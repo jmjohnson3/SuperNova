@@ -45,18 +45,17 @@ def _prep_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     X = df.drop(columns=[c for c in id_cols if c in df.columns]).copy()
 
-    # Derive start time features
-    if "start_ts_utc" in df.columns:
-        ts = pd.to_datetime(df["start_ts_utc"], errors="coerce", utc=True)
-        X["start_hour_utc"] = ts.dt.hour
-        X["start_dow_utc"] = ts.dt.dayofweek
+    # Derive start time features (from the id_df copy)
+    ts = pd.to_datetime(id_df["start_ts_utc"], errors="coerce", utc=True)
+    X["start_hour_utc"] = ts.dt.hour
+    X["start_dow_utc"] = ts.dt.dayofweek
 
     # Ensure b2b numeric
     for bcol in ("home_is_b2b", "away_is_b2b"):
         if bcol in X.columns:
             X[bcol] = X[bcol].astype("boolean").fillna(False).astype(int)
 
-    # One-hot season/team abbr to match training strategy (B)
+    # One-hot season/team abbr (match training)
     cat_cols = []
     for c in ("season", "home_team_abbr", "away_team_abbr"):
         if c in df.columns:
@@ -73,17 +72,14 @@ def _prep_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         if X[c].dtype == "object" or str(X[c].dtype).startswith("string"):
             X[c] = pd.to_numeric(X[c], errors="coerce")
 
-    # Fill numeric NaNs with median of this batch (ok for inference)
-    numeric_cols = [c for c in X.columns if is_numeric_dtype(X[c])]
-    if numeric_cols:
-        X[numeric_cols] = X[numeric_cols].fillna(X[numeric_cols].median(numeric_only=True))
-
-    X = X.fillna(0.0)
+    # IMPORTANT: do NOT fill with batch medians here.
+    # We'll fill using training medians AFTER we align to feature_cols.
     return id_df, X
 
 
-def _load_models(cfg: PredictConfig) -> tuple[XGBRegressor, XGBRegressor, list[str]]:
+def _load_models(cfg: PredictConfig) -> tuple[XGBRegressor, XGBRegressor, list[str], dict[str, float]]:
     feature_cols_path = cfg.model_dir / "feature_columns.json"
+    feature_medians_path = cfg.model_dir / "feature_medians.json"
     spread_path = cfg.model_dir / "spread_xgb.json"
     total_path = cfg.model_dir / "total_xgb.json"
 
@@ -94,13 +90,55 @@ def _load_models(cfg: PredictConfig) -> tuple[XGBRegressor, XGBRegressor, list[s
 
     feature_cols = json.loads(feature_cols_path.read_text(encoding="utf-8"))
 
+    # Medians are strongly recommended; if missing, we'll fall back to 0-fills
+    feature_medians: dict[str, float] = {}
+    if feature_medians_path.exists():
+        raw = json.loads(feature_medians_path.read_text(encoding="utf-8"))
+        # ensure floats
+        feature_medians = {str(k): float(v) for k, v in raw.items() if v is not None}
+    else:
+        log.warning("Missing %s. Will fill NaNs with 0.0 only (may hurt accuracy).", feature_medians_path)
+
     spread_model = XGBRegressor()
     spread_model.load_model(str(spread_path))
 
     total_model = XGBRegressor()
     total_model.load_model(str(total_path))
 
-    return spread_model, total_model, feature_cols
+    return spread_model, total_model, feature_cols, feature_medians
+
+
+def _align_and_fill(
+    X: pd.DataFrame,
+    *,
+    feature_cols: list[str],
+    feature_medians: dict[str, float],
+) -> pd.DataFrame:
+    """
+    Align columns to training schema, fill NaNs using training medians, then fill remaining with 0.
+    """
+    # Add any missing columns
+    for c in feature_cols:
+        if c not in X.columns:
+            X[c] = np.nan  # keep as NaN so median fill can apply
+
+    # Drop any extra columns not seen in training
+    extra_cols = [c for c in X.columns if c not in feature_cols]
+    if extra_cols:
+        X = X.drop(columns=extra_cols)
+
+    # Reorder
+    X = X[feature_cols]
+
+    # Fill using training medians (only where provided)
+    if feature_medians:
+        for c, m in feature_medians.items():
+            if c in X.columns:
+                X[c] = X[c].fillna(m)
+
+    # Final safety
+    X = X.fillna(0.0)
+    return X
 
 
 def main() -> None:
@@ -114,7 +152,7 @@ def main() -> None:
 
     log.info("Predicting for ET date=%s season=%s", et_today, cfg.season)
 
-    spread_model, total_model, feature_cols = _load_models(cfg)
+    spread_model, total_model, feature_cols, feature_medians = _load_models(cfg)
 
     with psycopg2.connect(cfg.pg_dsn) as conn:
         df = pd.read_sql(SQL_TODAY, conn, params={"game_date": et_today, "season": cfg.season})
@@ -124,15 +162,8 @@ def main() -> None:
 
         id_df, X = _prep_features(df)
 
-        # Align columns exactly to training
-        for c in feature_cols:
-            if c not in X.columns:
-                X[c] = 0.0
-        extra_cols = [c for c in X.columns if c not in feature_cols]
-        if extra_cols:
-            X = X.drop(columns=extra_cols)
-
-        X = X[feature_cols]
+        # Align + fill exactly like training
+        X = _align_and_fill(X, feature_cols=feature_cols, feature_medians=feature_medians)
 
         spread_pred = spread_model.predict(X)  # predicted margin = home - away
         total_pred = total_model.predict(X)
@@ -141,8 +172,6 @@ def main() -> None:
         out["pred_margin_home_minus_away"] = np.round(spread_pred, 2)
         out["pred_total_points"] = np.round(total_pred, 2)
 
-        # Convert margin to "spread" style:
-        # If pred margin is +, home favored by that many; if -, away favored.
         def fmt_spread(m: float, home: str, away: str) -> str:
             if m >= 0:
                 return f"{home} -{abs(m):.1f}"
@@ -153,7 +182,6 @@ def main() -> None:
             for m, h, a in zip(out["pred_margin_home_minus_away"], out["home_team_abbr"], out["away_team_abbr"])
         ]
 
-        # Pretty print
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
             print(
