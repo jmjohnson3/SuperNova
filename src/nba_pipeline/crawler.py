@@ -2,12 +2,13 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Iterable, Optional
-
+import time
 import psycopg2
 from zoneinfo import ZoneInfo
 
 from nba_pipeline.fetcher import MySportsFeedsClient
 from nba_pipeline.raw_store import save_api_response
+from nba_pipeline.fetcher import MySportsFeedsClient, NoContentYetError, RateLimitedError, BadPayloadError
 
 log = logging.getLogger("nba_pipeline.crawler")
 
@@ -16,6 +17,24 @@ TEAM_ABBRS = [
     "hou","ind","lac","lal","mem","mia","mil","min","nop","nyk",
     "okc","orl","phi","phx","por","sac","sas","tor","uta","was",
 ]
+
+# crawler.py (top-level)
+
+TEAM_ABBR_NORMALIZE = {
+    # common MSF vs "public" differences
+    "BRO": "BKN",
+    "PHO": "PHX",
+    "NOR": "NOP",
+    # add if you see them in payloads
+    # "GS": "GSW",
+    # "LAK": "LAL",
+    # "LAC": "LAC",  # ok
+}
+
+def _norm_abbr(abbr: str) -> str:
+    a = (abbr or "").strip().upper()
+    return TEAM_ABBR_NORMALIZE.get(a, a)
+
 
 _ET = ZoneInfo("America/New_York")
 
@@ -139,9 +158,10 @@ def extract_game_slugs_from_games_payload(payload: dict) -> list[str]:
     games = payload.get("games") or []
     for g in games:
         sched = g.get("schedule") or {}
-        start_time = sched.get("startTime")  # e.g. "2024-10-23T02:00:00.000Z"
-        away = ((sched.get("awayTeam") or {}).get("abbreviation") or "").upper()
-        home = ((sched.get("homeTeam") or {}).get("abbreviation") or "").upper()
+        start_time = sched.get("startTime")
+        away = _norm_abbr(((sched.get("awayTeam") or {}).get("abbreviation") or ""))
+        home = _norm_abbr(((sched.get("homeTeam") or {}).get("abbreviation") or ""))
+
         if not (start_time and away and home):
             continue
 
@@ -150,7 +170,6 @@ def extract_game_slugs_from_games_payload(payload: dict) -> list[str]:
         game_date = dt_et.strftime("%Y%m%d")
         slugs.append(f"{game_date}-{away}-{home}")
 
-    # dedupe preserve order
     seen = set()
     out = []
     for s in slugs:
@@ -262,30 +281,49 @@ def crawl_season_incremental(
         if not slugs:
             continue
 
-        # 2) Per-game endpoints for that date’s slugs
+            # 2) Per-game endpoints for that date’s slugs
+            # If this is a future date, boxscore/playbyplay won't exist yet (204). Skip them.
+        is_future_date = d > today_et
+
         for i, slug in enumerate(slugs, start=1):
             for endpoint_name, url_builder in (
-                ("boxscore", build_url_boxscore),
-                ("playbyplay", build_url_playbyplay),
-                ("lineup", build_url_lineup),
+                    ("boxscore", build_url_boxscore),
+                    ("playbyplay", build_url_playbyplay),
+                    ("lineup", build_url_lineup),
             ):
+                if is_future_date and endpoint_name in ("boxscore", "playbyplay"):
+                    continue
+
                 url = url_builder(season, slug)
 
                 if already_fetched(
-                    conn,
-                    provider=provider,
-                    endpoint=endpoint_name,
-                    season=season.season_slug,
-                    game_slug=slug,
-                    as_of_date=None,
-                    url=url,
+                        conn,
+                        provider=provider,
+                        endpoint=endpoint_name,
+                        season=season.season_slug,
+                        game_slug=slug,
+                        as_of_date=d,
+                        url=url,
                 ):
                     continue
 
                 try:
                     payload = client.fetch_json(url)
+                except NoContentYetError:
+                    # not ready (common for future / not started)
+                    log.info("Not ready yet (204) endpoint=%s game_slug=%s", endpoint_name, slug)
+                    continue
+                except RateLimitedError:
+                    log.warning("Rate limited (429). Stopping early for date=%s to avoid hammering.", d)
+                    return
+                except BadPayloadError as e:
+                    log.warning("Bad payload endpoint=%s game_slug=%s err=%s", endpoint_name, slug, e)
+                    continue
                 except Exception:
-                    log.warning("Skipping failed fetch endpoint=%s game_slug=%s url=%s", endpoint_name, slug, url, exc_info=True)
+                    log.warning(
+                        "Skipping failed fetch endpoint=%s game_slug=%s url=%s",
+                        endpoint_name, slug, url, exc_info=True
+                    )
                     continue
 
                 save_api_response(
@@ -302,10 +340,13 @@ def crawl_season_incremental(
             if i % 25 == 0:
                 log.info("Progress date=%s games=%d/%d (saved=%d)", d, i, len(slugs), saved)
 
+        if d > today_et:
+            continue
+
         # 3) Player gamelogs per team for the date
         for team in TEAM_ABBRS:
             url = build_url_player_gamelogs(season, d, team)
-
+            time.sleep(0.25)
             if already_fetched(
                 conn,
                 provider=provider,
@@ -319,10 +360,18 @@ def crawl_season_incremental(
 
             try:
                 payload = client.fetch_json(url)
+            except NoContentYetError:
+                log.info("Not ready yet (204) endpoint=player_gamelogs date=%s team=%s", d, team)
+                continue
+            except RateLimitedError:
+                log.warning("Rate limited (429). Stopping early for date=%s to avoid hammering.", d)
+                return
+            except BadPayloadError as e:
+                log.warning("Bad payload endpoint=player_gamelogs date=%s team=%s err=%s", d, team, e)
+                continue
             except Exception:
                 log.warning("Skipping failed fetch endpoint=player_gamelogs date=%s team=%s", d, team, exc_info=True)
                 continue
-
             save_api_response(
                 conn,
                 provider=provider,

@@ -4,13 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8b48474-6e90-4e60-b81d-144213686383" name="Changes" comment="init">
-      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_medians.json" afterDir="false" />
+    <list default="true" id="a8b48474-6e90-4e60-b81d-144213686383" name="Changes" comment="improve prediction accuracy">
+      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi_backfill.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_oddsapi.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/spread_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/spread_xgb.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/total_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/total_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/crawler.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/fetcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/fetcher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_columns.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_columns.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_medians.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_medians.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/spread_xgb.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/total_xgb.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_today.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_today.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/train_game_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/train_game_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/raw_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/raw_store.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,12 +87,21 @@
       <option name="project" value="LOCAL" />
       <updated>1769896869715</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="improve prediction accuracy">
+      <option name="closed" value="true" />
+      <created>1769925641006</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1769925641006</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="init" />
-    <option name="LAST_COMMIT_MESSAGE" value="init" />
+    <MESSAGE value="improve prediction accuracy" />
+    <option name="LAST_COMMIT_MESSAGE" value="improve prediction accuracy" />
   </component>
 </project>

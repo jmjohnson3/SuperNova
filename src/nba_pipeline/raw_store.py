@@ -1,24 +1,44 @@
+# src/nba_pipeline/raw_store.py
 import hashlib
 import json
 import logging
-from dataclasses import dataclass
-from datetime import date
+from datetime import datetime, timezone
 from typing import Any, Optional
-
-import psycopg2
-import psycopg2.extras
 
 log = logging.getLogger("nba_pipeline.raw_store")
 
+SQL_INSERT_API_RESPONSE = """
+INSERT INTO raw.api_responses (
+  provider,
+  endpoint,
+  season,
+  game_slug,
+  as_of_date,
+  url,
+  fetched_at_utc,
+  payload,
+  payload_sha256
+)
+VALUES (
+  %(provider)s,
+  %(endpoint)s,
+  %(season)s,
+  %(game_slug)s,
+  %(as_of_date)s,
+  %(url)s,
+  %(fetched_at_utc)s,
+  %(payload)s::jsonb,
+  %(payload_sha256)s
+)
+ON CONFLICT DO NOTHING;
+"""
 
-def _sha256_json(payload: Any) -> str:
-    # Stable hash: sort keys + compact separators
-    b = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+def _sha256_json(obj: Any) -> str:
+    b = json.dumps(obj, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(b).hexdigest()
 
-
 def save_api_response(
-    conn: psycopg2.extensions.connection,
+    conn,
     *,
     provider: str,
     endpoint: str,
@@ -26,25 +46,17 @@ def save_api_response(
     payload: Any,
     season: Optional[str] = None,
     game_slug: Optional[str] = None,
-    as_of_date: Optional[date] = None,
-) -> bool:
+    as_of_date: Optional[object] = None,
+    fetched_at_utc: Optional[datetime] = None,
+) -> str:
     """
-    Inserts payload into raw.api_responses with dedupe via (provider, endpoint, payload_sha256).
-    Returns True if inserted, False if already existed.
+    Insert raw API payload, idempotent.
+    Returns payload_sha256 (useful for logging).
     """
-    payload_hash = _sha256_json(payload)
+    if fetched_at_utc is None:
+        fetched_at_utc = datetime.now(timezone.utc)
 
-    sql = """
-    INSERT INTO raw.api_responses (
-      provider, endpoint, season, game_slug, as_of_date, url, fetched_at_utc, payload, payload_sha256
-    )
-    VALUES (
-      %(provider)s, %(endpoint)s, %(season)s, %(game_slug)s, %(as_of_date)s,
-      %(url)s, now(), %(payload)s::jsonb, %(payload_sha256)s
-    )
-    ON CONFLICT (provider, endpoint, payload_sha256) DO NOTHING
-    ;
-    """
+    payload_sha256 = _sha256_json(payload)
 
     params = {
         "provider": provider,
@@ -53,17 +65,12 @@ def save_api_response(
         "game_slug": game_slug,
         "as_of_date": as_of_date,
         "url": url,
-        "payload": json.dumps(payload, ensure_ascii=False),
-        "payload_sha256": payload_hash,
+        "fetched_at_utc": fetched_at_utc,
+        "payload": json.dumps(payload),
+        "payload_sha256": payload_sha256,
     }
 
     with conn.cursor() as cur:
-        cur.execute(sql, params)
-        inserted = cur.rowcount == 1
+        cur.execute(SQL_INSERT_API_RESPONSE, params)
 
-    if inserted:
-        log.info("Saved raw payload provider=%s endpoint=%s hash=%s", provider, endpoint, payload_hash[:10])
-    else:
-        log.info("Skipped duplicate payload provider=%s endpoint=%s hash=%s", provider, endpoint, payload_hash[:10])
-
-    return inserted
+    return payload_sha256
