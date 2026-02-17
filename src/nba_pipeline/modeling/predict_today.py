@@ -84,6 +84,23 @@ def _prep_features(
     # coerce numeric-ish strings
     X = _coerce_numeric_cols(X)
 
+    # --- Derived interaction features (must match training) ---
+    if "home_rest_days" in X.columns and "away_rest_days" in X.columns:
+        X["rest_advantage_home"] = X["home_rest_days"] - X["away_rest_days"]
+
+    if "home_pts_for_avg_10" in X.columns and "home_pts_against_avg_10" in X.columns:
+        X["home_net_rating_10"] = X["home_pts_for_avg_10"] - X["home_pts_against_avg_10"]
+    if "away_pts_for_avg_10" in X.columns and "away_pts_against_avg_10" in X.columns:
+        X["away_net_rating_10"] = X["away_pts_for_avg_10"] - X["away_pts_against_avg_10"]
+    if "home_net_rating_10" in X.columns and "away_net_rating_10" in X.columns:
+        X["net_rating_diff_10"] = X["home_net_rating_10"] - X["away_net_rating_10"]
+
+    if "home_pace_avg_5" in X.columns and "away_pace_avg_5" in X.columns:
+        X["pace_diff_5"] = X["home_pace_avg_5"] - X["away_pace_avg_5"]
+
+    if "home_pts_for_avg_5" in X.columns and "away_pts_for_avg_5" in X.columns:
+        X["pts_for_diff_5"] = X["home_pts_for_avg_5"] - X["away_pts_for_avg_5"]
+
     # align to training columns
     for c in feature_cols:
         if c not in X.columns:
@@ -209,6 +226,10 @@ def main() -> None:
                 pred_total_final[ok.values] = mkt_total.loc[ok].astype(float).values + pred_total_resid
 
                 used_market = ok.values
+
+        # Clip predictions to reasonable NBA ranges
+        pred_margin_final = np.clip(pred_margin_final, -40.0, 40.0)
+        pred_total_final = np.clip(pred_total_final, 170.0, 280.0)
 
         out = id_df.copy()
         out["pred_margin_home_minus_away"] = np.round(pred_margin_final, 2)

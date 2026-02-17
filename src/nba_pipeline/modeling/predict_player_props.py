@@ -227,10 +227,40 @@ def _load_artifacts(cfg: PredictConfig) -> tuple[dict[str, XGBRegressor], list[s
     }
     return models, feature_cols, medians
 
+def _add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
+    """Add derived interaction features (must match training)."""
+    if "pts_avg_10" in X.columns and "min_avg_10" in X.columns:
+        X["pts_per_min_10"] = X["pts_avg_10"] / X["min_avg_10"].clip(lower=1.0)
+    if "reb_avg_10" in X.columns and "min_avg_10" in X.columns:
+        X["reb_per_min_10"] = X["reb_avg_10"] / X["min_avg_10"].clip(lower=1.0)
+    if "ast_avg_10" in X.columns and "min_avg_10" in X.columns:
+        X["ast_per_min_10"] = X["ast_avg_10"] / X["min_avg_10"].clip(lower=1.0)
+
+    if "pts_avg_5" in X.columns and "pts_avg_10" in X.columns:
+        X["pts_trend_5v10"] = X["pts_avg_5"] - X["pts_avg_10"]
+    if "reb_avg_5" in X.columns and "reb_avg_10" in X.columns:
+        X["reb_trend_5v10"] = X["reb_avg_5"] - X["reb_avg_10"]
+    if "ast_avg_5" in X.columns and "ast_avg_10" in X.columns:
+        X["ast_trend_5v10"] = X["ast_avg_5"] - X["ast_avg_10"]
+
+    if "min_avg_5" in X.columns and "min_avg_10" in X.columns:
+        X["min_trend_5v10"] = X["min_avg_5"] - X["min_avg_10"]
+
+    if "pts_sd_10" in X.columns and "pts_avg_10" in X.columns:
+        X["pts_cv_10"] = X["pts_sd_10"] / X["pts_avg_10"].clip(lower=0.5)
+    if "reb_sd_10" in X.columns and "reb_avg_10" in X.columns:
+        X["reb_cv_10"] = X["reb_sd_10"] / X["reb_avg_10"].clip(lower=0.5)
+    if "ast_sd_10" in X.columns and "ast_avg_10" in X.columns:
+        X["ast_cv_10"] = X["ast_sd_10"] / X["ast_avg_10"].clip(lower=0.5)
+
+    return X
+
+
 def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]) -> pd.DataFrame:
     id_cols = {
         "season","game_slug","game_date_et","start_ts_utc",
-        "team_abbr","opponent_abbr","is_home","player_id"
+        "team_abbr","opponent_abbr","is_home","player_id",
+        "player_name",
     }
     X = df.drop(columns=[c for c in id_cols if c in df.columns]).copy()
 
@@ -247,6 +277,9 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
             X[bcol] = X[bcol].astype("boolean").fillna(False).astype(int)
 
     X = _coerce_numeric_cols(X)
+
+    # Derived interaction features (must match training)
+    X = _add_derived_features(X)
 
     # align schema
     for c in feature_cols:
@@ -301,9 +334,9 @@ def main() -> None:
          "proj_minutes", "is_proj_starter"]
     ].copy()
 
-    df_out["pred_points"] = models["points"].predict(X)
-    df_out["pred_rebounds"] = models["rebounds"].predict(X)
-    df_out["pred_assists"] = models["assists"].predict(X)
+    df_out["pred_points"] = np.clip(models["points"].predict(X), 0.0, 60.0)
+    df_out["pred_rebounds"] = np.clip(models["rebounds"].predict(X), 0.0, 25.0)
+    df_out["pred_assists"] = np.clip(models["assists"].predict(X), 0.0, 20.0)
 
     # pretty print grouped by game
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)

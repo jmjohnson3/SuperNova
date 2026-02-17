@@ -31,12 +31,21 @@ class TrainConfig:
     test_window_days: int = 7
     step_days: int = 7
     # XGBoost params
-    n_estimators: int = 700
+    n_estimators: int = 2000
     max_depth: int = 4
     learning_rate: float = 0.03
     subsample: float = 0.8
     colsample_bytree: float = 0.8
     random_state: int = 42
+    # Regularization
+    min_child_weight: int = 10
+    gamma: float = 0.1
+    reg_alpha: float = 0.1
+    reg_lambda: float = 3.0
+    # Early stopping
+    early_stopping_rounds: int = 50
+    # Huber loss
+    huber_slope: float = 5.0
 
 
 SQL_GAME_TRAINING_FEATURES = """
@@ -144,10 +153,16 @@ def build_model(cfg: TrainConfig) -> XGBRegressor:
         learning_rate=cfg.learning_rate,
         subsample=cfg.subsample,
         colsample_bytree=cfg.colsample_bytree,
-        objective="reg:squarederror",
+        objective="reg:pseudohubererror",
+        huber_slope=cfg.huber_slope,
+        min_child_weight=cfg.min_child_weight,
+        gamma=cfg.gamma,
+        reg_alpha=cfg.reg_alpha,
+        reg_lambda=cfg.reg_lambda,
+        early_stopping_rounds=cfg.early_stopping_rounds,
+        eval_metric="mae",
         random_state=cfg.random_state,
         n_jobs=-1,
-        reg_lambda=1.0,
     )
 
 
@@ -264,6 +279,23 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         log.warning("One-hot encoding remaining non-numeric cols: %s", non_numeric_cols)
         X = pd.get_dummies(X, columns=non_numeric_cols, drop_first=False, dummy_na=True)
 
+    # --- Derived interaction features ---
+    if "home_rest_days" in X.columns and "away_rest_days" in X.columns:
+        X["rest_advantage_home"] = X["home_rest_days"] - X["away_rest_days"]
+
+    if "home_pts_for_avg_10" in X.columns and "home_pts_against_avg_10" in X.columns:
+        X["home_net_rating_10"] = X["home_pts_for_avg_10"] - X["home_pts_against_avg_10"]
+    if "away_pts_for_avg_10" in X.columns and "away_pts_against_avg_10" in X.columns:
+        X["away_net_rating_10"] = X["away_pts_for_avg_10"] - X["away_pts_against_avg_10"]
+    if "home_net_rating_10" in X.columns and "away_net_rating_10" in X.columns:
+        X["net_rating_diff_10"] = X["home_net_rating_10"] - X["away_net_rating_10"]
+
+    if "home_pace_avg_5" in X.columns and "away_pace_avg_5" in X.columns:
+        X["pace_diff_5"] = X["home_pace_avg_5"] - X["away_pace_avg_5"]
+
+    if "home_pts_for_avg_5" in X.columns and "away_pts_for_avg_5" in X.columns:
+        X["pts_for_diff_5"] = X["home_pts_for_avg_5"] - X["away_pts_for_avg_5"]
+
     # At this point: numeric columns, but may contain NaNs.
     still_bad = [c for c in X.columns if not is_numeric_dtype(X[c])]
     if still_bad:
@@ -290,6 +322,16 @@ def apply_fill(X: pd.DataFrame, medians: Dict[str, float], columns: List[str]) -
             X2[c] = X2[c].fillna(m)
     # any columns that never had a median (all NaN in train) -> 0
     return X2.fillna(0.0)
+
+
+def temporal_eval_split(
+    dates: pd.Series, eval_frac: float = 0.15
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Return boolean masks (fit_mask, eval_mask) splitting by date quantile."""
+    cutoff = dates.quantile(1.0 - eval_frac)
+    fit_mask = (dates < cutoff).values
+    eval_mask = (dates >= cutoff).values
+    return fit_mask, eval_mask
 
 
 def evaluate_regression(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[float, float]:
@@ -639,11 +681,25 @@ def main() -> None:
             y_total_train = y_total.loc[train_mask]
             y_total_test = y_total.loc[test_mask]
 
+            # Temporal eval split for early stopping (last 15% of train by date)
+            train_dates = df.loc[train_mask, "game_date_et"]
+            fit_rel, eval_rel = temporal_eval_split(train_dates)
+            X_fit = X_train.iloc[fit_rel]
+            X_eval = X_train.iloc[eval_rel]
+
             spread_model = build_model(cfg)
             total_model = build_model(cfg)
 
-            spread_model.fit(X_train, y_spread_train)
-            total_model.fit(X_train, y_total_train)
+            spread_model.fit(
+                X_fit, y_spread_train.iloc[fit_rel],
+                eval_set=[(X_eval, y_spread_train.iloc[eval_rel])],
+                verbose=False,
+            )
+            total_model.fit(
+                X_fit, y_total_train.iloc[fit_rel],
+                eval_set=[(X_eval, y_total_train.iloc[eval_rel])],
+                verbose=False,
+            )
 
             spread_pred = spread_model.predict(X_test)
             total_pred = total_model.predict(X_test)
@@ -711,14 +767,30 @@ def main() -> None:
         medians_all = fit_fill_stats(X_raw)
         X_all = apply_fill(X_raw, medians_all, feature_cols)
 
+        # Temporal eval split for early stopping on final models
+        all_dates = df["game_date_et"]
+        fit_final, eval_final = temporal_eval_split(all_dates)
+        X_fit_final = X_all.iloc[fit_final]
+        X_eval_final = X_all.iloc[eval_final]
+
         spread_final = build_model(cfg)
         total_final = build_model(cfg)
 
         log.info("Fitting FINAL DIRECT spread model on all rows...")
-        spread_final.fit(X_all, y_spread)
+        spread_final.fit(
+            X_fit_final, y_spread.iloc[fit_final],
+            eval_set=[(X_eval_final, y_spread.iloc[eval_final])],
+            verbose=False,
+        )
+        log.info("Spread best iteration: %d", spread_final.best_iteration)
 
         log.info("Fitting FINAL DIRECT total model on all rows...")
-        total_final.fit(X_all, y_total)
+        total_final.fit(
+            X_fit_final, y_total.iloc[fit_final],
+            eval_set=[(X_eval_final, y_total.iloc[eval_final])],
+            verbose=False,
+        )
+        log.info("Total best iteration: %d", total_final.best_iteration)
 
         spread_final.save_model(str(model_dir / "spread_direct_xgb.json"))
         total_final.save_model(str(model_dir / "total_direct_xgb.json"))
