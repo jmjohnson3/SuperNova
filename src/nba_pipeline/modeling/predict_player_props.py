@@ -37,6 +37,7 @@ ORDER BY start_ts_utc, game_slug
 #  - get today's teams/opponents from features.game_prediction_features
 #  - for those teams, compute rolling stats for each player over previous games
 #  - choose each player's latest row prior to today (acts as a pregame snapshot)
+#  - LEFT JOIN V013 referee foul risk and V006 opponent style for full feature parity with training
 SQL_PLAYER_SNAPSHOTS_FOR_DATE = """
 WITH games_today AS (
     SELECT
@@ -52,7 +53,15 @@ WITH games_today AS (
       home_rest_days,
       home_is_b2b,
       away_rest_days,
-      away_is_b2b
+      away_is_b2b,
+      home_off_rtg_avg_10,
+      home_def_rtg_avg_10,
+      away_off_rtg_avg_10,
+      away_def_rtg_avg_10,
+      home_pace_avg_5 AS home_pace_5,
+      away_pace_avg_5 AS away_pace_5,
+      home_pace_avg_10 AS home_pace_10,
+      away_pace_avg_10 AS away_pace_10
     FROM features.game_prediction_features
     WHERE game_date_et = :game_date
       AND start_ts_utc IS NOT NULL
@@ -81,7 +90,19 @@ hist AS (
       p.assists,
       p.threes_made,
       p.fga,
-      p.fta
+      p.fta,
+      -- V007: expanded stats from JSONB
+      NULLIF(p.stats->'defense'->>'stl', '')::numeric            AS stl,
+      NULLIF(p.stats->'defense'->>'blk', '')::numeric            AS blk,
+      COALESCE(
+          NULLIF(p.stats->'defense'->>'tov', '')::numeric,
+          NULLIF(p.stats->'offense'->>'tov', '')::numeric
+      )                                                           AS tov,
+      NULLIF(p.stats->'rebounds'->>'offReb', '')::numeric        AS off_reb,
+      NULLIF(p.stats->'rebounds'->>'defReb', '')::numeric        AS def_reb,
+      NULLIF(p.stats->'fieldGoals'->>'fgMade', '')::numeric      AS fg_made,
+      NULLIF(p.stats->'miscellaneous'->>'plusMinus', '')::numeric AS plus_minus,
+      NULLIF(p.stats->'miscellaneous'->>'foulsTotal', '')::numeric AS fouls
     FROM raw.nba_player_gamelogs p
     JOIN raw.nba_games g
       ON g.season = p.season
@@ -117,7 +138,28 @@ feat AS (
 
       STDDEV_SAMP(h.points)   OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS pts_sd_10,
       STDDEV_SAMP(h.rebounds) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS reb_sd_10,
-      STDDEV_SAMP(h.assists)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS ast_sd_10
+      STDDEV_SAMP(h.assists)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS ast_sd_10,
+
+      AVG(
+        CASE WHEN h.minutes > 0 THEN (h.fga + 0.44 * h.fta) / h.minutes ELSE NULL END
+      ) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS usage_proxy_avg_10,
+
+      -- V007 rolling expanded stats
+      AVG(h.stl)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS stl_avg_5,
+      AVG(h.stl)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS stl_avg_10,
+      AVG(h.blk)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS blk_avg_5,
+      AVG(h.blk)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS blk_avg_10,
+      AVG(h.tov)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS tov_avg_10,
+      AVG(COALESCE(h.stl, 0) + COALESCE(h.blk, 0))
+                        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS stl_plus_blk_avg_10,
+      AVG(h.off_reb)    OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS off_reb_avg_10,
+      AVG(h.def_reb)    OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS def_reb_avg_10,
+      AVG(CASE WHEN h.fga > 0 THEN h.fg_made / h.fga ELSE NULL END)
+                        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS fg_pct_avg_10,
+      AVG(h.plus_minus) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS plus_minus_avg_5,
+      AVG(h.plus_minus) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS plus_minus_avg_10,
+      AVG(h.fouls)      OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS fouls_avg_5,
+      AVG(h.fouls)      OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS fouls_avg_10
     FROM hist h
 ),
 latest_per_player_team AS (
@@ -134,7 +176,17 @@ latest_per_player_team AS (
       reb_avg_5, reb_avg_10,
       ast_avg_5, ast_avg_10,
       fga_avg_10, fta_avg_10, threes_avg_10,
-      pts_sd_10, reb_sd_10, ast_sd_10
+      pts_sd_10, reb_sd_10, ast_sd_10,
+      usage_proxy_avg_10,
+      -- V007 expanded stats
+      stl_avg_5, stl_avg_10,
+      blk_avg_5, blk_avg_10,
+      tov_avg_10,
+      stl_plus_blk_avg_10,
+      off_reb_avg_10, def_reb_avg_10,
+      fg_pct_avg_10,
+      plus_minus_avg_5, plus_minus_avg_10,
+      fouls_avg_5, fouls_avg_10
     FROM feat
     ORDER BY player_id, team_abbr, start_ts_utc DESC
 ),
@@ -163,6 +215,16 @@ joined AS (
       lp.ast_avg_5, lp.ast_avg_10,
       lp.fga_avg_10, lp.fta_avg_10, lp.threes_avg_10,
       lp.pts_sd_10, lp.reb_sd_10, lp.ast_sd_10,
+      lp.usage_proxy_avg_10,
+      -- V007 expanded player stats
+      lp.stl_avg_5, lp.stl_avg_10,
+      lp.blk_avg_5, lp.blk_avg_10,
+      lp.tov_avg_10,
+      lp.stl_plus_blk_avg_10,
+      lp.off_reb_avg_10, lp.def_reb_avg_10,
+      lp.fg_pct_avg_10,
+      lp.plus_minus_avg_5, lp.plus_minus_avg_10,
+      lp.fouls_avg_5, lp.fouls_avg_10,
 
       gt.game_pace_est_5,
       gt.market_total,
@@ -177,7 +239,40 @@ joined AS (
         WHEN t.team_abbr = gt.home_team_abbr THEN (gt.market_total / 2.0) - (gt.market_spread_home / 2.0)
         WHEN t.team_abbr = gt.away_team_abbr THEN (gt.market_total / 2.0) + (gt.market_spread_home / 2.0)
         ELSE NULL::numeric
-      END AS team_implied_total
+      END AS team_implied_total,
+
+      CASE
+        WHEN t.team_abbr = gt.home_team_abbr THEN gt.away_def_rtg_avg_10
+        WHEN t.team_abbr = gt.away_team_abbr THEN gt.home_def_rtg_avg_10
+        ELSE NULL::numeric
+      END AS opp_def_rtg_10,
+      CASE
+        WHEN t.team_abbr = gt.home_team_abbr THEN gt.away_off_rtg_avg_10
+        WHEN t.team_abbr = gt.away_team_abbr THEN gt.home_off_rtg_avg_10
+        ELSE NULL::numeric
+      END AS opp_off_rtg_10,
+      CASE
+        WHEN t.team_abbr = gt.home_team_abbr THEN gt.away_pace_5
+        WHEN t.team_abbr = gt.away_team_abbr THEN gt.home_pace_5
+        ELSE NULL::numeric
+      END AS opp_pace_avg_5,
+      CASE
+        WHEN t.team_abbr = gt.home_team_abbr THEN gt.away_pace_10
+        WHEN t.team_abbr = gt.away_team_abbr THEN gt.home_pace_10
+        ELSE NULL::numeric
+      END AS opp_pace_avg_10,
+      gt.market_total AS game_market_total,
+      gt.market_spread_home AS game_market_spread,
+
+      -- V013 referee foul risk
+      rfr.avg_foul_uplift_crew,
+      rfr.avg_foul_per_36_uplift_crew,
+
+      -- V006 opponent style (for tov_vs_opp_stl, fg_pct_vs_opp_blk derived features)
+      ostyle.stl_avg_10   AS opp_stl_avg_10,
+      ostyle.blk_avg_10   AS opp_blk_avg_10,
+      ostyle.fouls_avg_10 AS opp_fouls_avg_10
+
     FROM teams_today t
     JOIN games_today gt
       ON gt.season = t.season
@@ -185,6 +280,14 @@ joined AS (
     JOIN latest_per_player_team lp
       ON lp.season = t.season
      AND lp.team_abbr = t.team_abbr
+    LEFT JOIN features.player_game_referee_foul_risk rfr
+      ON rfr.game_slug = t.game_slug
+     AND rfr.season   = t.season
+     AND rfr.player_id = lp.player_id
+    LEFT JOIN features.team_style_profile ostyle
+      ON ostyle.season    = t.season
+     AND ostyle.team_abbr = t.opponent_abbr
+     AND ostyle.game_slug = t.game_slug
 )
 SELECT *
 FROM joined
@@ -252,6 +355,37 @@ def _add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["reb_cv_10"] = X["reb_sd_10"] / X["reb_avg_10"].clip(lower=0.5)
     if "ast_sd_10" in X.columns and "ast_avg_10" in X.columns:
         X["ast_cv_10"] = X["ast_sd_10"] / X["ast_avg_10"].clip(lower=0.5)
+
+    # NEW: Matchup-scaled projections (player rate × game environment)
+    if "pts_per_min_10" in X.columns and "game_pace_est_5" in X.columns:
+        X["pts_pace_interaction"] = X["pts_per_min_10"] * X["game_pace_est_5"]
+    if "reb_per_min_10" in X.columns and "opp_pace_avg_10" in X.columns:
+        X["reb_pace_interaction"] = X["reb_per_min_10"] * X["opp_pace_avg_10"]
+
+    # NEW: Implied share of team total
+    if "pts_avg_10" in X.columns and "team_implied_total" in X.columns:
+        X["implied_pts_share"] = X["pts_avg_10"] / X["team_implied_total"].clip(lower=80.0)
+
+    # --- V007: Expanded player stat interactions ---
+    if "stl_plus_blk_avg_10" in X.columns and "opp_pace_avg_10" in X.columns:
+        X["stocks_pace_interaction"] = X["stl_plus_blk_avg_10"] * X["opp_pace_avg_10"] / 100.0
+    if "off_reb_avg_10" in X.columns and "def_reb_avg_10" in X.columns:
+        total_reb = X["off_reb_avg_10"] + X["def_reb_avg_10"]
+        X["off_reb_pct_10"] = X["off_reb_avg_10"] / total_reb.clip(lower=0.5)
+    if "tov_avg_10" in X.columns and "opp_stl_avg_10" in X.columns:
+        X["tov_vs_opp_stl"] = X["tov_avg_10"] * X["opp_stl_avg_10"] / 10.0
+    if "fouls_avg_5" in X.columns and "fouls_avg_10" in X.columns:
+        X["fouls_trend_5v10"] = X["fouls_avg_5"] - X["fouls_avg_10"]
+    if "plus_minus_avg_5" in X.columns and "plus_minus_avg_10" in X.columns:
+        X["pm_trend_5v10"] = X["plus_minus_avg_5"] - X["plus_minus_avg_10"]
+    if "fg_pct_avg_10" in X.columns and "opp_blk_avg_10" in X.columns:
+        X["fg_pct_vs_opp_blk"] = X["fg_pct_avg_10"] - X["opp_blk_avg_10"] / 10.0
+
+    # --- V013: Referee foul risk ---
+    if "avg_foul_uplift_crew" in X.columns and "fouls_avg_10" in X.columns:
+        X["ref_adjusted_fouls"] = X["fouls_avg_10"] + X["avg_foul_uplift_crew"].fillna(0)
+    if "avg_foul_per_36_uplift_crew" in X.columns and "min_avg_10" in X.columns:
+        X["ref_foul_min_risk"] = X["avg_foul_per_36_uplift_crew"].fillna(0) * X["min_avg_10"] / 36.0
 
     return X
 
