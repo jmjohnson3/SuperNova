@@ -6,6 +6,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from .features import add_game_derived_features
+
 import numpy as np
 import pandas as pd
 import psycopg2
@@ -312,94 +314,9 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         log.warning("One-hot encoding remaining non-numeric cols: %s", non_numeric_cols)
         X = pd.get_dummies(X, columns=non_numeric_cols, drop_first=False, dummy_na=True)
 
-    # --- Derived interaction features ---
-    if "home_rest_days" in X.columns and "away_rest_days" in X.columns:
-        X["rest_advantage_home"] = X["home_rest_days"] - X["away_rest_days"]
-
-    if "home_pts_for_avg_10" in X.columns and "home_pts_against_avg_10" in X.columns:
-        X["home_net_rating_10"] = X["home_pts_for_avg_10"] - X["home_pts_against_avg_10"]
-    if "away_pts_for_avg_10" in X.columns and "away_pts_against_avg_10" in X.columns:
-        X["away_net_rating_10"] = X["away_pts_for_avg_10"] - X["away_pts_against_avg_10"]
-    if "home_net_rating_10" in X.columns and "away_net_rating_10" in X.columns:
-        X["net_rating_diff_10"] = X["home_net_rating_10"] - X["away_net_rating_10"]
-
-    if "home_pace_avg_5" in X.columns and "away_pace_avg_5" in X.columns:
-        X["pace_diff_5"] = X["home_pace_avg_5"] - X["away_pace_avg_5"]
-
-    if "home_pts_for_avg_5" in X.columns and "away_pts_for_avg_5" in X.columns:
-        X["pts_for_diff_5"] = X["home_pts_for_avg_5"] - X["away_pts_for_avg_5"]
-
-    # --- NEW: Efficiency differentials ---
-    if "home_efg_pct_avg_5" in X.columns and "away_efg_pct_avg_5" in X.columns:
-        X["efg_diff_5"] = X["home_efg_pct_avg_5"] - X["away_efg_pct_avg_5"]
-    if "home_ts_pct_avg_5" in X.columns and "away_ts_pct_avg_5" in X.columns:
-        X["ts_diff_5"] = X["home_ts_pct_avg_5"] - X["away_ts_pct_avg_5"]
-    if "home_fg3a_rate_avg_5" in X.columns and "away_fg3a_rate_avg_5" in X.columns:
-        X["fg3a_rate_diff_5"] = X["home_fg3a_rate_avg_5"] - X["away_fg3a_rate_avg_5"]
-    if "home_tov_rate_avg_5" in X.columns and "away_tov_rate_avg_5" in X.columns:
-        X["tov_rate_diff_5"] = X["home_tov_rate_avg_5"] - X["away_tov_rate_avg_5"]
-
-    # --- NEW: Injury impact differential ---
-    if "home_injured_pts_lost" in X.columns and "away_injured_pts_lost" in X.columns:
-        X["injury_pts_diff"] = X["away_injured_pts_lost"] - X["home_injured_pts_lost"]
-
-    # --- NEW: Clutch differential ---
-    if "home_clutch_net_avg_10" in X.columns and "away_clutch_net_avg_10" in X.columns:
-        X["clutch_net_diff_10"] = X["home_clutch_net_avg_10"] - X["away_clutch_net_avg_10"]
-
-    # --- V005: Odds juice derived ---
-    if "spread_home_implied_prob" in X.columns:
-        X["spread_implied_edge"] = X.get("spread_home_implied_prob", 0.5) - 0.5
-    if "dk_spread_juice_move" in X.columns:
-        pass  # raw column already in feature set, no derivation needed
-
-    # --- V006: Team style differentials ---
-    if "home_stocks_avg_10" in X.columns and "away_stocks_avg_10" in X.columns:
-        X["stocks_diff_10"] = X["home_stocks_avg_10"] - X["away_stocks_avg_10"]
-    if "home_ast_tov_ratio_10" in X.columns and "away_ast_tov_ratio_10" in X.columns:
-        X["ast_tov_ratio_diff_10"] = X["home_ast_tov_ratio_10"] - X["away_ast_tov_ratio_10"]
-    if "home_pts_paint_avg_10" in X.columns and "away_pts_paint_avg_10" in X.columns:
-        X["paint_pts_diff_10"] = X["home_pts_paint_avg_10"] - X["away_pts_paint_avg_10"]
-    if "home_pts_fast_break_avg_10" in X.columns and "away_pts_fast_break_avg_10" in X.columns:
-        X["fast_break_diff_10"] = X["home_pts_fast_break_avg_10"] - X["away_pts_fast_break_avg_10"]
-    if "home_bench_pct_10" in X.columns and "away_bench_pct_10" in X.columns:
-        X["bench_depth_diff_10"] = X["home_bench_pct_10"] - X["away_bench_pct_10"]
-    if "home_fouls_avg_10" in X.columns and "away_fouls_avg_10" in X.columns:
-        X["fouls_diff_10"] = X["home_fouls_avg_10"] - X["away_fouls_avg_10"]
-
-    # --- V008: Lineup stability differential ---
-    if "home_starter_continuity_avg_10" in X.columns and "away_starter_continuity_avg_10" in X.columns:
-        X["continuity_diff_10"] = X["home_starter_continuity_avg_10"] - X["away_starter_continuity_avg_10"]
-
-    # --- V009: Standings differentials ---
-    if "home_streak" in X.columns and "away_streak" in X.columns:
-        X["streak_diff"] = X["home_streak"] - X["away_streak"]
-    if "home_last10_pct" in X.columns and "away_last10_pct" in X.columns:
-        X["last10_pct_diff"] = X["home_last10_pct"] - X["away_last10_pct"]
-    if "home_home_record_pct" in X.columns and "away_away_record_pct" in X.columns:
-        X["venue_record_diff"] = X["home_home_record_pct"] - X["away_away_record_pct"]
-
-    # --- V011: PBP differentials ---
-    if "home_three_pt_rate_avg_10" in X.columns and "away_three_pt_rate_avg_10" in X.columns:
-        X["three_pt_rate_diff_10"] = X["home_three_pt_rate_avg_10"] - X["away_three_pt_rate_avg_10"]
-
-    # --- B2B × rest interaction ---
-    # b2b_net_disadvantage: +1 = home on b2b / away rested, -1 = reverse
-    # Needs to be explicit because XGBoost tree splits treat it differently than each flag alone.
-    if "home_is_b2b" in X.columns and "away_is_b2b" in X.columns:
-        X["b2b_net_disadvantage"] = X["home_is_b2b"] - X["away_is_b2b"]
-
-    # --- Referee foul over/under bias signal ---
-    # crew_avg_fouls_per_game is absolute; this makes it RELATIVE to these teams' foul tendencies.
-    # Positive = ref crew calls more fouls than these teams typically generate → more FTAs → over bias.
-    if (
-        "crew_avg_fouls_per_game" in X.columns
-        and "home_fouls_avg_10" in X.columns
-        and "away_fouls_avg_10" in X.columns
-    ):
-        X["ref_foul_ot_signal"] = (
-            X["crew_avg_fouls_per_game"] - (X["home_fouls_avg_10"] + X["away_fouls_avg_10"])
-        )
+    # Derived interaction features — single source of truth in features.add_game_derived_features.
+    # To add a new feature, edit that function; both training and inference pick it up.
+    X = add_game_derived_features(X)
 
     # At this point: numeric columns, but may contain NaNs.
     still_bad = [c for c in X.columns if not is_numeric_dtype(X[c])]

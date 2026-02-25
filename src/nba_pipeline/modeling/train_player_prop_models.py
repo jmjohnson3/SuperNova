@@ -11,6 +11,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sqlalchemy import create_engine, text
 from xgboost import XGBRegressor
 
+from .features import add_player_prop_derived_features
+
 log = logging.getLogger("nba_pipeline.modeling.train_player_prop_models")
 
 
@@ -69,39 +71,6 @@ def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
     return X
 
 
-def _add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
-    """Add derived interaction features from existing columns."""
-    # Per-minute efficiency
-    if "pts_avg_10" in X.columns and "min_avg_10" in X.columns:
-        X["pts_per_min_10"] = X["pts_avg_10"] / X["min_avg_10"].clip(lower=1.0)
-    if "reb_avg_10" in X.columns and "min_avg_10" in X.columns:
-        X["reb_per_min_10"] = X["reb_avg_10"] / X["min_avg_10"].clip(lower=1.0)
-    if "ast_avg_10" in X.columns and "min_avg_10" in X.columns:
-        X["ast_per_min_10"] = X["ast_avg_10"] / X["min_avg_10"].clip(lower=1.0)
-
-    # Recent trend: 5-game vs 10-game (momentum)
-    if "pts_avg_5" in X.columns and "pts_avg_10" in X.columns:
-        X["pts_trend_5v10"] = X["pts_avg_5"] - X["pts_avg_10"]
-    if "reb_avg_5" in X.columns and "reb_avg_10" in X.columns:
-        X["reb_trend_5v10"] = X["reb_avg_5"] - X["reb_avg_10"]
-    if "ast_avg_5" in X.columns and "ast_avg_10" in X.columns:
-        X["ast_trend_5v10"] = X["ast_avg_5"] - X["ast_avg_10"]
-
-    # Minutes trend (increasing/decreasing role)
-    if "min_avg_5" in X.columns and "min_avg_10" in X.columns:
-        X["min_trend_5v10"] = X["min_avg_5"] - X["min_avg_10"]
-
-    # Coefficient of variation (consistency)
-    if "pts_sd_10" in X.columns and "pts_avg_10" in X.columns:
-        X["pts_cv_10"] = X["pts_sd_10"] / X["pts_avg_10"].clip(lower=0.5)
-    if "reb_sd_10" in X.columns and "reb_avg_10" in X.columns:
-        X["reb_cv_10"] = X["reb_sd_10"] / X["reb_avg_10"].clip(lower=0.5)
-    if "ast_sd_10" in X.columns and "ast_avg_10" in X.columns:
-        X["ast_cv_10"] = X["ast_sd_10"] / X["ast_avg_10"].clip(lower=0.5)
-
-    return X
-
-
 def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """
     X with NaNs preserved. Targets: points/rebounds/assists.
@@ -147,8 +116,8 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         log.warning("One-hot encoding remaining non-numeric cols: %s", non_numeric_cols)
         X = pd.get_dummies(X, columns=non_numeric_cols, drop_first=False, dummy_na=True)
 
-    # Derived interaction features
-    X = _add_derived_features(X)
+    # Derived interaction features — single source of truth in features.add_player_prop_derived_features.
+    X = add_player_prop_derived_features(X)
 
     still_bad = [c for c in X.columns if not is_numeric_dtype(X[c])]
     if still_bad:

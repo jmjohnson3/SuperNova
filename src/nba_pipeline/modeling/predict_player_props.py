@@ -11,6 +11,8 @@ from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_
 from sqlalchemy import create_engine, text
 from xgboost import XGBRegressor
 
+from .features import add_player_prop_derived_features
+
 log = logging.getLogger("nba_pipeline.modeling.predict_player_props")
 
 _ET = ZoneInfo("America/New_York")
@@ -334,66 +336,6 @@ def _load_artifacts(cfg: PredictConfig) -> tuple[dict[str, XGBRegressor], list[s
     }
     return models, feature_cols, medians
 
-def _add_derived_features(X: pd.DataFrame) -> pd.DataFrame:
-    """Add derived interaction features (must match training)."""
-    if "pts_avg_10" in X.columns and "min_avg_10" in X.columns:
-        X["pts_per_min_10"] = X["pts_avg_10"] / X["min_avg_10"].clip(lower=1.0)
-    if "reb_avg_10" in X.columns and "min_avg_10" in X.columns:
-        X["reb_per_min_10"] = X["reb_avg_10"] / X["min_avg_10"].clip(lower=1.0)
-    if "ast_avg_10" in X.columns and "min_avg_10" in X.columns:
-        X["ast_per_min_10"] = X["ast_avg_10"] / X["min_avg_10"].clip(lower=1.0)
-
-    if "pts_avg_5" in X.columns and "pts_avg_10" in X.columns:
-        X["pts_trend_5v10"] = X["pts_avg_5"] - X["pts_avg_10"]
-    if "reb_avg_5" in X.columns and "reb_avg_10" in X.columns:
-        X["reb_trend_5v10"] = X["reb_avg_5"] - X["reb_avg_10"]
-    if "ast_avg_5" in X.columns and "ast_avg_10" in X.columns:
-        X["ast_trend_5v10"] = X["ast_avg_5"] - X["ast_avg_10"]
-
-    if "min_avg_5" in X.columns and "min_avg_10" in X.columns:
-        X["min_trend_5v10"] = X["min_avg_5"] - X["min_avg_10"]
-
-    if "pts_sd_10" in X.columns and "pts_avg_10" in X.columns:
-        X["pts_cv_10"] = X["pts_sd_10"] / X["pts_avg_10"].clip(lower=0.5)
-    if "reb_sd_10" in X.columns and "reb_avg_10" in X.columns:
-        X["reb_cv_10"] = X["reb_sd_10"] / X["reb_avg_10"].clip(lower=0.5)
-    if "ast_sd_10" in X.columns and "ast_avg_10" in X.columns:
-        X["ast_cv_10"] = X["ast_sd_10"] / X["ast_avg_10"].clip(lower=0.5)
-
-    # NEW: Matchup-scaled projections (player rate × game environment)
-    if "pts_per_min_10" in X.columns and "game_pace_est_5" in X.columns:
-        X["pts_pace_interaction"] = X["pts_per_min_10"] * X["game_pace_est_5"]
-    if "reb_per_min_10" in X.columns and "opp_pace_avg_10" in X.columns:
-        X["reb_pace_interaction"] = X["reb_per_min_10"] * X["opp_pace_avg_10"]
-
-    # NEW: Implied share of team total
-    if "pts_avg_10" in X.columns and "team_implied_total" in X.columns:
-        X["implied_pts_share"] = X["pts_avg_10"] / X["team_implied_total"].clip(lower=80.0)
-
-    # --- V007: Expanded player stat interactions ---
-    if "stl_plus_blk_avg_10" in X.columns and "opp_pace_avg_10" in X.columns:
-        X["stocks_pace_interaction"] = X["stl_plus_blk_avg_10"] * X["opp_pace_avg_10"] / 100.0
-    if "off_reb_avg_10" in X.columns and "def_reb_avg_10" in X.columns:
-        total_reb = X["off_reb_avg_10"] + X["def_reb_avg_10"]
-        X["off_reb_pct_10"] = X["off_reb_avg_10"] / total_reb.clip(lower=0.5)
-    if "tov_avg_10" in X.columns and "opp_stl_avg_10" in X.columns:
-        X["tov_vs_opp_stl"] = X["tov_avg_10"] * X["opp_stl_avg_10"] / 10.0
-    if "fouls_avg_5" in X.columns and "fouls_avg_10" in X.columns:
-        X["fouls_trend_5v10"] = X["fouls_avg_5"] - X["fouls_avg_10"]
-    if "plus_minus_avg_5" in X.columns and "plus_minus_avg_10" in X.columns:
-        X["pm_trend_5v10"] = X["plus_minus_avg_5"] - X["plus_minus_avg_10"]
-    if "fg_pct_avg_10" in X.columns and "opp_blk_avg_10" in X.columns:
-        X["fg_pct_vs_opp_blk"] = X["fg_pct_avg_10"] - X["opp_blk_avg_10"] / 10.0
-
-    # --- V013: Referee foul risk ---
-    if "avg_foul_uplift_crew" in X.columns and "fouls_avg_10" in X.columns:
-        X["ref_adjusted_fouls"] = X["fouls_avg_10"] + X["avg_foul_uplift_crew"].fillna(0)
-    if "avg_foul_per_36_uplift_crew" in X.columns and "min_avg_10" in X.columns:
-        X["ref_foul_min_risk"] = X["avg_foul_per_36_uplift_crew"].fillna(0) * X["min_avg_10"] / 36.0
-
-    return X
-
-
 def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]) -> pd.DataFrame:
     id_cols = {
         "season","game_slug","game_date_et","start_ts_utc",
@@ -416,8 +358,8 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
 
     X = _coerce_numeric_cols(X)
 
-    # Derived interaction features (must match training)
-    X = _add_derived_features(X)
+    # Derived interaction features — single source of truth in features.add_player_prop_derived_features.
+    X = add_player_prop_derived_features(X)
 
     # align schema
     for c in feature_cols:
@@ -436,6 +378,23 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
         if c in X.columns:
             X[c] = X[c].fillna(m)
     return X.fillna(0.0)
+
+def _validate_player_predictions(
+    pred_pts: np.ndarray,
+    pred_reb: np.ndarray,
+    pred_ast: np.ndarray,
+    player_names: pd.Series,
+) -> None:
+    """Warn when raw model outputs fall outside sensible per-game NBA ranges before clipping."""
+    for i, (pts, reb, ast) in enumerate(zip(pred_pts, pred_reb, pred_ast)):
+        name = player_names.iloc[i] if i < len(player_names) else i
+        if not (0 <= pts <= 60):
+            log.warning("Extreme PTS prediction player=%s raw=%.1f (outside 0-60)", name, pts)
+        if not (0 <= reb <= 25):
+            log.warning("Extreme REB prediction player=%s raw=%.1f (outside 0-25)", name, reb)
+        if not (0 <= ast <= 20):
+            log.warning("Extreme AST prediction player=%s raw=%.1f (outside 0-20)", name, ast)
+
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
@@ -475,9 +434,15 @@ def main() -> None:
          "proj_minutes", "is_proj_starter"]
     ].copy()
 
-    df_out["pred_points"] = np.clip(models["points"].predict(X), 0.0, 60.0)
-    df_out["pred_rebounds"] = np.clip(models["rebounds"].predict(X), 0.0, 25.0)
-    df_out["pred_assists"] = np.clip(models["assists"].predict(X), 0.0, 20.0)
+    raw_pts = models["points"].predict(X)
+    raw_reb = models["rebounds"].predict(X)
+    raw_ast = models["assists"].predict(X)
+
+    _validate_player_predictions(raw_pts, raw_reb, raw_ast, df["player_name"])
+
+    df_out["pred_points"] = np.clip(raw_pts, 0.0, 60.0)
+    df_out["pred_rebounds"] = np.clip(raw_reb, 0.0, 25.0)
+    df_out["pred_assists"] = np.clip(raw_ast, 0.0, 20.0)
 
     # pretty print grouped by game
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)
