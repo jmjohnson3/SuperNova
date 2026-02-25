@@ -113,11 +113,14 @@ SELECT
     aoar.opp_def_rtg_faced_avg_10 AS away_sos_def_10,
 
     -- ===== STANDINGS / SEASON CONTEXT =====
-    hst.win_pct                 AS home_win_pct,
-    ast_st.win_pct              AS away_win_pct,
-    hst.conference_rank         AS home_conf_rank,
-    ast_st.conference_rank      AS away_conf_rank,
-    COALESCE(hst.win_pct, 0.5) - COALESCE(ast_st.win_pct, 0.5) AS win_pct_diff,
+    -- Sourced from team_standings_detail (point-in-time via V009) to avoid
+    -- leakage from team_standings_features which returns the most-recent
+    -- snapshot globally with no game-date cutoff.
+    hsd.win_pct                 AS home_win_pct,
+    asd.win_pct                 AS away_win_pct,
+    hsd.conference_rank         AS home_conf_rank,
+    asd.conference_rank         AS away_conf_rank,
+    COALESCE(hsd.win_pct, 0.5) - COALESCE(asd.win_pct, 0.5) AS win_pct_diff,
 
     -- ===== HOME/AWAY SPLITS =====
     hhas.home_win_pct_10        AS home_home_win_pct_10,
@@ -301,10 +304,10 @@ LEFT JOIN features.team_opp_adjusted_roll hoar
   ON hoar.season = b.season AND hoar.game_slug = b.game_slug AND hoar.team_abbr = b.home_team_abbr
 LEFT JOIN features.team_opp_adjusted_roll aoar
   ON aoar.season = b.season AND aoar.game_slug = b.game_slug AND aoar.team_abbr = b.away_team_abbr
-LEFT JOIN features.team_standings_features hst
-  ON hst.season = b.season AND hst.team_abbr = b.home_team_abbr
-LEFT JOIN features.team_standings_features ast_st
-  ON ast_st.season = b.season AND ast_st.team_abbr = b.away_team_abbr
+-- team_standings_features removed: it returns the most-recent global snapshot
+-- with no date cutoff, leaking future win_pct into training rows.
+-- win_pct and conference_rank are now sourced from team_standings_detail (hsd/asd)
+-- which is already joined below and is properly point-in-time (source_fetched_at_utc <= game_date_et).
 LEFT JOIN LATERAL (
     SELECT home_win_pct_10
     FROM features.team_home_away_splits s
@@ -487,11 +490,14 @@ SELECT
     aoar.opp_def_rtg_faced_avg_10 AS away_sos_def_10,
 
     -- ===== STANDINGS =====
-    hst.win_pct                 AS home_win_pct,
-    ast_st.win_pct              AS away_win_pct,
-    hst.conference_rank         AS home_conf_rank,
-    ast_st.conference_rank      AS away_conf_rank,
-    COALESCE(hst.win_pct, 0.5) - COALESCE(ast_st.win_pct, 0.5) AS win_pct_diff,
+    -- Sourced from team_standings_detail (point-in-time via V009) to avoid
+    -- leakage from team_standings_features which returns the most-recent
+    -- snapshot globally with no game-date cutoff.
+    hsd.win_pct                 AS home_win_pct,
+    asd.win_pct                 AS away_win_pct,
+    hsd.conference_rank         AS home_conf_rank,
+    asd.conference_rank         AS away_conf_rank,
+    COALESCE(hsd.win_pct, 0.5) - COALESCE(asd.win_pct, 0.5) AS win_pct_diff,
 
     -- ===== HOME/AWAY SPLITS =====
     hhas.home_win_pct_10        AS home_home_win_pct_10,
@@ -681,10 +687,10 @@ LEFT JOIN features.team_opp_adjusted_roll hoar
   ON hoar.season = b.season AND hoar.game_slug = b.game_slug AND hoar.team_abbr = b.home_team_abbr
 LEFT JOIN features.team_opp_adjusted_roll aoar
   ON aoar.season = b.season AND aoar.game_slug = b.game_slug AND aoar.team_abbr = b.away_team_abbr
-LEFT JOIN features.team_standings_features hst
-  ON hst.season = b.season AND hst.team_abbr = b.home_team_abbr
-LEFT JOIN features.team_standings_features ast_st
-  ON ast_st.season = b.season AND ast_st.team_abbr = b.away_team_abbr
+-- team_standings_features removed: it returns the most-recent global snapshot
+-- with no date cutoff, leaking future win_pct into training rows.
+-- win_pct and conference_rank are now sourced from team_standings_detail (hsd/asd)
+-- which is already joined below and is properly point-in-time (source_fetched_at_utc <= game_date_et).
 LEFT JOIN LATERAL (
     SELECT home_win_pct_10
     FROM features.team_home_away_splits s

@@ -156,15 +156,22 @@ def build_model(
     cfg: TrainConfig,
     params_override: Optional[Dict] = None,
     objective: str = "reg:pseudohubererror",
+    n_estimators: Optional[int] = None,
+    use_early_stopping: bool = True,
 ) -> XGBRegressor:
     """Build XGBRegressor with config defaults, optionally overridden by Optuna params.
 
     Use objective='reg:squarederror' for targets far from 0 (e.g. game totals ~229).
     Huber loss with small huber_slope causes near-zero hessians when base_score=0.5
     is far from the target range, breaking tree splits entirely.
+
+    Set use_early_stopping=False for final production models: train to a fixed
+    n_estimators derived from CV best_iteration statistics rather than using a
+    held-out eval split, which triggers premature stopping due to distribution shift
+    between earlier training data and the most-recent games used as the eval set.
     """
     p = {
-        "n_estimators": cfg.n_estimators,
+        "n_estimators": n_estimators if n_estimators is not None else cfg.n_estimators,
         "max_depth": cfg.max_depth,
         "learning_rate": cfg.learning_rate,
         "subsample": cfg.subsample,
@@ -174,11 +181,12 @@ def build_model(
         "gamma": cfg.gamma,
         "reg_alpha": cfg.reg_alpha,
         "reg_lambda": cfg.reg_lambda,
-        "early_stopping_rounds": cfg.early_stopping_rounds,
         "eval_metric": "mae",
         "random_state": cfg.random_state,
         "n_jobs": -1,
     }
+    if use_early_stopping:
+        p["early_stopping_rounds"] = cfg.early_stopping_rounds
     # huber_slope only applies to Huber-family objectives
     if objective == "reg:pseudohubererror":
         p["huber_slope"] = cfg.huber_slope
@@ -404,7 +412,7 @@ def apply_fill(X: pd.DataFrame, medians: Dict[str, float], columns: List[str]) -
 
 
 def temporal_eval_split(
-    dates: pd.Series, eval_frac: float = 0.15
+    dates: pd.Series, eval_frac: float = 0.20
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Return boolean masks (fit_mask, eval_mask) splitting by date quantile."""
     cutoff = dates.quantile(1.0 - eval_frac)
@@ -513,7 +521,7 @@ def _optuna_objective(
         "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
         "subsample": trial.suggest_float("subsample", 0.6, 1.0),
         "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
-        "min_child_weight": trial.suggest_int("min_child_weight", 5, 30),
+        "min_child_weight": trial.suggest_int("min_child_weight", 3, 15),
         "gamma": trial.suggest_float("gamma", 0.0, 1.0),
         "reg_alpha": trial.suggest_float("reg_alpha", 0.01, 2.0, log=True),
         "reg_lambda": trial.suggest_float("reg_lambda", 0.5, 10.0, log=True),
@@ -693,6 +701,12 @@ def main() -> None:
         resid_total_true_all: List[float] = []
         resid_total_pred_all: List[float] = []
 
+        # Track fold best_iterations so final model can be trained to the right depth
+        spread_best_iters: List[int] = []
+        total_best_iters: List[int] = []
+        resid_spread_best_iters: List[int] = []
+        resid_total_best_iters: List[int] = []
+
         fold_rows = 0
 
         log.info(
@@ -747,6 +761,11 @@ def main() -> None:
 
             spread_pred = spread_model.predict(X_test)
             total_pred = total_model.predict(X_test)
+
+            if getattr(spread_model, "best_iteration", None) is not None:
+                spread_best_iters.append(spread_model.best_iteration)
+            if getattr(total_model, "best_iteration", None) is not None:
+                total_best_iters.append(total_model.best_iteration)
 
             # Direct metrics
             s_mae, s_rmse = evaluate_regression(y_spread_test.to_numpy(), spread_pred)
@@ -811,6 +830,11 @@ def main() -> None:
 
                     pred_spread_resid = spread_resid_model.predict(X_test_resid)
                     pred_total_resid = total_resid_model.predict(X_test_resid)
+
+                    if getattr(spread_resid_model, "best_iteration", None) is not None:
+                        resid_spread_best_iters.append(spread_resid_model.best_iteration)
+                    if getattr(total_resid_model, "best_iteration", None) is not None:
+                        resid_total_best_iters.append(total_resid_model.best_iteration)
 
                     market_spread = df.loc[test_mask & has_market_test, "market_spread_home"].astype(float).values
                     market_total = df.loc[test_mask & has_market_test, "market_total"].astype(float).values
@@ -886,35 +910,45 @@ def main() -> None:
                 rt_mae, rt_rmse,
             )
 
+        # --- Derive final model depth from CV best_iteration statistics ---
+        # Use p75 × 1.2 buffer: more training data than any single fold, so more trees needed.
+        # p75 (not median) guards against folds where early stopping fired too aggressively.
+        _s_iters = spread_best_iters if spread_best_iters else [cfg.n_estimators]
+        _t_iters = total_best_iters if total_best_iters else [cfg.n_estimators]
+        spread_n_est = max(int(np.percentile(_s_iters, 75) * 1.2), 100)
+        total_n_est  = max(int(np.percentile(_t_iters, 75) * 1.2), 100)
+        log.info(
+            "CV best_iteration | SPREAD median=%d p75=%d → final n_est=%d | "
+            "TOTAL median=%d p75=%d → final n_est=%d",
+            int(np.median(_s_iters)), int(np.percentile(_s_iters, 75)), spread_n_est,
+            int(np.median(_t_iters)), int(np.percentile(_t_iters, 75)), total_n_est,
+        )
+
         # --- Train FINAL models on ALL rows (production) ---
         medians_all = fit_fill_stats(X_raw)
         X_all = apply_fill(X_raw, medians_all, feature_cols)
 
-        # Temporal eval split for early stopping on final models
-        all_dates = df["game_date_et"]
-        fit_final, eval_final = temporal_eval_split(all_dates)
-        X_fit_final = X_all.iloc[fit_final]
-        X_eval_final = X_all.iloc[eval_final]
-
         # --- FINAL DIRECT MODELS ---
-        spread_final = build_model(cfg, params_override=best_spread_params, objective=SPREAD_OBJECTIVE)
-        total_final = build_model(cfg, params_override=best_total_params, objective=TOTAL_OBJECTIVE)
+        # Train to fixed n_estimators with no early stopping.
+        # Early stopping on a temporal eval split fires prematurely: the most-recent games
+        # (eval set) have distribution shift vs. earlier games (fit set), so XGBoost sees
+        # immediate eval loss increase and stops after just a handful of iterations.
+        spread_final = build_model(cfg, params_override=best_spread_params,
+                                   objective=SPREAD_OBJECTIVE,
+                                   n_estimators=spread_n_est,
+                                   use_early_stopping=False)
+        total_final = build_model(cfg, params_override=best_total_params,
+                                  objective=TOTAL_OBJECTIVE,
+                                  n_estimators=total_n_est,
+                                  use_early_stopping=False)
 
-        log.info("Fitting FINAL DIRECT spread model on all rows...")
-        spread_final.fit(
-            X_fit_final, y_spread.iloc[fit_final],
-            eval_set=[(X_eval_final, y_spread.iloc[eval_final])],
-            verbose=False,
-        )
-        log.info("Spread best iteration: %d", spread_final.best_iteration)
+        log.info("Fitting FINAL DIRECT spread model on all %d rows (n_estimators=%d)...",
+                 len(X_all), spread_n_est)
+        spread_final.fit(X_all, y_spread, verbose=False)
 
-        log.info("Fitting FINAL DIRECT total model on all rows...")
-        total_final.fit(
-            X_fit_final, y_total.iloc[fit_final],
-            eval_set=[(X_eval_final, y_total.iloc[eval_final])],
-            verbose=False,
-        )
-        log.info("Total best iteration: %d", total_final.best_iteration)
+        log.info("Fitting FINAL DIRECT total model on all %d rows (n_estimators=%d)...",
+                 len(X_all), total_n_est)
+        total_final.fit(X_all, y_total, verbose=False)
 
         spread_final.save_model(str(model_dir / "spread_direct_xgb.json"))
         total_final.save_model(str(model_dir / "total_direct_xgb.json"))
@@ -935,32 +969,31 @@ def main() -> None:
             y_total_resid_all = df.loc[has_market_all, "total_residual"].astype(float)
             X_resid_all = X_all.loc[has_market_all]
 
-            resid_dates = df.loc[has_market_all, "game_date_et"]
-            resid_fit, resid_eval = temporal_eval_split(resid_dates)
+            _rs_iters = resid_spread_best_iters if resid_spread_best_iters else [cfg.n_estimators]
+            _rt_iters = resid_total_best_iters if resid_total_best_iters else [cfg.n_estimators]
+            resid_spread_n_est = max(int(np.percentile(_rs_iters, 75) * 1.2), 100)
+            resid_total_n_est  = max(int(np.percentile(_rt_iters, 75) * 1.2), 100)
 
-            if resid_fit.sum() > 10 and resid_eval.sum() > 5:
-                spread_resid_final = build_model(cfg, params_override=best_spread_params, objective=SPREAD_OBJECTIVE)
-                total_resid_final = build_model(cfg, params_override=best_total_params, objective=TOTAL_OBJECTIVE)
+            spread_resid_final = build_model(cfg, params_override=best_spread_params,
+                                             objective=SPREAD_OBJECTIVE,
+                                             n_estimators=resid_spread_n_est,
+                                             use_early_stopping=False)
+            total_resid_final = build_model(cfg, params_override=best_total_params,
+                                            objective=TOTAL_OBJECTIVE,
+                                            n_estimators=resid_total_n_est,
+                                            use_early_stopping=False)
 
-                spread_resid_final.fit(
-                    X_resid_all.iloc[resid_fit], y_spread_resid_all.iloc[resid_fit],
-                    eval_set=[(X_resid_all.iloc[resid_eval], y_spread_resid_all.iloc[resid_eval])],
-                    verbose=False,
-                )
-                log.info("Spread residual best iteration: %d", spread_resid_final.best_iteration)
+            log.info("Fitting FINAL RESIDUAL spread model on %d rows (n_estimators=%d)...",
+                     n_market_all, resid_spread_n_est)
+            spread_resid_final.fit(X_resid_all, y_spread_resid_all, verbose=False)
 
-                total_resid_final.fit(
-                    X_resid_all.iloc[resid_fit], y_total_resid_all.iloc[resid_fit],
-                    eval_set=[(X_resid_all.iloc[resid_eval], y_total_resid_all.iloc[resid_eval])],
-                    verbose=False,
-                )
-                log.info("Total residual best iteration: %d", total_resid_final.best_iteration)
+            log.info("Fitting FINAL RESIDUAL total model on %d rows (n_estimators=%d)...",
+                     n_market_all, resid_total_n_est)
+            total_resid_final.fit(X_resid_all, y_total_resid_all, verbose=False)
 
-                spread_resid_final.save_model(str(model_dir / "spread_resid_xgb.json"))
-                total_resid_final.save_model(str(model_dir / "total_resid_xgb.json"))
-                log.info("Saved RESIDUAL models to %s", model_dir)
-            else:
-                log.warning("Not enough residual data for fit/eval split. Skipping residual models.")
+            spread_resid_final.save_model(str(model_dir / "spread_resid_xgb.json"))
+            total_resid_final.save_model(str(model_dir / "total_resid_xgb.json"))
+            log.info("Saved RESIDUAL models to %s", model_dir)
         else:
             log.warning("Only %d rows have market data (need %d). Skipping residual models.",
                         n_market_all, cfg.min_market_rows)
