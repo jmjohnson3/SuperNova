@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -48,6 +48,10 @@ class TrainConfig:
     min_train_days: int = 60
     test_window_days: int = 7
     step_days: int = 7
+    # Optuna tuning
+    run_optuna: bool = True
+    optuna_n_trials: int = 50
+    optuna_n_folds: int = 5
 
 
 SQL_PLAYER_TRAIN = """
@@ -139,8 +143,12 @@ def apply_fill(X: pd.DataFrame, medians: Dict[str, float], columns: List[str]) -
     return X2.fillna(0.0)
 
 
-def build_model(cfg: TrainConfig, huber_slope: float = 4.0) -> XGBRegressor:
-    return XGBRegressor(
+def build_model(
+    cfg: TrainConfig,
+    huber_slope: float = 4.0,
+    params_override: Optional[Dict] = None,
+) -> XGBRegressor:
+    p = dict(
         n_estimators=cfg.n_estimators,
         max_depth=cfg.max_depth,
         learning_rate=cfg.learning_rate,
@@ -157,6 +165,11 @@ def build_model(cfg: TrainConfig, huber_slope: float = 4.0) -> XGBRegressor:
         random_state=cfg.random_state,
         n_jobs=-1,
     )
+    if params_override:
+        # Apply Optuna-tuned architectural params; huber_slope stays stat-specific.
+        arch = {k: v for k, v in params_override.items() if k != "huber_slope"}
+        p.update(arch)
+    return XGBRegressor(**p)
 
 
 def _rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -210,6 +223,88 @@ def walk_forward_folds(
     return folds
 
 
+def run_optuna_tuning_props(
+    cfg: TrainConfig,
+    df: pd.DataFrame,
+    X_raw: pd.DataFrame,
+    y_pts: pd.Series,
+    feature_cols: List[str],
+) -> Dict:
+    """
+    Tune player-prop hyperparameters via walk-forward MAE on the PTS target
+    (most representative stat).  Huber_slope is included in the search but
+    stripped from the returned dict before applying to REB/AST models so
+    each stat retains its own stat-specific slope.
+    """
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    all_folds = walk_forward_folds(
+        df,
+        min_train_days=cfg.min_train_days,
+        test_window_days=cfg.test_window_days,
+        step_days=cfg.step_days,
+    )
+    tune_folds = all_folds[-cfg.optuna_n_folds:] if len(all_folds) > cfg.optuna_n_folds else all_folds
+
+    if not tune_folds:
+        log.warning("No walk-forward folds available for Optuna. Using default params.")
+        return {}
+
+    def objective(trial):
+        params = {
+            "max_depth":        trial.suggest_int("max_depth", 3, 6),
+            "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            "subsample":        trial.suggest_float("subsample", 0.6, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "min_child_weight": trial.suggest_int("min_child_weight", 5, 30),
+            "gamma":            trial.suggest_float("gamma", 0.0, 1.0),
+            "reg_alpha":        trial.suggest_float("reg_alpha", 0.01, 5.0, log=True),
+            "reg_lambda":       trial.suggest_float("reg_lambda", 0.5, 15.0, log=True),
+            "huber_slope":      trial.suggest_float("huber_slope", 1.0, 8.0),
+        }
+        mae_scores = []
+        for train_end, test_end in tune_folds:
+            train_mask = df["game_date_et"] < train_end
+            test_mask = (df["game_date_et"] >= train_end) & (df["game_date_et"] < test_end)
+            n_train, n_test = int(train_mask.sum()), int(test_mask.sum())
+            if n_train < 50 or n_test == 0:
+                continue
+            medians = fit_fill_stats(X_raw.loc[train_mask])
+            X_tr = apply_fill(X_raw.loc[train_mask], medians, feature_cols)
+            X_te = apply_fill(X_raw.loc[test_mask], medians, feature_cols)
+            y_tr = y_pts.loc[train_mask]
+            y_te = y_pts.loc[test_mask]
+            train_dates = df.loc[train_mask, "game_date_et"]
+            fit_rel, eval_rel = temporal_eval_split(train_dates)
+            m = XGBRegressor(
+                n_estimators=2000,
+                objective="reg:pseudohubererror",
+                early_stopping_rounds=50,
+                eval_metric="mae",
+                random_state=42,
+                n_jobs=-1,
+                **params,
+            )
+            m.fit(
+                X_tr.iloc[fit_rel], y_tr.iloc[fit_rel],
+                eval_set=[(X_tr.iloc[eval_rel], y_tr.iloc[eval_rel])],
+                verbose=False,
+            )
+            mae_scores.append(float(mean_absolute_error(y_te, m.predict(X_te))))
+        return float(np.mean(mae_scores)) if mae_scores else float("inf")
+
+    log.info(
+        "Running Optuna tuning for player props (%d trials, %d folds, PTS as proxy)...",
+        cfg.optuna_n_trials, len(tune_folds),
+    )
+    study = optuna.create_study(direction="minimize", study_name="player_props_pts")
+    study.optimize(objective, n_trials=cfg.optuna_n_trials, show_progress_bar=False)
+    best_params = study.best_params
+    log.info("Player props best params (PTS MAE=%.3f): %s", study.best_value, best_params)
+    return best_params
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
@@ -235,6 +330,16 @@ def main() -> None:
 
     X_raw, y_pts, y_reb, y_ast = make_xy_raw(df)
     feature_cols = list(X_raw.columns)
+
+    # --- Optuna hyperparameter tuning ---
+    best_params: Dict = {}
+    if cfg.run_optuna:
+        try:
+            best_params = run_optuna_tuning_props(cfg, df, X_raw, y_pts, feature_cols)
+        except ImportError:
+            log.warning("optuna not installed. Skipping tuning. pip install optuna")
+        except Exception as e:
+            log.warning("Optuna tuning failed: %s. Using default params.", e)
 
     stat_configs = [
         ("PTS", y_pts, cfg.huber_slope_pts),
@@ -291,7 +396,7 @@ def main() -> None:
                     y_train = y_full.loc[train_mask]
                     y_test = y_full.loc[test_mask]
 
-                    model = build_model(cfg, huber_slope=huber_slope)
+                    model = build_model(cfg, huber_slope=huber_slope, params_override=best_params)
                     model.fit(
                         X_fit, y_train.iloc[fit_rel],
                         eval_set=[(X_eval, y_train.iloc[eval_rel])],
@@ -342,7 +447,7 @@ def main() -> None:
 
     for stat_name, y_full, huber_slope in stat_configs:
         log.info("Training FINAL %s model...", stat_name)
-        m = build_model(cfg, huber_slope=huber_slope)
+        m = build_model(cfg, huber_slope=huber_slope, params_override=best_params)
         m.fit(
             X_fit_final, y_full.iloc[fit_final],
             eval_set=[(X_eval_final, y_full.iloc[eval_final])],

@@ -28,12 +28,14 @@ class PredictConfig:
 
 
 SQL_GAMES_FOR_DATE = """
-SELECT *
-FROM features.game_prediction_features
-WHERE game_date_et = :game_date
-  AND start_ts_utc IS NOT NULL
-  AND (:season IS NULL OR season = :season)
-ORDER BY start_ts_utc, game_slug
+SELECT gpf.*, h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5
+FROM features.game_prediction_features gpf
+LEFT JOIN features.team_h2h_features h2h
+  ON h2h.season = gpf.season AND h2h.game_slug = gpf.game_slug
+WHERE gpf.game_date_et = :game_date
+  AND gpf.start_ts_utc IS NOT NULL
+  AND (:season IS NULL OR gpf.season = :season)
+ORDER BY gpf.start_ts_utc, gpf.game_slug
 """
 
 def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
@@ -62,6 +64,13 @@ def _prep_features(
 
     # Start with all non-id columns
     X = df.drop(columns=[c for c in id_cols if c in df.columns]).copy()
+
+    # Season position: days elapsed since Oct 1 of the season-start year (mirrors training).
+    if "game_date_et" in df.columns:
+        gdt = pd.to_datetime(df["game_date_et"])
+        season_start_year = gdt.dt.year.where(gdt.dt.month >= 7, gdt.dt.year - 1)
+        season_start = pd.to_datetime(season_start_year.astype(str) + "-10-01")
+        X["season_days_elapsed"] = (gdt - season_start).dt.days.values
 
     # Derive timing
     if "start_ts_utc" in df.columns:

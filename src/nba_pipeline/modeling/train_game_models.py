@@ -52,15 +52,17 @@ class TrainConfig:
 
     # Optuna tuning
     run_optuna: bool = True
-    optuna_n_trials: int = 40
+    optuna_n_trials: int = 100
     optuna_n_folds: int = 5      # walk-forward folds used for tuning
 
 
 SQL_GAME_TRAINING_FEATURES = """
-SELECT *
-FROM features.game_training_features
-WHERE margin IS NOT NULL
-ORDER BY game_date_et, game_slug
+SELECT gtf.*, h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5
+FROM features.game_training_features gtf
+LEFT JOIN features.team_h2h_features h2h
+  ON h2h.season = gtf.season AND h2h.game_slug = gtf.game_slug
+WHERE gtf.margin IS NOT NULL
+ORDER BY gtf.game_date_et, gtf.game_slug
 """
 
 
@@ -84,74 +86,6 @@ def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
         if X[c].dtype == "object" or str(X[c].dtype).startswith("string"):
             X[c] = pd.to_numeric(X[c], errors="coerce")
     return X
-
-
-def make_xy(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
-    """
-    Build (X, y_spread, y_total) for DIRECT models.
-    - Drops leaky score columns.
-    - One-hot encodes season/home/away team IDs (as you already chose).
-    - Keeps market columns if present (they are valid pregame features).
-    """
-
-    y_spread = df["margin"].astype(float)
-    y_total = df["total_points"].astype(float)
-
-    keep_cats = ["season", "home_team_abbr", "away_team_abbr"]
-
-    drop_cols = {
-        "game_slug",
-        "game_date_et",
-        "margin",
-        "total_points",
-        # leakage:
-        "home_score",
-        "away_score",
-    }
-
-    X = df.drop(columns=[c for c in drop_cols if c in df.columns]).copy()
-
-    # timing features
-    if "start_ts_utc" in X.columns:
-        ts = pd.to_datetime(X["start_ts_utc"], errors="coerce", utc=True)
-        X["start_hour_utc"] = ts.dt.hour
-        X["start_dow_utc"] = ts.dt.dayofweek
-        X = X.drop(columns=["start_ts_utc"])
-
-    # b2b as 0/1
-    for bcol in ("home_is_b2b", "away_is_b2b"):
-        if bcol in X.columns:
-            X[bcol] = X[bcol].astype("boolean").fillna(False).astype(int)
-
-    # ensure cats exist then one-hot
-    for c in keep_cats:
-        if c not in X.columns and c in df.columns:
-            X[c] = df[c]
-
-    cat_cols = [c for c in keep_cats if c in X.columns]
-    if cat_cols:
-        X = pd.get_dummies(X, columns=cat_cols, drop_first=False, dummy_na=False)
-
-    X = _coerce_numeric_cols(X)
-
-    # fill numeric NaNs with global medians
-    numeric_cols = [c for c in X.columns if is_numeric_dtype(X[c])]
-    if numeric_cols:
-        X[numeric_cols] = X[numeric_cols].fillna(X[numeric_cols].median(numeric_only=True))
-
-    # last-resort one-hot
-    non_numeric_cols = [c for c in X.columns if not is_numeric_dtype(X[c])]
-    if non_numeric_cols:
-        log.warning("One-hot encoding remaining non-numeric cols: %s", non_numeric_cols)
-        X = pd.get_dummies(X, columns=non_numeric_cols, drop_first=False, dummy_na=True)
-
-    X = X.fillna(0.0)
-
-    still_bad = [c for c in X.columns if not is_numeric_dtype(X[c])]
-    if still_bad:
-        raise RuntimeError(f"Non-numeric columns remain after encoding: {still_bad[:20]}")
-
-    return X, y_spread, y_total
 
 
 def build_model(
@@ -271,6 +205,14 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     }
 
     X = df.drop(columns=[c for c in drop_cols if c in df.columns]).copy()
+
+    # Season position: days elapsed since Oct 1 of the season-start year.
+    # Lets the model discount noisy early-season rolling stats automatically.
+    if "game_date_et" in df.columns:
+        gdt = pd.to_datetime(df["game_date_et"])
+        season_start_year = gdt.dt.year.where(gdt.dt.month >= 7, gdt.dt.year - 1)
+        season_start = pd.to_datetime(season_start_year.astype(str) + "-10-01")
+        X["season_days_elapsed"] = (gdt - season_start).dt.days.values
 
     # Safety: drop obviously postgame/leaky columns if they ever appear
     leaky_prefixes = (
