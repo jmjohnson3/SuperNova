@@ -456,7 +456,7 @@ def main() -> None:
         for _, r in g_sorted.iterrows():
             ha = "HOME" if bool(r["is_home"]) else "AWAY"
             name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
-            star = "★" if bool(r.get("is_proj_starter", False)) else " "
+            star = "*" if bool(r.get("is_proj_starter", False)) else " "
 
             pm = r.get("proj_minutes")
             pm_txt = f"{pm:.1f}" if pd.notna(pm) else "NA"
