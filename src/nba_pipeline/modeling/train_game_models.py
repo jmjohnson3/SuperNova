@@ -152,16 +152,24 @@ def make_xy(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     return X, y_spread, y_total
 
 
-def build_model(cfg: TrainConfig, params_override: Optional[Dict] = None) -> XGBRegressor:
-    """Build XGBRegressor with config defaults, optionally overridden by Optuna params."""
+def build_model(
+    cfg: TrainConfig,
+    params_override: Optional[Dict] = None,
+    objective: str = "reg:pseudohubererror",
+) -> XGBRegressor:
+    """Build XGBRegressor with config defaults, optionally overridden by Optuna params.
+
+    Use objective='reg:squarederror' for targets far from 0 (e.g. game totals ~229).
+    Huber loss with small huber_slope causes near-zero hessians when base_score=0.5
+    is far from the target range, breaking tree splits entirely.
+    """
     p = {
         "n_estimators": cfg.n_estimators,
         "max_depth": cfg.max_depth,
         "learning_rate": cfg.learning_rate,
         "subsample": cfg.subsample,
         "colsample_bytree": cfg.colsample_bytree,
-        "objective": "reg:pseudohubererror",
-        "huber_slope": cfg.huber_slope,
+        "objective": objective,
         "min_child_weight": cfg.min_child_weight,
         "gamma": cfg.gamma,
         "reg_alpha": cfg.reg_alpha,
@@ -171,8 +179,15 @@ def build_model(cfg: TrainConfig, params_override: Optional[Dict] = None) -> XGB
         "random_state": cfg.random_state,
         "n_jobs": -1,
     }
+    # huber_slope only applies to Huber-family objectives
+    if objective == "reg:pseudohubererror":
+        p["huber_slope"] = cfg.huber_slope
     if params_override:
-        p.update(params_override)
+        # Don't pass huber_slope to non-Huber objectives
+        override = dict(params_override)
+        if objective != "reg:pseudohubererror":
+            override.pop("huber_slope", None)
+        p.update(override)
     return XGBRegressor(**p)
 
 
@@ -488,6 +503,7 @@ def _optuna_objective(
     feature_cols: List[str],
     folds: List[Tuple[pd.Timestamp, pd.Timestamp]],
     target_name: str,
+    objective: str = "reg:pseudohubererror",
 ) -> float:
     """
     Optuna objective: walk-forward MAE averaged across a subset of folds.
@@ -501,8 +517,9 @@ def _optuna_objective(
         "gamma": trial.suggest_float("gamma", 0.0, 1.0),
         "reg_alpha": trial.suggest_float("reg_alpha", 0.01, 2.0, log=True),
         "reg_lambda": trial.suggest_float("reg_lambda", 0.5, 10.0, log=True),
-        "huber_slope": trial.suggest_float("huber_slope", 2.0, 10.0),
     }
+    if objective == "reg:pseudohubererror":
+        params["huber_slope"] = trial.suggest_float("huber_slope", 2.0, 10.0)
 
     mae_scores = []
 
@@ -531,7 +548,7 @@ def _optuna_objective(
 
         model = XGBRegressor(
             n_estimators=2000,
-            objective="reg:pseudohubererror",
+            objective=objective,
             early_stopping_rounds=50,
             eval_metric="mae",
             random_state=42,
@@ -555,6 +572,10 @@ def _optuna_objective(
     return float(np.mean(mae_scores))
 
 
+SPREAD_OBJECTIVE = "reg:pseudohubererror"
+TOTAL_OBJECTIVE  = "reg:squarederror"
+
+
 def run_optuna_tuning(
     cfg: TrainConfig,
     df: pd.DataFrame,
@@ -566,6 +587,9 @@ def run_optuna_tuning(
     """
     Run Optuna hyperparameter search for both spread and total models.
     Returns (best_spread_params, best_total_params).
+
+    Spread uses Huber loss (robust to blowout-game outliers; targets near 0).
+    Total uses squared error (Huber hessians → 0 for targets ~229, breaking splits).
     """
     import optuna
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -589,7 +613,8 @@ def run_optuna_tuning(
     spread_study = optuna.create_study(direction="minimize", study_name="spread")
     spread_study.optimize(
         lambda trial: _optuna_objective(
-            trial, df, X_raw, y_spread, feature_cols, tune_folds, "spread"
+            trial, df, X_raw, y_spread, feature_cols, tune_folds, "spread",
+            objective=SPREAD_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
         show_progress_bar=False,
@@ -602,7 +627,8 @@ def run_optuna_tuning(
     total_study = optuna.create_study(direction="minimize", study_name="total")
     total_study.optimize(
         lambda trial: _optuna_objective(
-            trial, df, X_raw, y_total, feature_cols, tune_folds, "total"
+            trial, df, X_raw, y_total, feature_cols, tune_folds, "total",
+            objective=TOTAL_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
         show_progress_bar=False,
@@ -705,8 +731,8 @@ def main() -> None:
             X_eval = X_train.iloc[eval_rel]
 
             # --- DIRECT MODELS ---
-            spread_model = build_model(cfg, params_override=best_spread_params)
-            total_model = build_model(cfg, params_override=best_total_params)
+            spread_model = build_model(cfg, params_override=best_spread_params, objective=SPREAD_OBJECTIVE)
+            total_model = build_model(cfg, params_override=best_total_params, objective=TOTAL_OBJECTIVE)
 
             spread_model.fit(
                 X_fit, y_spread_train.iloc[fit_rel],
@@ -768,8 +794,8 @@ def main() -> None:
                 resid_train_dates = df.loc[train_mask & has_market_train, "game_date_et"]
                 resid_fit, resid_eval = temporal_eval_split(resid_train_dates)
 
-                spread_resid_model = build_model(cfg, params_override=best_spread_params)
-                total_resid_model = build_model(cfg, params_override=best_total_params)
+                spread_resid_model = build_model(cfg, params_override=best_spread_params, objective=SPREAD_OBJECTIVE)
+                total_resid_model = build_model(cfg, params_override=best_total_params, objective=TOTAL_OBJECTIVE)
 
                 if resid_fit.sum() > 10 and resid_eval.sum() > 5:
                     spread_resid_model.fit(
@@ -871,8 +897,8 @@ def main() -> None:
         X_eval_final = X_all.iloc[eval_final]
 
         # --- FINAL DIRECT MODELS ---
-        spread_final = build_model(cfg, params_override=best_spread_params)
-        total_final = build_model(cfg, params_override=best_total_params)
+        spread_final = build_model(cfg, params_override=best_spread_params, objective=SPREAD_OBJECTIVE)
+        total_final = build_model(cfg, params_override=best_total_params, objective=TOTAL_OBJECTIVE)
 
         log.info("Fitting FINAL DIRECT spread model on all rows...")
         spread_final.fit(
@@ -913,8 +939,8 @@ def main() -> None:
             resid_fit, resid_eval = temporal_eval_split(resid_dates)
 
             if resid_fit.sum() > 10 and resid_eval.sum() > 5:
-                spread_resid_final = build_model(cfg, params_override=best_spread_params)
-                total_resid_final = build_model(cfg, params_override=best_total_params)
+                spread_resid_final = build_model(cfg, params_override=best_spread_params, objective=SPREAD_OBJECTIVE)
+                total_resid_final = build_model(cfg, params_override=best_total_params, objective=TOTAL_OBJECTIVE)
 
                 spread_resid_final.fit(
                     X_resid_all.iloc[resid_fit], y_spread_resid_all.iloc[resid_fit],
