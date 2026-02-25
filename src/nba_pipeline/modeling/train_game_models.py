@@ -57,10 +57,14 @@ class TrainConfig:
 
 
 SQL_GAME_TRAINING_FEATURES = """
-SELECT gtf.*, h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5
+SELECT gtf.*,
+       h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5,
+       elo.home_elo, elo.away_elo, elo.elo_diff, elo.elo_win_prob_home
 FROM features.game_training_features gtf
 LEFT JOIN features.team_h2h_features h2h
   ON h2h.season = gtf.season AND h2h.game_slug = gtf.game_slug
+LEFT JOIN features.game_elo_features elo
+  ON elo.season = gtf.season AND elo.game_slug = gtf.game_slug
 WHERE gtf.margin IS NOT NULL
 ORDER BY gtf.game_date_et, gtf.game_slug
 """

@@ -28,10 +28,14 @@ class PredictConfig:
 
 
 SQL_GAMES_FOR_DATE = """
-SELECT gpf.*, h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5
+SELECT gpf.*,
+       h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5,
+       elo.home_elo, elo.away_elo, elo.elo_diff, elo.elo_win_prob_home
 FROM features.game_prediction_features gpf
 LEFT JOIN features.team_h2h_features h2h
   ON h2h.season = gpf.season AND h2h.game_slug = gpf.game_slug
+LEFT JOIN features.game_elo_features elo
+  ON elo.season = gpf.season AND elo.game_slug = gpf.game_slug
 WHERE gpf.game_date_et = :game_date
   AND gpf.start_ts_utc IS NOT NULL
   AND (:season IS NULL OR gpf.season = :season)
