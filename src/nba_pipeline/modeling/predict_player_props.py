@@ -149,6 +149,7 @@ feat AS (
       AVG(h.stl)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS stl_avg_10,
       AVG(h.blk)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS blk_avg_5,
       AVG(h.blk)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS blk_avg_10,
+      AVG(h.tov)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS tov_avg_5,
       AVG(h.tov)        OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS tov_avg_10,
       AVG(COALESCE(h.stl, 0) + COALESCE(h.blk, 0))
                         OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS stl_plus_blk_avg_10,
@@ -163,7 +164,10 @@ feat AS (
     FROM hist h
 ),
 latest_per_player_team AS (
-    SELECT DISTINCT ON (player_id, team_abbr)
+    -- DISTINCT ON includes season so a player who played for the same team across
+    -- multiple seasons gets one row per season.  ORDER BY season DESC ensures we
+    -- pick the current-season row first when the joined CTE filters on lp.season = t.season.
+    SELECT DISTINCT ON (player_id, team_abbr, season)
       season,
       player_id,
       player_name,
@@ -181,14 +185,14 @@ latest_per_player_team AS (
       -- V007 expanded stats
       stl_avg_5, stl_avg_10,
       blk_avg_5, blk_avg_10,
-      tov_avg_10,
+      tov_avg_5, tov_avg_10,
       stl_plus_blk_avg_10,
       off_reb_avg_10, def_reb_avg_10,
       fg_pct_avg_10,
       plus_minus_avg_5, plus_minus_avg_10,
       fouls_avg_5, fouls_avg_10
     FROM feat
-    ORDER BY player_id, team_abbr, start_ts_utc DESC
+    ORDER BY player_id, team_abbr, season DESC, start_ts_utc DESC
 ),
 joined AS (
     SELECT
@@ -219,7 +223,7 @@ joined AS (
       -- V007 expanded player stats
       lp.stl_avg_5, lp.stl_avg_10,
       lp.blk_avg_5, lp.blk_avg_10,
-      lp.tov_avg_10,
+      lp.tov_avg_5, lp.tov_avg_10,
       lp.stl_plus_blk_avg_10,
       lp.off_reb_avg_10, lp.def_reb_avg_10,
       lp.fg_pct_avg_10,
@@ -424,7 +428,10 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
         X = X.drop(columns=extra)
     X = X[feature_cols]
 
-    # fill
+    # Fill with training medians first (avoids pulling rate stats like fg_pct to 0).
+    # For bench players, the population median (e.g. ~0.47 FG%) is far better than 0.
+    # The final 0.0 fallback only hits one-hot dummy columns and any column
+    # whose training median was itself NaN (shouldn't occur for real numeric features).
     for c, m in medians.items():
         if c in X.columns:
             X[c] = X[c].fillna(m)

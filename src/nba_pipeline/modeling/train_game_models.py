@@ -383,6 +383,24 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     if "home_three_pt_rate_avg_10" in X.columns and "away_three_pt_rate_avg_10" in X.columns:
         X["three_pt_rate_diff_10"] = X["home_three_pt_rate_avg_10"] - X["away_three_pt_rate_avg_10"]
 
+    # --- B2B × rest interaction ---
+    # b2b_net_disadvantage: +1 = home on b2b / away rested, -1 = reverse
+    # Needs to be explicit because XGBoost tree splits treat it differently than each flag alone.
+    if "home_is_b2b" in X.columns and "away_is_b2b" in X.columns:
+        X["b2b_net_disadvantage"] = X["home_is_b2b"] - X["away_is_b2b"]
+
+    # --- Referee foul over/under bias signal ---
+    # crew_avg_fouls_per_game is absolute; this makes it RELATIVE to these teams' foul tendencies.
+    # Positive = ref crew calls more fouls than these teams typically generate → more FTAs → over bias.
+    if (
+        "crew_avg_fouls_per_game" in X.columns
+        and "home_fouls_avg_10" in X.columns
+        and "away_fouls_avg_10" in X.columns
+    ):
+        X["ref_foul_ot_signal"] = (
+            X["crew_avg_fouls_per_game"] - (X["home_fouls_avg_10"] + X["away_fouls_avg_10"])
+        )
+
     # At this point: numeric columns, but may contain NaNs.
     still_bad = [c for c in X.columns if not is_numeric_dtype(X[c])]
     if still_bad:

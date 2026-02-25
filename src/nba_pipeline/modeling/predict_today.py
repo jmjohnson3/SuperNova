@@ -101,6 +101,72 @@ def _prep_features(
     if "home_pts_for_avg_5" in X.columns and "away_pts_for_avg_5" in X.columns:
         X["pts_for_diff_5"] = X["home_pts_for_avg_5"] - X["away_pts_for_avg_5"]
 
+    # --- NEW: Efficiency differentials ---
+    if "home_efg_pct_avg_5" in X.columns and "away_efg_pct_avg_5" in X.columns:
+        X["efg_diff_5"] = X["home_efg_pct_avg_5"] - X["away_efg_pct_avg_5"]
+    if "home_ts_pct_avg_5" in X.columns and "away_ts_pct_avg_5" in X.columns:
+        X["ts_diff_5"] = X["home_ts_pct_avg_5"] - X["away_ts_pct_avg_5"]
+    if "home_fg3a_rate_avg_5" in X.columns and "away_fg3a_rate_avg_5" in X.columns:
+        X["fg3a_rate_diff_5"] = X["home_fg3a_rate_avg_5"] - X["away_fg3a_rate_avg_5"]
+    if "home_tov_rate_avg_5" in X.columns and "away_tov_rate_avg_5" in X.columns:
+        X["tov_rate_diff_5"] = X["home_tov_rate_avg_5"] - X["away_tov_rate_avg_5"]
+
+    # --- NEW: Injury impact differential ---
+    if "home_injured_pts_lost" in X.columns and "away_injured_pts_lost" in X.columns:
+        X["injury_pts_diff"] = X["away_injured_pts_lost"] - X["home_injured_pts_lost"]
+
+    # --- NEW: Clutch differential ---
+    if "home_clutch_net_avg_10" in X.columns and "away_clutch_net_avg_10" in X.columns:
+        X["clutch_net_diff_10"] = X["home_clutch_net_avg_10"] - X["away_clutch_net_avg_10"]
+
+    # --- V005: Odds juice derived ---
+    if "spread_home_implied_prob" in X.columns:
+        X["spread_implied_edge"] = X.get("spread_home_implied_prob", 0.5) - 0.5
+
+    # --- V006: Team style differentials ---
+    if "home_stocks_avg_10" in X.columns and "away_stocks_avg_10" in X.columns:
+        X["stocks_diff_10"] = X["home_stocks_avg_10"] - X["away_stocks_avg_10"]
+    if "home_ast_tov_ratio_10" in X.columns and "away_ast_tov_ratio_10" in X.columns:
+        X["ast_tov_ratio_diff_10"] = X["home_ast_tov_ratio_10"] - X["away_ast_tov_ratio_10"]
+    if "home_pts_paint_avg_10" in X.columns and "away_pts_paint_avg_10" in X.columns:
+        X["paint_pts_diff_10"] = X["home_pts_paint_avg_10"] - X["away_pts_paint_avg_10"]
+    if "home_pts_fast_break_avg_10" in X.columns and "away_pts_fast_break_avg_10" in X.columns:
+        X["fast_break_diff_10"] = X["home_pts_fast_break_avg_10"] - X["away_pts_fast_break_avg_10"]
+    if "home_bench_pct_10" in X.columns and "away_bench_pct_10" in X.columns:
+        X["bench_depth_diff_10"] = X["home_bench_pct_10"] - X["away_bench_pct_10"]
+    if "home_fouls_avg_10" in X.columns and "away_fouls_avg_10" in X.columns:
+        X["fouls_diff_10"] = X["home_fouls_avg_10"] - X["away_fouls_avg_10"]
+
+    # --- V008: Lineup stability differential ---
+    if "home_starter_continuity_avg_10" in X.columns and "away_starter_continuity_avg_10" in X.columns:
+        X["continuity_diff_10"] = X["home_starter_continuity_avg_10"] - X["away_starter_continuity_avg_10"]
+
+    # --- V009: Standings differentials ---
+    if "home_streak" in X.columns and "away_streak" in X.columns:
+        X["streak_diff"] = X["home_streak"] - X["away_streak"]
+    if "home_last10_pct" in X.columns and "away_last10_pct" in X.columns:
+        X["last10_pct_diff"] = X["home_last10_pct"] - X["away_last10_pct"]
+    if "home_home_record_pct" in X.columns and "away_away_record_pct" in X.columns:
+        X["venue_record_diff"] = X["home_home_record_pct"] - X["away_away_record_pct"]
+
+    # --- V011: PBP differentials ---
+    if "home_three_pt_rate_avg_10" in X.columns and "away_three_pt_rate_avg_10" in X.columns:
+        X["three_pt_rate_diff_10"] = X["home_three_pt_rate_avg_10"] - X["away_three_pt_rate_avg_10"]
+
+    # --- B2B × rest interaction ---
+    if "home_is_b2b" in X.columns and "away_is_b2b" in X.columns:
+        X["b2b_net_disadvantage"] = X["home_is_b2b"] - X["away_is_b2b"]
+
+    # --- Referee foul over/under bias signal ---
+    if (
+        "crew_avg_fouls_per_game" in X.columns
+        and "home_fouls_avg_10" in X.columns
+        and "away_fouls_avg_10" in X.columns
+    ):
+        X["ref_foul_ot_signal"] = (
+            X["crew_avg_fouls_per_game"] - (X["home_fouls_avg_10"] + X["away_fouls_avg_10"])
+        )
+
     # align to training columns
     for c in feature_cols:
         if c not in X.columns:
