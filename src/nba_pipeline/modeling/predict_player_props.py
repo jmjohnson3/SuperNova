@@ -63,7 +63,12 @@ WITH games_today AS (
       home_pace_avg_5 AS home_pace_5,
       away_pace_avg_5 AS away_pace_5,
       home_pace_avg_10 AS home_pace_10,
-      away_pace_avg_10 AS away_pace_10
+      away_pace_avg_10 AS away_pace_10,
+      -- teammate injury impact (V018)
+      COALESCE(home_injured_pts_lost, 0) AS home_injured_pts_lost,
+      COALESCE(away_injured_pts_lost, 0) AS away_injured_pts_lost,
+      COALESCE(home_injured_out_count, 0) AS home_injured_out_count,
+      COALESCE(away_injured_out_count, 0) AS away_injured_out_count
     FROM features.game_prediction_features
     WHERE game_date_et = :game_date
       AND start_ts_utc IS NOT NULL
@@ -277,7 +282,22 @@ joined AS (
       -- V006 opponent style (for tov_vs_opp_stl, fg_pct_vs_opp_blk derived features)
       ostyle.stl_avg_10   AS opp_stl_avg_10,
       ostyle.blk_avg_10   AS opp_blk_avg_10,
-      ostyle.fouls_avg_10 AS opp_fouls_avg_10
+      ostyle.fouls_avg_10 AS opp_fouls_avg_10,
+
+      -- V018: teammate injury impact
+      CASE WHEN t.team_abbr = gt.home_team_abbr
+           THEN gt.home_injured_pts_lost
+           ELSE gt.away_injured_pts_lost
+      END AS teammate_pts_out,
+      CASE WHEN t.team_abbr = gt.home_team_abbr
+           THEN gt.home_injured_out_count
+           ELSE gt.away_injured_out_count
+      END AS teammate_out_count,
+
+      -- V016: opponent position defense (latest rolling window before today)
+      opd.opp_pts_allowed_role_10,
+      opd.opp_reb_allowed_role_10,
+      opd.opp_ast_allowed_role_10
 
     FROM teams_today t
     JOIN games_today gt
@@ -294,6 +314,22 @@ joined AS (
       ON ostyle.season    = t.season
      AND ostyle.team_abbr = t.opponent_abbr
      AND ostyle.game_slug = t.game_slug
+    LEFT JOIN LATERAL (
+        SELECT pd.opp_pts_allowed_role_10,
+               pd.opp_reb_allowed_role_10,
+               pd.opp_ast_allowed_role_10
+        FROM features.opp_position_defense pd
+        WHERE pd.opponent_abbr = t.opponent_abbr
+          AND pd.role = CASE
+                  WHEN lp.fga_avg_10 IS NOT NULL AND lp.min_avg_10 > 0
+                       AND (lp.fga_avg_10 * 48.0 / NULLIF(lp.min_avg_10, 0)) >= 10 THEN 'G'
+                  WHEN lp.fga_avg_10 IS NOT NULL AND lp.min_avg_10 > 0
+                       AND (lp.fga_avg_10 * 48.0 / NULLIF(lp.min_avg_10, 0)) >= 4  THEN 'F'
+                  ELSE 'C' END
+          AND pd.game_date_et < :game_date
+        ORDER BY pd.game_date_et DESC, pd.start_ts_utc DESC
+        LIMIT 1
+    ) opd ON TRUE
 )
 SELECT *
 FROM joined j

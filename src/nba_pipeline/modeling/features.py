@@ -100,6 +100,16 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "home_is_b2b" in X.columns and "away_is_b2b" in X.columns:
         X["b2b_net_disadvantage"] = X["home_is_b2b"] - X["away_is_b2b"]
 
+    # Travel fatigue (V010) — raw columns already in gtf.*, add compound interactions
+    if "is_cross_country" in X.columns and "away_is_b2b" in X.columns:
+        X["cross_country_b2b"] = X["is_cross_country"].fillna(0).astype(float) * X["away_is_b2b"].astype(float)
+    if "travel_distance_miles" in X.columns and "away_is_b2b" in X.columns:
+        X["travel_b2b_fatigue"] = X["travel_distance_miles"].fillna(0) * X["away_is_b2b"].astype(float) / 1000.0
+    if "home_altitude_ft" in X.columns and "travel_distance_miles" in X.columns:
+        X["altitude_travel_stress"] = (X["home_altitude_ft"].fillna(0) / 5280.0) * X["travel_distance_miles"].fillna(0) / 1000.0
+    if "away_total_travel_miles_5" in X.columns and "away_rest_days" in X.columns:
+        X["travel_load_per_rest"] = X["away_total_travel_miles_5"].fillna(0) / X["away_rest_days"].clip(lower=1.0)
+
     # Referee foul over/under bias: positive = crew calls more fouls than these teams
     # typically generate → more FTAs → over bias.  Raw crew_avg_fouls_per_game alone
     # gives no matchup-relative signal.
@@ -182,5 +192,20 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["ref_adjusted_fouls"] = X["fouls_avg_10"] + X["avg_foul_uplift_crew"].fillna(0)
     if "avg_foul_per_36_uplift_crew" in X.columns and "min_avg_10" in X.columns:
         X["ref_foul_min_risk"] = X["avg_foul_per_36_uplift_crew"].fillna(0) * X["min_avg_10"] / 36.0
+
+    # V018: Teammate injury impact
+    if "teammate_pts_out" in X.columns and "team_implied_total" in X.columns:
+        X["teammate_pts_share_lost"] = X["teammate_pts_out"] / X["team_implied_total"].clip(lower=80.0)
+    if "teammate_pts_out" in X.columns and "pts_avg_10" in X.columns:
+        # How much of the missing pts load could this player absorb (usage bump proxy)
+        X["potential_usage_bump"] = X["teammate_pts_out"] * (X["pts_avg_10"] / X["pts_avg_10"].clip(lower=1.0))
+
+    # V016: Opponent position defense matchup edges
+    if "pts_avg_10" in X.columns and "opp_pts_allowed_role_10" in X.columns:
+        X["pts_vs_opp_role_edge"] = X["pts_avg_10"] - X["opp_pts_allowed_role_10"]
+    if "reb_avg_10" in X.columns and "opp_reb_allowed_role_10" in X.columns:
+        X["reb_vs_opp_role_edge"] = X["reb_avg_10"] - X["opp_reb_allowed_role_10"]
+    if "ast_avg_10" in X.columns and "opp_ast_allowed_role_10" in X.columns:
+        X["ast_vs_opp_role_edge"] = X["ast_avg_10"] - X["opp_ast_allowed_role_10"]
 
     return X
