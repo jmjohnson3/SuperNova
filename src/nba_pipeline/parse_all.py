@@ -7,6 +7,7 @@ from nba_pipeline.parse_player_gamelogs import main as parse_player_gamelogs
 from nba_pipeline.parse_lineup import main as parse_lineup
 from nba_pipeline.parse_boxscore import main as parse_boxscore
 from nba_pipeline.parse_pbp import main as parse_pbp
+from nba_pipeline.parse_referees import main as parse_referees
 
 log = logging.getLogger("nba_pipeline.parse_all")
 
@@ -25,6 +26,7 @@ def main() -> None:
     parse_lineup()            # availability / starters
     parse_boxscore()          # game + player boxscores
     parse_pbp()               # advanced features
+    parse_referees()          # referee assignments from boxscore payloads
 
     log.info("ALL PARSERS COMPLETE")
 

@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+from datetime import datetime
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
@@ -234,6 +236,61 @@ def upsert_injuries(conn) -> int:
     return len(rows)
 
 
+def snapshot_injuries_history(conn) -> int:
+    """
+    Copies the current contents of raw.nba_injuries into raw.nba_injuries_history
+    keyed by today's date (ET timezone).  Idempotent via ON CONFLICT … DO UPDATE.
+    """
+    today_et = datetime.now(ZoneInfo("America/New_York")).date()
+
+    sql = """
+    INSERT INTO raw.nba_injuries_history (
+        as_of_date,
+        player_id,
+        first_name,
+        last_name,
+        primary_position,
+        jersey_number,
+        team_abbr,
+        roster_status,
+        injury_description,
+        playing_probability,
+        source_fetched_at_utc
+    )
+    SELECT
+        %s AS as_of_date,
+        player_id,
+        first_name,
+        last_name,
+        primary_position,
+        jersey_number,
+        team_abbr,
+        roster_status,
+        injury_description,
+        playing_probability,
+        source_fetched_at_utc
+    FROM raw.nba_injuries
+    ON CONFLICT (as_of_date, player_id) DO UPDATE SET
+        first_name          = EXCLUDED.first_name,
+        last_name           = EXCLUDED.last_name,
+        primary_position    = EXCLUDED.primary_position,
+        jersey_number       = EXCLUDED.jersey_number,
+        team_abbr           = EXCLUDED.team_abbr,
+        roster_status       = EXCLUDED.roster_status,
+        injury_description  = EXCLUDED.injury_description,
+        playing_probability = EXCLUDED.playing_probability,
+        source_fetched_at_utc = EXCLUDED.source_fetched_at_utc
+    ;
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(sql, (today_et,))
+        row_count = cur.rowcount
+
+    log.info("snapshot_injuries_history: as_of_date=%s  rows=%d", today_et, row_count)
+    return row_count
+
+
 def insert_standings_snapshot(conn) -> int:
     """
     Inserts standings snapshots (keeps history) using latest payload per season.
@@ -353,9 +410,13 @@ def main() -> None:
     try:
         n1 = upsert_venues(conn)
         n2 = upsert_injuries(conn)
+        n2h = snapshot_injuries_history(conn)
         n3 = insert_standings_snapshot(conn)
         conn.commit()
-        log.info("Done. venues=%d injuries=%d standings_rows=%d", n1, n2, n3)
+        log.info(
+            "Done. venues=%d injuries=%d injuries_history=%d standings_rows=%d",
+            n1, n2, n2h, n3,
+        )
     except Exception:
         conn.rollback()
         log.exception("Failed; rolled back")
