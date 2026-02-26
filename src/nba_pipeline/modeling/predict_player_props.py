@@ -296,10 +296,15 @@ joined AS (
      AND ostyle.game_slug = t.game_slug
 )
 SELECT *
-FROM joined
+FROM joined j
 WHERE n_games_prev_10 >= 3
   AND (min_avg_10 IS NULL OR min_avg_10 >= 10.0)
   AND COALESCE(min_avg_5, min_avg_10) >= :min_proj_minutes
+  AND NOT EXISTS (
+    SELECT 1 FROM raw.nba_injuries inj
+    WHERE inj.player_id = j.player_id
+      AND UPPER(COALESCE(inj.playing_probability, '')) IN ('OUT', 'DOUBTFUL', 'QUESTIONABLE')
+  )
 ORDER BY start_ts_utc, game_slug, team_abbr, player_id
 """
 
