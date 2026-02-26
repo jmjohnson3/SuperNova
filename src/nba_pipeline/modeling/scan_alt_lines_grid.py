@@ -682,19 +682,15 @@ def main() -> None:
         passing = [r for r in all_rows if not r["filter_reasons"]]
         cut     = [r for r in all_rows if r["filter_reasons"]]
 
+        STAT_LABEL = {"points": "Points", "rebounds": "Rebounds", "assists": "Assists"}
         if passing:
-            for r in sorted(passing, key=lambda x: (x["stat"], -x["line"], -x["hit_rate"])):
-                lbl = _fmt_label(r["stat"], cfg.side)
-                total_str = (
-                    f" | total={r['game_total']:.0f}" if r["game_total"] else ""
-                )
-                print(
-                    f"{r['player_name']} ({r['team_abbr']}) {lbl} {r['line']:g}"
-                    f" | {r['hits']}/{r['games_count']} ({r['hit_rate']*100:.0f}%)"
-                    f" | avg={r['avg_value']:.1f}{total_str}"
-                )
+            for r in sorted(passing, key=lambda x: (-x["hit_rate"], -x["line"])):
+                side_word = "Over" if cfg.side == "over" else "Under"
+                stat_word = STAT_LABEL.get(r["stat"], r["stat"].title())
+                pct = f"{r['hit_rate']*100:.0f}%"
+                print(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}  {pct}")
         else:
-            print("(no plays survive all filters for today's slate)")
+            print("No plays for today's slate")
 
         log.info(
             "Scan complete | %d candidates → %d pass, %d cut",

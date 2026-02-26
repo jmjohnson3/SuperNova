@@ -262,11 +262,9 @@ def main() -> None:
         # Print
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
-            tag = "mkt+resid" if bool(r["used_market_recon"]) else "direct"
-            print(
-                f"{start:%Y-%m-%d %I:%M%p ET} | {r['away_team_abbr']} @ {r['home_team_abbr']} | "
-                f"Spread: {r['pred_spread_label']} | Total: {r['pred_total_points']:.1f} | {tag}"
-            )
+            print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
+            print(f"{r['pred_spread_label']}")
+            print(f"Over {r['pred_total_points']:.1f}")
 
 
 if __name__ == "__main__":

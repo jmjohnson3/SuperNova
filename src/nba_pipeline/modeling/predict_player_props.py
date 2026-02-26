@@ -454,21 +454,16 @@ def main() -> None:
     df_out = df_out.sort_values(["start_ts_utc","game_slug","team_abbr","pred_points"], ascending=[True,True,True,False])
 
     for (ts, slug), g in df_out.groupby(["start_ts_utc", "game_slug"], sort=False):
-        print(f"\n{ts:%Y-%m-%d %I:%M%p ET} | {slug}")
+        # derive away @ home from game_slug (format: YYYYMMDD-AWAY-HOME)
+        parts = str(slug).split("-")
+        matchup = f"{parts[1]} @ {parts[2]}" if len(parts) >= 3 else slug
+        print(f"\n{matchup}  {ts:%I:%M %p ET}")
 
         g_sorted = g.sort_values(["team_abbr", "pred_points"], ascending=[True, False])
 
         for _, r in g_sorted.iterrows():
-            ha = "HOME" if bool(r["is_home"]) else "AWAY"
             name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
-            star = "*" if bool(r.get("is_proj_starter", False)) else " "
-
-            pm = r.get("proj_minutes")
-            pm_txt = f"{pm:.1f}" if pd.notna(pm) else "NA"
-
-            print(
-                f"  {r['team_abbr']} vs {r['opponent_abbr']} ({ha}) | {star} {name} | PTS {r['pred_points']:.1f} | REB {r['pred_rebounds']:.1f} | AST {r['pred_assists']:.1f}"
-            )
+            print(f"  {name}  {r['pred_points']:.1f} PTS  {r['pred_rebounds']:.1f} REB  {r['pred_assists']:.1f} AST")
 
 
 
