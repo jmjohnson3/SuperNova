@@ -61,7 +61,7 @@ class MySportsFeedsClient:
 
                 if resp.status_code in NOT_READY:
                     # don't retry; just raise a special error the crawler can handle
-                    raise NotReadyError(f"HTTP {resp.status_code} for {url}: {resp.text[:200]}")
+                    raise NoContentYetError(f"HTTP {resp.status_code} for {url}: {resp.text[:200]}")
 
                 if resp.status_code in RETRYABLE:
                     raise RuntimeError(f"HTTP {resp.status_code} for {url}: {resp.text[:200]}")

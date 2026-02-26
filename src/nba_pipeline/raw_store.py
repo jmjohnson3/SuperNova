@@ -30,7 +30,14 @@ VALUES (
   %(payload)s::jsonb,
   %(payload_sha256)s
 )
-ON CONFLICT DO NOTHING;
+ON CONFLICT (provider, endpoint, url) DO UPDATE SET
+  season         = EXCLUDED.season,
+  game_slug      = EXCLUDED.game_slug,
+  as_of_date     = EXCLUDED.as_of_date,
+  fetched_at_utc = EXCLUDED.fetched_at_utc,
+  payload        = EXCLUDED.payload,
+  payload_sha256 = EXCLUDED.payload_sha256
+;
 """
 
 def _sha256_json(obj: Any) -> str:
