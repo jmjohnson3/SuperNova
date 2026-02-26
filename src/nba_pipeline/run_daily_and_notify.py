@@ -4,16 +4,17 @@ Full SuperNovaBets daily pipeline with Discord notifications.
 
 Order:
   1. Odds crawler       — post status
-  2. Parse + load       — post status
-  3. Compute Elo        — post status (non-critical)
-  4. Train game models  — post status
-  5. Train prop models  — post status
-  6. Game predictions   — post full output
-  7. Alt line scan      — post full output
-  8. Player prop projections — post full output
+  2. MSF crawler        — post status (injuries, lineups, box scores)
+  3. Parse + load       — post status
+  4. Compute Elo        — post status (non-critical)
+  5. Train game models  — post status
+  6. Train prop models  — post status
+  7. Game predictions   — post full output
+  8. Alt line scan      — post full output
+  9. Player prop projections — post full output
 
-Critical steps (1, 2, 4, 5) halt the pipeline on failure so we don't post
-stale predictions. Non-critical steps (3, 6, 7, 8) log + continue.
+Critical steps (1, 2, 3, 5, 6) halt the pipeline on failure so we don't post
+stale predictions. Non-critical steps (4, 7, 8, 9) log + continue.
 """
 from __future__ import annotations
 
@@ -52,6 +53,7 @@ class Step:
 
 STEPS: list[Step] = [
     Step("Odds Crawler",              "nba_pipeline.crawler_oddsapi",                    critical=True,  post_output=False, timeout_s=900),
+    Step("MSF Crawler",               "nba_pipeline.crawler",                            critical=True,  post_output=False, timeout_s=3600),
     Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=1800),
     Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=300),
     Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=3600),

@@ -166,6 +166,12 @@ def main() -> None:
             timeout_s=900,
             critical=True,
         ))
+        steps.append(Step(
+            name="Crawl MSF (injuries/games/lineups)",
+            module="nba_pipeline.crawler",
+            timeout_s=3600,
+            critical=True,
+        ))
         if args.backfill_odds:
             steps.append(Step(
                 name="Backfill odds (Odds API)",
