@@ -575,13 +575,27 @@ def _rank_best_props(df_raw: pd.DataFrame, df_out: pd.DataFrame, cfg: PredictCon
 
 
 def _print_best_bets(best: pd.DataFrame, pts_mae: float, reb_mae: float, ast_mae: float) -> None:
+    """
+    Print actionable bet decision rules for top-confidence prop players.
+
+    For each stat, the rule is:
+      BET OVER  if the book's line is below (model pred - MAE)
+      BET UNDER if the book's line is above (model pred + MAE)
+      NO BET    if the line falls inside the confidence interval
+
+    Usage: look up the line on DraftKings/FanDuel, apply the rule shown.
+    """
     if best.empty:
         return
+
     print("\n" + "=" * 65)
     print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
-    print(f"  CI shown as pred +/-1 MAE (pts={pts_mae:.1f}, reb={reb_mae:.1f}, ast={ast_mae:.1f})")
-    print(f"  Book lines outside CI = higher-confidence bets")
+    print(f"  Look up each line on DraftKings/FanDuel, then apply the rule:")
+    print(f"    BET OVER  if book line < lower bound")
+    print(f"    BET UNDER if book line > upper bound")
+    print(f"    No bet    if line is inside the range (too close to call)")
     print("=" * 65)
+
     for _, r in best.iterrows():
         conf = r["confidence"]
         stars = "***" if conf >= 0.78 else "** " if conf >= 0.68 else "*  "
@@ -594,36 +608,36 @@ def _print_best_bets(best: pd.DataFrame, pts_mae: float, reb_mae: float, ast_mae
         pr = float(r["pred_rebounds"])
         pa = float(r["pred_assists"])
 
-        # CI strings: pred ± mae → [lo, hi]
-        pts_ci = f"{pp:.1f}+/-{pts_mae:.1f} ({max(0,pp-pts_mae):.1f}-{pp+pts_mae:.1f})"
-        reb_ci = f"{pr:.1f}+/-{reb_mae:.1f}"
-        ast_ci = f"{pa:.1f}+/-{ast_mae:.1f}"
+        # Confidence interval bounds (1 MAE = ~68% of outcomes fall within)
+        pts_lo, pts_hi = max(0.0, pp - pts_mae), pp + pts_mae
+        reb_lo, reb_hi = max(0.0, pr - reb_mae), pr + reb_mae
+        ast_lo, ast_hi = max(0.0, pa - ast_mae), pa + ast_mae
 
-        # Hot/cold indicator vs 10-game avg
-        pts3   = r.get("pts_avg_3", np.nan)
-        pts10  = r.get("pts_avg_10", np.nan)
+        # Context tags
+        pts3  = r.get("pts_avg_3", np.nan)
+        pts10 = r.get("pts_avg_10", np.nan)
         if pd.notna(pts3) and pd.notna(pts10) and pts10 > 0:
             trend = "HOT" if pts3 > pts10 * 1.10 else "COLD" if pts3 < pts10 * 0.90 else ""
         else:
             trend = ""
 
-        # Opponent strength
         def_rtg = r.get("opp_def_rtg", np.nan)
         if pd.notna(def_rtg):
             opp_str = "vs weak D" if def_rtg > 115 else "vs strong D" if def_rtg < 108 else "vs avg D"
         else:
             opp_str = ""
 
-        trend_tag = f"  [{trend}]" if trend else ""
-        opp_tag   = f"  {opp_str}" if opp_str else ""
+        tags = "  ".join(t for t in [trend, opp_str] if t)
+        tags_str = f"  {tags}" if tags else ""
 
         print(
-            f"  {stars}  {name} ({r['team_abbr']} vs {opp})"
-            f"  proj {r['proj_minutes']:.0f}min"
-            f"{trend_tag}{opp_tag}"
-            f"  [conf={conf:.2f}]"
+            f"\n  {stars} {name} ({r['team_abbr']} vs {opp})"
+            f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
         )
-        print(f"         PTS {pts_ci}   REB {reb_ci}   AST {ast_ci}")
+        print(f"         PTS  model={pp:.1f}  OVER if line < {pts_lo:.1f}  |  UNDER if line > {pts_hi:.1f}")
+        print(f"         REB  model={pr:.1f}   OVER if line < {reb_lo:.1f}  |  UNDER if line > {reb_hi:.1f}")
+        print(f"         AST  model={pa:.1f}   OVER if line < {ast_lo:.1f}  |  UNDER if line > {ast_hi:.1f}")
+
     print()
 
 
@@ -732,12 +746,7 @@ def main() -> None:
         for _, r in g_sorted.iterrows():
             name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
             name = name.encode("ascii", errors="replace").decode("ascii")
-            print(
-                f"  {name}  "
-                f"{r['pred_points']:.1f}+/-{pts_mae:.1f} PTS  "
-                f"{r['pred_rebounds']:.1f}+/-{reb_mae:.1f} REB  "
-                f"{r['pred_assists']:.1f}+/-{ast_mae:.1f} AST"
-            )
+            print(f"  {name}  {r['pred_points']:.1f} PTS  {r['pred_rebounds']:.1f} REB  {r['pred_assists']:.1f} AST")
 
     # Best bets section
     best = _rank_best_props(df, df_out, cfg)
