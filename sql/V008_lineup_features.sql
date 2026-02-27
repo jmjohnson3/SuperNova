@@ -36,7 +36,7 @@ lineup_base AS (
     INNER JOIN raw.nba_game_lineups lu
         ON  lu.season    = sp.season
         AND lu.game_slug = sp.game_slug
-        AND lu.team_abbr = sp.team_abbr
+        AND UPPER(lu.team_abbr) = sp.team_abbr
 ),
 
 -- -----------------------------------------------------------------------

@@ -1,7 +1,8 @@
 import json
 import logging
+import math
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -25,6 +26,7 @@ class PredictConfig:
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None
+    min_edge_pts: float = 3.0    # minimum |pred - market| to flag as high-confidence
 
 
 SQL_GAMES_FOR_DATE = """
@@ -178,6 +180,145 @@ def _fmt_spread_from_margin(margin_home_minus_away: float, home: str, away: str)
     return f"{away} -{abs(margin_home_minus_away):.1f}"
 
 
+def _ensure_bets_schema(engine) -> None:
+    """Create bets.game_predictions table if it doesn't exist."""
+    ddl = """
+    CREATE SCHEMA IF NOT EXISTS bets;
+    CREATE TABLE IF NOT EXISTS bets.game_predictions (
+        id                  SERIAL PRIMARY KEY,
+        predicted_at_utc    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        game_date_et        DATE        NOT NULL,
+        game_slug           TEXT        NOT NULL,
+        season              TEXT        NOT NULL,
+        home_team_abbr      TEXT        NOT NULL,
+        away_team_abbr      TEXT        NOT NULL,
+        pred_margin_home    NUMERIC,
+        pred_total          NUMERIC,
+        used_residual_model BOOLEAN     DEFAULT FALSE,
+        market_spread_home  NUMERIC,
+        market_total        NUMERIC,
+        edge_spread         NUMERIC,
+        edge_total          NUMERIC,
+        actual_margin_home  NUMERIC,
+        actual_total        NUMERIC,
+        spread_bet_side     TEXT,
+        total_bet_side      TEXT,
+        spread_covered      BOOLEAN,
+        total_correct       BOOLEAN,
+        UNIQUE (game_date_et, game_slug)
+    );
+    """
+    with engine.begin() as conn:
+        conn.execute(text(ddl))
+
+
+def _save_predictions(out: pd.DataFrame, engine, et_day) -> None:
+    """Upsert game predictions into bets.game_predictions."""
+    _ensure_bets_schema(engine)
+    upsert_sql = text("""
+        INSERT INTO bets.game_predictions
+            (game_date_et, game_slug, season, home_team_abbr, away_team_abbr,
+             pred_margin_home, pred_total, used_residual_model,
+             market_spread_home, market_total, edge_spread, edge_total,
+             spread_bet_side, total_bet_side)
+        VALUES
+            (:game_date_et, :game_slug, :season, :home_team_abbr, :away_team_abbr,
+             :pred_margin_home, :pred_total, :used_residual_model,
+             :market_spread_home, :market_total, :edge_spread, :edge_total,
+             :spread_bet_side, :total_bet_side)
+        ON CONFLICT (game_date_et, game_slug) DO UPDATE SET
+            predicted_at_utc    = NOW(),
+            pred_margin_home    = EXCLUDED.pred_margin_home,
+            pred_total          = EXCLUDED.pred_total,
+            used_residual_model = EXCLUDED.used_residual_model,
+            market_spread_home  = EXCLUDED.market_spread_home,
+            market_total        = EXCLUDED.market_total,
+            edge_spread         = EXCLUDED.edge_spread,
+            edge_total          = EXCLUDED.edge_total,
+            spread_bet_side     = EXCLUDED.spread_bet_side,
+            total_bet_side      = EXCLUDED.total_bet_side
+    """)
+
+    rows = []
+    for _, r in out.iterrows():
+        edge_s = float(r["edge_spread"]) if pd.notna(r.get("edge_spread")) else None
+        edge_t = float(r["edge_total"]) if pd.notna(r.get("edge_total")) else None
+        spread_bet = None
+        total_bet = None
+        if edge_s is not None:
+            spread_bet = "home" if edge_s > 0 else "away"
+        if edge_t is not None:
+            total_bet = "over" if edge_t > 0 else "under"
+        rows.append({
+            "game_date_et": et_day,
+            "game_slug": r["game_slug"],
+            "season": r["season"],
+            "home_team_abbr": r["home_team_abbr"],
+            "away_team_abbr": r["away_team_abbr"],
+            "pred_margin_home": float(r["pred_margin_home_minus_away"]),
+            "pred_total": float(r["pred_total_points"]),
+            "used_residual_model": bool(r["used_market_recon"]),
+            "market_spread_home": float(r["market_spread_home"]) if pd.notna(r.get("market_spread_home")) else None,
+            "market_total": float(r["market_total"]) if pd.notna(r.get("market_total")) else None,
+            "edge_spread": edge_s,
+            "edge_total": edge_t,
+            "spread_bet_side": spread_bet,
+            "total_bet_side": total_bet,
+        })
+
+    if rows:
+        with engine.begin() as conn:
+            conn.execute(upsert_sql, rows)
+        log.info("Saved %d game predictions to bets.game_predictions", len(rows))
+
+
+def _check_injury_staleness(engine, warn_hours: float = 12.0) -> None:
+    """Print a warning if injury data has not been refreshed within warn_hours."""
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT MAX(source_fetched_at_utc) FROM raw.nba_injuries")
+            ).fetchone()
+        if row is None or row[0] is None:
+            print("\n  *** WARNING: No injury data found in DB. Run crawler first. ***")
+            return
+        last_fetch = row[0]
+        if last_fetch.tzinfo is None:
+            last_fetch = last_fetch.replace(tzinfo=timezone.utc)
+        age_hours = (datetime.now(timezone.utc) - last_fetch).total_seconds() / 3600
+        if age_hours > warn_hours:
+            print(
+                f"\n  *** STALE INJURY DATA: last updated {age_hours:.1f}h ago "
+                f"(>{warn_hours:.0f}h threshold)."
+                f"\n      Run: python -m nba_pipeline.crawler to refresh. ***\n"
+            )
+        else:
+            log.info("Injury data age: %.1fh (fresh)", age_hours)
+    except Exception as exc:
+        log.warning("Could not check injury data staleness: %s", exc)
+
+
+def _kelly(edge_pts: float, juice: int = -110, shrink: float = 0.35) -> tuple[float, float]:
+    """
+    Estimate full Kelly fraction and win probability for a spread/total bet.
+
+    edge_pts : |pred_margin - market_spread| (positive, regardless of direction)
+    juice    : standard American odds (-110 = bet $110 to win $100)
+    shrink   : how far we pull win-prob toward 50% to account for model uncertainty.
+               0.35 means we use 35% of the logistic signal above coin-flip.
+               At shrink=0.35: edge=3 → p≈0.52, edge=7 → p≈0.55, edge=14 → p≈0.60
+
+    Returns (full_kelly_fraction, estimated_win_prob).
+    Caller should apply fractional Kelly (typically 1/4) for safety.
+    """
+    b = 100 / abs(juice)           # net odds: win $b per $1 risked
+    sigma = 7.0                    # ~model RMSE; controls how fast p grows with edge
+    p_raw = 1 / (1 + math.exp(-edge_pts / sigma))
+    p = 0.5 + (p_raw - 0.5) * shrink
+    kelly = max(0.0, (b * p - (1 - p)) / b)
+    return kelly, p
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -191,6 +332,7 @@ def main() -> None:
     models, feature_cols, feature_medians = _load_models(cfg)
 
     engine = create_engine(cfg.pg_dsn)
+    _check_injury_staleness(engine)
 
     with engine.connect() as conn:
         df = pd.read_sql(
@@ -259,12 +401,73 @@ def main() -> None:
             for m, h, a in zip(out["pred_margin_home_minus_away"], out["home_team_abbr"], out["away_team_abbr"])
         ]
 
+        # Compute edges vs market lines
+        if "market_spread_home" in df.columns:
+            out["market_spread_home"] = pd.to_numeric(df["market_spread_home"].values, errors="coerce")
+            out["market_total"] = pd.to_numeric(df["market_total"].values, errors="coerce")
+            out["edge_spread"] = np.where(
+                out["market_spread_home"].notna(),
+                out["pred_margin_home_minus_away"] - out["market_spread_home"],
+                np.nan,
+            )
+            out["edge_total"] = np.where(
+                out["market_total"].notna(),
+                out["pred_total_points"] - out["market_total"],
+                np.nan,
+            )
+        else:
+            out["market_spread_home"] = np.nan
+            out["market_total"] = np.nan
+            out["edge_spread"] = np.nan
+            out["edge_total"] = np.nan
+
         # Print
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
             print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
-            print(f"{r['pred_spread_label']}")
-            print(f"Over {r['pred_total_points']:.1f}")
+
+            # Spread line
+            edge_s = r.get("edge_spread")
+            if pd.notna(edge_s) and abs(float(edge_s)) >= cfg.min_edge_pts:
+                es = float(edge_s)
+                edge_dir = "+" if es > 0 else ""
+                bet_side = "HOME" if es > 0 else "AWAY"
+                kelly, p_win = _kelly(abs(es))
+                qk_bet = (kelly / 4) * 1000
+                print(
+                    f"  {r['pred_spread_label']}  ★ EDGE {edge_dir}{es:.1f} pts  "
+                    f"[bet {bet_side}]"
+                )
+                print(
+                    f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  "
+                    f"1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll"
+                )
+            else:
+                print(f"  {r['pred_spread_label']}")
+
+            # Total line
+            edge_t = r.get("edge_total")
+            if pd.notna(edge_t) and abs(float(edge_t)) >= cfg.min_edge_pts:
+                et_ = float(edge_t)
+                edge_dir = "+" if et_ > 0 else ""
+                over_under = "Over" if et_ > 0 else "Under"
+                kelly, p_win = _kelly(abs(et_))
+                qk_bet = (kelly / 4) * 1000
+                print(
+                    f"  {over_under} {r['pred_total_points']:.1f}  ★ EDGE {edge_dir}{et_:.1f} pts"
+                )
+                print(
+                    f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  "
+                    f"1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll"
+                )
+            else:
+                print(f"  Over {r['pred_total_points']:.1f}")
+
+        # Save predictions to DB
+        try:
+            _save_predictions(out, engine, et_day)
+        except Exception as exc:
+            log.warning("Could not save predictions to DB: %s", exc)
 
 
 if __name__ == "__main__":

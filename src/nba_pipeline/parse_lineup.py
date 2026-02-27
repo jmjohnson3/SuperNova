@@ -52,6 +52,10 @@ def _pick_team_blocks(payload: dict) -> list[dict]:
 def _extract_lists(team_block: dict) -> tuple[list, list, list]:
     """
     Heuristic extraction. We keep raw_json anyway.
+    Handles two formats:
+      1. Simple lists: team_block['starters'], ['bench'], ['scratches']
+      2. MSF lineupPositions: team_block['actual']['lineupPositions'][n]['position']
+         where position is 'Starter1'–'Starter5', 'Bench1'–'Bench8', etc.
     """
     starters = team_block.get("starters") or team_block.get("startingLineup") or []
     bench = team_block.get("bench") or team_block.get("reserves") or []
@@ -62,6 +66,24 @@ def _extract_lists(team_block: dict) -> tuple[list, list, list]:
         bench = []
     if not isinstance(scratches, list):
         scratches = []
+
+    # MSF lineupPositions format: parse from actual.lineupPositions if lists are empty
+    if not starters and not bench:
+        actual = team_block.get("actual") or {}
+        positions = actual.get("lineupPositions") or []
+        if isinstance(positions, list):
+            for entry in positions:
+                player = entry.get("player")
+                if not player:
+                    continue
+                pos = str(entry.get("position") or "")
+                if pos.lower().startswith("starter"):
+                    starters.append(player)
+                elif pos.lower().startswith("bench"):
+                    bench.append(player)
+                elif pos.lower().startswith("scratch") or pos.lower().startswith("inactive"):
+                    scratches.append(player)
+
     return starters, bench, scratches
 
 

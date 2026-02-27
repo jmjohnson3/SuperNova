@@ -23,7 +23,7 @@ def _as_int(x: Any) -> Optional[int]:
     if x is None or isinstance(x, bool):
         return None
     try:
-        return int(str(x))
+        return int(float(str(x)))  # handles "1.0" from JSON floats
     except Exception:
         return None
 
@@ -62,20 +62,59 @@ def parse_all_pbp(conn, *, commit_every_games: int = 50) -> int:
             if not isinstance(plays, list):
                 plays = []
 
+            # MSF PBP event keys (one per play, beside playStatus/description)
+            _MSF_EVENT_KEYS = {
+                "fieldGoalAttempt", "freeThrowAttempt", "rebound",
+                "foul", "turnover", "substitution", "violation", "jumpBall",
+                "timeout", "flagrantFoul", "technicalFoul",
+            }
+
             for seq, p in enumerate(plays, start=1):
                 # Try common keys; keep raw_json always
                 play_id = _safe_str(p.get("playId") or p.get("id") or f"{seq}")
-                period = _as_int(p.get("period") or p.get("periodNumber") or p.get("quarter"))
-                clock = _safe_str(p.get("timeRemaining") or p.get("clock") or p.get("time"))
-                event_type = _safe_str(p.get("type") or p.get("playType") or p.get("eventType"))
+
+                # MSF format: period is at playStatus.quarter
+                play_status = p.get("playStatus") or {}
+                period = _as_int(
+                    play_status.get("quarter")
+                    or play_status.get("period")
+                    or p.get("period")
+                    or p.get("periodNumber")
+                    or p.get("quarter")
+                )
+
+                # clock: store secondsElapsed as string, fallback to other keys
+                secs = play_status.get("secondsElapsed")
+                clock = _safe_str(secs) if secs is not None else _safe_str(
+                    p.get("timeRemaining") or p.get("clock") or p.get("time")
+                )
+
+                # event_type: the MSF top-level event key (e.g. "fieldGoalAttempt")
+                event_type = None
+                event_block = None
+                for ek in _MSF_EVENT_KEYS:
+                    if ek in p:
+                        event_type = ek
+                        event_block = p[ek]
+                        break
+                if event_type is None:
+                    # fallback for other formats
+                    event_type = _safe_str(p.get("type") or p.get("playType") or p.get("eventType"))
+
                 desc = _safe_str(p.get("description") or p.get("text") or p.get("summary"))
 
-                team = p.get("team") or {}
-                team_abbr = _safe_str((team.get("abbreviation") if isinstance(team, dict) else None))
+                # team_abbr: inside the event block
+                team_abbr = None
+                if isinstance(event_block, dict):
+                    team = event_block.get("team") or {}
+                    team_abbr = _safe_str(team.get("abbreviation") if isinstance(team, dict) else None)
+                if not team_abbr:
+                    team = p.get("team") or {}
+                    team_abbr = _safe_str(team.get("abbreviation") if isinstance(team, dict) else None)
                 if team_abbr:
                     team_abbr = team_abbr.lower()
 
-                # score snapshot (best-effort)
+                # score: MSF PBP doesn't include running score per play
                 score = p.get("score") or {}
                 points_home = _as_int(score.get("homeScoreTotal") or score.get("home"))
                 points_away = _as_int(score.get("awayScoreTotal") or score.get("away"))

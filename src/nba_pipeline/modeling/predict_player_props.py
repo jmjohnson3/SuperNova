@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -25,6 +25,10 @@ class PredictConfig:
     min_proj_minutes: float = 18.0          # filter threshold
     starter_minutes_threshold: float = 28.0 # flag threshold
     starter_min_prev_games: int = 5         # sample size requirement
+    # Best bets filter
+    top_n_best_bets: int = 15               # how many to highlight
+    best_bets_min_games: int = 7            # minimum n_games_prev_10
+    best_bets_min_minutes: float = 22.0     # minimum min_avg_10
 
 SQL_TODAYS_GAMES = """
 SELECT *
@@ -127,6 +131,12 @@ feat AS (
 
       COUNT(*) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS n_games_prev_10,
 
+      -- 3-game window (hot/cold streaks)
+      AVG(h.minutes)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS min_avg_3,
+      AVG(h.points)   OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS pts_avg_3,
+      AVG(h.rebounds) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS reb_avg_3,
+      AVG(h.assists)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS ast_avg_3,
+
       AVG(h.minutes)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING) AS min_avg_5,
       AVG(h.minutes)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS min_avg_10,
 
@@ -147,6 +157,9 @@ feat AS (
       STDDEV_SAMP(h.rebounds) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS reb_sd_10,
       STDDEV_SAMP(h.assists)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS ast_sd_10,
 
+      AVG(
+        CASE WHEN h.minutes > 0 THEN (h.fga + 0.44 * h.fta) / h.minutes ELSE NULL END
+      ) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS usage_proxy_avg_5,
       AVG(
         CASE WHEN h.minutes > 0 THEN (h.fga + 0.44 * h.fta) / h.minutes ELSE NULL END
       ) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS usage_proxy_avg_10,
@@ -182,13 +195,13 @@ latest_per_player_team AS (
       start_ts_utc,
       n_games_prev_10,
       EXTRACT(EPOCH FROM (start_ts_utc - prev_start_ts_utc)) / 86400.0 AS player_rest_days,
-      min_avg_5, min_avg_10,
-      pts_avg_5, pts_avg_10,
-      reb_avg_5, reb_avg_10,
-      ast_avg_5, ast_avg_10,
+      min_avg_3, min_avg_5, min_avg_10,
+      pts_avg_3, pts_avg_5, pts_avg_10,
+      reb_avg_3, reb_avg_5, reb_avg_10,
+      ast_avg_3, ast_avg_5, ast_avg_10,
       fga_avg_10, fta_avg_10, threes_avg_10,
       pts_sd_10, reb_sd_10, ast_sd_10,
-      usage_proxy_avg_10,
+      usage_proxy_avg_5, usage_proxy_avg_10,
       -- V007 expanded stats
       stl_avg_5, stl_avg_10,
       blk_avg_5, blk_avg_10,
@@ -220,13 +233,13 @@ joined AS (
       END AS is_proj_starter,
       lp.n_games_prev_10,
       lp.player_rest_days,
-      lp.min_avg_5, lp.min_avg_10,
-      lp.pts_avg_5, lp.pts_avg_10,
-      lp.reb_avg_5, lp.reb_avg_10,
-      lp.ast_avg_5, lp.ast_avg_10,
+      lp.min_avg_3, lp.min_avg_5, lp.min_avg_10,
+      lp.pts_avg_3, lp.pts_avg_5, lp.pts_avg_10,
+      lp.reb_avg_3, lp.reb_avg_5, lp.reb_avg_10,
+      lp.ast_avg_3, lp.ast_avg_5, lp.ast_avg_10,
       lp.fga_avg_10, lp.fta_avg_10, lp.threes_avg_10,
       lp.pts_sd_10, lp.reb_sd_10, lp.ast_sd_10,
-      lp.usage_proxy_avg_10,
+      lp.usage_proxy_avg_5, lp.usage_proxy_avg_10,
       -- V007 expanded player stats
       lp.stl_avg_5, lp.stl_avg_10,
       lp.blk_avg_5, lp.blk_avg_10,
@@ -420,6 +433,69 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
             X[c] = X[c].fillna(m)
     return X.fillna(0.0)
 
+def _ensure_prop_table(engine) -> None:
+    """Create bets.prop_predictions table if it doesn't exist."""
+    ddl = text("""
+    CREATE SCHEMA IF NOT EXISTS bets;
+    CREATE TABLE IF NOT EXISTS bets.prop_predictions (
+        id                  SERIAL PRIMARY KEY,
+        predicted_at_utc    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        game_date_et        DATE        NOT NULL,
+        game_slug           TEXT        NOT NULL,
+        player_id           BIGINT      NOT NULL,
+        player_name         TEXT,
+        team_abbr           TEXT,
+        pred_points         NUMERIC,
+        pred_rebounds       NUMERIC,
+        pred_assists        NUMERIC,
+        actual_points       NUMERIC,
+        actual_rebounds     NUMERIC,
+        actual_assists      NUMERIC,
+        UNIQUE (game_date_et, game_slug, player_id)
+    );
+    """)
+    with engine.begin() as conn:
+        conn.execute(ddl)
+
+
+def _save_prop_predictions(df_out: pd.DataFrame, engine, et_day) -> None:
+    """Upsert player prop predictions into bets.prop_predictions."""
+    _ensure_prop_table(engine)
+    upsert_sql = text("""
+        INSERT INTO bets.prop_predictions
+            (game_date_et, game_slug, player_id, player_name, team_abbr,
+             pred_points, pred_rebounds, pred_assists)
+        VALUES
+            (:game_date_et, :game_slug, :player_id, :player_name, :team_abbr,
+             :pred_points, :pred_rebounds, :pred_assists)
+        ON CONFLICT (game_date_et, game_slug, player_id) DO UPDATE SET
+            predicted_at_utc = NOW(),
+            player_name      = EXCLUDED.player_name,
+            team_abbr        = EXCLUDED.team_abbr,
+            pred_points      = EXCLUDED.pred_points,
+            pred_rebounds    = EXCLUDED.pred_rebounds,
+            pred_assists     = EXCLUDED.pred_assists
+    """)
+
+    rows = []
+    for _, r in df_out.iterrows():
+        rows.append({
+            "game_date_et": et_day,
+            "game_slug": r["game_slug"],
+            "player_id": int(r["player_id"]),
+            "player_name": str(r.get("player_name") or ""),
+            "team_abbr": str(r.get("team_abbr") or ""),
+            "pred_points": float(r["pred_points"]),
+            "pred_rebounds": float(r["pred_rebounds"]),
+            "pred_assists": float(r["pred_assists"]),
+        })
+
+    if rows:
+        with engine.begin() as conn:
+            conn.execute(upsert_sql, rows)
+        log.info("Saved %d prop predictions to bets.prop_predictions", len(rows))
+
+
 def _validate_player_predictions(
     pred_pts: np.ndarray,
     pred_reb: np.ndarray,
@@ -437,6 +513,155 @@ def _validate_player_predictions(
             log.warning("Extreme AST prediction player=%s raw=%.1f (outside 0-20)", name, ast)
 
 
+def _rank_best_props(df_raw: pd.DataFrame, df_out: pd.DataFrame, cfg: PredictConfig) -> pd.DataFrame:
+    """
+    Score and rank prop predictions by model confidence + matchup quality.
+
+    Scoring components (all 0-1):
+      sample_score    — more games in lookback = more reliable (weight 0.25)
+      consistency     — lower pts CV = more predictable scorer    (weight 0.35)
+      min_stability   — stable minutes = predictable role         (weight 0.25)
+      matchup_quality — player avg vs. what opp allows to role    (weight 0.15)
+
+    Hard filters applied first:
+      n_games_prev_10 >= cfg.best_bets_min_games
+      min_avg_10      >= cfg.best_bets_min_minutes
+    """
+    mask = (
+        (df_raw["n_games_prev_10"] >= cfg.best_bets_min_games) &
+        (df_raw["min_avg_10"] >= cfg.best_bets_min_minutes)
+    )
+    df_r = df_out[mask].copy()
+    raw = df_raw[mask].copy()
+
+    if df_r.empty:
+        return df_r
+
+    # Sample size (0-1)
+    df_r["_sample"] = (raw["n_games_prev_10"] / 10.0).clip(0, 1).values
+
+    # Consistency: lower CV = higher score
+    pts_cv = (raw["pts_sd_10"] / raw["pts_avg_10"].clip(lower=0.5)).clip(0, 3)
+    df_r["_consistency"] = (1.0 / (1.0 + pts_cv)).values
+
+    # Minutes stability: small trend = predictable role
+    min_trend = (raw["min_avg_5"] - raw["min_avg_10"]).abs()
+    df_r["_min_stability"] = (1.0 / (1.0 + min_trend / raw["min_avg_10"].clip(lower=1.0))).values
+
+    # Matchup quality: player avg vs. what opponent allows to their role
+    if "opp_pts_allowed_role_10" in raw.columns and raw["opp_pts_allowed_role_10"].notna().any():
+        edge = raw["pts_avg_10"] - raw["opp_pts_allowed_role_10"].fillna(raw["pts_avg_10"])
+        # scale: +5 edge -> 0.75, 0 edge -> 0.5, -5 edge -> 0.25
+        df_r["_matchup"] = (0.5 + edge / (raw["pts_avg_10"].clip(lower=1.0) * 2)).clip(0, 1).values
+    else:
+        df_r["_matchup"] = 0.5
+
+    df_r["confidence"] = (
+        0.25 * df_r["_sample"] +
+        0.35 * df_r["_consistency"] +
+        0.25 * df_r["_min_stability"] +
+        0.15 * df_r["_matchup"]
+    )
+
+    # Carry through context columns for display
+    df_r["pts_avg_10"]  = raw["pts_avg_10"].values
+    df_r["pts_avg_3"]   = raw["pts_avg_3"].values  if "pts_avg_3"  in raw.columns else np.nan
+    df_r["min_avg_10"]  = raw["min_avg_10"].values
+    df_r["opp_def_rtg"] = raw["opp_def_rtg_10"].values if "opp_def_rtg_10" in raw.columns else np.nan
+
+    return df_r.nlargest(cfg.top_n_best_bets, "confidence").drop(
+        columns=["_sample", "_consistency", "_min_stability", "_matchup"], errors="ignore"
+    )
+
+
+def _print_best_bets(best: pd.DataFrame, pts_mae: float, reb_mae: float, ast_mae: float) -> None:
+    if best.empty:
+        return
+    print("\n" + "=" * 65)
+    print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
+    print(f"  CI shown as pred +/-1 MAE (pts={pts_mae:.1f}, reb={reb_mae:.1f}, ast={ast_mae:.1f})")
+    print(f"  Book lines outside CI = higher-confidence bets")
+    print("=" * 65)
+    for _, r in best.iterrows():
+        conf = r["confidence"]
+        stars = "***" if conf >= 0.78 else "** " if conf >= 0.68 else "*  "
+
+        name = (r.get("player_name") or f"id={int(r['player_id'])}").strip()
+        name = name.encode("ascii", errors="replace").decode("ascii")
+        opp  = r.get("opponent_abbr", "")
+
+        pp = float(r["pred_points"])
+        pr = float(r["pred_rebounds"])
+        pa = float(r["pred_assists"])
+
+        # CI strings: pred ± mae → [lo, hi]
+        pts_ci = f"{pp:.1f}+/-{pts_mae:.1f} ({max(0,pp-pts_mae):.1f}-{pp+pts_mae:.1f})"
+        reb_ci = f"{pr:.1f}+/-{reb_mae:.1f}"
+        ast_ci = f"{pa:.1f}+/-{ast_mae:.1f}"
+
+        # Hot/cold indicator vs 10-game avg
+        pts3   = r.get("pts_avg_3", np.nan)
+        pts10  = r.get("pts_avg_10", np.nan)
+        if pd.notna(pts3) and pd.notna(pts10) and pts10 > 0:
+            trend = "HOT" if pts3 > pts10 * 1.10 else "COLD" if pts3 < pts10 * 0.90 else ""
+        else:
+            trend = ""
+
+        # Opponent strength
+        def_rtg = r.get("opp_def_rtg", np.nan)
+        if pd.notna(def_rtg):
+            opp_str = "vs weak D" if def_rtg > 115 else "vs strong D" if def_rtg < 108 else "vs avg D"
+        else:
+            opp_str = ""
+
+        trend_tag = f"  [{trend}]" if trend else ""
+        opp_tag   = f"  {opp_str}" if opp_str else ""
+
+        print(
+            f"  {stars}  {name} ({r['team_abbr']} vs {opp})"
+            f"  proj {r['proj_minutes']:.0f}min"
+            f"{trend_tag}{opp_tag}"
+            f"  [conf={conf:.2f}]"
+        )
+        print(f"         PTS {pts_ci}   REB {reb_ci}   AST {ast_ci}")
+    print()
+
+
+def _check_injury_staleness(engine, warn_hours: float = 12.0) -> None:
+    """Print a warning if injury data has not been refreshed within warn_hours."""
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT MAX(source_fetched_at_utc) FROM raw.nba_injuries")
+            ).fetchone()
+        if row is None or row[0] is None:
+            print("\n  *** WARNING: No injury data found in DB. Run crawler first. ***")
+            return
+        last_fetch = row[0]
+        if last_fetch.tzinfo is None:
+            last_fetch = last_fetch.replace(tzinfo=timezone.utc)
+        age_hours = (datetime.now(timezone.utc) - last_fetch).total_seconds() / 3600
+        if age_hours > warn_hours:
+            print(
+                f"\n  *** STALE INJURY DATA: last updated {age_hours:.1f}h ago "
+                f"(>{warn_hours:.0f}h threshold)."
+                f"\n      Run: python -m nba_pipeline.crawler to refresh. ***\n"
+            )
+        else:
+            log.info("Injury data age: %.1fh (fresh)", age_hours)
+    except Exception as exc:
+        log.warning("Could not check injury data staleness: %s", exc)
+
+
+def _load_prop_mae(model_dir: Path) -> dict:
+    """Load per-stat walk-forward MAE from training. Falls back to defaults if missing."""
+    p = model_dir / "backtest_mae.json"
+    if p.exists():
+        return json.loads(p.read_text(encoding="utf-8"))
+    # Defaults from last known backtest run (2024-12-27 to 2026-01-22, 31663 player-games)
+    return {"pts": 4.745, "reb": 1.955, "ast": 1.391}
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
@@ -446,6 +671,7 @@ def main() -> None:
 
     models, feature_cols, medians = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
+    _check_injury_staleness(engine)
 
     with engine.connect() as conn:
         games = pd.read_sql(text(SQL_TODAYS_GAMES), conn, params={"game_date": et_day})
@@ -472,7 +698,7 @@ def main() -> None:
 
     df_out = df[
         ["start_ts_utc", "game_slug", "team_abbr", "opponent_abbr", "is_home", "player_id", "player_name",
-         "proj_minutes", "is_proj_starter"]
+         "proj_minutes", "is_proj_starter", "n_games_prev_10"]
     ].copy()
 
     raw_pts = models["points"].predict(X)
@@ -484,6 +710,12 @@ def main() -> None:
     df_out["pred_points"] = np.clip(raw_pts, 0.0, 60.0)
     df_out["pred_rebounds"] = np.clip(raw_reb, 0.0, 25.0)
     df_out["pred_assists"] = np.clip(raw_ast, 0.0, 20.0)
+
+    # Load walk-forward MAE for confidence intervals (±1 MAE = ~68% of outcomes)
+    mae = _load_prop_mae(cfg.model_dir)
+    pts_mae = mae.get("pts", 4.745)
+    reb_mae = mae.get("reb", 1.955)
+    ast_mae = mae.get("ast", 1.391)
 
     # pretty print grouped by game
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)
@@ -499,8 +731,23 @@ def main() -> None:
 
         for _, r in g_sorted.iterrows():
             name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
-            print(f"  {name}  {r['pred_points']:.1f} PTS  {r['pred_rebounds']:.1f} REB  {r['pred_assists']:.1f} AST")
+            name = name.encode("ascii", errors="replace").decode("ascii")
+            print(
+                f"  {name}  "
+                f"{r['pred_points']:.1f}+/-{pts_mae:.1f} PTS  "
+                f"{r['pred_rebounds']:.1f}+/-{reb_mae:.1f} REB  "
+                f"{r['pred_assists']:.1f}+/-{ast_mae:.1f} AST"
+            )
 
+    # Best bets section
+    best = _rank_best_props(df, df_out, cfg)
+    _print_best_bets(best, pts_mae=pts_mae, reb_mae=reb_mae, ast_mae=ast_mae)
+
+    # Save predictions to DB
+    try:
+        _save_prop_predictions(df_out, engine, et_day)
+    except Exception as exc:
+        log.warning("Could not save prop predictions to DB: %s", exc)
 
 
 if __name__ == "__main__":

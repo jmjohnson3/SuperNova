@@ -226,23 +226,31 @@ def main() -> None:
 
     if not args.skip_scan:
         steps.append(Step(
-            name="Scan alt lines grid (PTS/REB/AST best line)",
-            module="nba_pipeline.scan_alt_lines_grid",
+            name=”Scan alt lines grid (PTS/REB/AST best line)”,
+            module=”nba_pipeline.scan_alt_lines_grid”,
             timeout_s=600,
             critical=False,
         ))
         # Optional: if you still want the old “100% hit rate” script as a separate output
         try:
             import importlib.util
-            if importlib.util.find_spec("nba_pipeline.scan_alt_hit_rate") is not None:
+            if importlib.util.find_spec(“nba_pipeline.scan_alt_hit_rate”) is not None:
                 steps.append(Step(
-                    name="Scan alt hit rate (legacy)",
-                    module="nba_pipeline.scan_alt_hit_rate",
+                    name=”Scan alt hit rate (legacy)”,
+                    module=”nba_pipeline.scan_alt_hit_rate”,
                     timeout_s=600,
                     critical=False,
                 ))
         except Exception:
             pass
+
+    # Always run update_outcomes to backfill actuals from prior games (non-critical)
+    steps.append(Step(
+        name=”Update outcomes (ATS record)”,
+        module=”nba_pipeline.modeling.update_outcomes”,
+        timeout_s=120,
+        critical=False,
+    ))
 
     report_path = Path(args.report) if args.report else Path("reports") / f"daily_{et_day.isoformat()}.md"
 

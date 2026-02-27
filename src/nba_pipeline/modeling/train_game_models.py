@@ -27,7 +27,7 @@ class TrainConfig:
     pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
 
     # Minimum number of market rows required to train residual models
-    min_market_rows: int = 50
+    min_market_rows: int = 15
     run_walk_forward: bool = True
     min_train_days: int = 60
     test_window_days: int = 7
@@ -582,6 +582,10 @@ def main() -> None:
         resid_total_true_all: List[float] = []
         resid_total_pred_all: List[float] = []
 
+        # ATS tracking (direct model, rows with market spread)
+        ats_correct_all: List[bool] = []
+        ats_hc_correct_all: List[bool] = []  # high-confidence |edge| >= 3 pts
+
         # Track fold best_iterations so final model can be trained to the right depth
         spread_best_iters: List[int] = []
         total_best_iters: List[int] = []
@@ -660,6 +664,31 @@ def main() -> None:
                 f"DIRECT SPREAD MAE={s_mae:.3f} RMSE={s_rmse:.3f} DIR={s_dir:.3f} std_ratio={cal['std_ratio']:.3f} slope={cal['slope']:.3f} | "
                 f"DIRECT TOTAL MAE={t_mae:.3f} RMSE={t_rmse:.3f}"
             )
+
+            # ATS cover rate (only for test rows with market spread)
+            market_spread_test = df.loc[test_mask, "market_spread_home"].values
+            has_spread_mask = ~np.isnan(market_spread_test.astype(float))
+            if has_spread_mask.sum() >= 3:
+                mkt_s = market_spread_test[has_spread_mask].astype(float)
+                edge = spread_pred[has_spread_mask] - mkt_s
+                actual_m = y_spread_test.to_numpy()[has_spread_mask]
+                actual_covers = actual_m > mkt_s
+                pred_home = edge > 0
+                ats_correct = pred_home == actual_covers
+                ats_n = len(ats_correct)
+                ats_pct = float(ats_correct.mean())
+                ats_roi = (ats_correct.sum() * 100 - (~ats_correct).sum() * 110) / (ats_n * 110)
+                hc_mask = np.abs(edge) >= 3.0
+                hc_n = int(hc_mask.sum())
+                hc_ats_pct = float(ats_correct[hc_mask].mean()) if hc_n >= 2 else float("nan")
+                log.info(
+                    "  ATS n=%d pct=%.3f roi=%.3f | HC(>=3pt) n=%d pct=%s",
+                    ats_n, ats_pct, ats_roi, hc_n,
+                    f"{hc_ats_pct:.3f}" if not np.isnan(hc_ats_pct) else "n/a",
+                )
+                ats_correct_all.extend(ats_correct.tolist())
+                if hc_n >= 1:
+                    ats_hc_correct_all.extend(ats_correct[hc_mask].tolist())
 
             fold_rows += n_test
             spread_true_all.extend(y_spread_test.to_list())
@@ -772,6 +801,24 @@ def main() -> None:
             t_mae,
             t_rmse,
         )
+
+        # ATS overall summary
+        if ats_correct_all:
+            ats_arr = np.asarray(ats_correct_all)
+            ats_n_total = len(ats_arr)
+            ats_pct_total = float(ats_arr.mean())
+            ats_roi_total = (ats_arr.sum() * 100 - (~ats_arr).sum() * 110) / (ats_n_total * 110)
+            log.info(
+                "WALK-FORWARD ATS OVERALL | n=%d wins=%d pct=%.3f roi=%.3f",
+                ats_n_total, int(ats_arr.sum()), ats_pct_total, ats_roi_total,
+            )
+            if ats_hc_correct_all:
+                hc_arr = np.asarray(ats_hc_correct_all)
+                log.info(
+                    "WALK-FORWARD ATS HC(>=3pt) | n=%d wins=%d pct=%.3f roi=%.3f",
+                    len(hc_arr), int(hc_arr.sum()), float(hc_arr.mean()),
+                    (hc_arr.sum() * 100 - (~hc_arr).sum() * 110) / (len(hc_arr) * 110),
+                )
 
         if resid_spread_true_all:
             r_true = np.asarray(resid_spread_true_all, dtype=float)

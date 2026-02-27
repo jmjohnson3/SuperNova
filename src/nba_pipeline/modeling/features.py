@@ -153,6 +153,20 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # Minutes trend
     if "min_avg_5" in X.columns and "min_avg_10" in X.columns:
         X["min_trend_5v10"] = X["min_avg_5"] - X["min_avg_10"]
+    if "min_avg_3" in X.columns and "min_avg_5" in X.columns:
+        X["min_trend_3v5"] = X["min_avg_3"] - X["min_avg_5"]
+
+    # 3-game hot/cold streaks
+    if "pts_avg_3" in X.columns and "pts_avg_10" in X.columns:
+        X["pts_trend_3v10"] = X["pts_avg_3"] - X["pts_avg_10"]
+    if "reb_avg_3" in X.columns and "reb_avg_10" in X.columns:
+        X["reb_trend_3v10"] = X["reb_avg_3"] - X["reb_avg_10"]
+    if "ast_avg_3" in X.columns and "ast_avg_10" in X.columns:
+        X["ast_trend_3v10"] = X["ast_avg_3"] - X["ast_avg_10"]
+
+    # Usage momentum
+    if "usage_proxy_avg_5" in X.columns and "usage_proxy_avg_10" in X.columns:
+        X["usage_trend_5v10"] = X["usage_proxy_avg_5"] - X["usage_proxy_avg_10"]
 
     # Coefficient of variation (consistency)
     if "pts_sd_10" in X.columns and "pts_avg_10" in X.columns:
