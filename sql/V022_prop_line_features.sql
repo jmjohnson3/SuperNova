@@ -235,6 +235,8 @@ enriched AS (
     -- V022: Join most recent DraftKings prop line prior to this game date.
     -- Matches by normalized player name (unaccent + lowercase + strip non-alpha-space),
     -- mirroring parse_oddsapi._normalize_name() so names like "Nikola Jokić" → "nikola jokic".
+    -- Filters to the most recent as_of_date before game_date_et to avoid selecting historical
+    -- outlier lines (e.g. a 32.5 line from Dec when the current closing line is 25.5).
     LEFT JOIN LATERAL (
         SELECT
             MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev_book_line_pts,
@@ -243,9 +245,17 @@ enriched AS (
         FROM raw.nba_players np
         JOIN odds.nba_player_prop_lines pl
           ON pl.player_name_norm = public.normalize_player_name(np.player_name)
-         AND pl.as_of_date < r.game_date_et
          AND pl.bookmaker_key = 'draftkings'
         WHERE np.player_id = r.player_id
+          AND pl.as_of_date = (
+              SELECT MAX(pl2.as_of_date)
+              FROM raw.nba_players np2
+              JOIN odds.nba_player_prop_lines pl2
+                ON pl2.player_name_norm = public.normalize_player_name(np2.player_name)
+               AND pl2.bookmaker_key = 'draftkings'
+              WHERE np2.player_id = r.player_id
+                AND pl2.as_of_date < r.game_date_et
+          )
     ) prop_prior ON TRUE
 )
 SELECT

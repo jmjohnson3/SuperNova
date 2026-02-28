@@ -353,6 +353,7 @@ joined AS (
 
     -- V022: most recent DraftKings prop line strictly before game date (leakage guard).
     -- Mirrors the same join in features.player_training_features so train/serve features match.
+    -- Uses the most recent as_of_date (not MAX line value) to avoid selecting historical outliers.
     LEFT JOIN LATERAL (
         SELECT
             MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev_book_line_pts,
@@ -361,8 +362,15 @@ joined AS (
         FROM odds.nba_player_prop_lines pl
         WHERE pl.player_name_norm = LOWER(REGEXP_REPLACE(
                   unaccent(lp.player_name), '[^a-z ]', '', 'g'))
-          AND pl.as_of_date < :game_date
           AND pl.bookmaker_key = 'draftkings'
+          AND pl.as_of_date = (
+              SELECT MAX(pl2.as_of_date)
+              FROM odds.nba_player_prop_lines pl2
+              WHERE pl2.player_name_norm = LOWER(REGEXP_REPLACE(
+                        unaccent(lp.player_name), '[^a-z ]', '', 'g'))
+                AND pl2.as_of_date < :game_date
+                AND pl2.bookmaker_key = 'draftkings'
+          )
     ) prop_prior ON TRUE
 )
 SELECT *
