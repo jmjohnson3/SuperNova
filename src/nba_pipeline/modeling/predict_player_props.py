@@ -312,7 +312,12 @@ joined AS (
       -- V016: opponent position defense (latest rolling window before today)
       opd.opp_pts_allowed_role_10,
       opd.opp_reb_allowed_role_10,
-      opd.opp_ast_allowed_role_10
+      opd.opp_ast_allowed_role_10,
+
+      -- V022: DraftKings prop line prior (most recent closing line before game date)
+      prop_prior.prev_book_line_pts,
+      prop_prior.prev_book_line_reb,
+      prop_prior.prev_book_line_ast
 
     FROM teams_today t
     JOIN games_today gt
@@ -345,6 +350,20 @@ joined AS (
         ORDER BY pd.game_date_et DESC, pd.start_ts_utc DESC
         LIMIT 1
     ) opd ON TRUE
+
+    -- V022: most recent DraftKings prop line strictly before game date (leakage guard).
+    -- Mirrors the same join in features.player_training_features so train/serve features match.
+    LEFT JOIN LATERAL (
+        SELECT
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END) AS prev_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END) AS prev_book_line_ast
+        FROM odds.nba_player_prop_lines pl
+        WHERE pl.player_name_norm = LOWER(REGEXP_REPLACE(
+                  unaccent(lp.player_name), '[^a-z ]', '', 'g'))
+          AND pl.as_of_date < :game_date
+          AND pl.bookmaker_key = 'draftkings'
+    ) prop_prior ON TRUE
 )
 SELECT *
 FROM joined j

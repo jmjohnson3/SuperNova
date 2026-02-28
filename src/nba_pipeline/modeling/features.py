@@ -122,6 +122,26 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X["crew_avg_fouls_per_game"] - (X["home_fouls_avg_10"] + X["away_fouls_avg_10"])
         )
 
+    # Line movement magnitude (sharp money signal) — large absolute moves indicate
+    # consensus sharp action regardless of direction.
+    if "market_line_move_margin" in X.columns:
+        X["line_move_abs_spread"] = X["market_line_move_margin"].abs()
+    if "market_line_move_total" in X.columns:
+        X["line_move_abs_total"] = X["market_line_move_total"].abs()
+
+    # Sharp momentum: line moved AND implied probability agrees with move direction.
+    # A game where spread moved toward home AND book implies home likely = strong sharp signal.
+    if "market_line_move_margin" in X.columns and "spread_home_implied_prob" in X.columns:
+        X["sharp_momentum"] = (
+            X["market_line_move_margin"] * (X["spread_home_implied_prob"] - 0.5)
+        )
+
+    # Steam signal: large spread move coinciding with rest advantage amplifies the edge.
+    if "line_move_abs_spread" in X.columns and "rest_advantage_home" in X.columns:
+        X["steam_x_rest"] = (
+            X["line_move_abs_spread"].fillna(0) * X["rest_advantage_home"].fillna(0)
+        )
+
     return X
 
 
@@ -221,5 +241,24 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["reb_vs_opp_role_edge"] = X["reb_avg_10"] - X["opp_reb_allowed_role_10"]
     if "ast_avg_10" in X.columns and "opp_ast_allowed_role_10" in X.columns:
         X["ast_vs_opp_role_edge"] = X["ast_avg_10"] - X["opp_ast_allowed_role_10"]
+
+    # V022: DraftKings book line as a prior feature.
+    # The raw book lines (prev_book_line_*) are passed as-is to the model.
+    # These interaction features encode how the book line compares to the player's
+    # recent production — positive = book expects above-average output.
+    if "prev_book_line_pts" in X.columns and "pts_avg_10" in X.columns:
+        X["book_line_vs_pts_avg"] = X["prev_book_line_pts"] - X["pts_avg_10"]
+    if "prev_book_line_reb" in X.columns and "reb_avg_10" in X.columns:
+        X["book_line_vs_reb_avg"] = X["prev_book_line_reb"] - X["reb_avg_10"]
+    if "prev_book_line_ast" in X.columns and "ast_avg_10" in X.columns:
+        X["book_line_vs_ast_avg"] = X["prev_book_line_ast"] - X["ast_avg_10"]
+
+    # Book line as a share of team implied total (role / usage signal)
+    if "prev_book_line_pts" in X.columns and "team_implied_total" in X.columns:
+        X["book_pts_share"] = X["prev_book_line_pts"] / X["team_implied_total"].clip(lower=80.0)
+
+    # Book line trend: how much has the book shifted relative to the player's 3-game form
+    if "prev_book_line_pts" in X.columns and "pts_avg_3" in X.columns:
+        X["book_line_vs_pts_hot"] = X["prev_book_line_pts"] - X["pts_avg_3"]
 
     return X
