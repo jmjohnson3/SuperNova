@@ -13,6 +13,9 @@ _UTC = ZoneInfo("UTC")
 # NBA off-season: no games, skip to save credits
 _NBA_OFF_SEASON_MONTHS = {7, 8, 9}  # July, August, September
 
+_PROP_MARKETS = "player_points,player_rebounds,player_assists"
+_PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{event_id}/odds"
+
 
 @dataclass(frozen=True)
 class OddsCrawlerConfig:
@@ -223,6 +226,104 @@ def _fetch_live_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | None:
     return credits_remaining
 
 
+def _get_todays_event_ids(conn, et_day: date) -> list[dict]:
+    """Return event dicts from the already-fetched game-odds payload for et_day.
+
+    Reuses data already stored in raw.api_responses — no extra API call.
+    Returns list of {"event_id": ..., "home_team": ..., "away_team": ...}.
+    """
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT payload
+            FROM raw.api_responses
+            WHERE provider = 'oddsapi'
+              AND endpoint IN ('nba_odds', 'nba_odds_historical')
+              AND as_of_date = %s
+            ORDER BY fetched_at_utc DESC
+            LIMIT 1
+        """, (et_day,))
+        row = cur.fetchone()
+
+    if row is None:
+        return []
+
+    payload = row[0]
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    # Historical endpoint wraps data under a "data" key
+    if isinstance(payload, dict):
+        payload = payload.get("data", [])
+
+    events = []
+    for ev in (payload or []):
+        if isinstance(ev, dict) and ev.get("id"):
+            events.append({
+                "event_id": ev["id"],
+                "home_team": ev.get("home_team"),
+                "away_team": ev.get("away_team"),
+            })
+    return events
+
+
+def _fetch_prop_lines_for_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | None:
+    """Fetch player prop lines for every event on et_day.
+
+    Uses the per-event endpoint (3 markets per event).
+    Returns credits_remaining after the last fetch, or None if nothing fetched.
+    """
+    events = _get_todays_event_ids(conn, et_day)
+    if not events:
+        log.info("No event IDs found for %s — skipping prop fetch", et_day)
+        return None
+
+    log.info("Fetching prop lines for %d events on %s", len(events), et_day)
+    fetched_at_utc = datetime.now(_UTC)
+    credits_remaining: int | None = None
+
+    for ev in events:
+        event_id = ev["event_id"]
+        url = _PROP_ENDPOINT_TMPL.format(sport=cfg.sport, event_id=event_id)
+        params = {
+            "apiKey": cfg.oddsapi_key,
+            "regions": "us",
+            "markets": _PROP_MARKETS,
+            "bookmakers": "draftkings",
+            "oddsFormat": cfg.odds_format,
+            "dateFormat": cfg.date_format,
+        }
+        full_url = _build_full_url(url, params)
+
+        if _already_fetched(conn, as_of_date=et_day, full_url=full_url):
+            log.debug("Already have prop odds for event %s on %s — skipping", event_id, et_day)
+            continue
+
+        if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
+            log.warning("Budget guard: %d credits remaining. Stopping prop fetch.", credits_remaining)
+            break
+
+        try:
+            payload, credits_remaining = _fetch_with_backoff(cfg, url, params)
+        except RuntimeError as exc:
+            log.warning("Prop fetch failed for event %s: %s", event_id, exc)
+            continue
+
+        log.info("Prop odds %s | event=%s | credits_remaining=%s",
+                 et_day, event_id,
+                 credits_remaining if credits_remaining is not None else "unknown")
+
+        _save_payload(conn, endpoint="nba_prop_odds", as_of_date=et_day,
+                      url=full_url, payload=payload, fetched_at_utc=fetched_at_utc)
+
+        if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
+            log.warning("LOW CREDIT BALANCE: %d credits remaining. Stopping prop fetch.", credits_remaining)
+            break
+
+        time.sleep(cfg.sleep_between_calls_s)
+
+    return credits_remaining
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -295,6 +396,16 @@ def main() -> None:
                 saved += 1
                 if credits_remaining < cfg.min_credits_remaining:
                     log.warning("LOW CREDIT BALANCE: %d credits remaining.", credits_remaining)
+
+        # --- Prop lines: today only ---
+        if today_et.month not in _NBA_OFF_SEASON_MONTHS:
+            if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
+                result = _fetch_prop_lines_for_day(cfg, conn, today_et)
+                if result is not None:
+                    credits_remaining = result
+            else:
+                log.warning("Budget guard: %d credits remaining. Skipping prop fetch.",
+                            credits_remaining)
 
     log.info("Done. saved=%d skipped=%d credits_remaining=%s",
              saved, skipped,

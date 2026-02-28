@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -357,6 +359,38 @@ WHERE n_games_prev_10 >= 3
 ORDER BY start_ts_utc, game_slug, team_abbr, player_id
 """
 
+def _normalize_name(name: str) -> str:
+    """Lowercase, strip accents, remove non-alpha-space characters."""
+    nfkd = unicodedata.normalize("NFKD", name)
+    ascii_name = nfkd.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z ]", "", ascii_name.lower()).strip()
+
+
+def _load_prop_lines(engine, et_day: date, bookmaker: str = "draftkings") -> dict:
+    """Load prop lines from odds.nba_player_prop_lines for et_day.
+
+    Returns dict: {(player_name_norm, stat): (line, over_price, under_price)}
+    Gracefully returns empty dict if the table doesn't exist yet.
+    """
+    sql = text("""
+        SELECT player_name_norm, stat, line, over_price, under_price
+        FROM odds.nba_player_prop_lines
+        WHERE as_of_date = :date AND bookmaker_key = :bk
+    """)
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sql, {"date": et_day, "bk": bookmaker}).fetchall()
+        result = {}
+        for r in rows:
+            key = (r.player_name_norm, r.stat)
+            result[key] = (r.line, r.over_price, r.under_price)
+        log.info("Loaded %d prop lines from DB for %s (%s)", len(result), et_day, bookmaker)
+        return result
+    except Exception as exc:
+        log.warning("Could not load prop lines (table may not exist yet): %s", exc)
+        return {}
+
+
 def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
     for c in list(X.columns):
         if is_numeric_dtype(X[c]) or is_bool_dtype(X[c]) or is_datetime64_any_dtype(X[c]):
@@ -574,26 +608,41 @@ def _rank_best_props(df_raw: pd.DataFrame, df_out: pd.DataFrame, cfg: PredictCon
     )
 
 
-def _print_best_bets(best: pd.DataFrame, pts_mae: float, reb_mae: float, ast_mae: float) -> None:
+def _print_best_bets(
+    best: pd.DataFrame,
+    pts_mae: float,
+    reb_mae: float,
+    ast_mae: float,
+    prop_lines: dict | None = None,
+) -> None:
     """
-    Print actionable bet decision rules for top-confidence prop players.
+    Print actionable bet calls for top-confidence prop players.
 
-    For each stat, the rule is:
-      BET OVER  if the book's line is below (model pred - MAE)
-      BET UNDER if the book's line is above (model pred + MAE)
-      NO BET    if the line falls inside the confidence interval
+    When DraftKings lines are available (from odds.nba_player_prop_lines):
+      BET OVER  if book line < (model pred - MAE)
+      BET UNDER if book line > (model pred + MAE)
+      no bet    if line is inside the confidence interval
 
-    Usage: look up the line on DraftKings/FanDuel, apply the rule shown.
+    When no book line is available, falls back to decision rules:
+      OVER if line < {pred - MAE}  |  UNDER if line > {pred + MAE}
     """
     if best.empty:
         return
 
+    if prop_lines is None:
+        prop_lines = {}
+
+    n_with_lines = sum(
+        1 for _, r in best.iterrows()
+        if prop_lines.get((_normalize_name(str(r.get("player_name") or "")), "points"))
+    )
+
     print("\n" + "=" * 65)
     print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
-    print(f"  Look up each line on DraftKings/FanDuel, then apply the rule:")
-    print(f"    BET OVER  if book line < lower bound")
-    print(f"    BET UNDER if book line > upper bound")
-    print(f"    No bet    if line is inside the range (too close to call)")
+    if n_with_lines > 0:
+        print(f"  DK lines loaded for {n_with_lines}/{len(best)} players")
+    else:
+        print(f"  No DK lines in DB — showing decision rules (look up line manually)")
     print("=" * 65)
 
     for _, r in best.iterrows():
@@ -601,14 +650,15 @@ def _print_best_bets(best: pd.DataFrame, pts_mae: float, reb_mae: float, ast_mae
         stars = "***" if conf >= 0.78 else "** " if conf >= 0.68 else "*  "
 
         name = (r.get("player_name") or f"id={int(r['player_id'])}").strip()
-        name = name.encode("ascii", errors="replace").decode("ascii")
+        name_ascii = name.encode("ascii", errors="replace").decode("ascii")
+        name_norm = _normalize_name(name)
         opp  = r.get("opponent_abbr", "")
 
         pp = float(r["pred_points"])
         pr = float(r["pred_rebounds"])
         pa = float(r["pred_assists"])
 
-        # Confidence interval bounds (1 MAE = ~68% of outcomes fall within)
+        # Confidence interval bounds (1 MAE ≈ 68% of outcomes)
         pts_lo, pts_hi = max(0.0, pp - pts_mae), pp + pts_mae
         reb_lo, reb_hi = max(0.0, pr - reb_mae), pr + reb_mae
         ast_lo, ast_hi = max(0.0, pa - ast_mae), pa + ast_mae
@@ -631,12 +681,28 @@ def _print_best_bets(best: pd.DataFrame, pts_mae: float, reb_mae: float, ast_mae
         tags_str = f"  {tags}" if tags else ""
 
         print(
-            f"\n  {stars} {name} ({r['team_abbr']} vs {opp})"
+            f"\n  {stars} {name_ascii} ({r['team_abbr']} vs {opp})"
             f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
         )
-        print(f"         PTS  model={pp:.1f}  OVER if line < {pts_lo:.1f}  |  UNDER if line > {pts_hi:.1f}")
-        print(f"         REB  model={pr:.1f}   OVER if line < {reb_lo:.1f}  |  UNDER if line > {reb_hi:.1f}")
-        print(f"         AST  model={pa:.1f}   OVER if line < {ast_lo:.1f}  |  UNDER if line > {ast_hi:.1f}")
+
+        for pred, lo, hi, stat_label, stat_key in [
+            (pp, pts_lo, pts_hi, "PTS", "points"),
+            (pr, reb_lo, reb_hi, "REB", "rebounds"),
+            (pa, ast_lo, ast_hi, "AST", "assists"),
+        ]:
+            line_data = prop_lines.get((name_norm, stat_key))
+            if line_data and line_data[0] is not None:
+                book_line = float(line_data[0])
+                edge = pred - book_line
+                if edge > 0 and book_line < lo:
+                    call = f"★ BET OVER   edge=+{edge:.1f}"
+                elif edge < 0 and book_line > hi:
+                    call = f"★ BET UNDER  edge={edge:.1f}"
+                else:
+                    call = f"no bet — inside CI {lo:.1f}-{hi:.1f}"
+                print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  {call}")
+            else:
+                print(f"         {stat_label:<3}  model={pred:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
 
     print()
 
@@ -686,6 +752,7 @@ def main() -> None:
     models, feature_cols, medians = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
     _check_injury_staleness(engine)
+    prop_lines = _load_prop_lines(engine, et_day)
 
     with engine.connect() as conn:
         games = pd.read_sql(text(SQL_TODAYS_GAMES), conn, params={"game_date": et_day})
@@ -746,11 +813,27 @@ def main() -> None:
         for _, r in g_sorted.iterrows():
             name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
             name = name.encode("ascii", errors="replace").decode("ascii")
-            print(f"  {name}  {r['pred_points']:.1f} PTS  {r['pred_rebounds']:.1f} REB  {r['pred_assists']:.1f} AST")
+            name_norm = _normalize_name((r.get("player_name") or "").strip())
+
+            pts_line = prop_lines.get((name_norm, "points"))
+            reb_line = prop_lines.get((name_norm, "rebounds"))
+            ast_line = prop_lines.get((name_norm, "assists"))
+
+            def _fmt(pred: float, line_data) -> str:
+                if line_data and line_data[0] is not None:
+                    return f"{pred:.1f} (DK {float(line_data[0]):.1f})"
+                return f"{pred:.1f}"
+
+            print(
+                f"  {name}"
+                f"  {_fmt(r['pred_points'], pts_line)} PTS"
+                f"  {_fmt(r['pred_rebounds'], reb_line)} REB"
+                f"  {_fmt(r['pred_assists'], ast_line)} AST"
+            )
 
     # Best bets section
     best = _rank_best_props(df, df_out, cfg)
-    _print_best_bets(best, pts_mae=pts_mae, reb_mae=reb_mae, ast_mae=ast_mae)
+    _print_best_bets(best, pts_mae=pts_mae, reb_mae=reb_mae, ast_mae=ast_mae, prop_lines=prop_lines)
 
     # Save predictions to DB
     try:

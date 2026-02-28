@@ -1,6 +1,8 @@
 # src/nba_pipeline/parse_oddsapi.py
 import json
 import logging
+import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from typing import Any, Iterable, Optional
@@ -146,6 +148,184 @@ def iter_rows(as_of_date: date, fetched_at_utc, events: list[dict]) -> Iterable[
                 total_over_price,
                 total_under_price,
             )
+
+
+_PROP_MARKET_MAP = {
+    "player_points": "points",
+    "player_rebounds": "rebounds",
+    "player_assists": "assists",
+}
+
+_PROP_DDL = """
+CREATE SCHEMA IF NOT EXISTS odds;
+
+CREATE TABLE IF NOT EXISTS odds.nba_player_prop_lines (
+    id                SERIAL PRIMARY KEY,
+    as_of_date        DATE        NOT NULL,
+    fetched_at_utc    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    event_id          TEXT        NOT NULL,
+    commence_time_utc TEXT,
+    bookmaker_key     TEXT        NOT NULL,
+    home_team         TEXT,
+    away_team         TEXT,
+    player_name       TEXT        NOT NULL,
+    player_name_norm  TEXT        NOT NULL,
+    stat              TEXT        NOT NULL,
+    line              NUMERIC,
+    over_price        INTEGER,
+    under_price       INTEGER,
+    updated_at_utc    TIMESTAMPTZ,
+    UNIQUE (as_of_date, event_id, bookmaker_key, player_name_norm, stat)
+);
+
+CREATE INDEX IF NOT EXISTS idx_prop_lines_date_bk
+    ON odds.nba_player_prop_lines (as_of_date, bookmaker_key);
+"""
+
+_PROP_UPSERT_SQL = """
+INSERT INTO odds.nba_player_prop_lines (
+  as_of_date, fetched_at_utc,
+  event_id, commence_time_utc,
+  bookmaker_key,
+  home_team, away_team,
+  player_name, player_name_norm,
+  stat, line, over_price, under_price,
+  updated_at_utc
+)
+VALUES %s
+ON CONFLICT (as_of_date, event_id, bookmaker_key, player_name_norm, stat)
+DO UPDATE SET
+  fetched_at_utc    = EXCLUDED.fetched_at_utc,
+  commence_time_utc = EXCLUDED.commence_time_utc,
+  home_team         = EXCLUDED.home_team,
+  away_team         = EXCLUDED.away_team,
+  player_name       = EXCLUDED.player_name,
+  line              = EXCLUDED.line,
+  over_price        = EXCLUDED.over_price,
+  under_price       = EXCLUDED.under_price,
+  updated_at_utc    = EXCLUDED.updated_at_utc
+;
+"""
+
+_PROP_LOAD_SQL = """
+SELECT as_of_date, fetched_at_utc, payload
+FROM raw.api_responses
+WHERE provider = 'oddsapi'
+  AND endpoint = 'nba_prop_odds'
+  AND (%(as_of_date)s IS NULL OR as_of_date = %(as_of_date)s)
+ORDER BY fetched_at_utc;
+"""
+
+
+def _normalize_name(name: str) -> str:
+    """Lowercase, strip accents, remove non-alpha-space characters."""
+    nfkd = unicodedata.normalize("NFKD", name)
+    ascii_name = nfkd.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z ]", "", ascii_name.lower()).strip()
+
+
+def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Iterable[tuple]:
+    """Yield rows for odds.nba_player_prop_lines from a single prop-odds event payload."""
+    event_id = event_payload.get("id")
+    commence_time_utc = event_payload.get("commence_time")
+    home_team = event_payload.get("home_team")
+    away_team = event_payload.get("away_team")
+
+    for book in event_payload.get("bookmakers", []) or []:
+        bookmaker_key = book.get("key")
+
+        for market in book.get("markets", []) or []:
+            market_key = market.get("key")
+            stat = _PROP_MARKET_MAP.get(market_key)
+            if stat is None:
+                continue
+
+            # Group outcomes by player name
+            by_player: dict[str, dict] = {}
+            for outcome in market.get("outcomes", []) or []:
+                player = outcome.get("name")
+                desc = (outcome.get("description") or "").strip().lower()
+                if not player:
+                    continue
+                if player not in by_player:
+                    by_player[player] = {"over": None, "under": None, "line": None}
+                price = _to_int(outcome.get("price"))
+                point = _to_num(outcome.get("point"))
+                if desc == "over":
+                    by_player[player]["over"] = price
+                    by_player[player]["line"] = point
+                elif desc == "under":
+                    by_player[player]["under"] = price
+                    if by_player[player]["line"] is None:
+                        by_player[player]["line"] = point
+
+            for player_name, vals in by_player.items():
+                yield (
+                    as_of_date,
+                    fetched_at_utc,
+                    event_id,
+                    commence_time_utc,
+                    bookmaker_key,
+                    home_team,
+                    away_team,
+                    player_name,
+                    _normalize_name(player_name),
+                    stat,
+                    vals["line"],
+                    vals["over"],
+                    vals["under"],
+                    fetched_at_utc,  # updated_at_utc
+                )
+
+
+def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
+                   as_of_date: Optional[date] = None) -> None:
+    """Parse raw nba_prop_odds payloads into odds.nba_player_prop_lines."""
+    with psycopg2.connect(pg_dsn) as conn:
+        # Ensure table exists
+        with conn.cursor() as cur:
+            cur.execute(_PROP_DDL)
+        conn.commit()
+
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(_PROP_LOAD_SQL, {"as_of_date": as_of_date})
+            snaps = cur.fetchall()
+
+        if not snaps:
+            log.warning("No nba_prop_odds snapshots found (as_of_date=%s).", as_of_date)
+            return
+
+        total_rows = 0
+        with conn.cursor() as cur:
+            for s in snaps:
+                fetched_at_utc = s["fetched_at_utc"]
+                payload = s["payload"]
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
+
+                # Per-event endpoint returns a single event dict
+                if isinstance(payload, dict):
+                    events = [payload]
+                elif isinstance(payload, list):
+                    events = payload
+                else:
+                    log.warning("Unexpected prop payload type=%s; skipping", type(payload))
+                    continue
+
+                for event_payload in events:
+                    rows = list(iter_prop_rows(s["as_of_date"], fetched_at_utc, event_payload))
+                    if not rows:
+                        continue
+                    psycopg2.extras.execute_values(
+                        cur,
+                        _PROP_UPSERT_SQL,
+                        rows,
+                        page_size=500,
+                    )
+                    total_rows += len(rows)
+
+        conn.commit()
+        log.info("Upserted %d rows into odds.nba_player_prop_lines", total_rows)
 
 
 def main() -> None:
