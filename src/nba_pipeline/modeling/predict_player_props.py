@@ -722,9 +722,9 @@ def _print_best_bets(
                 book_line = float(line_data[0])
                 edge = pred - book_line
                 if edge > 0 and book_line < lo:
-                    call = f"★ BET OVER   edge=+{edge:.1f}"
+                    call = f">> BET OVER   edge=+{edge:.1f}"
                 elif edge < 0 and book_line > hi:
-                    call = f"★ BET UNDER  edge={edge:.1f}"
+                    call = f">> BET UNDER  edge={edge:.1f}"
                 else:
                     call = f"no bet — inside CI {lo:.1f}-{hi:.1f}"
                 print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  {call}")

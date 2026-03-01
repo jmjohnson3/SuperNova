@@ -266,18 +266,28 @@ def _get_todays_event_ids(conn, et_day: date) -> list[dict]:
     return events
 
 
-def _fetch_prop_lines_for_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | None:
-    """Fetch player prop lines for every event on et_day.
+def _fetch_prop_lines_for_day(
+    cfg: OddsCrawlerConfig, conn, as_of_date: date, event_source_date: date | None = None
+) -> int | None:
+    """Fetch player prop lines for upcoming events and save them as as_of_date.
+
+    event_source_date: which game-odds payload to read event IDs from.
+                       Defaults to as_of_date.  Pass tomorrow's date to
+                       pre-fetch prop lines for the next day's games while
+                       still storing them with today's as_of_date so the
+                       leakage guard (as_of_date < game_date) is satisfied.
 
     Uses the per-event endpoint (3 markets per event).
     Returns credits_remaining after the last fetch, or None if nothing fetched.
     """
-    events = _get_todays_event_ids(conn, et_day)
+    source_date = event_source_date if event_source_date is not None else as_of_date
+    events = _get_todays_event_ids(conn, source_date)
     if not events:
-        log.info("No event IDs found for %s — skipping prop fetch", et_day)
+        log.info("No event IDs found for %s — skipping prop fetch", source_date)
         return None
 
-    log.info("Fetching prop lines for %d events on %s", len(events), et_day)
+    log.info("Fetching prop lines for %d events (source=%s, as_of=%s)",
+             len(events), source_date, as_of_date)
     fetched_at_utc = datetime.now(_UTC)
     credits_remaining: int | None = None
 
@@ -294,8 +304,8 @@ def _fetch_prop_lines_for_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int
         }
         full_url = _build_full_url(url, params)
 
-        if _already_fetched(conn, as_of_date=et_day, full_url=full_url):
-            log.debug("Already have prop odds for event %s on %s — skipping", event_id, et_day)
+        if _already_fetched(conn, as_of_date=as_of_date, full_url=full_url):
+            log.debug("Already have prop odds for event %s on %s — skipping", event_id, as_of_date)
             continue
 
         if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
@@ -308,11 +318,11 @@ def _fetch_prop_lines_for_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int
             log.warning("Prop fetch failed for event %s: %s", event_id, exc)
             continue
 
-        log.info("Prop odds %s | event=%s | credits_remaining=%s",
-                 et_day, event_id,
+        log.info("Prop odds as_of=%s source=%s | event=%s | credits_remaining=%s",
+                 as_of_date, source_date, event_id,
                  credits_remaining if credits_remaining is not None else "unknown")
 
-        _save_payload(conn, endpoint="nba_prop_odds", as_of_date=et_day,
+        _save_payload(conn, endpoint="nba_prop_odds", as_of_date=as_of_date,
                       url=full_url, payload=payload, fetched_at_utc=fetched_at_utc)
 
         if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
@@ -397,12 +407,22 @@ def main() -> None:
                 if credits_remaining < cfg.min_credits_remaining:
                     log.warning("LOW CREDIT BALANCE: %d credits remaining.", credits_remaining)
 
-        # --- Prop lines: today only ---
+        # --- Prop lines: today's events AND tomorrow's upcoming events ---
+        # Tomorrow's events are saved with as_of_date=today so the leakage guard
+        # (as_of_date < game_date) is satisfied when predicting tomorrow's games.
         if today_et.month not in _NBA_OFF_SEASON_MONTHS:
             if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
+                # Try today's events (may 404 if games already in progress)
                 result = _fetch_prop_lines_for_day(cfg, conn, today_et)
                 if result is not None:
                     credits_remaining = result
+                # Try tomorrow's upcoming events, stored as today's date
+                if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
+                    result = _fetch_prop_lines_for_day(
+                        cfg, conn, today_et, event_source_date=tomorrow_et
+                    )
+                    if result is not None:
+                        credits_remaining = result
             else:
                 log.warning("Budget guard: %d credits remaining. Skipping prop fetch.",
                             credits_remaining)

@@ -240,21 +240,22 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
             if stat is None:
                 continue
 
-            # Group outcomes by player name
+            # Group outcomes by player name.
+            # Odds API prop format: name="Over"/"Under", description=player name.
             by_player: dict[str, dict] = {}
             for outcome in market.get("outcomes", []) or []:
-                player = outcome.get("name")
-                desc = (outcome.get("description") or "").strip().lower()
+                side = (outcome.get("name") or "").strip().lower()   # "over" or "under"
+                player = (outcome.get("description") or "").strip()  # e.g. "Jayson Tatum"
                 if not player:
                     continue
                 if player not in by_player:
                     by_player[player] = {"over": None, "under": None, "line": None}
                 price = _to_int(outcome.get("price"))
                 point = _to_num(outcome.get("point"))
-                if desc == "over":
+                if side == "over":
                     by_player[player]["over"] = price
                     by_player[player]["line"] = point
-                elif desc == "under":
+                elif side == "under":
                     by_player[player]["under"] = price
                     if by_player[player]["line"] is None:
                         by_player[player]["line"] = point
