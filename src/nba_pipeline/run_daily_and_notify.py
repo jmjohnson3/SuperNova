@@ -80,6 +80,7 @@ def run_module(mod: str, timeout_s: int) -> tuple[int, str, str]:
     src_dir = str(_repo_root() / "src")
     env["PYTHONPATH"] = src_dir + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     env["PYTHONIOENCODING"] = "utf-8"   # ensure subprocess stdout is UTF-8
+    env["DISCORD_FORMAT"] = "1"         # prediction scripts emit Discord markdown
 
     try:
         p = subprocess.run(
@@ -158,8 +159,42 @@ def _build_chunks(header: str, body: str) -> list[str]:
     return chunks
 
 
-async def _post_section(header: str, body: str) -> None:
-    for chunk in _build_chunks(header, body):
+def _build_rich_chunks(header: str, body: str) -> list[str]:
+    """Split header + body into ≤ DISCORD_LIMIT messages without code-block wrapping."""
+    body = body.strip()
+    if not body:
+        return [header]
+
+    first_budget = DISCORD_LIMIT - len(header) - 1
+    cont_budget  = DISCORD_LIMIT
+
+    def flush(lines: list[str], is_first: bool) -> str:
+        block = "\n".join(lines)
+        return f"{header}\n{block}" if is_first else block
+
+    chunks: list[str] = []
+    current: list[str] = []
+    current_len = 0
+    is_first = True
+    budget = first_budget
+
+    for line in body.splitlines():
+        needed = len(line) + (1 if current else 0)
+        if current and current_len + needed > budget:
+            chunks.append(flush(current, is_first))
+            current, current_len, is_first, budget = [], 0, False, cont_budget
+        current.append(line)
+        current_len += needed
+
+    if current:
+        chunks.append(flush(current, is_first))
+
+    return chunks
+
+
+async def _post_section(header: str, body: str, rich: bool = False) -> None:
+    chunks = _build_rich_chunks(header, body) if rich else _build_chunks(header, body)
+    for chunk in chunks:
         await _post(chunk)
         await asyncio.sleep(0.4)
 
@@ -226,7 +261,7 @@ async def main() -> None:
             }.get(step.label, f"**{step.label}**")
 
             if stdout.strip():
-                await _post_section(header, stdout.strip())
+                await _post_section(header, stdout.strip(), rich=True)
             else:
                 await _post(f"{header}\n_(no output for today's slate)_")
         else:

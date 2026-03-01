@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import os
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -422,9 +423,13 @@ def main() -> None:
             out["edge_total"] = np.nan
 
         # Print
+        discord = os.getenv("DISCORD_FORMAT") == "1"
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
-            print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
+            if discord:
+                print(f"\n**{r['away_team_abbr']} @ {r['home_team_abbr']}** · {start:%I:%M %p ET}")
+            else:
+                print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
 
             # Spread line
             edge_s = r.get("edge_spread")
@@ -434,14 +439,11 @@ def main() -> None:
                 bet_side = "HOME" if es > 0 else "AWAY"
                 kelly, p_win = _kelly(abs(es))
                 qk_bet = (kelly / 4) * 1000
-                print(
-                    f"  {r['pred_spread_label']}  ★ EDGE {edge_dir}{es:.1f} pts  "
-                    f"[bet {bet_side}]"
-                )
-                print(
-                    f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  "
-                    f"1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll"
-                )
+                if discord:
+                    print(f"  {r['pred_spread_label']}  ⚡ EDGE {edge_dir}{es:.1f} [{bet_side}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
+                else:
+                    print(f"  {r['pred_spread_label']}  * EDGE {edge_dir}{es:.1f} pts  [bet {bet_side}]")
+                    print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
                 print(f"  {r['pred_spread_label']}")
 
@@ -453,13 +455,11 @@ def main() -> None:
                 over_under = "Over" if et_ > 0 else "Under"
                 kelly, p_win = _kelly(abs(et_))
                 qk_bet = (kelly / 4) * 1000
-                print(
-                    f"  {over_under} {r['pred_total_points']:.1f}  ★ EDGE {edge_dir}{et_:.1f} pts"
-                )
-                print(
-                    f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  "
-                    f"1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll"
-                )
+                if discord:
+                    print(f"  {over_under} {r['pred_total_points']:.1f}  ⚡ EDGE {edge_dir}{et_:.1f} [{over_under.upper()}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
+                else:
+                    print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts")
+                    print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
                 print(f"  Over {r['pred_total_points']:.1f}")
 

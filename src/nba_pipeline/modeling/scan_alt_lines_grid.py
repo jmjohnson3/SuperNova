@@ -25,6 +25,7 @@ R16  Defensive profile      – skip props vs opponents with elite defense (def_
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal, Optional, Sequence
@@ -683,14 +684,18 @@ def main() -> None:
         cut     = [r for r in all_rows if r["filter_reasons"]]
 
         STAT_LABEL = {"points": "Points", "rebounds": "Rebounds", "assists": "Assists"}
+        discord = os.getenv("DISCORD_FORMAT") == "1"
         if passing:
             for r in sorted(passing, key=lambda x: (-x["hit_rate"], -x["line"])):
                 side_word = "Over" if cfg.side == "over" else "Under"
                 stat_word = STAT_LABEL.get(r["stat"], r["stat"].title())
                 pct = f"{r['hit_rate']*100:.0f}%"
-                print(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}  {pct}")
+                if discord:
+                    print(f"✅ **{r['player_name']}** · {side_word} {r['line']:g} {stat_word} · {pct}")
+                else:
+                    print(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}  {pct}")
         else:
-            print("No plays for today's slate")
+            print("*No plays for today's slate*" if discord else "No plays for today's slate")
 
         log.info(
             "Scan complete | %d candidates → %d pass, %d cut",

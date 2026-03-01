@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -641,6 +642,7 @@ def _print_best_bets(
     reb_mae: float,
     ast_mae: float,
     prop_lines: dict | None = None,
+    discord: bool = False,
 ) -> None:
     """
     Print actionable bet calls for top-confidence prop players.
@@ -664,17 +666,27 @@ def _print_best_bets(
         if prop_lines.get((_normalize_name(str(r.get("player_name") or "")), "points"))
     )
 
-    print("\n" + "=" * 65)
-    print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
-    if n_with_lines > 0:
-        print(f"  DK lines loaded for {n_with_lines}/{len(best)} players")
+    if discord:
+        print(f"\n**BEST PROP BETS** — top {len(best)} by confidence")
+        if n_with_lines > 0:
+            print(f"DK lines loaded for {n_with_lines}/{len(best)} players")
+        else:
+            print("No DK lines in DB — showing decision rules (look up line manually)")
     else:
-        print(f"  No DK lines in DB — showing decision rules (look up line manually)")
-    print("=" * 65)
+        print("\n" + "=" * 65)
+        print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
+        if n_with_lines > 0:
+            print(f"  DK lines loaded for {n_with_lines}/{len(best)} players")
+        else:
+            print(f"  No DK lines in DB — showing decision rules (look up line manually)")
+        print("=" * 65)
 
     for _, r in best.iterrows():
         conf = r["confidence"]
-        stars = "***" if conf >= 0.78 else "** " if conf >= 0.68 else "*  "
+        if discord:
+            stars = "⭐⭐⭐" if conf >= 0.78 else "⭐⭐" if conf >= 0.68 else "⭐"
+        else:
+            stars = "***" if conf >= 0.78 else "** " if conf >= 0.68 else "*  "
 
         name = (r.get("player_name") or f"id={int(r['player_id'])}").strip()
         name_ascii = name.encode("ascii", errors="replace").decode("ascii")
@@ -707,10 +719,13 @@ def _print_best_bets(
         tags = "  ".join(t for t in [trend, opp_str] if t)
         tags_str = f"  {tags}" if tags else ""
 
-        print(
-            f"\n  {stars} {name_ascii} ({r['team_abbr']} vs {opp})"
-            f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
-        )
+        if discord:
+            print(f"\n{stars} **{name}** ({r['team_abbr']} vs {opp}) · {r['proj_minutes']:.0f}min{tags_str} · conf={conf:.2f}")
+        else:
+            print(
+                f"\n  {stars} {name_ascii} ({r['team_abbr']} vs {opp})"
+                f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
+            )
 
         for pred, lo, hi, stat_label, stat_key in [
             (pp, pts_lo, pts_hi, "PTS", "points"),
@@ -722,14 +737,25 @@ def _print_best_bets(
                 book_line = float(line_data[0])
                 edge = pred - book_line
                 if edge > 0 and book_line < lo:
-                    call = f">> BET OVER   edge=+{edge:.1f}"
+                    if discord:
+                        print(f"  🟢 **OVER {stat_label}** · model={pred:.1f} DK={book_line:.1f} edge=+{edge:.1f}")
+                    else:
+                        print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  >> BET OVER   edge=+{edge:.1f}")
                 elif edge < 0 and book_line > hi:
-                    call = f">> BET UNDER  edge={edge:.1f}"
+                    if discord:
+                        print(f"  🔴 **UNDER {stat_label}** · model={pred:.1f} DK={book_line:.1f} edge={edge:.1f}")
+                    else:
+                        print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  >> BET UNDER  edge={edge:.1f}")
                 else:
-                    call = f"no bet — inside CI {lo:.1f}-{hi:.1f}"
-                print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  {call}")
+                    if discord:
+                        print(f"  ⬜ {stat_label} · model={pred:.1f} DK={book_line:.1f} (no bet, inside CI {lo:.1f}-{hi:.1f})")
+                    else:
+                        print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  no bet — inside CI {lo:.1f}-{hi:.1f}")
             else:
-                print(f"         {stat_label:<3}  model={pred:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
+                if discord:
+                    print(f"  ⬜ {stat_label} · model={pred:.1f} (OVER if line < {lo:.1f} | UNDER if line > {hi:.1f})")
+                else:
+                    print(f"         {stat_label:<3}  model={pred:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
 
     print()
 
@@ -829,11 +855,15 @@ def main() -> None:
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)
     df_out = df_out.sort_values(["start_ts_utc","game_slug","team_abbr","pred_points"], ascending=[True,True,True,False])
 
+    discord = os.getenv("DISCORD_FORMAT") == "1"
     for (ts, slug), g in df_out.groupby(["start_ts_utc", "game_slug"], sort=False):
         # derive away @ home from game_slug (format: YYYYMMDD-AWAY-HOME)
         parts = str(slug).split("-")
         matchup = f"{parts[1]} @ {parts[2]}" if len(parts) >= 3 else slug
-        print(f"\n{matchup}  {ts:%I:%M %p ET}")
+        if discord:
+            print(f"\n**{matchup}** · {ts:%I:%M %p ET}")
+        else:
+            print(f"\n{matchup}  {ts:%I:%M %p ET}")
 
         g_sorted = g.sort_values(["team_abbr", "pred_points"], ascending=[True, False])
 
@@ -860,7 +890,7 @@ def main() -> None:
 
     # Best bets section
     best = _rank_best_props(df, df_out, cfg)
-    _print_best_bets(best, pts_mae=pts_mae, reb_mae=reb_mae, ast_mae=ast_mae, prop_lines=prop_lines)
+    _print_best_bets(best, pts_mae=pts_mae, reb_mae=reb_mae, ast_mae=ast_mae, prop_lines=prop_lines, discord=discord)
 
     # Save predictions to DB
     try:
