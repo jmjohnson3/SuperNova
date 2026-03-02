@@ -226,70 +226,73 @@ def _fetch_live_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | None:
     return credits_remaining
 
 
-def _get_todays_event_ids(conn, et_day: date) -> list[dict]:
-    """Return event dicts from the already-fetched game-odds payload for et_day.
+def _get_live_event_ids(cfg: OddsCrawlerConfig, et_day: date) -> list[dict]:
+    """Fetch current event IDs from the Odds API events endpoint for et_day (ET).
 
-    Reuses data already stored in raw.api_responses — no extra API call.
+    Calls GET /v4/sports/{sport}/events and filters by commence_time to the
+    ET date window. Always uses fresh data — stored game-odds event IDs go
+    stale quickly and return 404 on the per-event prop endpoint.
+
     Returns list of {"event_id": ..., "home_team": ..., "away_team": ...}.
+    Raises RuntimeError on API failure (caller should handle gracefully).
     """
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT payload
-            FROM raw.api_responses
-            WHERE provider = 'oddsapi'
-              AND endpoint IN ('nba_odds', 'nba_odds_historical')
-              AND as_of_date = %s
-            ORDER BY fetched_at_utc DESC
-            LIMIT 1
-        """, (et_day,))
-        row = cur.fetchone()
+    url = f"https://api.the-odds-api.com/v4/sports/{cfg.sport}/events"
+    params = {
+        "apiKey": cfg.oddsapi_key,
+        "dateFormat": cfg.date_format,
+    }
+    r = requests.get(url, params=params, timeout=cfg.timeout_s,
+                     headers={"Accept": "application/json"})
+    r.raise_for_status()
+    all_events = r.json()  # list of events with commence_time
 
-    if row is None:
-        return []
-
-    payload = row[0]
-    if isinstance(payload, str):
-        payload = json.loads(payload)
-
-    # Historical endpoint wraps data under a "data" key
-    if isinstance(payload, dict):
-        payload = payload.get("data", [])
-
-    events = []
-    for ev in (payload or []):
-        if isinstance(ev, dict) and ev.get("id"):
-            events.append({
+    # Filter to the target ET day: convert commence_time to ET and compare
+    start_utc, end_utc = _et_day_window_utc(et_day)
+    results = []
+    for ev in (all_events or []):
+        ct = ev.get("commence_time", "")
+        if not ct:
+            continue
+        # Parse ISO timestamp — Odds API returns UTC
+        ct_dt = datetime.fromisoformat(ct.replace("Z", "+00:00")).astimezone(_UTC)
+        if start_utc <= ct_dt < end_utc and ev.get("id"):
+            results.append({
                 "event_id": ev["id"],
                 "home_team": ev.get("home_team"),
                 "away_team": ev.get("away_team"),
             })
-    return events
+    return results
 
 
 def _fetch_prop_lines_for_day(
-    cfg: OddsCrawlerConfig, conn, as_of_date: date, event_source_date: date | None = None
+    cfg: OddsCrawlerConfig, conn, as_of_date: date, game_date: date | None = None
 ) -> int | None:
-    """Fetch player prop lines for upcoming events and save them as as_of_date.
+    """Fetch player prop lines for a game day using per-event endpoints.
 
-    event_source_date: which game-odds payload to read event IDs from.
-                       Defaults to as_of_date.  Pass tomorrow's date to
-                       pre-fetch prop lines for the next day's games while
-                       still storing them with today's as_of_date so the
-                       leakage guard (as_of_date < game_date) is satisfied.
+    game_date: the ET date whose games we want prop lines for.
+               Defaults to as_of_date.  Pass tomorrow's date to pre-fetch
+               lines stored as today so the leakage guard is satisfied.
 
-    Uses the per-event endpoint (3 markets per event).
-    Returns credits_remaining after the last fetch, or None if nothing fetched.
+    Always fetches fresh event IDs from the events list endpoint (stored
+    game-odds IDs go stale and return 404 on the per-event prop endpoint).
+    Returns credits_remaining after the last successful fetch, or None.
     """
-    source_date = event_source_date if event_source_date is not None else as_of_date
-    events = _get_todays_event_ids(conn, source_date)
-    if not events:
-        log.info("No event IDs found for %s — skipping prop fetch", source_date)
+    target_date = game_date if game_date is not None else as_of_date
+
+    try:
+        events = _get_live_event_ids(cfg, target_date)
+    except Exception as exc:
+        log.warning("Failed to fetch event list for %s: %s", target_date, exc)
         return None
 
-    log.info("Fetching prop lines for %d events (source=%s, as_of=%s)",
-             len(events), source_date, as_of_date)
-    fetched_at_utc = datetime.now(_UTC)
+    if not events:
+        log.info("No events found for %s — skipping prop fetch", target_date)
+        return None
+
+    log.info("Fetching prop lines for %d events (game_date=%s, as_of=%s)",
+             len(events), target_date, as_of_date)
     credits_remaining: int | None = None
+    fetched_at_utc = datetime.now(_UTC)
 
     for ev in events:
         event_id = ev["event_id"]
@@ -305,7 +308,7 @@ def _fetch_prop_lines_for_day(
         full_url = _build_full_url(url, params)
 
         if _already_fetched(conn, as_of_date=as_of_date, full_url=full_url):
-            log.debug("Already have prop odds for event %s on %s — skipping", event_id, as_of_date)
+            log.debug("Already have prop odds for event %s as_of=%s", event_id, as_of_date)
             continue
 
         if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
@@ -318,15 +321,15 @@ def _fetch_prop_lines_for_day(
             log.warning("Prop fetch failed for event %s: %s", event_id, exc)
             continue
 
-        log.info("Prop odds as_of=%s source=%s | event=%s | credits_remaining=%s",
-                 as_of_date, source_date, event_id,
+        log.info("Prop odds as_of=%s event=%s (%s@%s) | credits=%s",
+                 as_of_date, event_id, ev.get("away_team", "?"), ev.get("home_team", "?"),
                  credits_remaining if credits_remaining is not None else "unknown")
 
         _save_payload(conn, endpoint="nba_prop_odds", as_of_date=as_of_date,
                       url=full_url, payload=payload, fetched_at_utc=fetched_at_utc)
 
         if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
-            log.warning("LOW CREDIT BALANCE: %d credits remaining. Stopping prop fetch.", credits_remaining)
+            log.warning("LOW CREDIT BALANCE: %d credits remaining. Stopping.", credits_remaining)
             break
 
         time.sleep(cfg.sleep_between_calls_s)
@@ -412,14 +415,14 @@ def main() -> None:
         # (as_of_date < game_date) is satisfied when predicting tomorrow's games.
         if today_et.month not in _NBA_OFF_SEASON_MONTHS:
             if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
-                # Try today's events (may 404 if games already in progress)
+                # Today's games
                 result = _fetch_prop_lines_for_day(cfg, conn, today_et)
                 if result is not None:
                     credits_remaining = result
-                # Try tomorrow's upcoming events, stored as today's date
+                # Tomorrow's games stored as today so leakage guard is satisfied
                 if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
                     result = _fetch_prop_lines_for_day(
-                        cfg, conn, today_et, event_source_date=tomorrow_et
+                        cfg, conn, today_et, game_date=tomorrow_et
                     )
                     if result is not None:
                         credits_remaining = result
