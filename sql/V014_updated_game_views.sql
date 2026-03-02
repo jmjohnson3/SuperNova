@@ -16,6 +16,10 @@
 -- ============================================================================
 
 
+-- Drop first so we can freely change column list/order
+DROP VIEW IF EXISTS features.game_training_features CASCADE;
+DROP VIEW IF EXISTS features.game_prediction_features CASCADE;
+
 -- ============================================================================
 -- GAME PREDICTION FEATURES (used at inference time)
 -- ============================================================================
@@ -323,9 +327,9 @@ LEFT JOIN LATERAL (
     ORDER BY s.game_date_et DESC LIMIT 1
 ) aaas ON TRUE
 LEFT JOIN features.team_injury_impact hinj
-  ON hinj.season = b.season AND hinj.team_abbr = b.home_team_abbr AND hinj.game_date_et = b.game_date_et
+  ON hinj.season = b.season AND hinj.team_abbr = b.home_team_abbr
 LEFT JOIN features.team_injury_impact ainj
-  ON ainj.season = b.season AND ainj.team_abbr = b.away_team_abbr AND ainj.game_date_et = b.game_date_et
+  ON ainj.season = b.season AND ainj.team_abbr = b.away_team_abbr
 LEFT JOIN features.team_clutch_performance hclutch
   ON hclutch.season = b.season AND hclutch.game_slug = b.game_slug AND hclutch.team_abbr = b.home_team_abbr
 LEFT JOIN features.team_clutch_performance aclutch
@@ -706,9 +710,9 @@ LEFT JOIN LATERAL (
     ORDER BY s.game_date_et DESC LIMIT 1
 ) aaas ON TRUE
 LEFT JOIN features.team_injury_impact hinj
-  ON hinj.season = b.season AND hinj.team_abbr = b.home_team_abbr AND hinj.game_date_et = b.game_date_et
+  ON hinj.season = b.season AND hinj.team_abbr = b.home_team_abbr
 LEFT JOIN features.team_injury_impact ainj
-  ON ainj.season = b.season AND ainj.team_abbr = b.away_team_abbr AND ainj.game_date_et = b.game_date_et
+  ON ainj.season = b.season AND ainj.team_abbr = b.away_team_abbr
 LEFT JOIN features.team_clutch_performance hclutch
   ON hclutch.season = b.season AND hclutch.game_slug = b.game_slug AND hclutch.team_abbr = b.home_team_abbr
 LEFT JOIN features.team_clutch_performance aclutch

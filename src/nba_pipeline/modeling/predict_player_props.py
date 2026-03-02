@@ -460,6 +460,12 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
     }
     X = df.drop(columns=[c for c in id_cols if c in df.columns]).copy()
 
+    if "game_date_et" in df.columns:
+        gdt = pd.to_datetime(df["game_date_et"])
+        season_start_year = gdt.dt.year.where(gdt.dt.month >= 7, gdt.dt.year - 1)
+        season_start = pd.to_datetime(season_start_year.astype(str) + "-10-01")
+        X["season_days_elapsed"] = (gdt - season_start).dt.days.values
+
     # one-hot for team/opponent/season
     cat_cols = [c for c in ("season","team_abbr","opponent_abbr") if c in df.columns]
     for c in cat_cols:
