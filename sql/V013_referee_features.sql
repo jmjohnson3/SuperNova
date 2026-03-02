@@ -54,15 +54,15 @@ WITH ref_game_fouls AS (
         g.game_date_et,
         g.start_ts_utc,
         COALESCE(
-            NULLIF(hts.stats->'miscellaneous'->>'foulsTotal', '')::numeric, 0
+            NULLIF(hts.stats->'miscellaneous'->>'fouls', '')::numeric, 0
         ) AS home_fouls,
         COALESCE(
-            NULLIF(ats.stats->'miscellaneous'->>'foulsTotal', '')::numeric, 0
+            NULLIF(ats.stats->'miscellaneous'->>'fouls', '')::numeric, 0
         ) AS away_fouls,
         COALESCE(
-            NULLIF(hts.stats->'miscellaneous'->>'foulsTotal', '')::numeric, 0
+            NULLIF(hts.stats->'miscellaneous'->>'fouls', '')::numeric, 0
         ) + COALESCE(
-            NULLIF(ats.stats->'miscellaneous'->>'foulsTotal', '')::numeric, 0
+            NULLIF(ats.stats->'miscellaneous'->>'fouls', '')::numeric, 0
         ) AS total_fouls
     FROM raw.nba_game_referees r
     JOIN raw.nba_games g
@@ -127,7 +127,7 @@ WITH player_game_fouls AS (
         g.game_date_et,
         g.start_ts_utc,
         COALESCE(
-            NULLIF(ps.stats->'miscellaneous'->>'foulsTotal', '')::numeric, 0
+            NULLIF(ps.stats->'miscellaneous'->>'fouls', '')::numeric, 0
         ) AS fouls,
         COALESCE(
             NULLIF(ps.stats->'miscellaneous'->>'minSeconds', '')::numeric, 0
@@ -186,9 +186,9 @@ with_ref AS (
 baseline AS (
     SELECT
         player_id,
-        AVG(fouls)        AS avg_fouls_overall,
-        AVG(fouls_per_36) AS avg_fouls_per_36_overall,
-        COUNT(*)          AS total_games
+        AVG(fouls) AS avg_fouls_overall,
+        AVG(CASE WHEN minutes_played > 0 THEN fouls / minutes_played * 36.0 ELSE NULL END) AS avg_fouls_per_36_overall,
+        COUNT(*) AS total_games
     FROM player_game_fouls
     GROUP BY player_id
 )

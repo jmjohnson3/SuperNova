@@ -116,7 +116,7 @@ hist AS (
       NULLIF(p.stats->'rebounds'->>'defReb', '')::numeric        AS def_reb,
       NULLIF(p.stats->'fieldGoals'->>'fgMade', '')::numeric      AS fg_made,
       NULLIF(p.stats->'miscellaneous'->>'plusMinus', '')::numeric AS plus_minus,
-      NULLIF(p.stats->'miscellaneous'->>'foulsTotal', '')::numeric AS fouls
+      NULLIF(p.stats->'miscellaneous'->>'fouls', '')::numeric AS fouls
     FROM raw.nba_player_gamelogs p
     JOIN raw.nba_games g
       ON g.season = p.season

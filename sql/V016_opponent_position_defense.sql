@@ -10,6 +10,11 @@
 --   F  (forward / wing)        : FGA/48 4–9
 --   C  (big / center)          : FGA/48 < 4
 --
+-- FIX (v2): The original view windowed over player-level rows, so
+-- "10 PRECEDING" spanned only 1–2 games worth of players. Now we aggregate
+-- to one row per (opponent, role, game) first, then window over those
+-- game-level rows so "10 PRECEDING" means exactly 10 prior games.
+--
 -- Used by: features.player_training_features (V018)
 --          predict_player_props.py inference SQL
 -- ============================================================================
@@ -49,37 +54,73 @@ game_player_stats AS (
     LEFT JOIN player_roles pr ON pr.player_id = p.player_id
     WHERE p.minutes IS NOT NULL AND p.minutes > 5
       AND g.status = 'final'
+),
+
+-- Aggregate to one row per (opponent, role, game).
+-- This is the correct granularity for the rolling window — each preceding
+-- row represents one full game, not one player's line.
+game_level_defense AS (
+    SELECT
+        season,
+        game_slug,
+        game_date_et,
+        start_ts_utc,
+        opponent_abbr,
+        role,
+        SUM(points)   AS game_pts_allowed,
+        SUM(rebounds) AS game_reb_allowed,
+        SUM(assists)  AS game_ast_allowed
+    FROM game_player_stats
+    GROUP BY season, game_slug, game_date_et, start_ts_utc, opponent_abbr, role
+),
+
+-- Rolling 10-game averages at game granularity.
+-- Now "10 PRECEDING" = 10 prior games, not 10 prior player rows.
+rolling_defense AS (
+    SELECT
+        season,
+        game_slug,
+        game_date_et,
+        start_ts_utc,
+        opponent_abbr,
+        role,
+        AVG(game_pts_allowed) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
+        ) AS opp_pts_allowed_role_10,
+
+        AVG(game_reb_allowed) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
+        ) AS opp_reb_allowed_role_10,
+
+        AVG(game_ast_allowed) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
+        ) AS opp_ast_allowed_role_10
+    FROM game_level_defense
 )
 
+-- Join rolling game-level averages back to player-level rows
 SELECT
-    season,
-    game_slug,
-    game_date_et,
-    start_ts_utc,
-    player_id,
-    team_abbr,
-    opponent_abbr,
-    role,
+    gps.season,
+    gps.game_slug,
+    gps.game_date_et,
+    gps.start_ts_utc,
+    gps.player_id,
+    gps.team_abbr,
+    gps.opponent_abbr,
+    gps.role,
+    rd.opp_pts_allowed_role_10,
+    rd.opp_reb_allowed_role_10,
+    rd.opp_ast_allowed_role_10
 
-    -- Rolling 10-game avg of stats ALLOWED by this player's opponent to their role bucket.
-    -- Window partitions on opponent_abbr + role so we measure how THIS defence handles
-    -- THIS type of player over the 10 games preceding the current row.
-    AVG(points)   OVER (
-        PARTITION BY opponent_abbr, role
-        ORDER BY game_date_et, start_ts_utc
-        ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
-    ) AS opp_pts_allowed_role_10,
-
-    AVG(rebounds) OVER (
-        PARTITION BY opponent_abbr, role
-        ORDER BY game_date_et, start_ts_utc
-        ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
-    ) AS opp_reb_allowed_role_10,
-
-    AVG(assists)  OVER (
-        PARTITION BY opponent_abbr, role
-        ORDER BY game_date_et, start_ts_utc
-        ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
-    ) AS opp_ast_allowed_role_10
-
-FROM game_player_stats;
+FROM game_player_stats gps
+LEFT JOIN rolling_defense rd
+    ON  rd.season        = gps.season
+    AND rd.game_slug     = gps.game_slug
+    AND rd.opponent_abbr = gps.opponent_abbr
+    AND rd.role          = gps.role;

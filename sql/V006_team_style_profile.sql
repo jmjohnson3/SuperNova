@@ -14,7 +14,7 @@
 --   rebounds -> reb
 --   offense  -> ast, ptsOffTov, pts2ndChance, ptsFastBreak,
 --               ptsPaint (or ptsPaintTotal), ptsBench (or ptsBenchTotal)
---   miscellaneous -> foulsTotal, plusMinus
+--   miscellaneous -> fouls, plusMinus
 --
 -- Rolling windows exclude the current game (ROWS BETWEEN N PRECEDING AND
 -- 1 PRECEDING) so that every feature is strictly pregame, avoiding leakage.
@@ -62,7 +62,7 @@ WITH box AS (
         )::numeric                                                   AS pts_bench,
 
         -- === Miscellaneous ===
-        NULLIF((s.stats->'miscellaneous'->>'foulsTotal'), '')::numeric AS fouls,
+        NULLIF((s.stats->'miscellaneous'->>'fouls'), '')::numeric AS fouls,
         NULLIF((s.stats->'miscellaneous'->>'plusMinus'), '')::numeric   AS plus_minus
 
     FROM raw.nba_boxscore_team_stats s

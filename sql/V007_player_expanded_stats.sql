@@ -76,7 +76,7 @@ WITH base_stats AS (
         NULLIF(pg.stats->'miscellaneous'->>'plusMinus', '')::numeric AS plus_minus,
 
         -- Personal fouls
-        NULLIF(pg.stats->'miscellaneous'->>'foulsTotal', '')::numeric AS fouls
+        NULLIF(pg.stats->'miscellaneous'->>'fouls', '')::numeric AS fouls
 
     FROM raw.nba_player_gamelogs pg
     JOIN raw.nba_games g
