@@ -61,20 +61,21 @@ with_counts AS (
           + COALESCE(jsonb_array_length(lb.bench), 0)   AS roster_available,
 
         -- Sorted array of starter player IDs for continuity comparison
+        -- Use ::numeric::int to handle IDs stored as floats (e.g. "10090.0")
         COALESCE(
             (SELECT array_agg(
                 COALESCE(
-                    (elem -> 'player' ->> 'id')::int,
-                    (elem ->> 'id')::int
+                    (elem -> 'player' ->> 'id')::numeric::int,
+                    (elem ->> 'id')::numeric::int
                 ) ORDER BY COALESCE(
-                    (elem -> 'player' ->> 'id')::int,
-                    (elem ->> 'id')::int
+                    (elem -> 'player' ->> 'id')::numeric::int,
+                    (elem ->> 'id')::numeric::int
                 )
             )
             FROM jsonb_array_elements(lb.starters) AS elem
             WHERE COALESCE(
-                (elem -> 'player' ->> 'id')::int,
-                (elem ->> 'id')::int
+                (elem -> 'player' ->> 'id')::numeric::int,
+                (elem ->> 'id')::numeric::int
             ) IS NOT NULL),
             ARRAY[]::int[]
         ) AS starter_ids

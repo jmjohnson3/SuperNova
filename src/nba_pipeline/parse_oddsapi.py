@@ -304,6 +304,12 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
                 if isinstance(payload, str):
                     payload = json.loads(payload)
 
+                # Historical per-event endpoint wraps the event under a "data" key
+                # alongside "timestamp", "next_timestamp", "previous_timestamp".
+                # Unwrap it so downstream parsing sees a plain event dict.
+                if isinstance(payload, dict) and "timestamp" in payload and "data" in payload:
+                    payload = payload["data"]
+
                 # Per-event endpoint returns a single event dict
                 if isinstance(payload, dict):
                     events = [payload]

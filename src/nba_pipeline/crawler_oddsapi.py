@@ -20,7 +20,7 @@ _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{ev
 @dataclass(frozen=True)
 class OddsCrawlerConfig:
     pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
-    oddsapi_key: str = "f623ce7de5f553aeb1f20289ce6083e4"
+    oddsapi_key: str = "5b6f0290e265c3329b3ed27897d79eaf"
     sport: str = "basketball_nba"
     regions: str = "us"
     markets: str = "spreads,totals"

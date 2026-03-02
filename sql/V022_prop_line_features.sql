@@ -25,7 +25,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent SCHEMA public;
 -- unaccent strips diacritics, LOWER lowercases, REGEXP_REPLACE removes non-alpha-space
 CREATE OR REPLACE FUNCTION public.normalize_player_name(name TEXT)
 RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT AS $$
-    SELECT LOWER(REGEXP_REPLACE(unaccent(name), '[^a-z ]', '', 'g'))
+    SELECT REGEXP_REPLACE(LOWER(unaccent(name)), '[^a-z ]', '', 'g')
 $$;
 
 DROP VIEW IF EXISTS features.player_training_features CASCADE;
