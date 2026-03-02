@@ -147,9 +147,18 @@ def build_model(
     cfg: TrainConfig,
     huber_slope: float = 4.0,
     params_override: Optional[Dict] = None,
+    n_estimators: Optional[int] = None,
+    use_early_stopping: bool = True,
 ) -> XGBRegressor:
+    """Build XGBRegressor with config defaults, optionally overridden by Optuna params.
+
+    Set use_early_stopping=False for final production models: train to a fixed
+    n_estimators derived from CV best_iteration statistics rather than using a
+    held-out eval split, which triggers premature stopping due to distribution shift
+    between earlier training data and the most-recent games used as the eval set.
+    """
     p = dict(
-        n_estimators=cfg.n_estimators,
+        n_estimators=n_estimators if n_estimators is not None else cfg.n_estimators,
         max_depth=cfg.max_depth,
         learning_rate=cfg.learning_rate,
         subsample=cfg.subsample,
@@ -160,15 +169,15 @@ def build_model(
         gamma=cfg.gamma,
         reg_alpha=cfg.reg_alpha,
         reg_lambda=cfg.reg_lambda,
-        early_stopping_rounds=cfg.early_stopping_rounds,
         eval_metric="mae",
         random_state=cfg.random_state,
         n_jobs=-1,
     )
+    if use_early_stopping:
+        p["early_stopping_rounds"] = cfg.early_stopping_rounds
     if params_override:
-        # Apply Optuna-tuned architectural params; huber_slope stays stat-specific.
-        arch = {k: v for k, v in params_override.items() if k != "huber_slope"}
-        p.update(arch)
+        # Per-stat Optuna params include tuned huber_slope — apply all directly.
+        p.update(params_override)
     return XGBRegressor(**p)
 
 
@@ -227,14 +236,15 @@ def run_optuna_tuning_props(
     cfg: TrainConfig,
     df: pd.DataFrame,
     X_raw: pd.DataFrame,
-    y_pts: pd.Series,
+    y_target: pd.Series,
     feature_cols: List[str],
+    stat_name: str = "PTS",
 ) -> Dict:
     """
-    Tune player-prop hyperparameters via walk-forward MAE on the PTS target
-    (most representative stat).  Huber_slope is included in the search but
-    stripped from the returned dict before applying to REB/AST models so
-    each stat retains its own stat-specific slope.
+    Tune player-prop hyperparameters via walk-forward MAE on y_target.
+    Runs a separate Optuna study per stat so REB/AST get their own optimal
+    depth, regularization, and huber_slope rather than reusing PTS params.
+    Returns full best_params including tuned huber_slope for this stat.
     """
     import optuna
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -248,7 +258,7 @@ def run_optuna_tuning_props(
     tune_folds = all_folds[-cfg.optuna_n_folds:] if len(all_folds) > cfg.optuna_n_folds else all_folds
 
     if not tune_folds:
-        log.warning("No walk-forward folds available for Optuna. Using default params.")
+        log.warning("No walk-forward folds available for Optuna (%s). Using default params.", stat_name)
         return {}
 
     def objective(trial):
@@ -273,8 +283,8 @@ def run_optuna_tuning_props(
             medians = fit_fill_stats(X_raw.loc[train_mask])
             X_tr = apply_fill(X_raw.loc[train_mask], medians, feature_cols)
             X_te = apply_fill(X_raw.loc[test_mask], medians, feature_cols)
-            y_tr = y_pts.loc[train_mask]
-            y_te = y_pts.loc[test_mask]
+            y_tr = y_target.loc[train_mask]
+            y_te = y_target.loc[test_mask]
             train_dates = df.loc[train_mask, "game_date_et"]
             fit_rel, eval_rel = temporal_eval_split(train_dates)
             m = XGBRegressor(
@@ -295,13 +305,13 @@ def run_optuna_tuning_props(
         return float(np.mean(mae_scores)) if mae_scores else float("inf")
 
     log.info(
-        "Running Optuna tuning for player props (%d trials, %d folds, PTS as proxy)...",
-        cfg.optuna_n_trials, len(tune_folds),
+        "Running Optuna tuning for %s (%d trials, %d folds)...",
+        stat_name, cfg.optuna_n_trials, len(tune_folds),
     )
-    study = optuna.create_study(direction="minimize", study_name="player_props_pts")
+    study = optuna.create_study(direction="minimize", study_name=f"player_props_{stat_name.lower()}")
     study.optimize(objective, n_trials=cfg.optuna_n_trials, show_progress_bar=False)
     best_params = study.best_params
-    log.info("Player props best params (PTS MAE=%.3f): %s", study.best_value, best_params)
+    log.info("%s best params (MAE=%.3f): %s", stat_name, study.best_value, best_params)
     return best_params
 
 
@@ -331,21 +341,30 @@ def main() -> None:
     X_raw, y_pts, y_reb, y_ast = make_xy_raw(df)
     feature_cols = list(X_raw.columns)
 
-    # --- Optuna hyperparameter tuning ---
-    best_params: Dict = {}
+    # --- Optuna hyperparameter tuning (separate study per stat) ---
+    best_params_pts: Dict = {}
+    best_params_reb: Dict = {}
+    best_params_ast: Dict = {}
     if cfg.run_optuna:
         try:
-            best_params = run_optuna_tuning_props(cfg, df, X_raw, y_pts, feature_cols)
+            best_params_pts = run_optuna_tuning_props(cfg, df, X_raw, y_pts, feature_cols, "PTS")
+            best_params_reb = run_optuna_tuning_props(cfg, df, X_raw, y_reb, feature_cols, "REB")
+            best_params_ast = run_optuna_tuning_props(cfg, df, X_raw, y_ast, feature_cols, "AST")
         except ImportError:
             log.warning("optuna not installed. Skipping tuning. pip install optuna")
         except Exception as e:
             log.warning("Optuna tuning failed: %s. Using default params.", e)
 
+    # (stat_name, y_target, huber_slope_default, best_params)
     stat_configs = [
-        ("PTS", y_pts, cfg.huber_slope_pts),
-        ("REB", y_reb, cfg.huber_slope_reb),
-        ("AST", y_ast, cfg.huber_slope_ast),
+        ("PTS", y_pts, cfg.huber_slope_pts, best_params_pts),
+        ("REB", y_reb, cfg.huber_slope_reb, best_params_reb),
+        ("AST", y_ast, cfg.huber_slope_ast, best_params_ast),
     ]
+
+    # best_iters initialized here so final model section can reference it regardless
+    # of whether walk-forward ran (e.g. run_walk_forward=False or no folds produced).
+    best_iters: Dict[str, List[int]] = {name: [] for name, _, _, _ in stat_configs}
 
     # --- Walk-forward validation ---
     if cfg.run_walk_forward:
@@ -364,9 +383,9 @@ def main() -> None:
                 len(folds), cfg.min_train_days, cfg.test_window_days, cfg.step_days,
             )
 
-            # Aggregates per stat
+            # Aggregates per stat (best_iters defined above the walk-forward block)
             agg: Dict[str, Tuple[List[float], List[float]]] = {
-                name: ([], []) for name, _, _ in stat_configs
+                name: ([], []) for name, _, _, _ in stat_configs
             }
 
             for k, (train_end, test_end) in enumerate(folds, start=1):
@@ -392,16 +411,18 @@ def main() -> None:
                 X_eval = X_train.iloc[eval_rel]
 
                 fold_msgs = []
-                for stat_name, y_full, huber_slope in stat_configs:
+                for stat_name, y_full, huber_slope, params_override in stat_configs:
                     y_train = y_full.loc[train_mask]
                     y_test = y_full.loc[test_mask]
 
-                    model = build_model(cfg, huber_slope=huber_slope, params_override=best_params)
+                    model = build_model(cfg, huber_slope=huber_slope, params_override=params_override)
                     model.fit(
                         X_fit, y_train.iloc[fit_rel],
                         eval_set=[(X_eval, y_train.iloc[eval_rel])],
                         verbose=False,
                     )
+                    if getattr(model, "best_iteration", None) is not None:
+                        best_iters[stat_name].append(model.best_iteration)
                     pred = model.predict(X_test)
 
                     mae = float(mean_absolute_error(y_test, pred))
@@ -420,7 +441,7 @@ def main() -> None:
             # Overall walk-forward summary
             overall_msgs = []
             wf_mae: Dict[str, float] = {}
-            for stat_name, _, _ in stat_configs:
+            for stat_name, _, _, _ in stat_configs:
                 true_all, pred_all = agg[stat_name]
                 if true_all:
                     y_t = np.asarray(true_all, dtype=float)
@@ -444,27 +465,31 @@ def main() -> None:
     medians_all = fit_fill_stats(X_raw)
     X_all = apply_fill(X_raw, medians_all, feature_cols)
 
-    # Temporal eval split for early stopping on final models
-    all_dates = df["game_date_et"]
-    fit_final, eval_final = temporal_eval_split(all_dates)
-    X_fit_final = X_all.iloc[fit_final]
-    X_eval_final = X_all.iloc[eval_final]
+    # Derive per-stat n_estimators from CV best_iteration statistics.
+    # p75 × 1.2 buffer: final model trains on more data than any fold, so needs more trees.
+    # p75 (not median) guards against folds where early stopping fired too aggressively.
+    stat_n_est: Dict[str, int] = {}
+    for stat_name, _, _, _ in stat_configs:
+        iters = best_iters.get(stat_name, [])
+        _iters = iters if iters else [cfg.n_estimators]
+        n_est = max(int(np.percentile(_iters, 75) * 1.2), 100)
+        stat_n_est[stat_name] = n_est
+        log.info(
+            "CV best_iteration %s | median=%d p75=%d → final n_estimators=%d",
+            stat_name, int(np.median(_iters)), int(np.percentile(_iters, 75)), n_est,
+        )
 
-    models = {}
     save_names = {"PTS": "points_xgb.json", "REB": "rebounds_xgb.json", "AST": "assists_xgb.json"}
 
-    for stat_name, y_full, huber_slope in stat_configs:
-        log.info("Training FINAL %s model...", stat_name)
-        m = build_model(cfg, huber_slope=huber_slope, params_override=best_params)
-        m.fit(
-            X_fit_final, y_full.iloc[fit_final],
-            eval_set=[(X_eval_final, y_full.iloc[eval_final])],
-            verbose=False,
-        )
-        log.info("%s best iteration: %d", stat_name, m.best_iteration)
+    for stat_name, y_full, huber_slope, params_override in stat_configs:
+        n_est = stat_n_est[stat_name]
+        log.info("Fitting FINAL %s model on all %d rows (n_estimators=%d, no early stopping)...",
+                 stat_name, len(X_all), n_est)
+        m = build_model(cfg, huber_slope=huber_slope, params_override=params_override,
+                        n_estimators=n_est, use_early_stopping=False)
+        m.fit(X_all, y_full, verbose=False)
         _eval(f"{stat_name} (train)", y_full.to_numpy(), m.predict(X_all))
         m.save_model(str(cfg.model_dir / save_names[stat_name]))
-        models[stat_name] = m
 
     (cfg.model_dir / "feature_columns.json").write_text(json.dumps(feature_cols), encoding="utf-8")
     (cfg.model_dir / "feature_medians.json").write_text(json.dumps(medians_all), encoding="utf-8")
