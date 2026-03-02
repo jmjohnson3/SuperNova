@@ -18,6 +18,11 @@ _NBA_OFF_SEASON_MONTHS = {7, 8, 9}  # July, August, September
 _ET = ZoneInfo("America/New_York")
 _UTC = ZoneInfo("UTC")
 
+_PROP_MARKETS = "player_points,player_rebounds,player_assists"
+_HIST_PROP_ENDPOINT_TMPL = (
+    "https://api.the-odds-api.com/v4/historical/sports/{sport}/events/{event_id}/odds"
+)
+
 SQL_INSERT_API_RESPONSE = """
 INSERT INTO raw.api_responses (
   provider,
@@ -144,6 +149,158 @@ def _daterange(start: date, end: date):
         d += timedelta(days=1)
 
 
+def _get_events_from_historical_payload(conn, et_day: date) -> list[dict]:
+    """Return event dicts from the stored nba_odds_historical payload for et_day.
+
+    Reuses data already in raw.api_responses — no extra API call.
+    Returns list of {"event_id": ..., "home_team": ..., "away_team": ...}.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT payload
+            FROM raw.api_responses
+            WHERE provider = 'oddsapi'
+              AND endpoint = 'nba_odds_historical'
+              AND as_of_date = %s
+            ORDER BY fetched_at_utc DESC
+            LIMIT 1
+            """,
+            (et_day,),
+        )
+        row = cur.fetchone()
+
+    if row is None:
+        return []
+
+    payload = row[0]
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+    if isinstance(payload, dict):
+        payload = payload.get("data", [])
+
+    events = []
+    for ev in payload or []:
+        if isinstance(ev, dict) and ev.get("id"):
+            events.append({
+                "event_id": ev["id"],
+                "home_team": ev.get("home_team"),
+                "away_team": ev.get("away_team"),
+            })
+    return events
+
+
+def _backfill_prop_lines(
+    cfg: BackfillConfig, conn, start_et: date, end_et: date, min_credits: int
+) -> None:
+    """Backfill historical player prop lines (PTS/REB/AST) from DraftKings.
+
+    Reads event IDs from already-stored nba_odds_historical payloads, then
+    calls the historical per-event endpoint for each game.  Payloads are stored
+    with endpoint='nba_prop_odds' so parse_oddsapi.parse_prop_odds() picks them
+    up automatically without any parser changes.
+
+    Cost: ~3 credits/event × ~9 events/day ≈ 27 credits/day
+    Full current-season backfill (~120 game days) ≈ 3,240 credits.
+    """
+    sport = cfg.sport
+    credits_remaining: int | None = None
+    saved = 0
+    skipped = 0
+
+    for et_day in _daterange(start_et, end_et):
+        if et_day.month in _NBA_OFF_SEASON_MONTHS:
+            skipped += 1
+            continue
+
+        if credits_remaining is not None and credits_remaining < min_credits:
+            log.warning(
+                "Budget guard: only %d credits remaining (floor=%d). Stopping prop backfill.",
+                credits_remaining, min_credits,
+            )
+            break
+
+        events = _get_events_from_historical_payload(conn, et_day)
+        if not events:
+            log.debug("No nba_odds_historical payload for %s — skipping prop backfill", et_day)
+            continue
+
+        # Snapshot at 01:00:00 UTC for the ET date (same as game-odds backfill).
+        # This is ~8–9 PM ET the previous day — pre-game lines are available.
+        snap_dt_utc = datetime(
+            et_day.year, et_day.month, et_day.day,
+            cfg.snapshot_hour_utc, cfg.snapshot_minute_utc, cfg.snapshot_second_utc,
+            tzinfo=_UTC,
+        )
+        snap_ts = snap_dt_utc.isoformat().replace("+00:00", "Z")
+
+        day_saved = 0
+        for ev in events:
+            event_id = ev["event_id"]
+            url = _HIST_PROP_ENDPOINT_TMPL.format(sport=sport, event_id=event_id)
+            params = {
+                "apiKey": cfg.oddsapi_key,
+                "date": snap_ts,
+                "regions": cfg.regions,
+                "markets": _PROP_MARKETS,
+                "bookmakers": "draftkings",
+                "oddsFormat": cfg.odds_format,
+                "dateFormat": cfg.date_format,
+            }
+            full_url = _build_full_url(url, params)
+
+            if _already_fetched(conn, provider="oddsapi", endpoint="nba_prop_odds",
+                                as_of_date=et_day, full_url=full_url):
+                skipped += 1
+                continue
+
+            if credits_remaining is not None and credits_remaining < min_credits:
+                log.warning("Budget guard: %d credits remaining. Stopping.", credits_remaining)
+                conn.commit()
+                return
+
+            try:
+                payload, credits_remaining = _fetch_with_backoff(cfg, url, params)
+            except RuntimeError as exc:
+                log.warning("Prop backfill failed event=%s date=%s: %s", event_id, et_day, exc)
+                continue
+
+            with conn.cursor() as cur:
+                cur.execute(
+                    SQL_INSERT_API_RESPONSE,
+                    {
+                        "provider": "oddsapi",
+                        "endpoint": "nba_prop_odds",
+                        "season": None,
+                        "game_slug": None,
+                        "as_of_date": et_day,
+                        "url": full_url,
+                        "fetched_at_utc": datetime.now(_UTC),
+                        "payload": json.dumps(payload),
+                        "payload_sha256": _sha256_json(payload),
+                    },
+                )
+
+            saved += 1
+            day_saved += 1
+            time.sleep(cfg.sleep_between_calls_s)
+
+        if day_saved > 0:
+            conn.commit()
+            log.info(
+                "Prop backfill %s | events_saved=%d | credits=%s",
+                et_day, day_saved,
+                credits_remaining if credits_remaining is not None else "unknown",
+            )
+
+    conn.commit()
+    log.info(
+        "Prop backfill done. saved=%d skipped=%d credits=%s",
+        saved, skipped,
+        credits_remaining if credits_remaining is not None else "unknown",
+    )
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -157,6 +314,12 @@ def main() -> None:
                         help="ET end date (YYYY-MM-DD). Default: today.")
     parser.add_argument("--budget", type=int, default=None,
                         help="Stop when fewer than this many credits remain. Default: 500.")
+    parser.add_argument("--prop-lines", action="store_true",
+                        help=(
+                            "Backfill historical player prop lines (PTS/REB/AST) from DraftKings. "
+                            "Reads event IDs from already-stored nba_odds_historical payloads. "
+                            "~27 credits/day; full current-season run ≈ 3,240 credits."
+                        ))
     args = parser.parse_args()
 
     cfg = BackfillConfig()
@@ -266,6 +429,13 @@ def main() -> None:
             saved, skipped,
             credits_remaining if credits_remaining is not None else "unknown",
         )
+
+        if args.prop_lines:
+            log.info(
+                "--- Starting prop lines backfill (%s to %s) | est. ~27 credits/day ---",
+                start_et, end_et,
+            )
+            _backfill_prop_lines(cfg, conn, start_et, end_et, min_credits)
 
 
 if __name__ == "__main__":
