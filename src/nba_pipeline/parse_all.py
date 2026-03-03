@@ -167,9 +167,6 @@ def main() -> None:
     parse_referees()          # referee assignments from boxscore payloads
     parse_prop_odds()         # prop lines from odds API
 
-    # Materialize slow game feature views so predictions run in <5 s
-    _materialize_game_features(_PG_DSN)
-
     log.info("ALL PARSERS COMPLETE")
 
 if __name__ == "__main__":
