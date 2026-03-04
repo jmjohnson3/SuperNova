@@ -461,7 +461,7 @@ def main() -> None:
                     print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
-                print(f"  Over {r['pred_total_points']:.1f}")
+                print(f"  Pred total: {r['pred_total_points']:.1f}")
 
         # Save predictions to DB
         try:

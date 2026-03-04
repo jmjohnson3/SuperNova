@@ -222,9 +222,57 @@ def upsert_nba_games(conn, game_rows: list[GameRow]) -> int:
     return len(game_rows)
 
 
+def load_games_by_date_payloads(conn) -> Iterable[tuple[str, datetime, dict]]:
+    """
+    Yield (season, fetched_at_utc, payload_dict) for each games_by_date row in raw.api_responses.
+    Ordered oldest-first so later upserts win on scores (most recent fetch wins).
+    """
+    sql = """
+    SELECT season, fetched_at_utc, payload
+    FROM raw.api_responses
+    WHERE provider = 'mysportsfeeds'
+      AND endpoint = 'games_by_date'
+    ORDER BY fetched_at_utc ASC
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(sql)
+        for r in cur.fetchall():
+            payload = r["payload"]
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            yield r["season"], r["fetched_at_utc"], payload
+
+
+def sync_scores_from_boxscores(conn) -> int:
+    """
+    Copy home_score/away_score from raw.nba_boxscore_games into raw.nba_games for any
+    game whose score is currently NULL.  The boxscore table is authoritative and always
+    current; nba_games can lag because games_season is only fetched once per season and
+    the daily games_by_date fetch happens pre-game (null scores).
+    Returns number of rows updated.
+    """
+    sql = """
+    UPDATE raw.nba_games g
+    SET
+        home_score = b.home_score_total,
+        away_score = b.away_score_total,
+        status     = 'final',
+        updated_at_utc = now()
+    FROM raw.nba_boxscore_games b
+    WHERE g.game_slug = b.game_slug
+      AND b.home_score_total IS NOT NULL
+      AND b.away_score_total IS NOT NULL
+      AND (g.home_score IS NULL OR g.away_score IS NULL)
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        return cur.rowcount
+
+
 def build_raw_nba_games(conn) -> int:
     """
-    Reads raw.api_responses (games_season) and upserts into raw.nba_games.
+    Reads raw.api_responses (games_season + games_by_date) and upserts into raw.nba_games.
+    Then syncs scores from raw.nba_boxscore_games so completed games are always current.
     Returns number of rows processed (not necessarily changed).
     """
     total = 0
@@ -232,7 +280,23 @@ def build_raw_nba_games(conn) -> int:
         parsed = parse_games_payload(season=season, payload=payload, fetched_at_utc=fetched_at_utc)
         total += upsert_nba_games(conn, parsed)
         log.info("Parsed season=%s fetched_at=%s games=%d", season, fetched_at_utc, len(parsed))
-    return total
+
+    # games_by_date payloads are fetched pre-game so scores are null; still useful for
+    # inserting new game rows (future schedule) that aren't in the old games_season payload.
+    by_date_total = 0
+    for season, fetched_at_utc, payload in load_games_by_date_payloads(conn):
+        parsed = parse_games_payload(season=season, payload=payload, fetched_at_utc=fetched_at_utc)
+        if parsed:
+            by_date_total += upsert_nba_games(conn, parsed)
+    if by_date_total:
+        log.info("Updated %d game rows from games_by_date payloads", by_date_total)
+
+    # Sync scores from boxscore table (authoritative, always current)
+    synced = sync_scores_from_boxscores(conn)
+    if synced:
+        log.info("Synced scores for %d games from nba_boxscore_games", synced)
+
+    return total + by_date_total
 
 
 def main() -> None:
