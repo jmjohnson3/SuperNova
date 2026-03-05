@@ -444,9 +444,10 @@ def main() -> None:
                     n_train, n_test, " | ".join(fold_msgs),
                 )
 
-            # Overall walk-forward summary
+            # Overall walk-forward summary + calibration quantiles
             overall_msgs = []
             wf_mae: Dict[str, float] = {}
+            calib: Dict[str, float] = {}
             for stat_name, _, _, _ in stat_configs:
                 true_all, pred_all = agg[stat_name]
                 if true_all:
@@ -454,18 +455,26 @@ def main() -> None:
                     y_p = np.asarray(pred_all, dtype=float)
                     mae = float(mean_absolute_error(y_t, y_p))
                     rmse = _rmse(y_t, y_p)
-                    overall_msgs.append(f"{stat_name} MAE={mae:.3f} RMSE={rmse:.3f}")
+                    abs_errs = np.abs(y_t - y_p)
+                    p68 = float(np.percentile(abs_errs, 68))
+                    p90 = float(np.percentile(abs_errs, 90))
+                    overall_msgs.append(
+                        f"{stat_name} MAE={mae:.3f} RMSE={rmse:.3f} p68={p68:.3f} p90={p90:.3f}"
+                    )
                     wf_mae[stat_name.lower()] = mae
+                    calib[f"ci_p68_{stat_name.lower()}"] = p68
+                    calib[f"ci_p90_{stat_name.lower()}"] = p90
 
             if overall_msgs:
                 log.info("WALK-FORWARD OVERALL | rows=%d | %s",
                          len(agg["PTS"][0]), " | ".join(overall_msgs))
 
-            # Save per-stat walk-forward MAEs for use as confidence intervals at predict time
+            # Save per-stat walk-forward MAEs + calibrated CI quantiles
             if wf_mae:
+                payload = {**wf_mae, **calib}
                 mae_path = cfg.model_dir / "backtest_mae.json"
-                mae_path.write_text(json.dumps(wf_mae, indent=2), encoding="utf-8")
-                log.info("Saved walk-forward MAE to %s", mae_path)
+                mae_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+                log.info("Saved walk-forward MAE + CI calibration to %s", mae_path)
 
     # --- Train FINAL models on ALL rows (production) ---
     medians_all = fit_fill_stats(X_raw)

@@ -644,22 +644,25 @@ def _rank_best_props(df_raw: pd.DataFrame, df_out: pd.DataFrame, cfg: PredictCon
 
 def _print_best_bets(
     best: pd.DataFrame,
-    pts_mae: float,
-    reb_mae: float,
-    ast_mae: float,
+    pts_ci: float,
+    reb_ci: float,
+    ast_ci: float,
     prop_lines: dict | None = None,
     discord: bool = False,
 ) -> None:
     """
     Print actionable bet calls for top-confidence prop players.
 
+    CI half-widths (pts_ci/reb_ci/ast_ci) are the empirical 68th percentile
+    of |error| from walk-forward CV — i.e. the true 68% coverage interval.
+
     When DraftKings lines are available (from odds.nba_player_prop_lines):
-      BET OVER  if book line < (model pred - MAE)
-      BET UNDER if book line > (model pred + MAE)
+      BET OVER  if book line < (model pred - ci)
+      BET UNDER if book line > (model pred + ci)
       no bet    if line is inside the confidence interval
 
     When no book line is available, falls back to decision rules:
-      OVER if line < {pred - MAE}  |  UNDER if line > {pred + MAE}
+      OVER if line < {pred - ci}  |  UNDER if line > {pred + ci}
     """
     if best.empty:
         return
@@ -703,10 +706,10 @@ def _print_best_bets(
         pr = float(r["pred_rebounds"])
         pa = float(r["pred_assists"])
 
-        # Confidence interval bounds (1 MAE ≈ 68% of outcomes)
-        pts_lo, pts_hi = max(0.0, pp - pts_mae), pp + pts_mae
-        reb_lo, reb_hi = max(0.0, pr - reb_mae), pr + reb_mae
-        ast_lo, ast_hi = max(0.0, pa - ast_mae), pa + ast_mae
+        # Confidence interval bounds (empirically calibrated 68% coverage)
+        pts_lo, pts_hi = max(0.0, pp - pts_ci), pp + pts_ci
+        reb_lo, reb_hi = max(0.0, pr - reb_ci), pr + reb_ci
+        ast_lo, ast_hi = max(0.0, pa - ast_ci), pa + ast_ci
 
         # Context tags
         pts3  = r.get("pts_avg_3", np.nan)
@@ -733,10 +736,10 @@ def _print_best_bets(
                 f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
             )
 
-        for pred, lo, hi, stat_label, stat_key in [
-            (pp, pts_lo, pts_hi, "PTS", "points"),
-            (pr, reb_lo, reb_hi, "REB", "rebounds"),
-            (pa, ast_lo, ast_hi, "AST", "assists"),
+        for pred, lo, hi, ci, stat_label, stat_key in [
+            (pp, pts_lo, pts_hi, pts_ci, "PTS", "points"),
+            (pr, reb_lo, reb_hi, reb_ci, "REB", "rebounds"),
+            (pa, ast_lo, ast_hi, ast_ci, "AST", "assists"),
         ]:
             line_data = prop_lines.get((name_norm, stat_key))
             if line_data and line_data[0] is not None:
@@ -759,9 +762,9 @@ def _print_best_bets(
                         print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  no bet — inside CI {lo:.1f}-{hi:.1f}")
             else:
                 if discord:
-                    print(f"  ⬜ {stat_label} · model={pred:.1f} (OVER if line < {lo:.1f} | UNDER if line > {hi:.1f})")
+                    print(f"  ⬜ {stat_label} · model={pred:.1f} ±{ci:.1f} (OVER if line < {lo:.1f} | UNDER if line > {hi:.1f})")
                 else:
-                    print(f"         {stat_label:<3}  model={pred:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
+                    print(f"         {stat_label:<3}  model={pred:.1f} ±{ci:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
 
     print()
 
@@ -793,12 +796,28 @@ def _check_injury_staleness(engine, warn_hours: float = 12.0) -> None:
 
 
 def _load_prop_mae(model_dir: Path) -> dict:
-    """Load per-stat walk-forward MAE from training. Falls back to defaults if missing."""
+    """Load per-stat walk-forward MAE + calibrated CI quantiles from training.
+
+    Keys returned:
+      pts, reb, ast              — walk-forward MAE (kept for reference)
+      ci_p68_pts/reb/ast         — empirical 68th percentile of |error| (true 68% CI half-width)
+      ci_p90_pts/reb/ast         — empirical 90th percentile of |error|
+
+    Falls back to 1.25 × MAE for p68 (theoretical Normal approximation) if quantiles
+    are not in the file (i.e. trained before this calibration was added).
+    """
     p = model_dir / "backtest_mae.json"
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    # Defaults from last known backtest run (2024-12-27 to 2026-01-22, 31663 player-games)
-    return {"pts": 4.745, "reb": 1.955, "ast": 1.391}
+    # Defaults from last known backtest run
+    defaults = {"pts": 4.745, "reb": 1.955, "ast": 1.391}
+    d = json.loads(p.read_text(encoding="utf-8")) if p.exists() else defaults
+    # Back-fill p68/p90 from MAE if missing (pre-calibration models)
+    for stat in ("pts", "reb", "ast"):
+        mae = d.get(stat, defaults[stat])
+        if f"ci_p68_{stat}" not in d:
+            d[f"ci_p68_{stat}"] = round(mae * 1.25, 3)   # Normal: MAE ≈ 0.798σ → σ ≈ 1.25 MAE
+        if f"ci_p90_{stat}" not in d:
+            d[f"ci_p90_{stat}"] = round(mae * 2.06, 3)   # Normal: 1.645σ ≈ 2.06 MAE
+    return d
 
 
 def main() -> None:
@@ -851,11 +870,16 @@ def main() -> None:
     df_out["pred_rebounds"] = np.clip(raw_reb, 0.0, 25.0)
     df_out["pred_assists"] = np.clip(raw_ast, 0.0, 20.0)
 
-    # Load walk-forward MAE for confidence intervals (±1 MAE = ~68% of outcomes)
+    # Load walk-forward MAE + calibrated CI quantiles (empirical 68% coverage per stat)
     mae = _load_prop_mae(cfg.model_dir)
     pts_mae = mae.get("pts", 4.745)
     reb_mae = mae.get("reb", 1.955)
     ast_mae = mae.get("ast", 1.391)
+    # Empirically calibrated CI half-widths: p68 is the true 68% interval,
+    # not ±1 MAE which only covers ~57% for Normal distributions.
+    pts_ci = mae.get("ci_p68_pts", round(pts_mae * 1.25, 3))
+    reb_ci = mae.get("ci_p68_reb", round(reb_mae * 1.25, 3))
+    ast_ci = mae.get("ci_p68_ast", round(ast_mae * 1.25, 3))
 
     # pretty print grouped by game
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)
@@ -896,7 +920,7 @@ def main() -> None:
 
     # Best bets section
     best = _rank_best_props(df, df_out, cfg)
-    _print_best_bets(best, pts_mae=pts_mae, reb_mae=reb_mae, ast_mae=ast_mae, prop_lines=prop_lines, discord=discord)
+    _print_best_bets(best, pts_ci=pts_ci, reb_ci=reb_ci, ast_ci=ast_ci, prop_lines=prop_lines, discord=discord)
 
     # Save predictions to DB
     try:
