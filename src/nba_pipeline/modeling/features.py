@@ -176,13 +176,41 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "min_avg_3" in X.columns and "min_avg_5" in X.columns:
         X["min_trend_3v5"] = X["min_avg_3"] - X["min_avg_5"]
 
-    # 3-game hot/cold streaks
+    # 3-game hot/cold streaks (raw difference)
     if "pts_avg_3" in X.columns and "pts_avg_10" in X.columns:
         X["pts_trend_3v10"] = X["pts_avg_3"] - X["pts_avg_10"]
     if "reb_avg_3" in X.columns and "reb_avg_10" in X.columns:
         X["reb_trend_3v10"] = X["reb_avg_3"] - X["reb_avg_10"]
     if "ast_avg_3" in X.columns and "ast_avg_10" in X.columns:
         X["ast_trend_3v10"] = X["ast_avg_3"] - X["ast_avg_10"]
+
+    # Hot/cold ratio — scale-invariant form: 1.2 means 20% above baseline regardless of role.
+    # Captures the same signal as trend diffs but normalized: a +5-pt bump means more for a
+    # 5 ppg player than for a 25 ppg player.
+    if "pts_avg_3" in X.columns and "pts_avg_10" in X.columns:
+        X["pts_hot_ratio"] = X["pts_avg_3"] / X["pts_avg_10"].clip(lower=1.0)
+    if "reb_avg_3" in X.columns and "reb_avg_10" in X.columns:
+        X["reb_hot_ratio"] = X["reb_avg_3"] / X["reb_avg_10"].clip(lower=0.5)
+    if "ast_avg_3" in X.columns and "ast_avg_10" in X.columns:
+        X["ast_hot_ratio"] = X["ast_avg_3"] / X["ast_avg_10"].clip(lower=0.5)
+    if "min_avg_3" in X.columns and "min_avg_10" in X.columns:
+        X["min_hot_ratio"] = X["min_avg_3"] / X["min_avg_10"].clip(lower=10.0)
+
+    # Trend significance: is the recent move meaningful relative to this player's own variance?
+    # Large trend / small SD = a real streak; large trend / large SD = noisy player who swings often.
+    # Behaves like a z-score of the 3-game trend vs the 10-game baseline.
+    if "pts_trend_3v10" in X.columns and "pts_sd_10" in X.columns:
+        X["pts_trend_sig"] = X["pts_trend_3v10"] / X["pts_sd_10"].clip(lower=0.5)
+    if "reb_trend_3v10" in X.columns and "reb_sd_10" in X.columns:
+        X["reb_trend_sig"] = X["reb_trend_3v10"] / X["reb_sd_10"].clip(lower=0.5)
+    if "ast_trend_3v10" in X.columns and "ast_sd_10" in X.columns:
+        X["ast_trend_sig"] = X["ast_trend_3v10"] / X["ast_sd_10"].clip(lower=0.5)
+
+    # Hot-player × fast-game: a player on a scoring streak benefits even more in a fast game
+    if "pts_hot_ratio" in X.columns and "game_pace_est_5" in X.columns:
+        X["pts_hot_x_pace"] = X["pts_hot_ratio"] * X["game_pace_est_5"] / 100.0
+    if "ast_hot_ratio" in X.columns and "game_pace_est_5" in X.columns:
+        X["ast_hot_x_pace"] = X["ast_hot_ratio"] * X["game_pace_est_5"] / 100.0
 
     # Usage momentum
     if "usage_proxy_avg_5" in X.columns and "usage_proxy_avg_10" in X.columns:
@@ -196,11 +224,22 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "ast_sd_10" in X.columns and "ast_avg_10" in X.columns:
         X["ast_cv_10"] = X["ast_sd_10"] / X["ast_avg_10"].clip(lower=0.5)
 
-    # Matchup-scaled projections
+    # Matchup-scaled projections (pace × per-min efficiency)
     if "pts_per_min_10" in X.columns and "game_pace_est_5" in X.columns:
         X["pts_pace_interaction"] = X["pts_per_min_10"] * X["game_pace_est_5"]
     if "reb_per_min_10" in X.columns and "opp_pace_avg_10" in X.columns:
         X["reb_pace_interaction"] = X["reb_per_min_10"] * X["opp_pace_avg_10"]
+    if "ast_per_min_10" in X.columns and "game_pace_est_5" in X.columns:
+        # Assists rise with pace — more possessions = more chances to dish
+        X["ast_pace_interaction"] = X["ast_per_min_10"] * X["game_pace_est_5"]
+
+    # Pace mismatch: derive player's team pace from game average and opponent pace.
+    # game_pace_est_5 ≈ (team_pace + opp_pace) / 2
+    # → team_pace_derived = 2 × game_pace_est_5 - opp_pace_avg_5
+    # Positive pace_mismatch = our team is faster than the opponent's preferred tempo
+    if "game_pace_est_5" in X.columns and "opp_pace_avg_5" in X.columns:
+        X["team_pace_derived"] = (2.0 * X["game_pace_est_5"] - X["opp_pace_avg_5"]).clip(lower=80.0)
+        X["pace_mismatch"] = X["team_pace_derived"] - X["opp_pace_avg_5"]
 
     # Implied share of team total
     if "pts_avg_10" in X.columns and "team_implied_total" in X.columns:
@@ -230,9 +269,14 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # V018: Teammate injury impact
     if "teammate_pts_out" in X.columns and "team_implied_total" in X.columns:
         X["teammate_pts_share_lost"] = X["teammate_pts_out"] / X["team_implied_total"].clip(lower=80.0)
-    if "teammate_pts_out" in X.columns and "pts_avg_10" in X.columns:
-        # How much of the missing pts load could this player absorb (usage bump proxy)
-        X["potential_usage_bump"] = X["teammate_pts_out"] * (X["pts_avg_10"] / X["pts_avg_10"].clip(lower=1.0))
+    if "teammate_pts_out" in X.columns and "pts_avg_10" in X.columns and "team_implied_total" in X.columns:
+        # How much of the missing pts load this player absorbs, weighted by their own scoring share.
+        # Higher-usage players get proportionally more of the vacated load.
+        _scoring_share = X["pts_avg_10"] / X["team_implied_total"].clip(lower=80.0)
+        X["potential_usage_bump"] = X["teammate_pts_out"] * _scoring_share
+    if "potential_usage_bump" in X.columns and "pts_trend_5v10" in X.columns:
+        # Compound signal: player is trending UP *and* a teammate is out → usage bump likely real
+        X["injury_boost_confirmed"] = X["potential_usage_bump"] * X["pts_trend_5v10"].clip(lower=0)
 
     # V016: Opponent position defense matchup edges
     if "pts_avg_10" in X.columns and "opp_pts_allowed_role_10" in X.columns:
