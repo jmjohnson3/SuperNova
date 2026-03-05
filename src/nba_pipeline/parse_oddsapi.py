@@ -4,7 +4,7 @@ import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Iterable, Optional
 
 import psycopg2
@@ -56,6 +56,7 @@ FROM raw.api_responses
 WHERE provider = 'oddsapi'
   AND endpoint = 'nba_odds_historical'
   AND (%(as_of_date)s IS NULL OR as_of_date = %(as_of_date)s)
+  AND (%(since_date)s IS NULL OR as_of_date >= %(since_date)s)
 ORDER BY fetched_at_utc;
 """
 
@@ -222,6 +223,7 @@ FROM raw.api_responses
 WHERE provider = 'oddsapi'
   AND endpoint = 'nba_prop_odds'
   AND (%(as_of_date)s IS NULL OR as_of_date = %(as_of_date)s)
+  AND (%(since_date)s IS NULL OR as_of_date >= %(since_date)s)
 ORDER BY fetched_at_utc;
 """
 
@@ -290,15 +292,33 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
 
 def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
                    as_of_date: Optional[date] = None) -> None:
-    """Parse raw nba_prop_odds payloads into odds.nba_player_prop_lines."""
+    """Parse raw nba_prop_odds payloads into odds.nba_player_prop_lines.
+
+    Incremental by default: when as_of_date is None, only processes payloads
+    from (MAX already-parsed date - 1 day) onward to avoid re-parsing all history
+    on every daily run.
+    """
     with psycopg2.connect(pg_dsn) as conn:
         # Ensure table exists
         with conn.cursor() as cur:
             cur.execute(_PROP_DDL)
         conn.commit()
 
+        # Compute since_date for incremental parsing (skips already-loaded history)
+        since_date: Optional[date] = None
+        if as_of_date is None:
+            with conn.cursor() as cur:
+                try:
+                    cur.execute("SELECT MAX(as_of_date) FROM odds.nba_player_prop_lines")
+                    row = cur.fetchone()
+                    if row and row[0]:
+                        since_date = row[0] - timedelta(days=1)
+                        log.info("Incremental prop odds: since %s", since_date)
+                except Exception:
+                    pass  # table may not exist yet on first run
+
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(_PROP_LOAD_SQL, {"as_of_date": as_of_date})
+            cur.execute(_PROP_LOAD_SQL, {"as_of_date": as_of_date, "since_date": since_date})
             snaps = cur.fetchall()
 
         if not snaps:
@@ -353,12 +373,26 @@ def parse_game_odds_historical(
     The historical endpoint returns one snapshot per day wrapped as:
       {"data": [...events], "timestamp": ..., "next_timestamp": ..., "previous_timestamp": ...}
 
-    On first call this backfills all stored history (~1,000+ days).
-    On subsequent calls only new days are added (ON CONFLICT DO UPDATE is idempotent).
+    Incremental by default: when as_of_date is None, only processes payloads
+    from (MAX already-parsed date - 1 day) onward to avoid re-parsing all history
+    on every daily run.
     """
     with psycopg2.connect(pg_dsn) as conn:
+        # Compute since_date for incremental parsing (skips already-loaded history)
+        since_date: Optional[date] = None
+        if as_of_date is None:
+            with conn.cursor() as cur:
+                try:
+                    cur.execute("SELECT MAX(as_of_date) FROM odds.nba_game_lines")
+                    row = cur.fetchone()
+                    if row and row[0]:
+                        since_date = row[0] - timedelta(days=1)
+                        log.info("Incremental historical game odds: since %s", since_date)
+                except Exception:
+                    pass  # table may not exist yet on first run
+
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(SQL_LOAD_HISTORICAL, {"as_of_date": as_of_date})
+            cur.execute(SQL_LOAD_HISTORICAL, {"as_of_date": as_of_date, "since_date": since_date})
             snaps = cur.fetchall()
 
         if not snaps:
