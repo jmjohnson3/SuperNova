@@ -30,6 +30,14 @@ class PredictConfig:
     min_edge_pts: float = 3.0    # minimum |pred - market| to flag as high-confidence
 
 
+# Blend weight for the residual model when market lines exist.
+# Derived from inverse-MAE weighting:
+#   direct MAE ≈ 10.48  → weight ≈ 0.30
+#   resid recon MAE ≈ 4.66 → weight ≈ 0.70
+# Final prediction = (1 - w) * direct + w * (market_line + resid)
+_RESID_BLEND_WEIGHT: float = 0.70
+
+
 SQL_GAMES_FOR_DATE = """
 SELECT gpf.*,
        h2h.h2h_meetings_5, h2h.h2h_home_margin_avg5, h2h.h2h_home_win_pct5,
@@ -348,10 +356,10 @@ def main() -> None:
         id_df, X = _prep_features(df, feature_cols=feature_cols, feature_medians=feature_medians)
 
         # Predictions:
-        # - If residual models exist AND market lines exist, reconstruct:
-        #     pred_margin = market_spread_home + pred_resid
-        #     pred_total  = market_total + pred_resid
-        # - Else fallback to direct models
+        # - If residual models exist AND market lines exist, blend:
+        #     pred = (1 - w) * direct  +  w * (market_line + resid_pred)
+        #   where w = _RESID_BLEND_WEIGHT (0.70 by default)
+        # - Else use direct model only
         spread_direct = models["spread_direct"]
         total_direct = models["total_direct"]
 
@@ -377,12 +385,27 @@ def main() -> None:
                 pred_spread_resid = spread_resid.predict(X.loc[ok])
                 pred_total_resid = total_resid.predict(X.loc[ok])
 
+                # Residual reconstruction: anchor to market line, shift by model residual
+                resid_recon_spread = mkt_spread.loc[ok].astype(float).values + pred_spread_resid
+                resid_recon_total = mkt_total.loc[ok].astype(float).values + pred_total_resid
+
+                # Blend: weighted average of direct and residual reconstruction.
+                # Direct acts as a regularizer; residual keeps us anchored to the market.
+                w = _RESID_BLEND_WEIGHT
                 pred_margin_final = pred_margin_final.copy()
                 pred_total_final = pred_total_final.copy()
 
-                pred_margin_final[ok.values] = mkt_spread.loc[ok].astype(float).values + pred_spread_resid
-                pred_total_final[ok.values] = mkt_total.loc[ok].astype(float).values + pred_total_resid
+                pred_margin_final[ok.values] = (
+                    (1.0 - w) * pred_margin_direct[ok.values] + w * resid_recon_spread
+                )
+                pred_total_final[ok.values] = (
+                    (1.0 - w) * pred_total_direct[ok.values] + w * resid_recon_total
+                )
 
+                log.info(
+                    "Blended predictions for %d/%d games (%.0f%% resid + %.0f%% direct)",
+                    ok.sum(), len(df), w * 100, (1.0 - w) * 100,
+                )
                 used_market = ok.values
 
         # Validate raw predictions before clipping
