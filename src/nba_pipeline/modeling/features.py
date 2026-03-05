@@ -36,6 +36,40 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "home_net_rating_10" in X.columns and "away_net_rating_10" in X.columns:
         X["net_rating_diff_10"] = X["home_net_rating_10"] - X["away_net_rating_10"]
 
+    # Pythagorean expectation (NBA exponent ≈ 14, from Daryl Morey / 82games research).
+    # More predictive of future wins than current W-L record because it corrects for
+    # close-game luck.  Points-for^14 / (points-for^14 + points-against^14) → [0, 1].
+    # Using both 5-game (recent form) and 10-game (true-talent) windows.
+    _EXP = 14.0
+    for win in (5, 10):
+        hf = f"home_pts_for_avg_{win}"
+        ha = f"home_pts_against_avg_{win}"
+        af = f"away_pts_for_avg_{win}"
+        aa = f"away_pts_against_avg_{win}"
+        if hf in X.columns and ha in X.columns:
+            hf_pow = X[hf].clip(lower=1.0) ** _EXP
+            ha_pow = X[ha].clip(lower=1.0) ** _EXP
+            X[f"home_pythag_{win}"] = hf_pow / (hf_pow + ha_pow)
+        if af in X.columns and aa in X.columns:
+            af_pow = X[af].clip(lower=1.0) ** _EXP
+            aa_pow = X[aa].clip(lower=1.0) ** _EXP
+            X[f"away_pythag_{win}"] = af_pow / (af_pow + aa_pow)
+        hp = f"home_pythag_{win}"
+        ap = f"away_pythag_{win}"
+        if hp in X.columns and ap in X.columns:
+            X[f"pythag_diff_{win}"] = X[hp] - X[ap]
+
+    # Pythagorean vs actual win-pct: positive = team is "better than their record"
+    # (won fewer close games than their scoring says they should).  Signals regression
+    # to mean — a team outperforming pythag is due for a correction.
+    if "home_pythag_10" in X.columns and "home_win_pct" in X.columns:
+        X["home_pythag_vs_record"] = X["home_pythag_10"] - X["home_win_pct"]
+    if "away_pythag_10" in X.columns and "away_win_pct" in X.columns:
+        X["away_pythag_vs_record"] = X["away_pythag_10"] - X["away_win_pct"]
+    if "home_pythag_vs_record" in X.columns and "away_pythag_vs_record" in X.columns:
+        # Positive = home team is more underrated by record than away team
+        X["pythag_record_edge"] = X["home_pythag_vs_record"] - X["away_pythag_vs_record"]
+
     # Pace
     if "home_pace_avg_5" in X.columns and "away_pace_avg_5" in X.columns:
         X["pace_diff_5"] = X["home_pace_avg_5"] - X["away_pace_avg_5"]
