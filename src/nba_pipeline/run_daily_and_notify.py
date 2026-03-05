@@ -55,6 +55,7 @@ STEPS: list[Step] = [
     Step("Odds Crawler",              "nba_pipeline.crawler_oddsapi",                    critical=True,  post_output=False, timeout_s=900),
     Step("MSF Crawler",               "nba_pipeline.crawler",                            critical=True,  post_output=False, timeout_s=3600),
     Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=1800),
+    Step("Yesterday's Results",       "nba_pipeline.grade_predictions",                  critical=False, post_output=True,  timeout_s=60),
     Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=False, post_output=False, timeout_s=600),
     Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=300),
     Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=3600),
@@ -256,13 +257,15 @@ async def main() -> None:
         # Step succeeded
         if step.post_output:
             header = {
+                "Yesterday's Results":     "📋 **Yesterday's Results**",
                 "Game Predictions":        "🏀 **Game Predictions**",
                 "Alt Line Scan":           "📊 **Alt Line Scan**",
                 "Player Prop Projections": "🎯 **Player Prop Projections**",
             }.get(step.label, f"**{step.label}**")
 
+            rich = step.label != "Yesterday's Results"  # results use code-block, predictions use rich
             if stdout.strip():
-                await _post_section(header, stdout.strip(), rich=True)
+                await _post_section(header, stdout.strip(), rich=rich)
             else:
                 await _post(f"{header}\n_(no output for today's slate)_")
         else:
