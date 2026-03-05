@@ -50,6 +50,15 @@ WHERE provider = 'oddsapi'
 ORDER BY fetched_at_utc;
 """
 
+SQL_LOAD_HISTORICAL = """
+SELECT as_of_date, fetched_at_utc, payload
+FROM raw.api_responses
+WHERE provider = 'oddsapi'
+  AND endpoint = 'nba_odds_historical'
+  AND (%(as_of_date)s IS NULL OR as_of_date = %(as_of_date)s)
+ORDER BY fetched_at_utc;
+"""
+
 
 @dataclass(frozen=True)
 class ParseConfig:
@@ -333,6 +342,74 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
 
         conn.commit()
         log.info("Upserted %d rows into odds.nba_player_prop_lines", total_rows)
+
+
+def parse_game_odds_historical(
+    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
+    as_of_date: Optional[date] = None,
+) -> None:
+    """Parse nba_odds_historical payloads into odds.nba_game_lines.
+
+    The historical endpoint returns one snapshot per day wrapped as:
+      {"data": [...events], "timestamp": ..., "next_timestamp": ..., "previous_timestamp": ...}
+
+    On first call this backfills all stored history (~1,000+ days).
+    On subsequent calls only new days are added (ON CONFLICT DO UPDATE is idempotent).
+    """
+    with psycopg2.connect(pg_dsn) as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(SQL_LOAD_HISTORICAL, {"as_of_date": as_of_date})
+            snaps = cur.fetchall()
+
+        if not snaps:
+            log.warning("No nba_odds_historical snapshots found (as_of_date=%s).", as_of_date)
+            return
+
+        total_rows = 0
+        batch: list[tuple] = []
+
+        def _flush(cur_) -> int:
+            if not batch:
+                return 0
+            psycopg2.extras.execute_values(
+                cur_,
+                UPSERT_SQL,
+                [(*r, r[2]) for r in batch],   # updated_at_utc = fetched_at_utc
+                page_size=500,
+            )
+            n = len(batch)
+            batch.clear()
+            return n
+
+        with conn.cursor() as cur:
+            for s in snaps:
+                payload = s["payload"]
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
+
+                # Historical endpoint wraps: {"data": [...events], "timestamp": ...}
+                if isinstance(payload, dict) and "data" in payload:
+                    events = payload["data"]
+                elif isinstance(payload, list):
+                    events = payload
+                else:
+                    log.warning("Unexpected historical payload type=%s; skipping", type(payload))
+                    continue
+
+                if not events:
+                    continue
+
+                rows = list(iter_rows(s["as_of_date"], s["fetched_at_utc"], events))
+                batch.extend(rows)
+
+                if len(batch) >= 2000:
+                    total_rows += _flush(cur)
+                    conn.commit()
+
+            total_rows += _flush(cur)
+        conn.commit()
+
+    log.info("Upserted %d rows from nba_odds_historical into odds.nba_game_lines", total_rows)
 
 
 def main() -> None:

@@ -716,8 +716,8 @@ def main() -> None:
                 y_spread_resid_train = df.loc[train_mask & has_market_train, "spread_residual"].astype(float)
                 y_total_resid_train = df.loc[train_mask & has_market_train, "total_residual"].astype(float)
 
-                X_train_resid = X_train.loc[has_market_train.values[train_mask.values]]
-                X_test_resid = X_test.loc[has_market_test.values[test_mask.values]]
+                X_train_resid = X_train.loc[has_market_train]
+                X_test_resid = X_test.loc[has_market_test]
 
                 # Temporal eval split for residual training
                 resid_train_dates = df.loc[train_mask & has_market_train, "game_date_et"]

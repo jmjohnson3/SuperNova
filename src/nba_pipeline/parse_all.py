@@ -8,7 +8,7 @@ from nba_pipeline.parse_lineup import main as parse_lineup
 from nba_pipeline.parse_boxscore import main as parse_boxscore
 from nba_pipeline.parse_pbp import main as parse_pbp
 from nba_pipeline.parse_referees import main as parse_referees
-from nba_pipeline.parse_oddsapi import parse_prop_odds
+from nba_pipeline.parse_oddsapi import parse_prop_odds, main as parse_game_odds, parse_game_odds_historical
 
 log = logging.getLogger("nba_pipeline.parse_all")
 
@@ -164,8 +164,10 @@ def main() -> None:
     parse_lineup()            # availability / starters
     parse_boxscore()          # game + player boxscores
     parse_pbp()               # advanced features
-    parse_referees()          # referee assignments from boxscore payloads
-    parse_prop_odds()         # prop lines from odds API
+    parse_referees()               # referee assignments from boxscore payloads
+    parse_game_odds()              # live game lines (nba_odds)
+    parse_game_odds_historical()   # backfilled historical game lines (nba_odds_historical)
+    parse_prop_odds()              # prop lines from odds API
 
     log.info("ALL PARSERS COMPLETE")
 
