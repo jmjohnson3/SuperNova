@@ -345,7 +345,58 @@ def main() -> None:
     df["game_date_et"] = pd.to_datetime(df["game_date_et"], errors="coerce")
 
     X_raw, y_pts, y_reb, y_ast = make_xy_raw(df)
-    feature_cols = list(X_raw.columns)
+    y_min = df["minutes"].astype(float)
+    feature_cols_base = list(X_raw.columns)
+
+    # --- Minutes model: walk-forward OOF stacking features ---
+    # A minutes model is trained on each fold's history; its out-of-fold (OOF)
+    # predictions are injected as features into PTS/REB/AST models.
+    # This is leakage-free: each fold uses only prior data to predict minutes.
+    oof_minutes = np.full(len(df), np.nan)
+    min_folds = walk_forward_folds(
+        df, min_train_days=cfg.min_train_days,
+        test_window_days=cfg.test_window_days, step_days=cfg.step_days,
+    )
+    min_best_iters: List[int] = []
+    log.info("Minutes stacking: running %d OOF folds...", len(min_folds))
+    for train_end, test_end in min_folds:
+        train_mask_m = df["game_date_et"] < train_end
+        test_mask_m = (df["game_date_et"] >= train_end) & (df["game_date_et"] < test_end)
+        n_tr, n_te = int(train_mask_m.sum()), int(test_mask_m.sum())
+        if n_tr < 50 or n_te == 0:
+            continue
+        med_m = fit_fill_stats(X_raw.loc[train_mask_m])
+        X_tr_m = apply_fill(X_raw.loc[train_mask_m], med_m, feature_cols_base)
+        X_te_m = apply_fill(X_raw.loc[test_mask_m], med_m, feature_cols_base)
+        tr_dates_m = df.loc[train_mask_m, "game_date_et"]
+        fit_m, eval_m = temporal_eval_split(tr_dates_m)
+        m_min = build_model(cfg, huber_slope=3.0)
+        m_min.fit(
+            X_tr_m.iloc[fit_m], y_min.loc[train_mask_m].iloc[fit_m],
+            eval_set=[(X_tr_m.iloc[eval_m], y_min.loc[train_mask_m].iloc[eval_m])],
+            verbose=False,
+        )
+        if getattr(m_min, "best_iteration", None) is not None:
+            min_best_iters.append(m_min.best_iteration)
+        oof_minutes[np.where(test_mask_m)[0]] = m_min.predict(X_te_m)
+
+    oof_covered = ~np.isnan(oof_minutes)
+    if oof_covered.any():
+        min_oof_mae = float(mean_absolute_error(y_min.values[oof_covered], oof_minutes[oof_covered]))
+        log.info("Minutes OOF | coverage=%.1f%% MAE=%.3f", oof_covered.mean() * 100, min_oof_mae)
+
+    fallback_min = df["min_avg_10"].fillna(df["min_avg_5"]).fillna(20.0).values
+    oof_filled = np.clip(
+        np.where(np.isnan(oof_minutes), fallback_min, oof_minutes), 0.0, 48.0
+    ).astype(float)
+    X_aug = X_raw.copy()
+    X_aug["pred_minutes"] = oof_filled
+    X_aug["pred_min_vs_avg"] = oof_filled - fallback_min
+    feature_cols = list(X_aug.columns)
+    log.info(
+        "Feature matrix: %d base + 2 minutes stacking = %d total",
+        len(feature_cols_base), len(feature_cols),
+    )
 
     # --- Optuna hyperparameter tuning (separate study per stat) ---
     best_params_pts: Dict = {}
@@ -353,9 +404,9 @@ def main() -> None:
     best_params_ast: Dict = {}
     if cfg.run_optuna:
         try:
-            best_params_pts = run_optuna_tuning_props(cfg, df, X_raw, y_pts, feature_cols, "PTS")
-            best_params_reb = run_optuna_tuning_props(cfg, df, X_raw, y_reb, feature_cols, "REB")
-            best_params_ast = run_optuna_tuning_props(cfg, df, X_raw, y_ast, feature_cols, "AST")
+            best_params_pts = run_optuna_tuning_props(cfg, df, X_aug, y_pts, feature_cols, "PTS")
+            best_params_reb = run_optuna_tuning_props(cfg, df, X_aug, y_reb, feature_cols, "REB")
+            best_params_ast = run_optuna_tuning_props(cfg, df, X_aug, y_ast, feature_cols, "AST")
         except ImportError:
             log.warning("optuna not installed. Skipping tuning. pip install optuna")
         except Exception as e:
@@ -403,8 +454,8 @@ def main() -> None:
                 if n_train < 50 or n_test == 0:
                     continue
 
-                X_train_raw = X_raw.loc[train_mask]
-                X_test_raw = X_raw.loc[test_mask]
+                X_train_raw = X_aug.loc[train_mask]
+                X_test_raw = X_aug.loc[test_mask]
 
                 medians = fit_fill_stats(X_train_raw)
                 X_train = apply_fill(X_train_raw, medians, feature_cols)
@@ -477,8 +528,26 @@ def main() -> None:
                 log.info("Saved walk-forward MAE + CI calibration to %s", mae_path)
 
     # --- Train FINAL models on ALL rows (production) ---
-    medians_all = fit_fill_stats(X_raw)
-    X_all = apply_fill(X_raw, medians_all, feature_cols)
+    # Step 1: Fit final minutes model on base features (no minutes stacking — it's the base).
+    medians_all_base = fit_fill_stats(X_raw)
+    X_all_base = apply_fill(X_raw, medians_all_base, feature_cols_base)
+    _min_n_est = max(int(np.percentile(min_best_iters, 75) * 1.2), 100) if min_best_iters else cfg.n_estimators
+    log.info(
+        "Fitting FINAL MIN model (%d rows, n_estimators=%d, no early stopping)...",
+        len(X_all_base), _min_n_est,
+    )
+    m_min_final = build_model(cfg, huber_slope=3.0, n_estimators=_min_n_est, use_early_stopping=False)
+    m_min_final.fit(X_all_base, y_min, verbose=False)
+    _eval("MIN (train)", y_min.to_numpy(), m_min_final.predict(X_all_base))
+    m_min_final.save_model(str(cfg.model_dir / "minutes_xgb.json"))
+
+    # Step 2: Augment with final minutes predictions for PTS/REB/AST training.
+    pred_min_all = np.clip(m_min_final.predict(X_all_base), 0.0, 48.0)
+    X_aug_final = X_raw.copy()
+    X_aug_final["pred_minutes"] = pred_min_all
+    X_aug_final["pred_min_vs_avg"] = pred_min_all - fallback_min
+    medians_all = fit_fill_stats(X_aug_final)
+    X_all = apply_fill(X_aug_final, medians_all, feature_cols)
 
     # Derive per-stat n_estimators from CV best_iteration statistics.
     # p75 × 1.2 buffer: final model trains on more data than any fold, so needs more trees.
@@ -508,6 +577,8 @@ def main() -> None:
 
     (cfg.model_dir / "feature_columns.json").write_text(json.dumps(feature_cols), encoding="utf-8")
     (cfg.model_dir / "feature_medians.json").write_text(json.dumps(medians_all), encoding="utf-8")
+    (cfg.model_dir / "feature_columns_base.json").write_text(json.dumps(feature_cols_base), encoding="utf-8")
+    (cfg.model_dir / "feature_medians_base.json").write_text(json.dumps(medians_all_base), encoding="utf-8")
 
     log.info("Saved player prop models + schema to %s", cfg.model_dir)
 

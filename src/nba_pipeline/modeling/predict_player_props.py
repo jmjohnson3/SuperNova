@@ -427,7 +427,7 @@ def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
             X[c] = pd.to_numeric(X[c], errors="coerce")
     return X
 
-def _load_artifacts(cfg: PredictConfig) -> tuple[dict[str, XGBRegressor], list[str], dict[str, float]]:
+def _load_artifacts(cfg: PredictConfig):
     model_dir = cfg.model_dir
     feat_path = model_dir / "feature_columns.json"
     med_path = model_dir / "feature_medians.json"
@@ -450,7 +450,25 @@ def _load_artifacts(cfg: PredictConfig) -> tuple[dict[str, XGBRegressor], list[s
         "rebounds": load_model(model_dir / "rebounds_xgb.json"),
         "assists": load_model(model_dir / "assists_xgb.json"),
     }
-    return models, feature_cols, medians
+
+    # Optional minutes stacking model (added after initial training run)
+    minutes_model: XGBRegressor | None = None
+    feature_cols_base: list[str] | None = None
+    medians_base: dict[str, float] | None = None
+    min_path = model_dir / "minutes_xgb.json"
+    base_feat_path = model_dir / "feature_columns_base.json"
+    base_med_path = model_dir / "feature_medians_base.json"
+    if min_path.exists() and base_feat_path.exists() and base_med_path.exists():
+        m_min = XGBRegressor()
+        m_min.load_model(str(min_path))
+        minutes_model = m_min
+        feature_cols_base = json.loads(base_feat_path.read_text(encoding="utf-8"))
+        medians_base = json.loads(base_med_path.read_text(encoding="utf-8"))
+        log.info("Loaded minutes stacking model from %s", min_path)
+    else:
+        log.info("No minutes stacking model found — using base features only for PTS/REB/AST")
+
+    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base
 
 def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]) -> pd.DataFrame:
     id_cols = {
@@ -827,7 +845,7 @@ def main() -> None:
     et_day = cfg.et_date or datetime.now(_ET).date()
     log.info("Predicting player props for ET date=%s", et_day)
 
-    models, feature_cols, medians = _load_artifacts(cfg)
+    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
     _check_injury_staleness(engine)
     prop_lines = _load_prop_lines(engine, et_day)
@@ -852,6 +870,20 @@ def main() -> None:
         if df.empty:
             log.warning("No player snapshots found for %s (need history in raw.nba_player_gamelogs)", et_day)
             return
+
+    # Apply minutes stacking model: predict minutes first, inject as features for PTS/REB/AST.
+    if minutes_model is not None and feature_cols_base is not None and medians_base is not None:
+        X_base = _prep_X(df, feature_cols_base, medians_base)
+        pred_min_raw = minutes_model.predict(X_base)
+        pred_min = np.clip(pred_min_raw, 0.0, 48.0)
+        fallback_min = df["min_avg_10"].fillna(df["min_avg_5"]).fillna(20.0).values
+        df = df.copy()
+        df["pred_minutes"] = pred_min
+        df["pred_min_vs_avg"] = pred_min - fallback_min
+        log.info(
+            "Minutes stacking: min=%.1f median=%.1f max=%.1f",
+            pred_min.min(), float(np.median(pred_min)), pred_min.max(),
+        )
 
     X = _prep_X(df, feature_cols, medians)
 
