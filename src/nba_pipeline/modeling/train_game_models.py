@@ -820,16 +820,38 @@ def main() -> None:
                     (hc_arr.sum() * 100 - (~hc_arr).sum() * 110) / (len(hc_arr) * 110),
                 )
 
+        # --- CI calibration: empirical error percentiles for correct CI sizing ---
+        s_abs = np.abs(spread_true_np - spread_pred_np)
+        t_abs = np.abs(total_true_np - total_pred_np)
+        s_p68, s_p90 = float(np.percentile(s_abs, 68)), float(np.percentile(s_abs, 90))
+        t_p68, t_p90 = float(np.percentile(t_abs, 68)), float(np.percentile(t_abs, 90))
+        log.info(
+            "CI CALIBRATION DIRECT | SPREAD ±MAE covers %.1f%% (p68=%.1f p90=%.1f RMSE=%.1f) | "
+            "TOTAL ±MAE covers %.1f%% (p68=%.1f p90=%.1f RMSE=%.1f)",
+            (s_abs < s_mae).mean() * 100, s_p68, s_p90, s_rmse,
+            (t_abs < t_mae).mean() * 100, t_p68, t_p90, t_rmse,
+        )
+
+        calib = {
+            "direct_spread_mae":  float(s_mae),
+            "direct_spread_rmse": float(s_rmse),
+            "direct_spread_p68":  s_p68,
+            "direct_spread_p90":  s_p90,
+            "direct_total_mae":   float(t_mae),
+            "direct_total_rmse":  float(t_rmse),
+            "direct_total_p68":   t_p68,
+            "direct_total_p90":   t_p90,
+        }
+
         if resid_spread_true_all:
             r_true = np.asarray(resid_spread_true_all, dtype=float)
             r_pred = np.asarray(resid_spread_pred_all, dtype=float)
             r_dir = directional_accuracy_margin(r_true, r_pred)
             r_cal = calibration_stats(r_true, r_pred)
             r_mae, r_rmse = evaluate_regression(r_true, r_pred)
-            rt_mae, rt_rmse = evaluate_regression(
-                np.asarray(resid_total_true_all, dtype=float),
-                np.asarray(resid_total_pred_all, dtype=float),
-            )
+            rt_true = np.asarray(resid_total_true_all, dtype=float)
+            rt_pred = np.asarray(resid_total_pred_all, dtype=float)
+            rt_mae, rt_rmse = evaluate_regression(rt_true, rt_pred)
             log.info(
                 "WALK-FORWARD RESID(recon) OVERALL | rows=%d | SPREAD MAE=%.3f RMSE=%.3f DIR=%.3f "
                 "std_ratio=%.3f slope=%.3f intercept=%.3f | TOTAL MAE=%.3f RMSE=%.3f",
@@ -837,6 +859,32 @@ def main() -> None:
                 r_cal["std_ratio"], r_cal["slope"], r_cal["intercept"],
                 rt_mae, rt_rmse,
             )
+            rs_abs = np.abs(r_true - r_pred)
+            rt_abs = np.abs(rt_true - rt_pred)
+            rs_p68, rs_p90 = float(np.percentile(rs_abs, 68)), float(np.percentile(rs_abs, 90))
+            rt_p68, rt_p90 = float(np.percentile(rt_abs, 68)), float(np.percentile(rt_abs, 90))
+            log.info(
+                "CI CALIBRATION RESID  | SPREAD ±MAE covers %.1f%% (p68=%.1f p90=%.1f RMSE=%.1f) | "
+                "TOTAL ±MAE covers %.1f%% (p68=%.1f p90=%.1f RMSE=%.1f)",
+                (rs_abs < r_mae).mean() * 100, rs_p68, rs_p90, r_rmse,
+                (rt_abs < rt_mae).mean() * 100, rt_p68, rt_p90, rt_rmse,
+            )
+            calib.update({
+                "resid_spread_mae":  float(r_mae),
+                "resid_spread_rmse": float(r_rmse),
+                "resid_spread_p68":  rs_p68,
+                "resid_spread_p90":  rs_p90,
+                "resid_total_mae":   float(rt_mae),
+                "resid_total_rmse":  float(rt_rmse),
+                "resid_total_p68":   rt_p68,
+                "resid_total_p90":   rt_p90,
+            })
+        else:
+            r_mae = r_rmse = rt_mae = rt_rmse = None
+
+        calib_path = model_dir / "calibration.json"
+        calib_path.write_text(json.dumps(calib, indent=2), encoding="utf-8")
+        log.info("Saved CI calibration to %s", calib_path)
 
         # --- Derive final model depth from CV best_iteration statistics ---
         # Use p75 × 1.2 buffer: more training data than any single fold, so more trees needed.

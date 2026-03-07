@@ -1,0 +1,18 @@
+{
+  "direct_spread_mae": 10.447846527187034,
+  "direct_spread_rmse": 13.847171438070589,
+  "direct_spread_p68": 12.15010900616646,
+  "direct_spread_p90": 23.74871442317963,
+  "direct_total_mae": 15.003360114018312,
+  "direct_total_rmse": 19.609073309507963,
+  "direct_total_p68": 18.50294372558594,
+  "direct_total_p90": 30.492584228515625,
+  "resid_spread_mae": 3.116453767704372,
+  "resid_spread_rmse": 6.472028649361919,
+  "resid_spread_p68": 1.9297757339477546,
+  "resid_spread_p90": 7.5415197849273685,
+  "resid_total_mae": 4.624937429384307,
+  "resid_total_rmse": 7.209025193114352,
+  "resid_total_p68": 4.8727449560165415,
+  "resid_total_p90": 11.186696815490723
+}

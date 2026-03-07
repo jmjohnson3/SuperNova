@@ -169,6 +169,25 @@ def _load_models(cfg: PredictConfig) -> tuple[dict[str, XGBRegressor], list[str]
     return models, feature_cols, feature_medians
 
 
+def _load_calibration(model_dir: Path) -> dict:
+    """Load walk-forward calibration stats (RMSE, p68, p90) per model type.
+
+    Falls back to conservative defaults (direct RMSE ≈ 14 spread / 20 total)
+    if the file doesn't exist (trained before calibration was added).
+    """
+    p = model_dir / "calibration.json"
+    defaults = {
+        "direct_spread_rmse": 14.0,
+        "direct_total_rmse":  20.0,
+        "resid_spread_rmse":  6.5,
+        "resid_total_rmse":   6.0,
+    }
+    if p.exists():
+        d = json.loads(p.read_text(encoding="utf-8"))
+        return {**defaults, **d}
+    return defaults
+
+
 def _validate_game_predictions(
     pred_margin: np.ndarray,
     pred_total: np.ndarray,
@@ -307,21 +326,27 @@ def _check_injury_staleness(engine, warn_hours: float = 12.0) -> None:
         log.warning("Could not check injury data staleness: %s", exc)
 
 
-def _kelly(edge_pts: float, juice: int = -110, shrink: float = 0.35) -> tuple[float, float]:
+def _kelly(
+    edge_pts: float,
+    juice: int = -110,
+    shrink: float = 0.35,
+    sigma: float = 14.0,
+) -> tuple[float, float]:
     """
     Estimate full Kelly fraction and win probability for a spread/total bet.
 
-    edge_pts : |pred_margin - market_spread| (positive, regardless of direction)
+    edge_pts : |pred - market_line| (positive, regardless of direction)
     juice    : standard American odds (-110 = bet $110 to win $100)
     shrink   : how far we pull win-prob toward 50% to account for model uncertainty.
                0.35 means we use 35% of the logistic signal above coin-flip.
-               At shrink=0.35: edge=3 → p≈0.52, edge=7 → p≈0.55, edge=14 → p≈0.60
+    sigma    : calibrated RMSE from walk-forward CV (saved in models/calibration.json).
+               Controls how fast p grows with edge. Default 14.0 = direct spread RMSE.
+               Old default was 7.0 which overstated win-prob by ~2×.
 
     Returns (full_kelly_fraction, estimated_win_prob).
     Caller should apply fractional Kelly (typically 1/4) for safety.
     """
-    b = 100 / abs(juice)           # net odds: win $b per $1 risked
-    sigma = 7.0                    # ~model RMSE; controls how fast p grows with edge
+    b = 100 / abs(juice)
     p_raw = 1 / (1 + math.exp(-edge_pts / sigma))
     p = 0.5 + (p_raw - 0.5) * shrink
     kelly = max(0.0, (b * p - (1 - p)) / b)
@@ -339,6 +364,7 @@ def main() -> None:
     log.info("Predicting for ET date=%s season=%s", et_day, cfg.season)
 
     models, feature_cols, feature_medians = _load_models(cfg)
+    calib = _load_calibration(cfg.model_dir)
 
     engine = create_engine(cfg.pg_dsn)
     _check_injury_staleness(engine)
@@ -454,13 +480,18 @@ def main() -> None:
             else:
                 print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
 
+            # Choose calibrated sigma based on which model was used for this game
+            used_blend = bool(r.get("used_market_recon", False))
+            sigma_s = calib.get("resid_spread_rmse" if used_blend else "direct_spread_rmse", 14.0)
+            sigma_t = calib.get("resid_total_rmse"  if used_blend else "direct_total_rmse",  20.0)
+
             # Spread line
             edge_s = r.get("edge_spread")
             if pd.notna(edge_s) and abs(float(edge_s)) >= cfg.min_edge_pts:
                 es = float(edge_s)
                 edge_dir = "+" if es > 0 else ""
                 bet_side = "HOME" if es > 0 else "AWAY"
-                kelly, p_win = _kelly(abs(es))
+                kelly, p_win = _kelly(abs(es), sigma=sigma_s)
                 qk_bet = (kelly / 4) * 1000
                 if discord:
                     print(f"  {r['pred_spread_label']}  ⚡ EDGE {edge_dir}{es:.1f} [{bet_side}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
@@ -476,7 +507,7 @@ def main() -> None:
                 et_ = float(edge_t)
                 edge_dir = "+" if et_ > 0 else ""
                 over_under = "Over" if et_ > 0 else "Under"
-                kelly, p_win = _kelly(abs(et_))
+                kelly, p_win = _kelly(abs(et_), sigma=sigma_t)
                 qk_bet = (kelly / 4) * 1000
                 if discord:
                     print(f"  {over_under} {r['pred_total_points']:.1f}  ⚡ EDGE {edge_dir}{et_:.1f} [{over_under.upper()}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
