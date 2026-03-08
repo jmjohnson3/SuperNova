@@ -104,6 +104,14 @@ roll AS (
         AVG(j.fta)         OVER w10 AS fta_avg_10,
         AVG(j.threes_made) OVER w10 AS threes_avg_10,
 
+        -- Home/away split averages (last 10 games at each venue type)
+        AVG(CASE WHEN j.is_home THEN j.points  ELSE NULL END) OVER w10 AS pts_avg_10_home,
+        AVG(CASE WHEN NOT j.is_home THEN j.points  ELSE NULL END) OVER w10 AS pts_avg_10_away,
+        AVG(CASE WHEN j.is_home THEN j.rebounds ELSE NULL END) OVER w10 AS reb_avg_10_home,
+        AVG(CASE WHEN NOT j.is_home THEN j.rebounds ELSE NULL END) OVER w10 AS reb_avg_10_away,
+        AVG(CASE WHEN j.is_home THEN j.minutes  ELSE NULL END) OVER w10 AS min_avg_10_home,
+        AVG(CASE WHEN NOT j.is_home THEN j.minutes  ELSE NULL END) OVER w10 AS min_avg_10_away,
+
         EXTRACT(EPOCH FROM (
             j.game_start_ts_utc -
             LAG(j.game_start_ts_utc) OVER (PARTITION BY j.player_id ORDER BY j.game_start_ts_utc)
@@ -134,6 +142,13 @@ enriched AS (
 
         oar.def_rtg_avg_10  AS opp_def_rtg_10,
         oar.off_rtg_avg_10  AS opp_off_rtg_10,
+
+        -- Player's own team offensive rating (for synthetic implied total when odds unavailable)
+        CASE WHEN r.team_abbr = r.home_team_abbr
+             THEN gtf.home_off_rtg_avg_10
+             ELSE gtf.away_off_rtg_avg_10
+        END AS team_off_rtg_10,
+        -- Note: home/away split columns (pts_avg_10_home, etc.) are already in r.* via ROWS window
 
         opace.pace_avg_5    AS opp_pace_avg_5,
         opace.pace_avg_10   AS opp_pace_avg_10,
@@ -304,6 +319,14 @@ SELECT
     opp_pts_allowed_role_10,
     opp_reb_allowed_role_10,
     opp_ast_allowed_role_10,
+
+    -- Home/away split averages
+    pts_avg_10_home, pts_avg_10_away,
+    reb_avg_10_home, reb_avg_10_away,
+    min_avg_10_home, min_avg_10_away,
+
+    -- Player's own team offensive rating
+    team_off_rtg_10,
 
     -- V022: DraftKings closing prop line (prior day)
     -- NULL for historical rows before prop line collection started (~2026-02-28)

@@ -206,6 +206,9 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         # leakage (postgame):
         "home_score",
         "away_score",
+        # residuals are postgame (actual - market) — must not be direct-model features
+        "spread_residual",
+        "total_residual",
     }
 
     X = df.drop(columns=[c for c in drop_cols if c in df.columns]).copy()
@@ -225,6 +228,7 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     leaky_exact = {
         "home_score", "away_score", "total_points", "margin",
         "home_points", "away_points",
+        "spread_residual", "total_residual",
     }
     leaky_cols = [c for c in X.columns if c in leaky_exact or c.startswith(leaky_prefixes)]
     if leaky_cols:

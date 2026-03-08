@@ -11,6 +11,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sqlalchemy import create_engine, text
 from xgboost import XGBRegressor
 
+try:
+    import lightgbm as lgb
+    _HAS_LGB = True
+except ImportError:
+    _HAS_LGB = False
+
 from .features import add_player_prop_derived_features
 
 log = logging.getLogger("nba_pipeline.modeling.train_player_prop_models")
@@ -617,6 +623,44 @@ def main() -> None:
     (cfg.model_dir / "feature_medians_base.json").write_text(json.dumps(medians_all_base), encoding="utf-8")
 
     log.info("Saved player prop models + schema to %s", cfg.model_dir)
+
+    # --- LightGBM ensemble (if available) ---
+    # Train a parallel LGB model on the same final X_all data.  At inference,
+    # predictions are averaged 50/50 with XGBoost, reducing variance and bias.
+    if _HAS_LGB:
+        log.info("Training LightGBM ensemble models on %d rows...", len(X_all))
+        lgb_save_names = {"PTS": "lgb_points.txt", "REB": "lgb_rebounds.txt", "AST": "lgb_assists.txt"}
+        lgb_trained = 0
+        for stat_name, y_full, _, _ in stat_configs:
+            try:
+                lgb_params = dict(
+                    objective="huber",
+                    alpha=0.9,
+                    metric="huber",
+                    num_leaves=31,
+                    learning_rate=0.05,
+                    n_estimators=2000,
+                    min_child_samples=20,
+                    subsample=0.8,
+                    colsample_bytree=0.8,
+                    reg_alpha=0.1,
+                    reg_lambda=1.0,
+                    verbose=-1,
+                    n_jobs=-1,
+                    random_state=cfg.random_state,
+                )
+                m_lgb = lgb.LGBMRegressor(**lgb_params)
+                m_lgb.fit(X_all, y_full)
+                _eval(f"{stat_name} LGB (train)", y_full.to_numpy(), m_lgb.predict(X_all))
+                m_lgb.booster_.save_model(str(cfg.model_dir / lgb_save_names[stat_name]))
+                lgb_trained += 1
+                log.info("Saved LGB %s model to %s", stat_name, lgb_save_names[stat_name])
+            except Exception as exc:
+                log.warning("LightGBM training failed for %s: %s", stat_name, exc)
+        if lgb_trained == 3:
+            log.info("LightGBM ensemble complete — XGB+LGB predictions will be averaged at inference")
+    else:
+        log.info("lightgbm not installed — skipping LGB ensemble (pip install lightgbm)")
 
 
 if __name__ == "__main__":

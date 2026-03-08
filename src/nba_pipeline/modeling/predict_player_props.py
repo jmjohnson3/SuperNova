@@ -14,6 +14,12 @@ from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_
 from sqlalchemy import create_engine, text
 from xgboost import XGBRegressor
 
+try:
+    import lightgbm as lgb
+    _HAS_LGB = True
+except ImportError:
+    _HAS_LGB = False
+
 from .features import add_player_prop_derived_features
 
 log = logging.getLogger("nba_pipeline.modeling.predict_player_props")
@@ -183,7 +189,15 @@ feat AS (
       AVG(h.plus_minus) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS plus_minus_avg_5,
       AVG(h.plus_minus) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS plus_minus_avg_10,
       AVG(h.fouls)      OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING) AS fouls_avg_5,
-      AVG(h.fouls)      OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS fouls_avg_10
+      AVG(h.fouls)      OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS fouls_avg_10,
+
+      -- Home/away split averages (last 10 games at each venue type)
+      AVG(CASE WHEN h.is_home THEN h.points  ELSE NULL END) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS pts_avg_10_home,
+      AVG(CASE WHEN NOT h.is_home THEN h.points  ELSE NULL END) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS pts_avg_10_away,
+      AVG(CASE WHEN h.is_home THEN h.rebounds ELSE NULL END) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS reb_avg_10_home,
+      AVG(CASE WHEN NOT h.is_home THEN h.rebounds ELSE NULL END) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS reb_avg_10_away,
+      AVG(CASE WHEN h.is_home THEN h.minutes  ELSE NULL END) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS min_avg_10_home,
+      AVG(CASE WHEN NOT h.is_home THEN h.minutes  ELSE NULL END) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS min_avg_10_away
     FROM hist h
 ),
 latest_per_player_team AS (
@@ -213,7 +227,11 @@ latest_per_player_team AS (
       off_reb_avg_10, def_reb_avg_10,
       fg_pct_avg_10,
       plus_minus_avg_5, plus_minus_avg_10,
-      fouls_avg_5, fouls_avg_10
+      fouls_avg_5, fouls_avg_10,
+      -- Home/away splits
+      pts_avg_10_home, pts_avg_10_away,
+      reb_avg_10_home, reb_avg_10_away,
+      min_avg_10_home, min_avg_10_away
     FROM feat
     ORDER BY player_id, team_abbr, season DESC, start_ts_utc DESC
 ),
@@ -252,6 +270,10 @@ joined AS (
       lp.fg_pct_avg_10,
       lp.plus_minus_avg_5, lp.plus_minus_avg_10,
       lp.fouls_avg_5, lp.fouls_avg_10,
+      -- Home/away splits
+      lp.pts_avg_10_home, lp.pts_avg_10_away,
+      lp.reb_avg_10_home, lp.reb_avg_10_away,
+      lp.min_avg_10_home, lp.min_avg_10_away,
 
       gt.game_pace_est_5,
       gt.market_total,
@@ -288,6 +310,14 @@ joined AS (
         WHEN t.team_abbr = gt.away_team_abbr THEN gt.home_pace_10
         ELSE NULL::numeric
       END AS opp_pace_avg_10,
+
+      -- Player's own team offensive rating (for synthetic team implied total)
+      CASE
+        WHEN t.team_abbr = gt.home_team_abbr THEN gt.home_off_rtg_avg_10
+        WHEN t.team_abbr = gt.away_team_abbr THEN gt.away_off_rtg_avg_10
+        ELSE NULL::numeric
+      END AS team_off_rtg_10,
+
       gt.market_total AS game_market_total,
       gt.market_spread_home AS game_market_spread,
 
@@ -468,7 +498,24 @@ def _load_artifacts(cfg: PredictConfig):
     else:
         log.info("No minutes stacking model found — using base features only for PTS/REB/AST")
 
-    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base
+    # Optional LightGBM ensemble models
+    lgb_models: dict | None = None
+    if _HAS_LGB:
+        lgb_paths = {
+            "points":   model_dir / "lgb_points.txt",
+            "rebounds": model_dir / "lgb_rebounds.txt",
+            "assists":  model_dir / "lgb_assists.txt",
+        }
+        if all(p.exists() for p in lgb_paths.values()):
+            lgb_models = {}
+            for stat, p in lgb_paths.items():
+                bst = lgb.Booster(model_file=str(p))
+                lgb_models[stat] = bst
+            log.info("Loaded LightGBM ensemble models — predictions will be XGB+LGB averaged")
+        else:
+            log.info("No LightGBM ensemble models found (run train_player_prop_models to generate)")
+
+    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models
 
 def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]) -> pd.DataFrame:
     id_cols = {
@@ -856,7 +903,7 @@ def main() -> None:
     et_day = cfg.et_date or datetime.now(_ET).date()
     log.info("Predicting player props for ET date=%s", et_day)
 
-    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base = _load_artifacts(cfg)
+    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
     _check_injury_staleness(engine, warn_hours=4.0)
     prop_lines = _load_prop_lines(engine, et_day)
@@ -913,9 +960,21 @@ def main() -> None:
          "proj_minutes", "is_proj_starter", "n_games_prev_10"]
     ].copy()
 
-    raw_pts = models["points"].predict(X)
-    raw_reb = models["rebounds"].predict(X)
-    raw_ast = models["assists"].predict(X)
+    xgb_pts = models["points"].predict(X)
+    xgb_reb = models["rebounds"].predict(X)
+    xgb_ast = models["assists"].predict(X)
+
+    # LightGBM ensemble: average XGB + LGB predictions if available
+    if lgb_models is not None:
+        lgb_pts = lgb_models["points"].predict(X.values)
+        lgb_reb = lgb_models["rebounds"].predict(X.values)
+        lgb_ast = lgb_models["assists"].predict(X.values)
+        raw_pts = (xgb_pts + lgb_pts) / 2.0
+        raw_reb = (xgb_reb + lgb_reb) / 2.0
+        raw_ast = (xgb_ast + lgb_ast) / 2.0
+        log.info("XGB+LGB ensemble active")
+    else:
+        raw_pts, raw_reb, raw_ast = xgb_pts, xgb_reb, xgb_ast
 
     _validate_player_predictions(raw_pts, raw_reb, raw_ast, df["player_name"])
 

@@ -250,6 +250,31 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "usage_proxy_avg_5" in X.columns and "usage_proxy_avg_10" in X.columns:
         X["usage_trend_5v10"] = X["usage_proxy_avg_5"] - X["usage_proxy_avg_10"]
 
+    # ---------------------------------------------------------------------------
+    # EMA rolling approximations via lag-bin decomposition.
+    # The SQL provides overlapping windows (avg_3, avg_5, avg_10).  We recover
+    # the non-overlapping bin averages and apply EMA weights (λ=0.85):
+    #   games 1-3  (most recent):  sum of λ^0..λ^2 = 2.5725,  per game weight ≈ 0.8575
+    #   games 4-5:                 sum of λ^3..λ^4 = 1.1361,  per game weight ≈ 0.5681
+    #   games 6-10 (oldest):       sum of λ^5..λ^9 = 1.6455,  per game weight ≈ 0.3291
+    #   total normaliser = 5.354
+    # EMA_10 ≈ (avg_3 × 2.5725 + avg_4_5 × 1.1361 + avg_6_10 × 1.6455) / 5.354
+    # ---------------------------------------------------------------------------
+    _EMA_NORM = 5.354
+    for stat in ("pts", "reb", "ast", "min"):
+        a3  = f"{stat}_avg_3"
+        a5  = f"{stat}_avg_5"
+        a10 = f"{stat}_avg_10"
+        if a3 in X.columns and a5 in X.columns and a10 in X.columns:
+            # Bin averages (can be NaN when window is partially filled)
+            bin_4_5  = (X[a5]  * 5 - X[a3]  * 3) / 2.0
+            bin_6_10 = (X[a10] * 10 - X[a5] * 5) / 5.0
+            X[f"{stat}_ema_10"] = (
+                X[a3] * 2.5725 + bin_4_5 * 1.1361 + bin_6_10 * 1.6455
+            ) / _EMA_NORM
+            # EMA trend vs simple average (captures recency premium/discount)
+            X[f"{stat}_ema_vs_avg"] = X[f"{stat}_ema_10"] - X[a10]
+
     # Coefficient of variation (consistency)
     if "pts_sd_10" in X.columns and "pts_avg_10" in X.columns:
         X["pts_cv_10"] = X["pts_sd_10"] / X["pts_avg_10"].clip(lower=0.5)
@@ -319,6 +344,44 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["reb_vs_opp_role_edge"] = X["reb_avg_10"] - X["opp_reb_allowed_role_10"]
     if "ast_avg_10" in X.columns and "opp_ast_allowed_role_10" in X.columns:
         X["ast_vs_opp_role_edge"] = X["ast_avg_10"] - X["opp_ast_allowed_role_10"]
+
+    # ---------------------------------------------------------------------------
+    # Home/away split features.
+    # pts_avg_10_home / pts_avg_10_away come from SQL conditional windows.
+    # ---------------------------------------------------------------------------
+    # Raw home advantage (positive = player scores more at home)
+    if "pts_avg_10_home" in X.columns and "pts_avg_10_away" in X.columns:
+        X["pts_home_adv"] = X["pts_avg_10_home"] - X["pts_avg_10_away"]
+    if "reb_avg_10_home" in X.columns and "reb_avg_10_away" in X.columns:
+        X["reb_home_adv"] = X["reb_avg_10_home"] - X["reb_avg_10_away"]
+
+    # Venue-specific prediction: pick the split matching tonight's venue
+    if "pts_avg_10_home" in X.columns and "pts_avg_10_away" in X.columns and "is_home" in X.columns:
+        X["pts_venue_split"] = X["pts_avg_10_home"].where(
+            X["is_home"].astype(bool), X["pts_avg_10_away"]
+        )
+    if "reb_avg_10_home" in X.columns and "reb_avg_10_away" in X.columns and "is_home" in X.columns:
+        X["reb_venue_split"] = X["reb_avg_10_home"].where(
+            X["is_home"].astype(bool), X["reb_avg_10_away"]
+        )
+    if "min_avg_10_home" in X.columns and "min_avg_10_away" in X.columns and "is_home" in X.columns:
+        X["min_venue_split"] = X["min_avg_10_home"].where(
+            X["is_home"].astype(bool), X["min_avg_10_away"]
+        )
+
+    # ---------------------------------------------------------------------------
+    # Synthetic team implied total — fills NULLs when market odds are unavailable.
+    # Formula: team_off_rtg / (team_off_rtg + opp_def_rtg) × league_avg_total
+    # League avg ≈ 222 points per game (2024-25 season).
+    # ---------------------------------------------------------------------------
+    if "team_off_rtg_10" in X.columns and "opp_def_rtg_10" in X.columns:
+        _off = X["team_off_rtg_10"].clip(lower=90.0)
+        _def = X["opp_def_rtg_10"].clip(lower=90.0)
+        X["team_implied_total_synth"] = (_off / (_off + _def) * 222.0).clip(80.0, 140.0)
+        if "team_implied_total" in X.columns:
+            X["team_implied_total_filled"] = X["team_implied_total"].fillna(
+                X["team_implied_total_synth"]
+            )
 
     # V022: DraftKings book line as a prior feature.
     # The raw book lines (prev_book_line_*) are passed as-is to the model.
