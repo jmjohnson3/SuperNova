@@ -76,6 +76,8 @@ game_level_defense AS (
 
 -- Rolling 10-game averages at game granularity.
 -- Now "10 PRECEDING" = 10 prior games, not 10 prior player rows.
+-- n_defense_games tracks the actual window size so we can NULL out
+-- sparse early-season estimates (< 3 games) that produce extreme values.
 rolling_defense AS (
     SELECT
         season,
@@ -84,6 +86,11 @@ rolling_defense AS (
         start_ts_utc,
         opponent_abbr,
         role,
+        COUNT(*) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
+        ) AS n_defense_games,
         AVG(game_pts_allowed) OVER (
             PARTITION BY opponent_abbr, role
             ORDER BY game_date_et, start_ts_utc
@@ -114,9 +121,9 @@ SELECT
     gps.team_abbr,
     gps.opponent_abbr,
     gps.role,
-    rd.opp_pts_allowed_role_10,
-    rd.opp_reb_allowed_role_10,
-    rd.opp_ast_allowed_role_10
+    CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_pts_allowed_role_10 ELSE NULL END AS opp_pts_allowed_role_10,
+    CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_reb_allowed_role_10 ELSE NULL END AS opp_reb_allowed_role_10,
+    CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_ast_allowed_role_10 ELSE NULL END AS opp_ast_allowed_role_10
 
 FROM game_player_stats gps
 LEFT JOIN rolling_defense rd

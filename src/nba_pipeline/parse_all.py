@@ -1,4 +1,6 @@
 import logging
+from pathlib import Path
+
 import psycopg2
 
 from nba_pipeline.parse_games import main as parse_games
@@ -13,6 +15,7 @@ from nba_pipeline.parse_oddsapi import parse_prop_odds, main as parse_game_odds,
 log = logging.getLogger("nba_pipeline.parse_all")
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+_SQL_DIR = Path(__file__).resolve().parents[2] / "sql"
 
 # ---------------------------------------------------------------------------
 # Materialized-view helpers
@@ -26,6 +29,53 @@ _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 # On subsequent runs: just refreshes the matviews, still ~3 min.
 # Predictions then complete in < 5 s.
 # ---------------------------------------------------------------------------
+
+def _apply_view_fixes(pg_dsn: str) -> None:
+    """Apply SQL view bug fixes. Idempotent — safe to run on every parse_all.
+
+    Fixes applied:
+    - V011: three_pt_rate_avg_10 was always 0 (wrong event_type filter;
+      now uses raw_json->'fieldGoalAttempt'->>'points' = 3)
+    - V013: referee fan-out producing 26% duplicate player-game rows
+      (team_abbr removed from player_referee_foul_history GROUP BY).
+      Requires DROP CASCADE because column list shrinks.
+    - V016: opp_pts_allowed_role_10 up to 140 in season-opening games
+      (NULL when window has < 3 games of data)
+
+    V013 drops player_referee_foul_history CASCADE which cascades to
+    player_game_referee_foul_risk and player_training_features.
+    V022 is re-applied afterwards to recreate player_training_features
+    with all its columns (including the prop line book-line prior).
+    """
+    conn = psycopg2.connect(pg_dsn)
+    conn.autocommit = False
+    cur = conn.cursor()
+    try:
+        # V011: CREATE OR REPLACE is fine (same column list, different filter)
+        cur.execute((_SQL_DIR / "V011_pbp_features.sql").read_text(encoding="utf-8"))
+        log.info("Applied V011 PBP 3PT rate fix")
+
+        # V016: CREATE OR REPLACE is fine (output column names unchanged)
+        cur.execute((_SQL_DIR / "V016_opponent_position_defense.sql").read_text(encoding="utf-8"))
+        log.info("Applied V016 opp_position_defense sparse-sample fix")
+
+        # V013: column list shrinks (team_abbr removed) — must DROP CASCADE first.
+        # This also drops player_game_referee_foul_risk and player_training_features.
+        cur.execute("DROP VIEW IF EXISTS features.player_referee_foul_history CASCADE")
+        cur.execute((_SQL_DIR / "V013_referee_features.sql").read_text(encoding="utf-8"))
+        log.info("Applied V013 referee fan-out fix")
+
+        # V022: recreate player_training_features (includes DROP VIEW IF EXISTS CASCADE)
+        cur.execute((_SQL_DIR / "V022_prop_line_features.sql").read_text(encoding="utf-8"))
+        log.info("Recreated player_training_features from V022")
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        log.exception("Failed to apply view fixes — continuing with existing views")
+    finally:
+        conn.close()
+
 
 _GAME_VIEWS = [
     (
@@ -168,6 +218,9 @@ def main() -> None:
     parse_game_odds()              # live game lines (nba_odds)
     parse_game_odds_historical()   # backfilled historical game lines (nba_odds_historical)
     parse_prop_odds()              # prop lines from odds API
+
+    _apply_view_fixes(_PG_DSN)
+    _materialize_game_features(_PG_DSN)
 
     log.info("ALL PARSERS COMPLETE")
 

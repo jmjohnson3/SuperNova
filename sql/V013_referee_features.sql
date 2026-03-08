@@ -164,10 +164,13 @@ player_ref_games AS (
 ),
 
 -- Aggregate: player stats WITH each referee (career/season)
+-- NOTE: team_abbr intentionally excluded from GROUP BY.
+-- Players who changed teams had multiple rows per (player, referee),
+-- causing a fan-out in player_game_referee_foul_risk (~26% duplicate rows).
+-- Aggregating across all teams gives the correct career-level history.
 with_ref AS (
     SELECT
         player_id,
-        team_abbr,
         player_first,
         player_last,
         referee_id,
@@ -177,7 +180,7 @@ with_ref AS (
         AVG(fouls)           AS avg_fouls_with_ref,
         AVG(fouls_per_36)    AS avg_fouls_per_36_with_ref
     FROM player_ref_games
-    GROUP BY player_id, team_abbr, player_first, player_last,
+    GROUP BY player_id, player_first, player_last,
              referee_id, ref_first, ref_last
     HAVING COUNT(*) >= 2  -- need at least 2 games for meaningful signal
 ),
@@ -195,7 +198,6 @@ baseline AS (
 
 SELECT
     wr.player_id,
-    wr.team_abbr,
     wr.player_first,
     wr.player_last,
     wr.referee_id,
@@ -263,7 +265,6 @@ WITH player_ref_uplift AS (
         r.season,
         g.game_date_et,
         prh.player_id,
-        prh.team_abbr,
         prh.player_first,
         prh.player_last,
         prh.referee_id,
@@ -282,7 +283,6 @@ SELECT
     season,
     game_date_et,
     player_id,
-    team_abbr,
     player_first,
     player_last,
 
@@ -301,4 +301,4 @@ SELECT
 
 FROM player_ref_uplift
 GROUP BY game_slug, season, game_date_et,
-         player_id, team_abbr, player_first, player_last;
+         player_id, player_first, player_last;

@@ -19,12 +19,10 @@ WITH game_plays AS (
         p.season,
         p.game_slug,
         UPPER(p.team_abbr) AS team_abbr,
-        COUNT(*) FILTER (WHERE p.event_type ILIKE '%three%'
-                            OR p.event_type ILIKE '%3pt%'
-                            OR p.event_type ILIKE '%3P%')          AS three_pt_plays,
-        COUNT(*) FILTER (WHERE p.event_type ILIKE '%two%'
-                            OR p.event_type ILIKE '%2pt%'
-                            OR p.event_type ILIKE '%2P%')          AS two_pt_plays,
+        COUNT(*) FILTER (WHERE p.event_type = 'fieldGoalAttempt'
+                            AND (p.raw_json->'fieldGoalAttempt'->>'points')::numeric = 3) AS three_pt_plays,
+        COUNT(*) FILTER (WHERE p.event_type = 'fieldGoalAttempt'
+                            AND (p.raw_json->'fieldGoalAttempt'->>'points')::numeric = 2) AS two_pt_plays,
         COUNT(*) FILTER (WHERE p.event_type ILIKE '%foul%')        AS foul_plays,
         COUNT(*) FILTER (WHERE p.event_type ILIKE '%turnover%'
                             OR p.event_type ILIKE '%tov%')         AS turnover_plays,
