@@ -655,9 +655,7 @@ def _rank_best_props(df_raw: pd.DataFrame, df_out: pd.DataFrame, cfg: PredictCon
     df_r["min_avg_10"]  = raw["min_avg_10"].values
     df_r["opp_def_rtg"] = raw["opp_def_rtg_10"].values if "opp_def_rtg_10" in raw.columns else np.nan
 
-    return df_r.nlargest(cfg.top_n_best_bets, "confidence").drop(
-        columns=["_sample", "_consistency", "_min_stability", "_matchup"], errors="ignore"
-    )
+    return df_r.nlargest(cfg.top_n_best_bets, "confidence")
 
 
 def _print_best_bets(
@@ -746,13 +744,26 @@ def _print_best_bets(
         tags = "  ".join(t for t in [trend, opp_str] if t)
         tags_str = f"  {tags}" if tags else ""
 
+        # Sub-score breakdown (sample / consistency / min_stability / matchup)
+        sub_s   = r.get("_sample",        np.nan)
+        sub_c   = r.get("_consistency",   np.nan)
+        sub_ms  = r.get("_min_stability", np.nan)
+        sub_mq  = r.get("_matchup",       np.nan)
+        if all(pd.notna(v) for v in [sub_s, sub_c, sub_ms, sub_mq]):
+            sub_str = f"samp={sub_s:.2f} cons={sub_c:.2f} min={sub_ms:.2f} mtch={sub_mq:.2f}"
+        else:
+            sub_str = ""
+
         if discord:
-            print(f"\n{stars} **{name}** ({r['team_abbr']} vs {opp}) · {r['proj_minutes']:.0f}min{tags_str} · conf={conf:.2f}")
+            sub_line = f" · {sub_str}" if sub_str else ""
+            print(f"\n{stars} **{name}** ({r['team_abbr']} vs {opp}) · {r['proj_minutes']:.0f}min{tags_str} · conf={conf:.2f}{sub_line}")
         else:
             print(
                 f"\n  {stars} {name_ascii} ({r['team_abbr']} vs {opp})"
                 f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
             )
+            if sub_str:
+                print(f"         breakdown: {sub_str}")
 
         for pred, lo, hi, ci, stat_label, stat_key in [
             (pp, pts_lo, pts_hi, pts_ci, "PTS", "points"),
@@ -847,7 +858,7 @@ def main() -> None:
 
     models, feature_cols, medians, minutes_model, feature_cols_base, medians_base = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
-    _check_injury_staleness(engine)
+    _check_injury_staleness(engine, warn_hours=4.0)
     prop_lines = _load_prop_lines(engine, et_day)
 
     with engine.connect() as conn:
@@ -870,6 +881,16 @@ def main() -> None:
         if df.empty:
             log.warning("No player snapshots found for %s (need history in raw.nba_player_gamelogs)", et_day)
             return
+
+    # Warn about players whose last recorded game is unusually old (load management, illness gaps)
+    if "player_rest_days" in df.columns:
+        stale_mask = df["player_rest_days"].fillna(0) > 5
+        stale_players = df.loc[stale_mask, ["player_name", "team_abbr", "player_rest_days"]].drop_duplicates("player_id" if "player_id" in df.columns else "player_name")
+        if not stale_players.empty:
+            print(f"\n  *** STALE PLAYER DATA WARNING: {len(stale_players)} player(s) last played 5+ days ago:")
+            for _, row in stale_players.iterrows():
+                print(f"      {row.get('player_name', '?')} ({row.get('team_abbr', '?')}) — {row['player_rest_days']:.0f} days since last game")
+            print("      Predictions for these players may be less reliable.\n")
 
     # Apply minutes stacking model: predict minutes first, inject as features for PTS/REB/AST.
     if minutes_model is not None and feature_cols_base is not None and medians_base is not None:

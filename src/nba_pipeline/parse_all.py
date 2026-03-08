@@ -199,6 +199,40 @@ def _materialize_game_features(pg_dsn: str) -> None:
         conn.close()
 
 
+def _audit_prop_name_coverage(pg_dsn: str) -> None:
+    """Log the fraction of player-game training rows that have a matched book line.
+
+    Low coverage (<15%) usually means the name-normalization join is broken or
+    the prop-line backfill hasn't been run yet.
+    """
+    conn = psycopg2.connect(pg_dsn)
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                COUNT(*)                                                    AS total,
+                COUNT(*) FILTER (WHERE prev_book_line_pts IS NOT NULL)      AS matched
+            FROM features.player_training_features
+        """)
+        row = cur.fetchone()
+        if row and row[0]:
+            total, matched = row
+            pct = 100.0 * matched / total
+            log.info("Prop line name-match coverage: %d/%d rows (%.1f%%)", matched, total, pct)
+            if pct < 15.0:
+                log.warning(
+                    "Prop line coverage %.1f%% is below 15%% threshold — "
+                    "check name normalization or run: python -m nba_pipeline.crawler_oddsapi_backfill --prop-lines",
+                    pct,
+                )
+        else:
+            log.info("player_training_features is empty — skipping prop name-match audit")
+    except Exception:
+        log.exception("Could not audit prop line name-match coverage (safe to ignore if view doesn't exist)")
+    finally:
+        conn.close()
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -221,6 +255,7 @@ def main() -> None:
 
     _apply_view_fixes(_PG_DSN)
     _materialize_game_features(_PG_DSN)
+    _audit_prop_name_coverage(_PG_DSN)
 
     log.info("ALL PARSERS COMPLETE")
 

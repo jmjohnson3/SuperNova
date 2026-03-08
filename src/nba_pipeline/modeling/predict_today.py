@@ -30,12 +30,20 @@ class PredictConfig:
     min_edge_pts: float = 3.0    # minimum |pred - market| to flag as high-confidence
 
 
-# Blend weight for the residual model when market lines exist.
-# Derived from inverse-MAE weighting:
-#   direct MAE ≈ 10.48  → weight ≈ 0.30
-#   resid recon MAE ≈ 4.66 → weight ≈ 0.70
-# Final prediction = (1 - w) * direct + w * (market_line + resid)
-_RESID_BLEND_WEIGHT: float = 0.70
+def _compute_blend_weight(calib: dict) -> float:
+    """Inverse-MAE blend weight for the residual model, derived from calibration.json.
+
+    Higher weight goes to the lower-MAE model (residual).
+    Falls back to 0.70 if calibration values are missing or degenerate.
+    """
+    direct_mae = calib.get("direct_spread_mae", 10.5)
+    resid_mae = calib.get("resid_spread_mae", 4.0)
+    if direct_mae <= 0 or resid_mae <= 0:
+        return 0.70
+    w_direct = 1.0 / direct_mae
+    w_resid = 1.0 / resid_mae
+    total = w_direct + w_resid
+    return round(w_resid / total, 4)
 
 
 SQL_GAMES_FOR_DATE = """
@@ -213,28 +221,38 @@ def _ensure_bets_schema(engine) -> None:
     ddl = """
     CREATE SCHEMA IF NOT EXISTS bets;
     CREATE TABLE IF NOT EXISTS bets.game_predictions (
-        id                  SERIAL PRIMARY KEY,
-        predicted_at_utc    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        game_date_et        DATE        NOT NULL,
-        game_slug           TEXT        NOT NULL,
-        season              TEXT        NOT NULL,
-        home_team_abbr      TEXT        NOT NULL,
-        away_team_abbr      TEXT        NOT NULL,
-        pred_margin_home    NUMERIC,
-        pred_total          NUMERIC,
-        used_residual_model BOOLEAN     DEFAULT FALSE,
-        market_spread_home  NUMERIC,
-        market_total        NUMERIC,
-        edge_spread         NUMERIC,
-        edge_total          NUMERIC,
-        actual_margin_home  NUMERIC,
-        actual_total        NUMERIC,
-        spread_bet_side     TEXT,
-        total_bet_side      TEXT,
-        spread_covered      BOOLEAN,
-        total_correct       BOOLEAN,
+        id                    SERIAL PRIMARY KEY,
+        predicted_at_utc      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        game_date_et          DATE        NOT NULL,
+        game_slug             TEXT        NOT NULL,
+        season                TEXT        NOT NULL,
+        home_team_abbr        TEXT        NOT NULL,
+        away_team_abbr        TEXT        NOT NULL,
+        pred_margin_home      NUMERIC,
+        pred_total            NUMERIC,
+        used_residual_model   BOOLEAN     DEFAULT FALSE,
+        market_spread_home    NUMERIC,
+        market_total          NUMERIC,
+        edge_spread           NUMERIC,
+        edge_total            NUMERIC,
+        actual_margin_home    NUMERIC,
+        actual_total          NUMERIC,
+        spread_bet_side       TEXT,
+        total_bet_side        TEXT,
+        spread_covered        BOOLEAN,
+        total_correct         BOOLEAN,
+        kelly_fraction_spread NUMERIC,
+        kelly_fraction_total  NUMERIC,
+        win_prob_spread       NUMERIC,
+        win_prob_total        NUMERIC,
         UNIQUE (game_date_et, game_slug)
     );
+    -- Add columns for older tables that predate this schema version
+    ALTER TABLE bets.game_predictions
+        ADD COLUMN IF NOT EXISTS kelly_fraction_spread NUMERIC,
+        ADD COLUMN IF NOT EXISTS kelly_fraction_total  NUMERIC,
+        ADD COLUMN IF NOT EXISTS win_prob_spread       NUMERIC,
+        ADD COLUMN IF NOT EXISTS win_prob_total        NUMERIC;
     """
     with engine.begin() as conn:
         conn.execute(text(ddl))
@@ -248,23 +266,31 @@ def _save_predictions(out: pd.DataFrame, engine, et_day) -> None:
             (game_date_et, game_slug, season, home_team_abbr, away_team_abbr,
              pred_margin_home, pred_total, used_residual_model,
              market_spread_home, market_total, edge_spread, edge_total,
-             spread_bet_side, total_bet_side)
+             spread_bet_side, total_bet_side,
+             kelly_fraction_spread, kelly_fraction_total,
+             win_prob_spread, win_prob_total)
         VALUES
             (:game_date_et, :game_slug, :season, :home_team_abbr, :away_team_abbr,
              :pred_margin_home, :pred_total, :used_residual_model,
              :market_spread_home, :market_total, :edge_spread, :edge_total,
-             :spread_bet_side, :total_bet_side)
+             :spread_bet_side, :total_bet_side,
+             :kelly_fraction_spread, :kelly_fraction_total,
+             :win_prob_spread, :win_prob_total)
         ON CONFLICT (game_date_et, game_slug) DO UPDATE SET
-            predicted_at_utc    = NOW(),
-            pred_margin_home    = EXCLUDED.pred_margin_home,
-            pred_total          = EXCLUDED.pred_total,
-            used_residual_model = EXCLUDED.used_residual_model,
-            market_spread_home  = EXCLUDED.market_spread_home,
-            market_total        = EXCLUDED.market_total,
-            edge_spread         = EXCLUDED.edge_spread,
-            edge_total          = EXCLUDED.edge_total,
-            spread_bet_side     = EXCLUDED.spread_bet_side,
-            total_bet_side      = EXCLUDED.total_bet_side
+            predicted_at_utc      = NOW(),
+            pred_margin_home      = EXCLUDED.pred_margin_home,
+            pred_total            = EXCLUDED.pred_total,
+            used_residual_model   = EXCLUDED.used_residual_model,
+            market_spread_home    = EXCLUDED.market_spread_home,
+            market_total          = EXCLUDED.market_total,
+            edge_spread           = EXCLUDED.edge_spread,
+            edge_total            = EXCLUDED.edge_total,
+            spread_bet_side       = EXCLUDED.spread_bet_side,
+            total_bet_side        = EXCLUDED.total_bet_side,
+            kelly_fraction_spread = EXCLUDED.kelly_fraction_spread,
+            kelly_fraction_total  = EXCLUDED.kelly_fraction_total,
+            win_prob_spread       = EXCLUDED.win_prob_spread,
+            win_prob_total        = EXCLUDED.win_prob_total
     """)
 
     rows = []
@@ -273,10 +299,16 @@ def _save_predictions(out: pd.DataFrame, engine, et_day) -> None:
         edge_t = float(r["edge_total"]) if pd.notna(r.get("edge_total")) else None
         spread_bet = None
         total_bet = None
+        kf_s = kf_t = wp_s = wp_t = None
+        used_blend = bool(r.get("used_market_recon", False))
+        sigma_s = calib.get("resid_spread_rmse" if used_blend else "direct_spread_rmse", 14.0)
+        sigma_t = calib.get("resid_total_rmse"  if used_blend else "direct_total_rmse",  20.0)
         if edge_s is not None:
             spread_bet = "home" if edge_s > 0 else "away"
+            kf_s, wp_s = _kelly(abs(edge_s), sigma=sigma_s)
         if edge_t is not None:
             total_bet = "over" if edge_t > 0 else "under"
+            kf_t, wp_t = _kelly(abs(edge_t), sigma=sigma_t)
         rows.append({
             "game_date_et": et_day,
             "game_slug": r["game_slug"],
@@ -292,6 +324,10 @@ def _save_predictions(out: pd.DataFrame, engine, et_day) -> None:
             "edge_total": edge_t,
             "spread_bet_side": spread_bet,
             "total_bet_side": total_bet,
+            "kelly_fraction_spread": round(kf_s, 4) if kf_s is not None else None,
+            "kelly_fraction_total":  round(kf_t, 4) if kf_t is not None else None,
+            "win_prob_spread": round(wp_s, 4) if wp_s is not None else None,
+            "win_prob_total":  round(wp_t, 4) if wp_t is not None else None,
         })
 
     if rows:
@@ -417,7 +453,7 @@ def main() -> None:
 
                 # Blend: weighted average of direct and residual reconstruction.
                 # Direct acts as a regularizer; residual keeps us anchored to the market.
-                w = _RESID_BLEND_WEIGHT
+                w = _compute_blend_weight(calib)
                 pred_margin_final = pred_margin_final.copy()
                 pred_total_final = pred_total_final.copy()
 
@@ -473,6 +509,18 @@ def main() -> None:
 
         # Print
         discord = os.getenv("DISCORD_FORMAT") == "1"
+
+        # Count bets that exceed the edge threshold
+        n_spread_bets = int(out["edge_spread"].abs().ge(cfg.min_edge_pts).sum()) if "edge_spread" in out else 0
+        n_total_bets  = int(out["edge_total"].abs().ge(cfg.min_edge_pts).sum()) if "edge_total" in out else 0
+        n_high_edge = n_spread_bets + n_total_bets
+        blend_w = _compute_blend_weight(calib)
+        model_note = f"resid {blend_w:.0%} / direct {1-blend_w:.0%}" if out["used_market_recon"].any() else "direct only"
+        if discord:
+            print(f"**{et_day}** — {len(out)} games · {n_high_edge} high-edge bets ({n_spread_bets} spread, {n_total_bets} total) · {model_note}")
+        else:
+            print(f"{et_day} — {len(out)} games  {n_high_edge} high-edge bets ({n_spread_bets} spread, {n_total_bets} total)  [{model_note}]")
+
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
             if discord:

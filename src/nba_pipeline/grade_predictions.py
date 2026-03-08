@@ -21,6 +21,18 @@ _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 # Grading
 # ---------------------------------------------------------------------------
 
+def _ensure_columns(engine) -> None:
+    """Add columns introduced after initial schema creation (idempotent)."""
+    with engine.begin() as conn:
+        conn.execute(text("""
+            ALTER TABLE bets.game_predictions
+                ADD COLUMN IF NOT EXISTS kelly_fraction_spread NUMERIC,
+                ADD COLUMN IF NOT EXISTS kelly_fraction_total  NUMERIC,
+                ADD COLUMN IF NOT EXISTS win_prob_spread       NUMERIC,
+                ADD COLUMN IF NOT EXISTS win_prob_total        NUMERIC
+        """))
+
+
 def grade_all_pending(engine) -> int:
     """UPDATE bets.game_predictions for all games that now have final scores.
 
@@ -185,6 +197,31 @@ def _yesterday_summary(engine, yesterday: date) -> str:
     return "\n".join(lines)
 
 
+def _grade_prop_predictions(engine) -> int:
+    """Fill actual_points/rebounds/assists from raw.nba_player_gamelogs. Returns rows updated."""
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(text("""
+                UPDATE bets.prop_predictions pp
+                SET
+                    actual_points   = gl.points,
+                    actual_rebounds = gl.rebounds,
+                    actual_assists  = gl.assists
+                FROM raw.nba_player_gamelogs gl
+                JOIN raw.nba_games g
+                  ON g.game_slug = gl.game_slug AND g.season = gl.season
+                WHERE gl.player_id    = pp.player_id
+                  AND gl.game_slug    = pp.game_slug
+                  AND g.status        = 'final'
+                  AND gl.points       IS NOT NULL
+                  AND pp.actual_points IS NULL
+            """))
+            return result.rowcount
+    except Exception as exc:
+        log.warning("Could not grade prop predictions (table may not exist yet): %s", exc)
+        return 0
+
+
 def _running_record(engine, lookback_days: int = 30) -> str:
     """Return a one-liner running W/L record over recent graded predictions."""
     with engine.connect() as conn:
@@ -225,9 +262,16 @@ def main() -> None:
     )
     engine = create_engine(_PG_DSN)
 
+    # 0. Add any missing schema columns (idempotent)
+    try:
+        _ensure_columns(engine)
+    except Exception as exc:
+        log.warning("Could not apply column migrations: %s", exc)
+
     # 1. Grade all ungraded predictions that now have final scores
     updated = grade_all_pending(engine)
-    log.info("Graded %d game predictions", updated)
+    prop_updated = _grade_prop_predictions(engine)
+    log.info("Graded %d game predictions, %d prop predictions", updated, prop_updated)
 
     # 2. Print yesterday's summary (captured by run_daily for Discord)
     yesterday = date.today() - timedelta(days=1)
