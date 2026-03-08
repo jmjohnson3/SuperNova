@@ -27,7 +27,8 @@ class PredictConfig:
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None
-    min_edge_pts: float = 3.0    # minimum |pred - market| to flag as high-confidence
+    min_edge_spread: float = 6.0  # minimum |pred - market| to flag a spread bet
+    min_edge_total: float = 3.0   # minimum |pred - market| to flag a total bet
 
 
 def _compute_blend_weight(calib: dict) -> float:
@@ -511,8 +512,8 @@ def main() -> None:
         discord = os.getenv("DISCORD_FORMAT") == "1"
 
         # Count bets that exceed the edge threshold
-        n_spread_bets = int(out["edge_spread"].abs().ge(cfg.min_edge_pts).sum()) if "edge_spread" in out else 0
-        n_total_bets  = int(out["edge_total"].abs().ge(cfg.min_edge_pts).sum()) if "edge_total" in out else 0
+        n_spread_bets = int(out["edge_spread"].abs().ge(cfg.min_edge_spread).sum()) if "edge_spread" in out else 0
+        n_total_bets  = int(out["edge_total"].abs().ge(cfg.min_edge_total).sum()) if "edge_total" in out else 0
         n_high_edge = n_spread_bets + n_total_bets
         blend_w = _compute_blend_weight(calib)
         model_note = f"resid {blend_w:.0%} / direct {1-blend_w:.0%}" if out["used_market_recon"].any() else "direct only"
@@ -535,7 +536,7 @@ def main() -> None:
 
             # Spread line
             edge_s = r.get("edge_spread")
-            if pd.notna(edge_s) and abs(float(edge_s)) >= cfg.min_edge_pts:
+            if pd.notna(edge_s) and abs(float(edge_s)) >= cfg.min_edge_spread:
                 es = float(edge_s)
                 edge_dir = "+" if es > 0 else ""
                 bet_side = "HOME" if es > 0 else "AWAY"
@@ -551,7 +552,7 @@ def main() -> None:
 
             # Total line
             edge_t = r.get("edge_total")
-            if pd.notna(edge_t) and abs(float(edge_t)) >= cfg.min_edge_pts:
+            if pd.notna(edge_t) and abs(float(edge_t)) >= cfg.min_edge_total:
                 et_ = float(edge_t)
                 edge_dir = "+" if et_ > 0 else ""
                 over_under = "Over" if et_ > 0 else "Under"
