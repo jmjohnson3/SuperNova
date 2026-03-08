@@ -55,14 +55,18 @@ class TrainConfig:
 
 
 SQL_PLAYER_TRAIN = """
-SELECT *
-FROM features.player_training_features
-WHERE points IS NOT NULL
-  AND rebounds IS NOT NULL
-  AND assists IS NOT NULL
-  AND n_games_prev_10 >= :min_prev_10
-  AND (min_avg_10 IS NULL OR min_avg_10 >= :min_min_avg_10)
-ORDER BY game_date_et, game_slug, player_id
+SELECT ptf.*, pg.minutes::float AS minutes
+FROM features.player_training_features ptf
+JOIN raw.nba_player_gamelogs pg
+  ON pg.player_id = ptf.player_id
+ AND pg.game_slug = ptf.game_slug
+WHERE ptf.points IS NOT NULL
+  AND ptf.rebounds IS NOT NULL
+  AND ptf.assists IS NOT NULL
+  AND ptf.n_games_prev_10 >= :min_prev_10
+  AND (ptf.min_avg_10 IS NULL OR ptf.min_avg_10 >= :min_min_avg_10)
+  AND pg.minutes IS NOT NULL
+ORDER BY ptf.game_date_et, ptf.game_slug, ptf.player_id
 """
 
 
@@ -147,6 +151,38 @@ def apply_fill(X: pd.DataFrame, medians: Dict[str, float], columns: List[str]) -
         if c in X2.columns:
             X2[c] = X2[c].fillna(m)
     return X2.fillna(0.0)
+
+
+def build_minutes_model(
+    cfg: TrainConfig,
+    n_estimators: Optional[int] = None,
+    use_early_stopping: bool = True,
+) -> XGBRegressor:
+    """Minutes model uses squared-error objective.
+
+    pseudohubererror cannot be used for minutes: its auto base_score
+    initialises to ~198 (far from the true mean of ~25), which saturates
+    gradients on the first iteration and causes early-stopping to fire
+    immediately (best_iteration=0), yielding constant predictions.
+    """
+    p = dict(
+        n_estimators=n_estimators if n_estimators is not None else cfg.n_estimators,
+        max_depth=cfg.max_depth,
+        learning_rate=cfg.learning_rate,
+        subsample=cfg.subsample,
+        colsample_bytree=cfg.colsample_bytree,
+        objective="reg:squarederror",
+        min_child_weight=cfg.min_child_weight,
+        gamma=cfg.gamma,
+        reg_alpha=cfg.reg_alpha,
+        reg_lambda=cfg.reg_lambda,
+        eval_metric="rmse",
+        random_state=cfg.random_state,
+        n_jobs=-1,
+    )
+    if use_early_stopping:
+        p["early_stopping_rounds"] = cfg.early_stopping_rounds
+    return XGBRegressor(**p)
 
 
 def build_model(
@@ -370,7 +406,7 @@ def main() -> None:
         X_te_m = apply_fill(X_raw.loc[test_mask_m], med_m, feature_cols_base)
         tr_dates_m = df.loc[train_mask_m, "game_date_et"]
         fit_m, eval_m = temporal_eval_split(tr_dates_m)
-        m_min = build_model(cfg, huber_slope=3.0)
+        m_min = build_minutes_model(cfg)
         m_min.fit(
             X_tr_m.iloc[fit_m], y_min.loc[train_mask_m].iloc[fit_m],
             eval_set=[(X_tr_m.iloc[eval_m], y_min.loc[train_mask_m].iloc[eval_m])],
@@ -536,7 +572,7 @@ def main() -> None:
         "Fitting FINAL MIN model (%d rows, n_estimators=%d, no early stopping)...",
         len(X_all_base), _min_n_est,
     )
-    m_min_final = build_model(cfg, huber_slope=3.0, n_estimators=_min_n_est, use_early_stopping=False)
+    m_min_final = build_minutes_model(cfg, n_estimators=_min_n_est, use_early_stopping=False)
     m_min_final.fit(X_all_base, y_min, verbose=False)
     _eval("MIN (train)", y_min.to_numpy(), m_min_final.predict(X_all_base))
     m_min_final.save_model(str(cfg.model_dir / "minutes_xgb.json"))
