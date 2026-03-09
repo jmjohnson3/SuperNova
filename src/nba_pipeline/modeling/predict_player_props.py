@@ -165,6 +165,7 @@ feat AS (
       STDDEV_SAMP(h.points)   OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS pts_sd_10,
       STDDEV_SAMP(h.rebounds) OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS reb_sd_10,
       STDDEV_SAMP(h.assists)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS ast_sd_10,
+      STDDEV_SAMP(h.minutes)  OVER (PARTITION BY h.player_id ORDER BY h.start_ts_utc ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS min_sd_10,
 
       AVG(
         CASE WHEN h.minutes > 0 THEN (h.fga + 0.44 * h.fta) / h.minutes ELSE NULL END
@@ -217,7 +218,7 @@ latest_per_player_team AS (
       reb_avg_3, reb_avg_5, reb_avg_10,
       ast_avg_3, ast_avg_5, ast_avg_10,
       fga_avg_10, fta_avg_10, threes_avg_10,
-      pts_sd_10, reb_sd_10, ast_sd_10,
+      pts_sd_10, reb_sd_10, ast_sd_10, min_sd_10,
       usage_proxy_avg_5, usage_proxy_avg_10,
       -- V007 expanded stats
       stl_avg_5, stl_avg_10,
@@ -259,7 +260,7 @@ joined AS (
       lp.reb_avg_3, lp.reb_avg_5, lp.reb_avg_10,
       lp.ast_avg_3, lp.ast_avg_5, lp.ast_avg_10,
       lp.fga_avg_10, lp.fta_avg_10, lp.threes_avg_10,
-      lp.pts_sd_10, lp.reb_sd_10, lp.ast_sd_10,
+      lp.pts_sd_10, lp.reb_sd_10, lp.ast_sd_10, lp.min_sd_10,
       lp.usage_proxy_avg_5, lp.usage_proxy_avg_10,
       -- V007 expanded player stats
       lp.stl_avg_5, lp.stl_avg_10,
@@ -941,6 +942,33 @@ def main() -> None:
             for _, row in stale_players.iterrows():
                 print(f"      {row.get('player_name', '?')} ({row.get('team_abbr', '?')}) — {row['player_rest_days']:.0f} days since last game")
             print("      Predictions for these players may be less reliable.\n")
+
+    # Override prev_book_line_* with today's actual DK line when available.
+    # Today's line is more accurate than the lagged value from yesterday's as_of_date.
+    # The model already uses prev_book_line_* as a feature — no retrain needed.
+    if prop_lines and not df.empty:
+        df = df.copy()
+        for col, stat in [
+            ("prev_book_line_pts", "points"),
+            ("prev_book_line_reb", "rebounds"),
+            ("prev_book_line_ast", "assists"),
+        ]:
+            if col not in df.columns:
+                df[col] = np.nan
+
+            def _get_line(player_name: str, _stat: str = stat) -> float:
+                key = (_normalize_name(str(player_name)), _stat)
+                v = prop_lines.get(key)
+                return float(v[0]) if v and v[0] is not None else np.nan
+
+            today_lines = df["player_name"].apply(_get_line)
+            n_overridden = int(today_lines.notna().sum())
+            if n_overridden > 0:
+                df[col] = today_lines.where(today_lines.notna(), df[col])
+                log.info(
+                    "Overrode %s with today's DK line for %d/%d players",
+                    col, n_overridden, len(df),
+                )
 
     # Apply minutes stacking model: predict minutes first, inject as features for PTS/REB/AST.
     if minutes_model is not None and feature_cols_base is not None and medians_base is not None:

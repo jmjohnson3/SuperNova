@@ -282,6 +282,9 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["reb_cv_10"] = X["reb_sd_10"] / X["reb_avg_10"].clip(lower=0.5)
     if "ast_sd_10" in X.columns and "ast_avg_10" in X.columns:
         X["ast_cv_10"] = X["ast_sd_10"] / X["ast_avg_10"].clip(lower=0.5)
+    # Minute share volatility: high min_cv_10 = unpredictable role, harder to forecast
+    if "min_sd_10" in X.columns and "min_avg_10" in X.columns:
+        X["min_cv_10"] = X["min_sd_10"] / X["min_avg_10"].clip(lower=5.0)
 
     # Matchup-scaled projections (pace × per-min efficiency)
     if "pts_per_min_10" in X.columns and "game_pace_est_5" in X.columns:

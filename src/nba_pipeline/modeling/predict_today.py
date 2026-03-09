@@ -31,30 +31,46 @@ class PredictConfig:
     min_edge_total: float = 5.0   # minimum |pred - market| to flag a total bet
 
 
-def _compute_blend_weight(calib: dict) -> float:
-    """Inverse-MAE blend weight for the residual model, derived from calibration.json.
+def _compute_blend_weight_spread(calib: dict) -> float:
+    """Inverse-MAE blend weight for the *spread* residual model.
 
-    Higher weight goes to the lower-MAE model (residual).
-    Quality gate: only use the residual model if it is ≥10% better (lower MAE) than
-    the direct model. If not, returns 0.0 (direct-only).
-    Falls back to 0.70 if calibration values are missing or degenerate.
+    Quality gate: only blend if resid MAE is ≥10% better (lower) than direct.
+    Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
     direct_mae = calib.get("direct_spread_mae", 10.5)
-    resid_mae = calib.get("resid_spread_mae", 4.0)
+    resid_mae = calib.get("resid_spread_mae", 99.0)
     if direct_mae <= 0 or resid_mae <= 0:
-        return 0.70
-    # Quality gate: residual must be ≥10% better than direct to be worth blending
+        return 0.0
     if resid_mae >= direct_mae * 0.90:
         log.info(
-            "Residual model quality gate failed (resid MAE %.3f ≥ 90%% of direct MAE %.3f). "
-            "Using direct model only.",
+            "Spread residual quality gate failed (resid MAE %.3f >= 90%% of direct %.3f). Direct only.",
             resid_mae, direct_mae,
         )
         return 0.0
-    w_direct = 1.0 / direct_mae
-    w_resid = 1.0 / resid_mae
-    total = w_direct + w_resid
-    return round(w_resid / total, 4)
+    w_d = 1.0 / direct_mae
+    w_r = 1.0 / resid_mae
+    return round(w_r / (w_d + w_r), 4)
+
+
+def _compute_blend_weight_total(calib: dict) -> float:
+    """Inverse-MAE blend weight for the *total* residual model.
+
+    Quality gate: only blend if resid MAE is ≥10% better (lower) than direct.
+    Falls back to 0.0 (direct-only) when gate fails or values are missing.
+    """
+    direct_mae = calib.get("direct_total_mae", 15.0)
+    resid_mae = calib.get("resid_total_mae", 99.0)
+    if direct_mae <= 0 or resid_mae <= 0:
+        return 0.0
+    if resid_mae >= direct_mae * 0.90:
+        log.info(
+            "Total residual quality gate failed (resid MAE %.3f >= 90%% of direct %.3f). Direct only.",
+            resid_mae, direct_mae,
+        )
+        return 0.0
+    w_d = 1.0 / direct_mae
+    w_r = 1.0 / resid_mae
+    return round(w_r / (w_d + w_r), 4)
 
 
 def _compute_live_bias(engine) -> tuple[float, float]:
@@ -89,6 +105,33 @@ def _compute_live_bias(engine) -> tuple[float, float]:
     except Exception as exc:
         log.warning("Could not compute live bias: %s", exc)
         return 0.0, 0.0
+
+
+def _compute_per_team_bias(engine) -> dict[str, float]:
+    """Rolling spread bias indexed by home_team_abbr (last 60 days, min 5 games).
+
+    Returns {home_team_abbr: spread_bias}.  Teams with insufficient data are
+    omitted; callers should fall back to the global bias for those.
+    """
+    sql = text("""
+        SELECT home_team_abbr,
+               AVG(pred_margin_home - actual_margin_home) AS spread_bias,
+               COUNT(*) AS n
+        FROM bets.game_predictions
+        WHERE actual_margin_home IS NOT NULL
+          AND game_date_et >= CURRENT_DATE - INTERVAL '60 days'
+        GROUP BY home_team_abbr
+        HAVING COUNT(*) >= 5
+    """)
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sql).fetchall()
+        result = {r.home_team_abbr: float(r.spread_bias or 0.0) for r in rows}
+        log.info("Per-team spread bias loaded for %d teams", len(result))
+        return result
+    except Exception as exc:
+        log.warning("Could not compute per-team spread bias: %s", exc)
+        return {}
 
 
 SQL_GAMES_FOR_DATE = """
@@ -305,7 +348,14 @@ def _ensure_bets_schema(engine) -> None:
         conn.execute(text(ddl))
 
 
-def _save_predictions(out: pd.DataFrame, engine, et_day, calib: dict | None = None) -> None:
+def _save_predictions(
+    out: pd.DataFrame,
+    engine,
+    et_day,
+    calib: dict | None = None,
+    w_spread: float = 0.0,
+    w_total: float = 0.0,
+) -> None:
     """Upsert game predictions into bets.game_predictions."""
     _ensure_bets_schema(engine)
     upsert_sql = text("""
@@ -349,8 +399,12 @@ def _save_predictions(out: pd.DataFrame, engine, et_day, calib: dict | None = No
         kf_s = kf_t = wp_s = wp_t = None
         used_blend = bool(r.get("used_market_recon", False))
         _calib = calib or {}
-        sigma_s = _calib.get("resid_spread_rmse" if used_blend else "direct_spread_rmse", 14.0)
-        sigma_t = _calib.get("resid_total_rmse"  if used_blend else "direct_total_rmse",  20.0)
+        sigma_s = _calib.get(
+            "resid_spread_rmse" if (used_blend and w_spread > 0) else "direct_spread_rmse", 14.0
+        )
+        sigma_t = _calib.get(
+            "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 20.0
+        )
         if edge_s is not None:
             spread_bet = "home" if edge_s > 0 else "away"
             kf_s, wp_s = _kelly(abs(edge_s), sigma=sigma_s)
@@ -483,6 +537,10 @@ def main() -> None:
         pred_total_final = pred_total_direct
         used_market = np.zeros(len(df), dtype=bool)
 
+        # Compute blend weights independently for spread and total
+        w_spread = _compute_blend_weight_spread(calib)
+        w_total = _compute_blend_weight_total(calib)
+
         if has_resid_models and ("market_spread_home" in df.columns) and ("market_total" in df.columns):
             mkt_spread = pd.to_numeric(df["market_spread_home"], errors="coerce")
             mkt_total = pd.to_numeric(df["market_total"], errors="coerce")
@@ -499,28 +557,35 @@ def main() -> None:
                 resid_recon_spread = mkt_spread.loc[ok].astype(float).values + pred_spread_resid
                 resid_recon_total = mkt_total.loc[ok].astype(float).values + pred_total_resid
 
-                # Blend: weighted average of direct and residual reconstruction.
-                # Direct acts as a regularizer; residual keeps us anchored to the market.
-                w = _compute_blend_weight(calib)
+                # Blend separately: spread and total can have different quality gates.
+                # w=0 → pure direct, w=1 → pure residual
                 pred_margin_final = pred_margin_final.copy()
                 pred_total_final = pred_total_final.copy()
 
                 pred_margin_final[ok.values] = (
-                    (1.0 - w) * pred_margin_direct[ok.values] + w * resid_recon_spread
+                    (1.0 - w_spread) * pred_margin_direct[ok.values] + w_spread * resid_recon_spread
                 )
                 pred_total_final[ok.values] = (
-                    (1.0 - w) * pred_total_direct[ok.values] + w * resid_recon_total
+                    (1.0 - w_total) * pred_total_direct[ok.values] + w_total * resid_recon_total
                 )
 
                 log.info(
-                    "Blended predictions for %d/%d games (%.0f%% resid + %.0f%% direct)",
-                    ok.sum(), len(df), w * 100, (1.0 - w) * 100,
+                    "Blended predictions for %d/%d games (spread: %.0f%% resid | total: %.0f%% resid)",
+                    ok.sum(), len(df), w_spread * 100, w_total * 100,
                 )
                 used_market = ok.values
 
-        # Auto bias correction: subtract rolling mean prediction error from recent graded games
-        bias_spread, bias_total = _compute_live_bias(engine)
-        pred_margin_final = pred_margin_final - bias_spread
+        # Bias correction:
+        #  Spread — use per-team rolling bias where ≥5 games exist (60-day window),
+        #           global rolling bias as fallback for teams with less data.
+        #  Total  — global rolling bias only (symmetric — no per-team advantage).
+        team_biases = _compute_per_team_bias(engine)
+        bias_spread_global, bias_total = _compute_live_bias(engine)
+        spread_bias_vec = np.array(
+            [team_biases.get(str(h), bias_spread_global) for h in id_df["home_team_abbr"]],
+            dtype=float,
+        )
+        pred_margin_final = pred_margin_final - spread_bias_vec
         pred_total_final = pred_total_final - bias_total
 
         # Validate raw predictions before clipping
@@ -567,8 +632,14 @@ def main() -> None:
         n_spread_bets = int(out["edge_spread"].abs().ge(cfg.min_edge_spread).sum()) if "edge_spread" in out else 0
         n_total_bets  = int(out["edge_total"].abs().ge(cfg.min_edge_total).sum()) if "edge_total" in out else 0
         n_high_edge = n_spread_bets + n_total_bets
-        blend_w = _compute_blend_weight(calib)
-        model_note = f"resid {blend_w:.0%} / direct {1-blend_w:.0%}" if out["used_market_recon"].any() else "direct only"
+        if out["used_market_recon"].any():
+            model_note = (
+                f"spread resid {w_spread:.0%} | total resid {w_total:.0%}"
+                if (w_spread > 0 or w_total > 0)
+                else "direct only (resid quality gate failed)"
+            )
+        else:
+            model_note = "direct only"
         if discord:
             print(f"**{et_day}** — {len(out)} games · {n_high_edge} high-edge bets ({n_spread_bets} spread, {n_total_bets} total) · {model_note}")
         else:
@@ -581,10 +652,14 @@ def main() -> None:
             else:
                 print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
 
-            # Choose calibrated sigma based on which model was used for this game
+            # Choose calibrated sigma based on which model was actually blended
             used_blend = bool(r.get("used_market_recon", False))
-            sigma_s = calib.get("resid_spread_rmse" if used_blend else "direct_spread_rmse", 14.0)
-            sigma_t = calib.get("resid_total_rmse"  if used_blend else "direct_total_rmse",  20.0)
+            sigma_s = calib.get(
+                "resid_spread_rmse" if (used_blend and w_spread > 0) else "direct_spread_rmse", 14.0
+            )
+            sigma_t = calib.get(
+                "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 20.0
+            )
 
             # Spread line
             edge_s = r.get("edge_spread")
@@ -620,7 +695,7 @@ def main() -> None:
 
         # Save predictions to DB
         try:
-            _save_predictions(out, engine, et_day, calib=calib)
+            _save_predictions(out, engine, et_day, calib=calib, w_spread=w_spread, w_total=w_total)
         except Exception as exc:
             log.warning("Could not save predictions to DB: %s", exc)
 

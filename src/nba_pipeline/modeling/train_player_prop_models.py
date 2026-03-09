@@ -119,7 +119,9 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         if c in df.columns and c not in X.columns:
             X[c] = df[c]
 
-    cat_cols = [c for c in ["season", "team_abbr", "opponent_abbr"] if c in X.columns]
+    # team_abbr and opponent_abbr OHE removed — causes overfitting
+    # (e.g. team_abbr_HOU, opponent_abbr_OKL ranked top-10 in assists model)
+    cat_cols = [c for c in ["season"] if c in X.columns]
     if cat_cols:
         X = pd.get_dummies(X, columns=cat_cols, drop_first=False, dummy_na=False)
 

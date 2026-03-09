@@ -99,6 +99,7 @@ roll AS (
         STDDEV_SAMP(j.points)   OVER w10 AS pts_sd_10,
         STDDEV_SAMP(j.rebounds) OVER w10 AS reb_sd_10,
         STDDEV_SAMP(j.assists)  OVER w10 AS ast_sd_10,
+        STDDEV_SAMP(j.minutes)  OVER w10 AS min_sd_10,
 
         AVG(j.fga)         OVER w10 AS fga_avg_10,
         AVG(j.fta)         OVER w10 AS fta_avg_10,
@@ -287,6 +288,7 @@ SELECT
     pts_avg_3, pts_avg_5, pts_avg_10, pts_sd_10,
     reb_avg_3, reb_avg_5, reb_avg_10, reb_sd_10,
     ast_avg_3, ast_avg_5, ast_avg_10, ast_sd_10,
+    min_sd_10,
     fga_avg_10, fta_avg_10, threes_avg_10,
     player_rest_days,
     usage_proxy_avg_5, usage_proxy_avg_10,
