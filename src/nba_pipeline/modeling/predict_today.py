@@ -27,8 +27,8 @@ class PredictConfig:
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None
-    min_edge_spread: float = 6.0  # minimum |pred - market| to flag a spread bet
-    min_edge_total: float = 5.0   # minimum |pred - market| to flag a total bet
+    min_edge_spread: float = 10.0  # minimum |pred - market| to flag a spread bet
+    min_edge_total: float = 7.0   # minimum |pred - market| to flag a total bet
 
 
 def _compute_blend_weight_spread(calib: dict) -> float:
@@ -471,7 +471,7 @@ def _check_injury_staleness(engine, warn_hours: float = 12.0) -> None:
 def _kelly(
     edge_pts: float,
     juice: int = -110,
-    shrink: float = 0.35,
+    shrink: float = 0.60,
     sigma: float = 14.0,
 ) -> tuple[float, float]:
     """
@@ -480,10 +480,10 @@ def _kelly(
     edge_pts : |pred - market_line| (positive, regardless of direction)
     juice    : standard American odds (-110 = bet $110 to win $100)
     shrink   : how far we pull win-prob toward 50% to account for model uncertainty.
-               0.35 means we use 35% of the logistic signal above coin-flip.
+               0.60 = use 60% of the logistic signal above coin-flip.
+               (was 0.35, which made all win-probs cluster 50-61% and useless as filter)
     sigma    : calibrated RMSE from walk-forward CV (saved in models/calibration.json).
                Controls how fast p grows with edge. Default 14.0 = direct spread RMSE.
-               Old default was 7.0 which overstated win-prob by ~2×.
 
     Returns (full_kelly_fraction, estimated_win_prob).
     Caller should apply fractional Kelly (typically 1/4) for safety.
@@ -707,9 +707,15 @@ def main() -> None:
             else:
                 print(f"  {r['pred_spread_label']}")
 
-            # Total line
+            # Total line — only flag when residual model was used (better calibrated)
             edge_t = r.get("edge_total")
-            if pd.notna(edge_t) and abs(float(edge_t)) >= cfg.min_edge_total:
+            used_blend_row = bool(r.get("used_market_recon", False))
+            total_bet_ok = (
+                pd.notna(edge_t)
+                and abs(float(edge_t)) >= cfg.min_edge_total
+                and used_blend_row  # require residual model: MAE 3.9 vs direct 15.0
+            )
+            if total_bet_ok:
                 et_ = float(edge_t)
                 edge_dir = "+" if et_ > 0 else ""
                 over_under = "Over" if et_ > 0 else "Under"
@@ -718,10 +724,11 @@ def main() -> None:
                 if discord:
                     print(f"  {over_under} {r['pred_total_points']:.1f}  ⚡ EDGE {edge_dir}{et_:.1f} [{over_under.upper()}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
                 else:
-                    print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts")
+                    print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts  [resid model]")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
-                print(f"  Pred total: {r['pred_total_points']:.1f}")
+                note = "" if used_blend_row else " (no market line — direct model only)"
+                print(f"  Pred total: {r['pred_total_points']:.1f}{note}")
 
         # Save predictions to DB
         try:

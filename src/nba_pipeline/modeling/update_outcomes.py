@@ -83,7 +83,7 @@ def _ensure_schema(conn) -> None:
 def _kelly(
     edge_pts: float,
     juice: int = -110,
-    shrink: float = 0.35,
+    shrink: float = 0.60,
     sigma: float = 14.0,
 ) -> tuple[float, float]:
     """Estimate full Kelly fraction and win probability for a spread/total bet.
