@@ -342,7 +342,11 @@ def _ensure_bets_schema(engine) -> None:
         ADD COLUMN IF NOT EXISTS kelly_fraction_total  NUMERIC,
         ADD COLUMN IF NOT EXISTS win_prob_spread       NUMERIC,
         ADD COLUMN IF NOT EXISTS win_prob_total        NUMERIC,
-        ADD COLUMN IF NOT EXISTS direction_correct     BOOLEAN;
+        ADD COLUMN IF NOT EXISTS direction_correct     BOOLEAN,
+        ADD COLUMN IF NOT EXISTS closing_spread_home   NUMERIC,
+        ADD COLUMN IF NOT EXISTS closing_total         NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_spread            NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_total             NUMERIC;
     """
     with engine.begin() as conn:
         conn.execute(text(ddl))
@@ -625,6 +629,31 @@ def main() -> None:
             out["edge_spread"] = np.nan
             out["edge_total"] = np.nan
 
+        # Load today's line movement for steam detection (line already moved in model's direction).
+        steam_games: set[str] = set()
+        try:
+            steam_sql = text("""
+                SELECT home_team_abbr, away_team_abbr, line_move_margin, line_move_total
+                FROM odds.nba_game_lines_open_close
+                WHERE as_of_date = :d
+            """)
+            with engine.connect() as _conn:
+                steam_rows = _conn.execute(steam_sql, {"d": et_day}).fetchall()
+            steam_map = {(r.home_team_abbr, r.away_team_abbr): r for r in steam_rows}
+            # Flag game if |line_move_margin| >= 1.0 and direction aligns with model prediction.
+            for _, r in out.iterrows():
+                sm = steam_map.get((r["home_team_abbr"], r["away_team_abbr"]))
+                if sm is None:
+                    continue
+                lm = sm.line_move_margin  # positive = line moved toward home (home more favored)
+                edge_s = r.get("edge_spread")
+                if lm is not None and edge_s is not None and pd.notna(edge_s) and abs(float(lm)) >= 1.0:
+                    # Model edge > 0 = model likes home. Steam = line moved toward home (lm > 0).
+                    if float(edge_s) * float(lm) > 0:
+                        steam_games.add(r["game_slug"])
+        except Exception as _exc:
+            log.debug("Could not load line movement for steam detection: %s", _exc)
+
         # Print
         discord = os.getenv("DISCORD_FORMAT") == "1"
 
@@ -647,10 +676,11 @@ def main() -> None:
 
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
+            steam_tag = " 🔥STEAM" if r["game_slug"] in steam_games else ""
             if discord:
-                print(f"\n**{r['away_team_abbr']} @ {r['home_team_abbr']}** · {start:%I:%M %p ET}")
+                print(f"\n**{r['away_team_abbr']} @ {r['home_team_abbr']}** · {start:%I:%M %p ET}{steam_tag}")
             else:
-                print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}")
+                print(f"\n{r['away_team_abbr']} @ {r['home_team_abbr']}  {start:%I:%M %p ET}{steam_tag}")
 
             # Choose calibrated sigma based on which model was actually blended
             used_blend = bool(r.get("used_market_recon", False))

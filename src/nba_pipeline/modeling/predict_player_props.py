@@ -425,25 +425,59 @@ def _normalize_name(name: str) -> str:
     return re.sub(r"[^a-z ]", "", ascii_name.lower()).strip()
 
 
-def _load_prop_lines(engine, et_day: date, bookmaker: str = "draftkings") -> dict:
+def _load_prop_lines(
+    engine, et_day: date, bookmakers: list[str] | None = None
+) -> dict:
     """Load prop lines from odds.nba_player_prop_lines for et_day.
 
-    Returns dict: {(player_name_norm, stat): (line, over_price, under_price)}
+    Loads all requested bookmakers and returns the best line per (player, stat):
+      {(player_name_norm, stat): {
+          "best_over":  (line, price, bookmaker_key),   # lowest line  → best for OVER bets
+          "best_under": (line, price, bookmaker_key),   # highest line → best for UNDER bets
+          "draftkings": (line, over_price, under_price) | None,
+          "fanduel":    (line, over_price, under_price) | None,
+          ...
+      }}
     Gracefully returns empty dict if the table doesn't exist yet.
     """
+    if bookmakers is None:
+        bookmakers = ["draftkings", "fanduel"]
+
     sql = text("""
-        SELECT player_name_norm, stat, line, over_price, under_price
+        SELECT player_name_norm, stat, bookmaker_key, line, over_price, under_price
         FROM odds.nba_player_prop_lines
-        WHERE as_of_date = :date AND bookmaker_key = :bk
+        WHERE as_of_date = :date AND bookmaker_key = ANY(:bks)
     """)
     try:
         with engine.connect() as conn:
-            rows = conn.execute(sql, {"date": et_day, "bk": bookmaker}).fetchall()
-        result = {}
+            rows = conn.execute(sql, {"date": et_day, "bks": bookmakers}).fetchall()
+        # Group by (player_name_norm, stat)
+        groups: dict[tuple, dict] = {}
         for r in rows:
             key = (r.player_name_norm, r.stat)
-            result[key] = (r.line, r.over_price, r.under_price)
-        log.info("Loaded %d prop lines from DB for %s (%s)", len(result), et_day, bookmaker)
+            if key not in groups:
+                groups[key] = {}
+            groups[key][r.bookmaker_key] = (r.line, r.over_price, r.under_price)
+
+        # Compute best line for OVER (lowest) and UNDER (highest) across bookmakers
+        result = {}
+        for key, bk_data in groups.items():
+            entry: dict = dict(bk_data)  # bookmaker_key → (line, ov, un)
+            best_over = best_under = None
+            for bk, (line, ov, un) in bk_data.items():
+                if line is None:
+                    continue
+                line_f = float(line)
+                if best_over is None or line_f < best_over[0]:
+                    best_over = (line_f, ov, bk)
+                if best_under is None or line_f > best_under[0]:
+                    best_under = (line_f, un, bk)
+            entry["best_over"] = best_over
+            entry["best_under"] = best_under
+            result[key] = entry
+
+        n = sum(len(v) - 2 for v in result.values())  # approximate # book rows
+        log.info("Loaded prop lines for %d player/stat combos from %s", len(result), bookmakers)
         return result
     except Exception as exc:
         log.warning("Could not load prop lines (table may not exist yet): %s", exc)
@@ -738,20 +772,25 @@ def _print_best_bets(
         1 for _, r in best.iterrows()
         if prop_lines.get((_normalize_name(str(r.get("player_name") or "")), "points"))
     )
+    books_present: set[str] = set()
+    for entry in prop_lines.values():
+        if isinstance(entry, dict):
+            books_present.update(k for k in entry if k not in ("best_over", "best_under"))
+    books_str = "/".join(sorted(books_present)).upper() or "DK"
 
     if discord:
         print(f"\n**BEST PROP BETS** — top {len(best)} by confidence")
         if n_with_lines > 0:
-            print(f"DK lines loaded for {n_with_lines}/{len(best)} players")
+            print(f"{books_str} lines loaded for {n_with_lines}/{len(best)} players")
         else:
-            print("No DK lines in DB — showing decision rules (look up line manually)")
+            print("No book lines in DB — showing decision rules (look up line manually)")
     else:
         print("\n" + "=" * 65)
         print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
         if n_with_lines > 0:
-            print(f"  DK lines loaded for {n_with_lines}/{len(best)} players")
+            print(f"  {books_str} lines loaded for {n_with_lines}/{len(best)} players")
         else:
-            print(f"  No DK lines in DB — showing decision rules (look up line manually)")
+            print(f"  No book lines in DB — showing decision rules (look up line manually)")
         print("=" * 65)
 
     for _, r in best.iterrows():
@@ -818,25 +857,68 @@ def _print_best_bets(
             (pr, reb_lo, reb_hi, reb_ci, "REB", "rebounds"),
             (pa, ast_lo, ast_hi, ast_ci, "AST", "assists"),
         ]:
-            line_data = prop_lines.get((name_norm, stat_key))
-            if line_data and line_data[0] is not None:
-                book_line = float(line_data[0])
-                edge = pred - book_line
-                if edge > 0 and book_line < lo:
+            entry = prop_lines.get((name_norm, stat_key))
+            # entry is now a dict: {bk_key: (line, ov_price, un_price), "best_over": ..., "best_under": ...}
+            has_lines = bool(entry and isinstance(entry, dict) and entry.get("best_over") is not None)
+
+            def _fmt_juice(price) -> str:
+                if price is None:
+                    return ""
+                p = int(price)
+                return f"{p:+d}" if p >= 0 else f"{p}"
+
+            def _fmt_lines_summary(entry: dict, for_over: bool) -> str:
+                """Return e.g. 'DK=27.5 (o-115) FD=28.0 (o-120)' for display."""
+                parts = []
+                for bk, data in entry.items():
+                    if bk in ("best_over", "best_under"):
+                        continue
+                    if not isinstance(data, tuple) or data[0] is None:
+                        continue
+                    ln, ov_p, un_p = data
+                    price = ov_p if for_over else un_p
+                    bk_label = bk.replace("draftkings", "DK").replace("fanduel", "FD").upper()
+                    juice_str = f" (o{_fmt_juice(price)})" if for_over else f" (u{_fmt_juice(price)})"
+                    parts.append(f"{bk_label}={float(ln):.1f}{juice_str}")
+                return "  ".join(parts)
+
+            if has_lines:
+                best_over = entry["best_over"]    # (line, price, bk)
+                best_under = entry["best_under"]  # (line, price, bk)
+                # Determine signal based on model vs best lines
+                over_line = float(best_over[0])
+                under_line = float(best_under[0])
+                over_edge = pred - over_line
+                under_edge = pred - under_line
+                bet_over = over_edge > 0 and over_line < lo
+                bet_under = under_edge < 0 and under_line > hi
+
+                if bet_over:
+                    bk_label = best_over[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
+                    juice_str = _fmt_juice(best_over[1])
+                    lines_display = _fmt_lines_summary(entry, for_over=True)
+                    break_even = 100 / (100 + abs(best_over[1])) if best_over[1] else None
+                    be_str = f" BE={break_even:.1%}" if break_even else ""
                     if discord:
-                        print(f"  🟢 **OVER {stat_label}** · model={pred:.1f} DK={book_line:.1f} edge=+{edge:.1f}")
+                        print(f"  🟢 **OVER {stat_label}** · model={pred:.1f} {lines_display} edge=+{over_edge:.1f}{be_str}")
                     else:
-                        print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  >> BET OVER   edge=+{edge:.1f}")
-                elif edge < 0 and book_line > hi:
+                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET OVER @ {bk_label}  edge=+{over_edge:.1f}{be_str}")
+                elif bet_under:
+                    bk_label = best_under[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
+                    juice_str = _fmt_juice(best_under[1])
+                    lines_display = _fmt_lines_summary(entry, for_over=False)
+                    break_even = 100 / (100 + abs(best_under[1])) if best_under[1] else None
+                    be_str = f" BE={break_even:.1%}" if break_even else ""
                     if discord:
-                        print(f"  🔴 **UNDER {stat_label}** · model={pred:.1f} DK={book_line:.1f} edge={edge:.1f}")
+                        print(f"  🔴 **UNDER {stat_label}** · model={pred:.1f} {lines_display} edge={under_edge:.1f}{be_str}")
                     else:
-                        print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  >> BET UNDER  edge={edge:.1f}")
+                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET UNDER @ {bk_label}  edge={under_edge:.1f}{be_str}")
                 else:
+                    lines_display = _fmt_lines_summary(entry, for_over=True)
                     if discord:
-                        print(f"  ⬜ {stat_label} · model={pred:.1f} DK={book_line:.1f} (no bet, inside CI {lo:.1f}-{hi:.1f})")
+                        print(f"  ⬜ {stat_label} · model={pred:.1f} {lines_display} (no bet, inside CI {lo:.1f}-{hi:.1f})")
                     else:
-                        print(f"         {stat_label:<3}  model={pred:.1f}  DK={book_line:.1f}  no bet — inside CI {lo:.1f}-{hi:.1f}")
+                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  no bet — inside CI {lo:.1f}-{hi:.1f}")
             else:
                 if discord:
                     print(f"  ⬜ {stat_label} · model={pred:.1f} ±{ci:.1f} (OVER if line < {lo:.1f} | UNDER if line > {hi:.1f})")
@@ -959,7 +1041,13 @@ def main() -> None:
             def _get_line(player_name: str, _stat: str = stat) -> float:
                 key = (_normalize_name(str(player_name)), _stat)
                 v = prop_lines.get(key)
-                return float(v[0]) if v and v[0] is not None else np.nan
+                if not v or not isinstance(v, dict):
+                    return np.nan
+                # Use best_over line as representative model input feature
+                best_over = v.get("best_over")
+                if best_over and best_over[0] is not None:
+                    return float(best_over[0])
+                return np.nan
 
             today_lines = df["player_name"].apply(_get_line)
             n_overridden = int(today_lines.notna().sum())
@@ -1050,8 +1138,11 @@ def main() -> None:
             ast_line = prop_lines.get((name_norm, "assists"))
 
             def _fmt(pred: float, line_data) -> str:
-                if line_data and line_data[0] is not None:
-                    return f"{pred:.1f} (DK {float(line_data[0]):.1f})"
+                if line_data and isinstance(line_data, dict):
+                    bo = line_data.get("best_over")
+                    if bo and bo[0] is not None:
+                        bk_lbl = bo[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
+                        return f"{pred:.1f} ({bk_lbl} {float(bo[0]):.1f})"
                 return f"{pred:.1f}"
 
             print(

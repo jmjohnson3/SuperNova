@@ -301,7 +301,7 @@ def _fetch_prop_lines_for_day(
             "apiKey": cfg.oddsapi_key,
             "regions": "us",
             "markets": _PROP_MARKETS,
-            "bookmakers": "draftkings",
+            "bookmakers": "draftkings,fanduel",
             "oddsFormat": cfg.odds_format,
             "dateFormat": cfg.date_format,
         }
