@@ -54,7 +54,7 @@ class Step:
 STEPS: list[Step] = [
     Step("Odds Crawler",              "nba_pipeline.crawler_oddsapi",                    critical=True,  post_output=False, timeout_s=900),
     Step("MSF Crawler",               "nba_pipeline.crawler",                            critical=True,  post_output=False, timeout_s=3600),
-    Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=1800),
+    Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=3600),
     Step("Yesterday's Results",       "nba_pipeline.grade_predictions",                  critical=False, post_output=True,  timeout_s=60),
     Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=False, post_output=False, timeout_s=600),
     Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=300),
