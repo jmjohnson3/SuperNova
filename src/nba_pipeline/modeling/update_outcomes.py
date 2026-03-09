@@ -45,8 +45,12 @@ def _ensure_schema(conn) -> None:
                 total_bet_side      TEXT,
                 spread_covered      BOOLEAN,
                 total_correct       BOOLEAN,
+                direction_correct   BOOLEAN,
                 UNIQUE (game_date_et, game_slug)
             );
+            -- Add column for older tables that predate this schema version
+            ALTER TABLE bets.game_predictions
+                ADD COLUMN IF NOT EXISTS direction_correct BOOLEAN;
             CREATE TABLE IF NOT EXISTS bets.prop_predictions (
                 id                  SERIAL PRIMARY KEY,
                 predicted_at_utc    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -79,7 +83,8 @@ def update_game_outcomes(conn) -> int:
         cur.execute("""
             SELECT gp.id, gp.game_slug, gp.game_date_et,
                    gp.market_spread_home, gp.market_total,
-                   gp.spread_bet_side, gp.total_bet_side
+                   gp.spread_bet_side, gp.total_bet_side,
+                   gp.pred_margin_home
             FROM bets.game_predictions gp
             WHERE gp.actual_margin_home IS NULL
               AND gp.game_date_et <= %s
@@ -132,14 +137,22 @@ def update_game_outcomes(conn) -> int:
                 else:
                     total_correct = actual_total < mkt_t
 
+            # Directional accuracy: did the model correctly predict home win vs. away win?
+            # Tracked for ALL games regardless of whether a bet was flagged.
+            pred_margin = float(row["pred_margin_home"]) if row["pred_margin_home"] is not None else None
+            direction_correct = None
+            if pred_margin is not None:
+                direction_correct = (pred_margin > 0) == (actual_margin > 0)
+
             cur.execute("""
                 UPDATE bets.game_predictions
                 SET actual_margin_home = %s,
                     actual_total       = %s,
                     spread_covered     = %s,
-                    total_correct      = %s
+                    total_correct      = %s,
+                    direction_correct  = %s
                 WHERE id = %s
-            """, (actual_margin, actual_total, spread_covered, total_correct, row["id"]))
+            """, (actual_margin, actual_total, spread_covered, total_correct, direction_correct, row["id"]))
             updated += 1
 
     conn.commit()
@@ -210,7 +223,9 @@ def print_running_record(conn) -> None:
                 COUNT(*) FILTER (WHERE spread_covered IS NOT NULL)       AS spread_n,
                 SUM(CASE WHEN spread_covered = TRUE THEN 1 ELSE 0 END)   AS spread_wins,
                 COUNT(*) FILTER (WHERE total_correct IS NOT NULL)        AS total_n,
-                SUM(CASE WHEN total_correct = TRUE THEN 1 ELSE 0 END)    AS total_wins
+                SUM(CASE WHEN total_correct = TRUE THEN 1 ELSE 0 END)    AS total_wins,
+                COUNT(*) FILTER (WHERE direction_correct IS NOT NULL)    AS dir_n,
+                SUM(CASE WHEN direction_correct = TRUE THEN 1 ELSE 0 END) AS dir_wins
             FROM bets.game_predictions
             WHERE spread_bet_side IS NOT NULL OR total_bet_side IS NOT NULL
         """)
@@ -223,9 +238,12 @@ def print_running_record(conn) -> None:
     spread_wins = int(row["spread_wins"] or 0)
     total_n = int(row["total_n"] or 0)
     total_wins = int(row["total_wins"] or 0)
+    dir_n = int(row["dir_n"] or 0)
+    dir_wins = int(row["dir_wins"] or 0)
 
     spread_pct = (spread_wins / spread_n * 100) if spread_n > 0 else 0.0
     total_pct = (total_wins / total_n * 100) if total_n > 0 else 0.0
+    dir_pct = (dir_wins / dir_n * 100) if dir_n > 0 else 0.0
 
     # ROI at -110: win $100 per win, lose $110 per loss
     spread_roi = ((spread_wins * 100 - (spread_n - spread_wins) * 110) / (spread_n * 110) * 100) if spread_n > 0 else 0.0
@@ -234,6 +252,7 @@ def print_running_record(conn) -> None:
     print(
         f"Spread: {spread_wins}-{spread_n - spread_wins} ({spread_pct:.1f}%) | ROI: {spread_roi:+.1f}%"
         f" | Total: {total_wins}-{total_n - total_wins} ({total_pct:.1f}%) | ROI: {total_roi:+.1f}%"
+        f" | Direction: {dir_wins}/{dir_n} ({dir_pct:.1f}%)"
     )
 
 

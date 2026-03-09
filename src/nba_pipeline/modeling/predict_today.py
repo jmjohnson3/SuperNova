@@ -28,23 +28,67 @@ class PredictConfig:
     season: str | None = None
     et_date: date | None = None
     min_edge_spread: float = 6.0  # minimum |pred - market| to flag a spread bet
-    min_edge_total: float = 3.0   # minimum |pred - market| to flag a total bet
+    min_edge_total: float = 5.0   # minimum |pred - market| to flag a total bet
 
 
 def _compute_blend_weight(calib: dict) -> float:
     """Inverse-MAE blend weight for the residual model, derived from calibration.json.
 
     Higher weight goes to the lower-MAE model (residual).
+    Quality gate: only use the residual model if it is ≥10% better (lower MAE) than
+    the direct model. If not, returns 0.0 (direct-only).
     Falls back to 0.70 if calibration values are missing or degenerate.
     """
     direct_mae = calib.get("direct_spread_mae", 10.5)
     resid_mae = calib.get("resid_spread_mae", 4.0)
     if direct_mae <= 0 or resid_mae <= 0:
         return 0.70
+    # Quality gate: residual must be ≥10% better than direct to be worth blending
+    if resid_mae >= direct_mae * 0.90:
+        log.info(
+            "Residual model quality gate failed (resid MAE %.3f ≥ 90%% of direct MAE %.3f). "
+            "Using direct model only.",
+            resid_mae, direct_mae,
+        )
+        return 0.0
     w_direct = 1.0 / direct_mae
     w_resid = 1.0 / resid_mae
     total = w_direct + w_resid
     return round(w_resid / total, 4)
+
+
+def _compute_live_bias(engine) -> tuple[float, float]:
+    """Compute rolling mean prediction error from recent graded games.
+
+    Returns (spread_bias, total_bias) — subtract from raw predictions to correct.
+    Positive bias means the model over-predicted (pred > actual on average).
+    Requires ≥10 graded games in the last 30 days; otherwise returns (0.0, 0.0).
+    """
+    sql = text("""
+        SELECT
+            COUNT(*)                               AS n,
+            AVG(pred_margin_home - actual_margin_home) AS spread_bias,
+            AVG(pred_total       - actual_total)       AS total_bias
+        FROM bets.game_predictions
+        WHERE actual_margin_home IS NOT NULL
+          AND game_date_et >= CURRENT_DATE - INTERVAL '30 days'
+    """)
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(sql).fetchone()
+        if row is None or row[0] is None or int(row[0]) < 10:
+            log.info("Auto bias correction: not enough data (need 10+ graded games in last 30 days).")
+            return 0.0, 0.0
+        sb = float(row[1] or 0.0)
+        tb = float(row[2] or 0.0)
+        log.info(
+            "Auto bias correction: n=%d  spread_bias=%.2f  total_bias=%.2f",
+            int(row[0]), sb, tb,
+        )
+        return sb, tb
+    except Exception as exc:
+        log.warning("Could not compute live bias: %s", exc)
+        return 0.0, 0.0
 
 
 SQL_GAMES_FOR_DATE = """
@@ -242,6 +286,7 @@ def _ensure_bets_schema(engine) -> None:
         total_bet_side        TEXT,
         spread_covered        BOOLEAN,
         total_correct         BOOLEAN,
+        direction_correct     BOOLEAN,
         kelly_fraction_spread NUMERIC,
         kelly_fraction_total  NUMERIC,
         win_prob_spread       NUMERIC,
@@ -253,7 +298,8 @@ def _ensure_bets_schema(engine) -> None:
         ADD COLUMN IF NOT EXISTS kelly_fraction_spread NUMERIC,
         ADD COLUMN IF NOT EXISTS kelly_fraction_total  NUMERIC,
         ADD COLUMN IF NOT EXISTS win_prob_spread       NUMERIC,
-        ADD COLUMN IF NOT EXISTS win_prob_total        NUMERIC;
+        ADD COLUMN IF NOT EXISTS win_prob_total        NUMERIC,
+        ADD COLUMN IF NOT EXISTS direction_correct     BOOLEAN;
     """
     with engine.begin() as conn:
         conn.execute(text(ddl))
@@ -471,6 +517,11 @@ def main() -> None:
                     ok.sum(), len(df), w * 100, (1.0 - w) * 100,
                 )
                 used_market = ok.values
+
+        # Auto bias correction: subtract rolling mean prediction error from recent graded games
+        bias_spread, bias_total = _compute_live_bias(engine)
+        pred_margin_final = pred_margin_final - bias_spread
+        pred_total_final = pred_total_final - bias_total
 
         # Validate raw predictions before clipping
         _validate_game_predictions(pred_margin_final, pred_total_final, id_df)

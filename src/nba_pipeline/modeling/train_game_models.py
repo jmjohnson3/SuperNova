@@ -196,7 +196,8 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     y_spread = df["margin"].astype(float)
     y_total = df["total_points"].astype(float)
 
-    keep_cats = ["season", "home_team_abbr", "away_team_abbr"]
+    # Team OHE removed — causes overfitting (e.g. away_team_abbr_DAL was top-3 feature)
+    keep_cats = ["season"]
 
     drop_cols = {
         "game_slug",
