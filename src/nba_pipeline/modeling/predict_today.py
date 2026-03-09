@@ -259,7 +259,7 @@ def _ensure_bets_schema(engine) -> None:
         conn.execute(text(ddl))
 
 
-def _save_predictions(out: pd.DataFrame, engine, et_day) -> None:
+def _save_predictions(out: pd.DataFrame, engine, et_day, calib: dict | None = None) -> None:
     """Upsert game predictions into bets.game_predictions."""
     _ensure_bets_schema(engine)
     upsert_sql = text("""
@@ -302,8 +302,9 @@ def _save_predictions(out: pd.DataFrame, engine, et_day) -> None:
         total_bet = None
         kf_s = kf_t = wp_s = wp_t = None
         used_blend = bool(r.get("used_market_recon", False))
-        sigma_s = calib.get("resid_spread_rmse" if used_blend else "direct_spread_rmse", 14.0)
-        sigma_t = calib.get("resid_total_rmse"  if used_blend else "direct_total_rmse",  20.0)
+        _calib = calib or {}
+        sigma_s = _calib.get("resid_spread_rmse" if used_blend else "direct_spread_rmse", 14.0)
+        sigma_t = _calib.get("resid_total_rmse"  if used_blend else "direct_total_rmse",  20.0)
         if edge_s is not None:
             spread_bet = "home" if edge_s > 0 else "away"
             kf_s, wp_s = _kelly(abs(edge_s), sigma=sigma_s)
@@ -568,7 +569,7 @@ def main() -> None:
 
         # Save predictions to DB
         try:
-            _save_predictions(out, engine, et_day)
+            _save_predictions(out, engine, et_day, calib=calib)
         except Exception as exc:
             log.warning("Could not save predictions to DB: %s", exc)
 

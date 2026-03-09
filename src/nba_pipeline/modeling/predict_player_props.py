@@ -932,7 +932,10 @@ def main() -> None:
     # Warn about players whose last recorded game is unusually old (load management, illness gaps)
     if "player_rest_days" in df.columns:
         stale_mask = df["player_rest_days"].fillna(0) > 5
-        stale_players = df.loc[stale_mask, ["player_name", "team_abbr", "player_rest_days"]].drop_duplicates("player_id" if "player_id" in df.columns else "player_name")
+        stale_cols = ["player_name", "team_abbr", "player_rest_days"]
+        if "player_id" in df.columns:
+            stale_cols = ["player_id"] + stale_cols
+        stale_players = df.loc[stale_mask, stale_cols].drop_duplicates("player_id" if "player_id" in df.columns else "player_name")
         if not stale_players.empty:
             print(f"\n  *** STALE PLAYER DATA WARNING: {len(stale_players)} player(s) last played 5+ days ago:")
             for _, row in stale_players.iterrows():
