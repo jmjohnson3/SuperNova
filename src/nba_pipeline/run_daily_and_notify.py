@@ -63,6 +63,7 @@ STEPS: list[Step] = [
     Step("Game Predictions",          "nba_pipeline.modeling.predict_today",              critical=False, post_output=True,  timeout_s=600),
     Step("Alt Line Scan",             "nba_pipeline.modeling.scan_alt_lines_grid",         critical=False, post_output=True,  timeout_s=600),
     Step("Player Prop Projections",   "nba_pipeline.modeling.predict_player_props",        critical=False, post_output=True,  timeout_s=900),
+    Step("Best Bets Parlay",          "nba_pipeline.modeling.post_parlay",                 critical=False, post_output=False, timeout_s=60),
 ]
 
 
