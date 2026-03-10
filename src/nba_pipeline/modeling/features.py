@@ -39,9 +39,9 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # Pythagorean expectation (NBA exponent ≈ 14, from Daryl Morey / 82games research).
     # More predictive of future wins than current W-L record because it corrects for
     # close-game luck.  Points-for^14 / (points-for^14 + points-against^14) → [0, 1].
-    # Using both 5-game (recent form) and 10-game (true-talent) windows.
+    # Using 5-game (recent form), 10-game (true-talent), and 20-game (season baseline) windows.
     _EXP = 14.0
-    for win in (5, 10):
+    for win in (5, 10, 20):
         hf = f"home_pts_for_avg_{win}"
         ha = f"home_pts_against_avg_{win}"
         af = f"away_pts_for_avg_{win}"
@@ -73,20 +73,43 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # Pace
     if "home_pace_avg_5" in X.columns and "away_pace_avg_5" in X.columns:
         X["pace_diff_5"] = X["home_pace_avg_5"] - X["away_pace_avg_5"]
+    if "home_pace_avg_20" in X.columns and "away_pace_avg_20" in X.columns:
+        X["pace_diff_20"] = X["home_pace_avg_20"] - X["away_pace_avg_20"]
 
     # Scoring volume
     if "home_pts_for_avg_5" in X.columns and "away_pts_for_avg_5" in X.columns:
         X["pts_for_diff_5"] = X["home_pts_for_avg_5"] - X["away_pts_for_avg_5"]
 
-    # Shooting efficiency differentials
-    if "home_efg_pct_avg_5" in X.columns and "away_efg_pct_avg_5" in X.columns:
-        X["efg_diff_5"] = X["home_efg_pct_avg_5"] - X["away_efg_pct_avg_5"]
-    if "home_ts_pct_avg_5" in X.columns and "away_ts_pct_avg_5" in X.columns:
-        X["ts_diff_5"] = X["home_ts_pct_avg_5"] - X["away_ts_pct_avg_5"]
-    if "home_fg3a_rate_avg_5" in X.columns and "away_fg3a_rate_avg_5" in X.columns:
-        X["fg3a_rate_diff_5"] = X["home_fg3a_rate_avg_5"] - X["away_fg3a_rate_avg_5"]
-    if "home_tov_rate_avg_5" in X.columns and "away_tov_rate_avg_5" in X.columns:
-        X["tov_rate_diff_5"] = X["home_tov_rate_avg_5"] - X["away_tov_rate_avg_5"]
+    # Shooting efficiency differentials (multi-window)
+    for window in (5, 10, 20):
+        for stat in ("efg_pct", "ts_pct", "tov_rate", "fg3_pct", "fg3a_rate"):
+            h, a = f"home_{stat}_avg_{window}", f"away_{stat}_avg_{window}"
+            if h in X.columns and a in X.columns:
+                X[f"{stat}_diff_{window}"] = X[h] - X[a]
+
+    # Net rating and pts diffs for 20-game window (5 and 10 are computed above via net_rating_10)
+    for window in (20,):
+        hf = f"home_pts_for_avg_{window}"
+        ha = f"home_pts_against_avg_{window}"
+        af = f"away_pts_for_avg_{window}"
+        aa = f"away_pts_against_avg_{window}"
+        if hf in X.columns and ha in X.columns:
+            X[f"home_net_rating_{window}"] = X[hf] - X[ha]
+        if af in X.columns and aa in X.columns:
+            X[f"away_net_rating_{window}"] = X[af] - X[aa]
+        if f"home_net_rating_{window}" in X.columns and f"away_net_rating_{window}" in X.columns:
+            X[f"net_rating_diff_{window}"] = X[f"home_net_rating_{window}"] - X[f"away_net_rating_{window}"]
+        if hf in X.columns and af in X.columns:
+            X[f"pts_for_diff_{window}"] = X[hf] - X[af]
+
+    # Venue-context diffs: how much does the home team over-perform at home vs. overall?
+    # Positive home_venue_premium = team gets meaningful home boost.
+    if "home_home_pts_for_avg_10" in X.columns and "home_pts_for_avg_10" in X.columns:
+        X["home_venue_premium"] = X["home_home_pts_for_avg_10"] - X["home_pts_for_avg_10"]
+    if "away_away_pts_for_avg_10" in X.columns and "away_pts_for_avg_10" in X.columns:
+        X["away_road_premium"] = X["away_away_pts_for_avg_10"] - X["away_pts_for_avg_10"]
+    if "home_venue_premium" in X.columns and "away_road_premium" in X.columns:
+        X["venue_context_diff"] = X["home_venue_premium"] - X["away_road_premium"]
 
     # Injury impact
     if "home_injured_pts_lost" in X.columns and "away_injured_pts_lost" in X.columns:

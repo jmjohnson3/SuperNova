@@ -166,7 +166,25 @@ SELECT
         THEN AVG(pts_bench) OVER w10
              / NULLIF(AVG(pts) OVER w10, 0)
         ELSE NULL
-    END                                                AS bench_pct_avg_10
+    END                                                AS bench_pct_avg_10,
+
+    -- =======================================================================
+    -- ROLLING 20-GAME AVERAGES (pregame, excludes current game)
+    -- Placed at the end to allow CREATE OR REPLACE without column reordering.
+    -- =======================================================================
+    AVG(stl)            OVER w20 AS stl_avg_20,
+    AVG(blk)            OVER w20 AS blk_avg_20,
+    AVG(ast)            OVER w20 AS ast_avg_20,
+    AVG(reb)            OVER w20 AS reb_avg_20,
+    AVG(off_reb)        OVER w20 AS off_reb_avg_20,
+    AVG(def_reb)        OVER w20 AS def_reb_avg_20,
+    AVG(pts_off_tov)    OVER w20 AS pts_off_tov_avg_20,
+    AVG(pts_2nd_chance) OVER w20 AS pts_2nd_chance_avg_20,
+    AVG(pts_fast_break) OVER w20 AS pts_fast_break_avg_20,
+    AVG(pts_paint)      OVER w20 AS pts_paint_avg_20,
+    AVG(pts_bench)      OVER w20 AS pts_bench_avg_20,
+    AVG(fouls)          OVER w20 AS fouls_avg_20,
+    AVG(plus_minus)     OVER w20 AS plus_minus_avg_20
 
 FROM ordered
 
@@ -186,4 +204,9 @@ WINDOW
         PARTITION BY season, team_abbr
         ORDER BY order_ts, game_slug
         ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
+    ),
+    w20 AS (
+        PARTITION BY season, team_abbr
+        ORDER BY order_ts, game_slug
+        ROWS BETWEEN 20 PRECEDING AND 1 PRECEDING
     );

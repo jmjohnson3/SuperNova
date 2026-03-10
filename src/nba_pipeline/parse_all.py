@@ -30,10 +30,67 @@ _SQL_DIR = Path(__file__).resolve().parents[2] / "sql"
 # Predictions then complete in < 5 s.
 # ---------------------------------------------------------------------------
 
+_TEAM_FORM_FEATURES_SQL = """
+CREATE OR REPLACE VIEW features.team_form_features AS
+SELECT
+    season,
+    team_abbr,
+    game_slug,
+    game_date_et,
+    AVG(points_for)     OVER w5  AS pts_for_avg_5,
+    AVG(points_against) OVER w5  AS pts_against_avg_5,
+    AVG(points_for)     OVER w10 AS pts_for_avg_10,
+    AVG(points_against) OVER w10 AS pts_against_avg_10,
+    STDDEV_SAMP(points_for) OVER w10 AS pts_for_sd_10,
+    AVG(points_for)     OVER w20 AS pts_for_avg_20,
+    AVG(points_against) OVER w20 AS pts_against_avg_20
+FROM features.team_game_spine
+WINDOW
+    w5  AS (PARTITION BY season, team_abbr ORDER BY game_date_et, game_slug ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING),
+    w10 AS (PARTITION BY season, team_abbr ORDER BY game_date_et, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
+    w20 AS (PARTITION BY season, team_abbr ORDER BY game_date_et, game_slug ROWS BETWEEN 20 PRECEDING AND 1 PRECEDING)
+"""
+
+_TEAM_PREGAME_ROLLING_SQL = """
+CREATE OR REPLACE VIEW features.team_pregame_rolling_boxscore AS
+WITH joined AS (
+    SELECT
+        s.season, s.team_abbr, s.game_slug, s.game_date_et, s.start_ts_utc,
+        m.poss_est, m.fg_pct, m.ft_pct, m.tov, m.oreb
+    FROM features.team_game_spine s
+    LEFT JOIN features.team_boxscore_metrics m
+      ON m.season = s.season AND m.team_abbr = s.team_abbr AND m.game_slug = s.game_slug
+),
+ordered AS (
+    SELECT *,
+        COALESCE(start_ts_utc, game_date_et::timestamp with time zone) AS order_ts
+    FROM joined
+)
+SELECT
+    season, team_abbr, game_slug, game_date_et,
+    COUNT(poss_est) OVER w5  AS pace_n_5,
+    COUNT(poss_est) OVER w10 AS pace_n_10,
+    AVG(poss_est)   OVER w5  AS pace_avg_5,
+    AVG(poss_est)   OVER w10 AS pace_avg_10,
+    AVG(fg_pct)     OVER w5  AS fg_pct_avg_5,
+    AVG(ft_pct)     OVER w5  AS ft_pct_avg_5,
+    AVG(tov)        OVER w5  AS tov_avg_5,
+    AVG(oreb)       OVER w5  AS oreb_avg_5,
+    AVG(poss_est)   OVER w20 AS pace_avg_20
+FROM ordered
+WINDOW
+    w5  AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING),
+    w10 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
+    w20 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 20 PRECEDING AND 1 PRECEDING)
+"""
+
+
 def _apply_view_fixes(pg_dsn: str) -> None:
     """Apply SQL view bug fixes. Idempotent — safe to run on every parse_all.
 
     Fixes applied:
+    - team_form_features: add pts_for_avg_20 / pts_against_avg_20 (w20 window)
+    - team_pregame_rolling_boxscore: add pace_avg_20 (w20 window)
     - V011: three_pt_rate_avg_10 was always 0 (wrong event_type filter;
       now uses raw_json->'fieldGoalAttempt'->>'points' = 3)
     - V013: referee fan-out producing 26% duplicate player-game rows
@@ -51,6 +108,19 @@ def _apply_view_fixes(pg_dsn: str) -> None:
     conn.autocommit = False
     cur = conn.cursor()
     try:
+        # Ensure team_form_features and team_pregame_rolling_boxscore have _avg_20 columns.
+        # CREATE OR REPLACE is safe — same base columns, new w20 columns appended.
+        cur.execute(_TEAM_FORM_FEATURES_SQL)
+        log.info("Applied team_form_features w20 update")
+        cur.execute(_TEAM_PREGAME_ROLLING_SQL)
+        log.info("Applied team_pregame_rolling_boxscore w20 update")
+
+        # V006/V001: CREATE OR REPLACE is fine (new _avg_20 columns added)
+        cur.execute((_SQL_DIR / "V006_team_style_profile.sql").read_text(encoding="utf-8"))
+        log.info("Applied V006 team_style_profile w20 update")
+        cur.execute((_SQL_DIR / "V001_new_feature_views.sql").read_text(encoding="utf-8"))
+        log.info("Applied V001 new_feature_views w20 + home/away splits update")
+
         # V011: CREATE OR REPLACE is fine (same column list, different filter)
         cur.execute((_SQL_DIR / "V011_pbp_features.sql").read_text(encoding="utf-8"))
         log.info("Applied V011 PBP 3PT rate fix")
@@ -65,7 +135,18 @@ def _apply_view_fixes(pg_dsn: str) -> None:
         cur.execute((_SQL_DIR / "V013_referee_features.sql").read_text(encoding="utf-8"))
         log.info("Applied V013 referee fan-out fix")
 
-        # V022: recreate player_training_features (includes DROP VIEW IF EXISTS CASCADE)
+        # V014: adds new _avg_20 + home/away split columns.
+        # DROPs the wrapper views game_training/prediction_features CASCADE.
+        # The matviews (_mat) are NOT dropped because the wrapper depends ON the
+        # matview, not vice versa.  _matview_needs_recreate() in
+        # _materialize_game_features() will detect the column count mismatch
+        # between the old matview and the new full V014 view and trigger recreation.
+        # Also drops player_training_features via CASCADE from game_training_features.
+        cur.execute((_SQL_DIR / "V014_updated_game_views.sql").read_text(encoding="utf-8"))
+        log.info("Applied V014 game_views w20 update")
+
+        # V022: recreate player_training_features (includes DROP VIEW IF EXISTS CASCADE).
+        # Must run AFTER V014 since V014 drops player_training_features via CASCADE.
         cur.execute((_SQL_DIR / "V022_prop_line_features.sql").read_text(encoding="utf-8"))
         log.info("Recreated player_training_features from V022")
 
@@ -99,6 +180,29 @@ _GAME_VIEWS = [
         ],
     ),
 ]
+
+
+def _matview_needs_recreate(conn, matview_name: str, view_name: str) -> bool:
+    """Return True if the matview column count differs from the underlying view.
+
+    When the underlying view gains new columns (e.g. after a SQL update), the
+    materialized view's schema is stale.  Dropping it forces the first-run path
+    in _materialize_game_features to recreate it with the correct schema.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """SELECT COUNT(*) FROM information_schema.columns
+               WHERE table_schema = 'features' AND table_name = %s""",
+            (matview_name,),
+        )
+        mat_cols = cur.fetchone()[0]
+        cur.execute(
+            """SELECT COUNT(*) FROM information_schema.columns
+               WHERE table_schema = 'features' AND table_name = %s""",
+            (view_name,),
+        )
+        view_cols = cur.fetchone()[0]
+    return mat_cols != view_cols
 
 
 def _materialize_game_features(pg_dsn: str) -> None:
@@ -181,6 +285,55 @@ def _materialize_game_features(pg_dsn: str) -> None:
 
                 conn.commit()
                 log.info("  Wrapper views rebuilt for features.%s", view_name)
+
+            # ------------------------------------------------------------------
+            # 2b. Schema-change detection: if the underlying view has more
+            #     columns than the matview (e.g. after a SQL update), drop the
+            #     matview so the first-run path above recreates it correctly.
+            # ------------------------------------------------------------------
+            elif _matview_needs_recreate(conn, mat_name, view_name):
+                log.info(
+                    "Schema change detected for features.%s — dropping matview for recreation",
+                    mat_name,
+                )
+                # Save player_training_features SQL before CASCADE drop
+                ptf_sql = None
+                if view_name == "game_training_features":
+                    cur.execute(
+                        """
+                        SELECT pg_get_viewdef('features.player_training_features', true)
+                        WHERE EXISTS (
+                            SELECT 1 FROM pg_class c
+                            JOIN pg_namespace n ON c.relnamespace = n.oid
+                            WHERE n.nspname = 'features' AND c.relname = 'player_training_features'
+                        )
+                        """
+                    )
+                    r2 = cur.fetchone()
+                    if r2:
+                        ptf_sql = r2[0].rstrip().rstrip(";")
+
+                cur.execute(f"DROP MATERIALIZED VIEW IF EXISTS features.{mat_name} CASCADE")
+                conn.commit()
+
+                # Recreate from the (now-updated) underlying view SQL
+                cur.execute("SELECT pg_get_viewdef(%s, true)", (f"features.{view_name}",))
+                view_sql = cur.fetchone()[0].rstrip().rstrip(";")
+                cur.execute(
+                    f"CREATE MATERIALIZED VIEW features.{mat_name} AS {view_sql} WITH NO DATA"
+                )
+                for idx_sql in index_sqls:
+                    cur.execute(idx_sql)
+                cur.execute(f"DROP VIEW IF EXISTS features.{view_name} CASCADE")
+                cur.execute(
+                    f"CREATE VIEW features.{view_name} AS SELECT * FROM features.{mat_name}"
+                )
+                if ptf_sql:
+                    cur.execute(
+                        f"CREATE VIEW features.player_training_features AS {ptf_sql}"
+                    )
+                conn.commit()
+                log.info("  Recreated features.%s with updated schema", mat_name)
 
             # ------------------------------------------------------------------
             # 3. Refresh (always — picks up new data from this parse run)

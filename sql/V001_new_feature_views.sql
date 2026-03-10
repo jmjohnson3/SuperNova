@@ -165,11 +165,18 @@ SELECT
     AVG(fg3a_rate) OVER w10 AS fg3a_rate_avg_10,
     AVG(efg_pct)   OVER w10 AS efg_pct_avg_10,
     AVG(ts_pct)    OVER w10 AS ts_pct_avg_10,
-    AVG(tov_rate)  OVER w10 AS tov_rate_avg_10
+    AVG(tov_rate)  OVER w10 AS tov_rate_avg_10,
+    -- 20-game rolling (appended at end to satisfy CREATE OR REPLACE column-order rules)
+    AVG(fg3_pct)   OVER w20 AS fg3_pct_avg_20,
+    AVG(efg_pct)   OVER w20 AS efg_pct_avg_20,
+    AVG(ts_pct)    OVER w20 AS ts_pct_avg_20,
+    AVG(tov_rate)  OVER w20 AS tov_rate_avg_20,
+    AVG(fg3a_rate) OVER w20 AS fg3a_rate_avg_20
 FROM ordered
 WINDOW
     w5  AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING),
-    w10 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING);
+    w10 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
+    w20 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 20 PRECEDING AND 1 PRECEDING);
 
 
 -- ============================================================================
@@ -240,11 +247,16 @@ SELECT
     AVG(def_rtg)  OVER w5  AS def_rtg_avg_5,
     -- Opponent strength over last 10 (schedule difficulty proxy)
     AVG(opp_season_def_rtg) OVER w10 AS opp_def_rtg_faced_avg_10,
-    AVG(opp_season_off_rtg) OVER w10 AS opp_off_rtg_faced_avg_10
+    AVG(opp_season_off_rtg) OVER w10 AS opp_off_rtg_faced_avg_10,
+    -- 20-game rolling (appended at end to satisfy CREATE OR REPLACE column-order rules)
+    AVG(off_rtg)  OVER w20 AS off_rtg_avg_20,
+    AVG(def_rtg)  OVER w20 AS def_rtg_avg_20,
+    AVG(off_rtg)  OVER w20 - AVG(def_rtg) OVER w20 AS net_rtg_avg_20
 FROM enriched
 WINDOW
     w5  AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING),
-    w10 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING);
+    w10 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
+    w20 AS (PARTITION BY season, team_abbr ORDER BY order_ts, game_slug ROWS BETWEEN 20 PRECEDING AND 1 PRECEDING);
 
 
 -- ============================================================================
@@ -358,24 +370,45 @@ WITH ordered AS (
 )
 SELECT
     season, team_abbr, game_slug, game_date_et, is_home,
-    -- Home-only rolling (only computed for home games, NULL for away)
-    CASE WHEN is_home THEN AVG(points_for)     OVER wh10 ELSE NULL END AS home_pts_for_avg_10,
-    CASE WHEN is_home THEN AVG(points_against)  OVER wh10 ELSE NULL END AS home_pts_against_avg_10,
-    CASE WHEN is_home THEN AVG(is_win)          OVER wh10 ELSE NULL END AS home_win_pct_10,
-    -- Away-only rolling (only computed for away games, NULL for home)
-    CASE WHEN NOT is_home THEN AVG(points_for)     OVER wa10 ELSE NULL END AS away_pts_for_avg_10,
-    CASE WHEN NOT is_home THEN AVG(points_against)  OVER wa10 ELSE NULL END AS away_pts_against_avg_10,
-    CASE WHEN NOT is_home THEN AVG(is_win)          OVER wa10 ELSE NULL END AS away_win_pct_10,
+    -- Home-only 10-game rolling (original columns — kept at same positions)
+    CASE WHEN is_home THEN AVG(points_for)     OVER wsplit10 ELSE NULL END AS home_pts_for_avg_10,
+    CASE WHEN is_home THEN AVG(points_against) OVER wsplit10 ELSE NULL END AS home_pts_against_avg_10,
+    CASE WHEN is_home THEN AVG(is_win)         OVER wsplit10 ELSE NULL END AS home_win_pct_10,
+    -- Away-only 10-game rolling (original columns — kept at same positions)
+    CASE WHEN NOT is_home THEN AVG(points_for)     OVER wsplit10 ELSE NULL END AS away_pts_for_avg_10,
+    CASE WHEN NOT is_home THEN AVG(points_against) OVER wsplit10 ELSE NULL END AS away_pts_against_avg_10,
+    CASE WHEN NOT is_home THEN AVG(is_win)         OVER wsplit10 ELSE NULL END AS away_win_pct_10,
     -- Overall rolling win%
-    AVG(is_win) OVER wall10 AS overall_win_pct_10
+    AVG(is_win) OVER wall10 AS overall_win_pct_10,
+    -- ===== NEW: 5-game and 20-game splits (appended at end) =====
+    -- Home-only 5-game
+    CASE WHEN is_home THEN AVG(points_for)     OVER wsplit5  ELSE NULL END AS home_pts_for_avg_5,
+    CASE WHEN is_home THEN AVG(points_against) OVER wsplit5  ELSE NULL END AS home_pts_against_avg_5,
+    CASE WHEN is_home THEN AVG(is_win)         OVER wsplit5  ELSE NULL END AS home_win_pct_5,
+    -- Home-only 20-game
+    CASE WHEN is_home THEN AVG(points_for)     OVER wsplit20 ELSE NULL END AS home_pts_for_avg_20,
+    CASE WHEN is_home THEN AVG(points_against) OVER wsplit20 ELSE NULL END AS home_pts_against_avg_20,
+    CASE WHEN is_home THEN AVG(is_win)         OVER wsplit20 ELSE NULL END AS home_win_pct_20,
+    -- Away-only 5-game
+    CASE WHEN NOT is_home THEN AVG(points_for)     OVER wsplit5  ELSE NULL END AS away_pts_for_avg_5,
+    CASE WHEN NOT is_home THEN AVG(points_against) OVER wsplit5  ELSE NULL END AS away_pts_against_avg_5,
+    CASE WHEN NOT is_home THEN AVG(is_win)         OVER wsplit5  ELSE NULL END AS away_win_pct_5,
+    -- Away-only 20-game
+    CASE WHEN NOT is_home THEN AVG(points_for)     OVER wsplit20 ELSE NULL END AS away_pts_for_avg_20,
+    CASE WHEN NOT is_home THEN AVG(points_against) OVER wsplit20 ELSE NULL END AS away_pts_against_avg_20,
+    CASE WHEN NOT is_home THEN AVG(is_win)         OVER wsplit20 ELSE NULL END AS away_win_pct_20
 FROM ordered
 WINDOW
-    wh10   AS (PARTITION BY season, team_abbr, CASE WHEN is_home THEN 1 ELSE 0 END
-               ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
-    wa10   AS (PARTITION BY season, team_abbr, CASE WHEN is_home THEN 1 ELSE 0 END
-               ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
-    wall10 AS (PARTITION BY season, team_abbr
-               ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING);
+    -- wsplit* partitions by season/team/venue so each window only looks at
+    -- games in the same venue context (home or away).
+    wsplit5  AS (PARTITION BY season, team_abbr, CASE WHEN is_home THEN 1 ELSE 0 END
+                 ORDER BY order_ts, game_slug ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING),
+    wsplit10 AS (PARTITION BY season, team_abbr, CASE WHEN is_home THEN 1 ELSE 0 END
+                 ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING),
+    wsplit20 AS (PARTITION BY season, team_abbr, CASE WHEN is_home THEN 1 ELSE 0 END
+                 ORDER BY order_ts, game_slug ROWS BETWEEN 20 PRECEDING AND 1 PRECEDING),
+    wall10   AS (PARTITION BY season, team_abbr
+                 ORDER BY order_ts, game_slug ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING);
 
 
 -- ============================================================================

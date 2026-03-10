@@ -128,7 +128,19 @@ SELECT
 
     -- ===== HOME/AWAY SPLITS =====
     hhas.home_win_pct_10        AS home_home_win_pct_10,
+    hhas.home_pts_for_avg_5     AS home_home_pts_for_avg_5,
+    hhas.home_pts_for_avg_20    AS home_home_pts_for_avg_20,
+    hhas.home_pts_against_avg_5 AS home_home_pts_against_avg_5,
+    hhas.home_pts_against_avg_20 AS home_home_pts_against_avg_20,
+    hhas.home_win_pct_5         AS home_home_win_pct_5,
+    hhas.home_win_pct_20        AS home_home_win_pct_20,
     aaas.away_win_pct_10        AS away_away_win_pct_10,
+    aaas.away_pts_for_avg_5     AS away_away_pts_for_avg_5,
+    aaas.away_pts_for_avg_20    AS away_away_pts_for_avg_20,
+    aaas.away_pts_against_avg_5 AS away_away_pts_against_avg_5,
+    aaas.away_pts_against_avg_20 AS away_away_pts_against_avg_20,
+    aaas.away_win_pct_5         AS away_away_win_pct_5,
+    aaas.away_win_pct_20        AS away_away_win_pct_20,
 
     -- ===== INJURY IMPACT =====
     COALESCE(hinj.injured_pts_lost, 0)    AS home_injured_pts_lost,
@@ -190,7 +202,7 @@ SELECT
     oj.total_over_implied_prob,
 
     -- ===== V006: TEAM STYLE PROFILE =====
-    -- Home team style
+    -- Home team style (10-game)
     hstyle.stl_avg_10           AS home_stl_avg_10,
     hstyle.blk_avg_10           AS home_blk_avg_10,
     hstyle.ast_avg_10           AS home_ast_avg_10,
@@ -203,7 +215,15 @@ SELECT
     hstyle.fast_break_pct_avg_10   AS home_fast_break_pct_10,
     hstyle.paint_pct_avg_10     AS home_paint_pct_10,
     hstyle.bench_pct_avg_10     AS home_bench_pct_10,
-    -- Away team style
+    -- Home team style (20-game)
+    hstyle.stl_avg_20           AS home_stl_avg_20,
+    hstyle.blk_avg_20           AS home_blk_avg_20,
+    hstyle.pts_fast_break_avg_20 AS home_pts_fast_break_avg_20,
+    hstyle.pts_paint_avg_20     AS home_pts_paint_avg_20,
+    hstyle.pts_bench_avg_20     AS home_pts_bench_avg_20,
+    hstyle.fouls_avg_20         AS home_fouls_avg_20,
+    hstyle.plus_minus_avg_20    AS home_plus_minus_avg_20,
+    -- Away team style (10-game)
     astyle.stl_avg_10           AS away_stl_avg_10,
     astyle.blk_avg_10           AS away_blk_avg_10,
     astyle.ast_avg_10           AS away_ast_avg_10,
@@ -216,6 +236,42 @@ SELECT
     astyle.fast_break_pct_avg_10   AS away_fast_break_pct_10,
     astyle.paint_pct_avg_10     AS away_paint_pct_10,
     astyle.bench_pct_avg_10     AS away_bench_pct_10,
+    -- Away team style (20-game)
+    astyle.stl_avg_20           AS away_stl_avg_20,
+    astyle.blk_avg_20           AS away_blk_avg_20,
+    astyle.pts_fast_break_avg_20 AS away_pts_fast_break_avg_20,
+    astyle.pts_paint_avg_20     AS away_pts_paint_avg_20,
+    astyle.pts_bench_avg_20     AS away_pts_bench_avg_20,
+    astyle.fouls_avg_20         AS away_fouls_avg_20,
+    astyle.plus_minus_avg_20    AS away_plus_minus_avg_20,
+
+    -- ===== V001: ADVANCED EFFICIENCY (20-game) =====
+    hae.efg_pct_avg_20          AS home_efg_pct_avg_20,
+    hae.ts_pct_avg_20           AS home_ts_pct_avg_20,
+    hae.tov_rate_avg_20         AS home_tov_rate_avg_20,
+    hae.fg3_pct_avg_20          AS home_fg3_pct_avg_20,
+    aae.efg_pct_avg_20          AS away_efg_pct_avg_20,
+    aae.ts_pct_avg_20           AS away_ts_pct_avg_20,
+    aae.tov_rate_avg_20         AS away_tov_rate_avg_20,
+    aae.fg3_pct_avg_20          AS away_fg3_pct_avg_20,
+
+    -- ===== V001: OPP-ADJUSTED RATINGS (20-game) =====
+    hoar.off_rtg_avg_20         AS home_off_rtg_avg_20,
+    hoar.def_rtg_avg_20         AS home_def_rtg_avg_20,
+    hoar.net_rtg_avg_20         AS home_net_rtg_avg_20,
+    aoar.off_rtg_avg_20         AS away_off_rtg_avg_20,
+    aoar.def_rtg_avg_20         AS away_def_rtg_avg_20,
+    aoar.net_rtg_avg_20         AS away_net_rtg_avg_20,
+
+    -- ===== TEAM FORM (20-game) =====
+    hf.pts_for_avg_20           AS home_pts_for_avg_20,
+    hf.pts_against_avg_20       AS home_pts_against_avg_20,
+    af.pts_for_avg_20           AS away_pts_for_avg_20,
+    af.pts_against_avg_20       AS away_pts_against_avg_20,
+
+    -- ===== PACE (20-game) =====
+    hroll.pace_avg_20           AS home_pace_avg_20,
+    aroll.pace_avg_20           AS away_pace_avg_20,
 
     -- ===== V008: LINEUP STABILITY =====
     hlu.starter_continuity_pct   AS home_starter_continuity,
@@ -313,14 +369,18 @@ LEFT JOIN features.team_opp_adjusted_roll aoar
 -- win_pct and conference_rank are now sourced from team_standings_detail (hsd/asd)
 -- which is already joined below and is properly point-in-time (source_fetched_at_utc <= game_date_et).
 LEFT JOIN LATERAL (
-    SELECT home_win_pct_10
+    SELECT home_win_pct_10, home_pts_for_avg_5, home_pts_for_avg_20,
+           home_pts_against_avg_5, home_pts_against_avg_20,
+           home_win_pct_5, home_win_pct_20
     FROM features.team_home_away_splits s
     WHERE s.season = b.season AND s.team_abbr = b.home_team_abbr
       AND s.is_home = TRUE AND s.game_date_et < b.game_date_et
     ORDER BY s.game_date_et DESC LIMIT 1
 ) hhas ON TRUE
 LEFT JOIN LATERAL (
-    SELECT away_win_pct_10
+    SELECT away_win_pct_10, away_pts_for_avg_5, away_pts_for_avg_20,
+           away_pts_against_avg_5, away_pts_against_avg_20,
+           away_win_pct_5, away_win_pct_20
     FROM features.team_home_away_splits s
     WHERE s.season = b.season AND s.team_abbr = b.away_team_abbr
       AND s.is_home = FALSE AND s.game_date_et < b.game_date_et
@@ -505,7 +565,19 @@ SELECT
 
     -- ===== HOME/AWAY SPLITS =====
     hhas.home_win_pct_10        AS home_home_win_pct_10,
+    hhas.home_pts_for_avg_5     AS home_home_pts_for_avg_5,
+    hhas.home_pts_for_avg_20    AS home_home_pts_for_avg_20,
+    hhas.home_pts_against_avg_5 AS home_home_pts_against_avg_5,
+    hhas.home_pts_against_avg_20 AS home_home_pts_against_avg_20,
+    hhas.home_win_pct_5         AS home_home_win_pct_5,
+    hhas.home_win_pct_20        AS home_home_win_pct_20,
     aaas.away_win_pct_10        AS away_away_win_pct_10,
+    aaas.away_pts_for_avg_5     AS away_away_pts_for_avg_5,
+    aaas.away_pts_for_avg_20    AS away_away_pts_for_avg_20,
+    aaas.away_pts_against_avg_5 AS away_away_pts_against_avg_5,
+    aaas.away_pts_against_avg_20 AS away_away_pts_against_avg_20,
+    aaas.away_win_pct_5         AS away_away_win_pct_5,
+    aaas.away_win_pct_20        AS away_away_win_pct_20,
 
     -- ===== INJURY IMPACT =====
     COALESCE(hinj.injured_pts_lost, 0)    AS home_injured_pts_lost,
@@ -566,7 +638,7 @@ SELECT
     oj.spread_home_implied_prob,
     oj.total_over_implied_prob,
 
-    -- ===== V006: TEAM STYLE =====
+    -- ===== V006: TEAM STYLE (10-game) =====
     hstyle.stl_avg_10           AS home_stl_avg_10,
     hstyle.blk_avg_10           AS home_blk_avg_10,
     hstyle.ast_avg_10           AS home_ast_avg_10,
@@ -579,6 +651,14 @@ SELECT
     hstyle.fast_break_pct_avg_10   AS home_fast_break_pct_10,
     hstyle.paint_pct_avg_10     AS home_paint_pct_10,
     hstyle.bench_pct_avg_10     AS home_bench_pct_10,
+    -- V006: TEAM STYLE (20-game)
+    hstyle.stl_avg_20           AS home_stl_avg_20,
+    hstyle.blk_avg_20           AS home_blk_avg_20,
+    hstyle.pts_fast_break_avg_20 AS home_pts_fast_break_avg_20,
+    hstyle.pts_paint_avg_20     AS home_pts_paint_avg_20,
+    hstyle.pts_bench_avg_20     AS home_pts_bench_avg_20,
+    hstyle.fouls_avg_20         AS home_fouls_avg_20,
+    hstyle.plus_minus_avg_20    AS home_plus_minus_avg_20,
     astyle.stl_avg_10           AS away_stl_avg_10,
     astyle.blk_avg_10           AS away_blk_avg_10,
     astyle.ast_avg_10           AS away_ast_avg_10,
@@ -591,6 +671,41 @@ SELECT
     astyle.fast_break_pct_avg_10   AS away_fast_break_pct_10,
     astyle.paint_pct_avg_10     AS away_paint_pct_10,
     astyle.bench_pct_avg_10     AS away_bench_pct_10,
+    astyle.stl_avg_20           AS away_stl_avg_20,
+    astyle.blk_avg_20           AS away_blk_avg_20,
+    astyle.pts_fast_break_avg_20 AS away_pts_fast_break_avg_20,
+    astyle.pts_paint_avg_20     AS away_pts_paint_avg_20,
+    astyle.pts_bench_avg_20     AS away_pts_bench_avg_20,
+    astyle.fouls_avg_20         AS away_fouls_avg_20,
+    astyle.plus_minus_avg_20    AS away_plus_minus_avg_20,
+
+    -- ===== V001: ADVANCED EFFICIENCY (20-game) =====
+    hae.efg_pct_avg_20          AS home_efg_pct_avg_20,
+    hae.ts_pct_avg_20           AS home_ts_pct_avg_20,
+    hae.tov_rate_avg_20         AS home_tov_rate_avg_20,
+    hae.fg3_pct_avg_20          AS home_fg3_pct_avg_20,
+    aae.efg_pct_avg_20          AS away_efg_pct_avg_20,
+    aae.ts_pct_avg_20           AS away_ts_pct_avg_20,
+    aae.tov_rate_avg_20         AS away_tov_rate_avg_20,
+    aae.fg3_pct_avg_20          AS away_fg3_pct_avg_20,
+
+    -- ===== V001: OPP-ADJUSTED RATINGS (20-game) =====
+    hoar.off_rtg_avg_20         AS home_off_rtg_avg_20,
+    hoar.def_rtg_avg_20         AS home_def_rtg_avg_20,
+    hoar.net_rtg_avg_20         AS home_net_rtg_avg_20,
+    aoar.off_rtg_avg_20         AS away_off_rtg_avg_20,
+    aoar.def_rtg_avg_20         AS away_def_rtg_avg_20,
+    aoar.net_rtg_avg_20         AS away_net_rtg_avg_20,
+
+    -- ===== TEAM FORM (20-game) =====
+    hf.pts_for_avg_20           AS home_pts_for_avg_20,
+    hf.pts_against_avg_20       AS home_pts_against_avg_20,
+    af.pts_for_avg_20           AS away_pts_for_avg_20,
+    af.pts_against_avg_20       AS away_pts_against_avg_20,
+
+    -- ===== PACE (20-game) =====
+    hroll.pace_avg_20           AS home_pace_avg_20,
+    aroll.pace_avg_20           AS away_pace_avg_20,
 
     -- ===== V008: LINEUP =====
     hlu.starter_continuity_pct   AS home_starter_continuity,
@@ -696,14 +811,18 @@ LEFT JOIN features.team_opp_adjusted_roll aoar
 -- win_pct and conference_rank are now sourced from team_standings_detail (hsd/asd)
 -- which is already joined below and is properly point-in-time (source_fetched_at_utc <= game_date_et).
 LEFT JOIN LATERAL (
-    SELECT home_win_pct_10
+    SELECT home_win_pct_10, home_pts_for_avg_5, home_pts_for_avg_20,
+           home_pts_against_avg_5, home_pts_against_avg_20,
+           home_win_pct_5, home_win_pct_20
     FROM features.team_home_away_splits s
     WHERE s.season = b.season AND s.team_abbr = b.home_team_abbr
       AND s.is_home = TRUE AND s.game_date_et < b.game_date_et
     ORDER BY s.game_date_et DESC LIMIT 1
 ) hhas ON TRUE
 LEFT JOIN LATERAL (
-    SELECT away_win_pct_10
+    SELECT away_win_pct_10, away_pts_for_avg_5, away_pts_for_avg_20,
+           away_pts_against_avg_5, away_pts_against_avg_20,
+           away_win_pct_5, away_win_pct_20
     FROM features.team_home_away_splits s
     WHERE s.season = b.season AND s.team_abbr = b.away_team_abbr
       AND s.is_home = FALSE AND s.game_date_et < b.game_date_et
