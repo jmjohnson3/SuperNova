@@ -214,11 +214,16 @@ def update_game_outcomes(conn) -> int:
             actual_margin = float(g["home_score"]) - float(g["away_score"])
             actual_total = float(g["home_score"]) + float(g["away_score"])
 
-            # ATS: home covered if actual_margin > market_spread_home
+            # ATS: home covered if actual_margin > -market_spread_home
+            # market_spread_home follows Odds API sign convention:
+            #   negative = home is FAVORITE (gives pts, e.g. -8.5)
+            #   positive = home is UNDERDOG (gets pts, e.g. +7.5)
+            # Home covers when: actual_margin + market_spread_home > 0
+            #                 = actual_margin > -market_spread_home
             spread_covered = None
             if row["market_spread_home"] is not None and row["spread_bet_side"] is not None:
                 mkt_s = float(row["market_spread_home"])
-                covered = actual_margin > mkt_s
+                covered = actual_margin > -mkt_s
                 if row["spread_bet_side"] == "home":
                     spread_covered = covered
                 else:
