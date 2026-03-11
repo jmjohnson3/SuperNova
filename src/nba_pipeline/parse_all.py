@@ -145,8 +145,19 @@ def _apply_view_fixes(pg_dsn: str) -> None:
         cur.execute((_SQL_DIR / "V014_updated_game_views.sql").read_text(encoding="utf-8"))
         log.info("Applied V014 game_views w20 update")
 
+        # V023: player shot profile view (PBP-derived shot quality features).
+        # Must run BEFORE V022 since V022 LEFT JOINs features.player_shot_profile.
+        cur.execute((_SQL_DIR / "V023_player_shot_profile.sql").read_text(encoding="utf-8"))
+        log.info("Applied V023 player_shot_profile (PBP shot quality features)")
+
+        # V024: opponent shot defense view (PBP-derived team defensive shot profile).
+        # Must run BEFORE V022 since V022 LEFT JOINs features.opponent_shot_defense.
+        cur.execute((_SQL_DIR / "V024_opponent_shot_defense.sql").read_text(encoding="utf-8"))
+        log.info("Applied V024 opponent_shot_defense (PBP opponent defensive shot profile)")
+
         # V022: recreate player_training_features (includes DROP VIEW IF EXISTS CASCADE).
         # Must run AFTER V014 since V014 drops player_training_features via CASCADE.
+        # Must run AFTER V023 + V024 since it LEFT JOINs both views.
         cur.execute((_SQL_DIR / "V022_prop_line_features.sql").read_text(encoding="utf-8"))
         log.info("Recreated player_training_features from V022")
 
@@ -188,19 +199,22 @@ def _matview_needs_recreate(conn, matview_name: str, view_name: str) -> bool:
     When the underlying view gains new columns (e.g. after a SQL update), the
     materialized view's schema is stale.  Dropping it forces the first-run path
     in _materialize_game_features to recreate it with the correct schema.
+
+    IMPORTANT: information_schema.columns does NOT include materialized views —
+    use pg_attribute + pg_class instead (covers both views and matviews).
+    """
+    query = """
+        SELECT COUNT(*)
+        FROM pg_attribute a
+        JOIN pg_class c ON c.oid = a.attrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'features' AND c.relname = %s
+          AND a.attnum > 0 AND NOT a.attisdropped
     """
     with conn.cursor() as cur:
-        cur.execute(
-            """SELECT COUNT(*) FROM information_schema.columns
-               WHERE table_schema = 'features' AND table_name = %s""",
-            (matview_name,),
-        )
+        cur.execute(query, (matview_name,))
         mat_cols = cur.fetchone()[0]
-        cur.execute(
-            """SELECT COUNT(*) FROM information_schema.columns
-               WHERE table_schema = 'features' AND table_name = %s""",
-            (view_name,),
-        )
+        cur.execute(query, (view_name,))
         view_cols = cur.fetchone()[0]
     return mat_cols != view_cols
 
@@ -342,6 +356,21 @@ def _materialize_game_features(pg_dsn: str) -> None:
             cur.execute(f"REFRESH MATERIALIZED VIEW features.{mat_name}")
             conn.commit()
             log.info("  Done refreshing features.%s", mat_name)
+
+            # ------------------------------------------------------------------
+            # 4. Restore thin wrapper (always).
+            # _apply_view_fixes runs CREATE OR REPLACE VIEW on game_training_features
+            # and game_prediction_features every parse_all run, replacing the thin
+            # wrapper with the full view SQL.  This ensures the wrapper always
+            # points to the matview for fast queries.
+            # CREATE OR REPLACE VIEW (not DROP+CREATE) so player_training_features
+            # and other downstream views are NOT cascade-dropped.
+            # ------------------------------------------------------------------
+            cur.execute(
+                f"CREATE OR REPLACE VIEW features.{view_name}"
+                f" AS SELECT * FROM features.{mat_name}"
+            )
+            conn.commit()
 
     except Exception:
         conn.rollback()

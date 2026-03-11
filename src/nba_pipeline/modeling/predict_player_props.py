@@ -349,7 +349,27 @@ joined AS (
       -- V022: DraftKings prop line prior (most recent closing line before game date)
       prop_prior.prev_book_line_pts,
       prop_prior.prev_book_line_reb,
-      prop_prior.prev_book_line_ast
+      prop_prior.prev_book_line_ast,
+
+      -- V023: player shot profile (most recent pregame rolling snapshot before today)
+      psp.paint_shot_rate_avg_10,
+      psp.pullup_shot_rate_avg_10,
+      psp.driving_shot_rate_avg_10,
+      psp.catch_and_shoot_rate_avg_10,
+      psp.three_pt_rate_pbp_avg_10,
+      psp.blocked_rate_avg_10,
+      psp.paint_shot_rate_avg_5,
+      psp.catch_and_shoot_rate_avg_5,
+
+      -- V024: opponent shot defense (most recent pregame rolling snapshot before today)
+      osd.opp_paint_allowed_avg_10,
+      osd.opp_pullup_allowed_avg_10,
+      osd.opp_driving_allowed_avg_10,
+      osd.opp_catch_shoot_allowed_avg_10,
+      osd.opp_3pt_allowed_avg_10,
+      osd.opp_blocked_rate_avg_10,
+      osd.opp_paint_allowed_avg_5,
+      osd.opp_3pt_allowed_avg_5
 
     FROM teams_today t
     JOIN games_today gt
@@ -404,6 +424,35 @@ joined AS (
                 AND pl2.bookmaker_key = 'draftkings'
           )
     ) prop_prior ON TRUE
+
+    -- V023: player shot profile (most recent snapshot before today).
+    -- Uses LATERAL+LIMIT 1 (not game_slug join) because today's game has no PBP yet.
+    LEFT JOIN LATERAL (
+        SELECT paint_shot_rate_avg_10, pullup_shot_rate_avg_10,
+               driving_shot_rate_avg_10, catch_and_shoot_rate_avg_10,
+               three_pt_rate_pbp_avg_10, blocked_rate_avg_10,
+               paint_shot_rate_avg_5, catch_and_shoot_rate_avg_5
+        FROM features.player_shot_profile psp_l
+        WHERE psp_l.player_id = lp.player_id
+          AND psp_l.game_date_et < :game_date
+        ORDER BY psp_l.game_date_et DESC
+        LIMIT 1
+    ) psp ON TRUE
+
+    -- V024: opponent shot defense (most recent snapshot before today).
+    -- Picks the most recent game where the opponent's defense profile was computed.
+    LEFT JOIN LATERAL (
+        SELECT opp_paint_allowed_avg_10, opp_pullup_allowed_avg_10,
+               opp_driving_allowed_avg_10, opp_catch_shoot_allowed_avg_10,
+               opp_3pt_allowed_avg_10, opp_blocked_rate_avg_10,
+               opp_paint_allowed_avg_5, opp_3pt_allowed_avg_5
+        FROM features.opponent_shot_defense osd_l
+        WHERE osd_l.opponent_abbr = t.opponent_abbr
+          AND osd_l.season = t.season
+          AND osd_l.game_date_et < :game_date
+        ORDER BY osd_l.game_date_et DESC
+        LIMIT 1
+    ) osd ON TRUE
 )
 SELECT *
 FROM joined j

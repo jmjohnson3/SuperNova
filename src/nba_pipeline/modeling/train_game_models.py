@@ -587,6 +587,12 @@ def main() -> None:
         resid_total_true_all: List[float] = []
         resid_total_pred_all: List[float] = []
 
+        # Fair-comparison baselines for quality gate (same population as resid model)
+        direct_market_spread_pred_all: List[float] = []   # direct model on market-data rows
+        direct_market_total_pred_all:  List[float] = []
+        market_spread_baseline_all:    List[float] = []   # raw market line as prediction
+        market_total_baseline_all:     List[float] = []
+
         # ATS tracking (direct model, rows with market spread)
         ats_correct_all: List[bool] = []
         ats_hc_correct_all: List[bool] = []  # high-confidence |edge| >= 3 pts
@@ -754,6 +760,14 @@ def main() -> None:
                     market_spread = df.loc[test_mask & has_market_test, "market_spread_home"].astype(float).values
                     market_total = df.loc[test_mask & has_market_test, "market_total"].astype(float).values
 
+                    # Direct model on same rows (fair quality gate comparison)
+                    pred_margin_direct_market = spread_model.predict(X_test_resid)
+                    pred_total_direct_market  = total_model.predict(X_test_resid)
+                    direct_market_spread_pred_all.extend(pred_margin_direct_market.tolist())
+                    direct_market_total_pred_all.extend(pred_total_direct_market.tolist())
+                    market_spread_baseline_all.extend(market_spread.tolist())
+                    market_total_baseline_all.extend(market_total.tolist())
+
                     # Reconstruct: prediction = market line + predicted residual
                     pred_margin_recon = market_spread + pred_spread_resid
                     pred_total_recon = market_total + pred_total_resid
@@ -884,6 +898,31 @@ def main() -> None:
                 "resid_total_p68":   rt_p68,
                 "resid_total_p90":   rt_p90,
             })
+            if direct_market_spread_pred_all:
+                dm_spread_mae = float(mean_absolute_error(
+                    resid_spread_true_all, direct_market_spread_pred_all))
+                dm_total_mae  = float(mean_absolute_error(
+                    resid_total_true_all,  direct_market_total_pred_all))
+                mkt_spread_mae = float(mean_absolute_error(
+                    resid_spread_true_all, market_spread_baseline_all))
+                mkt_total_mae  = float(mean_absolute_error(
+                    resid_total_true_all,  market_total_baseline_all))
+                calib.update({
+                    "direct_spread_mae_market": dm_spread_mae,
+                    "direct_total_mae_market":  dm_total_mae,
+                    "market_spread_mae":        mkt_spread_mae,
+                    "market_total_mae":         mkt_total_mae,
+                })
+                log.info(
+                    "QUALITY GATE BASELINES (market-data rows=%d) | "
+                    "direct_mkt: spread=%.3f total=%.3f | "
+                    "raw_market: spread=%.3f total=%.3f | "
+                    "resid(recon): spread=%.3f total=%.3f",
+                    len(resid_spread_true_all),
+                    dm_spread_mae, dm_total_mae,
+                    mkt_spread_mae, mkt_total_mae,
+                    float(r_mae), float(rt_mae),
+                )
         else:
             r_mae = r_rmse = rt_mae = rt_rmse = None
 

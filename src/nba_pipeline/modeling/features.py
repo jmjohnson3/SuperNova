@@ -428,4 +428,15 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "prev_book_line_pts" in X.columns and "pts_avg_3" in X.columns:
         X["book_line_vs_pts_hot"] = X["prev_book_line_pts"] - X["pts_avg_3"]
 
+    # V023 × V024: shot-type matchup differentials
+    # Positive = player shoots this type more than defense typically allows → advantage
+    _shot_matchups = [
+        ("paint_shot_rate_avg_10",      "opp_paint_allowed_avg_10"),
+        ("driving_shot_rate_avg_10",    "opp_driving_allowed_avg_10"),
+        ("catch_and_shoot_rate_avg_10", "opp_catch_shoot_allowed_avg_10"),
+    ]
+    for player_col, opp_col in _shot_matchups:
+        if player_col in X.columns and opp_col in X.columns:
+            X[f"matchup_{player_col[:5]}_{opp_col[:9]}"] = X[player_col] - X[opp_col]
+
     return X

@@ -210,7 +210,27 @@ enriched AS (
         -- Leakage guard: as_of_date < game_date_et (strictly prior day)
         prop_prior.prev_book_line_pts,
         prop_prior.prev_book_line_reb,
-        prop_prior.prev_book_line_ast
+        prop_prior.prev_book_line_ast,
+
+        -- V023: PBP-derived shot quality features (rolling pregame averages)
+        psp.paint_shot_rate_avg_10,
+        psp.pullup_shot_rate_avg_10,
+        psp.driving_shot_rate_avg_10,
+        psp.catch_and_shoot_rate_avg_10,
+        psp.three_pt_rate_pbp_avg_10,
+        psp.blocked_rate_avg_10,
+        psp.paint_shot_rate_avg_5,
+        psp.catch_and_shoot_rate_avg_5,
+
+        -- V024: opponent team shot defense profile (rolling pregame averages)
+        osd.opp_paint_allowed_avg_10,
+        osd.opp_pullup_allowed_avg_10,
+        osd.opp_driving_allowed_avg_10,
+        osd.opp_catch_shoot_allowed_avg_10,
+        osd.opp_3pt_allowed_avg_10,
+        osd.opp_blocked_rate_avg_10,
+        osd.opp_paint_allowed_avg_5,
+        osd.opp_3pt_allowed_avg_5
 
     FROM roll r
 
@@ -273,6 +293,15 @@ enriched AS (
                 AND pl2.as_of_date < r.game_date_et
           )
     ) prop_prior ON TRUE
+
+    -- V023: PBP shot profile features (NULL for players/games without PBP data)
+    LEFT JOIN features.player_shot_profile psp
+      ON psp.season = r.season AND psp.game_slug = r.game_slug AND psp.player_id = r.player_id
+
+    -- V024: opponent team shot defense profile (NULL when PBP data unavailable)
+    LEFT JOIN features.opponent_shot_defense osd
+      ON osd.season = r.season AND osd.game_slug = r.game_slug
+     AND osd.opponent_abbr = r.opponent_abbr
 )
 SELECT
     season, game_slug, game_date_et,
@@ -334,6 +363,18 @@ SELECT
     -- NULL for historical rows before prop line collection started (~2026-02-28)
     prev_book_line_pts,
     prev_book_line_reb,
-    prev_book_line_ast
+    prev_book_line_ast,
+
+    -- V023: PBP shot profile (NULL when PBP data unavailable for the rolling window)
+    paint_shot_rate_avg_10, pullup_shot_rate_avg_10,
+    driving_shot_rate_avg_10, catch_and_shoot_rate_avg_10,
+    three_pt_rate_pbp_avg_10, blocked_rate_avg_10,
+    paint_shot_rate_avg_5, catch_and_shoot_rate_avg_5,
+
+    -- V024: opponent shot defense (NULL when PBP data unavailable)
+    opp_paint_allowed_avg_10, opp_pullup_allowed_avg_10,
+    opp_driving_allowed_avg_10, opp_catch_shoot_allowed_avg_10,
+    opp_3pt_allowed_avg_10, opp_blocked_rate_avg_10,
+    opp_paint_allowed_avg_5, opp_3pt_allowed_avg_5
 
 FROM enriched;

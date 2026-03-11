@@ -34,20 +34,28 @@ class PredictConfig:
 def _compute_blend_weight_spread(calib: dict) -> float:
     """Inverse-MAE blend weight for the *spread* residual model.
 
-    Quality gate: only blend if resid MAE is ≥10% better (lower) than direct.
+    Quality gate: only blend if resid MAE beats the best baseline
+    (direct-on-market-data games, or raw market line) by ≥3%.
+    Uses direct MAE on market-data games for fair same-population comparison.
     Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
-    direct_mae = calib.get("direct_spread_mae", 10.5)
+    # Use direct MAE on market-data games (same population as resid). Falls back to
+    # overall direct_mae for backwards compatibility with old calibration.json.
+    direct_mae_market = calib.get("direct_spread_mae_market",
+                                   calib.get("direct_spread_mae", 10.5))
+    market_mae = calib.get("market_spread_mae", direct_mae_market)
     resid_mae = calib.get("resid_spread_mae", 99.0)
-    if direct_mae <= 0 or resid_mae <= 0:
+    if direct_mae_market <= 0 or resid_mae <= 0:
         return 0.0
-    if resid_mae >= direct_mae * 0.90:
+    best_baseline = min(direct_mae_market, market_mae)
+    if resid_mae >= best_baseline * 0.97:
         log.info(
-            "Spread residual quality gate failed (resid MAE %.3f >= 90%% of direct %.3f). Direct only.",
-            resid_mae, direct_mae,
+            "Spread residual quality gate failed "
+            "(resid MAE %.3f >= 97%% of best baseline %.3f [direct_mkt=%.3f market=%.3f]). Direct only.",
+            resid_mae, best_baseline * 0.97, direct_mae_market, market_mae,
         )
         return 0.0
-    w_d = 1.0 / direct_mae
+    w_d = 1.0 / direct_mae_market
     w_r = 1.0 / resid_mae
     return round(w_r / (w_d + w_r), 4)
 
@@ -55,20 +63,26 @@ def _compute_blend_weight_spread(calib: dict) -> float:
 def _compute_blend_weight_total(calib: dict) -> float:
     """Inverse-MAE blend weight for the *total* residual model.
 
-    Quality gate: only blend if resid MAE is ≥10% better (lower) than direct.
+    Quality gate: only blend if resid MAE beats the best baseline
+    (direct-on-market-data games, or raw market line) by ≥3%.
+    Uses direct MAE on market-data games for fair same-population comparison.
     Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
-    direct_mae = calib.get("direct_total_mae", 15.0)
+    direct_mae_market = calib.get("direct_total_mae_market",
+                                   calib.get("direct_total_mae", 15.0))
+    market_mae = calib.get("market_total_mae", direct_mae_market)
     resid_mae = calib.get("resid_total_mae", 99.0)
-    if direct_mae <= 0 or resid_mae <= 0:
+    if direct_mae_market <= 0 or resid_mae <= 0:
         return 0.0
-    if resid_mae >= direct_mae * 0.90:
+    best_baseline = min(direct_mae_market, market_mae)
+    if resid_mae >= best_baseline * 0.97:
         log.info(
-            "Total residual quality gate failed (resid MAE %.3f >= 90%% of direct %.3f). Direct only.",
-            resid_mae, direct_mae,
+            "Total residual quality gate failed "
+            "(resid MAE %.3f >= 97%% of best baseline %.3f [direct_mkt=%.3f market=%.3f]). Direct only.",
+            resid_mae, best_baseline * 0.97, direct_mae_market, market_mae,
         )
         return 0.0
-    w_d = 1.0 / direct_mae
+    w_d = 1.0 / direct_mae_market
     w_r = 1.0 / resid_mae
     return round(w_r / (w_d + w_r), 4)
 
