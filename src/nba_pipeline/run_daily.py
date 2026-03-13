@@ -184,7 +184,7 @@ def main() -> None:
         steps.append(Step(
             name="Parse + load (parse_all)",
             module="nba_pipeline.parse_all",
-            timeout_s=1800,
+            timeout_s=10800,
             critical=True,
         ))
 
@@ -199,45 +199,45 @@ def main() -> None:
     if not args.skip_train:
         steps.append(Step(
             name="Train game models",
-            module="nba_pipeline.train_game_models",
+            module="nba_pipeline.modeling.train_game_models",
             timeout_s=3600,
             critical=True,
         ))
         steps.append(Step(
             name="Train player prop models",
-            module="nba_pipeline.train_player_prop_models",
-            timeout_s=3600,
+            module="nba_pipeline.modeling.train_player_prop_models",
+            timeout_s=7200,
             critical=True,
         ))
 
     if not args.skip_predict:
         steps.append(Step(
             name="Predict today (spread/total)",
-            module="nba_pipeline.predict_today",
+            module="nba_pipeline.modeling.predict_today",
             timeout_s=600,
             critical=False,
         ))
         steps.append(Step(
             name="Predict player props (PTS/REB/AST)",
-            module="nba_pipeline.predict_player_props",
-            timeout_s=600,
+            module="nba_pipeline.modeling.predict_player_props",
+            timeout_s=900,
             critical=False,
         ))
 
     if not args.skip_scan:
         steps.append(Step(
-            name=”Scan alt lines grid (PTS/REB/AST best line)”,
-            module=”nba_pipeline.scan_alt_lines_grid”,
+            name="Scan alt lines grid (PTS/REB/AST best line)",
+            module="nba_pipeline.modeling.scan_alt_lines_grid",
             timeout_s=600,
             critical=False,
         ))
-        # Optional: if you still want the old “100% hit rate” script as a separate output
+        # Optional: if you still want the old "100% hit rate" script as a separate output
         try:
             import importlib.util
-            if importlib.util.find_spec(“nba_pipeline.scan_alt_hit_rate”) is not None:
+            if importlib.util.find_spec("nba_pipeline.modeling.scan_alt_hit_rate") is not None:
                 steps.append(Step(
-                    name=”Scan alt hit rate (legacy)”,
-                    module=”nba_pipeline.scan_alt_hit_rate”,
+                    name="Scan alt hit rate (legacy)",
+                    module="nba_pipeline.modeling.scan_alt_hit_rate",
                     timeout_s=600,
                     critical=False,
                 ))
@@ -246,8 +246,8 @@ def main() -> None:
 
     # Always run update_outcomes to backfill actuals from prior games (non-critical)
     steps.append(Step(
-        name=”Update outcomes (ATS record)”,
-        module=”nba_pipeline.modeling.update_outcomes”,
+        name="Update outcomes (ATS record)",
+        module="nba_pipeline.modeling.update_outcomes",
         timeout_s=120,
         critical=False,
     ))

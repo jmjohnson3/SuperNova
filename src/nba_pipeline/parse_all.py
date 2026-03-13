@@ -155,6 +155,40 @@ def _apply_view_fixes(pg_dsn: str) -> None:
         cur.execute((_SQL_DIR / "V024_opponent_shot_defense.sql").read_text(encoding="utf-8"))
         log.info("Applied V024 opponent_shot_defense (PBP opponent defensive shot profile)")
 
+        # Materialize "latest per player/team" snapshot tables for fast inference.
+        # V023/V024 are expensive window-function views; querying them at inference
+        # time per-player is O(N * full_view_scan). These tables are pre-computed once
+        # here and indexed so inference queries run in milliseconds.
+        cur.execute("""
+            DROP TABLE IF EXISTS features.player_shot_profile_snap;
+            CREATE TABLE features.player_shot_profile_snap AS
+            SELECT DISTINCT ON (player_id)
+                player_id, game_date_et,
+                paint_shot_rate_avg_10, pullup_shot_rate_avg_10,
+                driving_shot_rate_avg_10, catch_and_shoot_rate_avg_10,
+                three_pt_rate_pbp_avg_10, blocked_rate_avg_10,
+                paint_shot_rate_avg_5, catch_and_shoot_rate_avg_5
+            FROM features.player_shot_profile
+            ORDER BY player_id, game_date_et DESC;
+            CREATE INDEX ON features.player_shot_profile_snap(player_id);
+        """)
+        log.info("Materialized features.player_shot_profile_snap")
+
+        cur.execute("""
+            DROP TABLE IF EXISTS features.opponent_shot_defense_snap;
+            CREATE TABLE features.opponent_shot_defense_snap AS
+            SELECT DISTINCT ON (opponent_abbr, season)
+                opponent_abbr, season, game_date_et,
+                opp_paint_allowed_avg_10, opp_pullup_allowed_avg_10,
+                opp_driving_allowed_avg_10, opp_catch_shoot_allowed_avg_10,
+                opp_3pt_allowed_avg_10, opp_blocked_rate_avg_10,
+                opp_paint_allowed_avg_5, opp_3pt_allowed_avg_5
+            FROM features.opponent_shot_defense
+            ORDER BY opponent_abbr, season, game_date_et DESC;
+            CREATE INDEX ON features.opponent_shot_defense_snap(opponent_abbr, season);
+        """)
+        log.info("Materialized features.opponent_shot_defense_snap")
+
         # V022: recreate player_training_features (includes DROP VIEW IF EXISTS CASCADE).
         # Must run AFTER V014 since V014 drops player_training_features via CASCADE.
         # Must run AFTER V023 + V024 since it LEFT JOINs both views.

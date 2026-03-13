@@ -2,7 +2,12 @@ import json
 import logging
 import os
 import re
+import sys
 import unicodedata
+
+# Ensure stdout is UTF-8 on Windows (player names may contain non-ASCII chars)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -425,34 +430,16 @@ joined AS (
           )
     ) prop_prior ON TRUE
 
-    -- V023: player shot profile (most recent snapshot before today).
-    -- Uses LATERAL+LIMIT 1 (not game_slug join) because today's game has no PBP yet.
-    LEFT JOIN LATERAL (
-        SELECT paint_shot_rate_avg_10, pullup_shot_rate_avg_10,
-               driving_shot_rate_avg_10, catch_and_shoot_rate_avg_10,
-               three_pt_rate_pbp_avg_10, blocked_rate_avg_10,
-               paint_shot_rate_avg_5, catch_and_shoot_rate_avg_5
-        FROM features.player_shot_profile psp_l
-        WHERE psp_l.player_id = lp.player_id
-          AND psp_l.game_date_et < :game_date
-        ORDER BY psp_l.game_date_et DESC
-        LIMIT 1
-    ) psp ON TRUE
+    -- V023: player shot profile (precomputed snap table, indexed by player_id)
+    LEFT JOIN features.player_shot_profile_snap psp
+      ON psp.player_id = lp.player_id
+     AND psp.game_date_et < :game_date
 
-    -- V024: opponent shot defense (most recent snapshot before today).
-    -- Picks the most recent game where the opponent's defense profile was computed.
-    LEFT JOIN LATERAL (
-        SELECT opp_paint_allowed_avg_10, opp_pullup_allowed_avg_10,
-               opp_driving_allowed_avg_10, opp_catch_shoot_allowed_avg_10,
-               opp_3pt_allowed_avg_10, opp_blocked_rate_avg_10,
-               opp_paint_allowed_avg_5, opp_3pt_allowed_avg_5
-        FROM features.opponent_shot_defense osd_l
-        WHERE osd_l.opponent_abbr = t.opponent_abbr
-          AND osd_l.season = t.season
-          AND osd_l.game_date_et < :game_date
-        ORDER BY osd_l.game_date_et DESC
-        LIMIT 1
-    ) osd ON TRUE
+    -- V024: opponent shot defense (precomputed snap table, indexed by opponent+season)
+    LEFT JOIN features.opponent_shot_defense_snap osd
+      ON osd.opponent_abbr = t.opponent_abbr
+     AND osd.season        = t.season
+     AND osd.game_date_et  < :game_date
 )
 SELECT *
 FROM joined j
