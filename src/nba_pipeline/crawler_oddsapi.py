@@ -131,7 +131,11 @@ def _save_payload(conn, *, endpoint: str, as_of_date: date, url: str,
               %(provider)s, %(endpoint)s, NULL, NULL, %(as_of_date)s,
               %(url)s, %(fetched_at_utc)s, %(payload)s::jsonb, %(payload_sha256)s
             )
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT (provider, endpoint, url) DO UPDATE SET
+              as_of_date     = EXCLUDED.as_of_date,
+              fetched_at_utc = EXCLUDED.fetched_at_utc,
+              payload        = EXCLUDED.payload,
+              payload_sha256 = EXCLUDED.payload_sha256;
         """, {
             "provider": "oddsapi",
             "endpoint": endpoint,
@@ -207,10 +211,9 @@ def _fetch_live_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | None:
     }
     full_url = _build_full_url(url, params)
 
-    if _already_fetched(conn, as_of_date=et_day, full_url=full_url):
-        log.info("Already have live odds for %s — skipping", et_day)
-        return None
-
+    # No dedup check for live odds — lines move throughout the day and we
+    # always want the latest. ON CONFLICT DO UPDATE in _save_payload handles
+    # overwriting the previous snapshot.
     log.info("Fetching live odds for ET date=%s window=%s..%s",
              et_day, params["commenceTimeFrom"], params["commenceTimeTo"])
 

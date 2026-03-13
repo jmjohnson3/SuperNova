@@ -36,14 +36,21 @@ def _safe_str(x: Any) -> Optional[str]:
 
 
 def parse_all_pbp(conn, *, commit_every_games: int = 50) -> int:
+    # Only process games not yet loaded into nba_pbp_plays. PBP data for
+    # completed games never changes, so if any plays exist we can skip.
     q = """
-    SELECT season, game_slug, fetched_at_utc, payload
-    FROM raw.api_responses
-    WHERE provider='mysportsfeeds'
-      AND endpoint='playbyplay'
-      AND season IS NOT NULL
-      AND game_slug IS NOT NULL
-    ORDER BY fetched_at_utc ASC
+    SELECT ar.season, ar.game_slug, ar.fetched_at_utc, ar.payload
+    FROM raw.api_responses ar
+    WHERE ar.provider = 'mysportsfeeds'
+      AND ar.endpoint = 'playbyplay'
+      AND ar.season IS NOT NULL
+      AND ar.game_slug IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM raw.nba_pbp_plays p
+          WHERE p.season = ar.season AND p.game_slug = ar.game_slug
+          LIMIT 1
+      )
+    ORDER BY ar.fetched_at_utc ASC
     """
 
     processed_games = 0
