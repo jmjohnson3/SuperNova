@@ -439,4 +439,13 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         if player_col in X.columns and opp_col in X.columns:
             X[f"matchup_{player_col[:5]}_{opp_col[:9]}"] = X[player_col] - X[opp_col]
 
+    # V025: on/off impact interactions
+    if "on_off_diff_avg_10" in X.columns:
+        # on/off edge × game pace: impact players matter more in faster games
+        if "game_pace_est_5" in X.columns:
+            X["on_off_x_pace"] = X["on_off_diff_avg_10"] * X["game_pace_est_5"] / 100.0
+        # momentum: recent 5-game trend vs 10-game baseline
+        if "on_off_diff_avg_5" in X.columns:
+            X["on_off_trend_5v10"] = X["on_off_diff_avg_5"] - X["on_off_diff_avg_10"]
+
     return X

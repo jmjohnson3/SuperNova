@@ -189,6 +189,23 @@ def _apply_view_fixes(pg_dsn: str) -> None:
         """)
         log.info("Materialized features.opponent_shot_defense_snap")
 
+        # V025: player on/off splits. Must run BEFORE V022.
+        cur.execute((_SQL_DIR / "V025_player_on_off_splits.sql").read_text(encoding="utf-8"))
+        log.info("Applied V025 player_on_off_splits (game-level on/off net rating)")
+
+        cur.execute("""
+            DROP TABLE IF EXISTS features.player_on_off_snap;
+            CREATE TABLE features.player_on_off_snap AS
+            SELECT DISTINCT ON (player_id)
+                player_id, game_date_et,
+                on_net_per36_avg_10, on_net_per36_avg_5,
+                on_off_diff_avg_10,  on_off_diff_avg_5
+            FROM features.player_on_off_splits
+            ORDER BY player_id, game_date_et DESC;
+            CREATE INDEX ON features.player_on_off_snap(player_id);
+        """)
+        log.info("Materialized features.player_on_off_snap")
+
         # V022: recreate player_training_features (includes DROP VIEW IF EXISTS CASCADE).
         # Must run AFTER V014 since V014 drops player_training_features via CASCADE.
         # Must run AFTER V023 + V024 since it LEFT JOINs both views.

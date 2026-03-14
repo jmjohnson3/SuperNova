@@ -374,7 +374,13 @@ joined AS (
       osd.opp_3pt_allowed_avg_10,
       osd.opp_blocked_rate_avg_10,
       osd.opp_paint_allowed_avg_5,
-      osd.opp_3pt_allowed_avg_5
+      osd.opp_3pt_allowed_avg_5,
+
+      -- V025: on/off splits (most recent pregame snapshot)
+      poo.on_net_per36_avg_10,
+      poo.on_net_per36_avg_5,
+      poo.on_off_diff_avg_10,
+      poo.on_off_diff_avg_5
 
     FROM teams_today t
     JOIN games_today gt
@@ -440,6 +446,11 @@ joined AS (
       ON osd.opponent_abbr = t.opponent_abbr
      AND osd.season        = t.season
      AND osd.game_date_et  < :game_date
+
+    -- V025: on/off splits (precomputed snap table, indexed by player_id)
+    LEFT JOIN features.player_on_off_snap poo
+      ON poo.player_id    = lp.player_id
+     AND poo.game_date_et < :game_date
 )
 SELECT *
 FROM joined j

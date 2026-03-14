@@ -230,7 +230,13 @@ enriched AS (
         osd.opp_3pt_allowed_avg_10,
         osd.opp_blocked_rate_avg_10,
         osd.opp_paint_allowed_avg_5,
-        osd.opp_3pt_allowed_avg_5
+        osd.opp_3pt_allowed_avg_5,
+
+        -- V025: on/off splits (game-level net impact metrics)
+        poo.on_net_per36_avg_10,
+        poo.on_net_per36_avg_5,
+        poo.on_off_diff_avg_10,
+        poo.on_off_diff_avg_5
 
     FROM roll r
 
@@ -302,6 +308,11 @@ enriched AS (
     LEFT JOIN features.opponent_shot_defense osd
       ON osd.season = r.season AND osd.game_slug = r.game_slug
      AND osd.opponent_abbr = r.opponent_abbr
+
+    -- V025: player on/off splits (game-level net impact metrics)
+    LEFT JOIN features.player_on_off_splits poo
+      ON poo.season = r.season AND poo.game_slug = r.game_slug
+     AND poo.player_id = r.player_id
 )
 SELECT
     season, game_slug, game_date_et,
@@ -375,6 +386,10 @@ SELECT
     opp_paint_allowed_avg_10, opp_pullup_allowed_avg_10,
     opp_driving_allowed_avg_10, opp_catch_shoot_allowed_avg_10,
     opp_3pt_allowed_avg_10, opp_blocked_rate_avg_10,
-    opp_paint_allowed_avg_5, opp_3pt_allowed_avg_5
+    opp_paint_allowed_avg_5, opp_3pt_allowed_avg_5,
+
+    -- V025: on/off splits
+    on_net_per36_avg_10, on_net_per36_avg_5,
+    on_off_diff_avg_10, on_off_diff_avg_5
 
 FROM enriched;
