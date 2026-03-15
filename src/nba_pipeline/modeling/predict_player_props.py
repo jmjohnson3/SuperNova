@@ -826,11 +826,7 @@ def _print_best_bets(
     books_str = "/".join(sorted(books_present)).upper() or "DK"
 
     if discord:
-        print(f"\n**BEST PROP BETS** — top {len(best)} by confidence")
-        if n_with_lines > 0:
-            print(f"{books_str} lines loaded for {n_with_lines}/{len(best)} players")
-        else:
-            print("No book lines in DB — showing decision rules (look up line manually)")
+        print(f"\n**BEST PROP BETS**")
     else:
         print("\n" + "=" * 65)
         print(f"  BEST PROP BETS  (top {len(best)} by model confidence)")
@@ -888,10 +884,7 @@ def _print_best_bets(
         else:
             sub_str = ""
 
-        if discord:
-            sub_line = f" · {sub_str}" if sub_str else ""
-            print(f"\n{stars} **{name}** ({r['team_abbr']} vs {opp}) · {r['proj_minutes']:.0f}min{tags_str} · conf={conf:.2f}{sub_line}")
-        else:
+        if not discord:
             print(
                 f"\n  {stars} {name_ascii} ({r['team_abbr']} vs {opp})"
                 f"  proj {r['proj_minutes']:.0f}min{tags_str}  [conf={conf:.2f}]"
@@ -899,6 +892,7 @@ def _print_best_bets(
             if sub_str:
                 print(f"         breakdown: {sub_str}")
 
+        stat_lines_discord: list[str] = []
         for pred, lo, hi, ci, stat_label, stat_key in [
             (pp, pts_lo, pts_hi, pts_ci, "PTS", "points"),
             (pr, reb_lo, reb_hi, reb_ci, "REB", "rebounds"),
@@ -947,7 +941,7 @@ def _print_best_bets(
                     break_even = 100 / (100 + abs(best_over[1])) if best_over[1] else None
                     be_str = f" BE={break_even:.1%}" if break_even else ""
                     if discord:
-                        print(f"  🟢 **OVER {stat_label}** · model={pred:.1f} {lines_display} edge=+{over_edge:.1f}{be_str}")
+                        stat_lines_discord.append(f"OVER {over_line:.1f} {stat_label}")
                     else:
                         print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET OVER @ {bk_label}  edge=+{over_edge:.1f}{be_str}")
                 elif bet_under:
@@ -957,20 +951,19 @@ def _print_best_bets(
                     break_even = 100 / (100 + abs(best_under[1])) if best_under[1] else None
                     be_str = f" BE={break_even:.1%}" if break_even else ""
                     if discord:
-                        print(f"  🔴 **UNDER {stat_label}** · model={pred:.1f} {lines_display} edge={under_edge:.1f}{be_str}")
+                        stat_lines_discord.append(f"UNDER {under_line:.1f} {stat_label}")
                     else:
                         print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET UNDER @ {bk_label}  edge={under_edge:.1f}{be_str}")
                 else:
                     lines_display = _fmt_lines_summary(entry, for_over=True)
-                    if discord:
-                        print(f"  ⬜ {stat_label} · model={pred:.1f} {lines_display} (no bet, inside CI {lo:.1f}-{hi:.1f})")
-                    else:
+                    if not discord:
                         print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  no bet — inside CI {lo:.1f}-{hi:.1f}")
             else:
-                if discord:
-                    print(f"  ⬜ {stat_label} · model={pred:.1f} ±{ci:.1f} (OVER if line < {lo:.1f} | UNDER if line > {hi:.1f})")
-                else:
+                if not discord:
                     print(f"         {stat_label:<3}  model={pred:.1f} ±{ci:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
+
+        if discord and stat_lines_discord:
+            print(f"**{name}** ({r['team_abbr']} vs {opp})  " + "  ".join(stat_lines_discord))
 
     print()
 
