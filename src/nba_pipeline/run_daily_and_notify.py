@@ -38,6 +38,7 @@ DISCORD_WEBHOOK_URL = os.getenv(
 )
 
 DISCORD_LIMIT = 1950  # Discord hard cap is 2000; keep a buffer
+QUICKPICK_MENTION = "<@1365038800656535703>"  # QuickPickBot user ID
 
 
 # ---------------------------------------------------------------------------
@@ -299,12 +300,12 @@ async def main() -> None:
                     _pending_qp[tag] = picks_text  # post last, after player props
                 else:
                     await asyncio.sleep(0.4)
-                    await _post(f"@QuickPickBot\n{picks_text}")
+                    await _post(f"{QUICKPICK_MENTION}\n{picks_text}")
 
             # After player props: flush deferred best-game picks (user wants these last)
             if step.label == "Player Prop Projections" and "best_games" in _pending_qp:
                 await asyncio.sleep(0.4)
-                await _post(f"@QuickPickBot\n{_pending_qp.pop('best_games')}")
+                await _post(f"{QUICKPICK_MENTION}\n{_pending_qp.pop('best_games')}")
         else:
             await _post_status(step, secs, ok=True)
 
