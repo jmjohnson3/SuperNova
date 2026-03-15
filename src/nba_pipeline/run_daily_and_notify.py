@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -52,18 +53,18 @@ class Step:
 
 
 STEPS: list[Step] = [
-    Step("Odds Crawler",              "nba_pipeline.crawler_oddsapi",                    critical=True,  post_output=False, timeout_s=900),
-    Step("MSF Crawler",               "nba_pipeline.crawler",                            critical=True,  post_output=False, timeout_s=3600),
-    Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=3600),
-    Step("Yesterday's Results",       "nba_pipeline.grade_predictions",                  critical=False, post_output=True,  timeout_s=60),
-    Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=False, post_output=False, timeout_s=600),
-    Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=300),
-    Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=3600),
-    Step("Train Player Prop Models",  "nba_pipeline.modeling.train_player_prop_models",   critical=True,  post_output=False, timeout_s=3600),
-    Step("Game Predictions",          "nba_pipeline.modeling.predict_today",              critical=False, post_output=True,  timeout_s=600),
-    Step("Alt Line Scan",             "nba_pipeline.modeling.scan_alt_lines_grid",         critical=False, post_output=True,  timeout_s=600),
-    Step("Player Prop Projections",   "nba_pipeline.modeling.predict_player_props",        critical=False, post_output=True,  timeout_s=900),
-    Step("Best Bets Parlay",          "nba_pipeline.modeling.post_parlay",                 critical=False, post_output=False, timeout_s=60),
+    Step("Odds Crawler",              "nba_pipeline.crawler_oddsapi",                    critical=True,  post_output=False, timeout_s=14400),
+    Step("MSF Crawler",               "nba_pipeline.crawler",                            critical=True,  post_output=False, timeout_s=14400),
+    Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=14400),
+    Step("Yesterday's Results",       "nba_pipeline.grade_predictions",                  critical=False, post_output=True,  timeout_s=14400),
+    Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=False, post_output=False, timeout_s=14400),
+    Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=14400),
+    Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=14400),
+    Step("Train Player Prop Models",  "nba_pipeline.modeling.train_player_prop_models",   critical=True,  post_output=False, timeout_s=14400),
+    Step("Game Predictions",          "nba_pipeline.modeling.predict_today",              critical=False, post_output=True,  timeout_s=14400),
+    Step("Alt Line Scan",             "nba_pipeline.modeling.scan_alt_lines_grid",         critical=False, post_output=True,  timeout_s=14400),
+    Step("Player Prop Projections",   "nba_pipeline.modeling.predict_player_props",        critical=False, post_output=True,  timeout_s=14400),
+    Step("Best Bets Parlay",          "nba_pipeline.modeling.post_parlay",                 critical=False, post_output=False, timeout_s=14400),
 ]
 
 
@@ -202,6 +203,24 @@ async def _post_section(header: str, body: str, rich: bool = False) -> None:
         await asyncio.sleep(0.4)
 
 
+_QP_PATTERN = re.compile(r"---QUICKPICK:(\w+)---\n(.*?)\n---/QUICKPICK---\n?", re.DOTALL)
+
+
+def _extract_quickpicks(stdout: str) -> tuple[str, list[tuple[str, str]]]:
+    """Strip ---QUICKPICK:tag--- blocks from stdout.
+
+    Returns (cleaned_stdout, [(tag, picks_text), ...]) in order of appearance.
+    """
+    picks: list[tuple[str, str]] = []
+
+    def _repl(m: re.Match) -> str:
+        picks.append((m.group(1), m.group(2).strip()))
+        return ""
+
+    cleaned = _QP_PATTERN.sub(_repl, stdout)
+    return cleaned.strip(), picks
+
+
 async def _post_status(step: Step, secs: float, ok: bool, detail: str = "") -> None:
     icon = "✅" if ok else "❌"
     msg = f"{icon} **{step.label}** — {'done' if ok else 'FAILED'} in {secs:.0f}s"
@@ -224,6 +243,7 @@ async def main() -> None:
 
     results: list[tuple[str, bool, float]] = []   # (label, ok, secs)
     halted = False
+    _pending_qp: dict[str, str] = {}  # deferred @QuickPickBot blocks
 
     for step in STEPS:
         if halted:
@@ -265,10 +285,26 @@ async def main() -> None:
             }.get(step.label, f"**{step.label}**")
 
             rich = step.label != "Yesterday's Results"  # results use code-block, predictions use rich
-            if stdout.strip():
-                await _post_section(header, stdout.strip(), rich=rich)
+            cleaned, quickpicks = _extract_quickpicks(stdout)
+            if cleaned.strip():
+                await _post_section(header, cleaned, rich=rich)
             else:
                 await _post(f"{header}\n_(no output for today's slate)_")
+
+            # Post @QuickPickBot messages; defer best_games until after player props
+            for tag, picks_text in quickpicks:
+                if not picks_text:
+                    continue
+                if tag == "best_games":
+                    _pending_qp[tag] = picks_text  # post last, after player props
+                else:
+                    await asyncio.sleep(0.4)
+                    await _post(f"@QuickPickBot\n{picks_text}")
+
+            # After player props: flush deferred best-game picks (user wants these last)
+            if step.label == "Player Prop Projections" and "best_games" in _pending_qp:
+                await asyncio.sleep(0.4)
+                await _post(f"@QuickPickBot\n{_pending_qp.pop('best_games')}")
         else:
             await _post_status(step, secs, ok=True)
 

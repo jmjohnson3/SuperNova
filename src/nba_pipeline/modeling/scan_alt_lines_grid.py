@@ -685,6 +685,7 @@ def main() -> None:
 
         STAT_LABEL = {"points": "Points", "rebounds": "Rebounds", "assists": "Assists"}
         discord = os.getenv("DISCORD_FORMAT") == "1"
+        qp_alt: list[str] = []
         if passing:
             for r in sorted(passing, key=lambda x: (-x["hit_rate"], -x["line"])):
                 side_word = "Over" if cfg.side == "over" else "Under"
@@ -692,10 +693,17 @@ def main() -> None:
                 pct = f"{r['hit_rate']*100:.0f}%"
                 if discord:
                     print(f"✅ **{r['player_name']}** · {side_word} {r['line']:g} {stat_word} · {pct}")
+                    qp_alt.append(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}")
                 else:
                     print(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}  {pct}")
         else:
             print("*No plays for today's slate*" if discord else "No plays for today's slate")
+
+        if discord and qp_alt:
+            print("---QUICKPICK:alt_lines---")
+            for p in qp_alt:
+                print(p)
+            print("---/QUICKPICK---")
 
         log.info(
             "Scan complete | %d candidates → %d pass, %d cut",

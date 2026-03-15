@@ -686,6 +686,9 @@ def main() -> None:
         if not discord:
             print(f"{et_day} — {len(out)} games  {n_high_edge} high-edge bets ({n_spread_bets} spread, {n_total_bets} total)  [{model_note}]")
 
+        qp_all: list[str] = []   # all game picks (every game)
+        qp_best: list[str] = []  # edge-only picks (best bets)
+
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
             steam_tag = " 🔥STEAM" if r["game_slug"] in steam_games else ""
@@ -713,10 +716,30 @@ def main() -> None:
                 qk_bet = (kelly / 4) * 1000
                 if discord:
                     print(f"  {r['pred_spread_label']}  ← **{bet_side}**")
+                    ms = r.get('market_spread_home')
+                    if pd.notna(ms):
+                        ms = float(ms)
+                        bet_team = r['home_team_abbr'] if bet_side == "HOME" else r['away_team_abbr']
+                        bet_ms = ms if bet_side == "HOME" else -ms
+                        qp_all.append(f"{bet_team} {bet_ms:+.1f}")
+                        qp_best.append(f"{bet_team} {bet_ms:+.1f}")
+                    else:
+                        qp_all.append(r['pred_spread_label'])
+                        qp_best.append(r['pred_spread_label'])
                 else:
                     print(f"  {r['pred_spread_label']}  * EDGE {edge_dir}{es:.1f} pts  [bet {bet_side}]")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
+                if discord:
+                    ms = r.get('market_spread_home')
+                    if pd.notna(ms):
+                        ms = float(ms)
+                        pred_m = float(r['pred_margin_home_minus_away'])
+                        bet_team = r['home_team_abbr'] if pred_m >= 0 else r['away_team_abbr']
+                        bet_ms = ms if pred_m >= 0 else -ms
+                        qp_all.append(f"{bet_team} {bet_ms:+.1f}")
+                    else:
+                        qp_all.append(r['pred_spread_label'])
                 print(f"  {r['pred_spread_label']}")
 
             # Total line — only flag when residual model was used (better calibrated)
@@ -734,13 +757,41 @@ def main() -> None:
                 qk_bet = (kelly / 4) * 1000
                 if discord:
                     print(f"  {over_under} {r['pred_total_points']:.1f}  ← **{over_under.upper()}**")
+                    game_lbl = f"{r['away_team_abbr']}/{r['home_team_abbr']}"
+                    mt = r.get('market_total')
+                    total_val = float(mt) if pd.notna(mt) else float(r['pred_total_points'])
+                    ou = over_under[0].upper()
+                    qp_all.append(f"{game_lbl} {ou}{total_val:.1f}")
+                    qp_best.append(f"{game_lbl} {ou}{total_val:.1f}")
                 else:
                     edge_dir = "+" if et_ > 0 else ""
                     print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts  [resid model]")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
                 note = "" if used_blend_row else " (no market line)"
+                if discord:
+                    game_lbl = f"{r['away_team_abbr']}/{r['home_team_abbr']}"
+                    mt = r.get('market_total')
+                    if pd.notna(mt):
+                        mt_val = float(mt)
+                        pred_t = float(r['pred_total_points'])
+                        ou = "O" if pred_t > mt_val else "U"
+                        qp_all.append(f"{game_lbl} {ou}{mt_val:.1f}")
+                    else:
+                        qp_all.append(f"{game_lbl} {r['pred_total_points']:.1f}")
                 print(f"  {r['pred_total_points']:.1f}{note}" if discord else f"  Pred total: {r['pred_total_points']:.1f}{note}")
+
+        if discord:
+            if qp_all:
+                print("---QUICKPICK:all_games---")
+                for p in qp_all:
+                    print(p)
+                print("---/QUICKPICK---")
+            if qp_best:
+                print("---QUICKPICK:best_games---")
+                for p in qp_best:
+                    print(p)
+                print("---/QUICKPICK---")
 
         # Save predictions to DB
         try:

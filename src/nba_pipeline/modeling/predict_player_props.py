@@ -815,6 +815,8 @@ def _print_best_bets(
     if prop_lines is None:
         prop_lines = {}
 
+    qp_props: list[str] = []
+
     n_with_lines = sum(
         1 for _, r in best.iterrows()
         if prop_lines.get((_normalize_name(str(r.get("player_name") or "")), "points"))
@@ -963,7 +965,15 @@ def _print_best_bets(
                     print(f"         {stat_label:<3}  model={pred:.1f} ±{ci:.1f}  OVER if line < {lo:.1f}  |  UNDER if line > {hi:.1f}")
 
         if discord and stat_lines_discord:
-            print(f"**{name}** ({r['team_abbr']} vs {opp})  " + "  ".join(stat_lines_discord))
+            player_line = f"**{name}** ({r['team_abbr']} vs {opp})  " + "  ".join(stat_lines_discord)
+            print(player_line)
+            qp_props.append(f"{name} ({r['team_abbr']} vs {opp}) " + "  ".join(stat_lines_discord))
+
+    if discord and qp_props:
+        print("---QUICKPICK:props---")
+        for p in qp_props:
+            print(p)
+        print("---/QUICKPICK---")
 
     print()
 
