@@ -683,9 +683,7 @@ def main() -> None:
             )
         else:
             model_note = "direct only"
-        if discord:
-            print(f"**{et_day}** — {len(out)} games · {n_high_edge} high-edge bets ({n_spread_bets} spread, {n_total_bets} total) · {model_note}")
-        else:
+        if not discord:
             print(f"{et_day} — {len(out)} games  {n_high_edge} high-edge bets ({n_spread_bets} spread, {n_total_bets} total)  [{model_note}]")
 
         for _, r in out.iterrows():
@@ -714,7 +712,7 @@ def main() -> None:
                 kelly, p_win = _kelly(abs(es), sigma=sigma_s)
                 qk_bet = (kelly / 4) * 1000
                 if discord:
-                    print(f"  {r['pred_spread_label']}  ⚡ EDGE {edge_dir}{es:.1f} [{bet_side}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
+                    print(f"  {r['pred_spread_label']}  ← **{bet_side}**")
                 else:
                     print(f"  {r['pred_spread_label']}  * EDGE {edge_dir}{es:.1f} pts  [bet {bet_side}]")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
@@ -731,18 +729,18 @@ def main() -> None:
             )
             if total_bet_ok:
                 et_ = float(edge_t)
-                edge_dir = "+" if et_ > 0 else ""
                 over_under = "Over" if et_ > 0 else "Under"
                 kelly, p_win = _kelly(abs(et_), sigma=sigma_t)
                 qk_bet = (kelly / 4) * 1000
                 if discord:
-                    print(f"  {over_under} {r['pred_total_points']:.1f}  ⚡ EDGE {edge_dir}{et_:.1f} [{over_under.upper()}] p={p_win:.0%} ¼K=${qk_bet:.0f}/$1k")
+                    print(f"  {over_under} {r['pred_total_points']:.1f}  ← **{over_under.upper()}**")
                 else:
+                    edge_dir = "+" if et_ > 0 else ""
                     print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts  [resid model]")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
-                note = "" if used_blend_row else " (no market line — direct model only)"
-                print(f"  Pred total: {r['pred_total_points']:.1f}{note}")
+                note = "" if used_blend_row else " (no market line)"
+                print(f"  {r['pred_total_points']:.1f}{note}" if discord else f"  Pred total: {r['pred_total_points']:.1f}{note}")
 
         # Save predictions to DB
         try:

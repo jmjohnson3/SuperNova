@@ -1035,7 +1035,8 @@ def main() -> None:
 
     models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
-    _check_injury_staleness(engine, warn_hours=4.0)
+    if os.getenv("DISCORD_FORMAT") != "1":
+        _check_injury_staleness(engine, warn_hours=4.0)
     prop_lines = _load_prop_lines(engine, et_day)
 
     with engine.connect() as conn:
@@ -1060,7 +1061,7 @@ def main() -> None:
             return
 
     # Warn about players whose last recorded game is unusually old (load management, illness gaps)
-    if "player_rest_days" in df.columns:
+    if "player_rest_days" in df.columns and os.getenv("DISCORD_FORMAT") != "1":
         stale_mask = df["player_rest_days"].fillna(0) > 5
         stale_cols = ["player_name", "team_abbr", "player_rest_days"]
         if "player_id" in df.columns:
@@ -1164,40 +1165,37 @@ def main() -> None:
     df_out = df_out.sort_values(["start_ts_utc","game_slug","team_abbr","pred_points"], ascending=[True,True,True,False])
 
     discord = os.getenv("DISCORD_FORMAT") == "1"
-    for (ts, slug), g in df_out.groupby(["start_ts_utc", "game_slug"], sort=False):
-        # derive away @ home from game_slug (format: YYYYMMDD-AWAY-HOME)
-        parts = str(slug).split("-")
-        matchup = f"{parts[1]} @ {parts[2]}" if len(parts) >= 3 else slug
-        if discord:
-            print(f"\n**{matchup}** · {ts:%I:%M %p ET}")
-        else:
+    if not discord:
+        for (ts, slug), g in df_out.groupby(["start_ts_utc", "game_slug"], sort=False):
+            parts = str(slug).split("-")
+            matchup = f"{parts[1]} @ {parts[2]}" if len(parts) >= 3 else slug
             print(f"\n{matchup}  {ts:%I:%M %p ET}")
 
-        g_sorted = g.sort_values(["team_abbr", "pred_points"], ascending=[True, False])
+            g_sorted = g.sort_values(["team_abbr", "pred_points"], ascending=[True, False])
 
-        for _, r in g_sorted.iterrows():
-            name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
-            name = name.encode("ascii", errors="replace").decode("ascii")
-            name_norm = _normalize_name((r.get("player_name") or "").strip())
+            for _, r in g_sorted.iterrows():
+                name = (r.get("player_name") or "").strip() or f"player_id={int(r['player_id'])}"
+                name = name.encode("ascii", errors="replace").decode("ascii")
+                name_norm = _normalize_name((r.get("player_name") or "").strip())
 
-            pts_line = prop_lines.get((name_norm, "points"))
-            reb_line = prop_lines.get((name_norm, "rebounds"))
-            ast_line = prop_lines.get((name_norm, "assists"))
+                pts_line = prop_lines.get((name_norm, "points"))
+                reb_line = prop_lines.get((name_norm, "rebounds"))
+                ast_line = prop_lines.get((name_norm, "assists"))
 
-            def _fmt(pred: float, line_data) -> str:
-                if line_data and isinstance(line_data, dict):
-                    bo = line_data.get("best_over")
-                    if bo and bo[0] is not None:
-                        bk_lbl = bo[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
-                        return f"{pred:.1f} ({bk_lbl} {float(bo[0]):.1f})"
-                return f"{pred:.1f}"
+                def _fmt(pred: float, line_data) -> str:
+                    if line_data and isinstance(line_data, dict):
+                        bo = line_data.get("best_over")
+                        if bo and bo[0] is not None:
+                            bk_lbl = bo[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
+                            return f"{pred:.1f} ({bk_lbl} {float(bo[0]):.1f})"
+                    return f"{pred:.1f}"
 
-            print(
-                f"  {name}"
-                f"  {_fmt(r['pred_points'], pts_line)} PTS"
-                f"  {_fmt(r['pred_rebounds'], reb_line)} REB"
-                f"  {_fmt(r['pred_assists'], ast_line)} AST"
-            )
+                print(
+                    f"  {name}"
+                    f"  {_fmt(r['pred_points'], pts_line)} PTS"
+                    f"  {_fmt(r['pred_rebounds'], reb_line)} REB"
+                    f"  {_fmt(r['pred_assists'], ast_line)} AST"
+                )
 
     # Best bets section
     best = _rank_best_props(df, df_out, cfg)
