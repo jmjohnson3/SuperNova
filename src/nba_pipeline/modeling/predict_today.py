@@ -14,7 +14,7 @@ from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_
 from xgboost import XGBRegressor
 from sqlalchemy import create_engine, text
 
-from .features import add_game_derived_features
+from .features import add_game_derived_features, build_fd_parlay_url
 
 log = logging.getLogger("nba_pipeline.modeling.predict_today")
 
@@ -718,6 +718,8 @@ def main() -> None:
 
         qp_all: list[str] = []   # all game picks (every game)
         qp_best: list[str] = []  # edge-only picks (best bets)
+        qp_all_links:  list[str | None] = []   # FD links for all-games parlay
+        qp_best_links: list[str | None] = []   # FD links for best-bets parlay
 
         for _, r in out.iterrows():
             start = pd.to_datetime(r["start_ts_utc"], utc=True).tz_convert(_ET)
@@ -759,12 +761,15 @@ def main() -> None:
                     else:
                         qp_all.append(r['pred_spread_label'])
                         qp_best.append(r['pred_spread_label'])
+                    qp_all_links.append(_sl)
+                    qp_best_links.append(_sl)
                 else:
                     print(f"  {r['pred_spread_label']}  * EDGE {edge_dir}{es:.1f} pts  [bet {bet_side}]")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
                 if discord:
                     ms = r.get('market_spread_home')
+                    _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
                     if pd.notna(ms):
                         ms = float(ms)
                         pred_m = float(r['pred_margin_home_minus_away'])
@@ -773,6 +778,8 @@ def main() -> None:
                         qp_all.append(f"{bet_team} {bet_ms:+.1f}")
                     else:
                         qp_all.append(r['pred_spread_label'])
+                    _sl_no_edge = (_ld.spread_home_link if float(r['pred_margin_home_minus_away']) >= 0 else _ld.spread_away_link) if _ld else None
+                    qp_all_links.append(_sl_no_edge)
                 print(f"  {r['pred_spread_label']}")
 
             # Total line — only flag when residual model was used (better calibrated)
@@ -799,6 +806,8 @@ def main() -> None:
                     ou = over_under[0].upper()
                     qp_all.append(f"{game_lbl} {ou}{total_val:.1f}")
                     qp_best.append(f"{game_lbl} {ou}{total_val:.1f}")
+                    qp_all_links.append(_tl)
+                    qp_best_links.append(_tl)
                 else:
                     edge_dir = "+" if et_ > 0 else ""
                     print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts  [resid model]")
@@ -808,13 +817,16 @@ def main() -> None:
                 if discord:
                     game_lbl = f"{r['away_team_abbr']}/{r['home_team_abbr']}"
                     mt = r.get('market_total')
+                    _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
+                    pred_t = float(r['pred_total_points'])
                     if pd.notna(mt):
                         mt_val = float(mt)
-                        pred_t = float(r['pred_total_points'])
                         ou = "O" if pred_t > mt_val else "U"
                         qp_all.append(f"{game_lbl} {ou}{mt_val:.1f}")
                     else:
-                        qp_all.append(f"{game_lbl} {r['pred_total_points']:.1f}")
+                        qp_all.append(f"{game_lbl} {pred_t:.1f}")
+                    _tl_no_edge = (_ld.total_over_link if pred_t > float(mt) else _ld.total_under_link) if (_ld and pd.notna(mt)) else None
+                    qp_all_links.append(_tl_no_edge)
                 print(f"  {r['pred_total_points']:.1f}{note}" if discord else f"  Pred total: {r['pred_total_points']:.1f}{note}")
 
         if discord:
@@ -828,6 +840,14 @@ def main() -> None:
                 for p in qp_best:
                     print(p)
                 print("---/QUICKPICK---")
+            all_parlay = build_fd_parlay_url([l for l in qp_all_links if l])
+            best_parlay = build_fd_parlay_url([l for l in qp_best_links if l])
+            if all_parlay:
+                n = len([l for l in qp_all_links if l])
+                print(f"\n[All Games Parlay ({n} legs)]({all_parlay})")
+            if best_parlay:
+                n = len([l for l in qp_best_links if l])
+                print(f"[Best Bets Parlay ({n} legs)]({best_parlay})")
 
         # Save predictions to DB
         try:

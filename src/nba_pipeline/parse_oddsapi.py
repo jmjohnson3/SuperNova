@@ -207,12 +207,20 @@ CREATE TABLE IF NOT EXISTS odds.nba_player_prop_lines (
     line              NUMERIC,
     over_price        INTEGER,
     under_price       INTEGER,
+    over_link         TEXT,
+    under_link        TEXT,
     updated_at_utc    TIMESTAMPTZ,
     UNIQUE (as_of_date, event_id, bookmaker_key, player_name_norm, stat)
 );
 
 CREATE INDEX IF NOT EXISTS idx_prop_lines_date_bk
     ON odds.nba_player_prop_lines (as_of_date, bookmaker_key);
+"""
+
+_PROP_LINKS_ALTER_DDL = """
+ALTER TABLE IF EXISTS odds.nba_player_prop_lines
+    ADD COLUMN IF NOT EXISTS over_link  TEXT,
+    ADD COLUMN IF NOT EXISTS under_link TEXT;
 """
 
 _PROP_UPSERT_SQL = """
@@ -223,6 +231,7 @@ INSERT INTO odds.nba_player_prop_lines (
   home_team, away_team,
   player_name, player_name_norm,
   stat, line, over_price, under_price,
+  over_link, under_link,
   updated_at_utc
 )
 VALUES %s
@@ -236,6 +245,8 @@ DO UPDATE SET
   line              = EXCLUDED.line,
   over_price        = EXCLUDED.over_price,
   under_price       = EXCLUDED.under_price,
+  over_link         = EXCLUDED.over_link,
+  under_link        = EXCLUDED.under_link,
   updated_at_utc    = EXCLUDED.updated_at_utc
 ;
 """
@@ -283,16 +294,19 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
                 if not player:
                     continue
                 if player not in by_player:
-                    by_player[player] = {"over": None, "under": None, "line": None}
+                    by_player[player] = {"over": None, "under": None, "line": None,
+                                         "over_link": None, "under_link": None}
                 price = _to_int(outcome.get("price"))
                 point = _to_num(outcome.get("point"))
                 if side == "over":
                     by_player[player]["over"] = price
                     by_player[player]["line"] = point
+                    by_player[player]["over_link"] = outcome.get("link")
                 elif side == "under":
                     by_player[player]["under"] = price
                     if by_player[player]["line"] is None:
                         by_player[player]["line"] = point
+                    by_player[player]["under_link"] = outcome.get("link")
 
             for player_name, vals in by_player.items():
                 yield (
@@ -309,6 +323,8 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
                     vals["line"],
                     vals["over"],
                     vals["under"],
+                    vals["over_link"],
+                    vals["under_link"],
                     fetched_at_utc,  # updated_at_utc
                 )
 
@@ -322,9 +338,12 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
     on every daily run.
     """
     with psycopg2.connect(pg_dsn) as conn:
-        # Ensure table exists
+        # Ensure table exists and has link columns
         with conn.cursor() as cur:
             cur.execute(_PROP_DDL)
+        conn.commit()
+        with conn.cursor() as cur:
+            cur.execute(_PROP_LINKS_ALTER_DDL)
         conn.commit()
 
         # Compute since_date for incremental parsing (skips already-loaded history)

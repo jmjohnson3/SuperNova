@@ -449,3 +449,29 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X["on_off_trend_5v10"] = X["on_off_diff_avg_5"] - X["on_off_diff_avg_10"]
 
     return X
+
+
+def build_fd_parlay_url(links) -> str | None:
+    """Combine individual FanDuel addToBetslip links into a multi-leg parlay URL.
+
+    Uses indexed bracket notation: marketId[0]=X&selectionId[0]=Y&marketId[1]=A...
+    Filters None/empty. Returns None if no valid legs found.
+    """
+    from urllib.parse import urlparse, parse_qs
+    legs = []
+    for link in (links or []):
+        if not link:
+            continue
+        try:
+            qs = parse_qs(urlparse(link).query)
+            m = qs.get("marketId", [None])[0]
+            s = qs.get("selectionId", [None])[0]
+            if m and s:
+                legs.append((m, s))
+        except Exception:
+            continue
+    if not legs:
+        return None
+    base = "https://sportsbook.fanduel.com/addToBetslip"
+    params = "&".join(f"marketId[{i}]={m}&selectionId[{i}]={s}" for i, (m, s) in enumerate(legs))
+    return f"{base}?{params}"

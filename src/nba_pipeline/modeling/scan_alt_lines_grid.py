@@ -26,6 +26,8 @@ from __future__ import annotations
 
 import logging
 import os
+import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal, Optional, Sequence
@@ -34,9 +36,25 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from zoneinfo import ZoneInfo
 
+from .features import build_fd_parlay_url
+
 log = logging.getLogger("nba_pipeline.modeling.scan_alt_lines_grid")
 
 _ET = ZoneInfo("America/New_York")
+
+
+def _normalize_name(name: str) -> str:
+    """Lowercase, strip accents, remove non-alpha-space characters."""
+    nfkd = unicodedata.normalize("NFKD", name)
+    ascii_name = nfkd.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z ]", "", ascii_name.lower()).strip()
+
+
+SQL_FD_PROP_LINKS = """
+SELECT player_name_norm, stat, over_link
+FROM odds.nba_player_prop_lines
+WHERE as_of_date = :d AND bookmaker_key = 'fanduel' AND over_link IS NOT NULL
+"""
 
 Stat = Literal["points", "rebounds", "assists"]
 Side = Literal["over", "under"]
@@ -595,6 +613,17 @@ def main() -> None:
         starter_set      = _load_starters(conn, et_day) if cfg.starters_only else None
         injury_set       = _load_injuries(conn) if cfg.injury_kill else set()
 
+        # Load FanDuel prop over links for parlay building
+        fd_prop_links: dict[tuple, str] = {}
+        try:
+            link_rows = conn.execute(text(SQL_FD_PROP_LINKS), {"d": et_day}).fetchall()
+            for lr in link_rows:
+                fd_prop_links[(lr.player_name_norm, lr.stat)] = lr.over_link
+            if fd_prop_links:
+                log.info("Loaded FD prop over links for %d player/stat combos", len(fd_prop_links))
+        except Exception as _e:
+            log.debug("Could not load FD prop links: %s", _e)
+
         # Filter to today's teams (existing behaviour)
         today_teams: Optional[pd.DataFrame] = None
         if cfg.only_players_in_todays_games:
@@ -686,6 +715,7 @@ def main() -> None:
         STAT_LABEL = {"points": "Points", "rebounds": "Rebounds", "assists": "Assists"}
         discord = os.getenv("DISCORD_FORMAT") == "1"
         qp_alt: list[str] = []
+        alt_links: list[str] = []
         if passing:
             for r in sorted(passing, key=lambda x: (-x["hit_rate"], -x["line"])):
                 side_word = "Over" if cfg.side == "over" else "Under"
@@ -694,6 +724,10 @@ def main() -> None:
                 if discord:
                     print(f"✅ **{r['player_name']}** · {side_word} {r['line']:g} {stat_word} · {pct}")
                     qp_alt.append(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}")
+                    name_norm_key = _normalize_name(r["player_name"])
+                    link = fd_prop_links.get((name_norm_key, r["stat"]))
+                    if link:
+                        alt_links.append(link)
                 else:
                     print(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}  {pct}")
         else:
@@ -704,6 +738,11 @@ def main() -> None:
             for p in qp_alt:
                 print(p)
             print("---/QUICKPICK---")
+
+        if discord and alt_links:
+            parlay_url = build_fd_parlay_url(alt_links)
+            if parlay_url:
+                print(f"\n[Alt Lines Parlay ({len(alt_links)} legs)]({parlay_url})")
 
         log.info(
             "Scan complete | %d candidates → %d pass, %d cut",

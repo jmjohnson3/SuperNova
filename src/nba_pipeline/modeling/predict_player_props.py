@@ -25,7 +25,7 @@ try:
 except ImportError:
     _HAS_LGB = False
 
-from .features import add_player_prop_derived_features
+from .features import add_player_prop_derived_features, build_fd_parlay_url
 
 log = logging.getLogger("nba_pipeline.modeling.predict_player_props")
 
@@ -491,7 +491,8 @@ def _load_prop_lines(
         bookmakers = ["draftkings", "fanduel"]
 
     sql = text("""
-        SELECT player_name_norm, stat, bookmaker_key, line, over_price, under_price
+        SELECT player_name_norm, stat, bookmaker_key, line, over_price, under_price,
+               over_link, under_link
         FROM odds.nba_player_prop_lines
         WHERE as_of_date = :date AND bookmaker_key = ANY(:bks)
     """)
@@ -500,11 +501,14 @@ def _load_prop_lines(
             rows = conn.execute(sql, {"date": et_day, "bks": bookmakers}).fetchall()
         # Group by (player_name_norm, stat)
         groups: dict[tuple, dict] = {}
+        fd_links_local: dict[tuple, tuple] = {}
         for r in rows:
             key = (r.player_name_norm, r.stat)
             if key not in groups:
                 groups[key] = {}
             groups[key][r.bookmaker_key] = (r.line, r.over_price, r.under_price)
+            if r.bookmaker_key == "fanduel" and (getattr(r, "over_link", None) or getattr(r, "under_link", None)):
+                fd_links_local[key] = (r.over_link, r.under_link)
 
         # Compute best line for OVER (lowest) and UNDER (highest) across bookmakers
         result = {}
@@ -522,6 +526,12 @@ def _load_prop_lines(
             entry["best_over"] = best_over
             entry["best_under"] = best_under
             result[key] = entry
+
+        # Attach FD links to each entry
+        for key, entry in result.items():
+            ov_l, un_l = fd_links_local.get(key, (None, None))
+            entry["fd_over_link"] = ov_l
+            entry["fd_under_link"] = un_l
 
         n = sum(len(v) - 2 for v in result.values())  # approximate # book rows
         log.info("Loaded prop lines for %d player/stat combos from %s", len(result), bookmakers)
@@ -794,7 +804,7 @@ def _print_best_bets(
     ast_ci: float,
     prop_lines: dict | None = None,
     discord: bool = False,
-) -> None:
+) -> list[str]:
     """
     Print actionable bet calls for top-confidence prop players.
 
@@ -810,12 +820,13 @@ def _print_best_bets(
       OVER if line < {pred - ci}  |  UNDER if line > {pred + ci}
     """
     if best.empty:
-        return
+        return []
 
     if prop_lines is None:
         prop_lines = {}
 
     qp_props: list[str] = []
+    fd_bet_links: list[str] = []
 
     n_with_lines = sum(
         1 for _, r in best.iterrows()
@@ -943,7 +954,11 @@ def _print_best_bets(
                     break_even = 100 / (100 + abs(best_over[1])) if best_over[1] else None
                     be_str = f" BE={break_even:.1%}" if break_even else ""
                     if discord:
-                        stat_lines_discord.append(f"OVER {over_line:.1f} {stat_label}")
+                        link = entry.get("fd_over_link")
+                        link_str = f" [Bet FD]({link})" if link else ""
+                        stat_lines_discord.append(f"OVER {over_line:.1f} {stat_label}{link_str}")
+                        if link:
+                            fd_bet_links.append(link)
                     else:
                         print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET OVER @ {bk_label}  edge=+{over_edge:.1f}{be_str}")
                 elif bet_under:
@@ -953,7 +968,11 @@ def _print_best_bets(
                     break_even = 100 / (100 + abs(best_under[1])) if best_under[1] else None
                     be_str = f" BE={break_even:.1%}" if break_even else ""
                     if discord:
-                        stat_lines_discord.append(f"UNDER {under_line:.1f} {stat_label}")
+                        link = entry.get("fd_under_link")
+                        link_str = f" [Bet FD]({link})" if link else ""
+                        stat_lines_discord.append(f"UNDER {under_line:.1f} {stat_label}{link_str}")
+                        if link:
+                            fd_bet_links.append(link)
                     else:
                         print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET UNDER @ {bk_label}  edge={under_edge:.1f}{be_str}")
                 else:
@@ -975,7 +994,13 @@ def _print_best_bets(
             print(p)
         print("---/QUICKPICK---")
 
+    if discord and fd_bet_links:
+        parlay_url = build_fd_parlay_url(fd_bet_links)
+        if parlay_url:
+            print(f"\n[Best Props Parlay ({len(fd_bet_links)} legs)]({parlay_url})")
+
     print()
+    return fd_bet_links
 
 
 def _check_injury_staleness(engine, warn_hours: float = 12.0) -> None:
@@ -1199,6 +1224,47 @@ def main() -> None:
                     f"  {_fmt(r['pred_rebounds'], reb_line)} REB"
                     f"  {_fmt(r['pred_assists'], ast_line)} AST"
                 )
+
+    # Full Discord listing (projected starters only, grouped by game)
+    if discord:
+        for (ts, slug), g in df_out.groupby(["start_ts_utc", "game_slug"], sort=False):
+            parts = str(slug).split("-")
+            matchup = f"{parts[1].upper()} @ {parts[2].upper()}" if len(parts) >= 3 else slug
+            print(f"\n**{matchup}** · {ts:%I:%M %p ET}")
+            g_starters = g[g["is_proj_starter"] == True].sort_values(
+                ["team_abbr", "pred_points"], ascending=[True, False]
+            )
+            for _, r in g_starters.iterrows():
+                name = (r.get("player_name") or "").strip() or f"id={int(r['player_id'])}"
+                name_norm = _normalize_name((r.get("player_name") or "").strip())
+                pp = float(r["pred_points"])
+                pr = float(r["pred_rebounds"])
+                pa = float(r["pred_assists"])
+                pts_lo = max(0.0, pp - pts_ci)
+                pts_hi = pp + pts_ci
+                reb_lo = max(0.0, pr - reb_ci)
+                reb_hi = pr + reb_ci
+                ast_lo = max(0.0, pa - ast_ci)
+                ast_hi = pa + ast_ci
+                bet_parts = []
+                for pred, lo, hi, stat_label, stat_key in [
+                    (pp, pts_lo, pts_hi, "PTS", "points"),
+                    (pr, reb_lo, reb_hi, "REB", "rebounds"),
+                    (pa, ast_lo, ast_hi, "AST", "assists"),
+                ]:
+                    entry = prop_lines.get((name_norm, stat_key))
+                    if not entry or not isinstance(entry, dict):
+                        continue
+                    bo = entry.get("best_over")
+                    bu = entry.get("best_under")
+                    if bo and bo[0] is not None and pred > float(bo[0]) and float(bo[0]) < lo:
+                        link = entry.get("fd_over_link")
+                        bet_parts.append(f"OVER {float(bo[0]):.1f} {stat_label}" + (f" [Bet FD]({link})" if link else ""))
+                    elif bu and bu[0] is not None and pred < float(bu[0]) and float(bu[0]) > hi:
+                        link = entry.get("fd_under_link")
+                        bet_parts.append(f"UNDER {float(bu[0]):.1f} {stat_label}" + (f" [Bet FD]({link})" if link else ""))
+                bet_str = "  " + "  ".join(bet_parts) if bet_parts else ""
+                print(f"**{name}** ({r['team_abbr']} vs {r['opponent_abbr']})  {pp:.1f} PTS / {pr:.1f} REB / {pa:.1f} AST{bet_str}")
 
     # Best bets section
     best = _rank_best_props(df, df_out, cfg)
