@@ -21,6 +21,7 @@ INSERT INTO odds.nba_game_lines (
   spread_home_points, spread_home_price,
   spread_away_points, spread_away_price,
   total_points, total_over_price, total_under_price,
+  spread_home_link, spread_away_link, total_over_link, total_under_link,
   updated_at_utc
 )
 VALUES %s
@@ -37,8 +38,20 @@ DO UPDATE SET
   total_points           = EXCLUDED.total_points,
   total_over_price       = EXCLUDED.total_over_price,
   total_under_price      = EXCLUDED.total_under_price,
+  spread_home_link       = EXCLUDED.spread_home_link,
+  spread_away_link       = EXCLUDED.spread_away_link,
+  total_over_link        = EXCLUDED.total_over_link,
+  total_under_link       = EXCLUDED.total_under_link,
   updated_at_utc         = EXCLUDED.updated_at_utc
 ;
+"""
+
+_GAME_LINES_LINKS_DDL = """
+ALTER TABLE IF EXISTS odds.nba_game_lines
+    ADD COLUMN IF NOT EXISTS spread_home_link TEXT,
+    ADD COLUMN IF NOT EXISTS spread_away_link TEXT,
+    ADD COLUMN IF NOT EXISTS total_over_link  TEXT,
+    ADD COLUMN IF NOT EXISTS total_under_link TEXT;
 """
 
 SQL_LOAD = """
@@ -117,6 +130,8 @@ def iter_rows(as_of_date: date, fetched_at_utc, events: list[dict]) -> Iterable[
             spread_home_points = spread_home_price = None
             spread_away_points = spread_away_price = None
             total_points = total_over_price = total_under_price = None
+            spread_home_link = spread_away_link = None
+            total_over_link = total_under_link = None
 
             if spreads:
                 oh = _find_outcome(spreads, home_team)
@@ -124,9 +139,11 @@ def iter_rows(as_of_date: date, fetched_at_utc, events: list[dict]) -> Iterable[
                 if oh:
                     spread_home_points = _to_num(oh.get("point"))
                     spread_home_price = _to_int(oh.get("price"))
+                    spread_home_link = oh.get("link")
                 if oa:
                     spread_away_points = _to_num(oa.get("point"))
                     spread_away_price = _to_int(oa.get("price"))
+                    spread_away_link = oa.get("link")
 
             if totals:
                 o_over = _find_outcome(totals, "Over")
@@ -135,10 +152,12 @@ def iter_rows(as_of_date: date, fetched_at_utc, events: list[dict]) -> Iterable[
                 if o_over:
                     total_points = _to_num(o_over.get("point"))
                     total_over_price = _to_int(o_over.get("price"))
+                    total_over_link = o_over.get("link")
                 if o_under:
                     if total_points is None:
                         total_points = _to_num(o_under.get("point"))
                     total_under_price = _to_int(o_under.get("price"))
+                    total_under_link = o_under.get("link")
 
             yield (
                 provider,
@@ -157,6 +176,10 @@ def iter_rows(as_of_date: date, fetched_at_utc, events: list[dict]) -> Iterable[
                 total_points,
                 total_over_price,
                 total_under_price,
+                spread_home_link,
+                spread_away_link,
+                total_over_link,
+                total_under_link,
             )
 
 
@@ -378,6 +401,10 @@ def parse_game_odds_historical(
     on every daily run.
     """
     with psycopg2.connect(pg_dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(_GAME_LINES_LINKS_DDL)
+        conn.commit()
+
         # Compute since_date for incremental parsing (skips already-loaded history)
         since_date: Optional[date] = None
         if as_of_date is None:
@@ -453,6 +480,10 @@ def main() -> None:
     )
     cfg = ParseConfig()
     with psycopg2.connect(cfg.pg_dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(_GAME_LINES_LINKS_DDL)
+        conn.commit()
+
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(SQL_LOAD, {"as_of_date": cfg.as_of_date})
             snaps = cur.fetchall()

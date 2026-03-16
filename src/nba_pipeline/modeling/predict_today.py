@@ -163,6 +163,22 @@ WHERE gpf.game_date_et = :game_date
 ORDER BY gpf.start_ts_utc, gpf.game_slug
 """
 
+SQL_FANDUEL_LINKS = """
+SELECT tnm_h.team_abbr AS home_abbr,
+       tnm_a.team_abbr AS away_abbr,
+       gl.spread_home_link,
+       gl.spread_away_link,
+       gl.total_over_link,
+       gl.total_under_link
+FROM odds.nba_game_lines gl
+JOIN odds.team_name_map tnm_h ON tnm_h.team_name = gl.home_team
+JOIN odds.team_name_map tnm_a ON tnm_a.team_name = gl.away_team
+WHERE gl.as_of_date = :d
+  AND gl.bookmaker_key = 'fanduel'
+  AND (gl.spread_home_link IS NOT NULL OR gl.total_over_link IS NOT NULL)
+ORDER BY gl.fetched_at_utc DESC
+"""
+
 def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
     for c in list(X.columns):
         if is_numeric_dtype(X[c]) or is_bool_dtype(X[c]) or is_datetime64_any_dtype(X[c]):
@@ -525,6 +541,20 @@ def main() -> None:
     engine = create_engine(cfg.pg_dsn)
     _check_injury_staleness(engine)
 
+    # Load FanDuel betslip deeplinks for today's games (added by includeLinks=true crawler param)
+    fd_links: dict[tuple[str, str], object] = {}
+    try:
+        with engine.connect() as _conn:
+            link_rows = _conn.execute(text(SQL_FANDUEL_LINKS), {"d": et_day}).fetchall()
+        for row in link_rows:
+            key = (row.home_abbr, row.away_abbr)
+            if key not in fd_links:  # keep most-recent row per game
+                fd_links[key] = row
+        if fd_links:
+            log.info("Loaded FanDuel deeplinks for %d games", len(fd_links))
+    except Exception as _exc:
+        log.debug("Could not load FanDuel links (columns may not exist yet): %s", _exc)
+
     with engine.connect() as conn:
         df = pd.read_sql(
             text(SQL_GAMES_FOR_DATE),
@@ -715,7 +745,10 @@ def main() -> None:
                 kelly, p_win = _kelly(abs(es), sigma=sigma_s)
                 qk_bet = (kelly / 4) * 1000
                 if discord:
-                    print(f"  {r['pred_spread_label']}  ← **{bet_side}**")
+                    _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
+                    _sl = (_ld.spread_home_link if bet_side == "HOME" else _ld.spread_away_link) if _ld else None
+                    _link_str = f"  [Bet FD]({_sl})" if _sl else ""
+                    print(f"  {r['pred_spread_label']}  ← **{bet_side}**{_link_str}")
                     ms = r.get('market_spread_home')
                     if pd.notna(ms):
                         ms = float(ms)
@@ -756,7 +789,10 @@ def main() -> None:
                 kelly, p_win = _kelly(abs(et_), sigma=sigma_t)
                 qk_bet = (kelly / 4) * 1000
                 if discord:
-                    print(f"  {over_under} {r['pred_total_points']:.1f}  ← **{over_under.upper()}**")
+                    _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
+                    _tl = (_ld.total_over_link if et_ > 0 else _ld.total_under_link) if _ld else None
+                    _link_str = f"  [Bet FD]({_tl})" if _tl else ""
+                    print(f"  {over_under} {r['pred_total_points']:.1f}  ← **{over_under.upper()}**{_link_str}")
                     game_lbl = f"{r['away_team_abbr']}/{r['home_team_abbr']}"
                     mt = r.get('market_total')
                     total_val = float(mt) if pd.notna(mt) else float(r['pred_total_points'])
