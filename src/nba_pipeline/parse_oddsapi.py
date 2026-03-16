@@ -330,12 +330,15 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
 
 
 def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
-                   as_of_date: Optional[date] = None) -> None:
+                   as_of_date: Optional[date] = None,
+                   since_date: Optional[date] = None) -> None:
     """Parse raw nba_prop_odds payloads into odds.nba_player_prop_lines.
 
     Incremental by default: when as_of_date is None, only processes payloads
     from (MAX already-parsed date - 1 day) onward to avoid re-parsing all history
     on every daily run.
+
+    Pass since_date to force re-parsing from a specific date (e.g. after a backfill).
     """
     with psycopg2.connect(pg_dsn) as conn:
         # Ensure table exists and has link columns
@@ -347,8 +350,8 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
         conn.commit()
 
         # Compute since_date for incremental parsing (skips already-loaded history)
-        since_date: Optional[date] = None
-        if as_of_date is None:
+        # Caller can override by passing since_date directly.
+        if since_date is None and as_of_date is None:
             with conn.cursor() as cur:
                 try:
                     cur.execute("SELECT MAX(as_of_date) FROM odds.nba_player_prop_lines")
@@ -358,6 +361,8 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
                         log.info("Incremental prop odds: since %s", since_date)
                 except Exception:
                     pass  # table may not exist yet on first run
+        elif since_date is not None:
+            log.info("Forced prop odds re-parse: since %s", since_date)
 
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(_PROP_LOAD_SQL, {"as_of_date": as_of_date, "since_date": since_date})
