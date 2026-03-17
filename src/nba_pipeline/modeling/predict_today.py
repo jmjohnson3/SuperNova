@@ -780,7 +780,10 @@ def main() -> None:
                         qp_all.append(r['pred_spread_label'])
                     _sl_no_edge = (_ld.spread_home_link if float(r['pred_margin_home_minus_away']) >= 0 else _ld.spread_away_link) if _ld else None
                     qp_all_links.append(_sl_no_edge)
-                print(f"  {r['pred_spread_label']}")
+                    _link_str = f"  [FD]({_sl_no_edge})" if _sl_no_edge else ""
+                    print(f"  {r['pred_spread_label']}{_link_str}")
+                else:
+                    print(f"  {r['pred_spread_label']}")
 
             # Total line — only flag when residual model was used (better calibrated)
             edge_t = r.get("edge_total")
@@ -827,7 +830,10 @@ def main() -> None:
                         qp_all.append(f"{game_lbl} {pred_t:.1f}")
                     _tl_no_edge = (_ld.total_over_link if pred_t > float(mt) else _ld.total_under_link) if (_ld and pd.notna(mt)) else None
                     qp_all_links.append(_tl_no_edge)
-                print(f"  {r['pred_total_points']:.1f}{note}" if discord else f"  Pred total: {r['pred_total_points']:.1f}{note}")
+                    _link_str = f"  [FD]({_tl_no_edge})" if _tl_no_edge else ""
+                    print(f"  {r['pred_total_points']:.1f}{note}{_link_str}")
+                else:
+                    print(f"  Pred total: {r['pred_total_points']:.1f}{note}")
 
         if discord:
             if qp_all:

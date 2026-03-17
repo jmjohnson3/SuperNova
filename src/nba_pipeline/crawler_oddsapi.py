@@ -269,7 +269,8 @@ def _get_live_event_ids(cfg: OddsCrawlerConfig, et_day: date) -> list[dict]:
 
 
 def _fetch_prop_lines_for_day(
-    cfg: OddsCrawlerConfig, conn, as_of_date: date, game_date: date | None = None
+    cfg: OddsCrawlerConfig, conn, as_of_date: date, game_date: date | None = None,
+    force: bool = False,
 ) -> int | None:
     """Fetch player prop lines for a game day using per-event endpoints.
 
@@ -312,7 +313,7 @@ def _fetch_prop_lines_for_day(
         }
         full_url = _build_full_url(url, params)
 
-        if _already_fetched(conn, as_of_date=as_of_date, full_url=full_url):
+        if not force and _already_fetched(conn, as_of_date=as_of_date, full_url=full_url):
             log.debug("Already have prop odds for event %s as_of=%s", event_id, as_of_date)
             continue
 

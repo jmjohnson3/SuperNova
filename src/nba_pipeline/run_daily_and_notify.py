@@ -38,7 +38,6 @@ DISCORD_WEBHOOK_URL = os.getenv(
 )
 
 DISCORD_LIMIT = 1950  # Discord hard cap is 2000; keep a buffer
-QUICKPICK_MENTION = "<@1365038800656535703>"  # QuickPickBot user ID
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +61,7 @@ STEPS: list[Step] = [
     Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=14400),
     Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=14400),
     Step("Train Player Prop Models",  "nba_pipeline.modeling.train_player_prop_models",   critical=True,  post_output=False, timeout_s=14400),
+    Step("Prop Lines Refresh",        "nba_pipeline.refresh_prop_links",                  critical=False, post_output=False, timeout_s=600),
     Step("Game Predictions",          "nba_pipeline.modeling.predict_today",              critical=False, post_output=True,  timeout_s=14400),
     Step("Alt Line Scan",             "nba_pipeline.modeling.scan_alt_lines_grid",         critical=False, post_output=True,  timeout_s=14400),
     Step("Player Prop Projections",   "nba_pipeline.modeling.predict_player_props",        critical=False, post_output=True,  timeout_s=14400),
@@ -128,6 +128,7 @@ async def _post(content: str) -> None:
                 if attempt >= 3:
                     raise
                 await asyncio.sleep(2.0 * (attempt + 1))
+
 
 
 def _build_chunks(header: str, body: str) -> list[str]:
@@ -244,7 +245,6 @@ async def main() -> None:
 
     results: list[tuple[str, bool, float]] = []   # (label, ok, secs)
     halted = False
-    _pending_qp: dict[str, str] = {}  # deferred @QuickPickBot blocks
 
     for step in STEPS:
         if halted:
@@ -286,26 +286,11 @@ async def main() -> None:
             }.get(step.label, f"**{step.label}**")
 
             rich = step.label != "Yesterday's Results"  # results use code-block, predictions use rich
-            cleaned, quickpicks = _extract_quickpicks(stdout)
+            cleaned, _ = _extract_quickpicks(stdout)  # strip ---QUICKPICK--- blocks from output
             if cleaned.strip():
                 await _post_section(header, cleaned, rich=rich)
             else:
                 await _post(f"{header}\n_(no output for today's slate)_")
-
-            # Post @QuickPickBot messages; defer best_games until after player props
-            for tag, picks_text in quickpicks:
-                if not picks_text:
-                    continue
-                if tag == "best_games":
-                    _pending_qp[tag] = picks_text  # post last, after player props
-                else:
-                    await asyncio.sleep(0.4)
-                    await _post(f"{QUICKPICK_MENTION}\n{picks_text}")
-
-            # After player props: flush deferred best-game picks (user wants these last)
-            if step.label == "Player Prop Projections" and "best_games" in _pending_qp:
-                await asyncio.sleep(0.4)
-                await _post(f"{QUICKPICK_MENTION}\n{_pending_qp.pop('best_games')}")
         else:
             await _post_status(step, secs, ok=True)
 
