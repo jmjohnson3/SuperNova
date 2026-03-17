@@ -543,12 +543,19 @@ def parse_prop_odds_alt(
 
                 events = [payload] if isinstance(payload, dict) else (payload if isinstance(payload, list) else [])
 
+                # Deduplicate by PK within this snapshot to avoid execute_values conflicts
+                # PK: (as_of_date[0], bookmaker_key[3], player_name_norm[5], stat[6], side[7], line[8])
+                seen: dict[tuple, tuple] = {}
                 for event_payload in events:
-                    rows = list(iter_alt_prop_rows(s["as_of_date"], fetched_at_utc, event_payload))
-                    if not rows:
-                        continue
-                    psycopg2.extras.execute_values(cur, _ALT_PROP_UPSERT_SQL, rows, page_size=1000)
-                    total_rows += len(rows)
+                    for row in iter_alt_prop_rows(s["as_of_date"], fetched_at_utc, event_payload):
+                        pk = (row[0], row[3], row[5], row[6], row[7], row[8])
+                        seen[pk] = row
+
+                if not seen:
+                    continue
+                rows = list(seen.values())
+                psycopg2.extras.execute_values(cur, _ALT_PROP_UPSERT_SQL, rows, page_size=1000)
+                total_rows += len(rows)
 
         conn.commit()
         log.info("Upserted %d rows into odds.nba_player_prop_alt_lines", total_rows)
