@@ -50,10 +50,10 @@ def _normalize_name(name: str) -> str:
     return re.sub(r"[^a-z ]", "", ascii_name.lower()).strip()
 
 
-SQL_FD_PROP_LINKS = """
-SELECT player_name_norm, stat, over_link
-FROM odds.nba_player_prop_lines
-WHERE as_of_date = :d AND bookmaker_key = 'fanduel' AND over_link IS NOT NULL
+SQL_FD_ALT_LINKS = """
+SELECT player_name_norm, stat, line, link
+FROM odds.nba_player_prop_alt_lines
+WHERE as_of_date = :d AND bookmaker_key = 'fanduel' AND side = 'over' AND link IS NOT NULL
 """
 
 Stat = Literal["points", "rebounds", "assists"]
@@ -613,16 +613,16 @@ def main() -> None:
         starter_set      = _load_starters(conn, et_day) if cfg.starters_only else None
         injury_set       = _load_injuries(conn) if cfg.injury_kill else set()
 
-        # Load FanDuel prop over links for parlay building
+        # Load FanDuel alt-line over links for parlay building (keyed by player/stat/line)
         fd_prop_links: dict[tuple, str] = {}
         try:
-            link_rows = conn.execute(text(SQL_FD_PROP_LINKS), {"d": et_day}).fetchall()
+            link_rows = conn.execute(text(SQL_FD_ALT_LINKS), {"d": et_day}).fetchall()
             for lr in link_rows:
-                fd_prop_links[(lr.player_name_norm, lr.stat)] = lr.over_link
+                fd_prop_links[(lr.player_name_norm, lr.stat, float(lr.line))] = lr.link
             if fd_prop_links:
-                log.info("Loaded FD prop over links for %d player/stat combos", len(fd_prop_links))
+                log.info("Loaded FD alt-line over links for %d player/stat/line combos", len(fd_prop_links))
         except Exception as _e:
-            log.debug("Could not load FD prop links: %s", _e)
+            log.debug("Could not load FD alt prop links: %s", _e)
 
         # Filter to today's teams (existing behaviour)
         today_teams: Optional[pd.DataFrame] = None
@@ -722,10 +722,11 @@ def main() -> None:
                 stat_word = STAT_LABEL.get(r["stat"], r["stat"].title())
                 pct = f"{r['hit_rate']*100:.0f}%"
                 if discord:
-                    print(f"✅ **{r['player_name']}** · {side_word} {r['line']:g} {stat_word} · {pct}")
-                    qp_alt.append(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}")
                     name_norm_key = _normalize_name(r["player_name"])
-                    link = fd_prop_links.get((name_norm_key, r["stat"]))
+                    link = fd_prop_links.get((name_norm_key, r["stat"], float(r["line"])))
+                    link_str = f"  [Bet FD]({link})" if link else ""
+                    print(f"✅ **{r['player_name']}** · {side_word} {r['line']:g} {stat_word} · {pct}{link_str}")
+                    qp_alt.append(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}")
                     if link:
                         alt_links.append(link)
                 else:
@@ -733,18 +734,18 @@ def main() -> None:
         else:
             print("*No plays for today's slate*" if discord else "No plays for today's slate")
 
-        if discord and qp_alt:
-            print("---QUICKPICK:alt_lines---")
-            for p in qp_alt:
-                print(p)
-            print("---/QUICKPICK---")
-
         if discord and alt_links:
             parlay_url = build_fd_parlay_url(alt_links)
             if parlay_url:
                 n_alt = len(alt_links)
                 leg_str = "leg" if n_alt == 1 else "legs"
                 print(f"\n[Alt Lines Parlay ({n_alt} {leg_str})]({parlay_url})")
+
+        if discord and qp_alt:
+            print("---QUICKPICK:alt_lines---")
+            for p in qp_alt:
+                print(p)
+            print("---/QUICKPICK---")
 
         log.info(
             "Scan complete | %d candidates → %d pass, %d cut",

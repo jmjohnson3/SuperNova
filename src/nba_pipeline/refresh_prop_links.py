@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 import psycopg2
 
 from .crawler_oddsapi import OddsCrawlerConfig, _fetch_prop_lines_for_day
-from .parse_oddsapi import parse_prop_odds
+from .parse_oddsapi import parse_prop_odds, parse_prop_odds_alt
 
 log = logging.getLogger("nba_pipeline.refresh_prop_links")
 _ET = ZoneInfo("America/New_York")
@@ -39,6 +39,7 @@ def main() -> None:
 
     # Re-parse from yesterday so today's upserted payloads are included
     parse_prop_odds(since_date=today_et - timedelta(days=1))
+    parse_prop_odds_alt(since_date=today_et - timedelta(days=1))
     log.info("Prop lines refresh done.")
 
 

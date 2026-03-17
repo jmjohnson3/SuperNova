@@ -13,7 +13,10 @@ _UTC = ZoneInfo("UTC")
 # NBA off-season: no games, skip to save credits
 _NBA_OFF_SEASON_MONTHS = {7, 8, 9}  # July, August, September
 
-_PROP_MARKETS = "player_points,player_rebounds,player_assists"
+_PROP_MARKETS = (
+    "player_points,player_rebounds,player_assists,"
+    "player_points_alternate,player_rebounds_alternate,player_assists_alternate"
+)
 _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{event_id}/odds"
 
 

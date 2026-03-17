@@ -821,6 +821,102 @@ def _kelly_prop(
     return kelly, p
 
 
+def _print_discord_best_bets(
+    df_out: pd.DataFrame,
+    prop_lines: dict,
+    pts_ci: float,
+    reb_ci: float,
+    ast_ci: float,
+    max_legs: int = 8,
+) -> None:
+    """Print best prop bets for Discord, scanning ALL predicted players.
+
+    Unlike _print_best_bets() which uses only the top-confidence subset,
+    this scans every prediction and ranks purely by edge vs book line,
+    then builds a FanDuel parlay URL from the top legs.
+    """
+    ci_map = {"points": pts_ci, "rebounds": reb_ci, "assists": ast_ci}
+    candidates: list[tuple] = []  # (edge, name, team, opp, side, line, stat_label, stat_key, fd_link, kelly_pct)
+
+    for _, r in df_out.iterrows():
+        name = (r.get("player_name") or "").strip()
+        if not name:
+            continue
+        name_norm = _normalize_name(name)
+        team = str(r.get("team_abbr", ""))
+        opp = str(r.get("opponent_abbr", ""))
+
+        for pred_col, stat_key, stat_label in [
+            ("pred_points",   "points",   "PTS"),
+            ("pred_rebounds", "rebounds", "REB"),
+            ("pred_assists",  "assists",  "AST"),
+        ]:
+            pred = float(r.get(pred_col, np.nan))
+            if pd.isna(pred):
+                continue
+            entry = prop_lines.get((name_norm, stat_key))
+            if not entry or not isinstance(entry, dict):
+                continue
+            ci = ci_map.get(stat_key, pts_ci)
+            bo = entry.get("best_over")
+            bu = entry.get("best_under")
+            fd_over  = entry.get("fd_over_link")
+            fd_under = entry.get("fd_under_link")
+
+            if bo and bo[0] is not None and fd_over:
+                over_line = float(bo[0])
+                edge = pred - over_line
+                if edge > 0:
+                    juice = int(bo[1]) if bo[1] else -110
+                    kelly, _ = _kelly_prop(edge, juice=juice, sigma=ci)
+                    candidates.append((edge, name, team, opp, "OVER",  over_line,
+                                       stat_label, stat_key, fd_over,  kelly / 4 * 100))
+
+            if bu and bu[0] is not None and fd_under:
+                under_line = float(bu[0])
+                edge = under_line - pred
+                if edge > 0:
+                    juice = int(bu[1]) if bu[1] else -110
+                    kelly, _ = _kelly_prop(edge, juice=juice, sigma=ci)
+                    candidates.append((edge, name, team, opp, "UNDER", under_line,
+                                       stat_label, stat_key, fd_under, kelly / 4 * 100))
+
+    print("\n**BEST PROP BETS**")
+    if not candidates:
+        print("*No FD lines available for today's slate*\n")
+        return
+
+    # Deduplicate: keep highest edge per (name, stat_key), then rank
+    seen: dict[tuple, tuple] = {}
+    for c in sorted(candidates, key=lambda x: -x[0]):
+        key = (c[1], c[7])
+        if key not in seen:
+            seen[key] = c
+    ranked = sorted(seen.values(), key=lambda x: -x[0])[:max_legs]
+
+    parlay_links: list[str] = []
+    qp_props: list[str] = []
+    for (edge, name, team, opp, side, line, stat_label, stat_key, fd_link, kelly_pct) in ranked:
+        print(f"**{name}** ({team} vs {opp})  {side} {line:.1f} {stat_label} ({kelly_pct:.1f}%k) [Bet FD]({fd_link})")
+        parlay_links.append(fd_link)
+        qp_props.append(f"{name} ({team} vs {opp}) {side} {line:.1f} {stat_label}")
+
+    if qp_props:
+        print("---QUICKPICK:props---")
+        for p in qp_props:
+            print(p)
+        print("---/QUICKPICK---")
+
+    if parlay_links:
+        parlay_url = build_fd_parlay_url(parlay_links)
+        if parlay_url:
+            n = len(parlay_links)
+            leg_str = "leg" if n == 1 else "legs"
+            print(f"\n[Best Props Parlay ({n} {leg_str})]({parlay_url})")
+
+    print()
+
+
 def _print_best_bets(
     best: pd.DataFrame,
     pts_ci: float,
@@ -1312,8 +1408,12 @@ def main() -> None:
                 print(f"**{name}** ({r['team_abbr']} vs {r['opponent_abbr']})  {pp:.1f} PTS / {pr:.1f} REB / {pa:.1f} AST{bet_str}")
 
     # Best bets section
-    best = _rank_best_props(df, df_out, cfg)
-    _print_best_bets(best, pts_ci=pts_ci, reb_ci=reb_ci, ast_ci=ast_ci, prop_lines=prop_lines, discord=discord)
+    if discord:
+        # Discord: scan ALL predicted players by edge vs book line, not just the top-confidence subset
+        _print_discord_best_bets(df_out, prop_lines=prop_lines, pts_ci=pts_ci, reb_ci=reb_ci, ast_ci=ast_ci)
+    else:
+        best = _rank_best_props(df, df_out, cfg)
+        _print_best_bets(best, pts_ci=pts_ci, reb_ci=reb_ci, ast_ci=ast_ci, prop_lines=prop_lines, discord=False)
 
     # Save predictions to DB
     try:

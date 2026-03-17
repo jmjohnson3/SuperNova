@@ -189,6 +189,48 @@ _PROP_MARKET_MAP = {
     "player_assists": "assists",
 }
 
+_ALT_PROP_MARKET_MAP = {
+    "player_points_alternate":   "points",
+    "player_rebounds_alternate": "rebounds",
+    "player_assists_alternate":  "assists",
+}
+
+_ALT_PROP_DDL = """
+CREATE TABLE IF NOT EXISTS odds.nba_player_prop_alt_lines (
+    as_of_date       DATE         NOT NULL,
+    fetched_at_utc   TIMESTAMPTZ  NOT NULL,
+    event_id         TEXT,
+    bookmaker_key    TEXT         NOT NULL,
+    player_name      TEXT         NOT NULL,
+    player_name_norm TEXT         NOT NULL,
+    stat             TEXT         NOT NULL,
+    side             TEXT         NOT NULL,
+    line             NUMERIC(6,1) NOT NULL,
+    price            INTEGER,
+    link             TEXT,
+    PRIMARY KEY (as_of_date, bookmaker_key, player_name_norm, stat, side, line)
+);
+CREATE INDEX IF NOT EXISTS idx_prop_alt_lines_date_bk
+    ON odds.nba_player_prop_alt_lines (as_of_date, bookmaker_key);
+"""
+
+_ALT_PROP_UPSERT_SQL = """
+INSERT INTO odds.nba_player_prop_alt_lines (
+  as_of_date, fetched_at_utc, event_id,
+  bookmaker_key, player_name, player_name_norm,
+  stat, side, line, price, link
+)
+VALUES %s
+ON CONFLICT (as_of_date, bookmaker_key, player_name_norm, stat, side, line)
+DO UPDATE SET
+  fetched_at_utc = EXCLUDED.fetched_at_utc,
+  event_id       = EXCLUDED.event_id,
+  player_name    = EXCLUDED.player_name,
+  price          = EXCLUDED.price,
+  link           = EXCLUDED.link
+;
+"""
+
 _PROP_DDL = """
 CREATE SCHEMA IF NOT EXISTS odds;
 
@@ -409,6 +451,107 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
 
         conn.commit()
         log.info("Upserted %d rows into odds.nba_player_prop_lines", total_rows)
+
+
+def iter_alt_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Iterable[tuple]:
+    """Yield rows for odds.nba_player_prop_alt_lines from a single event payload.
+
+    Alt markets have one outcome per (player, side, line) — many lines per player.
+    """
+    event_id = event_payload.get("id")
+
+    for book in event_payload.get("bookmakers", []) or []:
+        bookmaker_key = book.get("key")
+
+        for market in book.get("markets", []) or []:
+            market_key = market.get("key")
+            stat = _ALT_PROP_MARKET_MAP.get(market_key)
+            if stat is None:
+                continue
+
+            for outcome in market.get("outcomes", []) or []:
+                side = (outcome.get("name") or "").strip().lower()   # "over" or "under"
+                player = (outcome.get("description") or "").strip()  # player name
+                if not player or side not in ("over", "under"):
+                    continue
+                point = _to_num(outcome.get("point"))
+                if point is None:
+                    continue
+                price = _to_int(outcome.get("price"))
+                link = outcome.get("link")
+                yield (
+                    as_of_date,
+                    fetched_at_utc,
+                    event_id,
+                    bookmaker_key,
+                    player,
+                    _normalize_name(player),
+                    stat,
+                    side,
+                    point,
+                    price,
+                    link,
+                )
+
+
+def parse_prop_odds_alt(
+    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
+    since_date: Optional[date] = None,
+) -> None:
+    """Parse alternate prop lines from raw nba_prop_odds payloads into
+    odds.nba_player_prop_alt_lines.
+
+    Reads the same payloads as parse_prop_odds() but extracts only the
+    player_*_alternate markets and stores one row per (player, stat, side, line).
+    """
+    with psycopg2.connect(pg_dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(_ALT_PROP_DDL)
+        conn.commit()
+
+        if since_date is None:
+            with conn.cursor() as cur:
+                try:
+                    cur.execute("SELECT MAX(as_of_date) FROM odds.nba_player_prop_alt_lines")
+                    row = cur.fetchone()
+                    if row and row[0]:
+                        since_date = row[0] - timedelta(days=1)
+                        log.info("Incremental alt prop odds: since %s", since_date)
+                except Exception:
+                    pass
+        else:
+            log.info("Forced alt prop re-parse: since %s", since_date)
+
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(_PROP_LOAD_SQL, {"as_of_date": None, "since_date": since_date})
+            snaps = cur.fetchall()
+
+        if not snaps:
+            log.info("No nba_prop_odds snapshots found for alt parsing.")
+            return
+
+        total_rows = 0
+        with conn.cursor() as cur:
+            for s in snaps:
+                fetched_at_utc = s["fetched_at_utc"]
+                payload = s["payload"]
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
+
+                if isinstance(payload, dict) and "timestamp" in payload and "data" in payload:
+                    payload = payload["data"]
+
+                events = [payload] if isinstance(payload, dict) else (payload if isinstance(payload, list) else [])
+
+                for event_payload in events:
+                    rows = list(iter_alt_prop_rows(s["as_of_date"], fetched_at_utc, event_payload))
+                    if not rows:
+                        continue
+                    psycopg2.extras.execute_values(cur, _ALT_PROP_UPSERT_SQL, rows, page_size=1000)
+                    total_rows += len(rows)
+
+        conn.commit()
+        log.info("Upserted %d rows into odds.nba_player_prop_alt_lines", total_rows)
 
 
 def parse_game_odds_historical(
