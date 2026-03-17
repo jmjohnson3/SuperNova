@@ -10,6 +10,7 @@ Adding a new derived feature?  Edit the function here ONCE.  Both training
 and inference pick it up automatically.  No need to touch two files.
 """
 
+import numpy as np
 import pandas as pd
 
 
@@ -447,6 +448,55 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         # momentum: recent 5-game trend vs 10-game baseline
         if "on_off_diff_avg_5" in X.columns:
             X["on_off_trend_5v10"] = X["on_off_diff_avg_5"] - X["on_off_diff_avg_10"]
+
+    # --- B2B and rest schedule features ---
+    if "player_rest_days" in X.columns:
+        X["player_is_b2b"] = (X["player_rest_days"].fillna(99) == 1).astype(int)
+
+    if all(c in X.columns for c in ["home_is_b2b", "away_is_b2b", "is_home"]):
+        is_home = X["is_home"].fillna(0).astype(int)
+        X["opp_is_b2b"] = np.where(
+            is_home == 1, X["away_is_b2b"].fillna(0).astype(int),
+            X["home_is_b2b"].fillna(0).astype(int)
+        )
+        X["team_rest_days"] = np.where(
+            is_home == 1, X["home_rest_days"].fillna(2), X["away_rest_days"].fillna(2)
+        )
+        X["opp_rest_days"] = np.where(
+            is_home == 1, X["away_rest_days"].fillna(2), X["home_rest_days"].fillna(2)
+        )
+        X["rest_advantage"] = X["team_rest_days"] - X["opp_rest_days"]
+
+    # B2B interaction features
+    if "player_is_b2b" in X.columns:
+        if "pts_avg_10" in X.columns:
+            X["b2b_pts_impact"] = X["player_is_b2b"] * X["pts_avg_10"]
+        if "min_avg_10" in X.columns:
+            X["b2b_min_impact"] = X["player_is_b2b"] * X["min_avg_10"]
+        if "usage_proxy_avg_10" in X.columns:
+            X["b2b_usage_impact"] = X["player_is_b2b"] * X["usage_proxy_avg_10"]
+
+    if "opp_is_b2b" in X.columns and "pts_avg_10" in X.columns:
+        X["opp_b2b_pts_bonus"] = X["opp_is_b2b"] * X["pts_avg_10"]
+
+    # --- Full usage rate: (FGA + 0.44*FTA + TOV) / minutes ---
+    if all(c in X.columns for c in ["usage_proxy_avg_10", "tov_avg_10", "min_avg_10"]):
+        X["usage_rate_full_avg_10"] = (
+            X["usage_proxy_avg_10"] + X["tov_avg_10"] / X["min_avg_10"].clip(lower=1)
+        )
+    if all(c in X.columns for c in ["usage_proxy_avg_5", "tov_avg_5", "min_avg_5"]):
+        X["usage_rate_full_avg_5"] = (
+            X["usage_proxy_avg_5"] + X["tov_avg_5"] / X["min_avg_5"].clip(lower=1)
+        )
+    if "usage_rate_full_avg_10" in X.columns:
+        if "usage_rate_full_avg_5" in X.columns:
+            X["usage_rate_trend_5v10"] = X["usage_rate_full_avg_5"] - X["usage_rate_full_avg_10"]
+        if "player_is_b2b" in X.columns:
+            X["usage_x_b2b"] = X["player_is_b2b"] * X["usage_rate_full_avg_10"]
+        if "teammate_pts_out" in X.columns:
+            X["usage_x_teammate_out"] = X["teammate_pts_out"] * X["usage_rate_full_avg_10"] / 25.0
+        if "game_pace_est_5" in X.columns:
+            X["usage_x_pace"] = X["usage_rate_full_avg_10"] * X["game_pace_est_5"] / 100.0
 
     return X
 

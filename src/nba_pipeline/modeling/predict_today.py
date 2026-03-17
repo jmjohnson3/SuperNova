@@ -844,10 +844,12 @@ def main() -> None:
             best_parlay = build_fd_parlay_url([l for l in qp_best_links if l])
             if all_parlay:
                 n = len([l for l in qp_all_links if l])
-                print(f"\n[All Games Parlay ({n} legs)]({all_parlay})")
+                leg_str = "leg" if n == 1 else "legs"
+                print(f"\n[All Games Parlay ({n} {leg_str})]({all_parlay})")
             if best_parlay:
                 n = len([l for l in qp_best_links if l])
-                print(f"[Best Bets Parlay ({n} legs)]({best_parlay})")
+                leg_str = "leg" if n == 1 else "legs"
+                print(f"[Best Bets Parlay ({n} {leg_str})]({best_parlay})")
 
         # Save predictions to DB
         try:

@@ -742,7 +742,9 @@ def main() -> None:
         if discord and alt_links:
             parlay_url = build_fd_parlay_url(alt_links)
             if parlay_url:
-                print(f"\n[Alt Lines Parlay ({len(alt_links)} legs)]({parlay_url})")
+                n_alt = len(alt_links)
+                leg_str = "leg" if n_alt == 1 else "legs"
+                print(f"\n[Alt Lines Parlay ({n_alt} {leg_str})]({parlay_url})")
 
         log.info(
             "Scan complete | %d candidates → %d pass, %d cut",

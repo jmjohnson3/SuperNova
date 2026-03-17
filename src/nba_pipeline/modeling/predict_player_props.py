@@ -997,7 +997,9 @@ def _print_best_bets(
     if discord and fd_bet_links:
         parlay_url = build_fd_parlay_url(fd_bet_links)
         if parlay_url:
-            print(f"\n[Best Props Parlay ({len(fd_bet_links)} legs)]({parlay_url})")
+            n = len(fd_bet_links)
+            leg_str = "leg" if n == 1 else "legs"
+            print(f"\n[Best Props Parlay ({n} {leg_str})]({parlay_url})")
 
     print()
     return fd_bet_links

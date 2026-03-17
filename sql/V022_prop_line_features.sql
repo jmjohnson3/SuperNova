@@ -236,7 +236,13 @@ enriched AS (
         poo.on_net_per36_avg_10,
         poo.on_net_per36_avg_5,
         poo.on_off_diff_avg_10,
-        poo.on_off_diff_avg_5
+        poo.on_off_diff_avg_5,
+
+        -- Schedule/rest features from game context (V001 via game_training_features)
+        gtf.home_rest_days,
+        gtf.away_rest_days,
+        gtf.home_is_b2b,
+        gtf.away_is_b2b
 
     FROM roll r
 
@@ -390,6 +396,10 @@ SELECT
 
     -- V025: on/off splits
     on_net_per36_avg_10, on_net_per36_avg_5,
-    on_off_diff_avg_10, on_off_diff_avg_5
+    on_off_diff_avg_10, on_off_diff_avg_5,
+
+    -- Schedule/rest context (from game_training_features)
+    home_rest_days, away_rest_days,
+    home_is_b2b, away_is_b2b
 
 FROM enriched;
