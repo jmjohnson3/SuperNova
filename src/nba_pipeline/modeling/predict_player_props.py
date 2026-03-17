@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -797,6 +798,29 @@ def _rank_best_props(df_raw: pd.DataFrame, df_out: pd.DataFrame, cfg: PredictCon
     return df_r.nlargest(cfg.top_n_best_bets, "confidence")
 
 
+def _kelly_prop(
+    edge_pts: float,
+    juice: int = -110,
+    shrink: float = 0.60,
+    sigma: float = 5.5,
+) -> tuple[float, float]:
+    """Kelly fraction and win probability for a player prop bet.
+
+    edge_pts : |pred - line| (positive, regardless of direction)
+    juice    : American odds on the bet side (e.g. -115)
+    shrink   : pull win-prob toward 50% to account for model uncertainty
+    sigma    : empirical p68 CI half-width from backtest_mae.json (ci_p68_*)
+
+    Returns (full_kelly_fraction, estimated_win_prob).
+    Callers should apply fractional Kelly (typically 1/4) when sizing bets.
+    """
+    b = 100 / abs(juice)
+    p_raw = 1 / (1 + math.exp(-edge_pts / sigma))
+    p = 0.5 + (p_raw - 0.5) * shrink
+    kelly = max(0.0, (b * p - (1 - p)) / b)
+    return kelly, p
+
+
 def _print_best_bets(
     best: pd.DataFrame,
     pts_ci: float,
@@ -947,34 +971,44 @@ def _print_best_bets(
                 bet_over = over_edge > 0 and over_line < lo
                 bet_under = under_edge < 0 and under_line > hi
 
+                # sigma = p68 CI for this stat (same value used for bet thresholds)
+                _sigma_map = {"points": pts_ci, "rebounds": reb_ci, "assists": ast_ci}
+                _sigma = _sigma_map.get(stat_key, pts_ci)
+
                 if bet_over:
                     bk_label = best_over[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
                     juice_str = _fmt_juice(best_over[1])
                     lines_display = _fmt_lines_summary(entry, for_over=True)
                     break_even = 100 / (100 + abs(best_over[1])) if best_over[1] else None
                     be_str = f" BE={break_even:.1%}" if break_even else ""
+                    _juice = int(best_over[1]) if best_over[1] else -110
+                    kelly, p_win = _kelly_prop(over_edge, juice=_juice, sigma=_sigma)
+                    qk_pct = kelly / 4 * 100  # 1/4 Kelly as %
                     if discord:
                         link = entry.get("fd_over_link")
                         link_str = f" [Bet FD]({link})" if link else ""
-                        stat_lines_discord.append(f"OVER {over_line:.1f} {stat_label}{link_str}")
+                        stat_lines_discord.append(f"OVER {over_line:.1f} {stat_label} ({qk_pct:.1f}%k){link_str}")
                         if link:
                             fd_bet_links.append(link)
                     else:
-                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET OVER @ {bk_label}  edge=+{over_edge:.1f}{be_str}")
+                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET OVER @ {bk_label}  edge=+{over_edge:.1f}{be_str}  kelly={qk_pct:.1f}%")
                 elif bet_under:
                     bk_label = best_under[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
                     juice_str = _fmt_juice(best_under[1])
                     lines_display = _fmt_lines_summary(entry, for_over=False)
                     break_even = 100 / (100 + abs(best_under[1])) if best_under[1] else None
                     be_str = f" BE={break_even:.1%}" if break_even else ""
+                    _juice = int(best_under[1]) if best_under[1] else -110
+                    kelly, p_win = _kelly_prop(abs(under_edge), juice=_juice, sigma=_sigma)
+                    qk_pct = kelly / 4 * 100  # 1/4 Kelly as %
                     if discord:
                         link = entry.get("fd_under_link")
                         link_str = f" [Bet FD]({link})" if link else ""
-                        stat_lines_discord.append(f"UNDER {under_line:.1f} {stat_label}{link_str}")
+                        stat_lines_discord.append(f"UNDER {under_line:.1f} {stat_label} ({qk_pct:.1f}%k){link_str}")
                         if link:
                             fd_bet_links.append(link)
                     else:
-                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET UNDER @ {bk_label}  edge={under_edge:.1f}{be_str}")
+                        print(f"         {stat_label:<3}  model={pred:.1f}  {lines_display}  >> BET UNDER @ {bk_label}  edge={under_edge:.1f}{be_str}  kelly={qk_pct:.1f}%")
                 else:
                     lines_display = _fmt_lines_summary(entry, for_over=True)
                     if not discord:
@@ -1259,12 +1293,21 @@ def main() -> None:
                         continue
                     bo = entry.get("best_over")
                     bu = entry.get("best_under")
+                    _sigma = {"points": pts_ci, "rebounds": reb_ci, "assists": ast_ci}.get(stat_key, pts_ci)
                     if bo and bo[0] is not None and pred > float(bo[0]) and float(bo[0]) < lo:
+                        _edge = pred - float(bo[0])
+                        _juice = int(bo[1]) if bo[1] else -110
+                        _kelly, _ = _kelly_prop(_edge, juice=_juice, sigma=_sigma)
+                        _qk = _kelly / 4 * 100
                         link = entry.get("fd_over_link")
-                        bet_parts.append(f"OVER {float(bo[0]):.1f} {stat_label}" + (f" [Bet FD]({link})" if link else ""))
+                        bet_parts.append(f"OVER {float(bo[0]):.1f} {stat_label} ({_qk:.1f}%k)" + (f" [Bet FD]({link})" if link else ""))
                     elif bu and bu[0] is not None and pred < float(bu[0]) and float(bu[0]) > hi:
+                        _edge = float(bu[0]) - pred
+                        _juice = int(bu[1]) if bu[1] else -110
+                        _kelly, _ = _kelly_prop(_edge, juice=_juice, sigma=_sigma)
+                        _qk = _kelly / 4 * 100
                         link = entry.get("fd_under_link")
-                        bet_parts.append(f"UNDER {float(bu[0]):.1f} {stat_label}" + (f" [Bet FD]({link})" if link else ""))
+                        bet_parts.append(f"UNDER {float(bu[0]):.1f} {stat_label} ({_qk:.1f}%k)" + (f" [Bet FD]({link})" if link else ""))
                 bet_str = "  " + "  ".join(bet_parts) if bet_parts else ""
                 print(f"**{name}** ({r['team_abbr']} vs {r['opponent_abbr']})  {pp:.1f} PTS / {pr:.1f} REB / {pa:.1f} AST{bet_str}")
 
