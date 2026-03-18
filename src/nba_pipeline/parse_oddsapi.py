@@ -564,6 +564,7 @@ def parse_prop_odds_alt(
 def parse_game_odds_historical(
     pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
     as_of_date: Optional[date] = None,
+    since_date: Optional[date] = None,
 ) -> None:
     """Parse nba_odds_historical payloads into odds.nba_game_lines.
 
@@ -573,6 +574,9 @@ def parse_game_odds_historical(
     Incremental by default: when as_of_date is None, only processes payloads
     from (MAX already-parsed date - 1 day) onward to avoid re-parsing all history
     on every daily run.
+
+    Pass since_date to force re-parsing from a specific date (e.g. after a backfill).
+    Example: parse_game_odds_historical(since_date=date(2024, 10, 22))
     """
     with psycopg2.connect(pg_dsn) as conn:
         with conn.cursor() as cur:
@@ -580,8 +584,8 @@ def parse_game_odds_historical(
         conn.commit()
 
         # Compute since_date for incremental parsing (skips already-loaded history)
-        since_date: Optional[date] = None
-        if as_of_date is None:
+        # Caller can override by passing since_date directly.
+        if since_date is None and as_of_date is None:
             with conn.cursor() as cur:
                 try:
                     cur.execute("SELECT MAX(as_of_date) FROM odds.nba_game_lines")
@@ -591,6 +595,8 @@ def parse_game_odds_historical(
                         log.info("Incremental historical game odds: since %s", since_date)
                 except Exception:
                     pass  # table may not exist yet on first run
+        elif since_date is not None:
+            log.info("Forced historical game odds re-parse: since %s", since_date)
 
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(SQL_LOAD_HISTORICAL, {"as_of_date": as_of_date, "since_date": since_date})
