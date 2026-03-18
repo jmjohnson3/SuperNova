@@ -723,7 +723,14 @@ def main() -> None:
                 pct = f"{r['hit_rate']*100:.0f}%"
                 if discord:
                     name_norm_key = _normalize_name(r["player_name"])
-                    link = fd_prop_links.get((name_norm_key, r["stat"], float(r["line"])))
+                    # Exact match first; FD uses half-point lines so try ±0.5 steps
+                    scan_line = float(r["line"])
+                    link = fd_prop_links.get((name_norm_key, r["stat"], scan_line))
+                    if link is None:
+                        for delta in (0.5, -0.5, 1.0, -1.0):
+                            link = fd_prop_links.get((name_norm_key, r["stat"], scan_line + delta))
+                            if link:
+                                break
                     link_str = f"  [Bet FD]({link})" if link else ""
                     print(f"✅ **{r['player_name']}** · {side_word} {r['line']:g} {stat_word} · {pct}{link_str}")
                     qp_alt.append(f"{r['player_name']} {side_word} {r['line']:g} {stat_word}")

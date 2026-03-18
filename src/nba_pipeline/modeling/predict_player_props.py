@@ -1363,10 +1363,10 @@ def main() -> None:
             parts = str(slug).split("-")
             matchup = f"{parts[1].upper()} @ {parts[2].upper()}" if len(parts) >= 3 else slug
             print(f"\n**{matchup}** · {ts:%I:%M %p ET}")
-            g_starters = g[g["is_proj_starter"] == True].sort_values(
+            g_all = g.sort_values(
                 ["team_abbr", "pred_points"], ascending=[True, False]
             )
-            for _, r in g_starters.iterrows():
+            for _, r in g_all.iterrows():
                 name = (r.get("player_name") or "").strip() or f"id={int(r['player_id'])}"
                 name_norm = _normalize_name((r.get("player_name") or "").strip())
                 pp = float(r["pred_points"])
@@ -1379,6 +1379,7 @@ def main() -> None:
                 ast_lo = max(0.0, pa - ast_ci)
                 ast_hi = pa + ast_ci
                 bet_parts = []
+                fd_links: list[str] = []
                 for pred, lo, hi, stat_label, stat_key in [
                     (pp, pts_lo, pts_hi, "PTS", "points"),
                     (pr, reb_lo, reb_hi, "REB", "rebounds"),
@@ -1390,6 +1391,7 @@ def main() -> None:
                     bo = entry.get("best_over")
                     bu = entry.get("best_under")
                     _sigma = {"points": pts_ci, "rebounds": reb_ci, "assists": ast_ci}.get(stat_key, pts_ci)
+                    has_bet = False
                     if bo and bo[0] is not None and pred > float(bo[0]) and float(bo[0]) < lo:
                         _edge = pred - float(bo[0])
                         _juice = int(bo[1]) if bo[1] else -110
@@ -1397,6 +1399,7 @@ def main() -> None:
                         _qk = _kelly / 4 * 100
                         link = entry.get("fd_over_link")
                         bet_parts.append(f"OVER {float(bo[0]):.1f} {stat_label} ({_qk:.1f}%k)" + (f" [Bet FD]({link})" if link else ""))
+                        has_bet = True
                     elif bu and bu[0] is not None and pred < float(bu[0]) and float(bu[0]) > hi:
                         _edge = float(bu[0]) - pred
                         _juice = int(bu[1]) if bu[1] else -110
@@ -1404,8 +1407,16 @@ def main() -> None:
                         _qk = _kelly / 4 * 100
                         link = entry.get("fd_under_link")
                         bet_parts.append(f"UNDER {float(bu[0]):.1f} {stat_label} ({_qk:.1f}%k)" + (f" [Bet FD]({link})" if link else ""))
+                        has_bet = True
+                    if not has_bet:
+                        # No edge — add a plain directional FD link if available
+                        if pred >= (float(bo[0]) if bo and bo[0] is not None else 9999) and entry.get("fd_over_link"):
+                            fd_links.append(f"[{stat_label}↑]({entry['fd_over_link']})")
+                        elif pred <= (float(bu[0]) if bu and bu[0] is not None else 0) and entry.get("fd_under_link"):
+                            fd_links.append(f"[{stat_label}↓]({entry['fd_under_link']})")
                 bet_str = "  " + "  ".join(bet_parts) if bet_parts else ""
-                print(f"**{name}** ({r['team_abbr']} vs {r['opponent_abbr']})  {pp:.1f} PTS / {pr:.1f} REB / {pa:.1f} AST{bet_str}")
+                link_str = "  " + " ".join(fd_links) if fd_links else ""
+                print(f"**{name}** ({r['team_abbr']} vs {r['opponent_abbr']})  {pp:.1f} PTS / {pr:.1f} REB / {pa:.1f} AST{bet_str}{link_str}")
 
     # Best bets section
     if discord:
