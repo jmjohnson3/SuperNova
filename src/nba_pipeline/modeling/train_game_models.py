@@ -19,6 +19,12 @@ from pandas.api.types import (
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
+try:
+    import lightgbm as lgb
+    _HAS_LGB = True
+except ImportError:
+    _HAS_LGB = False
+
 log = logging.getLogger("nba_pipeline.modeling.train_game_models")
 
 
@@ -972,6 +978,40 @@ def main() -> None:
 
         spread_final.save_model(str(model_dir / "spread_direct_xgb.json"))
         total_final.save_model(str(model_dir / "total_direct_xgb.json"))
+
+        # --- LightGBM direct ensemble (if available) ---
+        # Trained on same X_all/y_spread/y_total; blended 50/50 with XGB at inference.
+        if _HAS_LGB:
+            log.info("Training LightGBM direct game models on %d rows...", len(X_all))
+            _lgb_params = dict(
+                objective="huber",
+                alpha=0.9,
+                metric="huber",
+                num_leaves=63,
+                learning_rate=0.05,
+                n_estimators=500,
+                min_child_samples=20,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                reg_alpha=0.1,
+                reg_lambda=1.0,
+                verbose=-1,
+                n_jobs=-1,
+                random_state=cfg.random_state,
+            )
+            for _lgb_target, _lgb_y, _lgb_name in [
+                ("spread", y_spread, "spread_direct_lgb.txt"),
+                ("total",  y_total,  "total_direct_lgb.txt"),
+            ]:
+                try:
+                    _lgb_m = lgb.LGBMRegressor(**_lgb_params)
+                    _lgb_m.fit(X_all, _lgb_y)
+                    _lgb_m.booster_.save_model(str(model_dir / _lgb_name))
+                    log.info("Saved LGB %s model → %s", _lgb_target, _lgb_name)
+                except Exception as _exc:
+                    log.warning("LGB %s training failed: %s", _lgb_target, _exc)
+        else:
+            log.info("lightgbm not installed — skipping LGB game ensemble (pip install lightgbm)")
 
         # --- FINAL RESIDUAL MODELS ---
         has_market_all = (

@@ -12,6 +12,12 @@ import pandas as pd
 import psycopg2
 from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_dtype
 from xgboost import XGBRegressor
+
+try:
+    import lightgbm as lgb
+    _HAS_LGB = True
+except ImportError:
+    _HAS_LGB = False
 from sqlalchemy import create_engine, text
 
 from .features import add_game_derived_features, build_fd_parlay_url
@@ -85,6 +91,22 @@ def _compute_blend_weight_total(calib: dict) -> float:
     w_d = 1.0 / direct_mae_market
     w_r = 1.0 / resid_mae
     return round(w_r / (w_d + w_r), 4)
+
+
+def _should_use_market_total(calib: dict) -> bool:
+    """Return True if the raw market total line is more accurate than our direct model.
+
+    Gate: market MAE must beat direct model MAE (on market-data games) by ≥3%.
+    When True, pred_total_final is replaced with the raw market line for games
+    where market data is available — this naturally suppresses total bet signals
+    since edge_total = pred - market = 0.  Only bet totals when the residual
+    model passes its quality gate and adds genuine signal above the market.
+    """
+    market_mae = calib.get("market_total_mae", 99.0)
+    direct_mae = calib.get("direct_total_mae_market", calib.get("direct_total_mae", 99.0))
+    if market_mae >= 99.0 or direct_mae <= 0:
+        return False
+    return market_mae < direct_mae * 0.97
 
 
 def _compute_live_bias(engine) -> tuple[float, float]:
@@ -282,15 +304,30 @@ def _load_models(cfg: PredictConfig) -> tuple[dict[str, XGBRegressor], list[str]
         "total_resid": model_dir / "total_resid_xgb.json",
     }
 
-    models: dict[str, XGBRegressor] = {}
+    models: dict = {}
     for k, p in paths.items():
         if p.exists():
             m = XGBRegressor()
             m.load_model(str(p))
             models[k] = m
 
+    # Load optional LightGBM direct ensemble models (blended 50/50 with XGB at inference)
+    if _HAS_LGB:
+        for lgb_key, lgb_name in [("spread_direct_lgb", "spread_direct_lgb.txt"),
+                                   ("total_direct_lgb",  "total_direct_lgb.txt")]:
+            lgb_path = model_dir / lgb_name
+            if lgb_path.exists():
+                try:
+                    models[lgb_key] = lgb.Booster(model_file=str(lgb_path))
+                except Exception as _e:
+                    log.debug("Could not load %s: %s", lgb_name, _e)
+
     if "spread_direct" not in models or "total_direct" not in models:
         raise FileNotFoundError(f"Missing direct models in {model_dir}. Run training first.")
+
+    lgb_loaded = [k for k in models if k.endswith("_lgb")]
+    if lgb_loaded:
+        log.info("Loaded LGB game models: %s", lgb_loaded)
 
     return models, feature_cols, feature_medians
 
@@ -580,6 +617,16 @@ def main() -> None:
         pred_margin_direct = spread_direct.predict(X)
         pred_total_direct = total_direct.predict(X)
 
+        # Blend LightGBM 50/50 with XGB for direct predictions if LGB models loaded
+        if "spread_direct_lgb" in models:
+            lgb_spread_pred = models["spread_direct_lgb"].predict(X.values)
+            pred_margin_direct = 0.5 * pred_margin_direct + 0.5 * lgb_spread_pred
+            log.info("Blended LGB+XGB for direct spread prediction")
+        if "total_direct_lgb" in models:
+            lgb_total_pred = models["total_direct_lgb"].predict(X.values)
+            pred_total_direct = 0.5 * pred_total_direct + 0.5 * lgb_total_pred
+            log.info("Blended LGB+XGB for direct total prediction")
+
         # default output = direct
         pred_margin_final = pred_margin_direct
         pred_total_final = pred_total_direct
@@ -635,6 +682,23 @@ def main() -> None:
         )
         pred_margin_final = pred_margin_final - spread_bias_vec
         pred_total_final = pred_total_final - bias_total
+
+        # Market total passthrough: if raw market line beats our model, use it directly.
+        # This suppresses total bet signals (edge = pred - market = 0) which is correct
+        # when we have no model edge over the market on totals.
+        if _should_use_market_total(calib) and "market_total" in df.columns:
+            mkt_total_pt = pd.to_numeric(df["market_total"], errors="coerce")
+            mkt_ok_pt = mkt_total_pt.notna()
+            if mkt_ok_pt.any():
+                pred_total_final = pred_total_final.copy()
+                pred_total_final[mkt_ok_pt.values] = mkt_total_pt[mkt_ok_pt].values
+                log.info(
+                    "Total passthrough: using market line directly for %d/%d games "
+                    "(market_mae=%.3f < direct_mae=%.3f × 0.97)",
+                    mkt_ok_pt.sum(), len(df),
+                    calib.get("market_total_mae", 99.0),
+                    calib.get("direct_total_mae_market", calib.get("direct_total_mae", 99.0)),
+                )
 
         # Validate raw predictions before clipping
         _validate_game_predictions(pred_margin_final, pred_total_final, id_df)
