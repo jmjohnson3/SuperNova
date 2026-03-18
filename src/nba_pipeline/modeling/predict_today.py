@@ -241,8 +241,11 @@ def _prep_features(
         X["start_hour_utc"] = ts.dt.hour
         X["start_dow_utc"] = ts.dt.dayofweek
 
-    # b2b to 0/1
-    for bcol in ("home_is_b2b", "away_is_b2b"):
+    # b2b / schedule fatigue flags to 0/1
+    for bcol in ("home_is_b2b", "away_is_b2b",
+                 "home_is_b2b_away", "away_is_b2b_away",
+                 "home_is_3_in_4", "away_is_3_in_4",
+                 "home_is_4_in_5", "away_is_4_in_5"):
         if bcol in X.columns:
             X[bcol] = X[bcol].astype("boolean").fillna(False).astype(int)
 

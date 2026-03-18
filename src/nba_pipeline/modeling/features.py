@@ -103,6 +103,14 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         if hf in X.columns and af in X.columns:
             X[f"pts_for_diff_{window}"] = X[hf] - X[af]
 
+    # SOS-adjusted offensive quality
+    if "home_off_rtg_avg_10" in X.columns and "home_sos_def_10" in X.columns:
+        X["home_off_vs_sos"] = X["home_off_rtg_avg_10"] - X["home_sos_def_10"]
+    if "away_off_rtg_avg_10" in X.columns and "away_sos_def_10" in X.columns:
+        X["away_off_vs_sos"] = X["away_off_rtg_avg_10"] - X["away_sos_def_10"]
+    if "home_off_vs_sos" in X.columns and "away_off_vs_sos" in X.columns:
+        X["sos_adjusted_margin"] = X["home_off_vs_sos"] - X["away_off_vs_sos"]
+
     # Venue-context diffs: how much does the home team over-perform at home vs. overall?
     # Positive home_venue_premium = team gets meaningful home boost.
     if "home_home_pts_for_avg_10" in X.columns and "home_pts_for_avg_10" in X.columns:
@@ -157,6 +165,24 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # B2B net disadvantage (+1 = home on b2b / away rested, -1 = reverse)
     if "home_is_b2b" in X.columns and "away_is_b2b" in X.columns:
         X["b2b_net_disadvantage"] = X["home_is_b2b"] - X["away_is_b2b"]
+
+    # Composite fatigue severity: B2B=1, 3-in-4=2, 4-in-5=3 (additive, escalating)
+    _h_fatigue = [("home_is_b2b", 1), ("home_is_3_in_4", 2), ("home_is_4_in_5", 3)]
+    _a_fatigue = [("away_is_b2b", 1), ("away_is_3_in_4", 2), ("away_is_4_in_5", 3)]
+    if any(c in X.columns for c, _ in _h_fatigue):
+        X["home_fatigue_score"] = sum(
+            X[c].fillna(0).astype(float) * w for c, w in _h_fatigue if c in X.columns
+        )
+    if any(c in X.columns for c, _ in _a_fatigue):
+        X["away_fatigue_score"] = sum(
+            X[c].fillna(0).astype(float) * w for c, w in _a_fatigue if c in X.columns
+        )
+    if "home_fatigue_score" in X.columns and "away_fatigue_score" in X.columns:
+        X["fatigue_asymmetry"] = X["home_fatigue_score"] - X["away_fatigue_score"]
+        if "home_pts_for_avg_5" in X.columns:
+            X["home_fatigue_x_pts5"] = X["home_fatigue_score"] * X["home_pts_for_avg_5"]
+        if "away_pts_for_avg_5" in X.columns:
+            X["away_fatigue_x_pts5"] = X["away_fatigue_score"] * X["away_pts_for_avg_5"]
 
     # Travel fatigue (V010) — raw columns already in gtf.*, add compound interactions
     if "is_cross_country" in X.columns and "away_is_b2b" in X.columns:

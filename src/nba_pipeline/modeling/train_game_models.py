@@ -539,6 +539,67 @@ def run_optuna_tuning(
     return best_spread, best_total
 
 
+def _select_top_features(
+    X_all: pd.DataFrame,
+    y_spread: pd.Series,
+    y_total: pd.Series,
+    feature_cols: list,
+    model_dir: Path,
+    cum_thresh: float = 0.99,
+    min_keep: int = 80,
+    max_keep: int = 120,
+) -> tuple:
+    """Fit two cheap selector XGBs; rank by mean gain; return (pruned_feature_cols, X_pruned).
+    Always retains one-hot dummies (season_, home_team_abbr_, away_team_abbr_ prefixes)."""
+    sel_s = XGBRegressor(n_estimators=200, random_state=42, verbosity=0)
+    sel_t = XGBRegressor(n_estimators=200, random_state=42, verbosity=0)
+    sel_s.fit(X_all, y_spread)
+    sel_t.fit(X_all, y_total)
+
+    def _norm(arr):
+        tot = arr.sum() or 1.0
+        return arr / tot
+
+    # Use feature_importances_ (aligned directly with training columns)
+    # get_booster().get_score() returns 'f0','f1'... keys in this XGB version
+    imp_s = _norm(sel_s.feature_importances_)
+    imp_t = _norm(sel_t.feature_importances_)
+    avg   = {f: float((imp_s[i] + imp_t[i]) / 2.0) for i, f in enumerate(feature_cols)}
+
+    sorted_imp = sorted(avg.items(), key=lambda x: -x[1])
+    (model_dir / "feature_importance.json").write_text(
+        json.dumps({k: round(v, 6) for k, v in sorted_imp}, indent=2), encoding="utf-8"
+    )
+
+    dummies = {c for c in feature_cols
+               if c.startswith("season_") or c.startswith("home_team_abbr_")
+               or c.startswith("away_team_abbr_")}
+
+    non_struct = [(c, avg.get(c, 0.0)) for c in feature_cols if c not in dummies]
+    non_struct.sort(key=lambda x: -x[1])
+    total_gain = sum(v for _, v in non_struct) or 1.0
+
+    selected, cum = [], 0.0
+    for feat, g in non_struct:
+        selected.append(feat)
+        cum += g / total_gain
+        if cum >= cum_thresh and len(selected) >= min_keep:
+            break
+    if len(selected) < min_keep:
+        selected = [f for f, _ in non_struct[:min_keep]]
+    elif len(selected) > max_keep:
+        selected = [f for f, _ in non_struct[:max_keep]]
+
+    keep = dummies | set(selected)
+    pruned = [c for c in feature_cols if c in keep]
+
+    log.info(
+        "Feature pruning: %d → %d features (%d one-hot + %d signal, %.1f%% cum gain)",
+        len(feature_cols), len(pruned), len(dummies), len(selected), cum_thresh * 100,
+    )
+    return pruned, X_all[pruned]
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -953,6 +1014,11 @@ def main() -> None:
         # --- Train FINAL models on ALL rows (production) ---
         medians_all = fit_fill_stats(X_raw)
         X_all = apply_fill(X_raw, medians_all, feature_cols)
+
+        # Prune to top features by XGBoost gain importance before final fits
+        feature_cols, X_all = _select_top_features(
+            X_all, y_spread, y_total, feature_cols, model_dir
+        )
 
         # --- FINAL DIRECT MODELS ---
         # Train to fixed n_estimators with no early stopping.
