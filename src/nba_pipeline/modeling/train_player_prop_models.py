@@ -58,6 +58,8 @@ class TrainConfig:
     run_optuna: bool = True
     optuna_n_trials: int = 50
     optuna_n_folds: int = 5
+    # Minutes stacking
+    use_minutes_stacking: bool = True
 
 
 SQL_PLAYER_TRAIN = """
@@ -83,6 +85,20 @@ def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
         if X[c].dtype == "object" or str(X[c].dtype).startswith("string"):
             X[c] = pd.to_numeric(X[c], errors="coerce")
     return X
+
+
+def _load_player_positions(engine) -> dict:
+    """Returns {player_id: most_common_position} from box score history.
+    MODE() handles versatile players; only the 5 main positions returned."""
+    sql = text("""
+        SELECT player_id, MODE() WITHIN GROUP (ORDER BY position) AS primary_position
+        FROM raw.nba_boxscore_player_stats
+        WHERE position IN ('PG', 'SG', 'SF', 'PF', 'C')
+        GROUP BY player_id
+    """)
+    with engine.connect() as conn:
+        rows = conn.execute(sql).fetchall()
+    return {r[0]: r[1] for r in rows}
 
 
 def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
@@ -121,7 +137,8 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
 
     # team_abbr and opponent_abbr OHE removed — causes overfitting
     # (e.g. team_abbr_HOU, opponent_abbr_OKL ranked top-10 in assists model)
-    cat_cols = [c for c in ["season"] if c in X.columns]
+    # primary_position is fine: only 5 stable semantic values, no team leakage
+    cat_cols = [c for c in ["season", "primary_position"] if c in X.columns]
     if cat_cols:
         X = pd.get_dummies(X, columns=cat_cols, drop_first=False, dummy_na=False)
 
@@ -388,59 +405,73 @@ def main() -> None:
     # Parse dates for walk-forward and temporal splits
     df["game_date_et"] = pd.to_datetime(df["game_date_et"], errors="coerce")
 
+    # Item 10: primary_position from box score history
+    positions = _load_player_positions(engine)
+    df["primary_position"] = df["player_id"].map(positions).fillna("UNK")
+    log.info(
+        "Position coverage: %d/%d players mapped (%.1f%%)",
+        int((df["primary_position"] != "UNK").sum()), len(df),
+        100.0 * (df["primary_position"] != "UNK").mean(),
+    )
+
     X_raw, y_pts, y_reb, y_ast = make_xy_raw(df)
     y_min = df["minutes"].astype(float)
     feature_cols_base = list(X_raw.columns)
 
     # --- Minutes model: walk-forward OOF stacking features ---
-    # A minutes model is trained on each fold's history; its out-of-fold (OOF)
-    # predictions are injected as features into PTS/REB/AST models.
-    # This is leakage-free: each fold uses only prior data to predict minutes.
-    oof_minutes = np.full(len(df), np.nan)
-    min_folds = walk_forward_folds(
-        df, min_train_days=cfg.min_train_days,
-        test_window_days=cfg.test_window_days, step_days=cfg.step_days,
-    )
-    min_best_iters: List[int] = []
-    log.info("Minutes stacking: running %d OOF folds...", len(min_folds))
-    for train_end, test_end in min_folds:
-        train_mask_m = df["game_date_et"] < train_end
-        test_mask_m = (df["game_date_et"] >= train_end) & (df["game_date_et"] < test_end)
-        n_tr, n_te = int(train_mask_m.sum()), int(test_mask_m.sum())
-        if n_tr < 50 or n_te == 0:
-            continue
-        med_m = fit_fill_stats(X_raw.loc[train_mask_m])
-        X_tr_m = apply_fill(X_raw.loc[train_mask_m], med_m, feature_cols_base)
-        X_te_m = apply_fill(X_raw.loc[test_mask_m], med_m, feature_cols_base)
-        tr_dates_m = df.loc[train_mask_m, "game_date_et"]
-        fit_m, eval_m = temporal_eval_split(tr_dates_m)
-        m_min = build_minutes_model(cfg)
-        m_min.fit(
-            X_tr_m.iloc[fit_m], y_min.loc[train_mask_m].iloc[fit_m],
-            eval_set=[(X_tr_m.iloc[eval_m], y_min.loc[train_mask_m].iloc[eval_m])],
-            verbose=False,
-        )
-        if getattr(m_min, "best_iteration", None) is not None:
-            min_best_iters.append(m_min.best_iteration)
-        oof_minutes[np.where(test_mask_m)[0]] = m_min.predict(X_te_m)
-
-    oof_covered = ~np.isnan(oof_minutes)
-    if oof_covered.any():
-        min_oof_mae = float(mean_absolute_error(y_min.values[oof_covered], oof_minutes[oof_covered]))
-        log.info("Minutes OOF | coverage=%.1f%% MAE=%.3f", oof_covered.mean() * 100, min_oof_mae)
-
     fallback_min = df["min_avg_10"].fillna(df["min_avg_5"]).fillna(20.0).values
-    oof_filled = np.clip(
-        np.where(np.isnan(oof_minutes), fallback_min, oof_minutes), 0.0, 48.0
-    ).astype(float)
-    X_aug = X_raw.copy()
-    X_aug["pred_minutes"] = oof_filled
-    X_aug["pred_min_vs_avg"] = oof_filled - fallback_min
-    feature_cols = list(X_aug.columns)
-    log.info(
-        "Feature matrix: %d base + 2 minutes stacking = %d total",
-        len(feature_cols_base), len(feature_cols),
-    )
+    min_best_iters: List[int] = []
+    if cfg.use_minutes_stacking:
+        # A minutes model is trained on each fold's history; its out-of-fold (OOF)
+        # predictions are injected as features into PTS/REB/AST models.
+        # This is leakage-free: each fold uses only prior data to predict minutes.
+        oof_minutes = np.full(len(df), np.nan)
+        min_folds = walk_forward_folds(
+            df, min_train_days=cfg.min_train_days,
+            test_window_days=cfg.test_window_days, step_days=cfg.step_days,
+        )
+        log.info("Minutes stacking: running %d OOF folds...", len(min_folds))
+        for train_end, test_end in min_folds:
+            train_mask_m = df["game_date_et"] < train_end
+            test_mask_m = (df["game_date_et"] >= train_end) & (df["game_date_et"] < test_end)
+            n_tr, n_te = int(train_mask_m.sum()), int(test_mask_m.sum())
+            if n_tr < 50 or n_te == 0:
+                continue
+            med_m = fit_fill_stats(X_raw.loc[train_mask_m])
+            X_tr_m = apply_fill(X_raw.loc[train_mask_m], med_m, feature_cols_base)
+            X_te_m = apply_fill(X_raw.loc[test_mask_m], med_m, feature_cols_base)
+            tr_dates_m = df.loc[train_mask_m, "game_date_et"]
+            fit_m, eval_m = temporal_eval_split(tr_dates_m)
+            m_min = build_minutes_model(cfg)
+            m_min.fit(
+                X_tr_m.iloc[fit_m], y_min.loc[train_mask_m].iloc[fit_m],
+                eval_set=[(X_tr_m.iloc[eval_m], y_min.loc[train_mask_m].iloc[eval_m])],
+                verbose=False,
+            )
+            if getattr(m_min, "best_iteration", None) is not None:
+                min_best_iters.append(m_min.best_iteration)
+            oof_minutes[np.where(test_mask_m)[0]] = m_min.predict(X_te_m)
+
+        oof_covered = ~np.isnan(oof_minutes)
+        if oof_covered.any():
+            min_oof_mae = float(mean_absolute_error(y_min.values[oof_covered], oof_minutes[oof_covered]))
+            log.info("Minutes OOF | coverage=%.1f%% MAE=%.3f", oof_covered.mean() * 100, min_oof_mae)
+
+        oof_filled = np.clip(
+            np.where(np.isnan(oof_minutes), fallback_min, oof_minutes), 0.0, 48.0
+        ).astype(float)
+        X_aug = X_raw.copy()
+        X_aug["pred_minutes"] = oof_filled
+        X_aug["pred_min_vs_avg"] = oof_filled - fallback_min
+        feature_cols = list(X_aug.columns)
+        log.info(
+            "Feature matrix: %d base + 2 minutes stacking = %d total",
+            len(feature_cols_base), len(feature_cols),
+        )
+    else:
+        X_aug = X_raw
+        feature_cols = feature_cols_base
+        log.info("Minutes stacking disabled. Feature matrix: %d base features.", len(feature_cols))
 
     # --- Optuna hyperparameter tuning (separate study per stat) ---
     best_params_pts: Dict = {}
@@ -466,6 +497,9 @@ def main() -> None:
     # best_iters initialized here so final model section can reference it regardless
     # of whether walk-forward ran (e.g. run_walk_forward=False or no folds produced).
     best_iters: Dict[str, List[int]] = {name: [] for name, _, _, _ in stat_configs}
+    # calib/wf_mae initialized here so residual training can access them after walk-forward block.
+    calib: Dict = {}
+    wf_mae: Dict = {}
 
     # --- Walk-forward validation ---
     if cfg.run_walk_forward:
@@ -488,6 +522,9 @@ def main() -> None:
             agg: Dict[str, Tuple[List[float], List[float]]] = {
                 name: ([], []) for name, _, _, _ in stat_configs
             }
+            # Item 8: Track OOF predictions on market-data rows for quality gate
+            market_oof_direct:   Dict[str, List] = {name: [] for name, _, _, _ in stat_configs}
+            market_oof_baseline: Dict[str, List] = {name: [] for name, _, _, _ in stat_configs}
 
             for k, (train_end, test_end) in enumerate(folds, start=1):
                 train_mask = df["game_date_et"] < train_end
@@ -533,6 +570,18 @@ def main() -> None:
                     agg[stat_name][0].extend(y_test.to_list())
                     agg[stat_name][1].extend(pred.tolist())
 
+                    # Item 8: Track market-data rows for residual quality gate
+                    _bl_col = {"PTS": "prev_book_line_pts", "REB": "prev_book_line_reb",
+                               "AST": "prev_book_line_ast"}[stat_name]
+                    if _bl_col in df.columns:
+                        _test_bl = df.loc[test_mask, _bl_col].values
+                        _mkt = ~pd.isna(_test_bl)
+                        if _mkt.any():
+                            market_oof_direct[stat_name].extend(
+                                zip(y_test.values[_mkt], pred[_mkt]))
+                            market_oof_baseline[stat_name].extend(
+                                zip(y_test.values[_mkt], _test_bl[_mkt].astype(float)))
+
                 log.info(
                     "Fold %02d | train_end=%s test=[%s..%s) train=%d test=%d | %s",
                     k, train_end.date(), train_end.date(), test_end.date(),
@@ -564,6 +613,21 @@ def main() -> None:
                 log.info("WALK-FORWARD OVERALL | rows=%d | %s",
                          len(agg["PTS"][0]), " | ".join(overall_msgs))
 
+            # Item 8: Market subset MAE (direct model vs. book line baseline)
+            for stat_name, _, _, _ in stat_configs:
+                sl = stat_name.lower()
+                if market_oof_direct[stat_name]:
+                    acts_d, preds_d = zip(*market_oof_direct[stat_name])
+                    acts_b, bls_b   = zip(*market_oof_baseline[stat_name])
+                    direct_mkt_mae = float(mean_absolute_error(list(acts_d), list(preds_d)))
+                    book_line_mae  = float(mean_absolute_error(list(acts_b), list(bls_b)))
+                    log.info(
+                        "MARKET SUBSET %s | direct_mae=%.3f  book_line_mae=%.3f",
+                        stat_name, direct_mkt_mae, book_line_mae,
+                    )
+                    calib[f"direct_market_mae_{sl}"] = round(direct_mkt_mae, 4)
+                    calib[f"book_line_mae_{sl}"]     = round(book_line_mae, 4)
+
             # Save per-stat walk-forward MAEs + calibrated CI quantiles
             if wf_mae:
                 payload = {**wf_mae, **calib}
@@ -572,26 +636,32 @@ def main() -> None:
                 log.info("Saved walk-forward MAE + CI calibration to %s", mae_path)
 
     # --- Train FINAL models on ALL rows (production) ---
-    # Step 1: Fit final minutes model on base features (no minutes stacking — it's the base).
-    medians_all_base = fit_fill_stats(X_raw)
-    X_all_base = apply_fill(X_raw, medians_all_base, feature_cols_base)
-    _min_n_est = max(int(np.percentile(min_best_iters, 75) * 1.2), 100) if min_best_iters else cfg.n_estimators
-    log.info(
-        "Fitting FINAL MIN model (%d rows, n_estimators=%d, no early stopping)...",
-        len(X_all_base), _min_n_est,
-    )
-    m_min_final = build_minutes_model(cfg, n_estimators=_min_n_est, use_early_stopping=False)
-    m_min_final.fit(X_all_base, y_min, verbose=False)
-    _eval("MIN (train)", y_min.to_numpy(), m_min_final.predict(X_all_base))
-    m_min_final.save_model(str(cfg.model_dir / "minutes_xgb.json"))
+    if cfg.use_minutes_stacking:
+        # Step 1: Fit final minutes model on base features (no minutes stacking — it's the base).
+        medians_all_base = fit_fill_stats(X_raw)
+        X_all_base = apply_fill(X_raw, medians_all_base, feature_cols_base)
+        _min_n_est = max(int(np.percentile(min_best_iters, 75) * 1.2), 100) if min_best_iters else cfg.n_estimators
+        log.info(
+            "Fitting FINAL MIN model (%d rows, n_estimators=%d, no early stopping)...",
+            len(X_all_base), _min_n_est,
+        )
+        m_min_final = build_minutes_model(cfg, n_estimators=_min_n_est, use_early_stopping=False)
+        m_min_final.fit(X_all_base, y_min, verbose=False)
+        _eval("MIN (train)", y_min.to_numpy(), m_min_final.predict(X_all_base))
+        m_min_final.save_model(str(cfg.model_dir / "minutes_xgb.json"))
 
-    # Step 2: Augment with final minutes predictions for PTS/REB/AST training.
-    pred_min_all = np.clip(m_min_final.predict(X_all_base), 0.0, 48.0)
-    X_aug_final = X_raw.copy()
-    X_aug_final["pred_minutes"] = pred_min_all
-    X_aug_final["pred_min_vs_avg"] = pred_min_all - fallback_min
-    medians_all = fit_fill_stats(X_aug_final)
-    X_all = apply_fill(X_aug_final, medians_all, feature_cols)
+        # Step 2: Augment with final minutes predictions for PTS/REB/AST training.
+        pred_min_all = np.clip(m_min_final.predict(X_all_base), 0.0, 48.0)
+        X_aug_final = X_raw.copy()
+        X_aug_final["pred_minutes"] = pred_min_all
+        X_aug_final["pred_min_vs_avg"] = pred_min_all - fallback_min
+        medians_all = fit_fill_stats(X_aug_final)
+        X_all = apply_fill(X_aug_final, medians_all, feature_cols)
+    else:
+        medians_all_base = fit_fill_stats(X_raw)
+        X_aug_final = X_raw
+        medians_all = medians_all_base
+        X_all = apply_fill(X_aug_final, medians_all, feature_cols)
 
     # Derive per-stat n_estimators from CV best_iteration statistics.
     # p75 × 1.2 buffer: final model trains on more data than any fold, so needs more trees.
@@ -621,8 +691,9 @@ def main() -> None:
 
     (cfg.model_dir / "feature_columns.json").write_text(json.dumps(feature_cols), encoding="utf-8")
     (cfg.model_dir / "feature_medians.json").write_text(json.dumps(medians_all), encoding="utf-8")
-    (cfg.model_dir / "feature_columns_base.json").write_text(json.dumps(feature_cols_base), encoding="utf-8")
-    (cfg.model_dir / "feature_medians_base.json").write_text(json.dumps(medians_all_base), encoding="utf-8")
+    if cfg.use_minutes_stacking:
+        (cfg.model_dir / "feature_columns_base.json").write_text(json.dumps(feature_cols_base), encoding="utf-8")
+        (cfg.model_dir / "feature_medians_base.json").write_text(json.dumps(medians_all_base), encoding="utf-8")
 
     log.info("Saved player prop models + schema to %s", cfg.model_dir)
 
@@ -663,6 +734,65 @@ def main() -> None:
             log.info("LightGBM ensemble complete — XGB+LGB predictions will be averaged at inference")
     else:
         log.info("lightgbm not installed — skipping LGB ensemble (pip install lightgbm)")
+
+    # --- Item 8: Book line residual prop models ---
+    # Train a residual model that predicts (actual − book_line) on market rows.
+    # At inference: pred = book_line + resid_model(X) when a book line is available.
+    book_line_cols   = {"PTS": "prev_book_line_pts", "REB": "prev_book_line_reb", "AST": "prev_book_line_ast"}
+    resid_save_names = {"PTS": "prop_resid_pts_xgb.json", "REB": "prop_resid_reb_xgb.json",
+                        "AST": "prop_resid_ast_xgb.json"}
+    resid_quality: Dict[str, bool] = {}
+
+    for stat_name, y_full, huber_slope, params_override in stat_configs:
+        sl = stat_name.lower()
+        bl_col = book_line_cols[stat_name]
+        if bl_col not in df.columns:
+            log.warning("RESID %s: book line column %s not in df, skipping.", stat_name, bl_col)
+            resid_quality[stat_name] = False
+            continue
+
+        market_mask = df[bl_col].notna()
+        n_mkt = int(market_mask.sum())
+        if n_mkt < 1000:
+            log.warning("RESID %s: only %d market rows (<1000), skipping.", stat_name, n_mkt)
+            resid_quality[stat_name] = False
+            continue
+
+        # Quality gate: skip if direct model already beats book-line baseline by >3%
+        direct_mkt = calib.get(f"direct_market_mae_{sl}")
+        book_mkt   = calib.get(f"book_line_mae_{sl}")
+        if direct_mkt is not None and book_mkt is not None and direct_mkt <= book_mkt * 0.97:
+            log.info(
+                "RESID %s: direct already beats book line by >3%% (%.3f vs %.3f). Gated out.",
+                stat_name, direct_mkt, book_mkt,
+            )
+            resid_quality[stat_name] = False
+            continue
+
+        y_dev = (y_full - df[bl_col].astype(float)).loc[market_mask]
+        X_mkt = apply_fill(X_aug_final.loc[market_mask], medians_all, feature_cols)
+
+        n_est = stat_n_est[stat_name]
+        log.info(
+            "Fitting FINAL RESID %s on %d market rows (n_estimators=%d)...",
+            stat_name, n_mkt, n_est,
+        )
+        m_resid = build_model(cfg, huber_slope=huber_slope, params_override=params_override,
+                              n_estimators=n_est, use_early_stopping=False)
+        m_resid.fit(X_mkt, y_dev, verbose=False)
+        m_resid.save_model(str(cfg.model_dir / resid_save_names[stat_name]))
+        resid_quality[stat_name] = True
+        log.info("Saved RESID %s → %s", stat_name, resid_save_names[stat_name])
+
+    calib["resid_quality"] = resid_quality
+    log.info("Residual quality: %s", resid_quality)
+
+    # Re-save backtest_mae.json with resid_quality appended
+    if wf_mae or calib:
+        mae_path = cfg.model_dir / "backtest_mae.json"
+        payload = {**wf_mae, **calib}
+        mae_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        log.info("Updated backtest_mae.json with resid_quality")
 
 
 if __name__ == "__main__":

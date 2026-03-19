@@ -550,6 +550,24 @@ def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
             X[c] = pd.to_numeric(X[c], errors="coerce")
     return X
 
+
+def _load_player_positions(engine) -> dict:
+    """Returns {player_id: most_common_position} from box score history."""
+    sql = text("""
+        SELECT player_id, MODE() WITHIN GROUP (ORDER BY position) AS primary_position
+        FROM raw.nba_boxscore_player_stats
+        WHERE position IN ('PG', 'SG', 'SF', 'PF', 'C')
+        GROUP BY player_id
+    """)
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sql).fetchall()
+        return {r[0]: r[1] for r in rows}
+    except Exception as exc:
+        log.warning("Could not load player positions: %s", exc)
+        return {}
+
+
 def _load_artifacts(cfg: PredictConfig):
     model_dir = cfg.model_dir
     feat_path = model_dir / "feature_columns.json"
@@ -608,7 +626,19 @@ def _load_artifacts(cfg: PredictConfig):
         else:
             log.info("No LightGBM ensemble models found (run train_player_prop_models to generate)")
 
-    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models
+    # Item 8: Optional residual prop models
+    resid_models: dict[str, XGBRegressor] = {}
+    for stat, fname in [("points",   "prop_resid_pts_xgb.json"),
+                        ("rebounds", "prop_resid_reb_xgb.json"),
+                        ("assists",  "prop_resid_ast_xgb.json")]:
+        p = model_dir / fname
+        if p.exists():
+            m_r = XGBRegressor()
+            m_r.load_model(str(p))
+            resid_models[stat] = m_r
+            log.info("Loaded residual prop model: %s", fname)
+
+    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models, resid_models
 
 def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]) -> pd.DataFrame:
     id_cols = {
@@ -624,10 +654,11 @@ def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]
         season_start = pd.to_datetime(season_start_year.astype(str) + "-10-01")
         X["season_days_elapsed"] = (gdt - season_start).dt.days.values
 
-    # one-hot for team/opponent/season
-    cat_cols = [c for c in ("season","team_abbr","opponent_abbr") if c in df.columns]
+    # one-hot for team/opponent/season/position
+    cat_cols = [c for c in ("season","team_abbr","opponent_abbr","primary_position") if c in df.columns]
     for c in cat_cols:
-        X[c] = df[c]
+        if c not in X.columns:
+            X[c] = df[c]
     if cat_cols:
         X = pd.get_dummies(X, columns=cat_cols, drop_first=False, dummy_na=False)
 
@@ -1193,11 +1224,13 @@ def main() -> None:
     et_day = cfg.et_date or datetime.now(_ET).date()
     log.info("Predicting player props for ET date=%s", et_day)
 
-    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models = _load_artifacts(cfg)
+    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models, resid_models = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
     if os.getenv("DISCORD_FORMAT") != "1":
         _check_injury_staleness(engine, warn_hours=4.0)
     prop_lines = _load_prop_lines(engine, et_day)
+    # Item 10: Load player positions for inference
+    positions = _load_player_positions(engine)
 
     with engine.connect() as conn:
         games = pd.read_sql(text(SQL_TODAYS_GAMES), conn, params={"game_date": et_day})
@@ -1266,6 +1299,13 @@ def main() -> None:
                     col, n_overridden, len(df),
                 )
 
+    # Item 10: Add primary_position to df for OHE in _prep_X
+    if positions and "player_id" in df.columns:
+        df = df.copy()
+        df["primary_position"] = df["player_id"].map(positions).fillna("UNK")
+        n_mapped = int((df["primary_position"] != "UNK").sum())
+        log.info("Position feature: %d/%d players mapped", n_mapped, len(df))
+
     # Apply minutes stacking model: predict minutes first, inject as features for PTS/REB/AST.
     if minutes_model is not None and feature_cols_base is not None and medians_base is not None:
         X_base = _prep_X(df, feature_cols_base, medians_base)
@@ -1302,6 +1342,28 @@ def main() -> None:
         log.info("XGB+LGB ensemble active")
     else:
         raw_pts, raw_reb, raw_ast = xgb_pts, xgb_reb, xgb_ast
+
+    # Item 8: Apply residual prop models where book lines are available
+    if resid_models:
+        _book_line_inf = {
+            "points":   df["prev_book_line_pts"].values if "prev_book_line_pts" in df.columns else None,
+            "rebounds": df["prev_book_line_reb"].values if "prev_book_line_reb" in df.columns else None,
+            "assists":  df["prev_book_line_ast"].values if "prev_book_line_ast" in df.columns else None,
+        }
+        for _stat, _pred_arr in [("points", raw_pts), ("rebounds", raw_reb), ("assists", raw_ast)]:
+            if _stat not in resid_models or _book_line_inf[_stat] is None:
+                continue
+            _bl = _book_line_inf[_stat].astype(float)
+            _has_line = ~np.isnan(_bl)
+            if not _has_line.any():
+                continue
+            _dev = resid_models[_stat].predict(X)
+            _pred_resid = _bl + _dev
+            _pred_arr[_has_line] = _pred_resid[_has_line]
+            log.info(
+                "Residual applied to %s: %d/%d players have book lines",
+                _stat, int(_has_line.sum()), len(_has_line),
+            )
 
     _validate_player_predictions(raw_pts, raw_reb, raw_ast, df["player_name"])
 
