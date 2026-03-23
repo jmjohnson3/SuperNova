@@ -34,7 +34,8 @@ class PredictConfig:
     season: str | None = None
     et_date: date | None = None
     min_edge_spread: float = 5.0   # minimum |pred + market_spread_home| to flag a spread bet
-    min_edge_total: float = 7.0   # minimum |pred - market| to flag a total bet
+    min_edge_total: float = 5.0   # minimum pred - market to flag an OVER total bet
+    min_edge_total_under: float = 999.0  # disabled: under bets lose badly (market beats model on low totals)
 
 
 def _compute_blend_weight_spread(calib: dict) -> float:
@@ -482,9 +483,10 @@ def _save_predictions(
         if edge_s is not None and abs(edge_s) >= cfg.min_edge_spread:
             spread_bet = "home" if edge_s > 0 else "away"
             kf_s, wp_s = _kelly(abs(edge_s), sigma=sigma_s)
-        if edge_t is not None and abs(edge_t) >= cfg.min_edge_total:
-            total_bet = "over" if edge_t > 0 else "under"
-            kf_t, wp_t = _kelly(abs(edge_t), sigma=sigma_t)
+        if edge_t is not None and edge_t >= cfg.min_edge_total:
+            # Only flag OVER bets: data shows under bets lose badly (market > model on low totals)
+            total_bet = "over"
+            kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
         rows.append({
             "game_date_et": et_day,
             "game_slug": r["game_slug"],
@@ -770,7 +772,7 @@ def main() -> None:
 
         # Count bets that exceed the edge threshold
         n_spread_bets = int(out["edge_spread"].abs().ge(cfg.min_edge_spread).sum()) if "edge_spread" in out else 0
-        n_total_bets  = int(out["edge_total"].abs().ge(cfg.min_edge_total).sum()) if "edge_total" in out else 0
+        n_total_bets  = int(out["edge_total"].ge(cfg.min_edge_total).sum()) if "edge_total" in out else 0
         n_high_edge = n_spread_bets + n_total_bets
         if out["used_market_recon"].any():
             model_note = (
@@ -852,13 +854,11 @@ def main() -> None:
                 else:
                     print(f"  {r['pred_spread_label']}")
 
-            # Total line — only flag when residual model was used (better calibrated)
+            # Total line — only flag OVER bets at >= min_edge_total (under bets disabled)
             edge_t = r.get("edge_total")
-            used_blend_row = bool(r.get("used_market_recon", False))
             total_bet_ok = (
                 pd.notna(edge_t)
-                and abs(float(edge_t)) >= cfg.min_edge_total
-                and used_blend_row  # require residual model: MAE 3.9 vs direct 15.0
+                and float(edge_t) >= cfg.min_edge_total
             )
             if total_bet_ok:
                 et_ = float(edge_t)
@@ -880,10 +880,10 @@ def main() -> None:
                     qp_best_links.append(_tl)
                 else:
                     edge_dir = "+" if et_ > 0 else ""
-                    print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts  [resid model]")
+                    print(f"  {over_under} {r['pred_total_points']:.1f}  * EDGE {edge_dir}{et_:.1f} pts")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
-                note = "" if used_blend_row else " (no market line)"
+                note = "" if pd.notna(r.get("market_total")) else " (no market line)"
                 if discord:
                     game_lbl = f"{r['away_team_abbr']}/{r['home_team_abbr']}"
                     mt = r.get('market_total')
