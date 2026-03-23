@@ -3,7 +3,7 @@ from pathlib import Path
 
 import psycopg2
 
-from nba_pipeline.parse_games import main as parse_games
+from nba_pipeline.parse_games import main as parse_games, sync_scores_from_boxscores as _sync_scores
 from nba_pipeline.parse_meta import main as parse_meta
 from nba_pipeline.parse_player_gamelogs import main as parse_player_gamelogs
 from nba_pipeline.parse_lineup import main as parse_lineup
@@ -480,6 +480,14 @@ def main() -> None:
     parse_player_gamelogs()   # training backbone
     parse_lineup()            # availability / starters
     parse_boxscore()          # game + player boxscores
+    # Sync scores again: parse_boxscore may have added new rows that parse_games
+    # (run before boxscore) didn't see yet.
+    import psycopg2 as _pg
+    with _pg.connect(_PG_DSN) as _c:
+        n = _sync_scores(_c)
+        _c.commit()
+        if n:
+            log.info("Post-boxscore score sync: updated %d games", n)
     parse_pbp()               # advanced features
     parse_referees()               # referee assignments from boxscore payloads
     parse_game_odds()              # live game lines (nba_odds)

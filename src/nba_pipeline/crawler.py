@@ -13,16 +13,15 @@ from nba_pipeline.fetcher import MySportsFeedsClient, NoContentYetError, RateLim
 log = logging.getLogger("nba_pipeline.crawler")
 
 TEAM_ABBRS = [
-    "atl","bos","bkn","cha","chi","cle","dal","den","det","gsw",
+    "atl","bos","bro","cha","chi","cle","dal","den","det","gsw",
     "hou","ind","lac","lal","mem","mia","mil","min","nop","nyk",
-    "okc","orl","phi","phx","por","sac","sas","tor","uta","was",
+    "okl","orl","phi","phx","por","sac","sas","tor","uta","was",
 ]
 
 # crawler.py (top-level)
 
 TEAM_ABBR_NORMALIZE = {
-    # common MSF vs "public" differences
-    "BRO": "BKN",
+    # MSF uses BRO (not BKN) and OKL (not OKC) — do not remap these
     "PHO": "PHX",
     "NOR": "NOP",
     # add if you see them in payloads
@@ -296,13 +295,16 @@ def crawl_season_incremental(
 
                 url = url_builder(season, slug)
 
+                # Per-game endpoints (boxscore/playbyplay/lineup) are stored with
+                # as_of_date=NULL (they're keyed by game_slug, not date).
+                # Pass as_of_date=None so already_fetched matches the stored records.
                 if already_fetched(
                         conn,
                         provider=provider,
                         endpoint=endpoint_name,
                         season=season.season_slug,
                         game_slug=slug,
-                        as_of_date=d,
+                        as_of_date=None,
                         url=url,
                 ):
                     continue
@@ -415,10 +417,20 @@ def _load_slugs_from_saved_games_by_date(conn, *, season: str, as_of_date: date)
 
 
 def main() -> None:
+    import argparse
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
+
+    parser = argparse.ArgumentParser(description="MySportsFeeds incremental crawler")
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default=None,
+        help="Force start date (YYYY-MM-DD). Overrides incremental lookback. Use for backfill.",
+    )
+    args = parser.parse_args()
 
     cfg = CrawlerConfig()
     client = MySportsFeedsClient(api_key=cfg.api_key)
@@ -430,19 +442,23 @@ def main() -> None:
 
     today = et_today()
     end = today + (timedelta(days=1) if cfg.include_tomorrow else timedelta(days=0))
+    force_start: Optional[date] = date.fromisoformat(args.start_date) if args.start_date else None
 
     with psycopg2.connect(cfg.pg_dsn) as conn:
         conn.autocommit = False
         try:
             for s in seasons:
-                last = last_games_by_date_asof(conn, provider="mysportsfeeds", season=s.season_slug)
-
-                # If never crawled games_by_date, start at (today - lookback) to bootstrap
-                if last is None:
-                    start = today - timedelta(days=cfg.lookback_days)
+                if force_start is not None:
+                    start = force_start
                 else:
-                    # crawl forward, but include a small lookback to capture late stat corrections
-                    start = min(last, today) - timedelta(days=cfg.lookback_days)
+                    last = last_games_by_date_asof(conn, provider="mysportsfeeds", season=s.season_slug)
+
+                    # If never crawled games_by_date, start at (today - lookback) to bootstrap
+                    if last is None:
+                        start = today - timedelta(days=cfg.lookback_days)
+                    else:
+                        # crawl forward, but include a small lookback to capture late stat corrections
+                        start = min(last, today) - timedelta(days=cfg.lookback_days)
 
                 if start > end:
                     start = end
