@@ -76,6 +76,19 @@ def _ensure_schema(conn) -> None:
                 actual_assists      NUMERIC,
                 UNIQUE (game_date_et, game_slug, player_id)
             );
+            ALTER TABLE bets.prop_predictions
+                ADD COLUMN IF NOT EXISTS book_line_pts   NUMERIC,
+                ADD COLUMN IF NOT EXISTS book_line_reb   NUMERIC,
+                ADD COLUMN IF NOT EXISTS book_line_ast   NUMERIC,
+                ADD COLUMN IF NOT EXISTS edge_pts        NUMERIC,
+                ADD COLUMN IF NOT EXISTS edge_reb        NUMERIC,
+                ADD COLUMN IF NOT EXISTS edge_ast        NUMERIC,
+                ADD COLUMN IF NOT EXISTS kelly_pts       NUMERIC,
+                ADD COLUMN IF NOT EXISTS kelly_reb       NUMERIC,
+                ADD COLUMN IF NOT EXISTS kelly_ast       NUMERIC,
+                ADD COLUMN IF NOT EXISTS pts_over_hit    BOOLEAN,
+                ADD COLUMN IF NOT EXISTS reb_over_hit    BOOLEAN,
+                ADD COLUMN IF NOT EXISTS ast_over_hit    BOOLEAN;
         """)
     conn.commit()
 
@@ -343,9 +356,19 @@ def update_prop_outcomes(conn) -> int:
                 UPDATE bets.prop_predictions
                 SET actual_points   = %s,
                     actual_rebounds = %s,
-                    actual_assists  = %s
+                    actual_assists  = %s,
+                    pts_over_hit    = CASE WHEN %s IS NOT NULL AND book_line_pts IS NOT NULL
+                                          THEN %s > book_line_pts ELSE NULL END,
+                    reb_over_hit    = CASE WHEN %s IS NOT NULL AND book_line_reb IS NOT NULL
+                                          THEN %s > book_line_reb ELSE NULL END,
+                    ast_over_hit    = CASE WHEN %s IS NOT NULL AND book_line_ast IS NOT NULL
+                                          THEN %s > book_line_ast ELSE NULL END
                 WHERE id = %s
-            """, (a["points"], a["rebounds"], a["assists"], row["id"]))
+            """, (a["points"], a["rebounds"], a["assists"],
+                  a["points"], a["points"],
+                  a["rebounds"], a["rebounds"],
+                  a["assists"], a["assists"],
+                  row["id"]))
             updated += 1
 
     conn.commit()

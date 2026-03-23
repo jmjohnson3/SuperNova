@@ -33,7 +33,7 @@ class PredictConfig:
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None
-    min_edge_spread: float = 10.0  # minimum |pred - market| to flag a spread bet
+    min_edge_spread: float = 5.0   # minimum |pred + market_spread_home| to flag a spread bet
     min_edge_total: float = 7.0   # minimum |pred - market| to flag a total bet
 
 
@@ -479,10 +479,10 @@ def _save_predictions(
         sigma_t = _calib.get(
             "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 20.0
         )
-        if edge_s is not None:
+        if edge_s is not None and abs(edge_s) >= cfg.min_edge_spread:
             spread_bet = "home" if edge_s > 0 else "away"
             kf_s, wp_s = _kelly(abs(edge_s), sigma=sigma_s)
-        if edge_t is not None:
+        if edge_t is not None and abs(edge_t) >= cfg.min_edge_total:
             total_bet = "over" if edge_t > 0 else "under"
             kf_t, wp_t = _kelly(abs(edge_t), sigma=sigma_t)
         rows.append({
@@ -726,7 +726,7 @@ def main() -> None:
             out["market_total"] = pd.to_numeric(df["market_total"].values, errors="coerce")
             out["edge_spread"] = np.where(
                 out["market_spread_home"].notna(),
-                out["pred_margin_home_minus_away"] - out["market_spread_home"],
+                out["pred_margin_home_minus_away"] + out["market_spread_home"],
                 np.nan,
             )
             out["edge_total"] = np.where(

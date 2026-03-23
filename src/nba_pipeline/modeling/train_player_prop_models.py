@@ -60,6 +60,7 @@ class TrainConfig:
     optuna_n_folds: int = 5
     # Minutes stacking
     use_minutes_stacking: bool = True
+    run_multioutput_test: bool = True
 
 
 SQL_PLAYER_TRAIN = """
@@ -497,9 +498,10 @@ def main() -> None:
     # best_iters initialized here so final model section can reference it regardless
     # of whether walk-forward ran (e.g. run_walk_forward=False or no folds produced).
     best_iters: Dict[str, List[int]] = {name: [] for name, _, _, _ in stat_configs}
-    # calib/wf_mae initialized here so residual training can access them after walk-forward block.
+    # calib/wf_mae/multi_mae initialized here so residual training can access them after walk-forward block.
     calib: Dict = {}
     wf_mae: Dict = {}
+    multi_mae: Dict[str, float] = {}
 
     # --- Walk-forward validation ---
     if cfg.run_walk_forward:
@@ -628,6 +630,84 @@ def main() -> None:
                     calib[f"direct_market_mae_{sl}"] = round(direct_mkt_mae, 4)
                     calib[f"book_line_mae_{sl}"]     = round(book_line_mae, 4)
 
+            # --- Item 11: Multi-output LGB walk-forward test ---
+            # LGB 4.x Dataset API enforces 1D labels, so we use sklearn's MultiOutputRegressor
+            # wrapping LGBMRegressor.  Each stat gets an independent model, but the wrapper
+            # trains them in parallel and exposes a single .predict() → (n, 3) interface,
+            # which plugs naturally into the 3-way ensemble at inference.
+            if cfg.run_multioutput_test and _HAS_LGB and folds:
+                from sklearn.multioutput import MultiOutputRegressor
+                log.info("Running multi-output LGB walk-forward test (MultiOutputRegressor)...")
+                mo_agg: Dict[str, Tuple[List[float], List[float]]] = {
+                    "PTS": ([], []), "REB": ([], []), "AST": ([], [])
+                }
+                for train_end, test_end in folds:
+                    train_mask = df["game_date_et"] < train_end
+                    test_mask = (df["game_date_et"] >= train_end) & (df["game_date_et"] < test_end)
+                    if int(train_mask.sum()) < 50 or int(test_mask.sum()) == 0:
+                        continue
+                    medians_mo = fit_fill_stats(X_aug.loc[train_mask])
+                    X_tr_mo = apply_fill(X_aug.loc[train_mask], medians_mo, feature_cols)
+                    X_te_mo = apply_fill(X_aug.loc[test_mask], medians_mo, feature_cols)
+                    y_tr_mo = np.column_stack([
+                        y_pts.loc[train_mask].values,
+                        y_reb.loc[train_mask].values,
+                        y_ast.loc[train_mask].values,
+                    ])
+                    try:
+                        m_mo = MultiOutputRegressor(lgb.LGBMRegressor(
+                            objective="regression_l1",
+                            metric="mae",
+                            num_leaves=63,
+                            learning_rate=0.05,
+                            n_estimators=300,
+                            min_child_samples=20,
+                            subsample=0.8,
+                            colsample_bytree=0.8,
+                            reg_alpha=0.1,
+                            reg_lambda=1.0,
+                            verbose=-1,
+                            n_jobs=1,
+                            random_state=cfg.random_state,
+                        ), n_jobs=-1)
+                        m_mo.fit(X_tr_mo, y_tr_mo)
+                        pred_mo = m_mo.predict(X_te_mo)  # shape (n_test, 3)
+                        for i, (stat_name, y_stat) in enumerate([
+                            ("PTS", y_pts), ("REB", y_reb), ("AST", y_ast)
+                        ]):
+                            y_te_stat = y_stat.loc[test_mask]
+                            mo_agg[stat_name][0].extend(y_te_stat.tolist())
+                            mo_agg[stat_name][1].extend(pred_mo[:, i].tolist())
+                    except Exception as exc:
+                        log.warning("Multi-output LGB fold failed: %s", exc)
+                        break
+
+                mo_msgs = []
+                for stat_name, y_stat in [("PTS", y_pts), ("REB", y_reb), ("AST", y_ast)]:
+                    true_all, pred_all = mo_agg[stat_name]
+                    if true_all:
+                        mo_mae_val = float(mean_absolute_error(true_all, pred_all))
+                        multi_mae[stat_name.lower()] = mo_mae_val
+                        existing = wf_mae.get(stat_name.lower(), float("inf"))
+                        delta = mo_mae_val - existing
+                        mo_msgs.append(
+                            f"{stat_name}: multi={mo_mae_val:.3f} xgb={existing:.3f} delta={delta:+.3f}"
+                        )
+                if mo_msgs:
+                    log.info("MULTI-OUTPUT LGB COMPARISON | %s", " | ".join(mo_msgs))
+
+                for sl in ("pts", "reb", "ast"):
+                    if sl in multi_mae:
+                        calib[f"multi_output_mae_{sl}"] = round(multi_mae[sl], 4)
+
+                # Gate: use multi-output ensemble if it doesn't regress on any stat by >1%
+                use_multi = bool(multi_mae) and all(
+                    multi_mae.get(sl, float("inf")) <= wf_mae.get(sl, float("inf")) * 1.01
+                    for sl in ["pts", "reb", "ast"]
+                )
+                calib["use_multioutput_ensemble"] = use_multi
+                log.info("Multi-output ensemble gate: %s", use_multi)
+
             # Save per-stat walk-forward MAEs + calibrated CI quantiles
             if wf_mae:
                 payload = {**wf_mae, **calib}
@@ -734,6 +814,33 @@ def main() -> None:
             log.info("LightGBM ensemble complete — XGB+LGB predictions will be averaged at inference")
     else:
         log.info("lightgbm not installed — skipping LGB ensemble (pip install lightgbm)")
+
+    # --- Item 11: Final multi-output LGB model (MultiOutputRegressor, saved via joblib) ---
+    if cfg.run_multioutput_test and _HAS_LGB and multi_mae:
+        from sklearn.multioutput import MultiOutputRegressor
+        import joblib
+        y_all_stacked = np.column_stack([y_pts.values, y_reb.values, y_ast.values])
+        try:
+            m_mo_final = MultiOutputRegressor(lgb.LGBMRegressor(
+                objective="regression_l1",
+                metric="mae",
+                num_leaves=63,
+                learning_rate=0.05,
+                n_estimators=300,
+                min_child_samples=20,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                reg_alpha=0.1,
+                reg_lambda=1.0,
+                verbose=-1,
+                n_jobs=1,
+                random_state=cfg.random_state,
+            ), n_jobs=-1)
+            m_mo_final.fit(X_all, y_all_stacked)
+            joblib.dump(m_mo_final, str(cfg.model_dir / "lgb_multi.pkl"))
+            log.info("Saved multi-output LGB model → lgb_multi.pkl")
+        except Exception as exc:
+            log.warning("Final multi-output LGB failed: %s", exc)
 
     # --- Item 8: Book line residual prop models ---
     # Train a residual model that predicts (actual − book_line) on market rows.

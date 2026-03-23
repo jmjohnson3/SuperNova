@@ -638,7 +638,20 @@ def _load_artifacts(cfg: PredictConfig):
             resid_models[stat] = m_r
             log.info("Loaded residual prop model: %s", fname)
 
-    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models, resid_models
+    # Item 11: Optional multi-output LGB ensemble (MultiOutputRegressor, joblib-serialized)
+    lgb_multi_model = None
+    multi_path = model_dir / "lgb_multi.pkl"
+    if multi_path.exists():
+        mae_data = _load_prop_mae(model_dir)
+        if mae_data.get("use_multioutput_ensemble", False):
+            try:
+                import joblib
+                lgb_multi_model = joblib.load(str(multi_path))
+                log.info("Loaded multi-output LGB model for ensemble")
+            except Exception as exc:
+                log.warning("Could not load multi-output LGB model: %s", exc)
+
+    return models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models, resid_models, lgb_multi_model
 
 def _prep_X(df: pd.DataFrame, feature_cols: list[str], medians: dict[str, float]) -> pd.DataFrame:
     id_cols = {
@@ -710,9 +723,30 @@ def _ensure_prop_table(engine) -> None:
         actual_assists      NUMERIC,
         UNIQUE (game_date_et, game_slug, player_id)
     );
+    ALTER TABLE bets.prop_predictions
+        ADD COLUMN IF NOT EXISTS book_line_pts   NUMERIC,
+        ADD COLUMN IF NOT EXISTS book_line_reb   NUMERIC,
+        ADD COLUMN IF NOT EXISTS book_line_ast   NUMERIC,
+        ADD COLUMN IF NOT EXISTS edge_pts        NUMERIC,
+        ADD COLUMN IF NOT EXISTS edge_reb        NUMERIC,
+        ADD COLUMN IF NOT EXISTS edge_ast        NUMERIC,
+        ADD COLUMN IF NOT EXISTS kelly_pts       NUMERIC,
+        ADD COLUMN IF NOT EXISTS kelly_reb       NUMERIC,
+        ADD COLUMN IF NOT EXISTS kelly_ast       NUMERIC,
+        ADD COLUMN IF NOT EXISTS pts_over_hit    BOOLEAN,
+        ADD COLUMN IF NOT EXISTS reb_over_hit    BOOLEAN,
+        ADD COLUMN IF NOT EXISTS ast_over_hit    BOOLEAN;
     """)
     with engine.begin() as conn:
         conn.execute(ddl)
+
+
+def _float_or_none(v) -> float | None:
+    try:
+        f = float(v)
+        return None if np.isnan(f) else f
+    except (TypeError, ValueError):
+        return None
 
 
 def _save_prop_predictions(df_out: pd.DataFrame, engine, et_day) -> None:
@@ -721,17 +755,32 @@ def _save_prop_predictions(df_out: pd.DataFrame, engine, et_day) -> None:
     upsert_sql = text("""
         INSERT INTO bets.prop_predictions
             (game_date_et, game_slug, player_id, player_name, team_abbr,
-             pred_points, pred_rebounds, pred_assists)
+             pred_points, pred_rebounds, pred_assists,
+             book_line_pts, book_line_reb, book_line_ast,
+             edge_pts, edge_reb, edge_ast,
+             kelly_pts, kelly_reb, kelly_ast)
         VALUES
             (:game_date_et, :game_slug, :player_id, :player_name, :team_abbr,
-             :pred_points, :pred_rebounds, :pred_assists)
+             :pred_points, :pred_rebounds, :pred_assists,
+             :book_line_pts, :book_line_reb, :book_line_ast,
+             :edge_pts, :edge_reb, :edge_ast,
+             :kelly_pts, :kelly_reb, :kelly_ast)
         ON CONFLICT (game_date_et, game_slug, player_id) DO UPDATE SET
             predicted_at_utc = NOW(),
             player_name      = EXCLUDED.player_name,
             team_abbr        = EXCLUDED.team_abbr,
             pred_points      = EXCLUDED.pred_points,
             pred_rebounds    = EXCLUDED.pred_rebounds,
-            pred_assists     = EXCLUDED.pred_assists
+            pred_assists     = EXCLUDED.pred_assists,
+            book_line_pts    = EXCLUDED.book_line_pts,
+            book_line_reb    = EXCLUDED.book_line_reb,
+            book_line_ast    = EXCLUDED.book_line_ast,
+            edge_pts         = EXCLUDED.edge_pts,
+            edge_reb         = EXCLUDED.edge_reb,
+            edge_ast         = EXCLUDED.edge_ast,
+            kelly_pts        = EXCLUDED.kelly_pts,
+            kelly_reb        = EXCLUDED.kelly_reb,
+            kelly_ast        = EXCLUDED.kelly_ast
     """)
 
     rows = []
@@ -745,6 +794,15 @@ def _save_prop_predictions(df_out: pd.DataFrame, engine, et_day) -> None:
             "pred_points": float(r["pred_points"]),
             "pred_rebounds": float(r["pred_rebounds"]),
             "pred_assists": float(r["pred_assists"]),
+            "book_line_pts":  _float_or_none(r.get("prev_book_line_pts")),
+            "book_line_reb":  _float_or_none(r.get("prev_book_line_reb")),
+            "book_line_ast":  _float_or_none(r.get("prev_book_line_ast")),
+            "edge_pts":       _float_or_none(r.get("edge_pts")),
+            "edge_reb":       _float_or_none(r.get("edge_reb")),
+            "edge_ast":       _float_or_none(r.get("edge_ast")),
+            "kelly_pts":      _float_or_none(r.get("kelly_pts")),
+            "kelly_reb":      _float_or_none(r.get("kelly_reb")),
+            "kelly_ast":      _float_or_none(r.get("kelly_ast")),
         })
 
     if rows:
@@ -1224,7 +1282,7 @@ def main() -> None:
     et_day = cfg.et_date or datetime.now(_ET).date()
     log.info("Predicting player props for ET date=%s", et_day)
 
-    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models, resid_models = _load_artifacts(cfg)
+    models, feature_cols, medians, minutes_model, feature_cols_base, medians_base, lgb_models, resid_models, lgb_multi_model = _load_artifacts(cfg)
     engine = create_engine(cfg.pg_dsn)
     if os.getenv("DISCORD_FORMAT") != "1":
         _check_injury_staleness(engine, warn_hours=4.0)
@@ -1322,9 +1380,11 @@ def main() -> None:
 
     X = _prep_X(df, feature_cols, medians)
 
+    _bl_cols = [c for c in ("prev_book_line_pts", "prev_book_line_reb", "prev_book_line_ast")
+                if c in df.columns]
     df_out = df[
         ["start_ts_utc", "game_slug", "team_abbr", "opponent_abbr", "is_home", "player_id", "player_name",
-         "proj_minutes", "is_proj_starter", "n_games_prev_10"]
+         "proj_minutes", "is_proj_starter", "n_games_prev_10"] + _bl_cols
     ].copy()
 
     xgb_pts = models["points"].predict(X)
@@ -1342,6 +1402,22 @@ def main() -> None:
         log.info("XGB+LGB ensemble active")
     else:
         raw_pts, raw_reb, raw_ast = xgb_pts, xgb_reb, xgb_ast
+
+    # Item 11: XGB + LGB_single + LGB_multi (1/3 each when all present)
+    if lgb_multi_model is not None:
+        pred_mo_inf = lgb_multi_model.predict(X.values)  # shape (n, 3)
+        if lgb_models is not None:
+            # 3-way ensemble: xgb + lgb_single + lgb_multi
+            raw_pts = (xgb_pts + lgb_pts + pred_mo_inf[:, 0]) / 3.0
+            raw_reb = (xgb_reb + lgb_reb + pred_mo_inf[:, 1]) / 3.0
+            raw_ast = (xgb_ast + lgb_ast + pred_mo_inf[:, 2]) / 3.0
+            log.info("XGB+LGB+LGB_multi 3-way ensemble active")
+        else:
+            # XGB + LGB_multi only
+            raw_pts = (xgb_pts + pred_mo_inf[:, 0]) / 2.0
+            raw_reb = (xgb_reb + pred_mo_inf[:, 1]) / 2.0
+            raw_ast = (xgb_ast + pred_mo_inf[:, 2]) / 2.0
+            log.info("XGB+LGB_multi 2-way ensemble active")
 
     # Item 8: Apply residual prop models where book lines are available
     if resid_models:
@@ -1381,6 +1457,24 @@ def main() -> None:
     pts_ci = mae.get("ci_p68_pts", round(pts_mae * 1.25, 3))
     reb_ci = mae.get("ci_p68_reb", round(reb_mae * 1.25, 3))
     ast_ci = mae.get("ci_p68_ast", round(ast_mae * 1.25, 3))
+
+    # Item 12: Store book lines, edges, Kelly for grading
+    for pred_col, bl_col, edge_col, kelly_col, sigma in [
+        ("pred_points",   "prev_book_line_pts", "edge_pts", "kelly_pts", pts_ci),
+        ("pred_rebounds", "prev_book_line_reb", "edge_reb", "kelly_reb", reb_ci),
+        ("pred_assists",  "prev_book_line_ast", "edge_ast", "kelly_ast", ast_ci),
+    ]:
+        if bl_col in df_out.columns:
+            bl = pd.to_numeric(df_out[bl_col], errors="coerce")
+            edge = df_out[pred_col] - bl
+            df_out[edge_col] = edge.where(bl.notna(), other=np.nan)
+            kelly_vals = np.where(
+                bl.notna(),
+                [_kelly_prop(abs(e), sigma=sigma)[0] if not np.isnan(e) else np.nan
+                 for e in edge.values],
+                np.nan,
+            )
+            df_out[kelly_col] = kelly_vals
 
     # pretty print grouped by game
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)

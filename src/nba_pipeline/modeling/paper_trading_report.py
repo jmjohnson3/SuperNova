@@ -174,6 +174,66 @@ def print_report(conn, days: int = 90) -> None:
         ast_mae = float(pr["ast_mae"] or 0)
         print(f"  MAE  PTS: {pts_mae:.2f}  REB: {reb_mae:.2f}  AST: {ast_mae:.2f}")
 
+    # Prop bet grading by edge bucket
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                stat, abs_edge_bucket, direction,
+                COUNT(*) AS n,
+                SUM(CASE WHEN hit THEN 1 ELSE 0 END) AS wins
+            FROM (
+                SELECT 'pts' AS stat,
+                       CASE WHEN ABS(edge_pts) < 1 THEN '0-1'
+                            WHEN ABS(edge_pts) < 2 THEN '1-2'
+                            WHEN ABS(edge_pts) < 3 THEN '2-3'
+                            ELSE '3+' END AS abs_edge_bucket,
+                       CASE WHEN edge_pts > 0 THEN 'over' ELSE 'under' END AS direction,
+                       CASE WHEN edge_pts > 0 THEN pts_over_hit
+                            ELSE NOT pts_over_hit END AS hit
+                FROM bets.prop_predictions
+                WHERE game_date_et >= %s
+                  AND edge_pts IS NOT NULL
+                  AND pts_over_hit IS NOT NULL
+                UNION ALL
+                SELECT 'reb' AS stat,
+                       CASE WHEN ABS(edge_reb) < 1 THEN '0-1'
+                            WHEN ABS(edge_reb) < 2 THEN '1-2'
+                            WHEN ABS(edge_reb) < 3 THEN '2-3'
+                            ELSE '3+' END AS abs_edge_bucket,
+                       CASE WHEN edge_reb > 0 THEN 'over' ELSE 'under' END AS direction,
+                       CASE WHEN edge_reb > 0 THEN reb_over_hit
+                            ELSE NOT reb_over_hit END AS hit
+                FROM bets.prop_predictions
+                WHERE game_date_et >= %s
+                  AND edge_reb IS NOT NULL
+                  AND reb_over_hit IS NOT NULL
+                UNION ALL
+                SELECT 'ast' AS stat,
+                       CASE WHEN ABS(edge_ast) < 1 THEN '0-1'
+                            WHEN ABS(edge_ast) < 2 THEN '1-2'
+                            WHEN ABS(edge_ast) < 3 THEN '2-3'
+                            ELSE '3+' END AS abs_edge_bucket,
+                       CASE WHEN edge_ast > 0 THEN 'over' ELSE 'under' END AS direction,
+                       CASE WHEN edge_ast > 0 THEN ast_over_hit
+                            ELSE NOT ast_over_hit END AS hit
+                FROM bets.prop_predictions
+                WHERE game_date_et >= %s
+                  AND edge_ast IS NOT NULL
+                  AND ast_over_hit IS NOT NULL
+            ) t
+            GROUP BY 1, 2, 3
+            ORDER BY 1, 2
+        """, (cutoff, cutoff, cutoff))
+        prop_grade_rows = cur.fetchall()
+
+    if prop_grade_rows:
+        print(f"\n  Prop Bet Grading by Edge (last {days}d)")
+        print(f"  {'Stat':<5} {'Edge':<5} {'Dir':<6} {'W-L':<12} {'Win%'}")
+        for r in prop_grade_rows:
+            n, w = int(r["n"]), int(r["wins"])
+            print(f"  {r['stat']:<5} {r['abs_edge_bucket']:<5} {r['direction']:<6} "
+                  f"{w}-{n-w:<8} {_pct(w, n)}")
+
     print(f"\n{'='*65}\n")
 
 
