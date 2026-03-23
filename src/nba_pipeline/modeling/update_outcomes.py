@@ -462,6 +462,58 @@ def update_prop_outcomes(conn) -> int:
     return updated
 
 
+def backfill_prop_over_hit(conn) -> int:
+    """
+    Recompute pts/reb/ast_over_hit for already-graded prop rows where over_hit IS NULL
+    but both actual and book_line are present.  Handles rows graded before Item 12
+    added the book_line columns.
+    Returns number of rows updated.
+    """
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT id,
+                   actual_points,   book_line_pts,
+                   actual_rebounds, book_line_reb,
+                   actual_assists,  book_line_ast
+            FROM bets.prop_predictions
+            WHERE (
+                (actual_points   IS NOT NULL AND book_line_pts IS NOT NULL AND pts_over_hit IS NULL)
+             OR (actual_rebounds IS NOT NULL AND book_line_reb IS NOT NULL AND reb_over_hit IS NULL)
+             OR (actual_assists  IS NOT NULL AND book_line_ast IS NOT NULL AND ast_over_hit IS NULL)
+            )
+        """)
+        rows = cur.fetchall()
+
+    if not rows:
+        log.info("backfill_prop_over_hit: nothing to update.")
+        return 0
+
+    updated = 0
+    with conn.cursor() as cur:
+        for row in rows:
+            pts_hit = reb_hit = ast_hit = None
+            if row["actual_points"] is not None and row["book_line_pts"] is not None:
+                pts_hit = float(row["actual_points"]) > float(row["book_line_pts"])
+            if row["actual_rebounds"] is not None and row["book_line_reb"] is not None:
+                reb_hit = float(row["actual_rebounds"]) > float(row["book_line_reb"])
+            if row["actual_assists"] is not None and row["book_line_ast"] is not None:
+                ast_hit = float(row["actual_assists"]) > float(row["book_line_ast"])
+            if pts_hit is None and reb_hit is None and ast_hit is None:
+                continue
+            cur.execute("""
+                UPDATE bets.prop_predictions
+                SET pts_over_hit = COALESCE(pts_over_hit, %s),
+                    reb_over_hit = COALESCE(reb_over_hit, %s),
+                    ast_over_hit = COALESCE(ast_over_hit, %s)
+                WHERE id = %s
+            """, (pts_hit, reb_hit, ast_hit, row["id"]))
+            updated += 1
+
+    conn.commit()
+    log.info("backfill_prop_over_hit: updated %d rows", updated)
+    return updated
+
+
 def print_running_record(conn) -> None:
     """Print running ATS and total record from bets.game_predictions, including CLV stats."""
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -543,6 +595,10 @@ def main() -> None:
 
         n_props = update_prop_outcomes(conn)
         log.info("Updated %d prop outcome rows", n_props)
+
+        n_prop_hits = backfill_prop_over_hit(conn)
+        if n_prop_hits:
+            log.info("Backfilled prop over_hit for %d rows", n_prop_hits)
 
         print_running_record(conn)
 
