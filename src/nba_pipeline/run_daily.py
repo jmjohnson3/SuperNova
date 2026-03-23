@@ -141,6 +141,11 @@ def main() -> None:
     parser.add_argument("--skip-scan", action="store_true", help="Skip alt-line scan steps.")
     parser.add_argument("--backfill-odds", action="store_true", help="Also run crawler_oddsapi_backfill.")
     parser.add_argument("--report", type=str, default=None, help="Write a markdown report to this path.")
+    parser.add_argument(
+        "--close-only", action="store_true",
+        help="Evening close run: crawl game odds + update outcomes only (no parse/train/predict). "
+             "Run at ~6:30 PM ET to capture pre-game closing lines for CLV tracking.",
+    )
     args = parser.parse_args()
 
     console = _get_console()
@@ -156,6 +161,16 @@ def main() -> None:
     extra_env = {
         "NBA_ET_DATE": et_day.isoformat(),  # harmless if unused; handy if you later read it
     }
+
+    # --close-only: evening crawl for closing lines + update outcomes
+    if args.close_only:
+        close_steps = [
+            Step(name="Crawl odds (closing lines)", module="nba_pipeline.crawler_oddsapi", timeout_s=300, critical=True),
+            Step(name="Update outcomes + CLV", module="nba_pipeline.modeling.update_outcomes", timeout_s=120, critical=True),
+        ]
+        results = [_run_step(s, extra_env) for s in close_steps]
+        _render_table(console, [(r.name, "OK" if r.ok else "FAIL", f"{r.secs:.1f}s", str(r.rc)) for r in results])
+        return
 
     steps: list[Step] = []
 

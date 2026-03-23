@@ -309,6 +309,93 @@ def update_game_outcomes(conn) -> int:
     return updated
 
 
+def backfill_clv(conn) -> int:
+    """
+    Recompute CLV for already-graded rows where clv_spread IS NULL but a closing
+    line is now available.  This handles two cases:
+      1. Evening crawl ran after initial grading → new closing line available.
+      2. spread_bet_side was set/changed retroactively (e.g. threshold fix).
+    Returns number of rows updated.
+    """
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT id, game_date_et, home_team_abbr, away_team_abbr,
+                   market_spread_home, market_total,
+                   spread_bet_side, total_bet_side
+            FROM bets.game_predictions
+            WHERE actual_margin_home IS NOT NULL
+              AND clv_spread IS NULL
+              AND (spread_bet_side IS NOT NULL OR total_bet_side IS NOT NULL)
+        """)
+        rows = cur.fetchall()
+
+    if not rows:
+        log.info("backfill_clv: nothing to update.")
+        return 0
+
+    dates = list({r["game_date_et"] for r in rows})
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
+                    home_team_abbr, away_team_abbr, as_of_date,
+                    close_spread_home_points, close_total
+                FROM odds.nba_game_lines_open_close
+                WHERE as_of_date = ANY(%s::date[])
+                ORDER BY home_team_abbr, away_team_abbr, as_of_date, close_fetched_at_utc DESC
+            """, (dates,))
+            closing_lines = {
+                (r["home_team_abbr"], r["away_team_abbr"], r["as_of_date"]): r
+                for r in cur.fetchall()
+            }
+    except Exception as exc:
+        log.warning("backfill_clv: could not fetch closing lines: %s", exc)
+        return 0
+
+    updated = 0
+    with conn.cursor() as cur:
+        for row in rows:
+            cl_key = (row["home_team_abbr"], row["away_team_abbr"], row["game_date_et"])
+            cl = closing_lines.get(cl_key)
+            if not cl:
+                continue
+
+            closing_spread = float(cl["close_spread_home_points"]) if cl["close_spread_home_points"] is not None else None
+            closing_total  = float(cl["close_total"]) if cl["close_total"] is not None else None
+            mkt_s = float(row["market_spread_home"]) if row["market_spread_home"] is not None else None
+            mkt_t = float(row["market_total"]) if row["market_total"] is not None else None
+
+            clv_spread = None
+            clv_total  = None
+            if closing_spread is not None and mkt_s is not None and row["spread_bet_side"] is not None:
+                if row["spread_bet_side"] == "home":
+                    clv_spread = round(mkt_s - closing_spread, 2)
+                else:
+                    clv_spread = round(closing_spread - mkt_s, 2)
+            if closing_total is not None and mkt_t is not None and row["total_bet_side"] is not None:
+                if row["total_bet_side"] == "over":
+                    clv_total = round(closing_total - mkt_t, 2)
+                else:
+                    clv_total = round(mkt_t - closing_total, 2)
+
+            if clv_spread is None and clv_total is None:
+                continue
+
+            cur.execute("""
+                UPDATE bets.game_predictions
+                SET closing_spread_home = COALESCE(closing_spread_home, %s),
+                    closing_total       = COALESCE(closing_total, %s),
+                    clv_spread          = %s,
+                    clv_total           = %s
+                WHERE id = %s
+            """, (closing_spread, closing_total, clv_spread, clv_total, row["id"]))
+            updated += 1
+
+    conn.commit()
+    log.info("backfill_clv: updated %d rows", updated)
+    return updated
+
+
 def update_prop_outcomes(conn) -> int:
     """
     For each row in bets.prop_predictions where actual_points IS NULL
@@ -449,6 +536,10 @@ def main() -> None:
 
         n_games = update_game_outcomes(conn)
         log.info("Updated %d game outcome rows", n_games)
+
+        n_clv = backfill_clv(conn)
+        if n_clv:
+            log.info("Backfilled CLV for %d historical rows", n_clv)
 
         n_props = update_prop_outcomes(conn)
         log.info("Updated %d prop outcome rows", n_props)
