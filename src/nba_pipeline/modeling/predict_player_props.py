@@ -955,7 +955,8 @@ def _print_discord_best_bets(
             if bo and bo[0] is not None and fd_over:
                 over_line = float(bo[0])
                 edge = pred - over_line
-                if edge > 0:
+                # Require edge > CI threshold (same gate as non-discord _print_best_bets)
+                if edge > ci:
                     juice = int(bo[1]) if bo[1] else -110
                     kelly, _ = _kelly_prop(edge, juice=juice, sigma=ci)
                     candidates.append((edge, name, team, opp, "OVER",  over_line,
@@ -964,7 +965,8 @@ def _print_discord_best_bets(
             if bu and bu[0] is not None and fd_under:
                 under_line = float(bu[0])
                 edge = under_line - pred
-                if edge > 0:
+                # Require edge > CI threshold (same gate as non-discord _print_best_bets)
+                if edge > ci:
                     juice = int(bu[1]) if bu[1] else -110
                     kelly, _ = _kelly_prop(edge, juice=juice, sigma=ci)
                     candidates.append((edge, name, team, opp, "UNDER", under_line,

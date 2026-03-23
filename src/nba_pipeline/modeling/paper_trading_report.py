@@ -174,6 +174,42 @@ def print_report(conn, days: int = 90) -> None:
         ast_mae = float(pr["ast_mae"] or 0)
         print(f"  MAE  PTS: {pts_mae:.2f}  REB: {reb_mae:.2f}  AST: {ast_mae:.2f}")
 
+    # Over/Under bias summary: actual over-hit rate vs avg model edge per stat
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT stat, COUNT(*) AS n,
+                   AVG(over_hit::int) AS actual_over_rate,
+                   AVG(edge) AS avg_edge
+            FROM (
+                SELECT 'pts' AS stat, pts_over_hit AS over_hit, edge_pts AS edge
+                FROM bets.prop_predictions
+                WHERE game_date_et >= %s AND pts_over_hit IS NOT NULL AND edge_pts IS NOT NULL
+                UNION ALL
+                SELECT 'reb', reb_over_hit, edge_reb
+                FROM bets.prop_predictions
+                WHERE game_date_et >= %s AND reb_over_hit IS NOT NULL AND edge_reb IS NOT NULL
+                UNION ALL
+                SELECT 'ast', ast_over_hit, edge_ast
+                FROM bets.prop_predictions
+                WHERE game_date_et >= %s AND ast_over_hit IS NOT NULL AND edge_ast IS NOT NULL
+            ) t
+            GROUP BY stat
+            ORDER BY stat
+        """, (cutoff, cutoff, cutoff))
+        bias_rows = cur.fetchall()
+
+    if bias_rows:
+        print(f"\n  Over/Under Bias by Stat  [50% = fair; <50% = books inflate line above true EV]")
+        print(f"  {'Stat':<5} {'n':>5}  {'ActualOver%':>11}  {'AvgEdge':>8}  {'BookInflation':>14}")
+        print(f"  {'-'*5}  {'-'*5}  {'-'*11}  {'-'*8}  {'-'*14}")
+        for b in bias_rows:
+            n = int(b["n"])
+            over_rate = float(b["actual_over_rate"] or 0)
+            avg_edge = float(b["avg_edge"] or 0)
+            inflation = -avg_edge  # positive = books set line above model prediction
+            flag = "  (inflated!)" if over_rate < 0.38 else ""
+            print(f"  {b['stat']:<5}  {n:>5}  {over_rate*100:>10.1f}%  {avg_edge:>+8.3f}  {inflation:>+13.3f}{flag}")
+
     # Prop bet grading by edge bucket
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
