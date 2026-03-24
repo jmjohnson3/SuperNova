@@ -357,6 +357,22 @@ joined AS (
       prop_prior.prev_book_line_reb,
       prop_prior.prev_book_line_ast,
 
+      -- V022b: opening line + day-over-day intermediates
+      prop_prior.open_book_line_pts,
+      prop_prior.open_book_line_reb,
+      prop_prior.open_book_line_ast,
+      prop_prev.prev2_book_line_pts,
+      prop_prev.prev2_book_line_reb,
+      prop_prev.prev2_book_line_ast,
+
+      -- V022b: computed movement signals
+      prop_prior.prev_book_line_pts - prop_prior.open_book_line_pts  AS line_move_pts,
+      prop_prior.prev_book_line_reb - prop_prior.open_book_line_reb  AS line_move_reb,
+      prop_prior.prev_book_line_ast - prop_prior.open_book_line_ast  AS line_move_ast,
+      prop_prior.prev_book_line_pts - prop_prev.prev2_book_line_pts  AS day_over_day_move_pts,
+      prop_prior.prev_book_line_reb - prop_prev.prev2_book_line_reb  AS day_over_day_move_reb,
+      prop_prior.prev_book_line_ast - prop_prev.prev2_book_line_ast  AS day_over_day_move_ast,
+
       -- V023: player shot profile (most recent pregame rolling snapshot before today)
       psp.paint_shot_rate_avg_10,
       psp.pullup_shot_rate_avg_10,
@@ -420,9 +436,12 @@ joined AS (
     -- Uses the most recent as_of_date (not MAX line value) to avoid selecting historical outliers.
     LEFT JOIN LATERAL (
         SELECT
-            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev_book_line_pts,
-            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END) AS prev_book_line_reb,
-            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END) AS prev_book_line_ast
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END)      AS prev_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END)      AS prev_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END)      AS prev_book_line_ast,
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.open_line END) AS open_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.open_line END) AS open_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.open_line END) AS open_book_line_ast
         FROM odds.nba_player_prop_lines pl
         WHERE pl.player_name_norm = LOWER(REGEXP_REPLACE(
                   unaccent(lp.player_name), '[^a-z ]', '', 'g'))
@@ -436,6 +455,33 @@ joined AS (
                 AND pl2.bookmaker_key = 'draftkings'
           )
     ) prop_prior ON TRUE
+
+    -- V022b: second-most-recent DraftKings prop line (for day-over-day movement delta)
+    LEFT JOIN LATERAL (
+        SELECT
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev2_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END) AS prev2_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END) AS prev2_book_line_ast
+        FROM odds.nba_player_prop_lines pl
+        WHERE pl.player_name_norm = LOWER(REGEXP_REPLACE(
+                  unaccent(lp.player_name), '[^a-z ]', '', 'g'))
+          AND pl.bookmaker_key = 'draftkings'
+          AND pl.as_of_date = (
+              SELECT MAX(pl3.as_of_date)
+              FROM odds.nba_player_prop_lines pl3
+              WHERE pl3.player_name_norm = LOWER(REGEXP_REPLACE(
+                        unaccent(lp.player_name), '[^a-z ]', '', 'g'))
+                AND pl3.bookmaker_key = 'draftkings'
+                AND pl3.as_of_date < (
+                    SELECT MAX(pl4.as_of_date)
+                    FROM odds.nba_player_prop_lines pl4
+                    WHERE pl4.player_name_norm = LOWER(REGEXP_REPLACE(
+                              unaccent(lp.player_name), '[^a-z ]', '', 'g'))
+                      AND pl4.bookmaker_key = 'draftkings'
+                      AND pl4.as_of_date < :game_date
+                )
+          )
+    ) prop_prev ON TRUE
 
     -- V023: player shot profile (precomputed snap table, indexed by player_id)
     LEFT JOIN features.player_shot_profile_snap psp

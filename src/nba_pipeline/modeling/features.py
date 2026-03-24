@@ -455,6 +455,20 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "prev_book_line_pts" in X.columns and "pts_avg_3" in X.columns:
         X["book_line_vs_pts_hot"] = X["prev_book_line_pts"] - X["pts_avg_3"]
 
+    # V022b: prop line movement features
+    # line_move_*:        intraday (open→close same day); initially ~0% until crawl pairs build up
+    # day_over_day_move_*: yesterday − day-before-yesterday; ~70-80% coverage from Oct 2023
+    for stat, move_col, dod_col, sd_col in [
+        ("pts", "line_move_pts", "day_over_day_move_pts", "pts_sd_10"),
+        ("reb", "line_move_reb", "day_over_day_move_reb", "reb_sd_10"),
+        ("ast", "line_move_ast", "day_over_day_move_ast", "ast_sd_10"),
+    ]:
+        if move_col in X.columns and sd_col in X.columns:
+            X[f"book_{stat}_move_vs_sd"] = X[move_col].fillna(0) / X[sd_col].clip(lower=0.5)
+        if dod_col in X.columns and sd_col in X.columns:
+            X[f"book_{stat}_dod_direction"] = np.sign(X[dod_col].fillna(0))
+            X[f"book_{stat}_dod_vs_sd"]     = X[dod_col].fillna(0) / X[sd_col].clip(lower=0.5)
+
     # V023 × V024: shot-type matchup differentials
     # Positive = player shoots this type more than defense typically allows → advantage
     _shot_matchups = [

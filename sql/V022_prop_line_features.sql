@@ -212,6 +212,16 @@ enriched AS (
         prop_prior.prev_book_line_reb,
         prop_prior.prev_book_line_ast,
 
+        -- V022b: opening line for the same day (NULL until open_line backfill accumulates)
+        prop_prior.open_book_line_pts,
+        prop_prior.open_book_line_reb,
+        prop_prior.open_book_line_ast,
+
+        -- V022b: second-most-recent line (for day-over-day movement)
+        prop_prev.prev2_book_line_pts,
+        prop_prev.prev2_book_line_reb,
+        prop_prev.prev2_book_line_ast,
+
         -- V023: PBP-derived shot quality features (rolling pregame averages)
         psp.paint_shot_rate_avg_10,
         psp.pullup_shot_rate_avg_10,
@@ -287,9 +297,12 @@ enriched AS (
     -- outlier lines (e.g. a 32.5 line from Dec when the current closing line is 25.5).
     LEFT JOIN LATERAL (
         SELECT
-            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev_book_line_pts,
-            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END) AS prev_book_line_reb,
-            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END) AS prev_book_line_ast
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END)      AS prev_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END)      AS prev_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END)      AS prev_book_line_ast,
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.open_line END) AS open_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.open_line END) AS open_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.open_line END) AS open_book_line_ast
         FROM raw.nba_players np
         JOIN odds.nba_player_prop_lines pl
           ON pl.player_name_norm = public.normalize_player_name(np.player_name)
@@ -305,6 +318,36 @@ enriched AS (
                 AND pl2.as_of_date < r.game_date_et
           )
     ) prop_prior ON TRUE
+
+    -- V022b: second-most-recent DraftKings prop line (for day-over-day movement delta)
+    LEFT JOIN LATERAL (
+        SELECT
+            MAX(CASE WHEN pl.stat = 'points'   THEN pl.line END) AS prev2_book_line_pts,
+            MAX(CASE WHEN pl.stat = 'rebounds' THEN pl.line END) AS prev2_book_line_reb,
+            MAX(CASE WHEN pl.stat = 'assists'  THEN pl.line END) AS prev2_book_line_ast
+        FROM raw.nba_players np
+        JOIN odds.nba_player_prop_lines pl
+          ON pl.player_name_norm = public.normalize_player_name(np.player_name)
+         AND pl.bookmaker_key = 'draftkings'
+        WHERE np.player_id = r.player_id
+          AND pl.as_of_date = (
+              SELECT MAX(pl3.as_of_date)
+              FROM raw.nba_players np3
+              JOIN odds.nba_player_prop_lines pl3
+                ON pl3.player_name_norm = public.normalize_player_name(np3.player_name)
+               AND pl3.bookmaker_key = 'draftkings'
+              WHERE np3.player_id = r.player_id
+                AND pl3.as_of_date < (
+                    SELECT MAX(pl4.as_of_date)
+                    FROM raw.nba_players np4
+                    JOIN odds.nba_player_prop_lines pl4
+                      ON pl4.player_name_norm = public.normalize_player_name(np4.player_name)
+                     AND pl4.bookmaker_key = 'draftkings'
+                    WHERE np4.player_id = r.player_id
+                      AND pl4.as_of_date < r.game_date_et
+                )
+          )
+    ) prop_prev ON TRUE
 
     -- V023: PBP shot profile features (NULL for players/games without PBP data)
     LEFT JOIN features.player_shot_profile psp
@@ -400,6 +443,16 @@ SELECT
 
     -- Schedule/rest context (from game_training_features)
     home_rest_days, away_rest_days,
-    home_is_b2b, away_is_b2b
+    home_is_b2b, away_is_b2b,
+
+    -- V022b: prop line movement (appended per column-ordering rule)
+    -- line_move_*:        intraday open→close (NULL until 7AM+6:30PM crawl pairs accumulate)
+    -- day_over_day_move_*: yesterday vs day-before-yesterday (~70-80% coverage from Oct 2023)
+    prev_book_line_pts - open_book_line_pts  AS line_move_pts,
+    prev_book_line_reb - open_book_line_reb  AS line_move_reb,
+    prev_book_line_ast - open_book_line_ast  AS line_move_ast,
+    prev_book_line_pts - prev2_book_line_pts AS day_over_day_move_pts,
+    prev_book_line_reb - prev2_book_line_reb AS day_over_day_move_reb,
+    prev_book_line_ast - prev2_book_line_ast AS day_over_day_move_ast
 
 FROM enriched;

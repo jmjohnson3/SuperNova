@@ -265,6 +265,11 @@ ALTER TABLE IF EXISTS odds.nba_player_prop_lines
     ADD COLUMN IF NOT EXISTS under_link TEXT;
 """
 
+_PROP_OPEN_LINE_ALTER_DDL = """
+ALTER TABLE IF EXISTS odds.nba_player_prop_lines
+    ADD COLUMN IF NOT EXISTS open_line NUMERIC;
+"""
+
 _PROP_UPSERT_SQL = """
 INSERT INTO odds.nba_player_prop_lines (
   as_of_date, fetched_at_utc,
@@ -274,7 +279,8 @@ INSERT INTO odds.nba_player_prop_lines (
   player_name, player_name_norm,
   stat, line, over_price, under_price,
   over_link, under_link,
-  updated_at_utc
+  updated_at_utc,
+  open_line
 )
 VALUES %s
 ON CONFLICT (as_of_date, event_id, bookmaker_key, player_name_norm, stat)
@@ -290,6 +296,7 @@ DO UPDATE SET
   over_link         = EXCLUDED.over_link,
   under_link        = EXCLUDED.under_link,
   updated_at_utc    = EXCLUDED.updated_at_utc
+  -- open_line intentionally omitted: stays as first-seen value for the day
 ;
 """
 
@@ -368,6 +375,7 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
                     vals["over_link"],
                     vals["under_link"],
                     fetched_at_utc,  # updated_at_utc
+                    vals["line"],    # open_line: set on INSERT only, preserved by ON CONFLICT
                 )
 
 
@@ -383,12 +391,15 @@ def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba
     Pass since_date to force re-parsing from a specific date (e.g. after a backfill).
     """
     with psycopg2.connect(pg_dsn) as conn:
-        # Ensure table exists and has link columns
+        # Ensure table exists and has link + open_line columns
         with conn.cursor() as cur:
             cur.execute(_PROP_DDL)
         conn.commit()
         with conn.cursor() as cur:
             cur.execute(_PROP_LINKS_ALTER_DDL)
+        conn.commit()
+        with conn.cursor() as cur:
+            cur.execute(_PROP_OPEN_LINE_ALTER_DDL)
         conn.commit()
 
         # Compute since_date for incremental parsing (skips already-loaded history)
