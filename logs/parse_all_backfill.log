@@ -1,0 +1,85 @@
+2026-03-23 20:41:33,338 | INFO | nba_pipeline.parse_all | Starting FULL parse pipeline
+2026-03-23 20:41:35,704 | INFO | nba_pipeline.parse_meta | snapshot_injuries_history: as_of_date=2026-03-23  rows=319
+2026-03-23 20:41:35,750 | INFO | nba_pipeline.parse_meta | Done. venues=40 injuries=133 injuries_history=319 standings_rows=60
+2026-03-23 20:41:38,021 | INFO | nba_pipeline.parse_games | Parsed season=2025-2026-regular fetched_at=2026-01-28 22:48:24.871043-08:00 games=1230
+2026-03-23 20:41:38,105 | INFO | nba_pipeline.parse_games | Parsed season=2024-2025-regular fetched_at=2026-01-26 09:48:19.000078-08:00 games=1230
+2026-03-23 20:41:38,370 | INFO | nba_pipeline.parse_games | Updated 915 game rows from games_by_date payloads
+2026-03-23 20:41:38,557 | INFO | nba_pipeline.parse_games | Synced scores for 292 games from nba_boxscore_games
+2026-03-23 20:41:38,557 | INFO | nba_pipeline.parse_games | Done. Total processed=3375
+2026-03-23 20:41:43,448 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=250 total_rows=2559
+2026-03-23 20:41:44,365 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=500 total_rows=5071
+2026-03-23 20:41:45,384 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=750 total_rows=7557
+2026-03-23 20:41:46,306 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=1000 total_rows=10018
+2026-03-23 20:41:47,399 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=1250 total_rows=12537
+2026-03-23 20:41:48,517 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=1500 total_rows=15046
+2026-03-23 20:41:49,816 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=1750 total_rows=17531
+2026-03-23 20:41:50,864 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=2000 total_rows=19981
+2026-03-23 20:41:51,826 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=2250 total_rows=22448
+2026-03-23 20:41:52,801 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=2500 total_rows=24942
+2026-03-23 20:41:53,807 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=2750 total_rows=27565
+2026-03-23 20:41:54,749 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=3000 total_rows=30092
+2026-03-23 20:41:55,691 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=3250 total_rows=32545
+2026-03-23 20:41:56,693 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=3500 total_rows=35084
+2026-03-23 20:41:57,624 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=3750 total_rows=37596
+2026-03-23 20:41:58,193 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=4000 total_rows=39020
+2026-03-23 20:41:58,260 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=4250 total_rows=39204
+2026-03-23 20:41:58,496 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=4500 total_rows=39816
+2026-03-23 20:41:58,496 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=4750 total_rows=39816
+2026-03-23 20:41:58,637 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=5000 total_rows=40150
+2026-03-23 20:41:58,871 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=5250 total_rows=40765
+2026-03-23 20:41:59,027 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=5500 total_rows=41157
+2026-03-23 20:41:59,105 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=5750 total_rows=41363
+2026-03-23 20:41:59,183 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=6000 total_rows=41541
+2026-03-23 20:41:59,214 | INFO | nba_pipeline.parse_player_gamelogs | Committed player_gamelogs: payloads=6250 total_rows=41645
+2026-03-23 20:41:59,308 | INFO | nba_pipeline.parse_player_gamelogs | Done player_gamelogs: payloads=6485 rows=41814
+2026-03-23 20:42:04,787 | INFO | nba_pipeline.parse_lineup | Committed lineups: payloads=500 rows=1000
+2026-03-23 20:42:05,391 | INFO | nba_pipeline.parse_lineup | Committed lineups: payloads=1000 rows=2000
+2026-03-23 20:42:05,932 | INFO | nba_pipeline.parse_lineup | Committed lineups: payloads=1500 rows=3000
+2026-03-23 20:42:06,230 | INFO | nba_pipeline.parse_lineup | Committed lineups: payloads=2000 rows=4000
+2026-03-23 20:42:06,671 | INFO | nba_pipeline.parse_lineup | Done lineups: payloads=2449 rows=4898
+2026-03-23 20:42:12,938 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=250 (games=250 teams=500 players=5460)
+2026-03-23 20:42:15,938 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=500 (games=250 teams=500 players=5322)
+2026-03-23 20:42:18,579 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=750 (games=250 teams=500 players=5376)
+2026-03-23 20:42:20,865 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=1000 (games=250 teams=500 players=5284)
+2026-03-23 20:42:23,260 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=1250 (games=250 teams=500 players=5302)
+2026-03-23 20:42:26,177 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=1500 (games=250 teams=500 players=5530)
+2026-03-23 20:42:28,826 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=1750 (games=250 teams=500 players=5372)
+2026-03-23 20:42:31,291 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=2000 (games=250 teams=500 players=4871)
+2026-03-23 20:42:33,659 | INFO | nba_pipeline.parse_boxscore | Upserting batch processed=2250 (games=250 teams=500 players=5429)
+2026-03-23 20:42:35,626 | INFO | nba_pipeline.parse_boxscore | Final upsert processed=2276 (games=26 teams=52 players=552)
+2026-03-23 20:42:35,813 | INFO | nba_pipeline.parse_boxscore | Done. Boxscores processed=2276
+2026-03-23 20:42:44,382 | INFO | nba_pipeline.parse_pbp | Done pbp: games=0 rows=0
+2026-03-23 20:42:49,004 | INFO | nba_pipeline.parse_referees | Upserting batch processed=500 refs_in_batch=1492
+2026-03-23 20:42:49,658 | INFO | nba_pipeline.parse_referees | Upserting batch processed=1000 refs_in_batch=1497
+2026-03-23 20:42:50,246 | INFO | nba_pipeline.parse_referees | Upserting batch processed=1500 refs_in_batch=1500
+2026-03-23 20:42:50,830 | INFO | nba_pipeline.parse_referees | Upserting batch processed=2000 refs_in_batch=1429
+2026-03-23 20:42:51,189 | INFO | nba_pipeline.parse_referees | Final upsert processed=2276 refs_in_batch=825
+2026-03-23 20:42:51,236 | INFO | nba_pipeline.parse_referees | Done. Games processed=2276, referee rows=6759
+2026-03-23 20:42:53,975 | INFO | nba_pipeline.parse_oddsapi | Upserted 516 rows into odds.nba_game_lines
+2026-03-23 20:42:56,053 | INFO | nba_pipeline.parse_oddsapi | Incremental historical game odds: since 2026-03-23
+2026-03-23 20:42:56,100 | WARNING | nba_pipeline.parse_oddsapi | No nba_odds_historical snapshots found (as_of_date=None).
+2026-03-23 20:42:58,323 | INFO | nba_pipeline.parse_oddsapi | Incremental prop odds: since 2026-03-22
+2026-03-23 20:42:58,729 | INFO | nba_pipeline.parse_oddsapi | Upserted 881 rows into odds.nba_player_prop_lines
+2026-03-23 20:43:00,850 | INFO | nba_pipeline.parse_oddsapi | Incremental alt prop odds: since 2026-03-22
+2026-03-23 20:43:01,745 | INFO | nba_pipeline.parse_oddsapi | Upserted 7913 rows into odds.nba_player_prop_alt_lines
+2026-03-23 20:43:03,959 | INFO | nba_pipeline.parse_all | Applied team_form_features w20 update
+2026-03-23 20:43:03,975 | INFO | nba_pipeline.parse_all | Applied team_pregame_rolling_boxscore w20 update
+2026-03-23 20:43:04,006 | INFO | nba_pipeline.parse_all | Applied V006 team_style_profile w20 update
+2026-03-23 20:43:04,053 | INFO | nba_pipeline.parse_all | Applied V001 new_feature_views w20 + home/away splits update
+2026-03-23 20:43:04,068 | INFO | nba_pipeline.parse_all | Applied V011 PBP 3PT rate fix
+2026-03-23 20:43:04,084 | INFO | nba_pipeline.parse_all | Applied V016 opp_position_defense sparse-sample fix
+2026-03-23 20:43:04,321 | INFO | nba_pipeline.parse_all | Applied V013 referee fan-out fix
+2026-03-23 20:43:04,508 | INFO | nba_pipeline.parse_all | Applied V014 game_views w20 update
+2026-03-23 20:43:04,524 | INFO | nba_pipeline.parse_all | Applied V023 player_shot_profile (PBP shot quality features)
+2026-03-23 20:43:04,540 | INFO | nba_pipeline.parse_all | Applied V024 opponent_shot_defense (PBP opponent defensive shot profile)
+2026-03-23 20:43:44,510 | INFO | nba_pipeline.parse_all | Materialized features.player_shot_profile_snap
+2026-03-23 20:51:31,274 | INFO | nba_pipeline.parse_all | Materialized features.opponent_shot_defense_snap
+2026-03-23 20:51:31,415 | INFO | nba_pipeline.parse_all | Applied V025 player_on_off_splits (game-level on/off net rating)
+2026-03-23 20:51:33,573 | INFO | nba_pipeline.parse_all | Materialized features.player_on_off_snap
+2026-03-23 20:51:33,753 | INFO | nba_pipeline.parse_all | Recreated player_training_features from V022
+2026-03-23 20:51:35,991 | INFO | nba_pipeline.parse_all | Refreshing features.game_training_features_mat ...
+2026-03-23 20:59:12,543 | INFO | nba_pipeline.parse_all |   Done refreshing features.game_training_features_mat
+2026-03-23 20:59:12,939 | INFO | nba_pipeline.parse_all | Refreshing features.game_prediction_features_mat ...
+2026-03-23 21:06:02,428 | INFO | nba_pipeline.parse_all |   Done refreshing features.game_prediction_features_mat
+2026-03-23 21:19:29,359 | INFO | nba_pipeline.parse_all | Prop line name-match coverage: 31124/42093 rows (73.9%)
+2026-03-23 21:19:29,406 | INFO | nba_pipeline.parse_all | ALL PARSERS COMPLETE
