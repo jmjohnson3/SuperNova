@@ -202,8 +202,6 @@ def main() -> None:
             timeout_s=10800,
             critical=True,
         ))
-
-    if not args.skip_parse:
         steps.append(Step(
             name="Compute Elo ratings",
             module="nba_pipeline.compute_elo",

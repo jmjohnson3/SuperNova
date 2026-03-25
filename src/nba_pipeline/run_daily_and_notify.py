@@ -247,14 +247,15 @@ async def main() -> None:
 
     _CRAWL_MODULES  = {"nba_pipeline.crawler_oddsapi", "nba_pipeline.crawler"}
     _PARSE_MODULES  = {"nba_pipeline.parse_all", "nba_pipeline.materialize_features",
-                       "nba_pipeline.grade_predictions", "nba_pipeline.compute_elo"}
+                       "nba_pipeline.compute_elo"}
+    # grade_predictions is never skipped — yesterday's results always post
     _TRAIN_MODULES  = {"nba_pipeline.modeling.train_game_models",
                        "nba_pipeline.modeling.train_player_prop_models"}
     _PREDICT_MODULES = {"nba_pipeline.modeling.predict_today",
+                        "nba_pipeline.modeling.predict_player_props",
                         "nba_pipeline.refresh_prop_links",
                         "nba_pipeline.modeling.post_parlay"}
-    _SCAN_MODULES   = {"nba_pipeline.modeling.scan_alt_lines_grid",
-                       "nba_pipeline.modeling.predict_player_props"}
+    _SCAN_MODULES   = {"nba_pipeline.modeling.scan_alt_lines_grid"}
 
     def _should_skip(step: Step) -> bool:
         if args.close_only:

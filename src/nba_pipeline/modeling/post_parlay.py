@@ -14,7 +14,7 @@ import asyncio
 import logging
 import math
 import os
-from datetime import datetime
+from datetime import datetime, date as _date
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -30,8 +30,8 @@ DISCORD_WEBHOOK_URL = os.getenv(
 )
 
 # Minimum edge thresholds — match predict_today.py config
-MIN_EDGE_SPREAD = 10.0
-MIN_EDGE_TOTAL  = 7.0
+MIN_EDGE_SPREAD = 5.0
+MIN_EDGE_TOTAL  = 5.0
 
 
 def _american_to_decimal(american: int) -> float:
@@ -251,7 +251,7 @@ def main() -> None:
     parser.add_argument("--date", help="ET date override YYYY-MM-DD")
     args = parser.parse_args()
 
-    et_day = args.date or datetime.now(_ET).date().isoformat()
+    et_day = _date.fromisoformat(args.date) if args.date else datetime.now(_ET).date()
 
     engine = create_engine(PG_DSN)
     plays = _load_plays(engine, et_day)
