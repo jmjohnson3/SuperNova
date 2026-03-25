@@ -235,6 +235,37 @@ async def _post_status(step: Step, secs: float, ok: bool, detail: str = "") -> N
 # Main
 # ---------------------------------------------------------------------------
 async def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser(description="SuperNovaBets daily pipeline with Discord notifications")
+    parser.add_argument("--skip-crawl",   action="store_true", help="Skip Odds API + MSF crawlers")
+    parser.add_argument("--skip-parse",   action="store_true", help="Skip parse/load step")
+    parser.add_argument("--skip-train",   action="store_true", help="Skip model training")
+    parser.add_argument("--skip-predict", action="store_true", help="Skip prediction output")
+    parser.add_argument("--skip-scan",    action="store_true", help="Skip alt-line grid scan")
+    parser.add_argument("--close-only",   action="store_true", help="Run only odds crawl + update outcomes")
+    args = parser.parse_args()
+
+    _CRAWL_MODULES  = {"nba_pipeline.crawler_oddsapi", "nba_pipeline.crawler"}
+    _PARSE_MODULES  = {"nba_pipeline.parse_all", "nba_pipeline.materialize_features",
+                       "nba_pipeline.grade_predictions", "nba_pipeline.compute_elo"}
+    _TRAIN_MODULES  = {"nba_pipeline.modeling.train_game_models",
+                       "nba_pipeline.modeling.train_player_prop_models"}
+    _PREDICT_MODULES = {"nba_pipeline.modeling.predict_today",
+                        "nba_pipeline.refresh_prop_links",
+                        "nba_pipeline.modeling.post_parlay"}
+    _SCAN_MODULES   = {"nba_pipeline.modeling.scan_alt_lines_grid",
+                       "nba_pipeline.modeling.predict_player_props"}
+
+    def _should_skip(step: Step) -> bool:
+        if args.close_only:
+            return step.module not in {"nba_pipeline.crawler_oddsapi", "nba_pipeline.grade_predictions"}
+        if args.skip_crawl  and step.module in _CRAWL_MODULES:   return True
+        if args.skip_parse  and step.module in _PARSE_MODULES:   return True
+        if args.skip_train  and step.module in _TRAIN_MODULES:   return True
+        if args.skip_predict and step.module in _PREDICT_MODULES: return True
+        if args.skip_scan   and step.module in _SCAN_MODULES:    return True
+        return False
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -247,6 +278,9 @@ async def main() -> None:
     halted = False
 
     for step in STEPS:
+        if _should_skip(step):
+            log.info("⏭ Skipping %s (--skip flag)", step.label)
+            continue
         if halted:
             results.append((step.label, False, 0.0))
             continue
