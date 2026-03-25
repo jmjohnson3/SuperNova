@@ -956,6 +956,38 @@ def _kelly_prop(
     return kelly, p
 
 
+def _fmt_juice(price) -> str:
+    if price is None:
+        return ""
+    p = int(price)
+    return f"{p:+d}" if p >= 0 else f"{p}"
+
+
+def _fmt_lines_summary(entry: dict, for_over: bool) -> str:
+    """Return e.g. 'DK=27.5 (o-115) FD=28.0 (o-120)' for display."""
+    parts = []
+    for bk, data in entry.items():
+        if bk in ("best_over", "best_under"):
+            continue
+        if not isinstance(data, tuple) or data[0] is None:
+            continue
+        ln, ov_p, un_p = data
+        price = ov_p if for_over else un_p
+        bk_label = bk.replace("draftkings", "DK").replace("fanduel", "FD").upper()
+        juice_str = f" (o{_fmt_juice(price)})" if for_over else f" (u{_fmt_juice(price)})"
+        parts.append(f"{bk_label}={float(ln):.1f}{juice_str}")
+    return "  ".join(parts)
+
+
+def _fmt_pred_with_line(pred: float, line_data) -> str:
+    if line_data and isinstance(line_data, dict):
+        bo = line_data.get("best_over")
+        if bo and bo[0] is not None:
+            bk_lbl = bo[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
+            return f"{pred:.1f} ({bk_lbl} {float(bo[0]):.1f})"
+    return f"{pred:.1f}"
+
+
 def _print_discord_best_bets(
     df_out: pd.DataFrame,
     prop_lines: dict,
@@ -1171,27 +1203,6 @@ def _print_best_bets(
             entry = prop_lines.get((name_norm, stat_key))
             # entry is now a dict: {bk_key: (line, ov_price, un_price), "best_over": ..., "best_under": ...}
             has_lines = bool(entry and isinstance(entry, dict) and entry.get("best_over") is not None)
-
-            def _fmt_juice(price) -> str:
-                if price is None:
-                    return ""
-                p = int(price)
-                return f"{p:+d}" if p >= 0 else f"{p}"
-
-            def _fmt_lines_summary(entry: dict, for_over: bool) -> str:
-                """Return e.g. 'DK=27.5 (o-115) FD=28.0 (o-120)' for display."""
-                parts = []
-                for bk, data in entry.items():
-                    if bk in ("best_over", "best_under"):
-                        continue
-                    if not isinstance(data, tuple) or data[0] is None:
-                        continue
-                    ln, ov_p, un_p = data
-                    price = ov_p if for_over else un_p
-                    bk_label = bk.replace("draftkings", "DK").replace("fanduel", "FD").upper()
-                    juice_str = f" (o{_fmt_juice(price)})" if for_over else f" (u{_fmt_juice(price)})"
-                    parts.append(f"{bk_label}={float(ln):.1f}{juice_str}")
-                return "  ".join(parts)
 
             if has_lines:
                 best_over = entry["best_over"]    # (line, price, bk)
@@ -1546,19 +1557,11 @@ def main() -> None:
                 reb_line = prop_lines.get((name_norm, "rebounds"))
                 ast_line = prop_lines.get((name_norm, "assists"))
 
-                def _fmt(pred: float, line_data) -> str:
-                    if line_data and isinstance(line_data, dict):
-                        bo = line_data.get("best_over")
-                        if bo and bo[0] is not None:
-                            bk_lbl = bo[2].replace("draftkings", "DK").replace("fanduel", "FD").upper()
-                            return f"{pred:.1f} ({bk_lbl} {float(bo[0]):.1f})"
-                    return f"{pred:.1f}"
-
                 print(
                     f"  {name}"
-                    f"  {_fmt(r['pred_points'], pts_line)} PTS"
-                    f"  {_fmt(r['pred_rebounds'], reb_line)} REB"
-                    f"  {_fmt(r['pred_assists'], ast_line)} AST"
+                    f"  {_fmt_pred_with_line(r['pred_points'], pts_line)} PTS"
+                    f"  {_fmt_pred_with_line(r['pred_rebounds'], reb_line)} REB"
+                    f"  {_fmt_pred_with_line(r['pred_assists'], ast_line)} AST"
                 )
 
     # Full Discord listing (projected starters only, grouped by game)

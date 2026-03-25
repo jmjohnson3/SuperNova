@@ -10,6 +10,13 @@ from psycopg2.extras import RealDictCursor, execute_values
 log = logging.getLogger("nba_pipeline.parse_boxscore")
 
 
+def _dedup_by_key(rows: list[dict], key_fn):
+    out = {}
+    for r in rows:
+        out[key_fn(r)] = r
+    return list(out.values())
+
+
 def _parse_iso(ts: Optional[str]) -> Optional[datetime]:
     if not ts:
         return None
@@ -282,12 +289,6 @@ def build_raw_boxscores(conn, *, commit_every: int = 250) -> None:
             teams_batch.extend(team_rows)
             players_batch.extend(player_rows)
             processed += 1
-
-            def _dedup_by_key(rows: list[dict], key_fn):
-                out = {}
-                for r in rows:
-                    out[key_fn(r)] = r
-                return list(out.values())
 
             # right before upsert_boxscore_games / upsert_team_stats / upsert_player_stats:
             games_batch = _dedup_by_key(games_batch, lambda r: r["game_slug"])

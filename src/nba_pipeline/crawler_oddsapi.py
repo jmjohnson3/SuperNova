@@ -248,10 +248,7 @@ def _get_live_event_ids(cfg: OddsCrawlerConfig, et_day: date) -> list[dict]:
         "apiKey": cfg.oddsapi_key,
         "dateFormat": cfg.date_format,
     }
-    r = requests.get(url, params=params, timeout=cfg.timeout_s,
-                     headers={"Accept": "application/json"})
-    r.raise_for_status()
-    all_events = r.json()  # list of events with commence_time
+    all_events, _ = _fetch_with_backoff(cfg, url, params)
 
     # Filter to the target ET day: convert commence_time to ET and compare
     start_utc, end_utc = _et_day_window_utc(et_day)

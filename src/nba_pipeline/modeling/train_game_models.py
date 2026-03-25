@@ -748,9 +748,9 @@ def main() -> None:
             has_spread_mask = ~np.isnan(market_spread_test.astype(float))
             if has_spread_mask.sum() >= 3:
                 mkt_s = market_spread_test[has_spread_mask].astype(float)
-                edge = spread_pred[has_spread_mask] - mkt_s
+                edge = spread_pred[has_spread_mask] + mkt_s
                 actual_m = y_spread_test.to_numpy()[has_spread_mask]
-                actual_covers = actual_m > mkt_s
+                actual_covers = actual_m > -mkt_s
                 pred_home = edge > 0
                 ats_correct = pred_home == actual_covers
                 ats_n = len(ats_correct)

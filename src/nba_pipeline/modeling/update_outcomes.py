@@ -120,7 +120,7 @@ def _backfill_kelly(conn) -> int:
             SELECT id, edge_spread, edge_total
             FROM bets.game_predictions
             WHERE (edge_spread IS NOT NULL OR edge_total IS NOT NULL)
-              AND (kelly_fraction_spread IS NULL AND kelly_fraction_total IS NULL)
+              AND (kelly_fraction_spread IS NULL OR kelly_fraction_total IS NULL)
         """)
         rows = cur.fetchall()
 

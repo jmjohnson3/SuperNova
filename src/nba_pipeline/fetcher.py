@@ -57,45 +57,29 @@ class MySportsFeedsClient:
                 NOT_READY = {204, 404}
 
                 if resp.status_code == 200:
-                    return resp.json()
+                    data = resp.json()
+                    # Reject error-shaped payloads (API errors wrapped in 200)
+                    if isinstance(data, dict) and ("error" in data or "errors" in data):
+                        raise BadPayloadError(f"API error payload for {url}: {data}")
+                    # Reject suspiciously small payloads unless they match known empty shapes
+                    if len(resp.content or b"") < 200 and not _is_known_empty_payload(url, data):
+                        raise BadPayloadError(
+                            f"Suspiciously small payload ({len(resp.content)} bytes) for {url}: {resp.text[:200]}"
+                        )
+                    log.info("Fetched %d bytes from %s", len(resp.content), url)
+                    return data
 
                 if resp.status_code in NOT_READY:
                     # don't retry; just raise a special error the crawler can handle
                     raise NoContentYetError(f"HTTP {resp.status_code} for {url}: {resp.text[:200]}")
 
+                if resp.status_code == 429:
+                    raise RateLimitedError(f"HTTP 429 for {url}")
+
                 if resp.status_code in RETRYABLE:
                     raise RuntimeError(f"HTTP {resp.status_code} for {url}: {resp.text[:200]}")
 
                 raise RuntimeError(f"HTTP {resp.status_code} for {url}: {resp.text[:200]}")
-
-                if resp.status_code == 429:
-                    raise RateLimitedError(f"HTTP 429 for {url}")
-                if resp.status_code == 204:
-                    raise NoContentYetError(f"HTTP 204 for {url}")
-                if resp.status_code != 200:
-                    raise RuntimeError(f"HTTP {resp.status_code} for {url}: {resp.text[:500]}")
-
-                data = resp.json()
-                # If endpoint returns empty data arrays, don't save; caller will skip.
-                if isinstance(data, dict):
-                    if "gamelogs" in data and not data.get("gamelogs"):
-                        raise NoContentYetError("Empty gamelogs")
-                    if "games" in data and not data.get("games"):
-                        raise NoContentYetError("Empty games")
-                return data
-
-                # error-shaped payloads
-                if isinstance(data, dict) and ("error" in data or "errors" in data):
-                    raise BadPayloadError(f"API error payload for {url}: {data}")
-
-                # small payloads are OK if they match known shapes (games/gamelogs, etc.)
-                if len(resp.content or b"") < 200 and not _is_known_empty_payload(url, data):
-                    raise BadPayloadError(
-                        f"Suspiciously small payload ({len(resp.content)} bytes) for {url}: {resp.text[:200]}"
-                    )
-
-                log.info("Fetched %d bytes from %s", len(resp.content), url)
-                return data
 
             except NoContentYetError:
                 raise

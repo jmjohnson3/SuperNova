@@ -10,6 +10,13 @@ from psycopg2.extras import RealDictCursor, execute_values
 
 log = logging.getLogger("nba_pipeline.parse_pbp")
 
+# MSF PBP event keys (one per play, beside playStatus/description)
+_MSF_EVENT_KEYS = {
+    "fieldGoalAttempt", "freeThrowAttempt", "rebound",
+    "foul", "turnover", "substitution", "violation", "jumpBall",
+    "timeout", "flagrantFoul", "technicalFoul",
+}
+
 
 def _ensure_obj(payload: Any) -> dict:
     if isinstance(payload, dict):
@@ -68,13 +75,6 @@ def parse_all_pbp(conn, *, commit_every_games: int = 50) -> int:
             plays = payload.get("plays") or payload.get("gamePlays") or []
             if not isinstance(plays, list):
                 plays = []
-
-            # MSF PBP event keys (one per play, beside playStatus/description)
-            _MSF_EVENT_KEYS = {
-                "fieldGoalAttempt", "freeThrowAttempt", "rebound",
-                "foul", "turnover", "substitution", "violation", "jumpBall",
-                "timeout", "flagrantFoul", "technicalFoul",
-            }
 
             for seq, p in enumerate(plays, start=1):
                 # Try common keys; keep raw_json always

@@ -259,7 +259,9 @@ async def main() -> None:
 
     def _should_skip(step: Step) -> bool:
         if args.close_only:
-            return step.module not in {"nba_pipeline.crawler_oddsapi", "nba_pipeline.grade_predictions"}
+            # Evening close run: crawl closing odds + update outcomes for CLV tracking
+            # (matches run_daily.py --close-only behaviour)
+            return step.module not in {"nba_pipeline.crawler_oddsapi", "nba_pipeline.modeling.update_outcomes"}
         if args.skip_crawl  and step.module in _CRAWL_MODULES:   return True
         if args.skip_parse  and step.module in _PARSE_MODULES:   return True
         if args.skip_train  and step.module in _TRAIN_MODULES:   return True

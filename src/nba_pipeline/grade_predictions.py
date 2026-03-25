@@ -141,7 +141,7 @@ def _yesterday_summary(engine, yesterday: date) -> str:
 
         # ── Total column ──
         if mkt_total is not None and total_side is not None:
-            result_sym = "W" if total_won else "L"
+            result_sym = "W" if total_won else ("-" if total_won is None else "L")
             direction = total_side.upper()
             total_col = f"Total {act_total:.0f} mk={mkt_total:.1f} BET {direction} {result_sym}"
             total_bets += 1
@@ -159,7 +159,7 @@ def _yesterday_summary(engine, yesterday: date) -> str:
             act_spread_str = _spread_label(away, act_margin)    # away -X (act_margin negative)
 
         if mkt_spread is not None and spread_side is not None:
-            result_sym = "W" if spread_won else "L"
+            result_sym = "W" if spread_won else ("-" if spread_won is None else "L")
             bet_team = home if spread_side == "home" else away
             spread_col = (
                 f"Spread mk={_spread_label(home, mkt_spread)} "

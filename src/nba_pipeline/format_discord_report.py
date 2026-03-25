@@ -94,7 +94,7 @@ def build_discord_report(
         for _, r in d.iterrows():
             name = _safe_str(r.get("player_name"))
             team = _safe_str(r.get("team_abbr"))
-            linev = _fmt_float(r.get("line"), 0) if float(r.get("line", 0)).is_integer() else _fmt_float(r.get("line"), 1)
+            linev = _fmt_float(r.get("line"), 0) if float(r.get("line") or 0).is_integer() else _fmt_float(r.get("line"), 1)
             hits = int(r.get("hits", 0))
             gc = int(r.get("games_count", 0))
             hr = float(r.get("hit_rate", 0.0)) * 100.0

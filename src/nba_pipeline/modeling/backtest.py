@@ -124,10 +124,13 @@ def _ats_stats(
     yp = y_pred_margin[valid]
 
     # Did the home team cover?
-    home_covered = yt > ms
+    # market_spread_home is negative for favorites (e.g. -6.5).
+    # Home covers when actual_margin > -market_spread_home.
+    home_covered = yt > -ms
 
-    # Edge: how much our model disagrees with the spread
-    edge = yp - ms
+    # Edge: pred_margin + market_spread_home (matches predict_today.py formula).
+    # Positive edge → model favors home to cover; negative → model favors away.
+    edge = yp + ms
 
     # All games with spread: did we pick the right side?
     pred_home = edge > 0

@@ -104,7 +104,12 @@ def _apply_view_fixes(pg_dsn: str) -> None:
     V022 is re-applied afterwards to recreate player_training_features
     with all its columns (including the prop line book-line prior).
     """
-    conn = psycopg2.connect(pg_dsn)
+    conn = None
+    try:
+        conn = psycopg2.connect(pg_dsn)
+    except Exception:
+        log.exception("_apply_view_fixes: failed to connect to database")
+        return
     conn.autocommit = False
     cur = conn.cursor()
     try:
@@ -285,7 +290,12 @@ def _materialize_game_features(pg_dsn: str) -> None:
     Subsequent calls (~90 s each):
       - REFRESH MATERIALIZED VIEW only (step 7)
     """
-    conn = psycopg2.connect(pg_dsn)
+    conn = None
+    try:
+        conn = psycopg2.connect(pg_dsn)
+    except Exception:
+        log.exception("_materialize_game_features: failed to connect to database")
+        return
     conn.autocommit = False
     cur = conn.cursor()
 
@@ -438,7 +448,12 @@ def _audit_prop_name_coverage(pg_dsn: str) -> None:
     Low coverage (<15%) usually means the name-normalization join is broken or
     the prop-line backfill hasn't been run yet.
     """
-    conn = psycopg2.connect(pg_dsn)
+    conn = None
+    try:
+        conn = psycopg2.connect(pg_dsn)
+    except Exception:
+        log.exception("_audit_prop_name_coverage: failed to connect to database")
+        return
     try:
         cur = conn.cursor()
         cur.execute("""

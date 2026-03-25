@@ -212,7 +212,7 @@ def _build_message(plays: list[dict], et_day) -> str:
         )
 
     lines.append("")
-    lines.append(f"*Model: walk-forward XGBoost | Spread MAE 10.9 | Thresholds: spread>=10pt, total>=7pt+resid*")
+    lines.append(f"*Model: walk-forward XGBoost | Thresholds: spread>={MIN_EDGE_SPREAD:.0f}pt, total>={MIN_EDGE_TOTAL:.0f}pt*")
 
     return "\n".join(lines)
 
