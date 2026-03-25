@@ -1081,8 +1081,20 @@ def _print_discord_best_bets(
     Unlike _print_best_bets() which uses only the top-confidence subset,
     this scans every prediction and ranks purely by edge vs book line,
     then builds a FanDuel parlay URL from the top legs.
+
+    Over gates: edge > CI (unchanged — no profitable over zone found empirically)
+    Under gates: stat-specific min/max windows derived from paper trading analysis:
+      PTS: 3.0 <= edge <= 5.0  (CI=5.56 was in losing zone; large edges = DK repriced)
+      REB: 1.0 <= edge <= 3.0  (>3 means DK correctly priced a high-rebound game)
+      AST: CI  <= edge <= 3.0  (>3 means DK correctly priced a high-assist game)
     """
     ci_map = {"points": pts_ci, "rebounds": reb_ci, "assists": ast_ci}
+    # (min_under_edge, max_under_edge) per stat — empirically derived from paper trading
+    under_windows = {
+        "points":   (3.0, 5.0),
+        "rebounds": (1.0, 3.0),
+        "assists":  (max(ast_ci, 1.0), 3.0),
+    }
     candidates: list[tuple] = []  # (edge, name, team, opp, side, line, stat_label, stat_key, fd_link, kelly_pct)
 
     for _, r in df_out.iterrows():
@@ -1113,7 +1125,7 @@ def _print_discord_best_bets(
             if bo and bo[0] is not None and fd_over:
                 over_line = float(bo[0])
                 edge = pred - over_line
-                # Require edge > CI threshold (same gate as non-discord _print_best_bets)
+                # Overs: require edge > CI (no profitable over zone found empirically)
                 if edge > ci:
                     juice = int(bo[1]) if bo[1] else -110
                     kelly, _ = _kelly_prop(edge, juice=juice, sigma=ci)
@@ -1123,8 +1135,9 @@ def _print_discord_best_bets(
             if bu and bu[0] is not None and fd_under:
                 under_line = float(bu[0])
                 edge = under_line - pred
-                # Require edge > CI threshold (same gate as non-discord _print_best_bets)
-                if edge > ci:
+                # Unders: stat-specific window — min avoids noise, max avoids DK repriced lines
+                min_e, max_e = under_windows.get(stat_key, (ci, float("inf")))
+                if min_e <= edge <= max_e:
                     juice = int(bu[1]) if bu[1] else -110
                     kelly, _ = _kelly_prop(edge, juice=juice, sigma=ci)
                     candidates.append((edge, name, team, opp, "UNDER", under_line,
@@ -1274,6 +1287,14 @@ def _print_best_bets(
             if sub_str:
                 print(f"         breakdown: {sub_str}")
 
+        # Under edge windows: (min, max) per stat — empirically derived from paper trading
+        # Large under edges = DK correctly repriced a hot player; don't fight it
+        _under_windows = {
+            "points":   (3.0, 5.0),
+            "rebounds": (1.0, 3.0),
+            "assists":  (max(ast_ci, 1.0), 3.0),
+        }
+
         stat_lines_discord: list[str] = []
         for pred, lo, hi, ci, stat_label, stat_key in [
             (pp, pts_lo, pts_hi, pts_ci, "PTS", "points"),
@@ -1292,8 +1313,11 @@ def _print_best_bets(
                 under_line = float(best_under[0])
                 over_edge = pred - over_line
                 under_edge = pred - under_line
+                # Overs: keep CI threshold (no profitable over zone found empirically)
                 bet_over = over_edge > 0 and over_line < lo
-                bet_under = under_edge < 0 and under_line > hi
+                # Unders: stat-specific window (min avoids noise, max avoids DK-repriced lines)
+                _u_min, _u_max = _under_windows.get(stat_key, (ci, float("inf")))
+                bet_under = _u_min <= (under_line - pred) <= _u_max
 
                 # sigma = p68 CI for this stat (same value used for bet thresholds)
                 _sigma_map = {"points": pts_ci, "rebounds": reb_ci, "assists": ast_ci}

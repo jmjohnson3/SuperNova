@@ -213,7 +213,7 @@ def build_minutes_model(
 
 def build_model(
     cfg: TrainConfig,
-    huber_slope: float = 4.0,
+    huber_slope: float = 4.0,  # kept for backward compat, ignored (objective=absoluteerror)
     params_override: Optional[Dict] = None,
     n_estimators: Optional[int] = None,
     use_early_stopping: bool = True,
@@ -231,8 +231,7 @@ def build_model(
         learning_rate=cfg.learning_rate,
         subsample=cfg.subsample,
         colsample_bytree=cfg.colsample_bytree,
-        objective="reg:pseudohubererror",
-        huber_slope=huber_slope,
+        objective="reg:absoluteerror",  # MAE = predicts median, avoids mean-bias vs book lines
         min_child_weight=cfg.min_child_weight,
         gamma=cfg.gamma,
         reg_alpha=cfg.reg_alpha,
@@ -244,8 +243,9 @@ def build_model(
     if use_early_stopping:
         p["early_stopping_rounds"] = cfg.early_stopping_rounds
     if params_override:
-        # Per-stat Optuna params include tuned huber_slope — apply all directly.
-        p.update(params_override)
+        # Strip huber_slope from legacy Optuna params (no longer used with reg:absoluteerror)
+        filtered = {k: v for k, v in params_override.items() if k != "huber_slope"}
+        p.update(filtered)
     return XGBRegressor(**p)
 
 
@@ -339,7 +339,6 @@ def run_optuna_tuning_props(
             "gamma":            trial.suggest_float("gamma", 0.0, 1.0),
             "reg_alpha":        trial.suggest_float("reg_alpha", 0.01, 5.0, log=True),
             "reg_lambda":       trial.suggest_float("reg_lambda", 0.5, 15.0, log=True),
-            "huber_slope":      trial.suggest_float("huber_slope", 1.0, 8.0),
         }
         mae_scores = []
         for train_end, test_end in tune_folds:
@@ -357,7 +356,7 @@ def run_optuna_tuning_props(
             fit_rel, eval_rel = temporal_eval_split(train_dates)
             m = XGBRegressor(
                 n_estimators=2000,
-                objective="reg:pseudohubererror",
+                objective="reg:absoluteerror",  # MAE = predicts median
                 early_stopping_rounds=50,
                 eval_metric="mae",
                 random_state=42,
@@ -787,9 +786,8 @@ def main() -> None:
         for stat_name, y_full, _, _ in stat_configs:
             try:
                 lgb_params = dict(
-                    objective="huber",
-                    alpha=0.9,
-                    metric="huber",
+                    objective="regression_l1",  # MAE = predicts median, matches XGB objective
+                    metric="mae",
                     num_leaves=31,
                     learning_rate=0.05,
                     n_estimators=2000,

@@ -469,6 +469,25 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X[f"book_{stat}_dod_direction"] = np.sign(X[dod_col].fillna(0))
             X[f"book_{stat}_dod_vs_sd"]     = X[dod_col].fillna(0) / X[sd_col].clip(lower=0.5)
 
+    # Streak inflation features (added for over-bet calibration)
+    # pts_streak_ratio > 1 = player on hot streak vs baseline → expect regression to mean
+    # pts_sd_vs_line = volatility relative to book line → high = uncertain prediction
+    for stat, avg5_col, avg10_col, sd_col, line_col in [
+        ("pts", "pts_avg_5", "pts_avg_10", "pts_sd_10", "prev_book_line_pts"),
+        ("reb", "reb_avg_5", "reb_avg_10", "reb_sd_10", "prev_book_line_reb"),
+        ("ast", "ast_avg_5", "ast_avg_10", "ast_sd_10", "prev_book_line_ast"),
+    ]:
+        if avg5_col in X.columns and avg10_col in X.columns:
+            # Ratio of recent 5-game avg to 10-game baseline (>1 = hot streak, <1 = cold)
+            X[f"{stat}_streak_ratio"] = (
+                X[avg5_col].fillna(X[avg10_col]) / X[avg10_col].clip(lower=0.5)
+            ).clip(0.3, 3.0)
+        if sd_col in X.columns and line_col in X.columns:
+            # SD as fraction of book line: high = volatile player, uncertain outcome
+            X[f"{stat}_sd_vs_line"] = (
+                X[sd_col].fillna(0) / X[line_col].clip(lower=1.0)
+            ).clip(0.0, 2.0)
+
     # V023 × V024: shot-type matchup differentials
     # Positive = player shoots this type more than defense typically allows → advantage
     _shot_matchups = [
