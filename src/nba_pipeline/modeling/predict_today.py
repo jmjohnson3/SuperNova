@@ -427,6 +427,7 @@ def _save_predictions(
     out: pd.DataFrame,
     engine,
     et_day,
+    cfg,
     calib: dict | None = None,
     w_spread: float = 0.0,
     w_total: float = 0.0,
@@ -926,7 +927,7 @@ def main() -> None:
 
         # Save predictions to DB
         try:
-            _save_predictions(out, engine, et_day, calib=calib, w_spread=w_spread, w_total=w_total)
+            _save_predictions(out, engine, et_day, cfg, calib=calib, w_spread=w_spread, w_total=w_total)
         except Exception as exc:
             log.warning("Could not save predictions to DB: %s", exc)
 
