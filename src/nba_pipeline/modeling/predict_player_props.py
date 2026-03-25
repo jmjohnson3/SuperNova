@@ -956,6 +956,86 @@ def _kelly_prop(
     return kelly, p
 
 
+def _print_full_slate_parlays(
+    df_out: pd.DataFrame,
+    prop_lines: dict,
+    max_legs: int = 25,
+) -> None:
+    """Build full-slate FD parlays from ALL model predictions.
+
+    For every player/stat we have a FD deeplink for, pick the model-favored
+    direction (OVER if pred > over_line, UNDER if pred < under_line, else
+    whichever edge is larger) and collect the link.  Deduplicate, then chunk
+    into max_legs-leg parlays and print each one.
+    """
+    from nba_pipeline.modeling.features import build_fd_parlay_url
+
+    all_links: list[str] = []
+
+    for _, r in df_out.iterrows():
+        name_norm = _normalize_name((r.get("player_name") or "").strip())
+
+        for stat_key, pred_col in [
+            ("points",   "pred_points"),
+            ("rebounds", "pred_rebounds"),
+            ("assists",  "pred_assists"),
+        ]:
+            pred = r.get(pred_col)
+            if pred is None or (isinstance(pred, float) and pd.isna(pred)):
+                continue
+            pred = float(pred)
+
+            entry = prop_lines.get((name_norm, stat_key))
+            if not entry or not isinstance(entry, dict):
+                continue
+
+            over_link  = entry.get("fd_over_link")
+            under_link = entry.get("fd_under_link")
+            if not over_link and not under_link:
+                continue
+
+            best_over  = entry.get("best_over")
+            best_under = entry.get("best_under")
+            over_line  = float(best_over[0])  if (best_over  and best_over[0]  is not None) else None
+            under_line = float(best_under[0]) if (best_under and best_under[0] is not None) else None
+
+            over_edge  = (pred - over_line)  if over_line  is not None else None
+            under_edge = (under_line - pred) if under_line is not None else None
+
+            # Pick the side the model favors more
+            if over_edge is not None and under_edge is not None:
+                link = over_link if over_edge >= under_edge else under_link
+            elif over_edge is not None:
+                link = over_link
+            else:
+                link = under_link
+
+            if link:
+                all_links.append(link)
+
+    if not all_links:
+        return
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for lnk in all_links:
+        if lnk not in seen:
+            seen.add(lnk)
+            deduped.append(lnk)
+
+    chunks = [deduped[i:i + max_legs] for i in range(0, len(deduped), max_legs)]
+    n_parlays = len(chunks)
+    print(
+        f"\n**Full Slate Parlays** ({len(deduped)} legs → "
+        f"{n_parlays} parlay{'s' if n_parlays != 1 else ''})"
+    )
+    for i, chunk in enumerate(chunks, start=1):
+        parlay_url = build_fd_parlay_url(chunk)
+        if parlay_url:
+            print(f"[Parlay {i} ({len(chunk)} legs)]({parlay_url})")
+
+
 def _fmt_juice(price) -> str:
     if price is None:
         return ""
@@ -1629,6 +1709,8 @@ def main() -> None:
     if discord:
         # Discord: scan ALL predicted players by edge vs book line, not just the top-confidence subset
         _print_discord_best_bets(df_out, prop_lines=prop_lines, pts_ci=pts_ci, reb_ci=reb_ci, ast_ci=ast_ci)
+        # Full-slate parlays: every prediction chunked into 25-leg FD parlays
+        _print_full_slate_parlays(df_out, prop_lines=prop_lines)
     else:
         best = _rank_best_props(df, df_out, cfg)
         _print_best_bets(best, pts_ci=pts_ci, reb_ci=reb_ci, ast_ci=ast_ci, prop_lines=prop_lines, discord=False)
