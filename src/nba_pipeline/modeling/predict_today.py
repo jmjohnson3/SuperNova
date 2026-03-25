@@ -41,9 +41,11 @@ class PredictConfig:
 def _compute_blend_weight_spread(calib: dict) -> float:
     """Inverse-MAE blend weight for the *spread* residual model.
 
-    Quality gate: only blend if resid MAE beats the best baseline
-    (direct-on-market-data games, or raw market line) by ≥3%.
-    Uses direct MAE on market-data games for fair same-population comparison.
+    Quality gate: allow residual model within 2% of the best baseline MAE.
+    The residual model anchors predictions to the market line, which prevents
+    mean-compression on extreme spreads (the direct model outputs +8 when market
+    says -20.5, generating false away edges; the residual model correctly predicts
+    the anchored value near +25 for those games).
     Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
     # Use direct MAE on market-data games (same population as resid). Falls back to
@@ -55,11 +57,11 @@ def _compute_blend_weight_spread(calib: dict) -> float:
     if direct_mae_market <= 0 or resid_mae <= 0:
         return 0.0
     best_baseline = min(direct_mae_market, market_mae)
-    if resid_mae >= best_baseline * 0.97:
+    if resid_mae >= best_baseline * 1.02:
         log.info(
             "Spread residual quality gate failed "
-            "(resid MAE %.3f >= 97%% of best baseline %.3f [direct_mkt=%.3f market=%.3f]). Direct only.",
-            resid_mae, best_baseline * 0.97, direct_mae_market, market_mae,
+            "(resid MAE %.3f >= 102%% of best baseline %.3f [direct_mkt=%.3f market=%.3f]). Direct only.",
+            resid_mae, best_baseline * 1.02, direct_mae_market, market_mae,
         )
         return 0.0
     w_d = 1.0 / direct_mae_market
@@ -70,9 +72,11 @@ def _compute_blend_weight_spread(calib: dict) -> float:
 def _compute_blend_weight_total(calib: dict) -> float:
     """Inverse-MAE blend weight for the *total* residual model.
 
-    Quality gate: only blend if resid MAE beats the best baseline
-    (direct-on-market-data games, or raw market line) by ≥3%.
-    Uses direct MAE on market-data games for fair same-population comparison.
+    Quality gate: allow residual model within 2% of the best baseline MAE.
+    The residual model anchors to the market total, preventing the direct model's
+    upward mean-compression bias (which causes it to always predict slightly over
+    the market line and thus always bet OVER). The residual model has no systematic
+    direction bias because it predicts deviation from the market, not an absolute total.
     Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
     direct_mae_market = calib.get("direct_total_mae_market",
@@ -82,11 +86,11 @@ def _compute_blend_weight_total(calib: dict) -> float:
     if direct_mae_market <= 0 or resid_mae <= 0:
         return 0.0
     best_baseline = min(direct_mae_market, market_mae)
-    if resid_mae >= best_baseline * 0.97:
+    if resid_mae >= best_baseline * 1.02:
         log.info(
             "Total residual quality gate failed "
-            "(resid MAE %.3f >= 97%% of best baseline %.3f [direct_mkt=%.3f market=%.3f]). Direct only.",
-            resid_mae, best_baseline * 0.97, direct_mae_market, market_mae,
+            "(resid MAE %.3f >= 102%% of best baseline %.3f [direct_mkt=%.3f market=%.3f]). Direct only.",
+            resid_mae, best_baseline * 1.02, direct_mae_market, market_mae,
         )
         return 0.0
     w_d = 1.0 / direct_mae_market
