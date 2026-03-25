@@ -246,9 +246,14 @@ def load_games_by_date_payloads(conn) -> Iterable[tuple[str, datetime, dict]]:
 def sync_scores_from_boxscores(conn) -> int:
     """
     Copy home_score/away_score from raw.nba_boxscore_games into raw.nba_games for any
-    game whose score is currently NULL.  The boxscore table is authoritative and always
-    current; nba_games can lag because games_season is only fetched once per season and
-    the daily games_by_date fetch happens pre-game (null scores).
+    game that is COMPLETED but not yet marked final in nba_games.  The boxscore table
+    is authoritative; nba_games can lag because games_season is fetched once at season
+    start and games_by_date is fetched pre-game (null scores).
+
+    Only syncs rows where played_status='COMPLETED' to avoid caching partial mid-game
+    scores.  Also re-syncs games already in nba_games but not yet marked 'final'
+    (handles the case where a partial score was written earlier in the same day).
+
     Returns number of rows updated.
     """
     sql = """
@@ -262,7 +267,8 @@ def sync_scores_from_boxscores(conn) -> int:
     WHERE g.game_slug = b.game_slug
       AND b.home_score_total IS NOT NULL
       AND b.away_score_total IS NOT NULL
-      AND (g.home_score IS NULL OR g.away_score IS NULL)
+      AND b.played_status = 'COMPLETED'
+      AND (g.home_score IS NULL OR g.away_score IS NULL OR g.status != 'final')
     """
     with conn.cursor() as cur:
         cur.execute(sql)

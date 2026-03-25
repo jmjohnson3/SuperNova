@@ -131,6 +131,25 @@ def already_fetched(
         return cur.fetchone() is not None
 
 
+def _boxscore_is_completed(conn, *, game_slug: str) -> bool:
+    """
+    Return True if raw.nba_boxscore_games already has a COMPLETED record for this game.
+
+    Used instead of already_fetched() for boxscore endpoints: we re-fetch until the
+    game is settled so partial mid-game scores never get permanently cached.
+    Note: raw.nba_boxscore_games is populated by parse_boxscore (part of parse_all),
+    so this reflects the state from the previous pipeline run.
+    """
+    q = """
+    SELECT 1 FROM raw.nba_boxscore_games
+    WHERE game_slug = %s AND played_status = 'COMPLETED'
+    LIMIT 1
+    """
+    with conn.cursor() as cur:
+        cur.execute(q, (game_slug,))
+        return cur.fetchone() is not None
+
+
 def last_games_by_date_asof(conn, *, provider: str, season: str) -> Optional[date]:
     """
     Returns the max as_of_date we have for games_by_date for this season.
@@ -295,10 +314,15 @@ def crawl_season_incremental(
 
                 url = url_builder(season, slug)
 
-                # Per-game endpoints (boxscore/playbyplay/lineup) are stored with
-                # as_of_date=NULL (they're keyed by game_slug, not date).
-                # Pass as_of_date=None so already_fetched matches the stored records.
-                if already_fetched(
+                # For boxscores, skip only when we already have a COMPLETED record in
+                # raw.nba_boxscore_games.  This guarantees we re-fetch if the pipeline
+                # previously ran mid-game (partial scores) — a plain already_fetched()
+                # check would permanently cache those partial results.
+                # For all other per-game endpoints use the normal already_fetched guard.
+                if endpoint_name == "boxscore":
+                    if _boxscore_is_completed(conn, game_slug=slug):
+                        continue
+                elif already_fetched(
                         conn,
                         provider=provider,
                         endpoint=endpoint_name,
