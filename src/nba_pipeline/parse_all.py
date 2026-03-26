@@ -140,6 +140,11 @@ def _apply_view_fixes(pg_dsn: str) -> None:
         cur.execute((_SQL_DIR / "V013_referee_features.sql").read_text(encoding="utf-8"))
         log.info("Applied V013 referee fan-out fix")
 
+        # V009: streak/last10/conference_rank now computed from raw game results.
+        # CREATE OR REPLACE — no CASCADE needed (column list unchanged).
+        cur.execute((_SQL_DIR / "V009_standings_detail.sql").read_text(encoding="utf-8"))
+        log.info("Applied V009 standings_detail streak/last10/conf_rank fix")
+
         # V014: adds new _avg_20 + home/away split columns.
         # DROPs the wrapper views game_training/prediction_features CASCADE.
         # The matviews (_mat) are NOT dropped because the wrapper depends ON the
