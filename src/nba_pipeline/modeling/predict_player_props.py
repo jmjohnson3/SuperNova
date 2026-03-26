@@ -351,6 +351,9 @@ joined AS (
       opd.opp_pts_allowed_role_10,
       opd.opp_reb_allowed_role_10,
       opd.opp_ast_allowed_role_10,
+      opd.opp_pts_allowed_role_5,
+      opd.opp_reb_allowed_role_5,
+      opd.opp_ast_allowed_role_5,
 
       -- V022: DraftKings prop line prior (most recent closing line before game date)
       prop_prior.prev_book_line_pts,
@@ -417,7 +420,10 @@ joined AS (
     LEFT JOIN LATERAL (
         SELECT pd.opp_pts_allowed_role_10,
                pd.opp_reb_allowed_role_10,
-               pd.opp_ast_allowed_role_10
+               pd.opp_ast_allowed_role_10,
+               pd.opp_pts_allowed_role_5,
+               pd.opp_reb_allowed_role_5,
+               pd.opp_ast_allowed_role_5
         FROM features.opp_position_defense pd
         WHERE pd.opponent_abbr = t.opponent_abbr
           AND pd.role = CASE

@@ -205,6 +205,9 @@ enriched AS (
         opd.opp_pts_allowed_role_10,
         opd.opp_reb_allowed_role_10,
         opd.opp_ast_allowed_role_10,
+        opd.opp_pts_allowed_role_5,
+        opd.opp_reb_allowed_role_5,
+        opd.opp_ast_allowed_role_5,
 
         -- V022: DraftKings prop line prior (most recent closing line before this game)
         -- Leakage guard: as_of_date < game_date_et (strictly prior day)
@@ -406,10 +409,13 @@ SELECT
     teammate_pts_out,
     teammate_out_count,
 
-    -- V018: opponent position defense
+    -- V018: opponent position defense (10-game and 5-game recent form)
     opp_pts_allowed_role_10,
     opp_reb_allowed_role_10,
     opp_ast_allowed_role_10,
+    opp_pts_allowed_role_5,
+    opp_reb_allowed_role_5,
+    opp_ast_allowed_role_5,
 
     -- Home/away split averages
     pts_avg_10_home, pts_avg_10_away,

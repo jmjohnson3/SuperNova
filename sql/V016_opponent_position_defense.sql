@@ -107,7 +107,29 @@ rolling_defense AS (
             PARTITION BY opponent_abbr, role
             ORDER BY game_date_et, start_ts_utc
             ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
-        ) AS opp_ast_allowed_role_10
+        ) AS opp_ast_allowed_role_10,
+
+        -- 5-game window for recent defensive form
+        COUNT(*) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+        ) AS n_defense_games_5,
+        AVG(game_pts_allowed) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+        ) AS opp_pts_allowed_role_5,
+        AVG(game_reb_allowed) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+        ) AS opp_reb_allowed_role_5,
+        AVG(game_ast_allowed) OVER (
+            PARTITION BY opponent_abbr, role
+            ORDER BY game_date_et, start_ts_utc
+            ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+        ) AS opp_ast_allowed_role_5
     FROM game_level_defense
 )
 
@@ -123,7 +145,11 @@ SELECT
     gps.role,
     CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_pts_allowed_role_10 ELSE NULL END AS opp_pts_allowed_role_10,
     CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_reb_allowed_role_10 ELSE NULL END AS opp_reb_allowed_role_10,
-    CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_ast_allowed_role_10 ELSE NULL END AS opp_ast_allowed_role_10
+    CASE WHEN rd.n_defense_games >= 3 THEN rd.opp_ast_allowed_role_10 ELSE NULL END AS opp_ast_allowed_role_10,
+    -- 5-game recent form (requires min 3 games)
+    CASE WHEN rd.n_defense_games_5 >= 3 THEN rd.opp_pts_allowed_role_5 ELSE NULL END AS opp_pts_allowed_role_5,
+    CASE WHEN rd.n_defense_games_5 >= 3 THEN rd.opp_reb_allowed_role_5 ELSE NULL END AS opp_reb_allowed_role_5,
+    CASE WHEN rd.n_defense_games_5 >= 3 THEN rd.opp_ast_allowed_role_5 ELSE NULL END AS opp_ast_allowed_role_5
 
 FROM game_player_stats gps
 LEFT JOIN rolling_defense rd

@@ -217,6 +217,38 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         if "away_pts_for_avg_5" in X.columns:
             X["away_fatigue_x_pts5"] = X["away_fatigue_score"] * X["away_pts_for_avg_5"]
 
+    # Item 9: Rest asymmetry interactions — captures "team on B2B facing well-rested opponent".
+    # home_b2b_vs_opp_rest = how rested the opponent is when the home team is on B2B.
+    # Values: 0 (home not on B2B), 1–5 (home on B2B, opponent has N days rest).
+    # The difference (b2b_rest_asymmetry) gives the net disadvantage: positive = home team
+    # is both fatigued AND facing a fresh opponent; negative = the reverse.
+    if "home_is_b2b" in X.columns and "away_rest_days" in X.columns:
+        X["home_b2b_vs_opp_rest"] = (
+            X["home_is_b2b"].astype(float)
+            * X["away_rest_days"].clip(upper=5).fillna(2.0)
+        )
+    if "away_is_b2b" in X.columns and "home_rest_days" in X.columns:
+        X["away_b2b_vs_opp_rest"] = (
+            X["away_is_b2b"].astype(float)
+            * X["home_rest_days"].clip(upper=5).fillna(2.0)
+        )
+    if "home_b2b_vs_opp_rest" in X.columns and "away_b2b_vs_opp_rest" in X.columns:
+        X["b2b_rest_asymmetry"] = X["home_b2b_vs_opp_rest"] - X["away_b2b_vs_opp_rest"]
+    # Escalated version: composite fatigue score (B2B=1, 3-in-4=2, 4-in-5=3) × opp rest days.
+    # Separates "how tired" from "how rested is the opponent" — both components matter.
+    if "home_fatigue_score" in X.columns and "away_rest_days" in X.columns:
+        X["home_fatigue_vs_opp_rest"] = (
+            X["home_fatigue_score"]
+            * X["away_rest_days"].clip(upper=5).fillna(2.0)
+        )
+    if "away_fatigue_score" in X.columns and "home_rest_days" in X.columns:
+        X["away_fatigue_vs_opp_rest"] = (
+            X["away_fatigue_score"]
+            * X["home_rest_days"].clip(upper=5).fillna(2.0)
+        )
+    if "home_fatigue_vs_opp_rest" in X.columns and "away_fatigue_vs_opp_rest" in X.columns:
+        X["fatigue_rest_mismatch"] = X["home_fatigue_vs_opp_rest"] - X["away_fatigue_vs_opp_rest"]
+
     # Travel fatigue (V010) — raw columns already in gtf.*, add compound interactions
     if "is_cross_country" in X.columns and "away_is_b2b" in X.columns:
         X["cross_country_b2b"] = X["is_cross_country"].fillna(0).astype(float) * X["away_is_b2b"].astype(float)
@@ -431,6 +463,37 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "ast_avg_10" in X.columns and "opp_ast_allowed_role_10" in X.columns:
         X["ast_vs_opp_role_edge"] = X["ast_avg_10"] - X["opp_ast_allowed_role_10"]
 
+    # V016 Item 8: Normalized opponent position defense — rate and trend features.
+    # opp_pts_allowed_role_10 = total pts allowed to ALL players of that role per game.
+    # Share ratio: player's typical output / role-group total → "what fraction of that D's
+    # allowed pts does this player historically account for?"  Scale-invariant across roles.
+    if "pts_avg_10" in X.columns and "opp_pts_allowed_role_10" in X.columns:
+        X["pts_opp_role_share"] = (
+            X["pts_avg_10"] / X["opp_pts_allowed_role_10"].clip(lower=20.0)
+        )
+    if "reb_avg_10" in X.columns and "opp_reb_allowed_role_10" in X.columns:
+        X["reb_opp_role_share"] = (
+            X["reb_avg_10"] / X["opp_reb_allowed_role_10"].clip(lower=8.0)
+        )
+    if "ast_avg_10" in X.columns and "opp_ast_allowed_role_10" in X.columns:
+        X["ast_opp_role_share"] = (
+            X["ast_avg_10"] / X["opp_ast_allowed_role_10"].clip(lower=5.0)
+        )
+    # Defense trend: 5-game vs 10-game. Positive = defense allowing MORE recently (weakening).
+    # Captures in-season regression / deterioration that the 10-game window smooths over.
+    if "opp_pts_allowed_role_5" in X.columns and "opp_pts_allowed_role_10" in X.columns:
+        X["opp_role_def_trend_pts"] = X["opp_pts_allowed_role_5"] - X["opp_pts_allowed_role_10"]
+    if "opp_reb_allowed_role_5" in X.columns and "opp_reb_allowed_role_10" in X.columns:
+        X["opp_role_def_trend_reb"] = X["opp_reb_allowed_role_5"] - X["opp_reb_allowed_role_10"]
+    if "opp_ast_allowed_role_5" in X.columns and "opp_ast_allowed_role_10" in X.columns:
+        X["opp_role_def_trend_ast"] = X["opp_ast_allowed_role_5"] - X["opp_ast_allowed_role_10"]
+    # Compound: player on hot streak vs. weakening defense → aligned signals amplify edge.
+    # np.sign(opp_def_trend) = +1 means defense is getting worse → same direction as player_trend_up.
+    if "pts_trend_5v10" in X.columns and "opp_role_def_trend_pts" in X.columns:
+        X["pts_trend_vs_def_trend"] = (
+            X["pts_trend_5v10"] * np.sign(X["opp_role_def_trend_pts"].fillna(0))
+        )
+
     # ---------------------------------------------------------------------------
     # Home/away split features.
     # pts_avg_10_home / pts_avg_10_away come from SQL conditional windows.
@@ -570,6 +633,20 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
 
     if "opp_is_b2b" in X.columns and "pts_avg_10" in X.columns:
         X["opp_b2b_pts_bonus"] = X["opp_is_b2b"] * X["pts_avg_10"]
+
+    # Item 9: Rest asymmetry — tired player vs. rested opponent (and vice-versa).
+    # Captures the compound disadvantage: not just "I'm on B2B" but "I'm on B2B AND
+    # opponent had 4 days rest", which is meaningfully worse than either alone.
+    if "player_is_b2b" in X.columns and "opp_rest_days" in X.columns:
+        X["prop_b2b_vs_rested_opp"] = (
+            X["player_is_b2b"].astype(float)
+            * X["opp_rest_days"].clip(upper=5).fillna(2.0)
+        )
+    if "opp_is_b2b" in X.columns and "team_rest_days" in X.columns:
+        X["prop_opp_b2b_vs_fresh"] = (
+            X["opp_is_b2b"].astype(float)
+            * X["team_rest_days"].clip(upper=5).fillna(2.0)
+        )
 
     # --- Full usage rate: (FGA + 0.44*FTA + TOV) / minutes ---
     if all(c in X.columns for c in ["usage_proxy_avg_10", "tov_avg_10", "min_avg_10"]):
