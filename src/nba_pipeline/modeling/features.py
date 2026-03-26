@@ -71,6 +71,39 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         # Positive = home team is more underrated by record than away team
         X["pythag_record_edge"] = X["home_pythag_vs_record"] - X["away_pythag_vs_record"]
 
+    # Pace-adjusted Pythagorean — uses per-100-possession offensive/defensive ratings
+    # instead of raw points per game.  Raw pythag is biased by pace: a team playing at
+    # 110 possessions/game will naturally score and allow more points, inflating their
+    # apparent Pythagorean expectation vs a 95-pace team with identical efficiency.
+    # Off/def ratings normalise this: off_rtg = (pts_scored / possessions) * 100,
+    # giving a pace-neutral measure of scoring and defensive quality.
+    # Available windows: 10 and 20 (no 5-game off/def_rtg in SQL views).
+    for win in (10, 20):
+        h_off = f"home_off_rtg_avg_{win}"
+        h_def = f"home_def_rtg_avg_{win}"
+        a_off = f"away_off_rtg_avg_{win}"
+        a_def = f"away_def_rtg_avg_{win}"
+        if h_off in X.columns and h_def in X.columns:
+            ho_pow = X[h_off].clip(lower=80.0) ** _EXP
+            hd_pow = X[h_def].clip(lower=80.0) ** _EXP
+            X[f"home_pythag_rtg_{win}"] = ho_pow / (ho_pow + hd_pow)
+        if a_off in X.columns and a_def in X.columns:
+            ao_pow = X[a_off].clip(lower=80.0) ** _EXP
+            ad_pow = X[a_def].clip(lower=80.0) ** _EXP
+            X[f"away_pythag_rtg_{win}"] = ao_pow / (ao_pow + ad_pow)
+        hp_r = f"home_pythag_rtg_{win}"
+        ap_r = f"away_pythag_rtg_{win}"
+        if hp_r in X.columns and ap_r in X.columns:
+            X[f"pythag_rtg_diff_{win}"] = X[hp_r] - X[ap_r]
+
+    # Pace-adjusted pythag vs actual record (same regression-to-mean signal, now pace-neutral)
+    if "home_pythag_rtg_10" in X.columns and "home_win_pct" in X.columns:
+        X["home_pythag_rtg_vs_record"] = X["home_pythag_rtg_10"] - X["home_win_pct"]
+    if "away_pythag_rtg_10" in X.columns and "away_win_pct" in X.columns:
+        X["away_pythag_rtg_vs_record"] = X["away_pythag_rtg_10"] - X["away_win_pct"]
+    if "home_pythag_rtg_vs_record" in X.columns and "away_pythag_rtg_vs_record" in X.columns:
+        X["pythag_rtg_record_edge"] = X["home_pythag_rtg_vs_record"] - X["away_pythag_rtg_vs_record"]
+
     # Pace
     if "home_pace_avg_5" in X.columns and "away_pace_avg_5" in X.columns:
         X["pace_diff_5"] = X["home_pace_avg_5"] - X["away_pace_avg_5"]

@@ -990,6 +990,80 @@ def main() -> None:
                     mkt_spread_mae, mkt_total_mae,
                     float(r_mae), float(rt_mae),
                 )
+
+                # ── Blend back-test ──────────────────────────────────────────
+                # Use the same quality-gate formula as predict_today.py to derive
+                # blend weights, then evaluate the blended prediction on the
+                # held-out market rows.  This is the only honest ATS comparison
+                # because both direct and residual have seen NONE of the test data.
+                best_baseline_spread = min(dm_spread_mae, mkt_spread_mae)
+                best_baseline_total  = min(dm_total_mae,  mkt_total_mae)
+
+                # Blend only if residual is within 2% of the best baseline
+                blend_alpha_spread = 0.0
+                blend_alpha_total  = 0.0
+                if float(r_mae) < best_baseline_spread * 1.02:
+                    w_d = 1.0 / dm_spread_mae
+                    w_r = 1.0 / float(r_mae)
+                    blend_alpha_spread = round(w_r / (w_d + w_r), 4)
+                if float(rt_mae) < best_baseline_total * 1.02:
+                    w_d = 1.0 / dm_total_mae
+                    w_r = 1.0 / float(rt_mae)
+                    blend_alpha_total = round(w_r / (w_d + w_r), 4)
+
+                log.info(
+                    "BLEND WEIGHTS | spread_alpha=%.3f total_alpha=%.3f "
+                    "(0.0 = direct-only, 1.0 = resid-only)",
+                    blend_alpha_spread, blend_alpha_total,
+                )
+                calib["blend_alpha_spread"] = blend_alpha_spread
+                calib["blend_alpha_total"]  = blend_alpha_total
+
+                # ATS back-test for blended spread on market rows
+                d_arr  = np.asarray(direct_market_spread_pred_all, dtype=float)
+                r_arr  = np.asarray(resid_spread_pred_all, dtype=float)  # recon = mkt+resid
+                mkt_s  = np.asarray(market_spread_baseline_all, dtype=float)
+                act_m  = np.asarray(resid_spread_true_all, dtype=float)
+
+                # Direct ATS on same market-data subset (fair apples-to-apples)
+                direct_edge_mkt = d_arr + mkt_s
+                direct_covers = act_m > -mkt_s
+                direct_ats_mkt = (direct_edge_mkt > 0) == direct_covers
+                direct_n = len(direct_ats_mkt)
+                direct_ats_pct = float(direct_ats_mkt.mean())
+                direct_roi = (direct_ats_mkt.sum() * 100 - (~direct_ats_mkt).sum() * 110) / (direct_n * 110)
+                # high-confidence: |edge| >= 5 pts
+                hc5 = np.abs(direct_edge_mkt) >= 5.0
+                hc5_n = int(hc5.sum())
+                hc5_pct = float(direct_ats_mkt[hc5].mean()) if hc5_n >= 3 else float("nan")
+                log.info(
+                    "DIRECT (market rows) ATS n=%d pct=%.3f roi=%.3f | HC(>=5pt) n=%d pct=%s",
+                    direct_n, direct_ats_pct, direct_roi,
+                    hc5_n, f"{hc5_pct:.3f}" if not np.isnan(hc5_pct) else "n/a",
+                )
+
+                if blend_alpha_spread > 0:
+                    blend_pred = (1.0 - blend_alpha_spread) * d_arr + blend_alpha_spread * r_arr
+                    blend_edge = blend_pred + mkt_s
+                    blend_ats  = (blend_edge > 0) == direct_covers
+                    blend_n    = len(blend_ats)
+                    blend_pct  = float(blend_ats.mean())
+                    blend_roi  = (blend_ats.sum() * 100 - (~blend_ats).sum() * 110) / (blend_n * 110)
+                    hc5_b = np.abs(blend_edge) >= 5.0
+                    hc5_bn = int(hc5_b.sum())
+                    hc5_bpct = float(blend_ats[hc5_b].mean()) if hc5_bn >= 3 else float("nan")
+                    log.info(
+                        "BLEND (alpha=%.3f) ATS n=%d pct=%.3f roi=%.3f | HC(>=5pt) n=%d pct=%s",
+                        blend_alpha_spread, blend_n, blend_pct, blend_roi,
+                        hc5_bn, f"{hc5_bpct:.3f}" if not np.isnan(hc5_bpct) else "n/a",
+                    )
+                    calib["blend_spread_ats_pct"]  = round(blend_pct, 4)
+                    calib["blend_spread_ats_roi"]  = round(blend_roi, 4)
+                    calib["blend_spread_ats_n"]    = blend_n
+                    calib["direct_spread_ats_pct"] = round(direct_ats_pct, 4)
+                    calib["direct_spread_ats_roi"] = round(direct_roi, 4)
+                else:
+                    log.info("BLEND gated out for spread (resid MAE too high vs direct)")
         else:
             r_mae = r_rmse = rt_mae = rt_rmse = None
 
