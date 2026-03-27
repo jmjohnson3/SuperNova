@@ -33,9 +33,13 @@ class PredictConfig:
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None
-    min_edge_spread: float = 5.0   # minimum |pred + market_spread_home| to flag a spread bet
+    min_edge_spread: float = 7.0   # minimum |pred + market_spread_home| to flag a spread bet
     min_edge_total: float = 5.0   # minimum pred - market to flag an OVER total bet
     min_edge_total_under: float = 999.0  # disabled: under bets lose badly (market beats model on low totals)
+
+
+# Lower spread threshold when the opponent is on a back-to-back (77.7% OOF ATS at 4+pt edge).
+_B2B_OPP_EDGE_MIN: float = 4.0
 
 
 def _compute_blend_weight_spread(calib: dict) -> float:
@@ -485,7 +489,10 @@ def _save_predictions(
         sigma_t = _calib.get(
             "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 20.0
         )
-        if edge_s is not None and abs(edge_s) >= cfg.min_edge_spread:
+        _opp_b2b = (float(r.get("away_is_b2b", 0)) > 0.5 if (edge_s or 0) > 0
+                    else float(r.get("home_is_b2b", 0)) > 0.5)
+        _eff_min_s = _B2B_OPP_EDGE_MIN if _opp_b2b else cfg.min_edge_spread
+        if edge_s is not None and abs(edge_s) >= _eff_min_s:
             spread_bet = "home" if edge_s > 0 else "away"
             kf_s, wp_s = _kelly(abs(edge_s), sigma=sigma_s)
         if edge_t is not None and edge_t >= cfg.min_edge_total:
@@ -718,6 +725,10 @@ def main() -> None:
         pred_total_final = np.clip(pred_total_final, 170.0, 280.0)
 
         out = id_df.copy()
+        # Carry B2B flags so bet threshold logic can apply lower threshold vs. B2B opponents.
+        for _b in ("home_is_b2b", "away_is_b2b"):
+            out[_b] = (pd.to_numeric(df[_b].values, errors="coerce").fillna(0).astype(int)
+                       if _b in df.columns else 0)
         out["pred_margin_home_minus_away"] = np.round(pred_margin_final, 2)
         out["pred_total_points"] = np.round(pred_total_final, 2)
         out["used_market_recon"] = used_market
@@ -775,8 +786,16 @@ def main() -> None:
         # Print
         discord = os.getenv("DISCORD_FORMAT") == "1"
 
-        # Count bets that exceed the edge threshold
-        n_spread_bets = int(out["edge_spread"].abs().ge(cfg.min_edge_spread).sum()) if "edge_spread" in out else 0
+        # Count bets that exceed the edge threshold (including B2B-opponent bets at lower threshold)
+        if "edge_spread" in out:
+            _abs_es = out["edge_spread"].abs()
+            _opp_b2b_col = (
+                ((out["edge_spread"] > 0) & (out.get("away_is_b2b", 0) > 0)) |
+                ((out["edge_spread"] < 0) & (out.get("home_is_b2b", 0) > 0))
+            )
+            n_spread_bets = int((_abs_es.ge(cfg.min_edge_spread) | (_abs_es.ge(_B2B_OPP_EDGE_MIN) & _opp_b2b_col)).sum())
+        else:
+            n_spread_bets = 0
         n_total_bets  = int(out["edge_total"].ge(cfg.min_edge_total).sum()) if "edge_total" in out else 0
         n_high_edge = n_spread_bets + n_total_bets
         if out["used_market_recon"].any():
@@ -814,17 +833,21 @@ def main() -> None:
 
             # Spread line
             edge_s = r.get("edge_spread")
-            if pd.notna(edge_s) and abs(float(edge_s)) >= cfg.min_edge_spread:
+            _opp_b2b_disp = (float(r.get("away_is_b2b", 0)) > 0.5 if (pd.notna(edge_s) and float(edge_s) > 0)
+                             else float(r.get("home_is_b2b", 0)) > 0.5)
+            _eff_min_disp = _B2B_OPP_EDGE_MIN if _opp_b2b_disp else cfg.min_edge_spread
+            if pd.notna(edge_s) and abs(float(edge_s)) >= _eff_min_disp:
                 es = float(edge_s)
                 edge_dir = "+" if es > 0 else ""
                 bet_side = "HOME" if es > 0 else "AWAY"
                 kelly, p_win = _kelly(abs(es), sigma=sigma_s)
                 qk_bet = (kelly / 4) * 1000
+                _b2b_tag = " [B2B OPP]" if _opp_b2b_disp and abs(es) < cfg.min_edge_spread else ""
                 if discord:
                     _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
                     _sl = (_ld.spread_home_link if bet_side == "HOME" else _ld.spread_away_link) if _ld else None
                     _link_str = f"  [Bet FD]({_sl})" if _sl else ""
-                    print(f"  {r['pred_spread_label']}  ← **{bet_side}**{_link_str}")
+                    print(f"  {r['pred_spread_label']}  <- **{bet_side}**{_b2b_tag}{_link_str}")
                     ms = r.get('market_spread_home')
                     if pd.notna(ms):
                         ms = float(ms)
@@ -838,7 +861,7 @@ def main() -> None:
                     qp_all_links.append(_sl)
                     qp_best_links.append(_sl)
                 else:
-                    print(f"  {r['pred_spread_label']}  * EDGE {edge_dir}{es:.1f} pts  [bet {bet_side}]")
+                    print(f"  {r['pred_spread_label']}  * EDGE {edge_dir}{es:.1f} pts  [bet {bet_side}]{_b2b_tag}")
                     print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
             else:
                 if discord:
