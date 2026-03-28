@@ -1,0 +1,547 @@
+import logging
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+from typing import Iterable, Optional
+import time
+import psycopg2
+from zoneinfo import ZoneInfo
+
+from nba_pipeline.fetcher import MySportsFeedsClient, NoContentYetError, RateLimitedError, BadPayloadError
+from nba_pipeline.raw_store import save_api_response
+
+log = logging.getLogger("mlb_pipeline.crawler")
+
+MLB_TEAMS = [
+    "ari", "atl", "bal", "bos", "chc", "cws", "cin", "cle", "col", "det",
+    "hou", "kc",  "laa", "lad", "mia", "mil", "min", "nym", "nyy", "oak",
+    "phi", "pit", "sd",  "sea", "sf",  "stl", "tb",  "tex", "tor", "was",
+]
+
+TEAM_ABBR_NORMALIZE: dict[str, str] = {
+    # Normalize common MSF variants to canonical lowercase-equivalent upper forms.
+    # Add entries here if API payloads use unexpected abbreviations.
+    "KC":  "KC",   # Kansas City — no change needed, but document it
+    "CWS": "CWS",  # Chicago White Sox
+    "NYM": "NYM",
+    "NYY": "NYY",
+    "LAA": "LAA",
+    "LAD": "LAD",
+    # Historical / alternate abbreviations seen in some MSF responses:
+    "SFG": "SF",
+    "SDP": "SD",
+    "KCR": "KC",
+    "TBR": "TB",
+    "WSN": "WAS",
+    "CHW": "CWS",
+}
+
+
+def _norm_abbr(abbr: str) -> str:
+    a = (abbr or "").strip().upper()
+    return TEAM_ABBR_NORMALIZE.get(a, a)
+
+
+_ET = ZoneInfo("America/New_York")
+
+
+@dataclass(frozen=True)
+class Season:
+    league: str
+    season_slug: str
+
+
+@dataclass(frozen=True)
+class CrawlerConfig:
+    api_key: str = "4359aa1b-cc29-4647-a3e5-7314e2"
+    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+
+    # "incremental window" behavior:
+    # - we start at (last_seen_games_by_date - lookback_days)
+    # - and crawl through ET today (+ optionally tomorrow)
+    lookback_days: int = 2
+    include_tomorrow: bool = True
+
+    commit_every: int = 50
+
+
+def yyyymmdd(d: date) -> str:
+    return d.strftime("%Y%m%d")
+
+
+def et_today() -> date:
+    return datetime.now(tz=_ET).date()
+
+
+def daterange(start: date, end: date) -> Iterable[date]:
+    d = start
+    while d <= end:
+        yield d
+        d += timedelta(days=1)
+
+
+# ---------- URL builders ----------
+
+def build_url_games_by_date(season: Season, d: date) -> str:
+    return (
+        f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
+        f"/{season.season_slug}/date/{yyyymmdd(d)}/games.json"
+    )
+
+
+def build_url_boxscore(season: Season, game_slug: str) -> str:
+    return (
+        f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
+        f"/{season.season_slug}/games/{game_slug}/boxscore.json"
+    )
+
+
+def build_url_lineup(season: Season, game_slug: str) -> str:
+    return (
+        f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
+        f"/{season.season_slug}/games/{game_slug}/lineup.json"
+    )
+
+
+def build_url_player_gamelogs(season: Season, d: date, team: str) -> str:
+    return (
+        f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
+        f"/{season.season_slug}/date/{yyyymmdd(d)}/player_gamelogs.json?team={team}"
+    )
+
+
+def build_url_injuries(season: Season) -> str:
+    # MySportsFeeds injuries endpoint is not season-scoped in the URL
+    return f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}/injuries.json"
+
+
+def build_url_standings(season: Season) -> str:
+    return (
+        f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
+        f"/{season.season_slug}/standings.json"
+    )
+
+
+def build_url_venues(season: Season) -> str:
+    return (
+        f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
+        f"/{season.season_slug}/venues.json"
+    )
+
+
+# ---------- DB helpers ----------
+
+def already_fetched(
+    conn,
+    *,
+    provider: str,
+    endpoint: str,
+    season: Optional[str],
+    game_slug: Optional[str],
+    as_of_date: Optional[date],
+    url: str,
+) -> bool:
+    """
+    Fast pre-check to avoid hitting the API at all when we already have this exact URL stored.
+    """
+    q = """
+    SELECT 1
+    FROM raw.api_responses
+    WHERE provider=%s
+      AND endpoint=%s
+      AND (season IS NOT DISTINCT FROM %s)
+      AND (game_slug IS NOT DISTINCT FROM %s)
+      AND (as_of_date IS NOT DISTINCT FROM %s)
+      AND url=%s
+    LIMIT 1
+    """
+    with conn.cursor() as cur:
+        cur.execute(q, (provider, endpoint, season, game_slug, as_of_date, url))
+        return cur.fetchone() is not None
+
+
+def _mlb_boxscore_is_completed(conn, *, game_slug: str) -> bool:
+    """
+    Return True if raw.mlb_boxscore_games already has a COMPLETED record for this game.
+
+    Used instead of already_fetched() for boxscore endpoints: we re-fetch until the
+    game is settled so partial mid-game scores never get permanently cached.
+    Note: raw.mlb_boxscore_games is populated by parse_boxscore (part of parse_all),
+    so this reflects the state from the previous pipeline run.
+    """
+    q = """
+    SELECT 1 FROM raw.mlb_boxscore_games
+    WHERE game_slug = %s AND played_status = 'COMPLETED'
+    LIMIT 1
+    """
+    with conn.cursor() as cur:
+        cur.execute(q, (game_slug,))
+        return cur.fetchone() is not None
+
+
+def last_games_by_date_asof(conn, *, provider: str, season: str) -> Optional[date]:
+    """
+    Returns the max as_of_date we have for games_by_date for this season.
+    If you've never run the incremental crawler yet, this might be NULL.
+    """
+    q = """
+    SELECT MAX(as_of_date)
+    FROM raw.api_responses
+    WHERE provider=%s
+      AND endpoint='games_by_date'
+      AND season=%s
+      AND as_of_date IS NOT NULL
+    """
+    with conn.cursor() as cur:
+        cur.execute(q, (provider, season))
+        row = cur.fetchone()
+    return row[0] if row and row[0] is not None else None
+
+
+# ---------- payload parsing helpers ----------
+
+def extract_game_slugs_from_games_payload(payload: dict) -> list[str]:
+    slugs: list[str] = []
+    games = payload.get("games") or []
+    for g in games:
+        sched = g.get("schedule") or {}
+        start_time = sched.get("startTime")
+        away = _norm_abbr(((sched.get("awayTeam") or {}).get("abbreviation") or ""))
+        home = _norm_abbr(((sched.get("homeTeam") or {}).get("abbreviation") or ""))
+
+        if not (start_time and away and home):
+            continue
+
+        dt_utc = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+        dt_et = dt_utc.astimezone(_ET)
+        game_date = dt_et.strftime("%Y%m%d")
+        slugs.append(f"{game_date}-{away}-{home}")
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for s in slugs:
+        if s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out
+
+
+# ---------- crawler core ----------
+
+def crawl_season_incremental(
+    *,
+    conn,
+    client: MySportsFeedsClient,
+    season: Season,
+    start_date: date,
+    end_date: date,
+    commit_every: int = 50,
+) -> None:
+    log.info("Crawling season=%s start=%s end=%s", season.season_slug, start_date, end_date)
+
+    saved = 0
+
+    def record_save() -> None:
+        nonlocal saved
+        saved += 1
+        if commit_every and saved % commit_every == 0:
+            conn.commit()
+            log.info("Committed batch: saved=%d", saved)
+
+    provider = "mysportsfeeds"
+    today_et = et_today()
+
+    # 0) Meta endpoints (daily snapshots)
+    meta = [
+        ("injuries", build_url_injuries(season)),
+        ("standings", build_url_standings(season)),
+        ("venues", build_url_venues(season)),
+    ]
+    for endpoint, url in meta:
+        if already_fetched(
+            conn,
+            provider=provider,
+            endpoint=endpoint,
+            season=(season.season_slug if endpoint != "injuries" else None),
+            game_slug=None,
+            as_of_date=today_et,
+            url=url,
+        ):
+            log.info("Skip meta (already fetched): %s", endpoint)
+            continue
+
+        try:
+            payload = client.fetch_json(url)
+        except Exception:
+            log.warning("Skipping failed fetch meta endpoint=%s url=%s", endpoint, url, exc_info=True)
+            continue
+
+        save_api_response(
+            conn,
+            provider=provider,
+            endpoint=endpoint,
+            season=(season.season_slug if endpoint != "injuries" else None),
+            as_of_date=today_et,
+            url=url,
+            payload=payload,
+        )
+        log.info("Saved %s", endpoint)
+        record_save()
+
+    # 1) Per-day: games_by_date + derive slugs
+    for d in daterange(start_date, end_date):
+        games_url = build_url_games_by_date(season, d)
+
+        if already_fetched(
+            conn,
+            provider=provider,
+            endpoint="games_by_date",
+            season=season.season_slug,
+            game_slug=None,
+            as_of_date=d,
+            url=games_url,
+        ):
+            log.info("Skip games_by_date (already fetched): %s", d)
+            # Reuse saved payload slugs to still process per-game endpoints if missing.
+            slugs = _load_slugs_from_saved_games_by_date(conn, season=season.season_slug, as_of_date=d)
+        else:
+            try:
+                payload = client.fetch_json(games_url)
+            except Exception:
+                log.warning("Skipping failed fetch games_by_date date=%s url=%s", d, games_url, exc_info=True)
+                continue
+
+            save_api_response(
+                conn,
+                provider=provider,
+                endpoint="games_by_date",
+                season=season.season_slug,
+                as_of_date=d,
+                url=games_url,
+                payload=payload,
+            )
+            log.info("Saved games_by_date date=%s", d)
+            record_save()
+            slugs = extract_game_slugs_from_games_payload(payload)
+
+        if not slugs:
+            continue
+
+        # 2) Per-game endpoints for that date's slugs.
+        # If this is a future date, boxscore won't exist yet (204). Skip it.
+        # Note: MLB V1 has no playbyplay endpoint — only boxscore + lineup.
+        is_future_date = d > today_et
+
+        for i, slug in enumerate(slugs, start=1):
+            for endpoint_name, url_builder in (
+                ("boxscore", build_url_boxscore),
+                ("lineup",   build_url_lineup),
+            ):
+                if is_future_date and endpoint_name == "boxscore":
+                    continue
+
+                url = url_builder(season, slug)
+
+                # For boxscores, skip only when we already have a COMPLETED record in
+                # raw.mlb_boxscore_games.  This guarantees we re-fetch if the pipeline
+                # previously ran mid-game (partial scores) — a plain already_fetched()
+                # check would permanently cache those partial results.
+                # For all other per-game endpoints use the normal already_fetched guard.
+                if endpoint_name == "boxscore":
+                    if _mlb_boxscore_is_completed(conn, game_slug=slug):
+                        continue
+                elif already_fetched(
+                    conn,
+                    provider=provider,
+                    endpoint=endpoint_name,
+                    season=season.season_slug,
+                    game_slug=slug,
+                    as_of_date=None,
+                    url=url,
+                ):
+                    continue
+
+                try:
+                    payload = client.fetch_json(url)
+                except NoContentYetError:
+                    # not ready (common for future / not started)
+                    log.info("Not ready yet (204) endpoint=%s game_slug=%s", endpoint_name, slug)
+                    continue
+                except RateLimitedError:
+                    log.warning("Rate limited (429). Stopping early for date=%s to avoid hammering.", d)
+                    return
+                except BadPayloadError as e:
+                    log.warning("Bad payload endpoint=%s game_slug=%s err=%s", endpoint_name, slug, e)
+                    continue
+                except Exception:
+                    log.warning(
+                        "Skipping failed fetch endpoint=%s game_slug=%s url=%s",
+                        endpoint_name, slug, url, exc_info=True,
+                    )
+                    continue
+
+                save_api_response(
+                    conn,
+                    provider=provider,
+                    endpoint=endpoint_name,
+                    season=season.season_slug,
+                    game_slug=slug,
+                    url=url,
+                    payload=payload,
+                )
+                record_save()
+
+            if i % 25 == 0:
+                log.info("Progress date=%s games=%d/%d (saved=%d)", d, i, len(slugs), saved)
+
+        if d > today_et:
+            continue
+
+        # 3) Player gamelogs per team for the date
+        for team in MLB_TEAMS:
+            url = build_url_player_gamelogs(season, d, team)
+            time.sleep(0.25)
+            if already_fetched(
+                conn,
+                provider=provider,
+                endpoint="player_gamelogs",
+                season=season.season_slug,
+                game_slug=None,
+                as_of_date=d,
+                url=url,
+            ):
+                continue
+
+            try:
+                payload = client.fetch_json(url)
+            except NoContentYetError:
+                log.info("Not ready yet (204) endpoint=player_gamelogs date=%s team=%s", d, team)
+                continue
+            except RateLimitedError:
+                log.warning("Rate limited (429). Stopping early for date=%s to avoid hammering.", d)
+                return
+            except BadPayloadError as e:
+                log.warning("Bad payload endpoint=player_gamelogs date=%s team=%s err=%s", d, team, e)
+                continue
+            except Exception:
+                log.warning(
+                    "Skipping failed fetch endpoint=player_gamelogs date=%s team=%s",
+                    d, team, exc_info=True,
+                )
+                continue
+
+            save_api_response(
+                conn,
+                provider=provider,
+                endpoint="player_gamelogs",
+                season=season.season_slug,
+                as_of_date=d,
+                url=url,
+                payload=payload,
+            )
+            record_save()
+
+        conn.commit()
+        log.info("Committed end-of-day date=%s (saved=%d)", d, saved)
+
+    conn.commit()
+    log.info("Season incremental complete: saved=%d", saved)
+
+
+def _load_slugs_from_saved_games_by_date(conn, *, season: str, as_of_date: date) -> list[str]:
+    """
+    If we already have games_by_date in raw.api_responses, reuse it
+    instead of refetching just to get slugs.
+    """
+    q = """
+    SELECT payload
+    FROM raw.api_responses
+    WHERE provider='mysportsfeeds'
+      AND endpoint='games_by_date'
+      AND season=%s
+      AND as_of_date=%s
+    ORDER BY fetched_at_utc DESC
+    LIMIT 1
+    """
+    with conn.cursor() as cur:
+        cur.execute(q, (season, as_of_date))
+        row = cur.fetchone()
+    if not row or row[0] is None:
+        return []
+    payload = row[0]
+    return extract_game_slugs_from_games_payload(payload)
+
+
+def main() -> None:
+    import argparse
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    )
+
+    parser = argparse.ArgumentParser(description="MySportsFeeds MLB incremental crawler")
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default=None,
+        help="Force start date (YYYY-MM-DD). Overrides incremental lookback. Use for backfill.",
+    )
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        default=None,
+        help="Force end date (YYYY-MM-DD). Defaults to today+1 (include_tomorrow). Use for backfill.",
+    )
+    args = parser.parse_args()
+
+    cfg = CrawlerConfig()
+    client = MySportsFeedsClient(api_key=cfg.api_key)
+
+    seasons = [
+        Season(league="mlb", season_slug="2024-regular"),
+        Season(league="mlb", season_slug="2025-regular"),
+    ]
+
+    today = et_today()
+    default_end = today + (timedelta(days=1) if cfg.include_tomorrow else timedelta(days=0))
+    force_start: Optional[date] = date.fromisoformat(args.start_date) if args.start_date else None
+    force_end: Optional[date] = date.fromisoformat(args.end_date) if args.end_date else None
+
+    with psycopg2.connect(cfg.pg_dsn) as conn:
+        conn.autocommit = False
+        try:
+            for s in seasons:
+                end = force_end if force_end is not None else default_end
+
+                if force_start is not None:
+                    start = force_start
+                else:
+                    last = last_games_by_date_asof(conn, provider="mysportsfeeds", season=s.season_slug)
+
+                    # If never crawled games_by_date, start at (today - lookback) to bootstrap
+                    if last is None:
+                        start = today - timedelta(days=cfg.lookback_days)
+                    else:
+                        # crawl forward, but include a small lookback to capture late stat corrections
+                        start = min(last, today) - timedelta(days=cfg.lookback_days)
+
+                if start > end:
+                    start = end
+
+                crawl_season_incremental(
+                    conn=conn,
+                    client=client,
+                    season=s,
+                    start_date=start,
+                    end_date=end,
+                    commit_every=cfg.commit_every,
+                )
+
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            log.exception("Crawl failed; rolled back")
+            raise
+
+
+if __name__ == "__main__":
+    main()
