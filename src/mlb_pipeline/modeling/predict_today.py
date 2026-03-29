@@ -22,7 +22,7 @@ except ImportError:
 
 from sqlalchemy import create_engine, text
 
-from .features import add_game_derived_features
+from .features import add_game_derived_features, build_fd_parlay_url
 
 log = logging.getLogger("mlb_pipeline.modeling.predict_today")
 
@@ -56,6 +56,21 @@ FROM raw.mlb_starting_pitchers sp
 JOIN raw.mlb_games g ON g.game_slug = sp.game_slug
 WHERE g.game_date_et = :game_date
   AND sp.player_name IS NOT NULL
+"""
+
+
+SQL_FANDUEL_LINKS = """
+SELECT home_team  AS home_abbr,
+       away_team  AS away_abbr,
+       spread_home_link,
+       spread_away_link,
+       total_over_link,
+       total_under_link
+FROM odds.mlb_game_lines
+WHERE as_of_date = :d
+  AND bookmaker_key = 'fanduel'
+  AND (spread_home_link IS NOT NULL OR total_over_link IS NOT NULL)
+ORDER BY fetched_at_utc DESC
 """
 
 
@@ -504,6 +519,20 @@ def main() -> None:
     except Exception as exc:
         log.debug("Could not load starting pitchers (table may not exist yet): %s", exc)
 
+    # Load FanDuel deeplinks for today's games (present after includeLinks=true crawls)
+    fd_links: dict[tuple[str, str], object] = {}
+    try:
+        with engine.connect() as conn:
+            fd_rows = conn.execute(text(SQL_FANDUEL_LINKS), {"d": et_day}).fetchall()
+        for row in fd_rows:
+            key = (row.home_abbr, row.away_abbr)
+            if key not in fd_links:
+                fd_links[key] = row
+        if fd_links:
+            log.info("Loaded FanDuel deeplinks for %d games", len(fd_links))
+    except Exception as exc:
+        log.debug("Could not load FanDuel links: %s", exc)
+
     id_df, X = _prep_features(df, feature_cols=feature_cols, feature_medians=feature_medians)
 
     # Generate direct predictions
@@ -619,12 +648,14 @@ def main() -> None:
 
     discord = os.getenv("DISCORD_FORMAT") == "1"
 
-    if not discord:
-        print(
-            f"{et_day} — {len(out)} games  "
-            f"{n_high_edge} high-edge bets ({n_rl_bets} run-line, {n_total_bets} total)  "
-            f"[{model_note}]"
-        )
+    summary_line = (
+        f"{'⚾ ' if discord else ''}{et_day} — {len(out)} games  "
+        f"{n_high_edge} high-edge bets ({n_rl_bets} run-line, {n_total_bets} total)  "
+        f"[{model_note}]"
+    )
+    print(summary_line)
+
+    best_links: list[str | None] = []  # FD links for high-edge bets (parlay)
 
     for _, r in out.iterrows():
         start_raw = r.get("start_ts_utc")
@@ -639,6 +670,8 @@ def main() -> None:
 
         home_sp = r.get("home_sp_name") or "TBD"
         away_sp = r.get("away_sp_name") or "TBD"
+
+        _ld = fd_links.get((home, away))  # FanDuel deeplink row for this game
 
         if discord:
             print(f"\n**{away} @ {home}** · {time_str}")
@@ -675,23 +708,23 @@ def main() -> None:
             kelly, p_win = _kelly(abs(e_rl), sigma=sigma_rl)
             qk_bet = (kelly / 4) * 1000
             mkt_label = f"{float(mkt_rl):+.1f}" if pd.notna(mkt_rl) else "n/a"
+            # FD link: home covers → spread_home_link; away covers → spread_away_link
+            _sl = (_ld.spread_home_link if e_rl > 0 else _ld.spread_away_link) if _ld else None
+            best_links.append(_sl)
+            _link_str = f"  [Bet FD]({_sl})" if (_sl and discord) else ""
             if discord:
-                print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}]**")
+                print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}]**{_link_str}")
             else:
                 print(f"  Run line: {bet_team} {mkt_label}  * EDGE +{abs(e_rl):.2f}  [bet {bet_side}]")
                 print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
         elif pd.notna(mkt_rl):
             mkt_label = f"{float(mkt_rl):+.1f}"
             pred_side_label = home if pred_rd >= 0 else away
-            if discord:
-                print(f"  Run line: {pred_side_label} {mkt_label}  [no edge]")
-            else:
-                print(f"  Run line: {pred_side_label} {mkt_label}  [no edge]")
+            _sl_no_edge = (_ld.spread_home_link if pred_rd >= 0 else _ld.spread_away_link) if _ld else None
+            _link_str = f"  [FD]({_sl_no_edge})" if (_sl_no_edge and discord) else ""
+            print(f"  Run line: {pred_side_label} {mkt_label}  [no edge]{_link_str}")
         else:
-            if discord:
-                print(f"  Pred run diff: {pred_rd:+.1f}")
-            else:
-                print(f"  Pred run diff: {pred_rd:+.1f}")
+            print(f"  Pred run diff: {pred_rd:+.1f}")
 
         # Total edge
         edge_t  = r.get("edge_total")
@@ -702,23 +735,28 @@ def main() -> None:
             kelly, p_win = _kelly(e_t, sigma=sigma_t)
             qk_bet = (kelly / 4) * 1000
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
+            _tl = _ld.total_over_link if _ld else None
+            best_links.append(_tl)
+            _link_str = f"  [Bet FD]({_tl})" if (_tl and discord) else ""
             if discord:
-                print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER]**")
+                print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER]**{_link_str}")
             else:
                 print(f"  Total: OVER {mkt_t_label}  * EDGE +{e_t:.2f}  [bet OVER]")
                 print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
         elif pd.notna(mkt_tot):
             mkt_t_label = f"{float(mkt_tot):.1f}"
             pred_ou = "O" if pred_tot > float(mkt_tot) else "U"
-            if discord:
-                print(f"  Total: {pred_ou}{mkt_t_label}  [no edge]")
-            else:
-                print(f"  Total: {pred_ou}{mkt_t_label}  [no edge]")
+            _tl_no_edge = (_ld.total_over_link if pred_tot > float(mkt_tot) else _ld.total_under_link) if (_ld and pd.notna(mkt_tot)) else None
+            _link_str = f"  [FD]({_tl_no_edge})" if (_tl_no_edge and discord) else ""
+            print(f"  Total: {pred_ou}{mkt_t_label}  [no edge]{_link_str}")
         else:
-            if discord:
-                print(f"  Pred total: {pred_tot:.1f}")
-            else:
-                print(f"  Pred total: {pred_tot:.1f}")
+            print(f"  Pred total: {pred_tot:.1f}")
+
+    # Parlay URL for all high-edge bets
+    if discord:
+        parlay = build_fd_parlay_url([l for l in best_links if l])
+        if parlay:
+            print(f"\n**Best Bets Parlay** [FD]({parlay})")
 
     # Save predictions to DB
     try:

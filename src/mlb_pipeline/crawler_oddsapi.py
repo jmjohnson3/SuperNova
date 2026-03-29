@@ -210,6 +210,7 @@ def _fetch_live_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | None:
         "dateFormat": cfg.date_format,
         "commenceTimeFrom": _to_z(start_utc),
         "commenceTimeTo": _to_z(end_utc),
+        "includeLinks": "true",
     }
     full_url = _build_full_url(url, params)
 

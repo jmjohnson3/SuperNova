@@ -117,3 +117,25 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["market_run_line"] = X["run_line_home"]
 
     return X
+
+
+def build_fd_parlay_url(links) -> str | None:
+    """Combine individual FanDuel addToBetslip links into a multi-leg parlay URL."""
+    from urllib.parse import urlparse, parse_qs
+    legs = []
+    for link in (links or []):
+        if not link:
+            continue
+        try:
+            qs = parse_qs(urlparse(link).query)
+            m = qs.get("marketId", [None])[0]
+            s = qs.get("selectionId", [None])[0]
+            if m and s:
+                legs.append((m, s))
+        except Exception:
+            continue
+    if not legs:
+        return None
+    base = "https://sportsbook.fanduel.com/addToBetslip"
+    params = "&".join(f"marketId[{i}]={m}&selectionId[{i}]={s}" for i, (m, s) in enumerate(legs))
+    return f"{base}?{params}"
