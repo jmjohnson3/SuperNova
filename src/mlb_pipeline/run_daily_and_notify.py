@@ -30,7 +30,10 @@ import httpx
 
 log = logging.getLogger("mlb_pipeline.run_daily_and_notify")
 
-MLB_DISCORD_WEBHOOK_URL = os.getenv("MLB_DISCORD_WEBHOOK_URL", "")
+MLB_DISCORD_WEBHOOK_URL = os.getenv(
+    "MLB_DISCORD_WEBHOOK_URL",
+    "https://discord.com/api/webhooks/1461420766108319858/LenBk50YR1eS1isFMSOzE8gMWgSgBTSYmU4Ac1unf2SOo_kPSGk71afBqbBiQDuUZwD3",
+)
 
 DISCORD_LIMIT = 1950
 
