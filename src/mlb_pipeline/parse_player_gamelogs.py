@@ -443,17 +443,18 @@ def build_mlb_player_gamelogs(conn, *, commit_every: int = 250, full_reload: boo
     if max_date is not None:
         log.info("Incremental mode: max game_date_et in DB = %s; will process payloads >= that date", max_date)
         date_filter = "AND as_of_date >= %(since)s::date"
-        filter_params = {"since": max_date}
+        filter_params: dict = {"since": max_date, "mlb_url": "%/mlb/%"}
     else:
         log.info("Full-reload mode: processing all player_gamelogs payloads")
         date_filter = ""
-        filter_params = {}
+        filter_params = {"mlb_url": "%/mlb/%"}
 
     q = f"""
     SELECT season, as_of_date, fetched_at_utc, payload
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'player_gamelogs'
+      AND url LIKE %(mlb_url)s
       AND as_of_date IS NOT NULL
       AND payload IS NOT NULL
       {date_filter}

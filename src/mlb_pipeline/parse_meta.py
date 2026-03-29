@@ -60,7 +60,7 @@ def upsert_venues(conn) -> int:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'venues'
-      AND (league = 'mlb' OR league IS NULL)
+      AND url LIKE '%/mlb/%'
     ORDER BY fetched_at_utc DESC
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -174,6 +174,7 @@ def upsert_teams(conn) -> int:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'standings'
+      AND url LIKE '%/mlb/%'
       AND season IS NOT NULL
     ORDER BY fetched_at_utc DESC
     """
@@ -274,6 +275,7 @@ def insert_standings_snapshot(conn) -> int:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'standings'
+      AND url LIKE '%/mlb/%'
       AND season IS NOT NULL
     ORDER BY fetched_at_utc DESC
     """
@@ -386,6 +388,7 @@ def upsert_injuries(conn) -> int:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'injuries'
+      AND url LIKE '%/mlb/%'
     ORDER BY fetched_at_utc DESC
     LIMIT 1
     """

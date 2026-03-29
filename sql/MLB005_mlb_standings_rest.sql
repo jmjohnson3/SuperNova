@@ -49,10 +49,10 @@ rest_calc AS (
         END AS rest_days
     FROM game_dates_with_prev
 ),
--- Get the most recent standings entry for each team as of each game date.
--- raw.mlb_standings has one row per (season, as_of_date, team_abbr).
+-- Get standings for each team per season.
+-- raw.mlb_standings has one row per (season, team_abbr) — the latest snapshot.
 standings_latest AS (
-    SELECT DISTINCT ON (s.season, s.team_abbr, g.game_slug)
+    SELECT
         s.season,
         s.team_abbr,
         g.game_slug,
@@ -60,20 +60,12 @@ standings_latest AS (
         s.wins,
         s.losses,
         s.win_pct,
-        s.run_diff,
-        s.division_rank,
-        s.as_of_date
+        s.run_differential,
+        s.division_rank
     FROM raw.mlb_standings s
-    -- Join to game dates to pin standings to each game
     JOIN game_dates g
         ON g.team_abbr = s.team_abbr
        AND g.season    = s.season
-       AND s.as_of_date <= g.game_date_et
-    ORDER BY
-        s.season,
-        s.team_abbr,
-        g.game_slug,
-        s.as_of_date DESC  -- Most recent standings entry before game date
 )
 SELECT
     r.season,
@@ -88,7 +80,7 @@ SELECT
     sl.wins,
     sl.losses,
     sl.win_pct,
-    sl.run_diff,
+    sl.run_differential                           AS run_diff,
     sl.division_rank,
     -- Computed convenience fields
     CASE
@@ -100,7 +92,7 @@ SELECT
     -- Run diff per game
     CASE
         WHEN (sl.wins + sl.losses) > 0
-        THEN sl.run_diff::float / (sl.wins + sl.losses)
+        THEN sl.run_differential::float / (sl.wins + sl.losses)
         ELSE NULL
     END AS run_diff_per_game
 FROM rest_calc r

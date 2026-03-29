@@ -258,7 +258,7 @@ def load_games_by_date_payloads(conn) -> Iterable[tuple[str, datetime, dict]]:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'games_by_date'
-      AND (league = 'mlb' OR league IS NULL)
+      AND url LIKE '%/mlb/%'
     ORDER BY fetched_at_utc ASC
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -274,6 +274,9 @@ def sync_scores_from_boxscores(conn) -> int:
     """
     UPDATE raw.mlb_games scores from raw.mlb_boxscore_games for completed games.
 
+    Returns 0 immediately if raw.mlb_boxscore_games doesn't exist yet (first run
+    before parse_boxscore has run).
+
     raw.mlb_boxscore_games is authoritative for final scores; raw.mlb_games may
     lag because games_by_date payloads are fetched pre-game (null scores).
 
@@ -284,6 +287,15 @@ def sync_scores_from_boxscores(conn) -> int:
     Sync query mirrors the NBA equivalent but uses MLB run-based score columns:
       raw.mlb_boxscore_games: home_runs, away_runs, played_status
     """
+    # Guard: boxscore table may not exist yet on first run
+    with conn.cursor() as _chk:
+        _chk.execute("""
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema='raw' AND table_name='mlb_boxscore_games'
+        """)
+        if _chk.fetchone() is None:
+            return 0
+
     sql = """
     UPDATE raw.mlb_games g
     SET

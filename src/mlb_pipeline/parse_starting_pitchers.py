@@ -309,9 +309,9 @@ def update_game_sp_ids(conn) -> int:
     FROM best_sp home_sp
     JOIN best_sp away_sp
         ON away_sp.game_slug = home_sp.game_slug
-        AND away_sp.team_abbr = g.away_team_abbr
     WHERE home_sp.game_slug = g.game_slug
       AND home_sp.team_abbr = g.home_team_abbr
+      AND away_sp.team_abbr = g.away_team_abbr
       AND (
           g.home_sp_id IS DISTINCT FROM home_sp.player_id
           OR g.away_sp_id IS DISTINCT FROM away_sp.player_id
@@ -354,6 +354,7 @@ def build_mlb_starting_pitchers(conn) -> None:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'lineup'
+      AND url LIKE '%/mlb/%'
       AND game_slug IS NOT NULL
     ORDER BY fetched_at_utc ASC
     ;

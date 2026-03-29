@@ -22,38 +22,38 @@ CREATE OR REPLACE VIEW features.mlb_game_training_features AS
 WITH
 -- Best (most recent) odds line per game
 market_lines AS (
-    SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
-        home_team_abbr,
-        away_team_abbr,
+    SELECT DISTINCT ON (home_team, away_team, as_of_date)
+        home_team,
+        away_team,
         as_of_date,
-        run_line_home,
-        run_line_home_price,
-        run_line_away_price,
-        total_line,
-        over_price,
-        under_price
+        spread_home_points  AS run_line_home,
+        spread_home_price   AS run_line_home_price,
+        spread_away_price   AS run_line_away_price,
+        total_points        AS total_line,
+        total_over_price    AS over_price,
+        total_under_price   AS under_price
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
     ORDER BY
-        home_team_abbr,
-        away_team_abbr,
+        home_team,
+        away_team,
         as_of_date,
         -- Prefer fanduel, then draftkings
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
 ),
 -- Opening line: earliest crawl per game
 market_lines_open AS (
-    SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
-        home_team_abbr,
-        away_team_abbr,
+    SELECT DISTINCT ON (home_team, away_team, as_of_date)
+        home_team,
+        away_team,
         as_of_date,
-        run_line_home     AS open_run_line_home,
-        total_line        AS open_total_line
+        spread_home_points  AS open_run_line_home,
+        total_points        AS open_total_line
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
     ORDER BY
-        home_team_abbr,
-        away_team_abbr,
+        home_team,
+        away_team,
         as_of_date,
         -- Oldest crawl first for opening line
         event_id ASC
@@ -67,7 +67,7 @@ SELECT
     g.home_team_abbr,
     g.away_team_abbr,
     g.venue_id,
-    v.venue_name,
+    v.name                                  AS venue_name,
 
     -- ---- Targets (training only) ----
     g.home_score,
@@ -141,7 +141,7 @@ SELECT
     hp.hr9_5                                AS home_hr9_5,
     hp.sp_era_5                             AS home_sp_era_5,
     hp.sp_whip_5                            AS home_sp_whip_5,
-    hp.sp_k9_5                              AS home_sp_k9_5,
+    hp.sp_k9_5                              AS home_team_sp_k9_5,
     hp.bp_era_5                             AS home_bp_era_5,
     hp.bp_whip_5                            AS home_bp_whip_5,
     hp.runs_allowed_avg_10                  AS home_runs_allowed_avg_10,
@@ -152,7 +152,7 @@ SELECT
     hp.hr9_10                               AS home_hr9_10,
     hp.sp_era_10                            AS home_sp_era_10,
     hp.sp_whip_10                           AS home_sp_whip_10,
-    hp.sp_k9_10                             AS home_sp_k9_10,
+    hp.sp_k9_10                             AS home_team_sp_k9_10,
     hp.bp_era_10                            AS home_bp_era_10,
     hp.bp_whip_10                           AS home_bp_whip_10,
     hp.bullpen_ip_last_3                    AS home_bullpen_ip_last_3,
@@ -166,7 +166,7 @@ SELECT
     ap.hr9_5                                AS away_hr9_5,
     ap.sp_era_5                             AS away_sp_era_5,
     ap.sp_whip_5                            AS away_sp_whip_5,
-    ap.sp_k9_5                              AS away_sp_k9_5,
+    ap.sp_k9_5                              AS away_team_sp_k9_5,
     ap.bp_era_5                             AS away_bp_era_5,
     ap.bp_whip_5                            AS away_bp_whip_5,
     ap.runs_allowed_avg_10                  AS away_runs_allowed_avg_10,
@@ -177,7 +177,7 @@ SELECT
     ap.hr9_10                               AS away_hr9_10,
     ap.sp_era_10                            AS away_sp_era_10,
     ap.sp_whip_10                           AS away_sp_whip_10,
-    ap.sp_k9_10                             AS away_sp_k9_10,
+    ap.sp_k9_10                             AS away_team_sp_k9_10,
     ap.bp_era_10                            AS away_bp_era_10,
     ap.bp_whip_10                           AS away_bp_whip_10,
     ap.bullpen_ip_last_3                    AS away_bullpen_ip_last_3,
@@ -265,9 +265,9 @@ FROM raw.mlb_games g
 LEFT JOIN raw.mlb_venues v
     ON v.venue_id = g.venue_id
 
--- Ballpark factors
+-- Ballpark factors (join by home team since they always play in their home park)
 LEFT JOIN features.mlb_ballpark_factors bf
-    ON bf.venue_id = g.venue_id
+    ON bf.team_abbr = g.home_team_abbr
 
 -- Home team batting rolling
 LEFT JOIN features.mlb_team_batting_rolling hb
@@ -321,13 +321,13 @@ LEFT JOIN features.mlb_standings_rest asr
 
 -- Market lines (most recent line before game time)
 LEFT JOIN market_lines ml
-    ON ml.home_team_abbr = g.home_team_abbr
-   AND ml.away_team_abbr = g.away_team_abbr
+    ON ml.home_team = g.home_team_abbr
+   AND ml.away_team = g.away_team_abbr
    AND ml.as_of_date     = g.game_date_et
 
 LEFT JOIN market_lines_open mlo
-    ON mlo.home_team_abbr = g.home_team_abbr
-   AND mlo.away_team_abbr = g.away_team_abbr
+    ON mlo.home_team = g.home_team_abbr
+   AND mlo.away_team = g.away_team_abbr
    AND mlo.as_of_date     = g.game_date_et
 
 WHERE g.status = 'final'
@@ -341,21 +341,21 @@ WHERE g.status = 'final'
 CREATE OR REPLACE VIEW features.mlb_game_prediction_features AS
 WITH
 market_lines AS (
-    SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
-        home_team_abbr,
-        away_team_abbr,
+    SELECT DISTINCT ON (home_team, away_team, as_of_date)
+        home_team,
+        away_team,
         as_of_date,
-        run_line_home,
-        run_line_home_price,
-        run_line_away_price,
-        total_line,
-        over_price,
-        under_price
+        spread_home_points  AS run_line_home,
+        spread_home_price   AS run_line_home_price,
+        spread_away_price   AS run_line_away_price,
+        total_points        AS total_line,
+        total_over_price    AS over_price,
+        total_under_price   AS under_price
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
     ORDER BY
-        home_team_abbr,
-        away_team_abbr,
+        home_team,
+        away_team,
         as_of_date,
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
 )
@@ -368,7 +368,7 @@ SELECT
     g.home_team_abbr,
     g.away_team_abbr,
     g.venue_id,
-    v.venue_name,
+    v.name                                  AS venue_name,
     g.status,
 
     -- ---- Market lines ----
@@ -432,7 +432,7 @@ SELECT
     hp.hr9_5                                AS home_hr9_5,
     hp.sp_era_5                             AS home_sp_era_5,
     hp.sp_whip_5                            AS home_sp_whip_5,
-    hp.sp_k9_5                              AS home_sp_k9_5,
+    hp.sp_k9_5                              AS home_team_sp_k9_5,
     hp.bp_era_5                             AS home_bp_era_5,
     hp.bp_whip_5                            AS home_bp_whip_5,
     hp.runs_allowed_avg_10                  AS home_runs_allowed_avg_10,
@@ -443,7 +443,7 @@ SELECT
     hp.hr9_10                               AS home_hr9_10,
     hp.sp_era_10                            AS home_sp_era_10,
     hp.sp_whip_10                           AS home_sp_whip_10,
-    hp.sp_k9_10                             AS home_sp_k9_10,
+    hp.sp_k9_10                             AS home_team_sp_k9_10,
     hp.bp_era_10                            AS home_bp_era_10,
     hp.bp_whip_10                           AS home_bp_whip_10,
     hp.bullpen_ip_last_3                    AS home_bullpen_ip_last_3,
@@ -457,7 +457,7 @@ SELECT
     ap.hr9_5                                AS away_hr9_5,
     ap.sp_era_5                             AS away_sp_era_5,
     ap.sp_whip_5                            AS away_sp_whip_5,
-    ap.sp_k9_5                              AS away_sp_k9_5,
+    ap.sp_k9_5                              AS away_team_sp_k9_5,
     ap.bp_era_5                             AS away_bp_era_5,
     ap.bp_whip_5                            AS away_bp_whip_5,
     ap.runs_allowed_avg_10                  AS away_runs_allowed_avg_10,
@@ -468,7 +468,7 @@ SELECT
     ap.hr9_10                               AS away_hr9_10,
     ap.sp_era_10                            AS away_sp_era_10,
     ap.sp_whip_10                           AS away_sp_whip_10,
-    ap.sp_k9_10                             AS away_sp_k9_10,
+    ap.sp_k9_10                             AS away_team_sp_k9_10,
     ap.bp_era_10                            AS away_bp_era_10,
     ap.bp_whip_10                           AS away_bp_whip_10,
     ap.bullpen_ip_last_3                    AS away_bullpen_ip_last_3,
@@ -546,8 +546,9 @@ FROM raw.mlb_games g
 LEFT JOIN raw.mlb_venues v
     ON v.venue_id = g.venue_id
 
+-- Ballpark factors (join by home team since they always play in their home park)
 LEFT JOIN features.mlb_ballpark_factors bf
-    ON bf.venue_id = g.venue_id
+    ON bf.team_abbr = g.home_team_abbr
 
 LEFT JOIN features.mlb_team_batting_rolling hb
     ON hb.game_slug = g.game_slug
@@ -590,9 +591,9 @@ LEFT JOIN features.mlb_standings_rest asr
    AND asr.team_abbr = g.away_team_abbr
 
 LEFT JOIN market_lines ml
-    ON ml.home_team_abbr = g.home_team_abbr
-   AND ml.away_team_abbr = g.away_team_abbr
-   AND ml.as_of_date     = g.game_date_et
+    ON ml.home_team  = g.home_team_abbr
+   AND ml.away_team  = g.away_team_abbr
+   AND ml.as_of_date = g.game_date_et
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE
