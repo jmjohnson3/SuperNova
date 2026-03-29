@@ -156,10 +156,17 @@ def main() -> None:
 
     if not args.skip_crawl:
         steps.append(Step(
-            name="Crawl MSF (injuries/games/lineups)",
-            module="mlb_pipeline.crawler",
+            name="Crawl MLB Stats API (schedule/boxscores)",
+            module="mlb_pipeline.crawler_statsapi",
+            args=("--season", "2026-regular"),
             timeout_s=3600,
             critical=True,
+        ))
+        steps.append(Step(
+            name="Crawl MSF (injuries/lineups)",
+            module="mlb_pipeline.crawler",
+            timeout_s=3600,
+            critical=False,  # MSF returns 403 for MLB game data; non-critical
         ))
         steps.append(Step(
             name="Crawl odds (Odds API)",
