@@ -32,7 +32,7 @@ log = logging.getLogger("mlb_pipeline.run_daily_and_notify")
 
 MLB_DISCORD_WEBHOOK_URL = os.getenv(
     "MLB_DISCORD_WEBHOOK_URL",
-    "https://discord.com/api/webhooks/1461420766108319858/LenBk50YR1eS1isFMSOzE8gMWgSgBTSYmU4Ac1unf2SOo_kPSGk71afBqbBiQDuUZwD3",
+    "https://discord.com/api/webhooks/1487880251886403596/fB9WT_Krl2QdOV8MD6o0Pzdp-BgnsJ8wISAJ6-Xi0wMVQfViVjbKU2wV4VC9f52Iwo9n",
 )
 
 DISCORD_LIMIT = 1950
