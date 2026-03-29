@@ -24,6 +24,18 @@ _MLB_SQL_VIEWS = [
     "MLB006_mlb_game_features.sql",
 ]
 
+_MLB_MATVIEW_REFRESH = [
+    # MLB007: create + refresh rolling materialized views for fast prediction queries
+    "MLB007_mlb_materialized_rolling.sql",
+]
+
+_MLB_MATVIEW_REFRESH_SQL = """
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_pitching_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_pitcher_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_standings_rest_mat;
+"""
+
 
 def _apply_sql_views(pg_dsn: str) -> None:
     """Apply MLB SQL views in order. Idempotent — safe to run on every parse_all.
@@ -64,6 +76,45 @@ def _apply_sql_views(pg_dsn: str) -> None:
         conn.close()
 
 
+def _refresh_matviews(pg_dsn: str) -> None:
+    """Create (if needed) and refresh MLB rolling materialized views."""
+    conn = None
+    try:
+        conn = psycopg2.connect(pg_dsn)
+        conn.autocommit = True
+        cur = conn.cursor()
+
+        # Apply MLB007 SQL (CREATE MATERIALIZED VIEW IF NOT EXISTS + indexes)
+        for filename in _MLB_MATVIEW_REFRESH:
+            sql_path = _SQL_DIR / filename
+            try:
+                sql = sql_path.read_text(encoding="utf-8")
+                # Split into individual statements and run each
+                for stmt in sql.split(";"):
+                    stmt = stmt.strip()
+                    if stmt:
+                        cur.execute(stmt)
+                log.info("Applied %s", filename)
+            except Exception:
+                log.exception("Failed to apply %s", filename)
+
+        # Refresh all mat views
+        for stmt in _MLB_MATVIEW_REFRESH_SQL.strip().split(";"):
+            stmt = stmt.strip()
+            if not stmt:
+                continue
+            try:
+                cur.execute(stmt)
+                log.info("Refreshed: %s", stmt.split()[-1])
+            except Exception:
+                log.exception("Failed to refresh: %s", stmt)
+    except Exception:
+        log.exception("_refresh_matviews: failed to connect")
+    finally:
+        if conn:
+            conn.close()
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -89,6 +140,9 @@ def main() -> None:
             log.info("Post-boxscore score sync: updated %d games", n)
 
     _apply_sql_views(_PG_DSN)
+
+    # Create/refresh materialized rolling views for fast prediction queries
+    _refresh_matviews(_PG_DSN)
 
     log.info("ALL MLB PARSERS COMPLETE")
 

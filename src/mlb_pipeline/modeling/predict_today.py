@@ -44,16 +44,18 @@ class PredictConfig:
 SQL_GAMES_FOR_DATE = """
 SELECT *
 FROM features.mlb_game_prediction_features
-WHERE game_date_et = %(game_date)s
+WHERE game_date_et = :game_date
 ORDER BY start_ts_utc, game_slug
 """
 
 SQL_STARTING_PITCHERS = """
 SELECT sp.game_slug,
-       sp.side,
-       sp.pitcher_name
+       CASE WHEN sp.team_abbr = g.home_team_abbr THEN 'home' ELSE 'away' END AS side,
+       sp.player_name AS pitcher_name
 FROM raw.mlb_starting_pitchers sp
-WHERE sp.game_date_et = %(game_date)s
+JOIN raw.mlb_games g ON g.game_slug = sp.game_slug
+WHERE g.game_date_et = :game_date
+  AND sp.player_name IS NOT NULL
 """
 
 

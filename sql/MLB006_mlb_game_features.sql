@@ -269,23 +269,23 @@ LEFT JOIN raw.mlb_venues v
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = g.home_team_abbr
 
--- Home team batting rolling
-LEFT JOIN features.mlb_team_batting_rolling hb
+-- Home team batting rolling (use mat view for fast join by game_slug)
+LEFT JOIN features.mlb_team_batting_rolling_mat hb
     ON hb.game_slug = g.game_slug
    AND hb.team_abbr = g.home_team_abbr
 
 -- Away team batting rolling
-LEFT JOIN features.mlb_team_batting_rolling ab
+LEFT JOIN features.mlb_team_batting_rolling_mat ab
     ON ab.game_slug = g.game_slug
    AND ab.team_abbr = g.away_team_abbr
 
 -- Home team pitching rolling
-LEFT JOIN features.mlb_team_pitching_rolling hp
+LEFT JOIN features.mlb_team_pitching_rolling_mat hp
     ON hp.game_slug = g.game_slug
    AND hp.team_abbr = g.home_team_abbr
 
 -- Away team pitching rolling
-LEFT JOIN features.mlb_team_pitching_rolling ap
+LEFT JOIN features.mlb_team_pitching_rolling_mat ap
     ON ap.game_slug = g.game_slug
    AND ap.team_abbr = g.away_team_abbr
 
@@ -295,7 +295,7 @@ LEFT JOIN raw.mlb_starting_pitchers hsp_sched
    AND hsp_sched.team_abbr = g.home_team_abbr
 
 -- Home SP rolling stats
-LEFT JOIN features.mlb_pitcher_rolling hsp
+LEFT JOIN features.mlb_pitcher_rolling_mat hsp
     ON hsp.game_slug  = g.game_slug
    AND hsp.player_id  = COALESCE(hsp_sched.player_id, g.home_sp_id)
 
@@ -305,17 +305,17 @@ LEFT JOIN raw.mlb_starting_pitchers asp_sched
    AND asp_sched.team_abbr = g.away_team_abbr
 
 -- Away SP rolling stats
-LEFT JOIN features.mlb_pitcher_rolling asp
+LEFT JOIN features.mlb_pitcher_rolling_mat asp
     ON asp.game_slug  = g.game_slug
    AND asp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
 
 -- Home standings + rest
-LEFT JOIN features.mlb_standings_rest hsr
+LEFT JOIN features.mlb_standings_rest_mat hsr
     ON hsr.game_slug = g.game_slug
    AND hsr.team_abbr = g.home_team_abbr
 
 -- Away standings + rest
-LEFT JOIN features.mlb_standings_rest asr
+LEFT JOIN features.mlb_standings_rest_mat asr
     ON asr.game_slug = g.game_slug
    AND asr.team_abbr = g.away_team_abbr
 
@@ -358,6 +358,28 @@ market_lines AS (
         away_team,
         as_of_date,
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
+),
+-- Pre-compute latest rolling stats per team from materialized views (fast).
+-- Since the prediction view only shows future/today games, the most recent
+-- completed game will always be before the predicted game date.
+latest_batting AS (
+    SELECT DISTINCT ON (team_abbr)
+        *
+    FROM features.mlb_team_batting_rolling_mat
+    ORDER BY team_abbr, game_date_et DESC, game_slug DESC
+),
+latest_pitching AS (
+    SELECT DISTINCT ON (team_abbr)
+        *
+    FROM features.mlb_team_pitching_rolling_mat
+    ORDER BY team_abbr, game_date_et DESC, game_slug DESC
+),
+-- Latest rolling stats per pitcher (most recent start)
+latest_pitcher AS (
+    SELECT DISTINCT ON (player_id)
+        *
+    FROM features.mlb_pitcher_rolling_mat
+    ORDER BY player_id, game_date_et DESC, game_slug DESC
 )
 SELECT
     -- ---- Game identifiers ----
@@ -550,43 +572,35 @@ LEFT JOIN raw.mlb_venues v
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = g.home_team_abbr
 
-LEFT JOIN features.mlb_team_batting_rolling hb
-    ON hb.game_slug = g.game_slug
-   AND hb.team_abbr = g.home_team_abbr
+-- Home/away batting: latest completed game stats per team
+LEFT JOIN latest_batting hb ON hb.team_abbr = g.home_team_abbr
+LEFT JOIN latest_batting ab ON ab.team_abbr = g.away_team_abbr
 
-LEFT JOIN features.mlb_team_batting_rolling ab
-    ON ab.game_slug = g.game_slug
-   AND ab.team_abbr = g.away_team_abbr
-
-LEFT JOIN features.mlb_team_pitching_rolling hp
-    ON hp.game_slug = g.game_slug
-   AND hp.team_abbr = g.home_team_abbr
-
-LEFT JOIN features.mlb_team_pitching_rolling ap
-    ON ap.game_slug = g.game_slug
-   AND ap.team_abbr = g.away_team_abbr
+-- Home/away pitching: latest completed game stats per team
+LEFT JOIN latest_pitching hp ON hp.team_abbr = g.home_team_abbr
+LEFT JOIN latest_pitching ap ON ap.team_abbr = g.away_team_abbr
 
 LEFT JOIN raw.mlb_starting_pitchers hsp_sched
     ON hsp_sched.game_slug = g.game_slug
    AND hsp_sched.team_abbr = g.home_team_abbr
 
-LEFT JOIN features.mlb_pitcher_rolling hsp
-    ON hsp.game_slug  = g.game_slug
-   AND hsp.player_id  = COALESCE(hsp_sched.player_id, g.home_sp_id)
+-- Home SP rolling: latest start stats for the scheduled SP
+LEFT JOIN latest_pitcher hsp
+    ON hsp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
 
 LEFT JOIN raw.mlb_starting_pitchers asp_sched
     ON asp_sched.game_slug = g.game_slug
    AND asp_sched.team_abbr = g.away_team_abbr
 
-LEFT JOIN features.mlb_pitcher_rolling asp
-    ON asp.game_slug  = g.game_slug
-   AND asp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
+-- Away SP rolling: latest start stats for the scheduled SP
+LEFT JOIN latest_pitcher asp
+    ON asp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
 
-LEFT JOIN features.mlb_standings_rest hsr
+LEFT JOIN features.mlb_standings_rest_mat hsr
     ON hsr.game_slug = g.game_slug
    AND hsr.team_abbr = g.home_team_abbr
 
-LEFT JOIN features.mlb_standings_rest asr
+LEFT JOIN features.mlb_standings_rest_mat asr
     ON asr.game_slug = g.game_slug
    AND asr.team_abbr = g.away_team_abbr
 

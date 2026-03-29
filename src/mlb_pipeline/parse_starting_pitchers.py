@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS raw.mlb_starting_pitchers (
     player_id    INTEGER,
     player_name  TEXT,
     source       TEXT        NOT NULL DEFAULT 'announced',
-    updated_at_utc TIMESTAMPTZ DEFAULT now(),
+    fetched_at_utc TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (game_slug, team_abbr)
 );
 CREATE INDEX IF NOT EXISTS idx_mlb_sp_game_slug
@@ -251,14 +251,14 @@ def upsert_starting_pitchers(conn, rows: list[dict]) -> int:
 
     sql = """
     INSERT INTO raw.mlb_starting_pitchers (
-        game_slug, team_abbr, player_id, player_name, source, updated_at_utc
+        game_slug, team_abbr, player_id, player_name, source, fetched_at_utc
     )
     VALUES %s
     ON CONFLICT (game_slug, team_abbr) DO UPDATE SET
         player_id      = EXCLUDED.player_id,
         player_name    = EXCLUDED.player_name,
         source         = EXCLUDED.source,
-        updated_at_utc = now()
+        fetched_at_utc = now()
     ;
     """
     with conn.cursor() as cur:

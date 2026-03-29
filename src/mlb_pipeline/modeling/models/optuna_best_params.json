@@ -1,0 +1,23 @@
+{
+  "run_line_params": {
+    "max_depth": 7,
+    "learning_rate": 0.04075768602798539,
+    "subsample": 0.6042031275379187,
+    "colsample_bytree": 0.610567246022292,
+    "min_child_weight": 12,
+    "gamma": 0.16230536416731944,
+    "reg_alpha": 0.7577595385364324,
+    "reg_lambda": 7.768417828959603,
+    "huber_slope": 4.2095647077345735
+  },
+  "total_params": {
+    "max_depth": 5,
+    "learning_rate": 0.05010883084767582,
+    "subsample": 0.6974180872610688,
+    "colsample_bytree": 0.7037687530709649,
+    "min_child_weight": 9,
+    "gamma": 0.7980133407170685,
+    "reg_alpha": 0.08018533531298523,
+    "reg_lambda": 1.2759300851374409
+  }
+}
