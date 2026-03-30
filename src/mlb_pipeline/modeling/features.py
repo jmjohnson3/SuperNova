@@ -119,6 +119,77 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     return X
 
 
+def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add derived interaction features for MLB player prop models.
+
+    Works for both pitcher and batter DataFrames by checking column presence.
+    Call this after OHE / coercion so all inputs are numeric.
+
+    Pitcher columns trigger pitcher-specific features (k_pct_5, era_5, k9_5, …).
+    Batter columns trigger batter-specific features (hits_avg_5, tb_avg_5, …).
+    """
+    X = X.copy()
+
+    # ── Batter features ──────────────────────────────────────────────────────
+    # Trend: recent (5g) vs medium-term (10g) rolling averages
+    for stat in ("hits", "hr", "tb"):
+        avg5  = f"{stat}_avg_5"
+        avg10 = f"{stat}_avg_10"
+        sd10  = f"{stat}_sd_10"
+        if avg5 in X.columns and avg10 in X.columns:
+            X[f"{stat}_trend_5v10"] = X[avg5] - X[avg10]
+            # Hot ratio — scale-invariant: 1.0 = neutral, >1 = hot streak
+            denom = X[avg10].where(X[avg10].abs() > 1e-6, other=np.nan)
+            X[f"{stat}_hot_ratio"] = X[avg5] / denom
+        # Trend z-score (significance relative to player volatility)
+        if f"{stat}_trend_5v10" in X.columns and sd10 in X.columns:
+            denom = X[sd10].where(X[sd10] > 1e-6, other=np.nan)
+            X[f"{stat}_trend_sig"] = X[f"{stat}_trend_5v10"] / denom
+
+    # Park-adjusted hit rates
+    if "hr_avg_10" in X.columns and "park_hr_factor" in X.columns:
+        X["hr_park_adj_10"] = X["hr_avg_10"] * X["park_hr_factor"]
+    if "tb_avg_10" in X.columns and "park_run_factor" in X.columns:
+        X["tb_park_adj_10"] = X["tb_avg_10"] * X["park_run_factor"]
+
+    # Batter × Opponent SP interaction: batters facing strikeout-heavy pitchers get fewer hits
+    if "hits_avg_10" in X.columns and "opp_sp_era_5" in X.columns:
+        X["hits_vs_opp_era"] = X["hits_avg_10"] * (X["opp_sp_era_5"] / 4.0)
+    if "tb_avg_10" in X.columns and "opp_sp_fip_5" in X.columns:
+        X["tb_vs_opp_fip"] = X["tb_avg_10"] * (X["opp_sp_fip_5"] / 4.0)
+
+    # ── Pitcher features ─────────────────────────────────────────────────────
+    # K% × opponent K vulnerability (opponent batter K rate — higher = easier to K)
+    if "k_pct_5" in X.columns and "opp_k_pct_avg_10" in X.columns:
+        X["sp_k_pct_vs_opp_k_rate"] = X["k_pct_5"] * X["opp_k_pct_avg_10"]
+
+    # Strikeout rate trend (recent vs 10-start)
+    if "k9_5" in X.columns and "k9_10" in X.columns:
+        X["k9_trend_5v10"] = X["k9_5"] - X["k9_10"]
+    if "k_pct_5" in X.columns and "k_pct_10" in X.columns:
+        X["k_pct_trend_5v10"] = X["k_pct_5"] - X["k_pct_10"]
+
+    # ERA trend — negative means improving
+    if "era_5" in X.columns and "era_10" in X.columns:
+        X["era_trend_5v10"] = X["era_5"] - X["era_10"]
+
+    # FIP trend
+    if "fip_5" in X.columns and "fip_10" in X.columns:
+        X["fip_trend_5v10"] = X["fip_5"] - X["fip_10"]
+
+    # Pitcher × park: K% × park HR factor (pitcher in HR-friendly park faces fewer weak contacts)
+    if "k_pct_5" in X.columns and "park_hr_factor" in X.columns:
+        X["k_pct_x_park_hr"] = X["k_pct_5"] * X["park_hr_factor"]
+
+    # ── Shared ───────────────────────────────────────────────────────────────
+    # Back-to-back flag (rest_days ≤ 1)
+    if "rest_days" in X.columns:
+        X["is_b2b"] = (X["rest_days"].fillna(10.0) <= 1).astype(int)
+
+    return X
+
+
 def build_fd_parlay_url(links) -> str | None:
     """Combine individual FanDuel addToBetslip links into a multi-leg parlay URL."""
     from urllib.parse import urlparse, parse_qs

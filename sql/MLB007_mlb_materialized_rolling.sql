@@ -37,6 +37,17 @@ CREATE INDEX IF NOT EXISTS idx_mlb_pitcher_rolling_mat_player_date
     ON features.mlb_pitcher_rolling_mat (player_id, game_date_et DESC, game_slug DESC);
 
 -- ============================================================
+-- Individual batter rolling materialized view (MLB008)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_batting_rolling_mat AS
+SELECT * FROM features.mlb_player_batting_rolling;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_batting_player_mat_pk
+    ON features.mlb_player_batting_rolling_mat (game_slug, player_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_batting_player_mat_player_date
+    ON features.mlb_player_batting_rolling_mat (player_id, game_date_et DESC, game_slug DESC);
+
+-- ============================================================
 -- Standings + rest materialized view
 -- ============================================================
 CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_standings_rest_mat AS

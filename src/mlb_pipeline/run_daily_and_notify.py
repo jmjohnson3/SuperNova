@@ -59,7 +59,11 @@ STEPS: list[Step] = [
     Step("Parse + Load",           "mlb_pipeline.parse_all",        critical=True,  post_output=False),
     Step("Train Game Models",      "mlb_pipeline.modeling.train_game_models",
          critical=True, post_output=False),
+    Step("Train Player Prop Models", "mlb_pipeline.modeling.train_player_prop_models",
+         critical=False, post_output=False),
     Step("Game Predictions",       "mlb_pipeline.modeling.predict_today",
+         critical=False, post_output=True),
+    Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
          critical=False, post_output=True),
 ]
 
@@ -183,8 +187,10 @@ async def main() -> None:
     _CRAWL_MODULES  = {"mlb_pipeline.crawler_statsapi", "mlb_pipeline.crawler",
                        "mlb_pipeline.crawler_oddsapi"}
     _PARSE_MODULES  = {"mlb_pipeline.parse_all"}
-    _TRAIN_MODULES  = {"mlb_pipeline.modeling.train_game_models"}
-    _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today"}
+    _TRAIN_MODULES  = {"mlb_pipeline.modeling.train_game_models",
+                       "mlb_pipeline.modeling.train_player_prop_models"}
+    _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
+                        "mlb_pipeline.modeling.predict_player_props"}
 
     def _should_skip(step: Step) -> bool:
         if args.skip_crawl   and step.module in _CRAWL_MODULES:   return True
@@ -237,7 +243,8 @@ async def main() -> None:
 
         if step.post_output:
             header = {
-                "Game Predictions": "⚾ **MLB Game Predictions**",
+                "Game Predictions":       "⚾ **MLB Game Predictions**",
+                "Player Prop Projections": "⚾ **MLB Player Props**",
             }.get(step.label, f"**{step.label}**")
             if stdout.strip():
                 await _post_section(header, stdout.strip())

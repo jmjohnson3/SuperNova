@@ -190,12 +190,24 @@ def main() -> None:
             timeout_s=3600,
             critical=True,
         ))
+        steps.append(Step(
+            name="Train player prop models",
+            module="mlb_pipeline.modeling.train_player_prop_models",
+            timeout_s=1800,
+            critical=False,
+        ))
 
     if not args.skip_predict:
         steps.append(Step(
             name="Predict today",
             module="mlb_pipeline.modeling.predict_today",
             timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Predict player props",
+            module="mlb_pipeline.modeling.predict_player_props",
+            timeout_s=300,
             critical=False,
         ))
 

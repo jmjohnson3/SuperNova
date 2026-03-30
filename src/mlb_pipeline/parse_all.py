@@ -22,6 +22,7 @@ _MLB_SQL_VIEWS = [
     "MLB004_mlb_ballpark_factors.sql",
     "MLB005_mlb_standings_rest.sql",
     "MLB006_mlb_game_features.sql",
+    "MLB008_mlb_player_batting_rolling.sql",
 ]
 
 _MLB_MATVIEW_REFRESH = [
@@ -34,6 +35,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_pitching_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_pitcher_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_standings_rest_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_batting_rolling_mat;
 """
 
 
