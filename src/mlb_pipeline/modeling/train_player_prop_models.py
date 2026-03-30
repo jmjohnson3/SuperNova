@@ -94,6 +94,15 @@ SELECT
     p.starts_in_window_10,
     p.last_start_k,
     p.last_start_ip,
+    -- Group B: SP rest + home/away performance splits (MLB003)
+    p.days_since_last_start AS sp_days_since_last_start,
+    p.is_short_rest,
+    p.era_home_10,
+    p.era_away_10,
+    p.k9_home_10,
+    p.k9_away_10,
+    p.fip_home_10,
+    p.fip_away_10,
     -- Opponent team batting context (how K-prone are the opposing batters?)
     ob.k_pct_avg_10    AS opp_k_pct_avg_10,
     ob.bb_pct_avg_10   AS opp_bb_pct_avg_10,
@@ -152,6 +161,11 @@ SELECT
     sp_r.bb_pct_5  AS opp_sp_bb_pct_5,
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
+    -- Group B: opponent SP rest + home/away splits
+    sp_r.days_since_last_start AS opp_sp_days_since_last_start,
+    sp_r.is_short_rest         AS opp_sp_is_short_rest,
+    sp_r.era_home_10           AS opp_sp_era_home_10,
+    sp_r.era_away_10           AS opp_sp_era_away_10,
     -- Park factors
     bf.run_factor  AS park_run_factor,
     bf.hr_factor   AS park_hr_factor,
