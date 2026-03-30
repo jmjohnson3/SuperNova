@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 from dataclasses import dataclass
@@ -58,6 +59,7 @@ class TrainConfig:
     run_optuna: bool = True
     optuna_n_trials: int = 50
     optuna_n_folds: int = 5
+    optuna_max_age_days: int = 7  # skip re-tune if cached params are fresher than this
     # Minutes stacking
     use_minutes_stacking: bool = True
     run_multioutput_test: bool = True
@@ -477,15 +479,47 @@ def main() -> None:
     best_params_pts: Dict = {}
     best_params_reb: Dict = {}
     best_params_ast: Dict = {}
+    _optuna_cache_path = cfg.model_dir / "optuna_best_params_props.json"
+
+    def _optuna_cache_is_fresh() -> bool:
+        if not _optuna_cache_path.exists():
+            return False
+        age_s = datetime.datetime.now().timestamp() - _optuna_cache_path.stat().st_mtime
+        return age_s < cfg.optuna_max_age_days * 86400
+
     if cfg.run_optuna:
-        try:
-            best_params_pts = run_optuna_tuning_props(cfg, df, X_aug, y_pts, feature_cols, "PTS")
-            best_params_reb = run_optuna_tuning_props(cfg, df, X_aug, y_reb, feature_cols, "REB")
-            best_params_ast = run_optuna_tuning_props(cfg, df, X_aug, y_ast, feature_cols, "AST")
-        except ImportError:
-            log.warning("optuna not installed. Skipping tuning. pip install optuna")
-        except Exception as e:
-            log.warning("Optuna tuning failed: %s. Using default params.", e)
+        if _optuna_cache_is_fresh():
+            try:
+                cached = json.loads(_optuna_cache_path.read_text())
+                best_params_pts = cached.get("pts", {})
+                best_params_reb = cached.get("reb", {})
+                best_params_ast = cached.get("ast", {})
+                cache_age_h = (_optuna_cache_path.stat().st_mtime)
+                cache_age_h = (datetime.datetime.now().timestamp() - cache_age_h) / 3600
+                log.info(
+                    "Loaded cached Optuna params (%.1fh old, max_age=%dd) — skipping re-tune.",
+                    cache_age_h, cfg.optuna_max_age_days,
+                )
+            except Exception as e:
+                log.warning("Failed to load cached Optuna params: %s. Re-running tuning.", e)
+                best_params_pts = best_params_reb = best_params_ast = {}
+
+        if not best_params_pts:
+            try:
+                best_params_pts = run_optuna_tuning_props(cfg, df, X_aug, y_pts, feature_cols, "PTS")
+                best_params_reb = run_optuna_tuning_props(cfg, df, X_aug, y_reb, feature_cols, "REB")
+                best_params_ast = run_optuna_tuning_props(cfg, df, X_aug, y_ast, feature_cols, "AST")
+                # Persist so the next N days can skip re-tuning
+                _optuna_cache_path.write_text(json.dumps({
+                    "pts": best_params_pts,
+                    "reb": best_params_reb,
+                    "ast": best_params_ast,
+                }, indent=2))
+                log.info("Saved Optuna params to %s", _optuna_cache_path)
+            except ImportError:
+                log.warning("optuna not installed. Skipping tuning. pip install optuna")
+            except Exception as e:
+                log.warning("Optuna tuning failed: %s. Using default params.", e)
 
     # (stat_name, y_target, huber_slope_default, best_params)
     stat_configs = [
