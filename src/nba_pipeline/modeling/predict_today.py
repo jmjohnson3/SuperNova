@@ -727,7 +727,7 @@ def main() -> None:
         out = id_df.copy()
         # Carry B2B flags so bet threshold logic can apply lower threshold vs. B2B opponents.
         for _b in ("home_is_b2b", "away_is_b2b"):
-            out[_b] = (pd.to_numeric(df[_b].values, errors="coerce").fillna(0).astype(int)
+            out[_b] = (pd.to_numeric(df[_b], errors="coerce").fillna(0).astype(int)
                        if _b in df.columns else 0)
         out["pred_margin_home_minus_away"] = np.round(pred_margin_final, 2)
         out["pred_total_points"] = np.round(pred_total_final, 2)
