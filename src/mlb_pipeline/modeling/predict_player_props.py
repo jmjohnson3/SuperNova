@@ -489,11 +489,20 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
         key = (str(row["player_name_norm"]), str(row["stat"]))
         existing = result.get(key)
         if existing is None or priority[bk] < priority.get(existing["bookmaker_key"], 99):
+            def _clean(v):
+                if v is None:
+                    return None
+                try:
+                    if pd.isna(v):
+                        return None
+                except (TypeError, ValueError):
+                    pass
+                return str(v) if v else None
             result[key] = {
                 "bookmaker_key": bk,
                 "line": float(row["line"]) if row["line"] is not None else None,
-                "over_link": row.get("over_link"),
-                "under_link": row.get("under_link"),
+                "over_link": _clean(row.get("over_link")),
+                "under_link": _clean(row.get("under_link")),
             }
     return result
 
@@ -587,17 +596,19 @@ def _print_discord(
             has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
 
             if line is not None:
+                bk = line_data.get("bookmaker_key", "")
+                book_lbl = "FD" if bk == "fanduel" else "DK"
                 dir_str = "O" if edge > 0 else "U"
                 bet_str = f"| {dir_str}{line:.1f}"
                 if has_edge:
                     bet_str += f"  ★ EDGE {edge:+.1f}"
-                    fd_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
-                    link_str = f"  [Bet FD]({fd_link})" if fd_link else ""
-                    if fd_link:
-                        fd_links.append(fd_link)
+                    bet_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
+                    link_str = f"  [Bet {book_lbl}]({bet_link})" if bet_link else ""
+                    if bet_link:
+                        fd_links.append(bet_link)
                 else:
-                    fd_link = line_data.get("over_link") or line_data.get("under_link")
-                    link_str = f"  [FD]({fd_link})" if fd_link else ""
+                    bet_link = line_data.get("over_link") or line_data.get("under_link")
+                    link_str = f"  [{book_lbl}]({bet_link})" if bet_link else ""
             else:
                 bet_str = ""
                 link_str = ""
@@ -626,17 +637,19 @@ def _print_discord(
                 has_edge = edge is not None and abs(edge) >= threshold
 
                 if line is not None:
+                    bk = line_data.get("bookmaker_key", "")
+                    book_lbl = "FD" if bk == "fanduel" else "DK"
                     dir_str = "O" if edge > 0 else "U"
                     bet_str = f"| {dir_str}{line:.1f}"
                     if has_edge:
                         bet_str += f"  ★ EDGE {edge:+.2f}"
-                        fd_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
-                        link_str = f"  [Bet FD]({fd_link})" if fd_link else ""
-                        if fd_link:
-                            fd_links.append(fd_link)
+                        bet_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
+                        link_str = f"  [Bet {book_lbl}]({bet_link})" if bet_link else ""
+                        if bet_link:
+                            fd_links.append(bet_link)
                     else:
-                        fd_link = line_data.get("over_link") or line_data.get("under_link")
-                        link_str = f"  [FD]({fd_link})" if fd_link else ""
+                        bet_link = line_data.get("over_link") or line_data.get("under_link")
+                        link_str = f"  [{book_lbl}]({bet_link})" if bet_link else ""
                 else:
                     bet_str = ""
                     link_str = ""
@@ -672,7 +685,8 @@ def _print_best_bets(
             best.append({
                 "name": name, "stat": "K", "pred": pred_k,
                 "line": ld["line"], "edge": edge,
-                "fd_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                "bookmaker_key": ld.get("bookmaker_key", ""),
                 "team": row.get("team_abbr", ""),
             })
 
@@ -694,7 +708,8 @@ def _print_best_bets(
                 best.append({
                     "name": name, "stat": stat, "pred": pred_v,
                     "line": ld["line"], "edge": edge,
-                    "fd_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                    "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                    "bookmaker_key": ld.get("bookmaker_key", ""),
                     "team": row.get("team_abbr", ""),
                 })
 
@@ -705,11 +720,13 @@ def _print_best_bets(
         print("**Best Props (ranked by edge)**")
         for b in best[:10]:
             direction = "OVER" if b["edge"] > 0 else "UNDER"
-            fd_str = f"  [Bet FD]({b['fd_link']})" if b["fd_link"] else ""
+            book_lbl = "FD" if b.get("bookmaker_key") == "fanduel" else "DK"
+            bet_link = b.get("bet_link")
+            link_str = f"  [Bet {book_lbl}]({bet_link})" if bet_link else ""
             print(f"  {b['name']} ({b['team']}) {b['stat']} {direction} {b['line']} "
-                  f"| pred {b['pred']:.2f} | edge {b['edge']:+.2f}{fd_str}")
-            if b["fd_link"]:
-                fd_links.append(b["fd_link"])
+                  f"| pred {b['pred']:.2f} | edge {b['edge']:+.2f}{link_str}")
+            if bet_link:
+                fd_links.append(bet_link)
 
     return fd_links
 

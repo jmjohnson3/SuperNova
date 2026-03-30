@@ -308,6 +308,7 @@ def _fetch_prop_lines_for_day(
             "bookmakers": "draftkings,fanduel",
             "oddsFormat": cfg.odds_format,
             "dateFormat": cfg.date_format,
+            "includeLinks": "true",
         }
         full_url = _build_full_url(url, params)
 
