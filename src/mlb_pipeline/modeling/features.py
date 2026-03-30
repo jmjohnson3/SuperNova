@@ -116,6 +116,113 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "run_line_home" in X.columns:
         X["market_run_line"] = X["run_line_home"]
 
+    # ── OPS (OBP + SLG) differential ─────────────────────────────────────────
+    # OPS is the most common single-number offensive quality proxy.
+    for _w in ("5", "10"):
+        for _side in ("home", "away"):
+            _obp = f"{_side}_obp_avg_{_w}"
+            _slg = f"{_side}_slg_avg_{_w}"
+            if _obp in X.columns and _slg in X.columns:
+                X[f"{_side}_ops_{_w}"] = X[_obp] + X[_slg]
+        h, a = f"home_ops_{_w}", f"away_ops_{_w}"
+        if h in X.columns and a in X.columns:
+            X[f"ops_diff_{_w}"] = X[h] - X[a]
+
+    # ── Runs scoring trend (hot / cold offense arc) ───────────────────────────
+    # Positive = team is outscoring its season baseline over last 5 games.
+    for _side in ("home", "away"):
+        _r5, _r20 = f"{_side}_runs_avg_5", f"{_side}_runs_avg_20"
+        if _r5 in X.columns and _r20 in X.columns:
+            X[f"{_side}_runs_trend_5v20"] = X[_r5] - X[_r20]
+    if "home_runs_trend_5v20" in X.columns and "away_runs_trend_5v20" in X.columns:
+        X["runs_trend_diff"] = X["home_runs_trend_5v20"] - X["away_runs_trend_5v20"]
+
+    # ── Team ERA trend (improving = negative value) ───────────────────────────
+    for _side in ("home", "away"):
+        _e5, _e10 = f"{_side}_era_5", f"{_side}_era_10"
+        if _e5 in X.columns and _e10 in X.columns:
+            X[f"{_side}_era_trend_5v10"] = X[_e5] - X[_e10]
+    # Positive diff = away staff worsening relative to home (home edge)
+    if "home_era_trend_5v10" in X.columns and "away_era_trend_5v10" in X.columns:
+        X["era_trend_diff"] = X["away_era_trend_5v10"] - X["home_era_trend_5v10"]
+
+    # ── SP K/BB ratio (dominance vs command) ─────────────────────────────────
+    for _side in ("home", "away"):
+        _k, _bb = f"{_side}_sp_k_pct_5", f"{_side}_sp_bb_pct_5"
+        if _k in X.columns and _bb in X.columns:
+            X[f"{_side}_sp_k_bb_ratio_5"] = X[_k] / X[_bb].clip(lower=0.01)
+    if "home_sp_k_bb_ratio_5" in X.columns and "away_sp_k_bb_ratio_5" in X.columns:
+        X["sp_k_bb_ratio_diff"] = X["home_sp_k_bb_ratio_5"] - X["away_sp_k_bb_ratio_5"]
+
+    # ── Team pitching K/9 ÷ BB/9 (staff control quality) ─────────────────────
+    for _side in ("home", "away"):
+        _k9, _bb9 = f"{_side}_k9_5", f"{_side}_bb9_5"
+        if _k9 in X.columns and _bb9 in X.columns:
+            X[f"{_side}_team_k_bb_ratio_5"] = X[_k9] / X[_bb9].clip(lower=0.1)
+    if "home_team_k_bb_ratio_5" in X.columns and "away_team_k_bb_ratio_5" in X.columns:
+        X["team_k_bb_ratio_diff"] = X["home_team_k_bb_ratio_5"] - X["away_team_k_bb_ratio_5"]
+
+    # ── Bullpen exposure (fraction of game SP doesn't cover) ─────────────────
+    # 0 = SP goes all 9 (no bullpen needed), 1 = SP gets no outs (all bullpen).
+    for _side in ("home", "away"):
+        _ip = f"{_side}_sp_ip_avg_5"
+        if _ip in X.columns:
+            X[f"{_side}_bullpen_exposure"] = (1.0 - X[_ip].clip(0, 9) / 9.0).clip(lower=0.0)
+
+    # ── SP depth × BP ERA (short SP + bad bullpen = runs) ────────────────────
+    for _side in ("home", "away"):
+        _exp, _bpera = f"{_side}_bullpen_exposure", f"{_side}_bp_era_5"
+        if _exp in X.columns and _bpera in X.columns:
+            X[f"{_side}_pen_exposure_x_era"] = X[_exp] * X[_bpera]
+    # Positive = away team is more exposed (home pen advantage)
+    if "home_pen_exposure_x_era" in X.columns and "away_pen_exposure_x_era" in X.columns:
+        X["pen_exposure_era_diff"] = X["away_pen_exposure_x_era"] - X["home_pen_exposure_x_era"]
+
+    # ── Bullpen ERA differential ──────────────────────────────────────────────
+    # Positive = away BP worse than home (late-inning advantage for home).
+    for _w in ("5", "10"):
+        h, a = f"home_bp_era_{_w}", f"away_bp_era_{_w}"
+        if h in X.columns and a in X.columns:
+            X[f"bp_era_diff_{_w}"] = X[a] - X[h]
+
+    # ── Market vig-implied win probability ────────────────────────────────────
+    # Convert American odds → raw implied prob → de-vig (normalize so home+away = 1).
+    def _american_to_prob(odds: pd.Series) -> pd.Series:
+        odds_n = pd.to_numeric(odds, errors="coerce")
+        pos = odds_n > 0
+        neg = odds_n < 0
+        p = pd.Series(np.nan, index=odds_n.index)
+        p[pos] = 100.0 / (odds_n[pos] + 100.0)
+        p[neg] = odds_n[neg].abs() / (odds_n[neg].abs() + 100.0)
+        return p
+
+    if "run_line_home_price" in X.columns and "run_line_away_price" in X.columns:
+        _raw_h = _american_to_prob(X["run_line_home_price"])
+        _raw_a = _american_to_prob(X["run_line_away_price"])
+        _total = (_raw_h + _raw_a).replace(0, np.nan)
+        X["market_home_win_prob"] = _raw_h / _total
+
+    # ── Park × offense interaction ────────────────────────────────────────────
+    # Amplifies offensive projections by park run-scoring environment.
+    _park = X.get("park_run_factor") if "park_run_factor" in X.columns else X.get("run_factor")
+    if _park is not None:
+        for _side in ("home", "away"):
+            _r10 = f"{_side}_runs_avg_10"
+            if _r10 in X.columns:
+                X[f"{_side}_park_adj_runs_10"] = X[_r10] * _park
+        if "home_park_adj_runs_10" in X.columns and "away_park_adj_runs_10" in X.columns:
+            X["park_adj_runs_diff"] = X["home_park_adj_runs_10"] - X["away_park_adj_runs_10"]
+
+    # ── Pythagorean × opposing SP quality ────────────────────────────────────
+    # Strong team facing weak SP → amplified win probability.
+    # High away_sp_fip_5 = weak away pitcher = home offense benefits more.
+    if "home_pythag" in X.columns and "away_sp_fip_5" in X.columns:
+        X["home_pythag_x_opp_sp_fip"] = X["home_pythag"] * X["away_sp_fip_5"]
+    if "away_pythag" in X.columns and "home_sp_fip_5" in X.columns:
+        X["away_pythag_x_opp_sp_fip"] = X["away_pythag"] * X["home_sp_fip_5"]
+    if "home_pythag_x_opp_sp_fip" in X.columns and "away_pythag_x_opp_sp_fip" in X.columns:
+        X["pythag_sp_quality_diff"] = X["home_pythag_x_opp_sp_fip"] - X["away_pythag_x_opp_sp_fip"]
+
     return X
 
 
