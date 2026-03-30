@@ -1,15 +1,15 @@
 {
-  "direct_spread_mae": 3.5464028222959163,
-  "direct_spread_rmse": 4.520874592766637,
-  "direct_spread_p68": 4.199121471643448,
-  "direct_spread_p90": 7.420491269230848,
-  "direct_rl_mae": 3.5464028222959163,
-  "direct_rl_rmse": 4.520874592766637,
-  "direct_rl_dir": 0.5306062389640965,
-  "direct_rl_p68": 4.199121471643448,
-  "direct_rl_p90": 7.420491269230848,
-  "direct_total_mae": 3.569036579468869,
-  "direct_total_rmse": 4.520010860824652,
-  "direct_total_p68": 4.338385391235351,
-  "direct_total_p90": 7.0944565773010275
+  "direct_spread_mae": 3.5316114609465887,
+  "direct_spread_rmse": 4.5101300699091595,
+  "direct_spread_p68": 4.204552154541016,
+  "direct_spread_p90": 7.381967735290529,
+  "direct_rl_mae": 3.5316114609465887,
+  "direct_rl_rmse": 4.5101300699091595,
+  "direct_rl_dir": 0.5253090052972337,
+  "direct_rl_p68": 4.204552154541016,
+  "direct_rl_p90": 7.381967735290529,
+  "direct_total_mae": 3.570914109220499,
+  "direct_total_rmse": 4.515181677559729,
+  "direct_total_p68": 4.347828941345215,
+  "direct_total_p90": 7.137629699707032
 }

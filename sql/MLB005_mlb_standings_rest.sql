@@ -3,6 +3,8 @@
 -- is_b2b = TRUE when rest_days = 1 (back-to-back)
 -- Standings (wins/losses/run_diff) computed from raw.mlb_games results directly
 -- since raw.mlb_standings has NULL data (MSF subscription doesn't cover MLB game data).
+-- New (Group B): wins_last_5, win_pct_last_5, wins_last_10, win_pct_last_10,
+--                run_diff_avg_last_5 — rolling form windows capturing team momentum.
 CREATE OR REPLACE VIEW features.mlb_standings_rest AS
 WITH game_dates AS (
     -- One row per (season, team, game) combining home + away appearances
@@ -76,8 +78,8 @@ completed_game_records AS (
     WHERE g.status = 'final'
       AND g.home_score IS NOT NULL
 ),
--- Cumulative standings THROUGH each completed game (inclusive of that game's result).
--- wins_through / losses_through / run_diff_through include this game's result.
+-- Cumulative standings THROUGH each completed game (inclusive of that game's result)
+-- PLUS rolling form windows (5 and 10 prior games, leakage-safe via PRECEDING AND 1 PRECEDING).
 -- LATERAL join will use `game_date_et < target_date` to get state before target game.
 cumulative_standings AS (
     SELECT
@@ -85,22 +87,28 @@ cumulative_standings AS (
         game_slug,
         game_date_et,
         team_abbr,
-        SUM(won) OVER (
-            PARTITION BY season, team_abbr
-            ORDER BY game_date_et, game_slug
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) AS wins_through,
-        SUM(1 - won) OVER (
-            PARTITION BY season, team_abbr
-            ORDER BY game_date_et, game_slug
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) AS losses_through,
-        SUM(run_diff_game) OVER (
-            PARTITION BY season, team_abbr
-            ORDER BY game_date_et, game_slug
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) AS run_differential_through
+        -- ── Cumulative (season-to-date, inclusive of this game) ──────────────
+        SUM(won)           OVER w_cum AS wins_through,
+        SUM(1 - won)       OVER w_cum AS losses_through,
+        SUM(run_diff_game) OVER w_cum AS run_differential_through,
+        -- ── Rolling form: last 5 completed games (leakage-safe) ──────────────
+        SUM(won)           OVER w5    AS wins_last_5,
+        COUNT(*)           OVER w5    AS games_last_5,
+        AVG(run_diff_game) OVER w5    AS run_diff_avg_last_5,
+        -- ── Rolling form: last 10 completed games ─────────────────────────────
+        SUM(won)           OVER w10   AS wins_last_10,
+        COUNT(*)           OVER w10   AS games_last_10
     FROM completed_game_records
+    WINDOW
+        w_cum AS (PARTITION BY season, team_abbr
+                  ORDER BY game_date_et, game_slug
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+        w5    AS (PARTITION BY season, team_abbr
+                  ORDER BY game_date_et, game_slug
+                  ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING),
+        w10   AS (PARTITION BY season, team_abbr
+                  ORDER BY game_date_et, game_slug
+                  ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING)
 )
 SELECT
     r.season,
@@ -122,7 +130,7 @@ SELECT
     sw.run_differential                               AS run_diff,
     -- Division rank not available (would require additional standings data)
     NULL::integer                                     AS division_rank,
-    -- Computed convenience fields (alias for win_pct)
+    -- Alias for win_pct
     CASE
         WHEN (sw.wins + sw.losses) > 0
         THEN sw.wins::float / (sw.wins + sw.losses)
@@ -134,14 +142,31 @@ SELECT
         WHEN (sw.wins + sw.losses) > 0
         THEN sw.run_differential::float / (sw.wins + sw.losses)
         ELSE NULL
-    END AS run_diff_per_game
+    END AS run_diff_per_game,
+    -- ── Rolling form (last 5/10 games) ────────────────────────────────────────
+    sw.wins_last_5,
+    sw.games_last_5,
+    CASE WHEN sw.games_last_5 > 0
+         THEN sw.wins_last_5::float / sw.games_last_5
+         ELSE NULL END AS win_pct_last_5,
+    sw.wins_last_10,
+    sw.games_last_10,
+    CASE WHEN sw.games_last_10 > 0
+         THEN sw.wins_last_10::float / sw.games_last_10
+         ELSE NULL END AS win_pct_last_10,
+    sw.run_diff_avg_last_5
 FROM rest_calc r
 -- Join to most recent cumulative standings row before this game
 LEFT JOIN LATERAL (
     SELECT
         cs.wins_through      AS wins,
         cs.losses_through    AS losses,
-        cs.run_differential_through AS run_differential
+        cs.run_differential_through AS run_differential,
+        cs.wins_last_5,
+        cs.games_last_5,
+        cs.run_diff_avg_last_5,
+        cs.wins_last_10,
+        cs.games_last_10
     FROM cumulative_standings cs
     WHERE cs.team_abbr   = r.team_abbr
       AND cs.season      = r.season

@@ -223,6 +223,79 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "home_pythag_x_opp_sp_fip" in X.columns and "away_pythag_x_opp_sp_fip" in X.columns:
         X["pythag_sp_quality_diff"] = X["home_pythag_x_opp_sp_fip"] - X["away_pythag_x_opp_sp_fip"]
 
+    # ── SP days rest differential (Group B) ──────────────────────────────────
+    # Positive = home SP has had more rest (advantage for home).
+    if "home_sp_days_rest" in X.columns and "away_sp_days_rest" in X.columns:
+        X["sp_days_rest_diff"] = (
+            pd.to_numeric(X["home_sp_days_rest"], errors="coerce")
+            - pd.to_numeric(X["away_sp_days_rest"], errors="coerce")
+        )
+
+    # Short-rest asymmetry: +1 = away SP on short rest, -1 = home SP on short rest
+    if "home_sp_is_short_rest" in X.columns and "away_sp_is_short_rest" in X.columns:
+        X["sp_short_rest_asymmetry"] = (
+            pd.to_numeric(X["away_sp_is_short_rest"], errors="coerce").fillna(0)
+            - pd.to_numeric(X["home_sp_is_short_rest"], errors="coerce").fillna(0)
+        )
+
+    # ── SP home/away ERA splits (Group B) ────────────────────────────────────
+    # era_home - era_away: negative = pitcher is better at home (common for home SPs).
+    # The "split edge" = away SP's home disadvantage minus home SP's home advantage.
+    for _side in ("home", "away"):
+        _eh = f"{_side}_sp_era_home_10"
+        _ea = f"{_side}_sp_era_away_10"
+        if _eh in X.columns and _ea in X.columns:
+            X[f"{_side}_sp_home_away_era_split"] = (
+                pd.to_numeric(X[_eh], errors="coerce")
+                - pd.to_numeric(X[_ea], errors="coerce")
+            )
+
+    # Positive = away SP performs relatively worse away from home (home has edge)
+    if "home_sp_home_away_era_split" in X.columns and "away_sp_home_away_era_split" in X.columns:
+        X["sp_home_away_split_edge"] = (
+            X["away_sp_home_away_era_split"] - X["home_sp_home_away_era_split"]
+        )
+
+    # ── Rolling win% differential — recent form (Group B) ────────────────────
+    # Captures hot/cold streaks over the last 5 and 10 games.
+    if "home_win_pct_last_5" in X.columns and "away_win_pct_last_5" in X.columns:
+        X["win_pct_last_5_diff"] = (
+            pd.to_numeric(X["home_win_pct_last_5"], errors="coerce")
+            - pd.to_numeric(X["away_win_pct_last_5"], errors="coerce")
+        )
+    if "home_win_pct_last_10" in X.columns and "away_win_pct_last_10" in X.columns:
+        X["win_pct_last_10_diff"] = (
+            pd.to_numeric(X["home_win_pct_last_10"], errors="coerce")
+            - pd.to_numeric(X["away_win_pct_last_10"], errors="coerce")
+        )
+
+    # Rolling run diff per game (last 5): positive = home team has been outscoring opponents
+    if "home_run_diff_avg_last_5" in X.columns and "away_run_diff_avg_last_5" in X.columns:
+        X["run_diff_avg_last_5_edge"] = (
+            pd.to_numeric(X["home_run_diff_avg_last_5"], errors="coerce")
+            - pd.to_numeric(X["away_run_diff_avg_last_5"], errors="coerce")
+        )
+
+    # Recent form vs season form: is the home team trending up relative to season baseline?
+    if "home_win_pct_last_5" in X.columns and "home_win_pct" in X.columns:
+        X["home_form_vs_season"] = (
+            pd.to_numeric(X["home_win_pct_last_5"], errors="coerce")
+            - pd.to_numeric(X["home_win_pct"], errors="coerce")
+        )
+    if "away_win_pct_last_5" in X.columns and "away_win_pct" in X.columns:
+        X["away_form_vs_season"] = (
+            pd.to_numeric(X["away_win_pct_last_5"], errors="coerce")
+            - pd.to_numeric(X["away_win_pct"], errors="coerce")
+        )
+    if "home_form_vs_season" in X.columns and "away_form_vs_season" in X.columns:
+        X["form_momentum_diff"] = X["home_form_vs_season"] - X["away_form_vs_season"]
+
+    # ── H2H season record edge (Group B) ────────────────────────────────────
+    # Deviation from 50/50 in head-to-head games this season.
+    # Only meaningful after a few series; NULL-safe via fillna.
+    if "h2h_home_win_pct_ytd" in X.columns:
+        X["h2h_edge"] = pd.to_numeric(X["h2h_home_win_pct_ytd"], errors="coerce") - 0.5
+
     return X
 
 

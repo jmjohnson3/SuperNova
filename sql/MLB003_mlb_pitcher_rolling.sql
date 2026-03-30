@@ -1,6 +1,7 @@
--- MLB003: Individual starting pitcher rolling stats (last 5 starts)
--- Leakage-safe: all windows use ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING
+-- MLB003: Individual starting pitcher rolling stats (last 5/10/20 starts)
+-- Leakage-safe: all rolling windows use ROWS BETWEEN N PRECEDING AND 1 PRECEDING
 -- FIP approximation: (13*HR + 3*BB - 2*K) / IP + 3.2  (no HBP in raw data)
+-- New (Group B): days_since_last_start, is_short_rest, home/away ERA splits
 CREATE OR REPLACE VIEW features.mlb_pitcher_rolling AS
 WITH starter_gamelogs AS (
     SELECT
@@ -9,6 +10,8 @@ WITH starter_gamelogs AS (
         g.game_date_et,
         gl.player_id,
         gl.team_abbr,
+        -- Home/away flag for split stats
+        CASE WHEN gl.team_abbr = g.home_team_abbr THEN 1 ELSE 0 END AS is_home,
         COALESCE(gl.innings_pitched, 0)    AS ip,
         COALESCE(gl.earned_runs, 0)        AS er,
         COALESCE(gl.strikeouts_pitcher, 0) AS k,
@@ -31,12 +34,18 @@ derived AS (
         game_date_et,
         player_id,
         team_abbr,
+        is_home,
         ip,
         er,
         k,
         bb,
         h,
         hr,
+        -- Days since this pitcher's previous start (leakage-safe: gap before this start)
+        game_date_et - LAG(game_date_et) OVER (
+            PARTITION BY season, player_id
+            ORDER BY game_date_et, game_slug
+        ) AS days_since_last_start,
         -- ERA for this start: 9 * ER / IP
         CASE WHEN ip > 0
              THEN 9.0 * er / ip
@@ -45,7 +54,7 @@ derived AS (
         CASE WHEN ip > 0
              THEN (h + bb)::float / ip
              ELSE NULL END AS start_whip,
-        -- K% per batter faced approx: K / (IP * 3 + H + BB)  [batters faced estimate]
+        -- K% per batter faced approx: K / (IP * 3 + H + BB)
         CASE WHEN (ip * 3 + h + bb) > 0
              THEN k::float / (ip * 3 + h + bb)
              ELSE NULL END AS start_k_pct,
@@ -113,9 +122,26 @@ SELECT
     AVG(start_fip)   OVER w20 AS fip_20,
     AVG(ip)          OVER w20 AS ip_avg_20,
 
-    -- Count of starts in last 5 (to know how many samples back the avg)
+    -- Count of starts in last 5/10 (sample size)
     COUNT(*) OVER w5  AS starts_in_window_5,
-    COUNT(*) OVER w10 AS starts_in_window_10
+    COUNT(*) OVER w10 AS starts_in_window_10,
+
+    -- New columns appended after existing ones (CREATE OR REPLACE requires this)
+
+    -- Days since last start + short-rest flag
+    days_since_last_start,
+    CASE WHEN days_since_last_start IS NOT NULL
+          AND days_since_last_start <= 4
+         THEN 1 ELSE 0 END                  AS is_short_rest,
+
+    -- Home/away ERA splits (last 10 starts, FILTER by home/away flag)
+    -- Helps identify SPs who perform meaningfully better at home vs on the road.
+    AVG(start_era) FILTER (WHERE is_home = 1) OVER w10 AS era_home_10,
+    AVG(start_era) FILTER (WHERE is_home = 0) OVER w10 AS era_away_10,
+    AVG(start_k9)  FILTER (WHERE is_home = 1) OVER w10 AS k9_home_10,
+    AVG(start_k9)  FILTER (WHERE is_home = 0) OVER w10 AS k9_away_10,
+    AVG(start_fip) FILTER (WHERE is_home = 1) OVER w10 AS fip_home_10,
+    AVG(start_fip) FILTER (WHERE is_home = 0) OVER w10 AS fip_away_10
 
 FROM derived
 WINDOW

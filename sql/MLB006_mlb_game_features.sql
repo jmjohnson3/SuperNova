@@ -11,9 +11,10 @@
 --   MLB005: standings + rest days (home + away)
 --   odds.mlb_game_lines: market run line + total (LEFT JOIN)
 --
--- Column naming convention:
---   home_* / away_* for team-level features
---   home_sp_* / away_sp_* for starting pitcher features
+-- Group B additions:
+--   SP: days_rest, is_short_rest, home/away ERA splits
+--   Standings: wins_last_5/10, win_pct_last_5/10, run_diff_avg_last_5
+--   H2H: head-to-head season record between the two teams
 
 -- ============================================================
 -- TRAINING VIEW: one row per completed game
@@ -38,7 +39,6 @@ market_lines AS (
         home_team,
         away_team,
         as_of_date,
-        -- Prefer fanduel, then draftkings
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
 ),
 -- Opening line: earliest crawl per game
@@ -55,8 +55,28 @@ market_lines_open AS (
         home_team,
         away_team,
         as_of_date,
-        -- Oldest crawl first for opening line
         event_id ASC
+),
+-- Head-to-head season record: for each game, how many prior games between
+-- these two teams this season, and how many did the home team win?
+h2h AS (
+    SELECT
+        g1.game_slug,
+        COUNT(*) FILTER (WHERE g2.status = 'final')       AS h2h_games_ytd,
+        SUM(CASE
+            WHEN g2.home_team_abbr = g1.home_team_abbr
+             AND g2.home_score > g2.away_score THEN 1
+            WHEN g2.away_team_abbr = g1.home_team_abbr
+             AND g2.away_score > g2.home_score THEN 1
+            ELSE 0
+        END) FILTER (WHERE g2.status = 'final')           AS h2h_home_team_wins
+    FROM raw.mlb_games g1
+    LEFT JOIN raw.mlb_games g2
+        ON (   (g2.home_team_abbr = g1.home_team_abbr AND g2.away_team_abbr = g1.away_team_abbr)
+            OR (g2.home_team_abbr = g1.away_team_abbr AND g2.away_team_abbr = g1.home_team_abbr))
+       AND g2.game_date_et < g1.game_date_et
+       AND g2.season       = g1.season
+    GROUP BY g1.game_slug
 )
 SELECT
     -- ---- Game identifiers ----
@@ -72,7 +92,7 @@ SELECT
     -- ---- Targets (training only) ----
     g.home_score,
     g.away_score,
-    g.home_score - g.away_score            AS run_diff,        -- positive = home win
+    g.home_score - g.away_score            AS run_diff,
     g.home_score + g.away_score            AS total_runs,
     CASE WHEN g.home_score > g.away_score THEN 1 ELSE 0 END AS home_win,
 
@@ -195,6 +215,15 @@ SELECT
     hsp.era_10                              AS home_sp_career_era_10,
     hsp.fip_10                              AS home_sp_fip_10,
     hsp.starts_in_window_5                  AS home_sp_starts_in_window,
+    -- Group B: SP rest + home/away splits
+    hsp.days_since_last_start               AS home_sp_days_rest,
+    hsp.is_short_rest                       AS home_sp_is_short_rest,
+    hsp.era_home_10                         AS home_sp_era_home_10,
+    hsp.era_away_10                         AS home_sp_era_away_10,
+    hsp.k9_home_10                          AS home_sp_k9_home_10,
+    hsp.k9_away_10                          AS home_sp_k9_away_10,
+    hsp.fip_home_10                         AS home_sp_fip_home_10,
+    hsp.fip_away_10                         AS home_sp_fip_away_10,
 
     -- ---- Away SP rolling ----
     asp.era_5                               AS away_sp_career_era_5,
@@ -209,6 +238,15 @@ SELECT
     asp.era_10                              AS away_sp_career_era_10,
     asp.fip_10                              AS away_sp_fip_10,
     asp.starts_in_window_5                  AS away_sp_starts_in_window,
+    -- Group B: SP rest + home/away splits
+    asp.days_since_last_start               AS away_sp_days_rest,
+    asp.is_short_rest                       AS away_sp_is_short_rest,
+    asp.era_home_10                         AS away_sp_era_home_10,
+    asp.era_away_10                         AS away_sp_era_away_10,
+    asp.k9_home_10                          AS away_sp_k9_home_10,
+    asp.k9_away_10                          AS away_sp_k9_away_10,
+    asp.fip_home_10                         AS away_sp_fip_home_10,
+    asp.fip_away_10                         AS away_sp_fip_away_10,
 
     -- ---- Standings + rest (home) ----
     hsr.wins                                AS home_wins,
@@ -220,6 +258,12 @@ SELECT
     hsr.rest_days                           AS home_rest_days,
     hsr.is_b2b                              AS home_is_b2b,
     hsr.games_played                        AS home_games_played,
+    -- Group B: rolling form
+    hsr.wins_last_5                         AS home_wins_last_5,
+    hsr.win_pct_last_5                      AS home_win_pct_last_5,
+    hsr.wins_last_10                        AS home_wins_last_10,
+    hsr.win_pct_last_10                     AS home_win_pct_last_10,
+    hsr.run_diff_avg_last_5                 AS home_run_diff_avg_last_5,
 
     -- ---- Standings + rest (away) ----
     asr.wins                                AS away_wins,
@@ -231,95 +275,85 @@ SELECT
     asr.rest_days                           AS away_rest_days,
     asr.is_b2b                              AS away_is_b2b,
     asr.games_played                        AS away_games_played,
+    -- Group B: rolling form
+    asr.wins_last_5                         AS away_wins_last_5,
+    asr.win_pct_last_5                      AS away_win_pct_last_5,
+    asr.wins_last_10                        AS away_wins_last_10,
+    asr.win_pct_last_10                     AS away_win_pct_last_10,
+    asr.run_diff_avg_last_5                 AS away_run_diff_avg_last_5,
+
+    -- ---- Head-to-head season record ----
+    h2h.h2h_games_ytd,
+    CASE WHEN h2h.h2h_games_ytd > 0
+         THEN h2h.h2h_home_team_wins::float / h2h.h2h_games_ytd
+         ELSE NULL END                      AS h2h_home_win_pct_ytd,
 
     -- ---- Derived differential features ----
-    -- Batting edge
     hb.runs_avg_10 - ab.runs_avg_10         AS runs_scored_edge_10,
     hb.obp_avg_10  - ab.obp_avg_10          AS obp_edge_10,
     hb.slg_avg_10  - ab.slg_avg_10          AS slg_edge_10,
-    -- Pitching edge (lower ERA = better, so away_era - home_era = positive for home)
     ap.era_10    - hp.era_10                AS era_edge_10,
     ap.whip_10   - hp.whip_10              AS whip_edge_10,
-    -- SP matchup edge
     asp.fip_5    - hsp.fip_5               AS sp_fip_edge_5,
     asp.era_5    - hsp.era_5               AS sp_era_edge_5,
-    -- Bullpen fatigue edge (home bullpen less taxed = positive for home)
     ap.bullpen_ip_last_3 - hp.bullpen_ip_last_3 AS bullpen_fatigue_edge,
-    -- Rest advantage
     hsr.rest_days - asr.rest_days           AS rest_days_advantage,
-    -- Win pct edge
     hsr.win_pct   - asr.win_pct            AS win_pct_edge,
     hsr.run_diff_per_game - asr.run_diff_per_game AS run_diff_per_game_edge,
-    -- Division rank edge (lower = better, so away - home = positive for home)
     COALESCE(asr.division_rank, 5) - COALESCE(hsr.division_rank, 5) AS division_rank_edge,
-    -- Offense vs defense: home bats vs away pitching (runs_avg_10 + allowed_avg_10) / 2 = implied total
     (hb.runs_avg_10 + ap.runs_allowed_avg_10) / 2.0  AS home_implied_runs,
     (ab.runs_avg_10 + hp.runs_allowed_avg_10) / 2.0  AS away_implied_runs,
-    -- Park-adjusted implied total
     bf.run_factor * ((hb.runs_avg_10 + ap.runs_allowed_avg_10)
                    + (ab.runs_avg_10 + hp.runs_allowed_avg_10)) / 2.0 AS park_adj_implied_total
 
 FROM raw.mlb_games g
 
--- Venue info
 LEFT JOIN raw.mlb_venues v
     ON v.venue_id = g.venue_id
 
--- Ballpark factors (join by home team since they always play in their home park)
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = g.home_team_abbr
 
--- Home team batting rolling (use mat view for fast join by game_slug)
 LEFT JOIN features.mlb_team_batting_rolling_mat hb
     ON hb.game_slug = g.game_slug
    AND hb.team_abbr = g.home_team_abbr
 
--- Away team batting rolling
 LEFT JOIN features.mlb_team_batting_rolling_mat ab
     ON ab.game_slug = g.game_slug
    AND ab.team_abbr = g.away_team_abbr
 
--- Home team pitching rolling
 LEFT JOIN features.mlb_team_pitching_rolling_mat hp
     ON hp.game_slug = g.game_slug
    AND hp.team_abbr = g.home_team_abbr
 
--- Away team pitching rolling
 LEFT JOIN features.mlb_team_pitching_rolling_mat ap
     ON ap.game_slug = g.game_slug
    AND ap.team_abbr = g.away_team_abbr
 
--- Home starting pitcher (from scheduled SP table)
 LEFT JOIN raw.mlb_starting_pitchers hsp_sched
     ON hsp_sched.game_slug = g.game_slug
    AND hsp_sched.team_abbr = g.home_team_abbr
 
--- Home SP rolling stats
 LEFT JOIN features.mlb_pitcher_rolling_mat hsp
     ON hsp.game_slug  = g.game_slug
    AND hsp.player_id  = COALESCE(hsp_sched.player_id, g.home_sp_id)
 
--- Away starting pitcher
 LEFT JOIN raw.mlb_starting_pitchers asp_sched
     ON asp_sched.game_slug = g.game_slug
    AND asp_sched.team_abbr = g.away_team_abbr
 
--- Away SP rolling stats
 LEFT JOIN features.mlb_pitcher_rolling_mat asp
     ON asp.game_slug  = g.game_slug
    AND asp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
 
--- Home standings + rest
 LEFT JOIN features.mlb_standings_rest_mat hsr
     ON hsr.game_slug = g.game_slug
    AND hsr.team_abbr = g.home_team_abbr
 
--- Away standings + rest
 LEFT JOIN features.mlb_standings_rest_mat asr
     ON asr.game_slug = g.game_slug
    AND asr.team_abbr = g.away_team_abbr
 
--- Market lines (most recent line before game time)
 LEFT JOIN market_lines ml
     ON ml.home_team = g.home_team_abbr
    AND ml.away_team = g.away_team_abbr
@@ -329,6 +363,9 @@ LEFT JOIN market_lines_open mlo
     ON mlo.home_team = g.home_team_abbr
    AND mlo.away_team = g.away_team_abbr
    AND mlo.as_of_date     = g.game_date_et
+
+LEFT JOIN h2h
+    ON h2h.game_slug = g.game_slug
 
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
@@ -359,9 +396,7 @@ market_lines AS (
         as_of_date,
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
 ),
--- Pre-compute latest rolling stats per team from materialized views (fast).
--- Since the prediction view only shows future/today games, the most recent
--- completed game will always be before the predicted game date.
+-- Latest rolling stats per team
 latest_batting AS (
     SELECT DISTINCT ON (team_abbr)
         *
@@ -380,6 +415,26 @@ latest_pitcher AS (
         *
     FROM features.mlb_pitcher_rolling_mat
     ORDER BY player_id, game_date_et DESC, game_slug DESC
+),
+-- Head-to-head season record for upcoming games
+h2h AS (
+    SELECT
+        g1.game_slug,
+        COUNT(*) FILTER (WHERE g2.status = 'final')       AS h2h_games_ytd,
+        SUM(CASE
+            WHEN g2.home_team_abbr = g1.home_team_abbr
+             AND g2.home_score > g2.away_score THEN 1
+            WHEN g2.away_team_abbr = g1.home_team_abbr
+             AND g2.away_score > g2.home_score THEN 1
+            ELSE 0
+        END) FILTER (WHERE g2.status = 'final')           AS h2h_home_team_wins
+    FROM raw.mlb_games g1
+    LEFT JOIN raw.mlb_games g2
+        ON (   (g2.home_team_abbr = g1.home_team_abbr AND g2.away_team_abbr = g1.away_team_abbr)
+            OR (g2.home_team_abbr = g1.away_team_abbr AND g2.away_team_abbr = g1.home_team_abbr))
+       AND g2.game_date_et < g1.game_date_et
+       AND g2.season       = g1.season
+    GROUP BY g1.game_slug
 )
 SELECT
     -- ---- Game identifiers ----
@@ -508,6 +563,16 @@ SELECT
     hsp.era_10                              AS home_sp_career_era_10,
     hsp.fip_10                              AS home_sp_fip_10,
     hsp.starts_in_window_5                  AS home_sp_starts_in_window,
+    -- Group B: SP rest (days since last start before today) + home/away splits
+    (g.game_date_et - hsp.game_date_et)     AS home_sp_days_rest,
+    CASE WHEN (g.game_date_et - hsp.game_date_et) <= 4 THEN 1 ELSE 0 END
+                                            AS home_sp_is_short_rest,
+    hsp.era_home_10                         AS home_sp_era_home_10,
+    hsp.era_away_10                         AS home_sp_era_away_10,
+    hsp.k9_home_10                          AS home_sp_k9_home_10,
+    hsp.k9_away_10                          AS home_sp_k9_away_10,
+    hsp.fip_home_10                         AS home_sp_fip_home_10,
+    hsp.fip_away_10                         AS home_sp_fip_away_10,
 
     -- ---- Away SP rolling ----
     asp.era_5                               AS away_sp_career_era_5,
@@ -522,6 +587,16 @@ SELECT
     asp.era_10                              AS away_sp_career_era_10,
     asp.fip_10                              AS away_sp_fip_10,
     asp.starts_in_window_5                  AS away_sp_starts_in_window,
+    -- Group B: SP rest + home/away splits
+    (g.game_date_et - asp.game_date_et)     AS away_sp_days_rest,
+    CASE WHEN (g.game_date_et - asp.game_date_et) <= 4 THEN 1 ELSE 0 END
+                                            AS away_sp_is_short_rest,
+    asp.era_home_10                         AS away_sp_era_home_10,
+    asp.era_away_10                         AS away_sp_era_away_10,
+    asp.k9_home_10                          AS away_sp_k9_home_10,
+    asp.k9_away_10                          AS away_sp_k9_away_10,
+    asp.fip_home_10                         AS away_sp_fip_home_10,
+    asp.fip_away_10                         AS away_sp_fip_away_10,
 
     -- ---- Standings + rest (home) ----
     hsr.wins                                AS home_wins,
@@ -533,6 +608,12 @@ SELECT
     hsr.rest_days                           AS home_rest_days,
     hsr.is_b2b                              AS home_is_b2b,
     hsr.games_played                        AS home_games_played,
+    -- Group B: rolling form
+    hsr.wins_last_5                         AS home_wins_last_5,
+    hsr.win_pct_last_5                      AS home_win_pct_last_5,
+    hsr.wins_last_10                        AS home_wins_last_10,
+    hsr.win_pct_last_10                     AS home_win_pct_last_10,
+    hsr.run_diff_avg_last_5                 AS home_run_diff_avg_last_5,
 
     -- ---- Standings + rest (away) ----
     asr.wins                                AS away_wins,
@@ -544,6 +625,18 @@ SELECT
     asr.rest_days                           AS away_rest_days,
     asr.is_b2b                              AS away_is_b2b,
     asr.games_played                        AS away_games_played,
+    -- Group B: rolling form
+    asr.wins_last_5                         AS away_wins_last_5,
+    asr.win_pct_last_5                      AS away_win_pct_last_5,
+    asr.wins_last_10                        AS away_wins_last_10,
+    asr.win_pct_last_10                     AS away_win_pct_last_10,
+    asr.run_diff_avg_last_5                 AS away_run_diff_avg_last_5,
+
+    -- ---- Head-to-head season record ----
+    h2h.h2h_games_ytd,
+    CASE WHEN h2h.h2h_games_ytd > 0
+         THEN h2h.h2h_home_team_wins::float / h2h.h2h_games_ytd
+         ELSE NULL END                      AS h2h_home_win_pct_ytd,
 
     -- ---- Derived differential features ----
     hb.runs_avg_10 - ab.runs_avg_10         AS runs_scored_edge_10,
@@ -568,15 +661,11 @@ FROM raw.mlb_games g
 LEFT JOIN raw.mlb_venues v
     ON v.venue_id = g.venue_id
 
--- Ballpark factors (join by home team since they always play in their home park)
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = g.home_team_abbr
 
--- Home/away batting: latest completed game stats per team
 LEFT JOIN latest_batting hb ON hb.team_abbr = g.home_team_abbr
 LEFT JOIN latest_batting ab ON ab.team_abbr = g.away_team_abbr
-
--- Home/away pitching: latest completed game stats per team
 LEFT JOIN latest_pitching hp ON hp.team_abbr = g.home_team_abbr
 LEFT JOIN latest_pitching ap ON ap.team_abbr = g.away_team_abbr
 
@@ -584,7 +673,6 @@ LEFT JOIN raw.mlb_starting_pitchers hsp_sched
     ON hsp_sched.game_slug = g.game_slug
    AND hsp_sched.team_abbr = g.home_team_abbr
 
--- Home SP rolling: latest start stats for the scheduled SP
 LEFT JOIN latest_pitcher hsp
     ON hsp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
 
@@ -592,7 +680,6 @@ LEFT JOIN raw.mlb_starting_pitchers asp_sched
     ON asp_sched.game_slug = g.game_slug
    AND asp_sched.team_abbr = g.away_team_abbr
 
--- Away SP rolling: latest start stats for the scheduled SP
 LEFT JOIN latest_pitcher asp
     ON asp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
 
@@ -608,6 +695,9 @@ LEFT JOIN market_lines ml
     ON ml.home_team  = g.home_team_abbr
    AND ml.away_team  = g.away_team_abbr
    AND ml.as_of_date = g.game_date_et
+
+LEFT JOIN h2h
+    ON h2h.game_slug = g.game_slug
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE
