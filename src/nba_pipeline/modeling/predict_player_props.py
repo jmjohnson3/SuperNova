@@ -208,10 +208,10 @@ feat AS (
     FROM hist h
 ),
 latest_per_player_team AS (
-    -- DISTINCT ON includes season so a player who played for the same team across
-    -- multiple seasons gets one row per season.  ORDER BY season DESC ensures we
-    -- pick the current-season row first when the joined CTE filters on lp.season = t.season.
-    SELECT DISTINCT ON (player_id, team_abbr, season)
+    -- DISTINCT ON (player_id, season) so each player appears exactly once, using
+    -- their most recent team (handles mid-season trades: traded players no longer
+    -- show up under their old team when both old+new team play the same day).
+    SELECT DISTINCT ON (player_id, season)
       season,
       player_id,
       player_name,
@@ -240,7 +240,7 @@ latest_per_player_team AS (
       reb_avg_10_home, reb_avg_10_away,
       min_avg_10_home, min_avg_10_away
     FROM feat
-    ORDER BY player_id, team_abbr, season DESC, start_ts_utc DESC
+    ORDER BY player_id, season DESC, start_ts_utc DESC
 ),
 joined AS (
     SELECT
@@ -1644,6 +1644,16 @@ def main() -> None:
                 np.nan,
             )
             df_out[kelly_col] = kelly_vals
+
+    # Safety dedup: drop any player appearing in more than one game block
+    # (can happen when a traded player has history for two teams both playing today).
+    # Sort so highest pred_points is kept (their current team's row, which typically
+    # has stronger recent stats and comes later chronologically).
+    n_before = len(df_out)
+    df_out = df_out.sort_values(["player_id", "pred_points"], ascending=[True, False])
+    df_out = df_out.drop_duplicates(subset=["player_id"], keep="first")
+    if len(df_out) < n_before:
+        log.info("Deduped %d duplicate player rows (mid-season trades)", n_before - len(df_out))
 
     # pretty print grouped by game
     df_out["start_ts_utc"] = pd.to_datetime(df_out["start_ts_utc"], utc=True).dt.tz_convert(_ET)
