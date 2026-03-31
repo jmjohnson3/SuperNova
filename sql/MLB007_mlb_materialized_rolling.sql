@@ -57,3 +57,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_standings_rest_mat_pk
     ON features.mlb_standings_rest_mat (game_slug, team_abbr);
 CREATE INDEX IF NOT EXISTS idx_mlb_standings_rest_mat_date
     ON features.mlb_standings_rest_mat (game_date_et, game_slug, team_abbr);
+
+-- ============================================================
+-- Umpire rolling materialized view (MLB009)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_umpire_rolling_mat AS
+SELECT * FROM features.mlb_umpire_rolling;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_umpire_rolling_mat_pk
+    ON features.mlb_umpire_rolling_mat (game_slug, umpire_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_umpire_rolling_mat_ump_date
+    ON features.mlb_umpire_rolling_mat (umpire_id, game_date_et DESC);

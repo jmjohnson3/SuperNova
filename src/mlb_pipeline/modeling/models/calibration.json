@@ -1,15 +1,15 @@
 {
-  "direct_spread_mae": 3.5316114609465887,
-  "direct_spread_rmse": 4.5101300699091595,
-  "direct_spread_p68": 4.204552154541016,
-  "direct_spread_p90": 7.381967735290529,
-  "direct_rl_mae": 3.5316114609465887,
-  "direct_rl_rmse": 4.5101300699091595,
-  "direct_rl_dir": 0.5253090052972337,
-  "direct_rl_p68": 4.204552154541016,
-  "direct_rl_p90": 7.381967735290529,
-  "direct_total_mae": 3.570914109220499,
-  "direct_total_rmse": 4.515181677559729,
-  "direct_total_p68": 4.347828941345215,
-  "direct_total_p90": 7.137629699707032
+  "direct_spread_mae": 3.3573490874895255,
+  "direct_spread_rmse": 4.412220262045935,
+  "direct_spread_p68": 4.124826784729958,
+  "direct_spread_p90": 7.193248844146729,
+  "direct_rl_mae": 3.3573490874895255,
+  "direct_rl_rmse": 4.412220262045935,
+  "direct_rl_dir": 0.6174220129487934,
+  "direct_rl_p68": 4.124826784729958,
+  "direct_rl_p90": 7.193248844146729,
+  "direct_total_mae": 3.551833376876041,
+  "direct_total_rmse": 4.489863664375865,
+  "direct_total_p68": 4.367589149475098,
+  "direct_total_p90": 7.1071732521057145
 }

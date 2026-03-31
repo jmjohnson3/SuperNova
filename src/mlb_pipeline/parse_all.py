@@ -23,6 +23,15 @@ _MLB_SQL_VIEWS = [
     "MLB005_mlb_standings_rest.sql",
     "MLB006_mlb_game_features.sql",
     "MLB008_mlb_player_batting_rolling.sql",
+    "MLB009_mlb_umpire_rolling.sql",   # DDL + umpire rolling view
+    "MLB010_mlb_weather_ddl.sql",      # weather table DDL
+]
+
+# Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
+# MLB006 is re-applied here so lineup quality columns take effect.
+_MLB_POST_MATVIEW_VIEWS = [
+    "MLB011_mlb_lineup_quality.sql",
+    "MLB006_mlb_game_features.sql",
 ]
 
 _MLB_MATVIEW_REFRESH = [
@@ -36,6 +45,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_pitching_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_pitcher_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_standings_rest_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_batting_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_umpire_rolling_mat;
 """
 
 
@@ -78,6 +88,7 @@ _MATVIEW_TO_VIEW = {
     "mlb_pitcher_rolling_mat":       "mlb_pitcher_rolling",
     "mlb_standings_rest_mat":        "mlb_standings_rest",
     "mlb_player_batting_rolling_mat": "mlb_player_batting_rolling",
+    "mlb_umpire_rolling_mat":        "mlb_umpire_rolling",
 }
 
 
@@ -179,6 +190,32 @@ def _refresh_matviews(pg_dsn: str) -> None:
             conn.close()
 
 
+def _apply_post_matview_views(pg_dsn: str) -> None:
+    """Apply SQL files that depend on matviews (MLB011 lineup quality + MLB006 re-apply).
+
+    Called after _refresh_matviews() so that mlb_player_batting_rolling_mat and
+    mlb_umpire_rolling_mat already exist when these views are created.
+    """
+    conn = None
+    try:
+        conn = psycopg2.connect(pg_dsn)
+        conn.autocommit = True
+        cur = conn.cursor()
+        for filename in _MLB_POST_MATVIEW_VIEWS:
+            sql_path = _SQL_DIR / filename
+            try:
+                sql = sql_path.read_text(encoding="utf-8")
+                cur.execute(sql)
+                log.info("Applied (post-matview) %s", filename)
+            except Exception:
+                log.exception("Failed to apply (post-matview) %s — continuing", filename)
+    except Exception:
+        log.exception("_apply_post_matview_views: failed to connect")
+    finally:
+        if conn:
+            conn.close()
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -191,7 +228,7 @@ def main() -> None:
     parse_meta()              # venues, teams, standings, injuries
     parse_games()             # mlb_games
     parse_player_gamelogs()   # player stat backbone
-    parse_boxscore()          # game + player boxscores
+    parse_boxscore()          # game + player boxscores (also extracts umpires daily)
     parse_starting_pitchers() # confirmed/probable starting pitchers
     parse_game_odds()         # game lines from Odds API
 
@@ -203,10 +240,25 @@ def main() -> None:
         if n:
             log.info("Post-boxscore score sync: updated %d games", n)
 
-    _apply_sql_views(_PG_DSN)
+    _apply_sql_views(_PG_DSN)   # applies MLB001-010 (creates raw.mlb_weather table)
+
+    # Fetch weather for all games without data (archive for historical, forecast for today)
+    # Must run AFTER _apply_sql_views so raw.mlb_weather table exists.
+    try:
+        from mlb_pipeline.crawler_weather import fetch_all_missing_weather
+        with psycopg2.connect(_PG_DSN) as _c:
+            n_wx = fetch_all_missing_weather(_c)
+            _c.commit()
+            if n_wx:
+                log.info("Fetched weather for %d games", n_wx)
+    except Exception:
+        log.exception("Weather crawl failed — continuing without weather data")
 
     # Create/refresh materialized rolling views for fast prediction queries
     _refresh_matviews(_PG_DSN)
+
+    # Apply views that depend on matviews (lineup quality + MLB006 re-apply)
+    _apply_post_matview_views(_PG_DSN)
 
     log.info("ALL MLB PARSERS COMPLETE")
 

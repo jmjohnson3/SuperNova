@@ -1,4 +1,8 @@
 -- MLB006: Main game feature views for training and prediction
+-- Group C additions (MLB009/010/011):
+--   Umpire:  home plate ump rolling K9/BB9/RPG (mlb_umpire_rolling_mat)
+--   Weather: temperature, wind, precipitation (raw.mlb_weather)
+--   Lineup:  actual batting-order quality OBP/SLG proxies (mlb_lineup_quality)
 -- Two views:
 --   features.mlb_game_training_features   -- completed games (status='final')
 --   features.mlb_game_prediction_features -- upcoming games (status IN ('scheduled','in_progress'))
@@ -304,7 +308,48 @@ SELECT
     (hb.runs_avg_10 + ap.runs_allowed_avg_10) / 2.0  AS home_implied_runs,
     (ab.runs_avg_10 + hp.runs_allowed_avg_10) / 2.0  AS away_implied_runs,
     bf.run_factor * ((hb.runs_avg_10 + ap.runs_allowed_avg_10)
-                   + (ab.runs_avg_10 + hp.runs_allowed_avg_10)) / 2.0 AS park_adj_implied_total
+                   + (ab.runs_avg_10 + hp.runs_allowed_avg_10)) / 2.0 AS park_adj_implied_total,
+
+    -- ---- Group C: Umpire rolling stats ----
+    COALESCE(ump.n_ump_games_prev_5, 0)             AS n_ump_games_prev_5,
+    ump.ump_rpg_5,
+    ump.ump_k9_5,
+    ump.ump_bb9_5,
+    ump.ump_rpg_10,
+    ump.ump_k9_10,
+    ump.ump_bb9_10,
+
+    -- ---- Group C: Weather ----
+    wx.temperature_f,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(wx.wind_speed_mph::FLOAT, 0.0)
+    END                                             AS wind_speed_mph,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(SIN(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0)
+    END                                             AS wind_sin,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0)
+    END                                             AS wind_cos,
+    COALESCE(wx.precip_prob_pct::FLOAT, 0.0)        AS precip_prob_pct,
+    CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END AS is_dome,
+
+    -- ---- Group C: Lineup quality (home) ----
+    hlq.lineup_avg_avg_10       AS home_lineup_avg_avg_10,
+    hlq.lineup_slg_avg_10       AS home_lineup_slg_avg_10,
+    hlq.lineup_iso_avg_10       AS home_lineup_iso_avg_10,
+    hlq.top4_slg_avg_10         AS home_top4_slg_avg_10,
+    hlq.lineup_data_completeness AS home_lineup_completeness,
+
+    -- ---- Group C: Lineup quality (away) ----
+    alq.lineup_avg_avg_10       AS away_lineup_avg_avg_10,
+    alq.lineup_slg_avg_10       AS away_lineup_slg_avg_10,
+    alq.lineup_iso_avg_10       AS away_lineup_iso_avg_10,
+    alq.top4_slg_avg_10         AS away_top4_slg_avg_10,
+    alq.lineup_data_completeness AS away_lineup_completeness,
+
+    -- ---- Group C: Lineup differential features ----
+    COALESCE(hlq.lineup_avg_avg_10, 0) - COALESCE(alq.lineup_avg_avg_10, 0) AS lineup_avg_edge,
+    COALESCE(hlq.lineup_slg_avg_10, 0) - COALESCE(alq.lineup_slg_avg_10, 0) AS lineup_slg_edge
 
 FROM raw.mlb_games g
 
@@ -366,6 +411,21 @@ LEFT JOIN market_lines_open mlo
 
 LEFT JOIN h2h
     ON h2h.game_slug = g.game_slug
+
+-- Group C joins
+LEFT JOIN features.mlb_umpire_rolling_mat ump
+    ON ump.game_slug = g.game_slug
+
+LEFT JOIN raw.mlb_weather wx
+    ON wx.game_slug = g.game_slug
+
+LEFT JOIN features.mlb_lineup_quality hlq
+    ON hlq.game_slug = g.game_slug
+   AND hlq.is_home = TRUE
+
+LEFT JOIN features.mlb_lineup_quality alq
+    ON alq.game_slug = g.game_slug
+   AND alq.is_home = FALSE
 
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
@@ -654,7 +714,45 @@ SELECT
     (hb.runs_avg_10 + ap.runs_allowed_avg_10) / 2.0  AS home_implied_runs,
     (ab.runs_avg_10 + hp.runs_allowed_avg_10) / 2.0  AS away_implied_runs,
     bf.run_factor * ((hb.runs_avg_10 + ap.runs_allowed_avg_10)
-                   + (ab.runs_avg_10 + hp.runs_allowed_avg_10)) / 2.0 AS park_adj_implied_total
+                   + (ab.runs_avg_10 + hp.runs_allowed_avg_10)) / 2.0 AS park_adj_implied_total,
+
+    -- ---- Group C: Umpire rolling stats ----
+    -- NULL for upcoming games (umpire only known from completed boxscores)
+    COALESCE(ump.n_ump_games_prev_5, 0)             AS n_ump_games_prev_5,
+    ump.ump_rpg_5,
+    ump.ump_k9_5,
+    ump.ump_bb9_5,
+    ump.ump_rpg_10,
+    ump.ump_k9_10,
+    ump.ump_bb9_10,
+
+    -- ---- Group C: Weather ----
+    wx.temperature_f,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(wx.wind_speed_mph::FLOAT, 0.0)
+    END                                             AS wind_speed_mph,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(SIN(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0)
+    END                                             AS wind_sin,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0)
+    END                                             AS wind_cos,
+    COALESCE(wx.precip_prob_pct::FLOAT, 0.0)        AS precip_prob_pct,
+    CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END AS is_dome,
+
+    -- ---- Group C: Lineup quality (NULL for upcoming games — median-imputed) ----
+    hlq.lineup_avg_avg_10       AS home_lineup_avg_avg_10,
+    hlq.lineup_slg_avg_10       AS home_lineup_slg_avg_10,
+    hlq.lineup_iso_avg_10       AS home_lineup_iso_avg_10,
+    hlq.top4_slg_avg_10         AS home_top4_slg_avg_10,
+    hlq.lineup_data_completeness AS home_lineup_completeness,
+    alq.lineup_avg_avg_10       AS away_lineup_avg_avg_10,
+    alq.lineup_slg_avg_10       AS away_lineup_slg_avg_10,
+    alq.lineup_iso_avg_10       AS away_lineup_iso_avg_10,
+    alq.top4_slg_avg_10         AS away_top4_slg_avg_10,
+    alq.lineup_data_completeness AS away_lineup_completeness,
+    COALESCE(hlq.lineup_avg_avg_10, 0) - COALESCE(alq.lineup_avg_avg_10, 0) AS lineup_avg_edge,
+    COALESCE(hlq.lineup_slg_avg_10, 0) - COALESCE(alq.lineup_slg_avg_10, 0) AS lineup_slg_edge
 
 FROM raw.mlb_games g
 
@@ -698,6 +796,21 @@ LEFT JOIN market_lines ml
 
 LEFT JOIN h2h
     ON h2h.game_slug = g.game_slug
+
+-- Group C joins
+LEFT JOIN features.mlb_umpire_rolling_mat ump
+    ON ump.game_slug = g.game_slug
+
+LEFT JOIN raw.mlb_weather wx
+    ON wx.game_slug = g.game_slug
+
+LEFT JOIN features.mlb_lineup_quality hlq
+    ON hlq.game_slug = g.game_slug
+   AND hlq.is_home = TRUE
+
+LEFT JOIN features.mlb_lineup_quality alq
+    ON alq.game_slug = g.game_slug
+   AND alq.is_home = FALSE
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE

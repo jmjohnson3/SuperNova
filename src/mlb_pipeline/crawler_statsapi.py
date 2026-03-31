@@ -346,7 +346,7 @@ def parse_boxscore(
     linescore: dict,
     home_team_abbr: str,
     away_team_abbr: str,
-) -> tuple[dict, dict, list[dict], list[dict], list[dict]]:
+) -> tuple[dict, dict, list[dict], list[dict], list[dict], list[dict]]:
     """
     Parse a boxscore + linescore response into structured row dicts.
 
@@ -356,6 +356,7 @@ def parse_boxscore(
         player_stat_rows    : list of dicts for raw.mlb_boxscore_player_stats
         gamelog_rows        : list of dicts for raw.mlb_player_gamelogs
         sp_rows             : list of dicts for raw.mlb_starting_pitchers
+        ump_rows            : list of dicts for raw.mlb_game_umpires
     """
     now_utc = datetime.now(timezone.utc)
     teams_bs = boxscore.get("teams", {})
@@ -503,7 +504,21 @@ def parse_boxscore(
                     "source": "actual",
                 })
 
-    return game_row, {}, player_stat_rows, gamelog_rows, sp_rows
+    # Extract umpires from boxscore officials array
+    ump_rows: list[dict] = []
+    for off in boxscore.get("officials", []):
+        ump_id = off.get("official", {}).get("id")
+        ump_name = off.get("official", {}).get("fullName", "")
+        ump_pos = off.get("officialType", "")  # "Home Plate", "First Base", etc.
+        if ump_id:
+            ump_rows.append({
+                "game_slug": game_slug,
+                "ump_position": ump_pos,
+                "umpire_id": int(ump_id),
+                "umpire_name": ump_name,
+            })
+
+    return game_row, {}, player_stat_rows, gamelog_rows, sp_rows, ump_rows
 
 
 # ---------------------------------------------------------------------------
@@ -619,6 +634,31 @@ def upsert_starting_pitchers(conn, rows: list[dict]) -> None:
         )
 
 
+def upsert_umpires(conn, rows: list[dict]) -> None:
+    if not rows:
+        return
+    sql = """
+    INSERT INTO raw.mlb_game_umpires (
+        game_slug, ump_position, umpire_id, umpire_name,
+        source_fetched_at_utc, updated_at_utc
+    ) VALUES %s
+    ON CONFLICT (game_slug, ump_position) DO UPDATE SET
+        umpire_id             = EXCLUDED.umpire_id,
+        umpire_name           = EXCLUDED.umpire_name,
+        updated_at_utc        = now()
+    ;
+    """
+    with conn.cursor() as cur:
+        execute_values(
+            cur, sql, rows,
+            template="""(
+                %(game_slug)s, %(ump_position)s, %(umpire_id)s, %(umpire_name)s,
+                now(), now()
+            )""",
+            page_size=200,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Build schedule index (game_slug → gamePk)
 # ---------------------------------------------------------------------------
@@ -703,7 +743,7 @@ def backfill_season(
             linescore = fetch_linescore(game_pk)
             time.sleep(REQUEST_SLEEP)
 
-            game_row, _, player_rows, gamelog_rows, sp_rows = parse_boxscore(
+            game_row, _, player_rows, gamelog_rows, sp_rows, ump_rows = parse_boxscore(
                 slug, season, game_pk, boxscore, linescore, home_abbr, away_abbr
             )
 
@@ -711,6 +751,7 @@ def backfill_season(
             upsert_player_stats(conn, player_rows)
             upsert_gamelogs(conn, gamelog_rows)
             upsert_starting_pitchers(conn, sp_rows)
+            upsert_umpires(conn, ump_rows)
             conn.commit()
 
             if (i + 1) % 100 == 0 or (i + 1) == len(to_fetch):
@@ -786,6 +827,83 @@ def backfill_season(
 
 
 # ---------------------------------------------------------------------------
+# Umpire backfill
+# ---------------------------------------------------------------------------
+
+def backfill_umpires(conn, season_slugs: list[str]) -> None:
+    """
+    One-time backfill: re-fetch boxscores only to extract officials for games
+    that are in raw.mlb_boxscore_games but not yet in raw.mlb_game_umpires.
+
+    ~2400 games × 0.15s ≈ 6 min.  Only needs to run once.
+    """
+    # Build slug → gamePk index from schedule
+    schedule_index: dict[str, int] = {}
+    for season_slug in season_slugs:
+        start_date, end_date = SEASON_DATE_RANGES.get(
+            season_slug, ("2024-03-20", "2025-10-05")
+        )
+        games = fetch_schedule(season_slug, start_date=start_date, end_date=end_date)
+        schedule_index.update(build_schedule_index(games))
+
+    # Games with boxscore but no umpire data
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT b.game_slug
+            FROM raw.mlb_boxscore_games b
+            WHERE NOT EXISTS (
+                SELECT 1 FROM raw.mlb_game_umpires u
+                WHERE u.game_slug = b.game_slug
+            )
+            ORDER BY b.game_slug
+        """)
+        slugs_needing = [r[0] for r in cur.fetchall()]
+
+    log.info("Umpire backfill: %d games need umpire data", len(slugs_needing))
+    errors = 0
+
+    for i, slug in enumerate(slugs_needing):
+        game_pk = schedule_index.get(slug)
+        if game_pk is None:
+            log.debug("No gamePk found for %s — skipping", slug)
+            continue
+
+        try:
+            boxscore = fetch_boxscore(game_pk)
+            time.sleep(REQUEST_SLEEP)
+
+            ump_rows: list[dict] = []
+            for off in boxscore.get("officials", []):
+                ump_id = off.get("official", {}).get("id")
+                ump_name = off.get("official", {}).get("fullName", "")
+                ump_pos = off.get("officialType", "")
+                if ump_id:
+                    ump_rows.append({
+                        "game_slug": slug,
+                        "ump_position": ump_pos,
+                        "umpire_id": int(ump_id),
+                        "umpire_name": ump_name,
+                    })
+
+            if ump_rows:
+                upsert_umpires(conn, ump_rows)
+                conn.commit()
+
+            if (i + 1) % 200 == 0 or (i + 1) == len(slugs_needing):
+                log.info("  Umpire backfill progress: %d / %d", i + 1, len(slugs_needing))
+
+        except Exception as exc:
+            conn.rollback()
+            log.warning("  Umpire backfill failed for %s: %s", slug, exc)
+            errors += 1
+            if errors > 50:
+                log.error("Too many errors (%d); aborting umpire backfill", errors)
+                break
+
+    log.info("Umpire backfill complete: processed=%d errors=%d", len(slugs_needing), errors)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -800,6 +918,8 @@ def main() -> None:
     parser.add_argument("--start-date", help="Start date YYYY-MM-DD (overrides season default)")
     parser.add_argument("--end-date", help="End date YYYY-MM-DD")
     parser.add_argument("--max-games", type=int, help="Max boxscores to fetch (for testing)")
+    parser.add_argument("--backfill-umpires", action="store_true",
+                        help="One-time backfill: extract umpires from already-fetched boxscores")
     args = parser.parse_args()
 
     seasons = args.season or ["2024-regular", "2025-regular"]
@@ -807,19 +927,22 @@ def main() -> None:
     conn = psycopg2.connect(DSN)
     conn.autocommit = False
     try:
-        for season_slug in seasons:
-            # Derive date range from season if not overridden
-            start_date = args.start_date
-            end_date = args.end_date
-            if not start_date and season_slug in SEASON_DATE_RANGES:
-                start_date, end_date = SEASON_DATE_RANGES[season_slug]
+        if args.backfill_umpires:
+            backfill_umpires(conn, seasons)
+        else:
+            for season_slug in seasons:
+                # Derive date range from season if not overridden
+                start_date = args.start_date
+                end_date = args.end_date
+                if not start_date and season_slug in SEASON_DATE_RANGES:
+                    start_date, end_date = SEASON_DATE_RANGES[season_slug]
 
-            backfill_season(
-                conn, season_slug,
-                start_date=start_date,
-                end_date=end_date,
-                max_games=args.max_games,
-            )
+                backfill_season(
+                    conn, season_slug,
+                    start_date=start_date,
+                    end_date=end_date,
+                    max_games=args.max_games,
+                )
     finally:
         conn.close()
 
