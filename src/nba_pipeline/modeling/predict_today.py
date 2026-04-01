@@ -941,16 +941,27 @@ def main() -> None:
                 for p in qp_best:
                     print(p)
                 print("---/QUICKPICK---")
-            all_parlay = build_fd_parlay_url([l for l in qp_all_links if l])
-            best_parlay = build_fd_parlay_url([l for l in qp_best_links if l])
-            if all_parlay:
-                n = len([l for l in qp_all_links if l])
-                leg_str = "leg" if n == 1 else "legs"
-                print(f"\n[All Games Parlay ({n} {leg_str})](<{all_parlay}>)")
-            if best_parlay:
-                n = len([l for l in qp_best_links if l])
-                leg_str = "leg" if n == 1 else "legs"
-                print(f"[Best Bets Parlay ({n} {leg_str})](<{best_parlay}>)")
+            _MAX_PARLAY_LEGS = 25
+            all_links  = [l for l in qp_all_links  if l]
+            best_links = [l for l in qp_best_links if l]
+            if all_links:
+                chunks = [all_links[i:i + _MAX_PARLAY_LEGS] for i in range(0, len(all_links), _MAX_PARLAY_LEGS)]
+                n_parlays = len(chunks)
+                print(f"\n**All Games Parlay** ({len(all_links)} legs → {n_parlays} parlay{'s' if n_parlays != 1 else ''})")
+                for i, chunk in enumerate(chunks, start=1):
+                    url = build_fd_parlay_url(chunk)
+                    if url:
+                        leg_str = "leg" if len(chunk) == 1 else "legs"
+                        print(f"[Parlay {i} ({len(chunk)} {leg_str})](<{url}>)")
+            if best_links:
+                chunks = [best_links[i:i + _MAX_PARLAY_LEGS] for i in range(0, len(best_links), _MAX_PARLAY_LEGS)]
+                n_parlays = len(chunks)
+                print(f"\n**Best Bets Parlay** ({len(best_links)} legs → {n_parlays} parlay{'s' if n_parlays != 1 else ''})")
+                for i, chunk in enumerate(chunks, start=1):
+                    url = build_fd_parlay_url(chunk)
+                    if url:
+                        leg_str = "leg" if len(chunk) == 1 else "legs"
+                        print(f"[Parlay {i} ({len(chunk)} {leg_str})](<{url}>)")
 
         # Save predictions to DB
         try:
