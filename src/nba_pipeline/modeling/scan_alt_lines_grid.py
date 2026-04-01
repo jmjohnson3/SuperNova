@@ -746,7 +746,7 @@ def main() -> None:
             if parlay_url:
                 n_alt = len(alt_links)
                 leg_str = "leg" if n_alt == 1 else "legs"
-                print(f"\n[Alt Lines Parlay ({n_alt} {leg_str})]({parlay_url})")
+                print(f"\n[Alt Lines Parlay ({n_alt} {leg_str})](<{parlay_url}>)")
 
         if discord and qp_alt:
             print("---QUICKPICK:alt_lines---")

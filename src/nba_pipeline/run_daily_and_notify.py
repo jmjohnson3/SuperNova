@@ -112,6 +112,10 @@ async def _post(content: str) -> None:
         log.warning("DISCORD_WEBHOOK_URL not set; skipping Discord post.")
         return
 
+    if not content or not content.strip():
+        log.warning("_post: skipping empty/whitespace-only message")
+        return
+
     async with httpx.AsyncClient(timeout=20) as client:
         for attempt in range(4):
             try:
@@ -123,6 +127,11 @@ async def _post(content: str) -> None:
                     log.warning("Discord rate-limited — waiting %.1fs", retry_after)
                     await asyncio.sleep(retry_after)
                     continue
+                if r.status_code == 400:
+                    log.error(
+                        "Discord 400 Bad Request: response=%s | content_len=%d | content_start=%r",
+                        r.text[:400], len(content), content[:120],
+                    )
                 r.raise_for_status()
             except httpx.TimeoutException:
                 if attempt >= 3:
@@ -152,6 +161,9 @@ def _build_chunks(header: str, body: str) -> list[str]:
     budget = first_budget
 
     for line in body.splitlines():
+        # Truncate any single line that could blow the Discord limit on its own
+        if len(line) > DISCORD_LIMIT:
+            line = line[:DISCORD_LIMIT - 1] + "…"
         needed = len(line) + (1 if current else 0)
         if current and current_len + needed > budget:
             chunks.append(flush(current, is_first))
@@ -185,6 +197,9 @@ def _build_rich_chunks(header: str, body: str) -> list[str]:
     budget = first_budget
 
     for line in body.splitlines():
+        # Truncate any single line that could blow the Discord limit on its own
+        if len(line) > DISCORD_LIMIT:
+            line = line[:DISCORD_LIMIT - 1] + "…"
         needed = len(line) + (1 if current else 0)
         if current and current_len + needed > budget:
             chunks.append(flush(current, is_first))

@@ -846,7 +846,7 @@ def main() -> None:
                 if discord:
                     _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
                     _sl = (_ld.spread_home_link if bet_side == "HOME" else _ld.spread_away_link) if _ld else None
-                    _link_str = f"  [Bet FD]({_sl})" if _sl else ""
+                    _link_str = f"  [Bet FD](<{_sl}>)" if _sl else ""
                     print(f"  {r['pred_spread_label']}  <- **{bet_side}**{_b2b_tag}{_link_str}")
                     ms = r.get('market_spread_home')
                     if pd.notna(ms):
@@ -877,7 +877,7 @@ def main() -> None:
                         qp_all.append(r['pred_spread_label'])
                     _sl_no_edge = (_ld.spread_home_link if float(r['pred_margin_home_minus_away']) >= 0 else _ld.spread_away_link) if _ld else None
                     qp_all_links.append(_sl_no_edge)
-                    _link_str = f"  [FD]({_sl_no_edge})" if _sl_no_edge else ""
+                    _link_str = f"  [FD](<{_sl_no_edge}>)" if _sl_no_edge else ""
                     print(f"  {r['pred_spread_label']}{_link_str}")
                 else:
                     print(f"  {r['pred_spread_label']}")
@@ -896,7 +896,7 @@ def main() -> None:
                 if discord:
                     _ld = fd_links.get((r['home_team_abbr'], r['away_team_abbr']))
                     _tl = (_ld.total_over_link if et_ > 0 else _ld.total_under_link) if _ld else None
-                    _link_str = f"  [Bet FD]({_tl})" if _tl else ""
+                    _link_str = f"  [Bet FD](<{_tl}>)" if _tl else ""
                     print(f"  {over_under} {r['pred_total_points']:.1f}  ← **{over_under.upper()}**{_link_str}")
                     game_lbl = f"{r['away_team_abbr']}/{r['home_team_abbr']}"
                     mt = r.get('market_total')
@@ -925,7 +925,7 @@ def main() -> None:
                         qp_all.append(f"{game_lbl} {pred_t:.1f}")
                     _tl_no_edge = (_ld.total_over_link if pred_t > float(mt) else _ld.total_under_link) if (_ld and pd.notna(mt)) else None
                     qp_all_links.append(_tl_no_edge)
-                    _link_str = f"  [FD]({_tl_no_edge})" if _tl_no_edge else ""
+                    _link_str = f"  [FD](<{_tl_no_edge}>)" if _tl_no_edge else ""
                     print(f"  {r['pred_total_points']:.1f}{note}{_link_str}")
                 else:
                     print(f"  Pred total: {r['pred_total_points']:.1f}{note}")
@@ -946,11 +946,11 @@ def main() -> None:
             if all_parlay:
                 n = len([l for l in qp_all_links if l])
                 leg_str = "leg" if n == 1 else "legs"
-                print(f"\n[All Games Parlay ({n} {leg_str})]({all_parlay})")
+                print(f"\n[All Games Parlay ({n} {leg_str})](<{all_parlay}>)")
             if best_parlay:
                 n = len([l for l in qp_best_links if l])
                 leg_str = "leg" if n == 1 else "legs"
-                print(f"[Best Bets Parlay ({n} {leg_str})]({best_parlay})")
+                print(f"[Best Bets Parlay ({n} {leg_str})](<{best_parlay}>)")
 
         # Save predictions to DB
         try:

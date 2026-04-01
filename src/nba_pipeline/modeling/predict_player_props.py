@@ -1039,7 +1039,7 @@ def _print_full_slate_parlays(
     for i, chunk in enumerate(chunks, start=1):
         parlay_url = build_fd_parlay_url(chunk)
         if parlay_url:
-            print(f"[Parlay {i} ({len(chunk)} legs)]({parlay_url})")
+            print(f"[Parlay {i} ({len(chunk)} legs)](<{parlay_url}>)")
 
 
 def _fmt_juice(price) -> str:
@@ -1180,7 +1180,7 @@ def _print_discord_best_bets(
         if parlay_url:
             n = len(parlay_links)
             leg_str = "leg" if n == 1 else "legs"
-            print(f"\n[Best Props Parlay ({n} {leg_str})]({parlay_url})")
+            print(f"\n[Best Props Parlay ({n} {leg_str})](<{parlay_url}>)")
 
     print()
 
@@ -1387,7 +1387,7 @@ def _print_best_bets(
         if parlay_url:
             n = len(fd_bet_links)
             leg_str = "leg" if n == 1 else "legs"
-            print(f"\n[Best Props Parlay ({n} {leg_str})]({parlay_url})")
+            print(f"\n[Best Props Parlay ({n} {leg_str})](<{parlay_url}>)")
 
     print()
     return fd_bet_links
