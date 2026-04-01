@@ -66,6 +66,8 @@ class PredictConfig:
     threshold_strikeouts: float = 1.0
     threshold_hits: float = 0.4
     threshold_total_bases: float = 0.5
+    threshold_home_runs: float = 0.25
+    threshold_walks: float = 0.3
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -139,7 +141,19 @@ SELECT
     ob.slg_avg_10       AS opp_slg_avg_10,
     -- Park factors
     bf.run_factor       AS park_run_factor,
-    bf.hr_factor        AS park_hr_factor
+    bf.hr_factor        AS park_hr_factor,
+    -- Weather (dome-zeroed)
+    wx.temperature_f,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(wx.wind_speed_mph::FLOAT, 0.0) END        AS wind_speed_mph,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(SIN(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_sin,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
+    COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
+    CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Pitcher handedness
+    ph.pitch_hand                                                AS pitcher_hand
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -164,6 +178,11 @@ LEFT JOIN features.mlb_ballpark_factors bf
         SELECT home_team_abbr FROM raw.mlb_games
         WHERE game_slug = ts.game_slug LIMIT 1
     )
+LEFT JOIN raw.mlb_weather wx ON wx.game_slug = ts.game_slug
+LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
+    SELECT venue_id FROM raw.mlb_games WHERE game_slug = ts.game_slug LIMIT 1
+)
+LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = ts.player_id
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -223,7 +242,41 @@ SELECT
     sp_r.era_away_10           AS opp_sp_era_away_10,
     -- Park factors
     bf.run_factor  AS park_run_factor,
-    bf.hr_factor   AS park_hr_factor
+    bf.hr_factor   AS park_hr_factor,
+    -- Umpire
+    ur.ump_bb9_10  AS ump_bb9_avg_10,
+    ur.ump_k9_10   AS ump_k9_avg_10,
+    -- Weather (dome-zeroed)
+    wx.temperature_f,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(wx.wind_speed_mph::FLOAT, 0.0) END        AS wind_speed_mph,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(SIN(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_sin,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
+    COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
+    CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Lineup slot
+    br.batting_order_avg_5,
+    br.batting_order_avg_10,
+    -- Batter + opponent SP handedness (OHE'd by _prep_features)
+    bh.bat_side                AS batter_hand,
+    opp_ph.pitch_hand          AS opp_sp_hand,
+    -- Matched-hand stats (the split that matches today's opponent's throwing hand)
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.hits_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.hits_avg_40_vs_rhp END AS hits_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.tb_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.tb_avg_40_vs_rhp END AS tb_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.k_rate_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.k_rate_avg_40_vs_rhp END AS k_rate_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.iso_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.iso_avg_40_vs_rhp END AS iso_avg_40_vs_hand,
+    -- Split differential (positive = better vs LHP)
+    COALESCE(bvh.hits_avg_40_vs_lhp, 0) - COALESCE(bvh.hits_avg_40_vs_rhp, 0) AS hits_hand_split_40,
+    COALESCE(bvh.tb_avg_40_vs_lhp,   0) - COALESCE(bvh.tb_avg_40_vs_rhp,   0) AS tb_hand_split_40,
+    -- Sample sizes
+    bvh.n_games_vs_lhp_40,
+    bvh.n_games_vs_rhp_40
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -248,11 +301,39 @@ LEFT JOIN LATERAL (
     ORDER BY sp_r.game_date_et DESC, sp_r.game_slug DESC
     LIMIT 1
 ) sp_r ON TRUE
+-- Opponent SP handedness
+LEFT JOIN raw.mlb_player_handedness opp_ph ON opp_ph.player_id = sp.player_id
+-- Batter's own handedness
+LEFT JOIN raw.mlb_player_handedness bh ON bh.player_id = rp.player_id
+-- Most recent batter-vs-hand rolling stats prior to today (LATERAL for latest snapshot)
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_batting_vs_hand_mat
+    WHERE player_id = rp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC, game_slug DESC
+    LIMIT 1
+) bvh ON TRUE
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = (
         SELECT home_team_abbr FROM games_today
         WHERE game_slug = tt.game_slug LIMIT 1
     )
+-- Home plate umpire rolling stats
+LEFT JOIN raw.mlb_game_umpires gu
+    ON gu.game_slug = tt.game_slug AND gu.ump_position = 'Home Plate'
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_umpire_rolling_mat
+    WHERE umpire_id = gu.umpire_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC LIMIT 1
+) ur ON TRUE
+-- Weather
+LEFT JOIN raw.mlb_weather wx ON wx.game_slug = tt.game_slug
+LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
+    SELECT venue_id FROM raw.mlb_games WHERE game_slug = tt.game_slug LIMIT 1
+)
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id
@@ -309,21 +390,34 @@ def _load_pitcher_artifacts(model_dir: Path):
 
 
 def _load_batter_artifacts(model_dir: Path):
-    """Returns (xgb_hits, lgb_hits, xgb_tb, lgb_tb, feature_cols, medians, backtest)."""
+    """Returns (xgb_hits, lgb_hits, xgb_tb, lgb_tb, xgb_hr, lgb_hr,
+                xgb_walks, lgb_walks, feature_cols, medians, backtest)."""
     xgb_h = XGBRegressor()
     xgb_h.load_model(str(model_dir / "hits_xgb.json"))
 
     xgb_tb = XGBRegressor()
     xgb_tb.load_model(str(model_dir / "total_bases_xgb.json"))
 
-    lgb_h, lgb_tb_m = None, None
+    xgb_hr = XGBRegressor()
+    xgb_hr.load_model(str(model_dir / "home_runs_xgb.json"))
+
+    xgb_walks = XGBRegressor()
+    xgb_walks.load_model(str(model_dir / "walks_xgb.json"))
+
+    lgb_h = lgb_tb_m = lgb_hr = lgb_walks = None
     if _HAS_LGB:
-        h_path = model_dir / "lgb_hits.txt"
-        tb_path = model_dir / "lgb_total_bases.txt"
+        h_path    = model_dir / "lgb_hits.txt"
+        tb_path   = model_dir / "lgb_total_bases.txt"
+        hr_path   = model_dir / "lgb_home_runs.txt"
+        walk_path = model_dir / "lgb_walks.txt"
         if h_path.exists():
             lgb_h = lgb.Booster(model_file=str(h_path))
         if tb_path.exists():
             lgb_tb_m = lgb.Booster(model_file=str(tb_path))
+        if hr_path.exists():
+            lgb_hr = lgb.Booster(model_file=str(hr_path))
+        if walk_path.exists():
+            lgb_walks = lgb.Booster(model_file=str(walk_path))
 
     feat = json.loads((model_dir / "feature_columns_batters.json").read_text())
     meds = json.loads((model_dir / "feature_medians_batters.json").read_text())
@@ -331,7 +425,7 @@ def _load_batter_artifacts(model_dir: Path):
     bt_path = model_dir / "backtest_mae.json"
     bt = json.loads(bt_path.read_text()) if bt_path.exists() else {}
 
-    return xgb_h, lgb_h, xgb_tb, lgb_tb_m, feat, meds, bt
+    return xgb_h, lgb_h, xgb_tb, lgb_tb_m, xgb_hr, lgb_hr, xgb_walks, lgb_walks, feat, meds, bt
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -592,39 +686,39 @@ def _print_discord(
             line = line_data["line"] if line_data else None
 
             edge = (pred_k - line) if (line is not None) else None
-            kel = _kelly_prop(abs(edge), cfg.threshold_strikeouts * 2) if edge is not None else 0.0
             has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
 
             if line is not None:
                 bk = line_data.get("bookmaker_key", "")
                 book_lbl = "FD" if bk == "fanduel" else "DK"
                 dir_str = "O" if edge > 0 else "U"
-                bet_str = f"| {dir_str}{line:.1f}"
+                k_part = f"K {pred_k:.1f}/{dir_str}{line:.1f}"
                 if has_edge:
-                    bet_str += f"  ★ EDGE {edge:+.1f}"
                     bet_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
-                    link_str = f"  [Bet {book_lbl}]({bet_link})" if bet_link else ""
+                    link_str = f" [Bet {book_lbl}](<{bet_link}>)" if bet_link else ""
                     if bet_link:
                         fd_links.append(bet_link)
+                    print(f"  SP {name}: ★ {k_part} +{abs(edge):.1f}{link_str}")
                 else:
                     bet_link = line_data.get("over_link") or line_data.get("under_link")
-                    link_str = f"  [{book_lbl}]({bet_link})" if bet_link else ""
+                    link_str = f" [{book_lbl}](<{bet_link}>)" if bet_link else ""
+                    print(f"  SP {name}: {k_part}{link_str}")
             else:
-                bet_str = ""
-                link_str = ""
+                print(f"  SP {name}: K {pred_k:.1f}")
 
-            print(f"  SP {name}: pred {pred_k:.1f} K {bet_str}{link_str}")
-
-        # Batters for this game
+        # Batters for this game — one compact line per player
         for row in all_batter_rows:
             if row["game_slug"] != slug:
                 continue
             name = row.get("player_name", f"id={row['player_id']}")
             norm = _normalize_name(name)
 
-            for stat, pred_col, stat_key, threshold in [
-                ("Hits",    "pred_hits",        "batter_hits",         cfg.threshold_hits),
-                ("TB",      "pred_total_bases",  "batter_total_bases",  cfg.threshold_total_bases),
+            parts: List[str] = []
+            for stat_lbl, pred_col, stat_key, threshold in [
+                ("H",  "pred_hits",        "batter_hits",         cfg.threshold_hits),
+                ("TB", "pred_total_bases",  "batter_total_bases",  cfg.threshold_total_bases),
+                ("HR", "pred_home_runs",    "batter_home_runs",    cfg.threshold_home_runs),
+                ("BB", "pred_walks",        "batter_walks",        cfg.threshold_walks),
             ]:
                 pred_v = row.get(pred_col)
                 if pred_v is None:
@@ -633,6 +727,10 @@ def _print_discord(
                 line_data = prop_lines.get((norm, stat_key))
                 line = line_data["line"] if line_data else None
 
+                # Skip HR/BB projections when there's no book line — too noisy
+                if line is None and stat_lbl in ("HR", "BB"):
+                    continue
+
                 edge = (pred_v - line) if (line is not None) else None
                 has_edge = edge is not None and abs(edge) >= threshold
 
@@ -640,21 +738,21 @@ def _print_discord(
                     bk = line_data.get("bookmaker_key", "")
                     book_lbl = "FD" if bk == "fanduel" else "DK"
                     dir_str = "O" if edge > 0 else "U"
-                    bet_str = f"| {dir_str}{line:.1f}"
                     if has_edge:
-                        bet_str += f"  ★ EDGE {edge:+.2f}"
                         bet_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
-                        link_str = f"  [Bet {book_lbl}]({bet_link})" if bet_link else ""
+                        link_str = f" [Bet {book_lbl}](<{bet_link}>)" if bet_link else ""
                         if bet_link:
                             fd_links.append(bet_link)
+                        parts.append(f"★ {stat_lbl} {pred_v:.2f}/{dir_str}{line:.1f} +{abs(edge):.2f}{link_str}")
                     else:
                         bet_link = line_data.get("over_link") or line_data.get("under_link")
-                        link_str = f"  [{book_lbl}]({bet_link})" if bet_link else ""
+                        link_str = f" [{book_lbl}](<{bet_link}>)" if bet_link else ""
+                        parts.append(f"{stat_lbl} {pred_v:.2f}/{dir_str}{line:.1f}{link_str}")
                 else:
-                    bet_str = ""
-                    link_str = ""
+                    parts.append(f"{stat_lbl} {pred_v:.2f}")
 
-                print(f"  {name}: pred {pred_v:.2f} {stat} {bet_str}{link_str}")
+            if parts:
+                print(f"  {name}: {' | '.join(parts)}")
 
         print("")
 
@@ -694,8 +792,10 @@ def _print_best_bets(
         name = row.get("player_name", f"id={row['player_id']}")
         norm = _normalize_name(name)
         for stat, pred_col, stat_key, threshold in [
-            ("H",  "pred_hits",       "batter_hits",        cfg.threshold_hits),
-            ("TB", "pred_total_bases", "batter_total_bases", cfg.threshold_total_bases),
+            ("H",  "pred_hits",        "batter_hits",        cfg.threshold_hits),
+            ("TB", "pred_total_bases",  "batter_total_bases", cfg.threshold_total_bases),
+            ("HR", "pred_home_runs",    "batter_home_runs",   cfg.threshold_home_runs),
+            ("BB", "pred_walks",        "batter_walks",       cfg.threshold_walks),
         ]:
             pred_v = row.get(pred_col)
             if pred_v is None:
@@ -722,7 +822,7 @@ def _print_best_bets(
             direction = "OVER" if b["edge"] > 0 else "UNDER"
             book_lbl = "FD" if b.get("bookmaker_key") == "fanduel" else "DK"
             bet_link = b.get("bet_link")
-            link_str = f"  [Bet {book_lbl}]({bet_link})" if bet_link else ""
+            link_str = f"  [Bet {book_lbl}](<{bet_link}>)" if bet_link else ""
             print(f"  {b['name']} ({b['team']}) {b['stat']} {direction} {b['line']} "
                   f"| pred {b['pred']:.2f} | edge {b['edge']:+.2f}{link_str}")
             if bet_link:
@@ -747,11 +847,14 @@ def predict_props(cfg: PredictConfig) -> None:
     batter_artifacts_ok = (
         (model_dir / "hits_xgb.json").exists() and
         (model_dir / "total_bases_xgb.json").exists() and
+        (model_dir / "home_runs_xgb.json").exists() and
+        (model_dir / "walks_xgb.json").exists() and
         (model_dir / "feature_columns_batters.json").exists()
     )
 
     xgb_k = lgb_k = feat_p = meds_p = bt = None
-    xgb_h = lgb_h = xgb_tb_m = lgb_tb_m = feat_b = meds_b = None
+    xgb_h = lgb_h = xgb_tb_m = lgb_tb_m = None
+    xgb_hr = lgb_hr = xgb_walks_m = lgb_walks_m = feat_b = meds_b = None
 
     if pitcher_artifacts_ok:
         try:
@@ -762,7 +865,9 @@ def predict_props(cfg: PredictConfig) -> None:
 
     if batter_artifacts_ok:
         try:
-            xgb_h, lgb_h, xgb_tb_m, lgb_tb_m, feat_b, meds_b, bt = _load_batter_artifacts(model_dir)
+            (xgb_h, lgb_h, xgb_tb_m, lgb_tb_m,
+             xgb_hr, lgb_hr, xgb_walks_m, lgb_walks_m,
+             feat_b, meds_b, bt) = _load_batter_artifacts(model_dir)
         except Exception:
             log.exception("Failed to load batter artifacts")
             batter_artifacts_ok = False
@@ -866,10 +971,14 @@ def predict_props(cfg: PredictConfig) -> None:
 
         if not df_b.empty:
             X_b = _prep_features(df_b, _BATTER_META, feat_b, meds_b)
-            pred_h  = _predict_ensemble(X_b, xgb_h, lgb_h)
-            pred_tb = _predict_ensemble(X_b, xgb_tb_m, lgb_tb_m)
-            sigma_h  = bt.get("ci_hits") if bt else None
-            sigma_tb = bt.get("ci_total_bases") if bt else None
+            pred_h     = _predict_ensemble(X_b, xgb_h,      lgb_h)
+            pred_tb    = _predict_ensemble(X_b, xgb_tb_m,   lgb_tb_m)
+            pred_hr    = _predict_ensemble(X_b, xgb_hr,     lgb_hr)
+            pred_walks = _predict_ensemble(X_b, xgb_walks_m, lgb_walks_m)
+            sigma_h     = bt.get("ci_hits")        if bt else None
+            sigma_tb    = bt.get("ci_total_bases") if bt else None
+            sigma_hr    = bt.get("ci_home_runs")   if bt else None
+            sigma_walks = bt.get("ci_walks")       if bt else None
 
             seen = set()
             for i, (_, row) in enumerate(df_b.iterrows()):
@@ -882,8 +991,10 @@ def predict_props(cfg: PredictConfig) -> None:
 
                 name = name_map.get(pid, f"id={pid}")
                 norm = _normalize_name(name)
-                ph = max(0.0, float(pred_h[i]))
-                ptb = max(0.0, float(pred_tb[i]))
+                ph    = max(0.0, float(pred_h[i]))
+                ptb   = max(0.0, float(pred_tb[i]))
+                phr   = max(0.0, float(pred_hr[i]))
+                pwalk = max(0.0, float(pred_walks[i]))
 
                 r = {
                     "game_slug": slug,
@@ -896,12 +1007,16 @@ def predict_props(cfg: PredictConfig) -> None:
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_hits": ph,
                     "pred_total_bases": ptb,
+                    "pred_home_runs": phr,
+                    "pred_walks": pwalk,
                 }
                 all_batter_rows.append(r)
 
                 for stat_key, stat_label, pred_v, sigma in [
-                    ("batter_hits",        "batter_hits",        ph,  sigma_h),
-                    ("batter_total_bases", "batter_total_bases", ptb, sigma_tb),
+                    ("batter_hits",        "batter_hits",        ph,    sigma_h),
+                    ("batter_total_bases", "batter_total_bases", ptb,   sigma_tb),
+                    ("batter_home_runs",   "batter_home_runs",   phr,   sigma_hr),
+                    ("batter_walks",       "batter_walks",       pwalk, sigma_walks),
                 ]:
                     ld = prop_lines.get((norm, stat_key))
                     line = ld["line"] if ld else None

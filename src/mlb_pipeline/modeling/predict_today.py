@@ -678,7 +678,8 @@ def main() -> None:
         else:
             print(f"\n{away} @ {home}  {time_str}")
 
-        print(f"  SP: {home_sp} (home) vs {away_sp} (away)")
+        if not (home_sp == "TBD" and away_sp == "TBD"):
+            print(f"  SP: {home_sp} (home) vs {away_sp} (away)")
 
         pred_rd  = float(r["pred_run_diff"])
         pred_tot = float(r["pred_total"])
@@ -711,7 +712,7 @@ def main() -> None:
             # FD link: home covers → spread_home_link; away covers → spread_away_link
             _sl = (_ld.spread_home_link if e_rl > 0 else _ld.spread_away_link) if _ld else None
             best_links.append(_sl)
-            _link_str = f"  [Bet FD]({_sl})" if (_sl and discord) else ""
+            _link_str = f"  [Bet FD](<{_sl}>)" if (_sl and discord) else ""
             if discord:
                 print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}]**{_link_str}")
             else:
@@ -721,8 +722,8 @@ def main() -> None:
             mkt_label = f"{float(mkt_rl):+.1f}"
             pred_side_label = home if pred_rd >= 0 else away
             _sl_no_edge = (_ld.spread_home_link if pred_rd >= 0 else _ld.spread_away_link) if _ld else None
-            _link_str = f"  [FD]({_sl_no_edge})" if (_sl_no_edge and discord) else ""
-            print(f"  Run line: {pred_side_label} {mkt_label}  [no edge]{_link_str}")
+            _link_str = f"  [FD](<{_sl_no_edge}>)" if (_sl_no_edge and discord) else ""
+            print(f"  Run line: {pred_side_label} {mkt_label}{_link_str}")
         else:
             print(f"  Pred run diff: {pred_rd:+.1f}")
 
@@ -737,7 +738,7 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_over_link if _ld else None
             best_links.append(_tl)
-            _link_str = f"  [Bet FD]({_tl})" if (_tl and discord) else ""
+            _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
                 print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER]**{_link_str}")
             else:
@@ -747,8 +748,8 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}"
             pred_ou = "O" if pred_tot > float(mkt_tot) else "U"
             _tl_no_edge = (_ld.total_over_link if pred_tot > float(mkt_tot) else _ld.total_under_link) if (_ld and pd.notna(mkt_tot)) else None
-            _link_str = f"  [FD]({_tl_no_edge})" if (_tl_no_edge and discord) else ""
-            print(f"  Total: {pred_ou}{mkt_t_label}  [no edge]{_link_str}")
+            _link_str = f"  [FD](<{_tl_no_edge}>)" if (_tl_no_edge and discord) else ""
+            print(f"  Total: {pred_ou}{mkt_t_label}{_link_str}")
         else:
             print(f"  Pred total: {pred_tot:.1f}")
 
@@ -756,7 +757,7 @@ def main() -> None:
     if discord:
         parlay = build_fd_parlay_url([l for l in best_links if l])
         if parlay:
-            print(f"\n**Best Bets Parlay** [FD]({parlay})")
+            print(f"\n**Best Bets Parlay** [FD](<{parlay}>)")
 
     # Save predictions to DB
     try:
