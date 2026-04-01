@@ -362,6 +362,44 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "k_pct_5" in X.columns and "park_hr_factor" in X.columns:
         X["k_pct_x_park_hr"] = X["k_pct_5"] * X["park_hr_factor"]
 
+    # ── Weather features ──────────────────────────────────────────────────────
+    if "wind_speed_mph" in X.columns and "park_hr_factor" in X.columns:
+        X["wind_x_park_hr"] = X["wind_speed_mph"] * X["park_hr_factor"]
+
+    if "temperature_f" in X.columns:
+        X["is_cold_game"]  = (X["temperature_f"].fillna(72.0) < 50.0).astype(int)
+        X["temp_below_60"] = (60.0 - X["temperature_f"].fillna(72.0)).clip(lower=0.0)
+
+    # ── Umpire walk-tendency ──────────────────────────────────────────────────
+    if "ump_bb9_avg_10" in X.columns and "bb_rate_avg_10" in X.columns:
+        X["ump_bb9_x_batter_bb_rate"] = X["ump_bb9_avg_10"] * X["bb_rate_avg_10"]
+
+    # ── Lineup slot ───────────────────────────────────────────────────────────
+    if "batting_order_avg_10" in X.columns:
+        X["is_top_of_order"] = (X["batting_order_avg_10"].fillna(5.0) <= 2.5).astype(int)
+        X["is_cleanup"]      = X["batting_order_avg_10"].fillna(5.0).between(3.0, 5.0).astype(int)
+
+    # ── Cross-season delta features ───────────────────────────────────────────
+    # How much is the player's current-season performance deviating from their
+    # cross-season (multi-year) baseline?  Positive = hot vs career trend.
+    for stat, cs_col, in_col in [
+        ("hits", "hits_avg_10_cs", "hits_avg_10"),
+        ("tb",   "tb_avg_10_cs",   "tb_avg_10"),
+        ("hr",   "hr_avg_10_cs",   "hr_avg_10"),
+    ]:
+        if cs_col in X.columns and in_col in X.columns:
+            X[f"{stat}_cs_delta"] = X[in_col].fillna(X[cs_col]) - X[cs_col]
+
+    # Prior-season vs cross-season baseline comparison
+    # prev_hits_avg reflects full 162-game prior season; cs features are recent 10-game
+    for stat, prev_col, cs_col in [
+        ("hits", "prev_hits_avg", "hits_avg_10_cs"),
+        ("tb",   "prev_tb_avg",   "tb_avg_10_cs"),
+    ]:
+        if prev_col in X.columns and cs_col in X.columns:
+            # Positive = recent form better than full prior-season avg
+            X[f"{stat}_cs_vs_prev"] = X[cs_col].fillna(X[prev_col]) - X[prev_col].fillna(X[cs_col])
+
     # ── Shared ───────────────────────────────────────────────────────────────
     # Back-to-back flag (rest_days ≤ 1)
     if "rest_days" in X.columns:

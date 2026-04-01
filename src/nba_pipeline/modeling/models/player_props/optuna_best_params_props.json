@@ -1,0 +1,32 @@
+{
+  "pts": {
+    "max_depth": 5,
+    "learning_rate": 0.06127377525491494,
+    "subsample": 0.8271851283014816,
+    "colsample_bytree": 0.7923850063056329,
+    "min_child_weight": 27,
+    "gamma": 0.368847911141977,
+    "reg_alpha": 0.03730389643767475,
+    "reg_lambda": 1.3096664645224028
+  },
+  "reb": {
+    "max_depth": 5,
+    "learning_rate": 0.01870168055541184,
+    "subsample": 0.7791801780356318,
+    "colsample_bytree": 0.5257279496512448,
+    "min_child_weight": 7,
+    "gamma": 0.4436710964171193,
+    "reg_alpha": 0.5345018140318619,
+    "reg_lambda": 1.4590047202554688
+  },
+  "ast": {
+    "max_depth": 6,
+    "learning_rate": 0.07736639788131532,
+    "subsample": 0.7838656030663735,
+    "colsample_bytree": 0.5024772489386614,
+    "min_child_weight": 11,
+    "gamma": 0.48601251779154836,
+    "reg_alpha": 0.8800121673246454,
+    "reg_lambda": 1.5885807156782696
+  }
+}

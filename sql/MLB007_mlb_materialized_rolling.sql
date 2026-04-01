@@ -68,3 +68,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_umpire_rolling_mat_pk
     ON features.mlb_umpire_rolling_mat (game_slug, umpire_id);
 CREATE INDEX IF NOT EXISTS idx_mlb_umpire_rolling_mat_ump_date
     ON features.mlb_umpire_rolling_mat (umpire_id, game_date_et DESC);
+
+-- ============================================================
+-- Batter vs SP handedness rolling materialized view (MLB012)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_batting_vs_hand_mat AS
+SELECT * FROM features.mlb_batting_vs_hand;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_batting_vs_hand_mat_pk
+    ON features.mlb_batting_vs_hand_mat (game_slug, player_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_batting_vs_hand_mat_player_date
+    ON features.mlb_batting_vs_hand_mat (player_id, game_date_et DESC, game_slug DESC);
+
+-- ============================================================
+-- Cross-season batter rolling materialized view (MLB013)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_batting_rolling_cross_mat AS
+SELECT * FROM features.mlb_player_batting_rolling_cross;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_batting_rolling_cross_mat_pk
+    ON features.mlb_player_batting_rolling_cross_mat (game_slug, player_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_batting_rolling_cross_mat_player_date
+    ON features.mlb_player_batting_rolling_cross_mat (player_id, game_date_et DESC, game_slug DESC);
+
+-- ============================================================
+-- Prior season per-player summary materialized view (MLB014)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_prev_season_stats_mat AS
+SELECT * FROM features.mlb_player_prev_season_stats;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_player_prev_season_stats_mat_pk
+    ON features.mlb_player_prev_season_stats_mat (player_id, season);

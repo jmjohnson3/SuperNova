@@ -276,7 +276,19 @@ SELECT
     COALESCE(bvh.tb_avg_40_vs_lhp,   0) - COALESCE(bvh.tb_avg_40_vs_rhp,   0) AS tb_hand_split_40,
     -- Sample sizes
     bvh.n_games_vs_lhp_40,
-    bvh.n_games_vs_rhp_40
+    bvh.n_games_vs_rhp_40,
+    -- Cross-season rolling features (MLB013)
+    bcs.n_games_prev_10_cs,
+    bcs.hits_avg_10_cs,  bcs.hits_avg_20_cs,
+    bcs.tb_avg_10_cs,    bcs.tb_avg_20_cs,
+    bcs.hr_avg_10_cs,    bcs.hr_rate_avg_10_cs,
+    bcs.ab_avg_10_cs,
+    bcs.k_rate_avg_10_cs, bcs.bb_rate_avg_10_cs, bcs.iso_avg_10_cs,
+    -- Prior full-season stats (MLB014)
+    pss.prev_games,
+    pss.prev_hits_avg,  pss.prev_tb_avg,  pss.prev_hr_avg,
+    pss.prev_ab_avg,    pss.prev_k_rate,  pss.prev_bb_rate,
+    pss.prev_iso,       pss.prev_hr_rate
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -314,6 +326,19 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC, game_slug DESC
     LIMIT 1
 ) bvh ON TRUE
+-- Cross-season rolling stats (no season boundary) — gives prior-year data early in season
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_player_batting_rolling_cross_mat
+    WHERE player_id = rp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC, game_slug DESC
+    LIMIT 1
+) bcs ON TRUE
+-- Prior full-season stats — stable 162-game prior for each player
+LEFT JOIN features.mlb_player_prev_season_stats_mat pss
+    ON pss.player_id = rp.player_id
+    AND pss.season = %(prior_season)s
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = (
         SELECT home_team_abbr FROM games_today
@@ -936,10 +961,12 @@ def predict_props(cfg: PredictConfig) -> None:
     all_batter_rows: List[Dict] = []
 
     if batter_artifacts_ok:
+        prior_season = f"{et_date.year - 1}-regular"
         df_b = pd.read_sql(
             SQL_BATTER_SNAPSHOTS, conn,
             params={
                 "game_date": et_date,
+                "prior_season": prior_season,
                 "min_ab_avg_10": cfg.min_ab_avg_10,
                 "min_n_games": cfg.min_n_games,
             }

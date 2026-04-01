@@ -25,6 +25,9 @@ _MLB_SQL_VIEWS = [
     "MLB008_mlb_player_batting_rolling.sql",
     "MLB009_mlb_umpire_rolling.sql",   # DDL + umpire rolling view
     "MLB010_mlb_weather_ddl.sql",      # weather table DDL
+    "MLB012_mlb_batting_vs_hand.sql",  # handedness DDL + base view
+    "MLB013_mlb_batting_cross_season_rolling.sql",  # cross-season rolling (no season partition)
+    "MLB014_mlb_player_prev_season_stats.sql",       # full prior-season aggregate stats
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -46,6 +49,9 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_pitcher_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_standings_rest_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_batting_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_umpire_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batting_vs_hand_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_batting_rolling_cross_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_prev_season_stats_mat;
 """
 
 
@@ -89,6 +95,9 @@ _MATVIEW_TO_VIEW = {
     "mlb_standings_rest_mat":        "mlb_standings_rest",
     "mlb_player_batting_rolling_mat": "mlb_player_batting_rolling",
     "mlb_umpire_rolling_mat":        "mlb_umpire_rolling",
+    "mlb_batting_vs_hand_mat":             "mlb_batting_vs_hand",
+    "mlb_player_batting_rolling_cross_mat": "mlb_player_batting_rolling_cross",
+    "mlb_player_prev_season_stats_mat":    "mlb_player_prev_season_stats",
 }
 
 

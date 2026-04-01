@@ -113,6 +113,18 @@ SELECT
     -- Park factors
     bf.run_factor      AS park_run_factor,
     bf.hr_factor       AS park_hr_factor,
+    -- Weather (dome-zeroed)
+    wx.temperature_f,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(wx.wind_speed_mph::FLOAT, 0.0) END        AS wind_speed_mph,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(SIN(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_sin,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
+    COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
+    CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Pitcher handedness
+    ph.pitch_hand                                                AS pitcher_hand,
     -- Target
     pgl.strikeouts_pitcher AS strikeouts
 FROM features.mlb_pitcher_rolling_mat p
@@ -129,6 +141,9 @@ LEFT JOIN features.mlb_team_batting_rolling_mat ob
     END
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = g.home_team_abbr
+LEFT JOIN raw.mlb_weather wx ON wx.game_slug = g.game_slug
+LEFT JOIN raw.mlb_venues  v  ON v.venue_id   = g.venue_id
+LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = p.player_id
 WHERE g.status = 'final'
   AND pgl.innings_pitched >= 3.0
   AND p.starts_in_window_10 >= 3
@@ -169,9 +184,57 @@ SELECT
     -- Park factors
     bf.run_factor  AS park_run_factor,
     bf.hr_factor   AS park_hr_factor,
+    -- Umpire
+    ur.ump_bb9_10  AS ump_bb9_avg_10,
+    ur.ump_k9_10   AS ump_k9_avg_10,
+    -- Weather (dome-zeroed)
+    wx.temperature_f,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(wx.wind_speed_mph::FLOAT, 0.0) END        AS wind_speed_mph,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(SIN(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_sin,
+    CASE WHEN v.roof_type = 'dome' THEN 0.0
+         ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
+    COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
+    CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Lineup slot
+    b.batting_order_avg_5,
+    b.batting_order_avg_10,
+    -- Batter + opponent SP handedness (OHE'd by _prep_X)
+    bh.bat_side                AS batter_hand,
+    opp_ph.pitch_hand          AS opp_sp_hand,
+    -- Matched-hand stats (the split that matches today's opponent's throwing hand)
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.hits_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.hits_avg_40_vs_rhp END AS hits_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.tb_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.tb_avg_40_vs_rhp END AS tb_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.k_rate_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.k_rate_avg_40_vs_rhp END AS k_rate_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.iso_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.iso_avg_40_vs_rhp END AS iso_avg_40_vs_hand,
+    -- Split differential (positive = better vs LHP)
+    COALESCE(bvh.hits_avg_40_vs_lhp, 0) - COALESCE(bvh.hits_avg_40_vs_rhp, 0) AS hits_hand_split_40,
+    COALESCE(bvh.tb_avg_40_vs_lhp,   0) - COALESCE(bvh.tb_avg_40_vs_rhp,   0) AS tb_hand_split_40,
+    -- Sample sizes (model learns when to trust the split)
+    bvh.n_games_vs_lhp_40,
+    bvh.n_games_vs_rhp_40,
+    -- Cross-season rolling features (MLB013) — populated even in early season
+    bcs.n_games_prev_10_cs,
+    bcs.hits_avg_10_cs,  bcs.hits_avg_20_cs,
+    bcs.tb_avg_10_cs,    bcs.tb_avg_20_cs,
+    bcs.hr_avg_10_cs,    bcs.hr_rate_avg_10_cs,
+    bcs.ab_avg_10_cs,
+    bcs.k_rate_avg_10_cs, bcs.bb_rate_avg_10_cs, bcs.iso_avg_10_cs,
+    -- Prior full-season stats (MLB014) — stable 162-game prior
+    pss.prev_games,
+    pss.prev_hits_avg,  pss.prev_tb_avg,  pss.prev_hr_avg,
+    pss.prev_ab_avg,    pss.prev_k_rate,  pss.prev_bb_rate,
+    pss.prev_iso,       pss.prev_hr_rate,
     -- Targets
     gl.hits        AS hits,
-    gl.total_bases AS total_bases
+    gl.total_bases AS total_bases,
+    gl.home_runs   AS home_runs,
+    gl.walks_batter AS walks_batter
 FROM features.mlb_player_batting_rolling_mat b
 JOIN raw.mlb_games g
     ON g.game_slug = b.game_slug
@@ -191,6 +254,36 @@ LEFT JOIN features.mlb_pitcher_rolling_mat sp_r
     AND sp_r.player_id = sp.player_id
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = g.home_team_abbr
+-- Home plate umpire rolling stats
+LEFT JOIN raw.mlb_game_umpires gu
+    ON gu.game_slug = b.game_slug AND gu.ump_position = 'Home Plate'
+LEFT JOIN features.mlb_umpire_rolling_mat ur
+    ON ur.game_slug = b.game_slug AND ur.umpire_id = gu.umpire_id
+-- Weather (dome-safe)
+LEFT JOIN raw.mlb_weather wx ON wx.game_slug = g.game_slug
+LEFT JOIN raw.mlb_venues  v  ON v.venue_id   = g.venue_id
+-- Opponent SP handedness
+LEFT JOIN raw.mlb_player_handedness opp_ph
+    ON opp_ph.player_id = sp.player_id
+-- Batter's own handedness
+LEFT JOIN raw.mlb_player_handedness bh
+    ON bh.player_id = b.player_id
+-- Batter vs hand rolling stats (leakage-safe: joined by exact game_slug)
+LEFT JOIN features.mlb_batting_vs_hand_mat bvh
+    ON bvh.game_slug = b.game_slug
+    AND bvh.player_id = b.player_id
+-- Cross-season rolling stats (MLB013) — same game_slug join, no season boundary
+LEFT JOIN features.mlb_player_batting_rolling_cross_mat bcs
+    ON bcs.game_slug = b.game_slug
+    AND bcs.player_id = b.player_id
+-- Prior full-season stats (MLB014) — one season back
+LEFT JOIN features.mlb_player_prev_season_stats_mat pss
+    ON pss.player_id = b.player_id
+    AND pss.season = CASE g.season
+        WHEN '2025-regular' THEN '2024-regular'
+        WHEN '2026-regular' THEN '2025-regular'
+        ELSE NULL
+    END
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 1.5
   AND b.n_games_prev_10 >= 3
@@ -250,15 +343,17 @@ def apply_medians(X: pd.DataFrame, medians: Dict[str, float], cols: List[str]) -
 
 
 def _build_xgb(cfg: TrainConfig, n_est: Optional[int] = None,
-               early_stop: bool = True) -> XGBRegressor:
+               early_stop: bool = True,
+               objective: str = "reg:absoluteerror") -> XGBRegressor:
+    eval_metric = "poisson-nloglik" if objective == "count:poisson" else "mae"
     p = dict(
         n_estimators=n_est or cfg.n_estimators,
         max_depth=cfg.max_depth,
         learning_rate=cfg.learning_rate,
         subsample=cfg.subsample,
         colsample_bytree=cfg.colsample_bytree,
-        objective="reg:absoluteerror",
-        eval_metric="mae",
+        objective=objective,
+        eval_metric=eval_metric,
         min_child_weight=cfg.min_child_weight,
         gamma=cfg.gamma,
         reg_alpha=cfg.reg_alpha,
@@ -271,15 +366,17 @@ def _build_xgb(cfg: TrainConfig, n_est: Optional[int] = None,
     return XGBRegressor(**p)
 
 
-def _build_lgb(n_est: int = 2000, early_stop: bool = True):
+def _build_lgb(n_est: int = 2000, early_stop: bool = True,
+               objective: str = "regression_l1"):
     if not _HAS_LGB:
         return None
+    metric = "poisson" if objective == "poisson" else "mae"
     p = dict(
         n_estimators=n_est,
         num_leaves=31,
         learning_rate=0.05,
-        objective="regression_l1",
-        metric="mae",
+        objective=objective,
+        metric=metric,
         subsample=0.8,
         colsample_bytree=0.8,
         min_child_samples=20,
@@ -325,6 +422,7 @@ def _run_walk_forward(
     medians: Dict[str, float],
     cfg: TrainConfig,
     stat_name: str,
+    objective: str = "reg:absoluteerror",
 ) -> Tuple[float, float]:
     """Run walk-forward CV. Returns (mae, p68_ci)."""
     folds = _walk_forward_folds(df, cfg.min_train_days, cfg.test_window_days, cfg.step_days)
@@ -355,7 +453,8 @@ def _run_walk_forward(
             fit_mask = slice(None)
             eval_mask = None
 
-        xgb = _build_xgb(cfg, early_stop=True)
+        lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
+        xgb = _build_xgb(cfg, early_stop=True, objective=objective)
         if eval_mask is not None:
             xgb.fit(
                 X_tr[fit_mask], y_tr[fit_mask],
@@ -370,7 +469,7 @@ def _run_walk_forward(
         preds = xgb.predict(X_te)
 
         if _HAS_LGB:
-            lgb_model = _build_lgb(early_stop=True)
+            lgb_model = _build_lgb(early_stop=True, objective=lgb_obj)
             if eval_mask is not None:
                 lgb_model.fit(
                     X_tr[fit_mask], y_tr[fit_mask],
@@ -407,17 +506,19 @@ def _fit_final_model(
     cfg: TrainConfig,
     stat_name: str,
     n_estimators: Optional[int] = None,
+    objective: str = "reg:absoluteerror",
 ) -> Tuple[XGBRegressor, Optional[object]]:
     """Fit final XGB (+LGB) on all data, no early stopping."""
     n_est = n_estimators or cfg.n_estimators
+    lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
     log.info("Fitting final %s XGB (n=%d rows, n_estimators=%d)", stat_name, len(X), n_est)
-    xgb = _build_xgb(cfg, n_est=n_est, early_stop=False)
+    xgb = _build_xgb(cfg, n_est=n_est, early_stop=False, objective=objective)
     xgb.fit(X, y, verbose=False)
 
     lgb_model = None
     if _HAS_LGB:
         log.info("Fitting final %s LGB", stat_name)
-        lgb_model = _build_lgb(n_est=n_est, early_stop=False)
+        lgb_model = _build_lgb(n_est=n_est, early_stop=False, objective=lgb_obj)
         lgb_model.fit(X, y)
 
     return xgb, lgb_model
@@ -482,7 +583,7 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _BATTER_META = ["game_slug", "game_date_et", "player_id", "team_abbr"]
-_BATTER_TARGETS = ["hits", "total_bases"]
+_BATTER_TARGETS = ["hits", "total_bases", "home_runs", "walks_batter"]
 
 
 def train_batter_models(cfg: TrainConfig) -> Dict:
@@ -497,25 +598,27 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     log.info("Batter training data: %d rows, %s → %s",
              len(df), df["game_date_et"].min().date(), df["game_date_et"].max().date())
 
-    y_hits = df["hits"].astype(float)
-    y_tb   = df["total_bases"].astype(float)
+    y_hits  = df["hits"].astype(float)
+    y_tb    = df["total_bases"].astype(float)
+    y_hr    = df["home_runs"].fillna(0).astype(float)
+    y_walks = df["walks_batter"].fillna(0).astype(float)
     X_raw = _prep_X(df, _BATTER_TARGETS, _BATTER_META)
     feature_cols = list(X_raw.columns)
 
     medians = fit_medians(X_raw)
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
-    # Walk-forward for both stats
-    hits_mae, hits_p68 = _run_walk_forward(
-        df, X_raw, y_hits, feature_cols, medians, cfg, "hits"
-    )
-    tb_mae, tb_p68 = _run_walk_forward(
-        df, X_raw, y_tb, feature_cols, medians, cfg, "total_bases"
-    )
+    # Walk-forward for all four stats
+    hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits")
+    tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases")
+    hr_mae,    hr_p68    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson")
+    walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter")
 
     # Final models
-    xgb_hits, lgb_hits = _fit_final_model(X_filled, y_hits, cfg, "hits")
-    xgb_tb,   lgb_tb   = _fit_final_model(X_filled, y_tb,   cfg, "total_bases")
+    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits")
+    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases")
+    xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    objective="count:poisson")
+    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter")
 
     # Save
     model_dir = cfg.model_dir
@@ -523,11 +626,17 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
 
     xgb_hits.save_model(str(model_dir / "hits_xgb.json"))
     xgb_tb.save_model(str(model_dir / "total_bases_xgb.json"))
+    xgb_hr.save_model(str(model_dir / "home_runs_xgb.json"))
+    xgb_walks.save_model(str(model_dir / "walks_xgb.json"))
 
     if lgb_hits is not None:
         lgb_hits.booster_.save_model(str(model_dir / "lgb_hits.txt"))
     if lgb_tb is not None:
         lgb_tb.booster_.save_model(str(model_dir / "lgb_total_bases.txt"))
+    if lgb_hr is not None:
+        lgb_hr.booster_.save_model(str(model_dir / "lgb_home_runs.txt"))
+    if lgb_walks is not None:
+        lgb_walks.booster_.save_model(str(model_dir / "lgb_walks.txt"))
 
     (model_dir / "feature_columns_batters.json").write_text(
         json.dumps(feature_cols), encoding="utf-8"
@@ -537,8 +646,10 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     )
 
     return {
-        "mae_hits": hits_mae, "ci_hits": hits_p68,
+        "mae_hits": hits_mae,   "ci_hits": hits_p68,
         "mae_total_bases": tb_mae, "ci_total_bases": tb_p68,
+        "mae_home_runs": hr_mae,   "ci_home_runs": hr_p68,
+        "mae_walks": walks_mae,    "ci_walks": walks_p68,
         "n_rows": len(df),
     }
 
@@ -569,20 +680,20 @@ def main() -> None:
         results["mae_strikeouts"] = None
         results["ci_strikeouts"] = None
 
-    log.info("=== Training batter prop models (hits + total_bases) ===")
+    log.info("=== Training batter prop models (hits + total_bases + home_runs + walks) ===")
     try:
         r = train_batter_models(cfg)
         results.update(r)
-        log.info("Hits: MAE=%.3f, CI(p68)=%.3f | Total Bases: MAE=%.3f, CI(p68)=%.3f | n=%d",
-                 r["mae_hits"], r["ci_hits"],
-                 r["mae_total_bases"], r["ci_total_bases"],
-                 r["n_rows"])
+        log.info(
+            "Hits: MAE=%.3f | TB: MAE=%.3f | HR: MAE=%.3f | Walks: MAE=%.3f | n=%d",
+            r["mae_hits"], r["mae_total_bases"], r["mae_home_runs"], r["mae_walks"],
+            r["n_rows"],
+        )
     except Exception:
         log.exception("Batter model training failed")
-        results["mae_hits"] = None
-        results["ci_hits"] = None
-        results["mae_total_bases"] = None
-        results["ci_total_bases"] = None
+        for k in ("mae_hits", "ci_hits", "mae_total_bases", "ci_total_bases",
+                  "mae_home_runs", "ci_home_runs", "mae_walks", "ci_walks"):
+            results[k] = None
 
     # Save backtest summary
     (cfg.model_dir / "backtest_mae.json").write_text(
