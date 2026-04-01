@@ -285,7 +285,7 @@ LEFT JOIN features.mlb_player_prev_season_stats_mat pss
         ELSE NULL
     END
 WHERE g.status = 'final'
-  AND b.ab_avg_10 >= 1.5
+  AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3
   AND gl.hits IS NOT NULL
   AND gl.total_bases IS NOT NULL
@@ -609,14 +609,14 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
     # Walk-forward for all four stats
-    hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits")
-    tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases")
+    hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",        objective="count:poisson")
+    tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases", objective="count:poisson")
     hr_mae,    hr_p68    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson")
     walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter")
 
     # Final models
-    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits")
-    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases")
+    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",        objective="count:poisson")
+    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases", objective="count:poisson")
     xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    objective="count:poisson")
     xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter")
 
