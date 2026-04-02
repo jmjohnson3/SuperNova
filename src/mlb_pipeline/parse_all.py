@@ -28,6 +28,7 @@ _MLB_SQL_VIEWS = [
     "MLB012_mlb_batting_vs_hand.sql",  # handedness DDL + base view
     "MLB013_mlb_batting_cross_season_rolling.sql",  # cross-season rolling (no season partition)
     "MLB014_mlb_player_prev_season_stats.sql",       # full prior-season aggregate stats
+    "MLB015_mlb_batter_vs_sp.sql",                   # batter vs specific SP career H2H base view
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -52,6 +53,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_umpire_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batting_vs_hand_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_batting_rolling_cross_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_prev_season_stats_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_vs_sp_mat;
 """
 
 
@@ -98,6 +100,7 @@ _MATVIEW_TO_VIEW = {
     "mlb_batting_vs_hand_mat":             "mlb_batting_vs_hand",
     "mlb_player_batting_rolling_cross_mat": "mlb_player_batting_rolling_cross",
     "mlb_player_prev_season_stats_mat":    "mlb_player_prev_season_stats",
+    "mlb_batter_vs_sp_mat":               "mlb_batter_vs_sp",
 }
 
 
@@ -177,18 +180,20 @@ def _refresh_matviews(pg_dsn: str) -> None:
                 log.exception("Failed to refresh: %s", stmt)
 
         # ── If any matview was dropped (cascading to game feature views),
-        #    re-apply MLB006 so those views are recreated with updated schemas ──
+        #    re-apply MLB011 (lineup quality) then MLB006 so those views are
+        #    recreated with updated schemas. MLB006 references mlb_lineup_quality
+        #    so MLB011 must come first. ──
         if dropped_any:
-            sql_path = _SQL_DIR / "MLB006_mlb_game_features.sql"
             conn.autocommit = False
             cur2 = conn.cursor()
             try:
-                cur2.execute(sql_path.read_text(encoding="utf-8"))
+                for fname in ("MLB011_mlb_lineup_quality.sql", "MLB006_mlb_game_features.sql"):
+                    cur2.execute((_SQL_DIR / fname).read_text(encoding="utf-8"))
                 conn.commit()
-                log.info("Re-applied MLB006 after matview schema change")
+                log.info("Re-applied MLB011 + MLB006 after matview schema change")
             except Exception:
                 conn.rollback()
-                log.exception("Failed to re-apply MLB006 after matview drop")
+                log.exception("Failed to re-apply MLB011/MLB006 after matview drop")
             finally:
                 conn.autocommit = True
 

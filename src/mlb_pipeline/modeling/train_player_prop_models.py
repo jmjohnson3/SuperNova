@@ -230,6 +230,13 @@ SELECT
     pss.prev_hits_avg,  pss.prev_tb_avg,  pss.prev_hr_avg,
     pss.prev_ab_avg,    pss.prev_k_rate,  pss.prev_bb_rate,
     pss.prev_iso,       pss.prev_hr_rate,
+    -- Career H2H vs this specific SP (MLB015) — leakage-safe via matview window
+    h2h.h2h_games,
+    h2h.h2h_ba,
+    h2h.h2h_obp,
+    h2h.h2h_slg,
+    h2h.h2h_k_rate,
+    h2h.h2h_iso,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -284,6 +291,11 @@ LEFT JOIN features.mlb_player_prev_season_stats_mat pss
         WHEN '2026-regular' THEN '2025-regular'
         ELSE NULL
     END
+-- Career H2H stats vs today's specific SP (MLB015, leakage-safe via matview window)
+LEFT JOIN features.mlb_batter_vs_sp_mat h2h
+    ON  h2h.game_slug  = b.game_slug
+    AND h2h.batter_id  = b.player_id
+    AND h2h.pitcher_id = sp.player_id
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3

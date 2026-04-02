@@ -99,3 +99,17 @@ SELECT * FROM features.mlb_player_prev_season_stats;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_player_prev_season_stats_mat_pk
     ON features.mlb_player_prev_season_stats_mat (player_id, season);
+
+-- ============================================================
+-- Batter vs specific SP career H2H materialized view (MLB015)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_batter_vs_sp_mat
+    AS SELECT * FROM features.mlb_batter_vs_sp
+    WITH DATA;
+
+CREATE UNIQUE INDEX IF NOT EXISTS mlb_bvsp_pk
+    ON features.mlb_batter_vs_sp_mat (batter_id, pitcher_id, game_slug);
+
+-- Secondary index for inference LATERAL (most-recent career stats before date)
+CREATE INDEX IF NOT EXISTS mlb_bvsp_lookup
+    ON features.mlb_batter_vs_sp_mat (batter_id, pitcher_id, game_date_et DESC);

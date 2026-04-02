@@ -466,6 +466,53 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 ).min(axis=1)
                 X[new_col] = X[split_col].fillna(0.0) * (n_min / 15.0).clip(upper=1.0)
 
+    # ── Batter vs specific pitcher H2H career stats (MLB015) ─────────────────
+    if "h2h_games" in X.columns:
+        _games = pd.to_numeric(X["h2h_games"], errors="coerce").fillna(0.0)
+
+        # Reliability weight: 0→1 as h2h_games grows 0→5
+        # Prevents 1-2 game samples from swamping generic features
+        _rel = (_games / 5.0).clip(upper=1.0)
+        X["h2h_reliability"] = _rel
+
+        # OPS computed here (sum of OBP + SLG from SQL cols)
+        if "h2h_obp" in X.columns and "h2h_slg" in X.columns:
+            X["h2h_ops"] = (
+                pd.to_numeric(X["h2h_obp"], errors="coerce").fillna(0.0)
+                + pd.to_numeric(X["h2h_slg"], errors="coerce").fillna(0.0)
+            )
+
+        # Reliability-weighted stats (0 when no history, full value at 5+ games)
+        for _raw, _weighted in [
+            ("h2h_ba",     "h2h_ba_weighted"),
+            ("h2h_ops",    "h2h_ops_weighted"),
+            ("h2h_k_rate", "h2h_k_rate_weighted"),
+            ("h2h_iso",    "h2h_iso_weighted"),
+        ]:
+            if _raw in X.columns:
+                X[_weighted] = (
+                    pd.to_numeric(X[_raw], errors="coerce").fillna(0.0) * _rel
+                )
+
+        # Delta vs batter's rolling baseline — "is this pitcher harder/easier than average?"
+        if "h2h_ops" in X.columns and "obp_avg_10" in X.columns and "iso_avg_10" in X.columns:
+            _ops_baseline = (
+                pd.to_numeric(X["obp_avg_10"], errors="coerce").fillna(0.0)
+                + pd.to_numeric(X["iso_avg_10"], errors="coerce").fillna(0.0)
+            )
+            X["h2h_ops_delta"] = (
+                pd.to_numeric(X["h2h_ops"], errors="coerce").fillna(0.0) - _ops_baseline
+            ) * _rel  # only meaningful when there's history
+
+        if "h2h_k_rate" in X.columns and "k_rate_avg_10" in X.columns:
+            _k_baseline = pd.to_numeric(X["k_rate_avg_10"], errors="coerce").fillna(0.0)
+            X["h2h_k_rate_delta"] = (
+                pd.to_numeric(X["h2h_k_rate"], errors="coerce").fillna(0.0) - _k_baseline
+            ) * _rel
+
+        # Binary flag: 5+ matchup games = meaningful H2H sample
+        X["h2h_has_history"] = (_games >= 5.0).astype(int)
+
     # ── Shared ───────────────────────────────────────────────────────────────
     # Back-to-back flag (rest_days ≤ 1)
     if "rest_days" in X.columns:

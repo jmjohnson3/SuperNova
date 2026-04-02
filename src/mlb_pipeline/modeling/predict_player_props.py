@@ -288,7 +288,14 @@ SELECT
     pss.prev_games,
     pss.prev_hits_avg,  pss.prev_tb_avg,  pss.prev_hr_avg,
     pss.prev_ab_avg,    pss.prev_k_rate,  pss.prev_bb_rate,
-    pss.prev_iso,       pss.prev_hr_rate
+    pss.prev_iso,       pss.prev_hr_rate,
+    -- Career H2H stats vs today's SP (MLB015, most recent entry before game date)
+    h2h.h2h_games,
+    h2h.h2h_ba,
+    h2h.h2h_obp,
+    h2h.h2h_slg,
+    h2h.h2h_k_rate,
+    h2h.h2h_iso
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -339,6 +346,16 @@ LEFT JOIN LATERAL (
 LEFT JOIN features.mlb_player_prev_season_stats_mat pss
     ON pss.player_id = rp.player_id
     AND pss.season = %(prior_season)s
+-- Career H2H stats vs today's SP (most recent entry before game date)
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_batter_vs_sp_mat
+    WHERE batter_id    = rp.player_id
+      AND pitcher_id   = sp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) h2h ON TRUE
 LEFT JOIN features.mlb_ballpark_factors bf
     ON bf.team_abbr = (
         SELECT home_team_abbr FROM games_today
