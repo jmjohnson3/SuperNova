@@ -679,6 +679,52 @@ def _fmt_edge(edge: Optional[float], threshold: float, direction: str = "OVER") 
     return f"[{direction} +{abs_e:.2f}]" if abs_e > 0 else "[no edge]"
 
 
+def _collect_all_prop_links(
+    all_pitcher_rows: List[Dict],
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+) -> List[str]:
+    """Collect one FD bet link per prop, taking the model's predicted direction.
+
+    Used to build the All Props Parlay (every player, model's side, regardless of edge).
+    """
+    links: List[str] = []
+
+    for row in all_pitcher_rows:
+        pred_k = row.get("pred_strikeouts")
+        if pred_k is None:
+            continue
+        norm = _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+        ld = prop_lines.get((norm, "pitcher_strikeouts"))
+        if not ld or ld.get("line") is None:
+            continue
+        edge = pred_k - ld["line"]
+        link = ld.get("over_link") if edge >= 0 else ld.get("under_link")
+        if link:
+            links.append(link)
+
+    for row in all_batter_rows:
+        norm = _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+        for pred_col, stat_key in [
+            ("pred_hits",        "batter_hits"),
+            ("pred_total_bases", "batter_total_bases"),
+            ("pred_home_runs",   "batter_home_runs"),
+            ("pred_walks",       "batter_walks"),
+        ]:
+            pred_v = row.get(pred_col)
+            if pred_v is None:
+                continue
+            ld = prop_lines.get((norm, stat_key))
+            if not ld or ld.get("line") is None:
+                continue
+            edge = pred_v - ld["line"]
+            link = ld.get("over_link") if edge >= 0 else ld.get("under_link")
+            if link:
+                links.append(link)
+
+    return links
+
+
 def _print_discord(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
@@ -1121,10 +1167,24 @@ def predict_props(cfg: PredictConfig) -> None:
     )
     fd_links.extend(best_links)
 
-    # Best props parlay
+    # Best props parlay (high-edge bets only)
     parlay_url = build_fd_parlay_url(fd_links)
     if parlay_url:
         print(f"\n**Best Props Parlay** [FD]({parlay_url})")
+
+    # All props parlay — every player, model's predicted direction, chunked at 25 legs
+    all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    all_links_dedup = [l for l in all_links if l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
+    n_all = len(all_links_dedup)
+    n_chunks = math.ceil(n_all / 25) if n_all else 0
+    for i in range(0, n_all, 25):
+        chunk = all_links_dedup[i:i + 25]
+        ap = build_fd_parlay_url(chunk)
+        if ap:
+            suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+            print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
 
 
 def main() -> None:

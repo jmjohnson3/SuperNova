@@ -346,7 +346,7 @@ def parse_boxscore(
     linescore: dict,
     home_team_abbr: str,
     away_team_abbr: str,
-) -> tuple[dict, dict, list[dict], list[dict], list[dict], list[dict]]:
+) -> tuple[dict, dict, list[dict], list[dict], list[dict], list[dict], list[dict]]:
     """
     Parse a boxscore + linescore response into structured row dicts.
 
@@ -357,6 +357,7 @@ def parse_boxscore(
         gamelog_rows        : list of dicts for raw.mlb_player_gamelogs
         sp_rows             : list of dicts for raw.mlb_starting_pitchers
         ump_rows            : list of dicts for raw.mlb_game_umpires
+        hand_rows           : list of dicts for raw.mlb_player_handedness
     """
     now_utc = datetime.now(timezone.utc)
     teams_bs = boxscore.get("teams", {})
@@ -390,6 +391,7 @@ def parse_boxscore(
     player_stat_rows: list[dict] = []
     gamelog_rows: list[dict] = []
     sp_rows: list[dict] = []
+    hand_rows: dict[int, dict] = {}  # player_id -> row; dedup within this game
 
     for side, team_abbr, is_home in [
         ("home", home_team_abbr, True),
@@ -412,6 +414,16 @@ def parse_boxscore(
             name_parts = full_name.rsplit(" ", 1)
             first_name = name_parts[0] if len(name_parts) > 1 else ""
             last_name = name_parts[-1]
+
+            # Collect handedness (batSide / pitchHand) from person dict
+            bat_side   = person.get("batSide",   {}).get("code")   # L / R / S
+            pitch_hand = person.get("pitchHand", {}).get("code")   # L / R
+            if (bat_side or pitch_hand) and player_id not in hand_rows:
+                hand_rows[player_id] = {
+                    "player_id":  player_id,
+                    "bat_side":   bat_side,
+                    "pitch_hand": pitch_hand,
+                }
 
             position = p.get("position", {}).get("abbreviation", "")
             batting_order_raw = p.get("battingOrder")
@@ -518,7 +530,7 @@ def parse_boxscore(
                 "umpire_name": ump_name,
             })
 
-    return game_row, {}, player_stat_rows, gamelog_rows, sp_rows, ump_rows
+    return game_row, {}, player_stat_rows, gamelog_rows, sp_rows, ump_rows, list(hand_rows.values())
 
 
 # ---------------------------------------------------------------------------
@@ -634,6 +646,198 @@ def upsert_starting_pitchers(conn, rows: list[dict]) -> None:
         )
 
 
+def fetch_probable_pitchers_for_date(conn, target_date: date) -> int:
+    """Fetch probable starting pitchers for upcoming games on target_date
+    from the MLB Stats API and upsert into raw.mlb_starting_pitchers.
+
+    Uses the schedule endpoint with hydrate=probablePitcher.  Never overwrites
+    rows whose source='actual' (i.e. confirmed starters from boxscore data).
+
+    Returns the number of team-rows inserted/updated.
+    """
+    date_str = target_date.strftime("%Y-%m-%d")
+    try:
+        data = _get("/schedule", params={
+            "sportId": 1,
+            "date": date_str,
+            "hydrate": "probablePitcher,team",
+            "gameType": "R",
+        })
+    except Exception as exc:
+        log.warning("fetch_probable_pitchers_for_date: API error for %s: %s", date_str, exc)
+        return 0
+
+    rows_to_upsert: list[dict] = []
+    slug_date = target_date.strftime("%Y%m%d")
+
+    for date_rec in data.get("dates", []):
+        for game in date_rec.get("games", []):
+            home_info = game.get("teams", {}).get("home", {})
+            away_info = game.get("teams", {}).get("away", {})
+            home_abbr = _norm(home_info.get("team", {}).get("abbreviation", ""))
+            away_abbr = _norm(away_info.get("team", {}).get("abbreviation", ""))
+            if not home_abbr or not away_abbr:
+                continue
+
+            # Replicate game_slug format: YYYYMMDD-AWAY-HOME[-G2]
+            game_num = game.get("gameNumber", 1)
+            dh = game.get("doubleHeader", "N")
+            slug = (f"{slug_date}-{away_abbr}-{home_abbr}-G{game_num}"
+                    if dh != "N" and game_num > 1
+                    else f"{slug_date}-{away_abbr}-{home_abbr}")
+
+            for side, team_info in [("home", home_info), ("away", away_info)]:
+                pp = team_info.get("probablePitcher") or {}
+                pid = pp.get("id")
+                if not pid:
+                    continue
+                team_abbr = home_abbr if side == "home" else away_abbr
+                rows_to_upsert.append({
+                    "game_slug": slug,
+                    "team_abbr": team_abbr,
+                    "player_id": int(pid),
+                    "player_name": pp.get("fullName"),
+                    "source": "probable",
+                })
+
+    if not rows_to_upsert:
+        return 0
+
+    # Upsert — never overwrites confirmed 'actual' source rows
+    sql = """
+    INSERT INTO raw.mlb_starting_pitchers (
+        game_slug, team_abbr, player_id, player_name, source, fetched_at_utc
+    ) VALUES %s
+    ON CONFLICT (game_slug, team_abbr) DO UPDATE SET
+        player_id      = CASE WHEN mlb_starting_pitchers.source = 'actual'
+                              THEN mlb_starting_pitchers.player_id
+                              ELSE EXCLUDED.player_id END,
+        player_name    = CASE WHEN mlb_starting_pitchers.source = 'actual'
+                              THEN mlb_starting_pitchers.player_name
+                              ELSE EXCLUDED.player_name END,
+        source         = CASE WHEN mlb_starting_pitchers.source = 'actual'
+                              THEN mlb_starting_pitchers.source
+                              ELSE EXCLUDED.source END,
+        fetched_at_utc = now()
+    ;
+    """
+    with conn.cursor() as cur:
+        execute_values(
+            cur, sql, rows_to_upsert,
+            template="(%(game_slug)s, %(team_abbr)s, %(player_id)s, %(player_name)s, %(source)s, now())",
+            page_size=100,
+        )
+    conn.commit()
+    return len(rows_to_upsert)
+
+
+def upsert_player_handedness(conn, rows: list[dict]) -> None:
+    """Upsert bat_side / pitch_hand into raw.mlb_player_handedness.
+
+    rows: list of dicts with keys player_id, bat_side, pitch_hand.
+    """
+    if not rows:
+        return
+    sql = """
+    INSERT INTO raw.mlb_player_handedness (player_id, bat_side, pitch_hand, updated_at)
+    VALUES %s
+    ON CONFLICT (player_id) DO UPDATE
+        SET bat_side   = EXCLUDED.bat_side,
+            pitch_hand = EXCLUDED.pitch_hand,
+            updated_at = now()
+    WHERE EXCLUDED.bat_side IS NOT NULL OR EXCLUDED.pitch_hand IS NOT NULL
+    ;
+    """
+    with conn.cursor() as cur:
+        execute_values(
+            cur, sql, rows,
+            template="(%(player_id)s, %(bat_side)s, %(pitch_hand)s, now())",
+            page_size=500,
+        )
+    conn.commit()
+
+
+def backfill_handedness(conn) -> None:
+    """One-time backfill: fetch bat_side / pitch_hand for all players in
+    raw.mlb_boxscore_player_stats that are not yet in raw.mlb_player_handedness.
+
+    Uses the free MLB Stats API batch people endpoint:
+      /api/v1/people?personIds=A,B,...&fields=people,id,batSide,pitchHand
+    ~3000 players → ~6 API calls (~2 seconds total).
+    """
+    import urllib.request, urllib.parse
+
+    # Players not yet in handedness table
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT player_id
+            FROM raw.mlb_boxscore_player_stats
+            WHERE player_id NOT IN (
+                SELECT player_id FROM raw.mlb_player_handedness
+            )
+            ORDER BY player_id
+        """)
+        missing_ids = [r[0] for r in cur.fetchall()]
+
+    log.info("Handedness backfill: %d players need lookup", len(missing_ids))
+    if not missing_ids:
+        return
+
+    batch_size = 500
+    total_upserted = 0
+    errors = 0
+
+    for i in range(0, len(missing_ids), batch_size):
+        batch = missing_ids[i : i + batch_size]
+        ids_str = ",".join(str(p) for p in batch)
+        params = urllib.parse.urlencode({
+            "personIds": ids_str,
+            "fields": "people,id,batSide,pitchHand",
+        })
+        url = f"{BASE_URL}/people?{params}"
+        try:
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "SuperNovaBets/1.0 (sports analytics)"}
+            )
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read())
+            time.sleep(REQUEST_SLEEP)
+
+            rows = []
+            for person in data.get("people", []):
+                pid = _as_int(person.get("id"))
+                if not pid:
+                    continue
+                bat_side  = person.get("batSide",   {}).get("code")
+                pitch_hand = person.get("pitchHand", {}).get("code")
+                rows.append({
+                    "player_id":  pid,
+                    "bat_side":   bat_side,
+                    "pitch_hand": pitch_hand,
+                })
+
+            if rows:
+                upsert_player_handedness(conn, rows)
+                total_upserted += len(rows)
+
+            log.info(
+                "Handedness backfill batch %d-%d: %d upserted",
+                i + 1, min(i + batch_size, len(missing_ids)), len(rows),
+            )
+
+        except Exception as exc:
+            log.warning("Handedness backfill batch starting at %d failed: %s", i, exc)
+            errors += 1
+            if errors > 5:
+                log.error("Too many errors; aborting handedness backfill")
+                break
+
+    log.info(
+        "Handedness backfill complete: %d players upserted, %d batch errors",
+        total_upserted, errors,
+    )
+
+
 def upsert_umpires(conn, rows: list[dict]) -> None:
     if not rows:
         return
@@ -743,7 +947,7 @@ def backfill_season(
             linescore = fetch_linescore(game_pk)
             time.sleep(REQUEST_SLEEP)
 
-            game_row, _, player_rows, gamelog_rows, sp_rows, ump_rows = parse_boxscore(
+            game_row, _, player_rows, gamelog_rows, sp_rows, ump_rows, hand_rows = parse_boxscore(
                 slug, season, game_pk, boxscore, linescore, home_abbr, away_abbr
             )
 
@@ -752,6 +956,8 @@ def backfill_season(
             upsert_gamelogs(conn, gamelog_rows)
             upsert_starting_pitchers(conn, sp_rows)
             upsert_umpires(conn, ump_rows)
+            if hand_rows:
+                upsert_player_handedness(conn, hand_rows)
             conn.commit()
 
             if (i + 1) % 100 == 0 or (i + 1) == len(to_fetch):
@@ -920,6 +1126,8 @@ def main() -> None:
     parser.add_argument("--max-games", type=int, help="Max boxscores to fetch (for testing)")
     parser.add_argument("--backfill-umpires", action="store_true",
                         help="One-time backfill: extract umpires from already-fetched boxscores")
+    parser.add_argument("--backfill-handedness", action="store_true",
+                        help="One-time backfill: fetch bat_side/pitch_hand for all known players (~6 API calls)")
     args = parser.parse_args()
 
     seasons = args.season or ["2024-regular", "2025-regular"]
@@ -929,7 +1137,15 @@ def main() -> None:
     try:
         if args.backfill_umpires:
             backfill_umpires(conn, seasons)
+        elif args.backfill_handedness:
+            backfill_handedness(conn)
         else:
+            # Fetch probable pitchers for today so predict_player_props has SP data
+            et_today = datetime.now(ET).date()
+            n_probable = fetch_probable_pitchers_for_date(conn, et_today)
+            if n_probable:
+                log.info("Fetched probable pitchers for %d teams today (%s)", n_probable, et_today)
+
             for season_slug in seasons:
                 # Derive date range from season if not overridden
                 start_date = args.start_date

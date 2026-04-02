@@ -655,7 +655,8 @@ def main() -> None:
     )
     print(summary_line)
 
-    best_links: list[str | None] = []  # FD links for high-edge bets (parlay)
+    best_links: list[str | None] = []      # FD links for high-edge bets (best bets parlay)
+    all_game_links: list[str | None] = []  # model's predicted side for every game (all games parlay)
 
     for _, r in out.iterrows():
         start_raw = r.get("start_ts_utc")
@@ -712,6 +713,7 @@ def main() -> None:
             # FD link: home covers → spread_home_link; away covers → spread_away_link
             _sl = (_ld.spread_home_link if e_rl > 0 else _ld.spread_away_link) if _ld else None
             best_links.append(_sl)
+            all_game_links.append(_sl)
             _link_str = f"  [Bet FD](<{_sl}>)" if (_sl and discord) else ""
             if discord:
                 print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}]**{_link_str}")
@@ -722,6 +724,7 @@ def main() -> None:
             mkt_label = f"{float(mkt_rl):+.1f}"
             pred_side_label = home if pred_rd >= 0 else away
             _sl_no_edge = (_ld.spread_home_link if pred_rd >= 0 else _ld.spread_away_link) if _ld else None
+            all_game_links.append(_sl_no_edge)
             _link_str = f"  [FD](<{_sl_no_edge}>)" if (_sl_no_edge and discord) else ""
             print(f"  Run line: {pred_side_label} {mkt_label}{_link_str}")
         else:
@@ -738,6 +741,7 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_over_link if _ld else None
             best_links.append(_tl)
+            all_game_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
                 print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER]**{_link_str}")
@@ -748,16 +752,20 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}"
             pred_ou = "O" if pred_tot > float(mkt_tot) else "U"
             _tl_no_edge = (_ld.total_over_link if pred_tot > float(mkt_tot) else _ld.total_under_link) if (_ld and pd.notna(mkt_tot)) else None
+            all_game_links.append(_tl_no_edge)
             _link_str = f"  [FD](<{_tl_no_edge}>)" if (_tl_no_edge and discord) else ""
             print(f"  Total: {pred_ou}{mkt_t_label}{_link_str}")
         else:
             print(f"  Pred total: {pred_tot:.1f}")
 
-    # Parlay URL for all high-edge bets
+    # Parlay URLs
     if discord:
         parlay = build_fd_parlay_url([l for l in best_links if l])
         if parlay:
             print(f"\n**Best Bets Parlay** [FD](<{parlay}>)")
+        all_parlay = build_fd_parlay_url([l for l in all_game_links if l])
+        if all_parlay:
+            print(f"\n**All Games Parlay** [FD](<{all_parlay}>)")
 
     # Save predictions to DB
     try:
