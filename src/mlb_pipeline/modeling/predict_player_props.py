@@ -738,6 +738,10 @@ def _print_discord(
             name = row.get("player_name", f"id={row['player_id']}")
             norm = _normalize_name(name)
 
+            # CI scaling: widen effective threshold for thin-sample early-season players
+            _n_g = row.get("n_games_prev_10") or 0
+            _ci_scale = math.sqrt(10.0 / max(_n_g, 1))
+
             parts: List[str] = []
             for stat_lbl, pred_col, stat_key, threshold in [
                 ("H",  "pred_hits",        "batter_hits",         cfg.threshold_hits),
@@ -757,7 +761,7 @@ def _print_discord(
                     continue
 
                 edge = (pred_v - line) if (line is not None) else None
-                has_edge = edge is not None and abs(edge) >= threshold
+                has_edge = edge is not None and abs(edge) >= threshold * _ci_scale
 
                 if line is not None:
                     bk = line_data.get("bookmaker_key", "")
@@ -816,6 +820,8 @@ def _print_best_bets(
     for row in all_batter_rows:
         name = row.get("player_name", f"id={row['player_id']}")
         norm = _normalize_name(name)
+        _n_g = row.get("n_games_prev_10") or 0
+        _ci_scale = math.sqrt(10.0 / max(_n_g, 1))
         for stat, pred_col, stat_key, threshold in [
             ("H",  "pred_hits",        "batter_hits",        cfg.threshold_hits),
             ("TB", "pred_total_bases",  "batter_total_bases", cfg.threshold_total_bases),
@@ -829,7 +835,7 @@ def _print_best_bets(
             if not ld or ld["line"] is None:
                 continue
             edge = pred_v - ld["line"]
-            if abs(edge) >= threshold:
+            if abs(edge) >= threshold * _ci_scale:
                 best.append({
                     "name": name, "stat": stat, "pred": pred_v,
                     "line": ld["line"], "edge": edge,
@@ -1032,6 +1038,7 @@ def predict_props(cfg: PredictConfig) -> None:
                     "is_home": row.get("is_home"),
                     "opponent_abbr": row.get("opponent_abbr"),
                     "start_ts_utc": row.get("start_ts_utc"),
+                    "n_games_prev_10": int(row.get("n_games_prev_10") or 0),
                     "pred_hits": ph,
                     "pred_total_bases": ptb,
                     "pred_home_runs": phr,

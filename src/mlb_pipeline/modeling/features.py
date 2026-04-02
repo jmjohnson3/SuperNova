@@ -400,6 +400,38 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             # Positive = recent form better than full prior-season avg
             X[f"{stat}_cs_vs_prev"] = X[cs_col].fillna(X[prev_col]) - X[prev_col].fillna(X[cs_col])
 
+    # ── Reliability-weighted platoon splits ──────────────────────────────────
+    # Dampens vs-hand split stats for batters with few PA against the relevant
+    # pitcher handedness.  Uses the OHE'd opp_sp_hand_L/R columns to identify
+    # which split is active today, then scales by min(n_games / 20, 1.0).
+    if "n_games_vs_lhp_40" in X.columns and "n_games_vs_rhp_40" in X.columns:
+        n_vs_hand = pd.Series(0.0, index=X.index)
+        if "opp_sp_hand_L" in X.columns:
+            n_vs_hand += X["opp_sp_hand_L"].fillna(0.0) * X["n_games_vs_lhp_40"].fillna(0.0)
+        if "opp_sp_hand_R" in X.columns:
+            n_vs_hand += X["opp_sp_hand_R"].fillna(0.0) * X["n_games_vs_rhp_40"].fillna(0.0)
+        rel = (n_vs_hand / 20.0).clip(upper=1.0)
+
+        for stat_col, new_col in [
+            ("hits_avg_40_vs_hand",   "hits_vs_hand_weighted"),
+            ("tb_avg_40_vs_hand",     "tb_vs_hand_weighted"),
+            ("k_rate_avg_40_vs_hand", "k_rate_vs_hand_weighted"),
+            ("iso_avg_40_vs_hand",    "iso_vs_hand_weighted"),
+        ]:
+            if stat_col in X.columns:
+                X[new_col] = X[stat_col].fillna(0.0) * rel
+
+        for split_col, new_col in [
+            ("hits_hand_split_40", "hits_hand_split_weighted"),
+            ("tb_hand_split_40",   "tb_hand_split_weighted"),
+        ]:
+            if split_col in X.columns:
+                n_min = pd.concat(
+                    [X["n_games_vs_lhp_40"].fillna(0.0), X["n_games_vs_rhp_40"].fillna(0.0)],
+                    axis=1,
+                ).min(axis=1)
+                X[new_col] = X[split_col].fillna(0.0) * (n_min / 15.0).clip(upper=1.0)
+
     # ── Shared ───────────────────────────────────────────────────────────────
     # Back-to-back flag (rest_days ≤ 1)
     if "rest_days" in X.columns:
