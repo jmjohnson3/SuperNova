@@ -355,7 +355,16 @@ SELECT
     -- Training targets for market-anchored residual models.
     -- Residual = actual - market_line; reconstruction = market_line + pred_residual.
     (g.home_score - g.away_score) - ml.run_line_home AS run_line_residual,
-    (g.home_score + g.away_score) - ml.total_line    AS total_residual
+    (g.home_score + g.away_score) - ml.total_line    AS total_residual,
+
+    -- ---- Group D: Bullpen fatigue 7-day window + SP short outing (appended last) ----
+    hp.bullpen_ip_last_7                             AS home_bullpen_ip_last_7,
+    hp.bp_era_7d                                     AS home_bp_era_7d,
+    hp.sp_short_last                                 AS home_sp_short_last,
+    ap.bullpen_ip_last_7                             AS away_bullpen_ip_last_7,
+    ap.bp_era_7d                                     AS away_bp_era_7d,
+    ap.sp_short_last                                 AS away_sp_short_last,
+    ap.bullpen_ip_last_7 - hp.bullpen_ip_last_7      AS bullpen_fatigue_7d_edge
 
 FROM raw.mlb_games g
 
@@ -758,7 +767,16 @@ SELECT
     alq.top4_slg_avg_10         AS away_top4_slg_avg_10,
     alq.lineup_data_completeness AS away_lineup_completeness,
     COALESCE(hlq.lineup_avg_avg_10, 0) - COALESCE(alq.lineup_avg_avg_10, 0) AS lineup_avg_edge,
-    COALESCE(hlq.lineup_slg_avg_10, 0) - COALESCE(alq.lineup_slg_avg_10, 0) AS lineup_slg_edge
+    COALESCE(hlq.lineup_slg_avg_10, 0) - COALESCE(alq.lineup_slg_avg_10, 0) AS lineup_slg_edge,
+
+    -- ---- Group D: Bullpen fatigue 7-day window + SP short outing (appended last) ----
+    hp.bullpen_ip_last_7                             AS home_bullpen_ip_last_7,
+    hp.bp_era_7d                                     AS home_bp_era_7d,
+    hp.sp_short_last                                 AS home_sp_short_last,
+    ap.bullpen_ip_last_7                             AS away_bullpen_ip_last_7,
+    ap.bp_era_7d                                     AS away_bp_era_7d,
+    ap.sp_short_last                                 AS away_sp_short_last,
+    ap.bullpen_ip_last_7 - hp.bullpen_ip_last_7      AS bullpen_fatigue_7d_edge
 
 FROM raw.mlb_games g
 

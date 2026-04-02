@@ -135,6 +135,44 @@ bullpen_fatigue AS (
         gp.game_slug,
         gp.game_date_et,
         gp.team_abbr
+),
+-- 7-day bullpen fatigue: captures full-week workload (3-day window misses games Mon/Tue
+-- when predicting weekend series).  Also computes rolling 7-day bullpen ERA.
+bullpen_7d AS (
+    SELECT
+        gp.season,
+        gp.game_slug,
+        gp.game_date_et,
+        gp.team_abbr,
+        COALESCE(SUM(prior.bp_ip), 0)           AS bullpen_ip_last_7,
+        CASE WHEN SUM(prior.bp_ip) > 0
+             THEN 9.0 * SUM(prior.bp_er) / SUM(prior.bp_ip)
+             ELSE NULL END                       AS bp_era_7d
+    FROM game_pitching gp
+    LEFT JOIN game_pitching prior
+        ON prior.team_abbr   = gp.team_abbr
+       AND prior.season      = gp.season
+       AND prior.game_date_et >= gp.game_date_et - INTERVAL '7 days'
+       AND prior.game_date_et <  gp.game_date_et
+    GROUP BY
+        gp.season,
+        gp.game_slug,
+        gp.game_date_et,
+        gp.team_abbr
+),
+-- SP short outing flag: did this team's SP get knocked out early (<4 IP) in their
+-- most recent game?  Signals the bullpen was overused last outing and may be depleted.
+sp_last_outing AS (
+    SELECT
+        season,
+        game_slug,
+        game_date_et,
+        team_abbr,
+        LAG(sp_ip) OVER (
+            PARTITION BY season, team_abbr
+            ORDER BY game_date_et, game_slug
+        ) AS prev_sp_ip
+    FROM game_pitching
 )
 SELECT
     d.season,
@@ -170,12 +208,26 @@ SELECT
     STDDEV_SAMP(d.runs_allowed)  OVER w10 AS runs_allowed_sd_10,
 
     -- Bullpen fatigue (calendar-day based, not rolling window)
-    bf.bullpen_ip_last_3
+    bf.bullpen_ip_last_3,
+
+    -- 7-day bullpen fatigue + recent ERA
+    b7d.bullpen_ip_last_7,
+    b7d.bp_era_7d,
+
+    -- SP short outing: 1 if last start was < 4 IP (signals depleted bullpen)
+    CASE WHEN slo.prev_sp_ip IS NOT NULL AND slo.prev_sp_ip < 4.0
+         THEN 1 ELSE 0 END AS sp_short_last
 
 FROM derived d
 JOIN bullpen_fatigue bf
     ON bf.game_slug  = d.game_slug
    AND bf.team_abbr  = d.team_abbr
+JOIN bullpen_7d b7d
+    ON b7d.game_slug = d.game_slug
+   AND b7d.team_abbr = d.team_abbr
+JOIN sp_last_outing slo
+    ON slo.game_slug = d.game_slug
+   AND slo.team_abbr = d.team_abbr
 WINDOW
     w5  AS (PARTITION BY d.season, d.team_abbr
             ORDER BY d.game_date_et, d.game_slug

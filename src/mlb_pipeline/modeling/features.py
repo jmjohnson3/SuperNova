@@ -296,6 +296,40 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "h2h_home_win_pct_ytd" in X.columns:
         X["h2h_edge"] = pd.to_numeric(X["h2h_home_win_pct_ytd"], errors="coerce") - 0.5
 
+    # ── Bullpen fatigue (Group D) ─────────────────────────────────────────────
+    # SP short outing asymmetry: positive = home SP was knocked out early last game
+    # (home bullpen overused; typically -1 for away advantage, +1 for home disadvantage)
+    if "home_sp_short_last" in X.columns and "away_sp_short_last" in X.columns:
+        X["sp_short_asymmetry"] = (
+            pd.to_numeric(X["home_sp_short_last"], errors="coerce").fillna(0)
+            - pd.to_numeric(X["away_sp_short_last"], errors="coerce").fillna(0)
+        )
+
+    # Pen depletion index: 7-day IP × (1 + short-start flag)
+    # Short start means bullpen worked extra innings → compounding fatigue
+    for _side in ("home", "away"):
+        _ip7   = f"{_side}_bullpen_ip_last_7"
+        _short = f"{_side}_sp_short_last"
+        if _ip7 in X.columns:
+            _ip  = pd.to_numeric(X[_ip7], errors="coerce").fillna(0.0)
+            _sh  = pd.to_numeric(X[_short], errors="coerce").fillna(0.0) if _short in X.columns else 0.0
+            X[f"{_side}_pen_depletion"] = _ip * (1.0 + _sh)
+
+    # Depletion edge: positive = away team's bullpen more depleted (home advantage)
+    if "home_pen_depletion" in X.columns and "away_pen_depletion" in X.columns:
+        X["pen_depletion_edge"] = X["away_pen_depletion"] - X["home_pen_depletion"]
+
+    # Quality × fatigue interaction: fatigued AND leaky pen = extra trouble
+    # bp_era_7d (higher = worse pen); multiply by 7-day IP (more usage = more depleted)
+    for _side in ("home", "away"):
+        _era7 = f"{_side}_bp_era_7d"
+        _ip7  = f"{_side}_bullpen_ip_last_7"
+        if _era7 in X.columns and _ip7 in X.columns:
+            X[f"{_side}_bp_era7_x_ip7"] = (
+                pd.to_numeric(X[_era7], errors="coerce").fillna(4.5)   # league-avg if NULL
+                * pd.to_numeric(X[_ip7], errors="coerce").fillna(0.0)
+            )
+
     return X
 
 
