@@ -14,7 +14,7 @@ _UTC = ZoneInfo("UTC")
 _MLB_OFF_SEASON_MONTHS = {11, 12, 1, 2}  # November, December, January, February
 
 _PROP_MARKETS = (
-    "pitcher_strikeouts,batter_hits,batter_home_runs,batter_total_bases"
+    "pitcher_strikeouts,batter_hits,batter_home_runs,batter_total_bases,batter_walks"
 )
 _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{event_id}/odds"
 
@@ -343,10 +343,22 @@ def _fetch_prop_lines_for_day(
 
 
 def main() -> None:
+    import argparse
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
+
+    parser = argparse.ArgumentParser(description="MLB Odds API crawler")
+    parser.add_argument("--start-date", metavar="YYYY-MM-DD",
+                        help="Override catch-up start date (historical backfill)")
+    parser.add_argument("--end-date", metavar="YYYY-MM-DD",
+                        help="Override catch-up end date (exclusive; defaults to today)")
+    parser.add_argument("--skip-live", action="store_true",
+                        help="Skip today/tomorrow live odds fetch (backfill-only mode)")
+    parser.add_argument("--skip-props", action="store_true",
+                        help="Skip prop lines fetch")
+    args = parser.parse_args()
 
     cfg = OddsCrawlerConfig()
     if not cfg.oddsapi_key:
@@ -360,22 +372,26 @@ def main() -> None:
     skipped = 0
 
     with psycopg2.connect(cfg.pg_dsn) as conn:
-        # Find the last date we already have odds for
-        last_date = _last_saved_date(conn)
-
-        if last_date is None:
-            # No history — start from the current MLB season opener (April)
-            season_start_year = today_et.year if today_et.month >= 4 else today_et.year - 1
-            catchup_start = date(season_start_year, 4, 1)
-            log.info("No prior odds found. Catching up from %s", catchup_start)
+        # Determine catch-up range
+        if args.start_date:
+            catchup_start = date.fromisoformat(args.start_date)
+            log.info("Backfill mode: catching up from %s (--start-date)", catchup_start)
         else:
-            catchup_start = last_date + timedelta(days=1)
-            log.info("Last saved date: %s. Catching up from %s to %s",
-                     last_date, catchup_start, today_et - timedelta(days=1))
+            last_date = _last_saved_date(conn)
+            if last_date is None:
+                season_start_year = today_et.year if today_et.month >= 4 else today_et.year - 1
+                catchup_start = date(season_start_year, 4, 1)
+                log.info("No prior odds found. Catching up from %s", catchup_start)
+            else:
+                catchup_start = last_date + timedelta(days=1)
+                log.info("Last saved date: %s. Catching up from %s to %s",
+                         last_date, catchup_start, today_et - timedelta(days=1))
+
+        catchup_end = date.fromisoformat(args.end_date) if args.end_date else today_et
 
         # --- Catch-up: historical endpoint for all missing past days ---
         d = catchup_start
-        while d < today_et:
+        while d < catchup_end:
             if d.month in _MLB_OFF_SEASON_MONTHS:
                 skipped += 1
                 d += timedelta(days=1)
@@ -401,24 +417,25 @@ def main() -> None:
             d += timedelta(days=1)
 
         # --- Live endpoint: today and tomorrow ---
-        for live_day in (today_et, tomorrow_et):
-            if live_day.month in _MLB_OFF_SEASON_MONTHS:
-                continue
-            if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
-                log.warning("Budget guard: %d credits remaining. Skipping live fetch for %s.",
-                            credits_remaining, live_day)
-                continue
-            result = _fetch_live_day(cfg, conn, live_day)
-            if result is not None:
-                credits_remaining = result
-                saved += 1
-                if credits_remaining < cfg.min_credits_remaining:
-                    log.warning("LOW CREDIT BALANCE: %d credits remaining.", credits_remaining)
+        if not args.skip_live:
+            for live_day in (today_et, tomorrow_et):
+                if live_day.month in _MLB_OFF_SEASON_MONTHS:
+                    continue
+                if credits_remaining is not None and credits_remaining < cfg.min_credits_remaining:
+                    log.warning("Budget guard: %d credits remaining. Skipping live fetch for %s.",
+                                credits_remaining, live_day)
+                    continue
+                result = _fetch_live_day(cfg, conn, live_day)
+                if result is not None:
+                    credits_remaining = result
+                    saved += 1
+                    if credits_remaining < cfg.min_credits_remaining:
+                        log.warning("LOW CREDIT BALANCE: %d credits remaining.", credits_remaining)
 
         # --- Prop lines: today's events AND tomorrow's upcoming events ---
         # Tomorrow's events are saved with as_of_date=today so the leakage guard
         # (as_of_date < game_date) is satisfied when predicting tomorrow's games.
-        if today_et.month not in _MLB_OFF_SEASON_MONTHS:
+        if not args.skip_props and today_et.month not in _MLB_OFF_SEASON_MONTHS:
             if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
                 # Today's games
                 result = _fetch_prop_lines_for_day(cfg, conn, today_et)

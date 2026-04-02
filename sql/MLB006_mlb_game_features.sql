@@ -349,7 +349,13 @@ SELECT
 
     -- ---- Group C: Lineup differential features ----
     COALESCE(hlq.lineup_avg_avg_10, 0) - COALESCE(alq.lineup_avg_avg_10, 0) AS lineup_avg_edge,
-    COALESCE(hlq.lineup_slg_avg_10, 0) - COALESCE(alq.lineup_slg_avg_10, 0) AS lineup_slg_edge
+    COALESCE(hlq.lineup_slg_avg_10, 0) - COALESCE(alq.lineup_slg_avg_10, 0) AS lineup_slg_edge,
+
+    -- ---- Residual targets (MUST be appended last — CREATE OR REPLACE VIEW forbids column reordering) ----
+    -- Training targets for market-anchored residual models.
+    -- Residual = actual - market_line; reconstruction = market_line + pred_residual.
+    (g.home_score - g.away_score) - ml.run_line_home AS run_line_residual,
+    (g.home_score + g.away_score) - ml.total_line    AS total_residual
 
 FROM raw.mlb_games g
 
