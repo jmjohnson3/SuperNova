@@ -2,7 +2,8 @@
 -- Leakage-safe: all rolling windows use ROWS BETWEEN N PRECEDING AND 1 PRECEDING
 -- FIP approximation: (13*HR + 3*BB - 2*K) / IP + 3.2  (no HBP in raw data)
 -- New (Group B): days_since_last_start, is_short_rest, home/away ERA splits
-CREATE OR REPLACE VIEW features.mlb_pitcher_rolling AS
+DROP VIEW IF EXISTS features.mlb_pitcher_rolling CASCADE;
+CREATE VIEW features.mlb_pitcher_rolling AS
 WITH starter_gamelogs AS (
     SELECT
         g.season,
