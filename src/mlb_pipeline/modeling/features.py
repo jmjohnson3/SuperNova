@@ -404,9 +404,20 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["is_cold_game"]  = (X["temperature_f"].fillna(72.0) < 50.0).astype(int)
         X["temp_below_60"] = (60.0 - X["temperature_f"].fillna(72.0)).clip(lower=0.0)
 
+    # ── Walk count trend + umpire interaction ─────────────────────────────────
+    if "bb_avg_5" in X.columns and "bb_avg_10" in X.columns:
+        X["bb_trend_5v10"] = X["bb_avg_5"] - X["bb_avg_10"]
+        denom = X["bb_avg_10"].where(X["bb_avg_10"].abs() > 1e-6, other=np.nan)
+        X["bb_hot_ratio"] = X["bb_avg_5"] / denom
+    if "bb_trend_5v10" in X.columns and "bb_sd_10" in X.columns:
+        denom = X["bb_sd_10"].where(X["bb_sd_10"] > 1e-6, other=np.nan)
+        X["bb_trend_sig"] = X["bb_trend_5v10"] / denom
+
     # ── Umpire walk-tendency ──────────────────────────────────────────────────
     if "ump_bb9_avg_10" in X.columns and "bb_rate_avg_10" in X.columns:
         X["ump_bb9_x_batter_bb_rate"] = X["ump_bb9_avg_10"] * X["bb_rate_avg_10"]
+    if "ump_bb9_avg_10" in X.columns and "bb_avg_10" in X.columns:
+        X["ump_bb9_x_bb_avg_10"] = X["ump_bb9_avg_10"] * X["bb_avg_10"]
 
     # ── Lineup slot ───────────────────────────────────────────────────────────
     if "batting_order_avg_10" in X.columns:
@@ -512,6 +523,25 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
 
         # Binary flag: 5+ matchup games = meaningful H2H sample
         X["h2h_has_history"] = (_games >= 5.0).astype(int)
+
+    # ── Home/Away venue-matched splits ───────────────────────────────────────
+    # For each stat, select the home or away rolling average based on today's location.
+    # Falls back to overall avg_10 when the venue-specific split is NULL (few games).
+    for _stat in ("hits", "tb", "hr", "bb"):
+        _home_col = f"{_stat}_home_avg_20"
+        _away_col = f"{_stat}_away_avg_20"
+        _fallback = f"{_stat}_avg_10"
+        if _home_col in X.columns and _away_col in X.columns and "is_home" in X.columns:
+            _is_home = X["is_home"].astype(float).fillna(0.0)
+            _fb = X[_fallback].fillna(0.0) if _fallback in X.columns else 0.0
+            X[f"{_stat}_venue_adj"] = np.where(
+                _is_home > 0.5,
+                X[_home_col].fillna(_fb),
+                X[_away_col].fillna(_fb),
+            )
+            X[f"{_stat}_home_away_split"] = (
+                X[_home_col].fillna(0.0) - X[_away_col].fillna(0.0)
+            )
 
     # ── Shared ───────────────────────────────────────────────────────────────
     # Back-to-back flag (rest_days ≤ 1)

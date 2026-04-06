@@ -123,6 +123,7 @@ SELECT
     pr.starts_in_window_10,
     pr.last_start_k,
     pr.last_start_ip,
+    pr.last_start_bb,
     -- Group B: SP rest + home/away splits (MLB003)
     pr.days_since_last_start AS sp_days_since_last_start,
     pr.is_short_rest,
@@ -153,7 +154,11 @@ SELECT
     COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
     CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
     -- Pitcher handedness
-    ph.pitch_hand                                                AS pitcher_hand
+    ph.pitch_hand                                                AS pitcher_hand,
+    -- Opponent lineup quality (NULL for upcoming games, median-imputed by model)
+    lq_opp.lineup_avg_avg_10                                     AS opp_lineup_avg_avg_10,
+    lq_opp.lineup_iso_avg_10                                     AS opp_lineup_iso_avg_10,
+    lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -183,6 +188,10 @@ LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
     SELECT venue_id FROM raw.mlb_games WHERE game_slug = ts.game_slug LIMIT 1
 )
 LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = ts.player_id
+-- Opponent batting lineup quality (NULL for upcoming games)
+LEFT JOIN features.mlb_lineup_quality lq_opp
+    ON lq_opp.game_slug  = ts.game_slug
+    AND lq_opp.team_abbr = ts.opponent_abbr
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -227,6 +236,14 @@ SELECT
     br.hr_rate_avg_5, br.hr_rate_avg_10,
     br.n_games_prev_10,
     br.rest_days,
+    -- Absolute walk/K count rolling
+    br.bb_avg_5,    br.bb_avg_10,    br.bb_avg_20,    br.bb_sd_10,
+    br.k_avg_5,     br.k_avg_10,
+    -- Home/away conditional rolling
+    br.hits_home_avg_20, br.hits_away_avg_20,
+    br.tb_home_avg_20,   br.tb_away_avg_20,
+    br.hr_home_avg_20,   br.hr_away_avg_20,
+    br.bb_home_avg_20,   br.bb_away_avg_20,
     -- Opponent SP stats
     sp_r.era_5     AS opp_sp_era_5,
     sp_r.fip_5     AS opp_sp_fip_5,
@@ -295,7 +312,11 @@ SELECT
     h2h.h2h_obp,
     h2h.h2h_slg,
     h2h.h2h_k_rate,
-    h2h.h2h_iso
+    h2h.h2h_iso,
+    -- Own-team lineup quality (NULL for upcoming games, median-imputed by model)
+    lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
+    lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
+    lq_own.top4_slg_avg_10                                       AS own_top4_slg_avg_10
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -376,6 +397,10 @@ LEFT JOIN raw.mlb_weather wx ON wx.game_slug = tt.game_slug
 LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
     SELECT venue_id FROM raw.mlb_games WHERE game_slug = tt.game_slug LIMIT 1
 )
+-- Own-team lineup quality (NULL for upcoming games)
+LEFT JOIN features.mlb_lineup_quality lq_own
+    ON lq_own.game_slug  = tt.game_slug
+    AND lq_own.team_abbr = tt.team_abbr
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id

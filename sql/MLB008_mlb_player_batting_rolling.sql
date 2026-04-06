@@ -23,9 +23,13 @@ WITH batter_gamelogs AS (
         COALESCE(gl.home_runs, 0)                AS hr,
         COALESCE(gl.total_bases, 0)              AS tb,
         COALESCE(gl.walks_batter, 0)             AS bb,
-        COALESCE(gl.strikeouts_batter, 0)        AS k_bat
+        COALESCE(gl.strikeouts_batter, 0)        AS k_bat,
+        COALESCE(bps.batting_order, 5)           AS batting_order
     FROM raw.mlb_games g
     JOIN raw.mlb_player_gamelogs gl ON gl.game_slug = g.game_slug
+    LEFT JOIN raw.mlb_boxscore_player_stats bps
+        ON bps.game_slug = gl.game_slug
+        AND bps.player_id = gl.player_id
     WHERE g.status = 'final'
       AND g.home_score IS NOT NULL
       AND gl.at_bats IS NOT NULL
@@ -47,6 +51,7 @@ derived AS (
         tb,
         bb,
         k_bat,
+        batting_order,
         -- Per-game rate stats
         CASE WHEN ab > 0
              THEN h::float / ab
@@ -121,7 +126,32 @@ SELECT
             PARTITION BY season, player_id
             ORDER BY game_date_et, game_slug
           )
-    )) / 86400.0                                     AS rest_days
+    )) / 86400.0                                     AS rest_days,
+
+    -- Lineup slot rolling averages
+    AVG(batting_order) OVER w5                       AS batting_order_avg_5,
+    AVG(batting_order) OVER w10                      AS batting_order_avg_10,
+
+    -- Absolute walk counts rolling (for walks prop model — raw scale signal)
+    AVG(bb)          OVER w5                         AS bb_avg_5,
+    AVG(bb)          OVER w10                        AS bb_avg_10,
+    AVG(bb)          OVER w20                        AS bb_avg_20,
+    STDDEV_SAMP(bb)  OVER w10                        AS bb_sd_10,
+
+    -- Absolute batter strikeout counts rolling (K tendency)
+    AVG(k_bat)       OVER w5                         AS k_avg_5,
+    AVG(k_bat)       OVER w10                        AS k_avg_10,
+
+    -- Home/away conditional rolling (last 20 games, FILTER by venue flag)
+    -- Follows same pattern as MLB003 home/away ERA splits
+    AVG(h)  FILTER (WHERE is_home = TRUE)  OVER w20  AS hits_home_avg_20,
+    AVG(h)  FILTER (WHERE is_home = FALSE) OVER w20  AS hits_away_avg_20,
+    AVG(tb) FILTER (WHERE is_home = TRUE)  OVER w20  AS tb_home_avg_20,
+    AVG(tb) FILTER (WHERE is_home = FALSE) OVER w20  AS tb_away_avg_20,
+    AVG(hr) FILTER (WHERE is_home = TRUE)  OVER w20  AS hr_home_avg_20,
+    AVG(hr) FILTER (WHERE is_home = FALSE) OVER w20  AS hr_away_avg_20,
+    AVG(bb) FILTER (WHERE is_home = TRUE)  OVER w20  AS bb_home_avg_20,
+    AVG(bb) FILTER (WHERE is_home = FALSE) OVER w20  AS bb_away_avg_20
 
 FROM derived
 WINDOW

@@ -92,6 +92,7 @@ SELECT
     FIRST_VALUE(start_era)   OVER w1 AS last_start_era,
     FIRST_VALUE(k)           OVER w1 AS last_start_k,
     FIRST_VALUE(start_fip)   OVER w1 AS last_start_fip,
+    FIRST_VALUE(bb)          OVER w1 AS last_start_bb,
 
     -- 5-start rolling averages (last 5 starts, leakage-safe)
     AVG(ip)            OVER w5 AS ip_avg_5,

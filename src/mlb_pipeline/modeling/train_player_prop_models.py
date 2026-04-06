@@ -50,7 +50,7 @@ class TrainConfig:
     test_window_days: int = 14
     step_days: int = 14
 
-    # XGBoost
+    # XGBoost defaults (overridden by Optuna when enabled)
     n_estimators: int = 2000
     max_depth: int = 4
     learning_rate: float = 0.03
@@ -62,6 +62,11 @@ class TrainConfig:
     reg_lambda: float = 5.0
     early_stopping_rounds: int = 50
     random_state: int = 42
+
+    # Optuna hyperparameter tuning
+    run_optuna: bool = True
+    optuna_n_trials: int = 20
+    optuna_n_folds: int = 5   # last N walk-forward folds used for tuning
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -94,6 +99,7 @@ SELECT
     p.starts_in_window_10,
     p.last_start_k,
     p.last_start_ip,
+    p.last_start_bb,
     -- Group B: SP rest + home/away performance splits (MLB003)
     p.days_since_last_start AS sp_days_since_last_start,
     p.is_short_rest,
@@ -125,6 +131,10 @@ SELECT
     CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
     -- Pitcher handedness
     ph.pitch_hand                                                AS pitcher_hand,
+    -- Opponent lineup quality (mlb_lineup_quality: NULL for upcoming games, median-imputed)
+    lq_opp.lineup_avg_avg_10                                     AS opp_lineup_avg_avg_10,
+    lq_opp.lineup_iso_avg_10                                     AS opp_lineup_iso_avg_10,
+    lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10,
     -- Target
     pgl.strikeouts_pitcher AS strikeouts
 FROM features.mlb_pitcher_rolling_mat p
@@ -144,6 +154,13 @@ LEFT JOIN features.mlb_ballpark_factors bf
 LEFT JOIN raw.mlb_weather wx ON wx.game_slug = g.game_slug
 LEFT JOIN raw.mlb_venues  v  ON v.venue_id   = g.venue_id
 LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = p.player_id
+-- Opponent batting lineup quality (completed boxscores; NULL for today's upcoming games)
+LEFT JOIN features.mlb_lineup_quality lq_opp
+    ON lq_opp.game_slug = p.game_slug
+    AND lq_opp.team_abbr = CASE
+        WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+        ELSE g.home_team_abbr
+    END
 WHERE g.status = 'final'
   AND pgl.innings_pitched >= 3.0
   AND p.starts_in_window_10 >= 3
@@ -168,6 +185,14 @@ SELECT
     b.avg_avg_10,  b.k_rate_avg_10, b.bb_rate_avg_10, b.iso_avg_10,
     b.hr_rate_avg_5, b.hr_rate_avg_10,
     b.n_games_prev_10,
+    -- Absolute walk/K count rolling (raw scale for walks prop model)
+    b.bb_avg_5,    b.bb_avg_10,    b.bb_avg_20,    b.bb_sd_10,
+    b.k_avg_5,     b.k_avg_10,
+    -- Home/away conditional rolling
+    b.hits_home_avg_20, b.hits_away_avg_20,
+    b.tb_home_avg_20,   b.tb_away_avg_20,
+    b.hr_home_avg_20,   b.hr_away_avg_20,
+    b.bb_home_avg_20,   b.bb_away_avg_20,
     -- Opponent SP context
     sp_r.era_5     AS opp_sp_era_5,
     sp_r.fip_5     AS opp_sp_fip_5,
@@ -237,6 +262,10 @@ SELECT
     h2h.h2h_slg,
     h2h.h2h_k_rate,
     h2h.h2h_iso,
+    -- Own-team lineup quality (protection in order; NULL for upcoming games, median-imputed)
+    lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
+    lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
+    lq_own.top4_slg_avg_10                                       AS own_top4_slg_avg_10,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -296,6 +325,10 @@ LEFT JOIN features.mlb_batter_vs_sp_mat h2h
     ON  h2h.game_slug  = b.game_slug
     AND h2h.batter_id  = b.player_id
     AND h2h.pitcher_id = sp.player_id
+-- Own-team lineup quality (completed boxscores; NULL for upcoming games)
+LEFT JOIN features.mlb_lineup_quality lq_own
+    ON lq_own.game_slug  = b.game_slug
+    AND lq_own.team_abbr = b.team_abbr
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3
@@ -356,7 +389,8 @@ def apply_medians(X: pd.DataFrame, medians: Dict[str, float], cols: List[str]) -
 
 def _build_xgb(cfg: TrainConfig, n_est: Optional[int] = None,
                early_stop: bool = True,
-               objective: str = "reg:absoluteerror") -> XGBRegressor:
+               objective: str = "reg:absoluteerror",
+               params_override: Optional[Dict] = None) -> XGBRegressor:
     eval_metric = "poisson-nloglik" if objective == "count:poisson" else "mae"
     p = dict(
         n_estimators=n_est or cfg.n_estimators,
@@ -375,11 +409,14 @@ def _build_xgb(cfg: TrainConfig, n_est: Optional[int] = None,
     )
     if early_stop:
         p["early_stopping_rounds"] = cfg.early_stopping_rounds
+    if params_override:
+        p.update(params_override)
     return XGBRegressor(**p)
 
 
 def _build_lgb(n_est: int = 2000, early_stop: bool = True,
-               objective: str = "regression_l1"):
+               objective: str = "regression_l1",
+               params_override: Optional[Dict] = None):
     if not _HAS_LGB:
         return None
     metric = "poisson" if objective == "poisson" else "mae"
@@ -398,6 +435,10 @@ def _build_lgb(n_est: int = 2000, early_stop: bool = True,
         n_jobs=-1,
         verbose=-1,
     )
+    if params_override:
+        # Apply shared params that map cleanly to LGB (skip XGB-only keys)
+        _lgb_keys = {"learning_rate", "subsample", "colsample_bytree", "reg_alpha", "reg_lambda"}
+        p.update({k: v for k, v in params_override.items() if k in _lgb_keys})
     if early_stop:
         p["callbacks"] = [lgb.early_stopping(50, verbose=False)]
     return lgb.LGBMRegressor(**p)
@@ -435,6 +476,7 @@ def _run_walk_forward(
     cfg: TrainConfig,
     stat_name: str,
     objective: str = "reg:absoluteerror",
+    params_override: Optional[Dict] = None,
 ) -> Tuple[float, float]:
     """Run walk-forward CV. Returns (mae, p68_ci)."""
     folds = _walk_forward_folds(df, cfg.min_train_days, cfg.test_window_days, cfg.step_days)
@@ -466,7 +508,7 @@ def _run_walk_forward(
             eval_mask = None
 
         lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
-        xgb = _build_xgb(cfg, early_stop=True, objective=objective)
+        xgb = _build_xgb(cfg, early_stop=True, objective=objective, params_override=params_override)
         if eval_mask is not None:
             xgb.fit(
                 X_tr[fit_mask], y_tr[fit_mask],
@@ -481,7 +523,7 @@ def _run_walk_forward(
         preds = xgb.predict(X_te)
 
         if _HAS_LGB:
-            lgb_model = _build_lgb(early_stop=True, objective=lgb_obj)
+            lgb_model = _build_lgb(early_stop=True, objective=lgb_obj, params_override=params_override)
             if eval_mask is not None:
                 lgb_model.fit(
                     X_tr[fit_mask], y_tr[fit_mask],
@@ -519,21 +561,126 @@ def _fit_final_model(
     stat_name: str,
     n_estimators: Optional[int] = None,
     objective: str = "reg:absoluteerror",
+    params_override: Optional[Dict] = None,
 ) -> Tuple[XGBRegressor, Optional[object]]:
     """Fit final XGB (+LGB) on all data, no early stopping."""
     n_est = n_estimators or cfg.n_estimators
     lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
     log.info("Fitting final %s XGB (n=%d rows, n_estimators=%d)", stat_name, len(X), n_est)
-    xgb = _build_xgb(cfg, n_est=n_est, early_stop=False, objective=objective)
+    xgb = _build_xgb(cfg, n_est=n_est, early_stop=False, objective=objective,
+                     params_override=params_override)
     xgb.fit(X, y, verbose=False)
 
     lgb_model = None
     if _HAS_LGB:
         log.info("Fitting final %s LGB", stat_name)
-        lgb_model = _build_lgb(n_est=n_est, early_stop=False, objective=lgb_obj)
+        lgb_model = _build_lgb(n_est=n_est, early_stop=False, objective=lgb_obj,
+                               params_override=params_override)
         lgb_model.fit(X, y)
 
     return xgb, lgb_model
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Optuna hyperparameter tuning
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _optuna_objective_props(
+    trial,
+    df: pd.DataFrame,
+    X_raw: pd.DataFrame,
+    y: pd.Series,
+    feature_cols: List[str],
+    medians: Dict[str, float],
+    folds: List[Tuple[pd.Timestamp, pd.Timestamp]],
+    objective: str = "reg:absoluteerror",
+) -> float:
+    """XGBoost objective for a single stat. Returns mean walk-forward MAE."""
+    params = {
+        "max_depth":        trial.suggest_int("max_depth", 3, 7),
+        "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+        "subsample":        trial.suggest_float("subsample", 0.6, 1.0),
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+        "min_child_weight": trial.suggest_int("min_child_weight", 3, 20),
+        "gamma":            trial.suggest_float("gamma", 0.0, 1.0),
+        "reg_alpha":        trial.suggest_float("reg_alpha", 0.01, 2.0, log=True),
+        "reg_lambda":       trial.suggest_float("reg_lambda", 0.5, 10.0, log=True),
+    }
+    eval_metric = "poisson-nloglik" if objective == "count:poisson" else "mae"
+    mae_scores = []
+
+    for train_end, test_end in folds:
+        tr_mask = pd.to_datetime(df["game_date_et"]) < train_end
+        te_mask = (pd.to_datetime(df["game_date_et"]) >= train_end) & \
+                  (pd.to_datetime(df["game_date_et"]) < test_end)
+        if tr_mask.sum() < 50 or te_mask.sum() == 0:
+            continue
+
+        X_tr = apply_medians(X_raw[tr_mask], medians, feature_cols)
+        X_te = apply_medians(X_raw[te_mask], medians, feature_cols)
+        y_tr = y[tr_mask]
+        y_te = y[te_mask]
+
+        # 85/15 temporal split within train for early stopping
+        cutoff = X_tr.index[int(len(X_tr) * 0.85)]
+        fit_mask = X_tr.index < cutoff
+        eval_mask = X_tr.index >= cutoff
+
+        model = XGBRegressor(
+            n_estimators=2000,
+            objective=objective,
+            eval_metric=eval_metric,
+            early_stopping_rounds=50,
+            random_state=42,
+            n_jobs=-1,
+            **params,
+        )
+        if fit_mask.sum() >= 30 and eval_mask.sum() > 0:
+            model.fit(
+                X_tr[fit_mask], y_tr[fit_mask],
+                eval_set=[(X_tr[eval_mask], y_tr[eval_mask])],
+                verbose=False,
+            )
+        else:
+            model.fit(X_tr, y_tr, verbose=False)
+
+        pred = model.predict(X_te)
+        mae_scores.append(float(mean_absolute_error(y_te, pred)))
+
+    return float(np.mean(mae_scores)) if mae_scores else float("inf")
+
+
+def _run_optuna_for_stat(
+    cfg: TrainConfig,
+    df: pd.DataFrame,
+    X_raw: pd.DataFrame,
+    y: pd.Series,
+    feature_cols: List[str],
+    medians: Dict[str, float],
+    stat_name: str,
+    objective: str = "reg:absoluteerror",
+) -> Dict:
+    """Run an Optuna study for one stat. Returns best XGB params (empty dict on failure)."""
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    all_folds = _walk_forward_folds(df, cfg.min_train_days, cfg.test_window_days, cfg.step_days)
+    tune_folds = all_folds[-cfg.optuna_n_folds:] if len(all_folds) > cfg.optuna_n_folds else all_folds
+    if not tune_folds:
+        log.warning("No folds for Optuna tuning of %s", stat_name)
+        return {}
+
+    log.info("Optuna tuning %s | %d trials, %d folds ...", stat_name, cfg.optuna_n_trials, len(tune_folds))
+    study = optuna.create_study(direction="minimize", study_name=stat_name)
+    study.optimize(
+        lambda trial: _optuna_objective_props(
+            trial, df, X_raw, y, feature_cols, medians, tune_folds, objective
+        ),
+        n_trials=cfg.optuna_n_trials,
+        show_progress_bar=False,
+    )
+    log.info("%s best Optuna MAE=%.3f | params=%s", stat_name, study.best_value, study.best_params)
+    return study.best_params
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -564,13 +711,28 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     medians = fit_medians(X_raw)
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
+    # Optuna hyperparameter tuning
+    best_k_params: Dict = {}
+    if cfg.run_optuna:
+        try:
+            best_k_params = _run_optuna_for_stat(
+                cfg, df, X_raw, y_k, feature_cols, medians, "strikeouts"
+            )
+        except ImportError:
+            log.warning("optuna not installed — skipping. pip install optuna")
+        except Exception as e:
+            log.warning("Optuna tuning failed for strikeouts: %s. Using defaults.", e)
+
     # Walk-forward evaluation
     wf_mae, wf_p68 = _run_walk_forward(
-        df, X_raw, y_k, feature_cols, medians, cfg, "strikeouts"
+        df, X_raw, y_k, feature_cols, medians, cfg, "strikeouts",
+        params_override=best_k_params,
     )
 
     # Final model
-    xgb, lgb_model = _fit_final_model(X_filled, y_k, cfg, "strikeouts")
+    xgb, lgb_model = _fit_final_model(
+        X_filled, y_k, cfg, "strikeouts", params_override=best_k_params
+    )
 
     # Save
     model_dir = cfg.model_dir
@@ -587,7 +749,10 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
         json.dumps(medians), encoding="utf-8"
     )
 
-    return {"mae_strikeouts": wf_mae, "ci_strikeouts": wf_p68, "n_rows": len(df)}
+    return {
+        "mae_strikeouts": wf_mae, "ci_strikeouts": wf_p68, "n_rows": len(df),
+        "optuna_strikeouts": best_k_params,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -620,17 +785,30 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     medians = fit_medians(X_raw)
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
-    # Walk-forward for all four stats
-    hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",        objective="count:poisson")
-    tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases", objective="count:poisson")
-    hr_mae,    hr_p68    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson")
-    walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter")
+    # Optuna hyperparameter tuning (separate study per stat)
+    best: Dict[str, Dict] = {"hits": {}, "total_bases": {}, "home_runs": {}, "walks_batter": {}}
+    if cfg.run_optuna:
+        try:
+            best["hits"]        = _run_optuna_for_stat(cfg, df, X_raw, y_hits,  feature_cols, medians, "hits",        "count:poisson")
+            best["total_bases"] = _run_optuna_for_stat(cfg, df, X_raw, y_tb,    feature_cols, medians, "total_bases", "count:poisson")
+            best["home_runs"]   = _run_optuna_for_stat(cfg, df, X_raw, y_hr,    feature_cols, medians, "home_runs",   "count:poisson")
+            best["walks_batter"]= _run_optuna_for_stat(cfg, df, X_raw, y_walks, feature_cols, medians, "walks_batter")
+        except ImportError:
+            log.warning("optuna not installed — skipping. pip install optuna")
+        except Exception as e:
+            log.warning("Optuna tuning failed for batters: %s. Using defaults.", e)
 
-    # Final models
-    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",        objective="count:poisson")
-    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases", objective="count:poisson")
-    xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    objective="count:poisson")
-    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter")
+    # Walk-forward for all four stats (using tuned params)
+    hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",         objective="count:poisson", params_override=best["hits"])
+    tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
+    hr_mae,    hr_p68    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
+    walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter", params_override=best["walks_batter"])
+
+    # Final models (using tuned params)
+    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",         objective="count:poisson", params_override=best["hits"])
+    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
+    xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
+    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter", params_override=best["walks_batter"])
 
     # Save
     model_dir = cfg.model_dir
@@ -663,6 +841,7 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
         "mae_home_runs": hr_mae,   "ci_home_runs": hr_p68,
         "mae_walks": walks_mae,    "ci_walks": walks_p68,
         "n_rows": len(df),
+        "optuna_batter": best,
     }
 
 
@@ -707,11 +886,25 @@ def main() -> None:
                   "mae_home_runs", "ci_home_runs", "mae_walks", "ci_walks"):
             results[k] = None
 
-    # Save backtest summary
+    # Save backtest summary (exclude Optuna dicts from MAE file)
+    mae_results = {k: v for k, v in results.items()
+                   if not k.startswith("optuna_")}
     (cfg.model_dir / "backtest_mae.json").write_text(
-        json.dumps(results, indent=2), encoding="utf-8"
+        json.dumps(mae_results, indent=2), encoding="utf-8"
     )
-    log.info("Saved backtest_mae.json: %s", results)
+    log.info("Saved backtest_mae.json: %s", mae_results)
+
+    # Save Optuna best params for reproducibility
+    optuna_results = {
+        "strikeouts": results.get("optuna_strikeouts", {}),
+        **results.get("optuna_batter", {}),
+    }
+    if any(optuna_results.values()):
+        (cfg.model_dir / "optuna_best_params.json").write_text(
+            json.dumps(optuna_results, indent=2), encoding="utf-8"
+        )
+        log.info("Saved optuna_best_params.json")
+
     log.info("MLB player prop training complete.")
 
 
