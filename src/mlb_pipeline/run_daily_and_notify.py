@@ -8,8 +8,11 @@ Steps:
   2. MSF crawler            — injuries/lineups (non-critical; 403 on game data)
   3. Odds API crawler       — run lines, totals, prop lines
   4. Parse + load           — parse_all (parsers + SQL views + mat views)
-  5. Train game models      — XGBoost + LightGBM
-  6. Game predictions       — post full output to Discord
+  5. Elo ratings            — MOV-adjusted team Elo (non-critical)
+  6. Train game models      — XGBoost + LightGBM
+  7. Train player prop models — XGBoost + LightGBM (non-critical)
+  8. Game predictions       — post full output to Discord
+  9. Player prop projections — post full output to Discord
 
 Set env var:
   MLB_DISCORD_WEBHOOK_URL   — Discord webhook URL for the #mlb channel
@@ -57,6 +60,7 @@ STEPS: list[Step] = [
     Step("MSF Crawler",            "mlb_pipeline.crawler",          critical=False, post_output=False),
     Step("Odds Crawler",           "mlb_pipeline.crawler_oddsapi",  critical=True,  post_output=False),
     Step("Parse + Load",           "mlb_pipeline.parse_all",        critical=True,  post_output=False),
+    Step("Elo Ratings",            "mlb_pipeline.compute_elo",      critical=False, post_output=False),
     Step("Train Game Models",      "mlb_pipeline.modeling.train_game_models",
          critical=True, post_output=False),
     Step("Train Player Prop Models", "mlb_pipeline.modeling.train_player_prop_models",
@@ -186,7 +190,7 @@ async def main() -> None:
 
     _CRAWL_MODULES  = {"mlb_pipeline.crawler_statsapi", "mlb_pipeline.crawler",
                        "mlb_pipeline.crawler_oddsapi"}
-    _PARSE_MODULES  = {"mlb_pipeline.parse_all"}
+    _PARSE_MODULES  = {"mlb_pipeline.parse_all", "mlb_pipeline.compute_elo"}
     _TRAIN_MODULES  = {"mlb_pipeline.modeling.train_game_models",
                        "mlb_pipeline.modeling.train_player_prop_models"}
     _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
