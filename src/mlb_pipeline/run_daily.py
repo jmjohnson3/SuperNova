@@ -174,6 +174,12 @@ def main() -> None:
             timeout_s=3600,
             critical=True,
         ))
+        steps.append(Step(
+            name="Crawl Statcast (Baseball Savant)",
+            module="mlb_pipeline.crawler_statcast",
+            timeout_s=300,
+            critical=False,
+        ))
 
     if not args.skip_parse:
         steps.append(Step(

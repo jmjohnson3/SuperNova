@@ -158,7 +158,16 @@ SELECT
     -- Opponent lineup quality (NULL for upcoming games, median-imputed by model)
     lq_opp.lineup_avg_avg_10                                     AS opp_lineup_avg_avg_10,
     lq_opp.lineup_iso_avg_10                                     AS opp_lineup_iso_avg_10,
-    lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10
+    lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10,
+    -- Statcast: pitcher's own batted-ball-against profile
+    sc_p.barrel_batted_rate  AS sc_barrel_rate,
+    sc_p.hard_hit_percent    AS sc_hard_hit_pct,
+    sc_p.avg_exit_velocity   AS sc_avg_exit_velo,
+    sc_p.groundballs_percent AS sc_gb_pct,
+    sc_p.flyballs_percent    AS sc_fb_pct,
+    sc_p.xba                 AS sc_xba,
+    sc_p.xslg                AS sc_xslg,
+    sc_p.xwoba               AS sc_xwoba
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -192,6 +201,10 @@ LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = ts.player_id
 LEFT JOIN features.mlb_lineup_quality lq_opp
     ON lq_opp.game_slug  = ts.game_slug
     AND lq_opp.team_abbr = ts.opponent_abbr
+-- Statcast pitcher profile (season-level)
+LEFT JOIN raw.mlb_statcast_pitching sc_p
+    ON sc_p.player_id = ts.player_id
+    AND sc_p.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -316,7 +329,28 @@ SELECT
     -- Own-team lineup quality (NULL for upcoming games, median-imputed by model)
     lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
     lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
-    lq_own.top4_slg_avg_10                                       AS own_top4_slg_avg_10
+    lq_own.top4_slg_avg_10                                       AS own_top4_slg_avg_10,
+    -- Statcast: batter's own batted-ball profile (season-level)
+    sc_b.barrel_batted_rate  AS sc_barrel_rate,
+    sc_b.hard_hit_percent    AS sc_hard_hit_pct,
+    sc_b.avg_exit_velocity   AS sc_avg_exit_velo,
+    sc_b.avg_launch_angle    AS sc_avg_launch_angle,
+    sc_b.sweet_spot_percent  AS sc_sweet_spot_pct,
+    sc_b.flyballs_percent    AS sc_fb_pct,
+    sc_b.groundballs_percent AS sc_gb_pct,
+    sc_b.linedrives_percent  AS sc_ld_pct,
+    sc_b.xba                 AS sc_xba,
+    sc_b.xslg                AS sc_xslg,
+    sc_b.xwoba               AS sc_xwoba,
+    sc_b.xiso                AS sc_xiso,
+    -- Statcast: opposing SP's batted-ball-against profile
+    sc_opp_p.barrel_batted_rate  AS opp_sp_sc_barrel_rate,
+    sc_opp_p.hard_hit_percent    AS opp_sp_sc_hard_hit_pct,
+    sc_opp_p.avg_exit_velocity   AS opp_sp_sc_avg_exit_velo,
+    sc_opp_p.groundballs_percent AS opp_sp_sc_gb_pct,
+    sc_opp_p.xba                 AS opp_sp_sc_xba,
+    sc_opp_p.xslg                AS opp_sp_sc_xslg,
+    sc_opp_p.xwoba               AS opp_sp_sc_xwoba
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -401,6 +435,14 @@ LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
 LEFT JOIN features.mlb_lineup_quality lq_own
     ON lq_own.game_slug  = tt.game_slug
     AND lq_own.team_abbr = tt.team_abbr
+-- Statcast: batter's own batted-ball profile (season-level)
+LEFT JOIN raw.mlb_statcast_batting sc_b
+    ON sc_b.player_id = rp.player_id
+    AND sc_b.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
+-- Statcast: opposing SP's batted-ball-against profile
+LEFT JOIN raw.mlb_statcast_pitching sc_opp_p
+    ON sc_opp_p.player_id = sp.player_id
+    AND sc_opp_p.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id

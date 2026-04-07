@@ -135,6 +135,15 @@ SELECT
     lq_opp.lineup_avg_avg_10                                     AS opp_lineup_avg_avg_10,
     lq_opp.lineup_iso_avg_10                                     AS opp_lineup_iso_avg_10,
     lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10,
+    -- Statcast: pitcher's own batted-ball-against profile (season-level)
+    sc_p.barrel_batted_rate  AS sc_barrel_rate,
+    sc_p.hard_hit_percent    AS sc_hard_hit_pct,
+    sc_p.avg_exit_velocity   AS sc_avg_exit_velo,
+    sc_p.groundballs_percent AS sc_gb_pct,
+    sc_p.flyballs_percent    AS sc_fb_pct,
+    sc_p.xba                 AS sc_xba,
+    sc_p.xslg                AS sc_xslg,
+    sc_p.xwoba               AS sc_xwoba,
     -- Target
     pgl.strikeouts_pitcher AS strikeouts
 FROM features.mlb_pitcher_rolling_mat p
@@ -161,6 +170,10 @@ LEFT JOIN features.mlb_lineup_quality lq_opp
         WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
         ELSE g.home_team_abbr
     END
+-- Statcast pitcher profile (season-level)
+LEFT JOIN raw.mlb_statcast_pitching sc_p
+    ON sc_p.player_id = p.player_id
+    AND sc_p.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 WHERE g.status = 'final'
   AND pgl.innings_pitched >= 3.0
   AND p.starts_in_window_10 >= 3
@@ -266,6 +279,27 @@ SELECT
     lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
     lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
     lq_own.top4_slg_avg_10                                       AS own_top4_slg_avg_10,
+    -- Statcast: batter's own batted-ball profile (season-level)
+    sc_b.barrel_batted_rate  AS sc_barrel_rate,
+    sc_b.hard_hit_percent    AS sc_hard_hit_pct,
+    sc_b.avg_exit_velocity   AS sc_avg_exit_velo,
+    sc_b.avg_launch_angle    AS sc_avg_launch_angle,
+    sc_b.sweet_spot_percent  AS sc_sweet_spot_pct,
+    sc_b.flyballs_percent    AS sc_fb_pct,
+    sc_b.groundballs_percent AS sc_gb_pct,
+    sc_b.linedrives_percent  AS sc_ld_pct,
+    sc_b.xba                 AS sc_xba,
+    sc_b.xslg                AS sc_xslg,
+    sc_b.xwoba               AS sc_xwoba,
+    sc_b.xiso                AS sc_xiso,
+    -- Statcast: opposing SP's batted-ball-against profile
+    sc_opp_p.barrel_batted_rate  AS opp_sp_sc_barrel_rate,
+    sc_opp_p.hard_hit_percent    AS opp_sp_sc_hard_hit_pct,
+    sc_opp_p.avg_exit_velocity   AS opp_sp_sc_avg_exit_velo,
+    sc_opp_p.groundballs_percent AS opp_sp_sc_gb_pct,
+    sc_opp_p.xba                 AS opp_sp_sc_xba,
+    sc_opp_p.xslg                AS opp_sp_sc_xslg,
+    sc_opp_p.xwoba               AS opp_sp_sc_xwoba,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -329,6 +363,14 @@ LEFT JOIN features.mlb_batter_vs_sp_mat h2h
 LEFT JOIN features.mlb_lineup_quality lq_own
     ON lq_own.game_slug  = b.game_slug
     AND lq_own.team_abbr = b.team_abbr
+-- Statcast: batter's own batted-ball profile (season-level)
+LEFT JOIN raw.mlb_statcast_batting sc_b
+    ON sc_b.player_id = b.player_id
+    AND sc_b.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Statcast: opposing SP's batted-ball-against profile
+LEFT JOIN raw.mlb_statcast_pitching sc_opp_p
+    ON sc_opp_p.player_id = sp.player_id
+    AND sc_opp_p.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3

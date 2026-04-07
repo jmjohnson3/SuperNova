@@ -581,6 +581,72 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 X[_home_col].fillna(0.0) - X[_away_col].fillna(0.0)
             )
 
+    # ── Statcast batted-ball features (batter) ─────────────────────────────
+    # These are the strongest HR/TB predictors available — barrel rate and
+    # hard-hit rate directly correlate with extra-base hit outcomes.
+
+    # Barrel rate × park HR factor: elite power in a hitter's park
+    if "sc_barrel_rate" in X.columns and "park_hr_factor" in X.columns:
+        X["sc_barrel_x_park_hr"] = X["sc_barrel_rate"].fillna(0.0) * X["park_hr_factor"].fillna(1.0)
+
+    # Hard hit % × flyball %: hard + elevated = HR/TB potential
+    if "sc_hard_hit_pct" in X.columns and "sc_fb_pct" in X.columns:
+        X["sc_hard_hit_x_fb"] = X["sc_hard_hit_pct"].fillna(0.0) * X["sc_fb_pct"].fillna(0.0) / 100.0
+
+    # Exit velocity vs league average (~88 mph): how much above/below
+    if "sc_avg_exit_velo" in X.columns:
+        X["sc_exit_velo_above_avg"] = X["sc_avg_exit_velo"].fillna(88.0) - 88.0
+
+    # xSLG - actual SLG proxy: how much underlying power vs what rolling stats show
+    if "sc_xslg" in X.columns and "iso_avg_10" in X.columns:
+        # xSLG ~ xBA + xISO; compare expected power to observed power (ISO)
+        X["sc_xslg_vs_iso"] = X["sc_xslg"].fillna(0.0) - X["iso_avg_10"].fillna(0.0)
+
+    # xwOBA vs rolling avg: overall quality-of-contact indicator
+    if "sc_xwoba" in X.columns and "avg_avg_10" in X.columns:
+        X["sc_xwoba_vs_avg"] = X["sc_xwoba"].fillna(0.0) - X["avg_avg_10"].fillna(0.0)
+
+    # xISO as direct power proxy (stronger than ISO from box scores)
+    if "sc_xiso" in X.columns and "park_hr_factor" in X.columns:
+        X["sc_xiso_park_adj"] = X["sc_xiso"].fillna(0.0) * X["park_hr_factor"].fillna(1.0)
+
+    # Launch angle sweet spot × exit velocity: optimal HR conditions
+    if "sc_sweet_spot_pct" in X.columns and "sc_avg_exit_velo" in X.columns:
+        X["sc_sweet_spot_x_velo"] = (
+            X["sc_sweet_spot_pct"].fillna(0.0) / 100.0
+            * (X["sc_avg_exit_velo"].fillna(88.0) - 85.0)
+        )
+
+    # ── Statcast matchup features (batter vs opposing SP's batted-ball profile) ──
+    # Batter barrel rate vs SP barrel-allowed rate: mismatch detector
+    if "sc_barrel_rate" in X.columns and "opp_sp_sc_barrel_rate" in X.columns:
+        X["sc_barrel_matchup"] = (
+            X["sc_barrel_rate"].fillna(0.0) - X["opp_sp_sc_barrel_rate"].fillna(0.0)
+        )
+
+    # Batter hard-hit vs SP hard-hit-allowed: contact quality mismatch
+    if "sc_hard_hit_pct" in X.columns and "opp_sp_sc_hard_hit_pct" in X.columns:
+        X["sc_hard_hit_matchup"] = (
+            X["sc_hard_hit_pct"].fillna(0.0) - X["opp_sp_sc_hard_hit_pct"].fillna(0.0)
+        )
+
+    # SP groundball% affects TB/HR potential: high GB% pitcher = fewer extra-base hits
+    if "opp_sp_sc_gb_pct" in X.columns:
+        X["opp_sp_gb_tendency"] = X["opp_sp_sc_gb_pct"].fillna(45.0) / 100.0
+
+    # SP xwOBA-against: overall hittability (higher = easier to hit)
+    if "opp_sp_sc_xwoba" in X.columns and "sc_xwoba" in X.columns:
+        X["sc_hittability_combo"] = X["sc_xwoba"].fillna(0.0) + X["opp_sp_sc_xwoba"].fillna(0.0)
+
+    # ── Statcast pitcher features (for strikeout model) ──────────────────────
+    # Pitcher barrel-allowed rate: low = dominant stuff, correlates with K potential
+    if "sc_barrel_rate" in X.columns and "k_pct_5" in X.columns:
+        X["sc_barrel_vs_k_rate"] = X["sc_barrel_rate"].fillna(0.0) / (X["k_pct_5"].fillna(0.2) + 0.01)
+
+    # SP hard-hit-against × opponent K-proneness
+    if "sc_hard_hit_pct" in X.columns and "opp_k_pct_avg_10" in X.columns:
+        X["sc_hard_hit_vs_opp_k"] = X["sc_hard_hit_pct"].fillna(0.0) * X["opp_k_pct_avg_10"].fillna(0.0)
+
     # ── Shared ───────────────────────────────────────────────────────────────
     # Back-to-back flag (rest_days ≤ 1)
     if "rest_days" in X.columns:
