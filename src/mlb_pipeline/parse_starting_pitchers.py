@@ -25,6 +25,8 @@ from typing import Any, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 
+from mlb_pipeline.crawler import _norm_abbr
+
 log = logging.getLogger("mlb_pipeline.parse_starting_pitchers")
 
 DSN = "postgresql://josh:password@localhost:5432/nba"
@@ -114,7 +116,7 @@ def parse_lineup_payload(
 
     for team_entry in team_lineups:
         team = team_entry.get("team") or {}
-        team_abbr = (team.get("abbreviation") or "").upper()
+        team_abbr = _norm_abbr(team.get("abbreviation") or "")
         if not team_abbr:
             continue
 

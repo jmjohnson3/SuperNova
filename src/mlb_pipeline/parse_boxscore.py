@@ -23,6 +23,8 @@ from typing import Any, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 
+from mlb_pipeline.crawler import _norm_abbr
+
 log = logging.getLogger("mlb_pipeline.parse_boxscore")
 
 DSN = "postgresql://josh:password@localhost:5432/nba"
@@ -200,8 +202,8 @@ def parse_boxscore_payload(game_slug: str, payload: dict) -> tuple[dict, list[di
 
     away_team = g.get("awayTeam") or {}
     home_team = g.get("homeTeam") or {}
-    home_team_abbr = (home_team.get("abbreviation") or "").upper()
-    away_team_abbr = (away_team.get("abbreviation") or "").upper()
+    home_team_abbr = _norm_abbr(home_team.get("abbreviation") or "")
+    away_team_abbr = _norm_abbr(away_team.get("abbreviation") or "")
     home_team_id = _as_int(home_team.get("id"))
     away_team_id = _as_int(away_team.get("id"))
 

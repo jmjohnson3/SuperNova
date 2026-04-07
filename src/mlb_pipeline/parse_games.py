@@ -10,6 +10,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from mlb_pipeline.crawler import _norm_abbr
+
 log = logging.getLogger("mlb_pipeline.parse_games")
 
 # Requires `pip install tzdata` on Windows to support IANA tz names
@@ -135,8 +137,8 @@ def parse_games_payload(
         sched = g.get("schedule") or {}
 
         start_time = sched.get("startTime")
-        away_abbr = ((sched.get("awayTeam") or {}).get("abbreviation") or "").upper()
-        home_abbr = ((sched.get("homeTeam") or {}).get("abbreviation") or "").upper()
+        away_abbr = _norm_abbr((sched.get("awayTeam") or {}).get("abbreviation") or "")
+        home_abbr = _norm_abbr((sched.get("homeTeam") or {}).get("abbreviation") or "")
 
         if not (start_time and away_abbr and home_abbr):
             continue

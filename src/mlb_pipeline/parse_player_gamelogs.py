@@ -30,6 +30,8 @@ try:
 except Exception as e:
     raise RuntimeError("tzdata missing — on Windows: pip install tzdata") from e
 
+from mlb_pipeline.crawler import _norm_abbr
+
 log = logging.getLogger("mlb_pipeline.parse_player_gamelogs")
 
 DSN = "postgresql://josh:password@localhost:5432/nba"
@@ -97,8 +99,8 @@ def _derive_game_slug(log_obj: dict) -> Optional[str]:
     start_time = game.get("startTime")
     away_team = game.get("awayTeam") or {}
     home_team = game.get("homeTeam") or {}
-    away_abbr = (away_team.get("abbreviation") or "").upper()
-    home_abbr = (home_team.get("abbreviation") or "").upper()
+    away_abbr = _norm_abbr(away_team.get("abbreviation") or "")
+    home_abbr = _norm_abbr(home_team.get("abbreviation") or "")
 
     gd = _game_date_et(start_time)
     if not (gd and away_abbr and home_abbr):
@@ -225,7 +227,7 @@ def parse_gamelogs_payload(
         if pid is None:
             continue
 
-        team_abbr = (team.get("abbreviation") or "").upper()
+        team_abbr = _norm_abbr(team.get("abbreviation") or "")
         if not team_abbr:
             continue
 
@@ -277,8 +279,8 @@ def parse_gamelogs_payload(
         # ---- Home/away derivation ----
         away_team = game.get("awayTeam") or {}
         home_team = game.get("homeTeam") or {}
-        away_abbr = (away_team.get("abbreviation") or "").upper()
-        home_abbr = (home_team.get("abbreviation") or "").upper()
+        away_abbr = _norm_abbr(away_team.get("abbreviation") or "")
+        home_abbr = _norm_abbr(home_team.get("abbreviation") or "")
         is_home: Optional[bool] = None
         opponent_abbr: Optional[str] = None
         if team_abbr and home_abbr and away_abbr:

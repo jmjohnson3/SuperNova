@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 
+from mlb_pipeline.crawler import _norm_abbr
+
 log = logging.getLogger("mlb_pipeline.parse_meta")
 
 
@@ -210,7 +212,7 @@ def upsert_teams(conn) -> int:
 
             by_team_id[team_id] = {
                 "team_id": team_id,
-                "abbreviation": abbr.upper(),
+                "abbreviation": _norm_abbr(abbr),
                 "city": team.get("city"),
                 "name": team.get("name"),
                 "division_name": division.get("name") if isinstance(division, dict) else None,
@@ -315,7 +317,7 @@ def insert_standings_snapshot(conn) -> int:
             insert_rows.append(
                 {
                     "season": season,
-                    "team_abbr": abbr.upper(),
+                    "team_abbr": _norm_abbr(abbr),
                     "team_id": _as_int(team.get("id")),
                     "wins": _as_int(standings.get("wins")),
                     "losses": _as_int(standings.get("losses")),
@@ -426,7 +428,7 @@ def upsert_injuries(conn) -> int:
                     else None
                 ),
                 "team_abbr": (
-                    team.get("abbreviation").upper()
+                    _norm_abbr(team.get("abbreviation"))
                     if isinstance(team, dict) and team.get("abbreviation")
                     else None
                 ),

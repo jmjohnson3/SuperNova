@@ -497,8 +497,8 @@ def main() -> None:
     client = MySportsFeedsClient(api_key=cfg.api_key)
 
     seasons = [
-        Season(league="mlb", season_slug="2024-2025-regular"),  # MLB 2025 season (Apr-Oct 2025)
-        Season(league="mlb", season_slug="2025-2026-regular"),  # MLB 2026 season (current)
+        Season(league="mlb", season_slug="2024-regular"),  # MLB 2024 season (Apr-Oct 2024)
+        Season(league="mlb", season_slug="2025-regular"),  # MLB 2025 season (Apr-Oct 2025)
     ]
 
     today = et_today()

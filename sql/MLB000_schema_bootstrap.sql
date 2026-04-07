@@ -88,12 +88,19 @@ CREATE TABLE IF NOT EXISTS raw.mlb_boxscore_team_stats (
 -- raw.mlb_boxscore_player_stats
 -- ============================================================
 CREATE TABLE IF NOT EXISTS raw.mlb_boxscore_player_stats (
-    game_slug       TEXT    NOT NULL,
-    player_id       INTEGER NOT NULL,
-    team_abbr       TEXT,
-    primary_position TEXT,
-    batting_order   INTEGER,
-    stats           JSONB,
+    game_slug           TEXT NOT NULL,
+    player_id           INTEGER NOT NULL,
+    season              TEXT,
+    team_abbr           TEXT,
+    team_id             INTEGER,
+    is_home             BOOLEAN,
+    first_name          TEXT,
+    last_name           TEXT,
+    primary_position    TEXT,
+    batting_order       INTEGER,
+    stats               JSONB,
+    source_fetched_at_utc TIMESTAMPTZ,
+    updated_at_utc      TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (game_slug, player_id)
 );
 

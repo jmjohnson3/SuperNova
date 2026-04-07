@@ -27,37 +27,37 @@ CREATE OR REPLACE VIEW features.mlb_game_training_features AS
 WITH
 -- Best (most recent) odds line per game
 market_lines AS (
-    SELECT DISTINCT ON (home_team, away_team, as_of_date)
-        home_team,
-        away_team,
+    SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
+        home_team_abbr,
+        away_team_abbr,
         as_of_date,
-        spread_home_points  AS run_line_home,
-        spread_home_price   AS run_line_home_price,
-        spread_away_price   AS run_line_away_price,
-        total_points        AS total_line,
-        total_over_price    AS over_price,
-        total_under_price   AS under_price
+        run_line_home,
+        run_line_home_price,
+        run_line_away_price,
+        total_line,
+        over_price,
+        under_price
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
     ORDER BY
-        home_team,
-        away_team,
+        home_team_abbr,
+        away_team_abbr,
         as_of_date,
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
 ),
 -- Opening line: earliest crawl per game
 market_lines_open AS (
-    SELECT DISTINCT ON (home_team, away_team, as_of_date)
-        home_team,
-        away_team,
+    SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
+        home_team_abbr,
+        away_team_abbr,
         as_of_date,
-        spread_home_points  AS open_run_line_home,
-        total_points        AS open_total_line
+        open_run_line_home,
+        total_line        AS open_total_line
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
     ORDER BY
-        home_team,
-        away_team,
+        home_team_abbr,
+        away_team_abbr,
         as_of_date,
         event_id ASC
 ),
@@ -415,13 +415,13 @@ LEFT JOIN features.mlb_standings_rest_mat asr
    AND asr.team_abbr = g.away_team_abbr
 
 LEFT JOIN market_lines ml
-    ON ml.home_team = g.home_team_abbr
-   AND ml.away_team = g.away_team_abbr
+    ON ml.home_team_abbr = g.home_team_abbr
+   AND ml.away_team_abbr = g.away_team_abbr
    AND ml.as_of_date     = g.game_date_et
 
 LEFT JOIN market_lines_open mlo
-    ON mlo.home_team = g.home_team_abbr
-   AND mlo.away_team = g.away_team_abbr
+    ON mlo.home_team_abbr = g.home_team_abbr
+   AND mlo.away_team_abbr = g.away_team_abbr
    AND mlo.as_of_date     = g.game_date_et
 
 LEFT JOIN h2h
@@ -453,21 +453,21 @@ WHERE g.status = 'final'
 CREATE OR REPLACE VIEW features.mlb_game_prediction_features AS
 WITH
 market_lines AS (
-    SELECT DISTINCT ON (home_team, away_team, as_of_date)
-        home_team,
-        away_team,
+    SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
+        home_team_abbr,
+        away_team_abbr,
         as_of_date,
-        spread_home_points  AS run_line_home,
-        spread_home_price   AS run_line_home_price,
-        spread_away_price   AS run_line_away_price,
-        total_points        AS total_line,
-        total_over_price    AS over_price,
-        total_under_price   AS under_price
+        run_line_home,
+        run_line_home_price,
+        run_line_away_price,
+        total_line,
+        over_price,
+        under_price
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
     ORDER BY
-        home_team,
-        away_team,
+        home_team_abbr,
+        away_team_abbr,
         as_of_date,
         CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
 ),
@@ -814,9 +814,9 @@ LEFT JOIN features.mlb_standings_rest_mat asr
    AND asr.team_abbr = g.away_team_abbr
 
 LEFT JOIN market_lines ml
-    ON ml.home_team  = g.home_team_abbr
-   AND ml.away_team  = g.away_team_abbr
-   AND ml.as_of_date = g.game_date_et
+    ON ml.home_team_abbr = g.home_team_abbr
+   AND ml.away_team_abbr = g.away_team_abbr
+   AND ml.as_of_date     = g.game_date_et
 
 LEFT JOIN h2h
     ON h2h.game_slug = g.game_slug
