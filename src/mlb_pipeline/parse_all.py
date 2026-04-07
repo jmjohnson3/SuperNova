@@ -29,6 +29,7 @@ _MLB_SQL_VIEWS = [
     "MLB013_mlb_batting_cross_season_rolling.sql",  # cross-season rolling (no season partition)
     "MLB014_mlb_player_prev_season_stats.sql",       # full prior-season aggregate stats
     "MLB015_mlb_batter_vs_sp.sql",                   # batter vs specific SP career H2H base view
+    "MLB016_mlb_elo_features.sql",                    # Elo rating features (depends on raw.mlb_elo)
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.

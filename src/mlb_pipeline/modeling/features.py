@@ -359,6 +359,15 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             if _runs in X.columns:
                 X[f"{_side}_park_adj_runs_10"] = X[_runs] * X["park_run_factor"]
 
+    # ── Elo-based interactions ────────────────────────────────────────────────
+    # Elo advantage × pitching quality: strong team with good pitcher = amplified edge
+    if "elo_diff" in X.columns:
+        for _side, _sign in [("home", 1), ("away", -1)]:
+            _sp_era = f"{_side}_sp_era_5"
+            if _sp_era in X.columns:
+                # Negative product = team is favoured AND has low ERA (good combo)
+                X[f"{_side}_elo_x_sp_quality"] = (_sign * X["elo_diff"]) / (X[_sp_era].clip(lower=1.0))
+
     return X
 
 

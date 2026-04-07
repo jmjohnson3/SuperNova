@@ -183,6 +183,14 @@ def main() -> None:
             critical=True,
         ))
 
+    if not args.skip_parse:
+        steps.append(Step(
+            name="Compute Elo ratings",
+            module="mlb_pipeline.compute_elo",
+            timeout_s=300,
+            critical=False,
+        ))
+
     if not args.skip_train:
         steps.append(Step(
             name="Train game models",

@@ -42,10 +42,13 @@ class PredictConfig:
 
 
 SQL_GAMES_FOR_DATE = """
-SELECT *
-FROM features.mlb_game_prediction_features
-WHERE game_date_et = :game_date
-ORDER BY start_ts_utc, game_slug
+SELECT gpf.*,
+       elo.home_elo, elo.away_elo, elo.elo_diff, elo.elo_win_prob_home
+FROM features.mlb_game_prediction_features gpf
+LEFT JOIN features.mlb_game_elo_features elo
+  ON elo.season = gpf.season AND elo.game_slug = gpf.game_slug
+WHERE gpf.game_date_et = :game_date
+ORDER BY gpf.start_ts_utc, gpf.game_slug
 """
 
 SQL_STARTING_PITCHERS = """

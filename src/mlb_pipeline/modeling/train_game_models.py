@@ -64,10 +64,13 @@ class TrainConfig:
 
 
 SQL_GAME_TRAINING_FEATURES = """
-SELECT *
-FROM features.mlb_game_training_features
-WHERE run_diff IS NOT NULL
-ORDER BY game_date_et, game_slug
+SELECT gtf.*,
+       elo.home_elo, elo.away_elo, elo.elo_diff, elo.elo_win_prob_home
+FROM features.mlb_game_training_features gtf
+LEFT JOIN features.mlb_game_elo_features elo
+  ON elo.season = gtf.season AND elo.game_slug = gtf.game_slug
+WHERE gtf.run_diff IS NOT NULL
+ORDER BY gtf.game_date_et, gtf.game_slug
 """
 
 

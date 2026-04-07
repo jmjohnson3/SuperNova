@@ -322,3 +322,17 @@ CREATE TABLE IF NOT EXISTS bets.mlb_prop_predictions (
     created_at_utc      TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (game_slug, player_id, stat)
 );
+
+-- ============================================================
+-- raw.mlb_elo
+-- (Elo ratings per team per game, computed by compute_elo.py)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS raw.mlb_elo (
+    game_slug    TEXT   NOT NULL,
+    team_abbr    TEXT   NOT NULL,
+    season       TEXT   NOT NULL,
+    game_date_et DATE   NOT NULL,
+    elo_pre      FLOAT  NOT NULL,
+    elo_post     FLOAT  NOT NULL,
+    PRIMARY KEY (game_slug, team_abbr)
+);
