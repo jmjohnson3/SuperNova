@@ -59,7 +59,7 @@ class TrainConfig:
 
     # Optuna tuning
     run_optuna: bool = True
-    optuna_n_trials: int = 40
+    optuna_n_trials: int = 60  # Improvement 4: increased from 40 to 60
     optuna_n_folds: int = 5      # walk-forward folds used for tuning
 
 
@@ -654,17 +654,27 @@ def main() -> None:
             X_fit  = X_train.iloc[fit_rel]
             X_eval = X_train.iloc[eval_rel]
 
+            # ── Improvement 2: Recency weighting for direct models ────────────────
+            # Compute sample weights based on game date recency (half-life ~90 days)
+            _train_dates = df.loc[train_mask, "game_date_et"]
+            _days_elapsed = (_train_dates - _train_dates.min()).dt.days.values.astype(float)
+            _recency_weights = np.exp(_days_elapsed / 90.0)
+            _recency_weights = _recency_weights / _recency_weights.mean()  # normalize
+            _recency_weights_fit = _recency_weights[fit_rel]
+
             # DIRECT MODELS
             rl_model  = build_model(cfg, params_override=best_run_line_params, objective=RUN_LINE_OBJECTIVE)
             tot_model = build_model(cfg, params_override=best_total_params,    objective=TOTAL_OBJECTIVE)
 
             rl_model.fit(
                 X_fit, y_rl_train.iloc[fit_rel],
+                sample_weight=_recency_weights_fit,
                 eval_set=[(X_eval, y_rl_train.iloc[eval_rel])],
                 verbose=False,
             )
             tot_model.fit(
                 X_fit, y_tot_train.iloc[fit_rel],
+                sample_weight=_recency_weights_fit,
                 eval_set=[(X_eval, y_tot_train.iloc[eval_rel])],
                 verbose=False,
             )

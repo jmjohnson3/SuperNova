@@ -107,6 +107,27 @@ CREATE TABLE IF NOT EXISTS raw.mlb_boxscore_player_stats (
 CREATE INDEX IF NOT EXISTS idx_mlb_bs_player_stats_player
     ON raw.mlb_boxscore_player_stats (player_id);
 
+-- Performance indexes for frequently-joined columns
+CREATE INDEX IF NOT EXISTS idx_mlb_games_venue_id
+    ON raw.mlb_games (venue_id);
+
+CREATE INDEX IF NOT EXISTS idx_mlb_games_home_sp_id
+    ON raw.mlb_games (home_sp_id)
+    WHERE home_sp_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_mlb_games_away_sp_id
+    ON raw.mlb_games (away_sp_id)
+    WHERE away_sp_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_mlb_games_game_date_et
+    ON raw.mlb_games (game_date_et);
+
+CREATE INDEX IF NOT EXISTS idx_mlb_games_status
+    ON raw.mlb_games (status);
+
+CREATE INDEX IF NOT EXISTS idx_mlb_bs_player_stats_team
+    ON raw.mlb_boxscore_player_stats (team_abbr);
+
 -- ============================================================
 -- raw.mlb_player_gamelogs
 -- (batting + pitching stats per player per game)
@@ -145,6 +166,10 @@ CREATE INDEX IF NOT EXISTS idx_mlb_gamelogs_player
     ON raw.mlb_player_gamelogs (player_id, game_date_et);
 CREATE INDEX IF NOT EXISTS idx_mlb_gamelogs_team
     ON raw.mlb_player_gamelogs (team_abbr, game_date_et);
+CREATE INDEX IF NOT EXISTS idx_mlb_player_gamelogs_team
+    ON raw.mlb_player_gamelogs (team_abbr);
+CREATE INDEX IF NOT EXISTS idx_mlb_player_gamelogs_game_date
+    ON raw.mlb_player_gamelogs (game_date_et);
 
 -- ============================================================
 -- raw.mlb_starting_pitchers

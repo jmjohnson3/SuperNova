@@ -31,6 +31,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 
+from mlb_pipeline.team_abbr import norm_statsapi as _norm
+
 log = logging.getLogger("mlb_pipeline.crawler_statsapi")
 
 DSN = "postgresql://josh:password@localhost:5432/nba"
@@ -38,16 +40,10 @@ BASE_URL = "https://statsapi.mlb.com/api/v1"
 ET = ZoneInfo("America/New_York")
 REQUEST_SLEEP = 0.15  # seconds between requests
 
-# MLB Stats API abbr → standard abbr used in rest of pipeline
-# (matches Odds API abbreviations from odds.mlb_game_lines)
-STATSAPI_ABBR_NORM: dict[str, str] = {
-    "AZ":  "ARI",   # Arizona Diamondbacks
-    "WSH": "WAS",   # Washington Nationals
-}
-
 SEASON_DATE_RANGES: dict[str, tuple[str, str]] = {
     "2024-regular": ("2024-03-20", "2024-09-30"),
     "2025-regular": ("2025-03-27", "2025-10-05"),
+    "2026-regular": ("2026-03-26", "2026-10-04"),
 }
 
 
@@ -66,14 +62,6 @@ def _get(path: str, params: dict | None = None, timeout: int = 20) -> dict:
     req = urllib.request.Request(url, headers={"User-Agent": "SuperNovaBets/1.0 (sports analytics)"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read())
-
-
-# ---------------------------------------------------------------------------
-# Team abbreviation normalization
-# ---------------------------------------------------------------------------
-
-def _norm(abbr: str) -> str:
-    return STATSAPI_ABBR_NORM.get(abbr, abbr)
 
 
 # ---------------------------------------------------------------------------

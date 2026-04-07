@@ -296,6 +296,11 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "h2h_home_win_pct_ytd" in X.columns:
         X["h2h_edge"] = pd.to_numeric(X["h2h_home_win_pct_ytd"], errors="coerce") - 0.5
 
+    # ── H2H familiarity (Improvement 1) ─────────────────────────────────────────
+    # Scaled 0-1 measure of how many times these teams have met this season
+    if "h2h_games_ytd" in X.columns:
+        X["h2h_familiarity"] = X["h2h_games_ytd"].clip(upper=19) / 19.0
+
     # ── Bullpen fatigue (Group D) ─────────────────────────────────────────────
     # SP short outing asymmetry: positive = home SP was knocked out early last game
     # (home bullpen overused; typically -1 for away advantage, +1 for home disadvantage)
@@ -329,6 +334,30 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 pd.to_numeric(X[_era7], errors="coerce").fillna(4.5)   # league-avg if NULL
                 * pd.to_numeric(X[_ip7], errors="coerce").fillna(0.0)
             )
+
+    # ── Bullpen fatigue × rest interaction (Improvement 3) ──────────────────────
+    # Bullpen IP per day of rest (higher = more stressed)
+    for _side in ("home", "away"):
+        _bp7 = f"{_side}_bullpen_ip_last_7"
+        _rest = f"{_side}_rest_days"
+        if _bp7 in X.columns and _rest in X.columns:
+            X[f"{_side}_bp_usage_per_rest"] = X[_bp7] / X[_rest].clip(lower=0.5)
+
+    # ── SP quality × opponent batting interaction (Improvement 3) ────────────────
+    # ERA × opposing batting average: pitcher quality vs opponent quality
+    for _h, _a in [("home", "away"), ("away", "home")]:
+        _sp_era = f"{_h}_sp_career_era_5"
+        _opp_avg = f"{_a}_avg_avg_10"
+        if _sp_era in X.columns and _opp_avg in X.columns:
+            X[f"{_h}_sp_era_x_opp_avg"] = X[_sp_era] * X[_opp_avg] * 10  # scale for visibility
+
+    # ── Park-adjusted run features (Improvement 5) ──────────────────────────────
+    # Offensive features adjusted for park run-scoring environment
+    if "park_run_factor" in X.columns:
+        for _side in ("home", "away"):
+            _runs = f"{_side}_runs_avg_10"
+            if _runs in X.columns:
+                X[f"{_side}_park_adj_runs_10"] = X[_runs] * X["park_run_factor"]
 
     return X
 
