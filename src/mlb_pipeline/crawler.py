@@ -17,6 +17,7 @@ MLB_TEAMS = [
     "phi", "pit", "sd",  "sea", "sf",  "stl", "tb",  "tex", "tor", "was",
 ]
 
+# NOTE: parsers import _norm_abbr from here; see also team_abbr.py for unified module
 TEAM_ABBR_NORMALIZE: dict[str, str] = {
     # Normalize common MSF variants to canonical lowercase-equivalent upper forms.
     # Add entries here if API payloads use unexpected abbreviations.
