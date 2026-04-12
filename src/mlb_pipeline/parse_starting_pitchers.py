@@ -251,6 +251,15 @@ def upsert_starting_pitchers(conn, rows: list[dict]) -> int:
     if not rows:
         return 0
 
+    # Skip rows where player_id is unknown — the DB column is NOT NULL
+    valid = [r for r in rows if r.get("player_id") is not None]
+    skipped = len(rows) - len(valid)
+    if skipped:
+        log.warning("upsert_starting_pitchers: skipping %d row(s) with null player_id", skipped)
+    if not valid:
+        return 0
+    rows = valid
+
     sql = """
     INSERT INTO raw.mlb_starting_pitchers (
         game_slug, team_abbr, player_id, player_name, source, fetched_at_utc
