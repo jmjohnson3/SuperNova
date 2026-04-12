@@ -49,6 +49,8 @@ _ET = ZoneInfo("America/New_York")
 class Season:
     league: str
     season_slug: str
+    season_start: date  # first possible game date (used to skip crawling future dates against old seasons)
+    season_end: date    # last possible game date
 
 
 @dataclass(frozen=True)
@@ -498,8 +500,12 @@ def main() -> None:
     client = MySportsFeedsClient(api_key=cfg.api_key)
 
     seasons = [
-        Season(league="mlb", season_slug="2024-regular"),  # MLB 2024 season (Apr-Oct 2024)
-        Season(league="mlb", season_slug="2025-regular"),  # MLB 2025 season (Apr-Oct 2025)
+        Season(league="mlb", season_slug="2024-regular",
+               season_start=date(2024, 3, 20), season_end=date(2024, 11, 2)),
+        Season(league="mlb", season_slug="2025-regular",
+               season_start=date(2025, 3, 18), season_end=date(2025, 11, 2)),
+        Season(league="mlb", season_slug="2026-regular",
+               season_start=date(2026, 3, 26), season_end=date(2026, 11, 2)),
     ]
 
     today = et_today()
@@ -527,6 +533,14 @@ def main() -> None:
 
                 if start > end:
                     start = end
+
+                # Clamp to season bounds — avoids requesting future dates against old seasons
+                # (e.g. requesting 2026 dates from 2024-regular → HTTP 500)
+                start = max(start, s.season_start)
+                end = min(end, s.season_end)
+                if start > end:
+                    log.info("Skipping season=%s (crawl window outside season bounds)", s.season_slug)
+                    continue
 
                 crawl_season_incremental(
                     conn=conn,
