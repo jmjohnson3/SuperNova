@@ -37,8 +37,8 @@ class PredictConfig:
     et_date: date | None = None
     # Minimum |edge| in runs to flag a run-line bet
     min_edge_run_line: float = 1.5
-    # Minimum edge in runs to flag a total OVER bet
-    min_edge_total: float = 1.0
+    # Minimum |edge| in runs to flag a total bet (over OR under)
+    min_edge_total: float = 2.5
 
 
 SQL_GAMES_FOR_DATE = """
@@ -428,9 +428,13 @@ def _save_predictions(
             rl_bet = "home" if edge_rl > 0 else "away"
             kf_rl, wp_rl = _kelly(abs(edge_rl), sigma=sigma_rl)
 
-        if edge_t is not None and edge_t >= cfg.min_edge_total:
-            tot_bet = "over"
-            kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
+        if edge_t is not None:
+            if edge_t >= cfg.min_edge_total:
+                tot_bet = "over"
+                kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
+            elif -edge_t >= cfg.min_edge_total:
+                tot_bet = "under"
+                kf_t, wp_t = _kelly(-edge_t, sigma=sigma_t)
 
         rows.append({
             "game_date_et":       et_day,
@@ -637,7 +641,7 @@ def main() -> None:
 
     # Count bet signals
     n_rl_bets    = int(out["edge_run_line"].abs().ge(cfg.min_edge_run_line).sum()) if "edge_run_line" in out else 0
-    n_total_bets = int(out["edge_total"].ge(cfg.min_edge_total).sum())             if "edge_total"   in out else 0
+    n_total_bets = int(out["edge_total"].abs().ge(cfg.min_edge_total).sum())        if "edge_total"   in out else 0
     n_high_edge  = n_rl_bets + n_total_bets
 
     if out["used_market_recon"].any():
@@ -751,6 +755,20 @@ def main() -> None:
             else:
                 print(f"  Total: OVER {mkt_t_label}  * EDGE +{e_t:.2f}  [bet OVER]")
                 print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
+        elif pd.notna(edge_t) and -float(edge_t) >= cfg.min_edge_total:
+            e_t = float(edge_t)
+            kelly, p_win = _kelly(-e_t, sigma=sigma_t)
+            qk_bet = (kelly / 4) * 1000
+            mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
+            _tl = _ld.total_under_link if _ld else None
+            best_links.append(_tl)
+            all_game_links.append(_tl)
+            _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
+            if discord:
+                print(f"  Total: UNDER {mkt_t_label}  * **EDGE +{-e_t:.2f}  [bet UNDER]**{_link_str}")
+            else:
+                print(f"  Total: UNDER {mkt_t_label}  * EDGE +{-e_t:.2f}  [bet UNDER]")
+                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
         elif pd.notna(mkt_tot):
             mkt_t_label = f"{float(mkt_tot):.1f}"
             pred_ou = "O" if pred_tot > float(mkt_tot) else "U"
@@ -761,14 +779,21 @@ def main() -> None:
         else:
             print(f"  Pred total: {pred_tot:.1f}")
 
-    # Parlay URLs
+    # Parlay URLs — chunked at 25 legs
     if discord:
-        parlay = build_fd_parlay_url([l for l in best_links if l])
-        if parlay:
-            print(f"\n**Best Bets Parlay** [FD](<{parlay}>)")
-        all_parlay = build_fd_parlay_url([l for l in all_game_links if l])
-        if all_parlay:
-            print(f"\n**All Games Parlay** [FD](<{all_parlay}>)")
+        def _game_parlay(title: str, links: list) -> None:
+            dedup = list(dict.fromkeys(l for l in links if l))
+            if not dedup:
+                return
+            n_chunks = math.ceil(len(dedup) / 25)
+            for i in range(0, len(dedup), 25):
+                url = build_fd_parlay_url(dedup[i:i + 25])
+                if url:
+                    sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                    print(f"\n**{title}{sfx}** [FD]({url})")
+
+        _game_parlay("Best Bets Parlay", best_links)
+        _game_parlay("All Games Parlay", all_game_links)
 
     # Save predictions to DB
     try:
