@@ -225,6 +225,21 @@ def main() -> None:
             critical=False,
         ))
 
+    # Grade completed games + props (always runs regardless of skip flags)
+    steps.append(Step(
+        name="Grade outcomes (update_outcomes)",
+        module="mlb_pipeline.modeling.update_outcomes",
+        timeout_s=120,
+        critical=False,
+    ))
+    steps.append(Step(
+        name="Paper trading report",
+        module="mlb_pipeline.modeling.paper_trading_report",
+        args=("--days", "90"),
+        timeout_s=60,
+        critical=False,
+    ))
+
     report_path = Path("reports") / f"mlb_daily_{et_day.isoformat()}.md"
 
     _p(console, f"[bold]ET date:[/bold] {et_day.isoformat()}" if console else f"ET date: {et_day.isoformat()}")
