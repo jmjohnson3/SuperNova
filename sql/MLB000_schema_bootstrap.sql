@@ -71,8 +71,13 @@ CREATE TABLE IF NOT EXISTS raw.mlb_boxscore_games (
     innings_played      NUMERIC(4, 1),  -- 9.0, 12.0, etc.
     game_duration_min   INTEGER,
     played_status       TEXT,           -- 'COMPLETED', 'IN_PROGRESS', etc.
-    fetched_at_utc      TIMESTAMPTZ NOT NULL DEFAULT now()
+    fetched_at_utc      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    home_f5_runs        INTEGER,        -- runs scored through end of 5th inning
+    away_f5_runs        INTEGER
 );
+-- Idempotent additions for installations created before home_f5_runs was added
+ALTER TABLE raw.mlb_boxscore_games ADD COLUMN IF NOT EXISTS home_f5_runs INTEGER;
+ALTER TABLE raw.mlb_boxscore_games ADD COLUMN IF NOT EXISTS away_f5_runs INTEGER;
 
 -- ============================================================
 -- raw.mlb_boxscore_team_stats
@@ -297,9 +302,22 @@ CREATE TABLE IF NOT EXISTS bets.mlb_game_predictions (
     closing_total       NUMERIC(5, 1),
     clv_run_line        NUMERIC(5, 2),
     clv_total           NUMERIC(5, 2),
+    market_rl_price     NUMERIC,        -- entry juice for run-line bet side
+    market_total_price  NUMERIC,        -- entry juice for total bet side
+    closing_rl_price    NUMERIC,        -- closing juice for run-line bet side
+    closing_total_price NUMERIC,        -- closing juice for total bet side
+    clv_rl_price        NUMERIC,        -- price CLV in implied prob % pts
+    clv_total_price     NUMERIC,        -- price CLV in implied prob % pts
     created_at_utc      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at_utc      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Idempotent additions for installations created before price CLV was added
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS market_rl_price     NUMERIC;
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS market_total_price  NUMERIC;
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS closing_rl_price    NUMERIC;
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS closing_total_price NUMERIC;
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS clv_rl_price        NUMERIC;
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS clv_total_price     NUMERIC;
 
 -- ============================================================
 -- bets.mlb_prop_predictions

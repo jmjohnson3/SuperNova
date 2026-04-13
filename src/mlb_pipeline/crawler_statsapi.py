@@ -360,6 +360,23 @@ def parse_boxscore(
     away_errors = _as_int(ls_teams.get("away", {}).get("errors"))
     innings = _as_int(linescore.get("currentInning"))
 
+    # --- First 5 innings score (sum runs through inning 5) ---
+    home_f5_runs: Optional[int] = None
+    away_f5_runs: Optional[int] = None
+    inning_list = linescore.get("innings") or []
+    if inning_list:
+        h5 = a5 = 0
+        for inn in inning_list:
+            num = _as_int(inn.get("num"))
+            if num is None or num > 5:
+                continue
+            h5 += _as_int(inn.get("home", {}).get("runs")) or 0
+            a5 += _as_int(inn.get("away", {}).get("runs")) or 0
+        # Only store if at least 5 innings were completed
+        if innings is not None and innings >= 5:
+            home_f5_runs = h5
+            away_f5_runs = a5
+
     game_row = {
         "game_slug": game_slug,
         "season": season,
@@ -374,6 +391,8 @@ def parse_boxscore(
         "innings_played": innings,
         "played_status": "COMPLETED",
         "source_fetched_at_utc": now_utc,
+        "home_f5_runs": home_f5_runs,
+        "away_f5_runs": away_f5_runs,
     }
 
     player_stat_rows: list[dict] = []
@@ -530,20 +549,24 @@ def upsert_boxscore_game(conn, row: dict) -> None:
     INSERT INTO raw.mlb_boxscore_games (
         game_slug, season, home_team_abbr, away_team_abbr,
         home_runs, away_runs, home_hits, away_hits, home_errors, away_errors,
-        innings_played, played_status, source_fetched_at_utc, updated_at_utc
+        innings_played, played_status, source_fetched_at_utc, updated_at_utc,
+        home_f5_runs, away_f5_runs
     ) VALUES (
         %(game_slug)s, %(season)s, %(home_team_abbr)s, %(away_team_abbr)s,
         %(home_runs)s, %(away_runs)s, %(home_hits)s, %(away_hits)s,
         %(home_errors)s, %(away_errors)s,
-        %(innings_played)s, %(played_status)s, %(source_fetched_at_utc)s, now()
+        %(innings_played)s, %(played_status)s, %(source_fetched_at_utc)s, now(),
+        %(home_f5_runs)s, %(away_f5_runs)s
     )
     ON CONFLICT (game_slug) DO UPDATE SET
-        home_runs   = EXCLUDED.home_runs,
-        away_runs   = EXCLUDED.away_runs,
-        home_hits   = EXCLUDED.home_hits,
-        away_hits   = EXCLUDED.away_hits,
+        home_runs      = EXCLUDED.home_runs,
+        away_runs      = EXCLUDED.away_runs,
+        home_hits      = EXCLUDED.home_hits,
+        away_hits      = EXCLUDED.away_hits,
         innings_played = EXCLUDED.innings_played,
         played_status  = EXCLUDED.played_status,
+        home_f5_runs   = COALESCE(EXCLUDED.home_f5_runs, raw.mlb_boxscore_games.home_f5_runs),
+        away_f5_runs   = COALESCE(EXCLUDED.away_f5_runs, raw.mlb_boxscore_games.away_f5_runs),
         updated_at_utc = now()
     ;
     """
@@ -1098,6 +1121,89 @@ def backfill_umpires(conn, season_slugs: list[str]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# F5 score backfill
+# ---------------------------------------------------------------------------
+
+def backfill_f5_scores(conn, season_slugs: list[str]) -> None:
+    """
+    One-time backfill: re-fetch linescores for completed games that are missing
+    first-5-innings scores in raw.mlb_boxscore_games.
+
+    ~5000 games × 0.15s ≈ 12 min.  Only needs to run once.
+    """
+    # Build slug → gamePk index from schedule for each requested season
+    schedule_index: dict[str, int] = {}
+    for season_slug in season_slugs:
+        start_date, end_date = SEASON_DATE_RANGES.get(
+            season_slug, ("2024-03-20", "2025-10-05")
+        )
+        log.info("Building schedule index for %s ...", season_slug)
+        games = fetch_schedule(season_slug, start_date=start_date, end_date=end_date)
+        schedule_index.update(build_schedule_index(games))
+
+    # Games with boxscore but no F5 data yet
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT game_slug
+            FROM raw.mlb_boxscore_games
+            WHERE home_f5_runs IS NULL
+              AND played_status = 'COMPLETED'
+              AND innings_played >= 5
+            ORDER BY game_slug
+        """)
+        slugs_needing = [r[0] for r in cur.fetchall()]
+
+    log.info("F5 backfill: %d games need first-5-innings data", len(slugs_needing))
+    updated = errors = 0
+
+    for i, slug in enumerate(slugs_needing):
+        game_pk = schedule_index.get(slug)
+        if game_pk is None:
+            log.debug("No gamePk found for %s — skipping", slug)
+            continue
+
+        try:
+            linescore = fetch_linescore(game_pk)
+            time.sleep(REQUEST_SLEEP)
+
+            inning_list = linescore.get("innings") or []
+            innings = _as_int(linescore.get("currentInning"))
+
+            if not inning_list or innings is None or innings < 5:
+                continue
+
+            h5 = a5 = 0
+            for inn in inning_list:
+                num = _as_int(inn.get("num"))
+                if num is None or num > 5:
+                    continue
+                h5 += _as_int(inn.get("home", {}).get("runs")) or 0
+                a5 += _as_int(inn.get("away", {}).get("runs")) or 0
+
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE raw.mlb_boxscore_games
+                    SET home_f5_runs = %s, away_f5_runs = %s, updated_at_utc = now()
+                    WHERE game_slug = %s
+                """, (h5, a5, slug))
+            conn.commit()
+            updated += 1
+
+            if (i + 1) % 200 == 0 or (i + 1) == len(slugs_needing):
+                log.info("  F5 backfill progress: %d / %d (updated=%d)", i + 1, len(slugs_needing), updated)
+
+        except Exception as exc:
+            conn.rollback()
+            log.warning("  F5 backfill failed for %s: %s", slug, exc)
+            errors += 1
+            if errors > 50:
+                log.error("Too many errors (%d); aborting F5 backfill", errors)
+                break
+
+    log.info("F5 backfill complete: updated=%d errors=%d", updated, errors)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -1116,6 +1222,8 @@ def main() -> None:
                         help="One-time backfill: extract umpires from already-fetched boxscores")
     parser.add_argument("--backfill-handedness", action="store_true",
                         help="One-time backfill: fetch bat_side/pitch_hand for all known players (~6 API calls)")
+    parser.add_argument("--backfill-f5", action="store_true",
+                        help="One-time backfill: re-fetch linescores to populate home_f5_runs/away_f5_runs")
     args = parser.parse_args()
 
     seasons = args.season or ["2024-regular", "2025-regular"]
@@ -1127,6 +1235,8 @@ def main() -> None:
             backfill_umpires(conn, seasons)
         elif args.backfill_handedness:
             backfill_handedness(conn)
+        elif args.backfill_f5:
+            backfill_f5_scores(conn, seasons)
         else:
             # Fetch probable pitchers for today so predict_player_props has SP data
             et_today = datetime.now(ET).date()
