@@ -59,6 +59,12 @@ def print_report(conn, days: int = 90) -> None:
                 SUM(CASE WHEN clv_total > 0 THEN 1 ELSE 0 END)
                     FILTER (WHERE clv_total IS NOT NULL)                        AS clv_tot_beat,
                 AVG(clv_total)     FILTER (WHERE clv_total IS NOT NULL)        AS avg_clv_tot,
+                COUNT(*) FILTER (WHERE clv_rl_price IS NOT NULL)               AS price_clv_rl_n,
+                SUM(CASE WHEN clv_rl_price > 0 THEN 1 ELSE 0 END)
+                    FILTER (WHERE clv_rl_price IS NOT NULL)                    AS price_clv_rl_beat,
+                AVG(clv_rl_price)  FILTER (WHERE clv_rl_price IS NOT NULL)    AS avg_price_clv_rl,
+                COUNT(*) FILTER (WHERE clv_total_price IS NOT NULL)            AS price_clv_tot_n,
+                AVG(clv_total_price) FILTER (WHERE clv_total_price IS NOT NULL) AS avg_price_clv_tot,
                 MIN(game_date_et)                                               AS first_date,
                 MAX(game_date_et)                                               AS last_date
             FROM bets.mlb_game_predictions
@@ -78,6 +84,9 @@ def print_report(conn, days: int = 90) -> None:
     clv_rl_b  = int(ov["clv_rl_beat"] or 0)
     clv_tot_n = int(ov["clv_tot_n"]  or 0)
     clv_tot_b = int(ov["clv_tot_beat"] or 0)
+    price_clv_rl_n   = int(ov["price_clv_rl_n"]   or 0)
+    price_clv_rl_b   = int(ov["price_clv_rl_beat"] or 0)
+    price_clv_tot_n  = int(ov["price_clv_tot_n"]  or 0)
 
     print(f"\n{'='*65}")
     print(f"  MLB PAPER TRADING REPORT  ({ov['first_date']} to {ov['last_date']},  last {days}d)")
@@ -98,14 +107,18 @@ def print_report(conn, days: int = 90) -> None:
     print("  Closing Line Value (CLV)  [positive = beat the close]")
     if clv_rl_n > 0:
         avg_crl = float(ov["avg_clv_rl"] or 0)
-        print(f"  Run Line: beat close {clv_rl_b}/{clv_rl_n} ({_pct(clv_rl_b, clv_rl_n)})  avg CLV = {avg_crl:+.2f} runs")
+        print(f"  Run Line (pts): beat close {clv_rl_b}/{clv_rl_n} ({_pct(clv_rl_b, clv_rl_n)})  avg CLV = {avg_crl:+.2f} runs")
     else:
-        print("  Run Line: no CLV data yet")
+        print("  Run Line (pts): no CLV data yet")
+    if price_clv_rl_n > 0:
+        avg_price_crl = float(ov["avg_price_clv_rl"] or 0)
+        print(f"  Run Line (price): beat close {price_clv_rl_b}/{price_clv_rl_n} ({_pct(price_clv_rl_b, price_clv_rl_n)})  avg CLV = {avg_price_crl:+.2f}%")
     if clv_tot_n > 0:
         avg_ctot = float(ov["avg_clv_tot"] or 0)
-        print(f"  Total:    beat close {clv_tot_b}/{clv_tot_n} ({_pct(clv_tot_b, clv_tot_n)})  avg CLV = {avg_ctot:+.2f} runs")
-    else:
-        print("  Total:    no CLV data yet")
+        print(f"  Total    (pts): beat close {clv_tot_b}/{clv_tot_n} ({_pct(clv_tot_b, clv_tot_n)})  avg CLV = {avg_ctot:+.2f} runs")
+    if price_clv_tot_n > 0:
+        avg_price_ctot = float(ov["avg_price_clv_tot"] or 0)
+        print(f"  Total    (price): {price_clv_tot_n} graded  avg CLV = {avg_price_ctot:+.2f}%")
 
     # ── Weekly breakdown ─────────────────────────────────────────────────────
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:

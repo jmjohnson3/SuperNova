@@ -18,6 +18,23 @@ log = logging.getLogger("mlb_pipeline.modeling.update_outcomes")
 _ET = ZoneInfo("America/New_York")
 PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 
+def _american_to_prob(price: float) -> float:
+    """Convert American odds price to raw implied probability (no vig removal)."""
+    if price >= 100:
+        return 100.0 / (price + 100.0)
+    else:
+        return abs(price) / (abs(price) + 100.0)
+
+
+def _price_clv(entry_price: float, closing_price: float) -> float:
+    """Price CLV in probability percentage points.
+
+    Positive = we got a better price than the closing line (beat the close).
+    entry_price and closing_price should be for the SAME side we bet.
+    """
+    return round((_american_to_prob(closing_price) - _american_to_prob(entry_price)) * 100, 2)
+
+
 # Stat column mapping: prop stat name → mlb_player_gamelogs column
 _STAT_COL = {
     "pitcher_strikeouts": "strikeouts_pitcher",
@@ -49,7 +66,8 @@ def update_game_outcomes(conn) -> int:
                    home_team_abbr, away_team_abbr,
                    market_run_line, market_total,
                    run_line_bet_side, total_bet_side,
-                   pred_run_diff
+                   pred_run_diff,
+                   market_rl_price, market_total_price
             FROM bets.mlb_game_predictions
             WHERE actual_home_score IS NULL
               AND game_date_et <= %s
@@ -87,7 +105,11 @@ def update_game_outcomes(conn) -> int:
                 SELECT DISTINCT ON (home_team, away_team, as_of_date)
                     home_team, away_team, as_of_date,
                     spread_home_points  AS closing_run_line,
-                    total_points        AS closing_total
+                    total_points        AS closing_total,
+                    spread_home_price   AS closing_rl_home_price,
+                    spread_away_price   AS closing_rl_away_price,
+                    total_over_price    AS closing_total_over_price,
+                    total_under_price   AS closing_total_under_price
                 FROM odds.mlb_game_lines
                 WHERE as_of_date = ANY(%s::date[])
                   AND spread_home_points IS NOT NULL
@@ -170,6 +192,30 @@ def update_game_outcomes(conn) -> int:
                 else:
                     clv_tot = round(mkt_t - closing_tot, 2)
 
+            # Price-based CLV (in probability % points; positive = beat the close)
+            closing_rl_price = None
+            clv_rl_price = None
+            closing_total_price = None
+            clv_total_price = None
+            entry_rl_price = row.get("market_rl_price")
+            entry_tot_price = row.get("market_total_price")
+
+            if cl is not None and row["run_line_bet_side"] is not None:
+                if row["run_line_bet_side"] == "home":
+                    closing_rl_price = cl.get("closing_rl_home_price")
+                else:
+                    closing_rl_price = cl.get("closing_rl_away_price")
+            if cl is not None and row["total_bet_side"] is not None:
+                if row["total_bet_side"] == "over":
+                    closing_total_price = cl.get("closing_total_over_price")
+                else:
+                    closing_total_price = cl.get("closing_total_under_price")
+
+            if closing_rl_price is not None and entry_rl_price is not None:
+                clv_rl_price = _price_clv(float(entry_rl_price), float(closing_rl_price))
+            if closing_total_price is not None and entry_tot_price is not None:
+                clv_total_price = _price_clv(float(entry_tot_price), float(closing_total_price))
+
             cur.execute("""
                 UPDATE bets.mlb_game_predictions
                 SET actual_home_score  = %s,
@@ -182,6 +228,10 @@ def update_game_outcomes(conn) -> int:
                     closing_total      = %s,
                     clv_run_line       = %s,
                     clv_total          = %s,
+                    closing_rl_price   = %s,
+                    closing_total_price= %s,
+                    clv_rl_price       = %s,
+                    clv_total_price    = %s,
                     updated_at_utc     = NOW()
                 WHERE game_slug = %s
             """, (
@@ -189,6 +239,8 @@ def update_game_outcomes(conn) -> int:
                 run_line_covered, total_covered,
                 closing_rl, closing_tot,
                 clv_rl, clv_tot,
+                closing_rl_price, closing_total_price,
+                clv_rl_price, clv_total_price,
                 row["game_slug"],
             ))
             updated += 1
@@ -208,7 +260,8 @@ def backfill_clv(conn) -> int:
         cur.execute("""
             SELECT game_slug, game_date_et, home_team_abbr, away_team_abbr,
                    market_run_line, market_total,
-                   run_line_bet_side, total_bet_side
+                   run_line_bet_side, total_bet_side,
+                   market_rl_price, market_total_price
             FROM bets.mlb_game_predictions
             WHERE actual_home_score IS NOT NULL
               AND clv_run_line IS NULL
@@ -226,8 +279,12 @@ def backfill_clv(conn) -> int:
             cur.execute("""
                 SELECT DISTINCT ON (home_team, away_team, as_of_date)
                     home_team, away_team, as_of_date,
-                    spread_home_points AS closing_run_line,
-                    total_points       AS closing_total
+                    spread_home_points  AS closing_run_line,
+                    total_points        AS closing_total,
+                    spread_home_price   AS closing_rl_home_price,
+                    spread_away_price   AS closing_rl_away_price,
+                    total_over_price    AS closing_total_over_price,
+                    total_under_price   AS closing_total_under_price
                 FROM odds.mlb_game_lines
                 WHERE as_of_date = ANY(%s::date[])
                   AND spread_home_points IS NOT NULL
@@ -269,18 +326,43 @@ def backfill_clv(conn) -> int:
                 else:
                     clv_tot = round(mkt_t - closing_tot, 2)
 
-            if clv_rl is None and clv_tot is None:
+            # Price CLV for historical rows that have stored entry prices
+            entry_rl_price  = row.get("market_rl_price")
+            entry_tot_price = row.get("market_total_price")
+            closing_rl_price = closing_total_price = None
+            clv_rl_price = clv_total_price = None
+            if cl is not None and row["run_line_bet_side"] is not None:
+                closing_rl_price = (cl.get("closing_rl_home_price")
+                                    if row["run_line_bet_side"] == "home"
+                                    else cl.get("closing_rl_away_price"))
+            if cl is not None and row["total_bet_side"] is not None:
+                closing_total_price = (cl.get("closing_total_over_price")
+                                       if row["total_bet_side"] == "over"
+                                       else cl.get("closing_total_under_price"))
+            if closing_rl_price is not None and entry_rl_price is not None:
+                clv_rl_price = _price_clv(float(entry_rl_price), float(closing_rl_price))
+            if closing_total_price is not None and entry_tot_price is not None:
+                clv_total_price = _price_clv(float(entry_tot_price), float(closing_total_price))
+
+            if clv_rl is None and clv_tot is None and clv_rl_price is None:
                 continue
 
             cur.execute("""
                 UPDATE bets.mlb_game_predictions
-                SET closing_run_line = COALESCE(closing_run_line, %s),
-                    closing_total    = COALESCE(closing_total, %s),
-                    clv_run_line     = %s,
-                    clv_total        = %s,
-                    updated_at_utc   = NOW()
+                SET closing_run_line  = COALESCE(closing_run_line, %s),
+                    closing_total     = COALESCE(closing_total, %s),
+                    clv_run_line      = %s,
+                    clv_total         = %s,
+                    closing_rl_price  = COALESCE(closing_rl_price, %s),
+                    closing_total_price = COALESCE(closing_total_price, %s),
+                    clv_rl_price      = %s,
+                    clv_total_price   = %s,
+                    updated_at_utc    = NOW()
                 WHERE game_slug = %s
-            """, (closing_rl, closing_tot, clv_rl, clv_tot, row["game_slug"]))
+            """, (closing_rl, closing_tot, clv_rl, clv_tot,
+                  closing_rl_price, closing_total_price,
+                  clv_rl_price, clv_total_price,
+                  row["game_slug"]))
             updated += 1
 
     conn.commit()
@@ -386,7 +468,9 @@ def print_running_record(conn) -> None:
                     FILTER (WHERE clv_run_line IS NOT NULL)                  AS clv_rl_beat,
                 AVG(clv_run_line) FILTER (WHERE clv_run_line IS NOT NULL)   AS avg_clv_rl,
                 COUNT(*) FILTER (WHERE clv_total IS NOT NULL)               AS clv_tot_n,
-                AVG(clv_total)    FILTER (WHERE clv_total IS NOT NULL)      AS avg_clv_tot
+                AVG(clv_total)    FILTER (WHERE clv_total IS NOT NULL)      AS avg_clv_tot,
+                COUNT(*) FILTER (WHERE clv_rl_price IS NOT NULL)            AS price_clv_rl_n,
+                AVG(clv_rl_price) FILTER (WHERE clv_rl_price IS NOT NULL)   AS avg_price_clv_rl
             FROM bets.mlb_game_predictions
             WHERE run_line_bet_side IS NOT NULL OR total_bet_side IS NOT NULL
         """)
@@ -404,6 +488,8 @@ def print_running_record(conn) -> None:
     avg_clv_rl  = float(row["avg_clv_rl"]  or 0.0)
     clv_tot_n = int(row["clv_tot_n"] or 0)
     avg_clv_tot = float(row["avg_clv_tot"] or 0.0)
+    price_clv_rl_n  = int(row["price_clv_rl_n"] or 0)
+    avg_price_clv_rl = float(row["avg_price_clv_rl"] or 0.0)
 
     rl_pct  = (rl_w / rl_n * 100)   if rl_n  > 0 else 0.0
     tot_pct = (tot_w / tot_n * 100) if tot_n > 0 else 0.0
@@ -418,9 +504,11 @@ def print_running_record(conn) -> None:
     if clv_rl_n > 0:
         print(
             f"MLB CLV Run Line: beat close {clv_rl_b}/{clv_rl_n} ({clv_rl_pct:.0f}%)"
-            f" avg CLV={avg_clv_rl:+.2f}"
-            + (f" | CLV Total avg={avg_clv_tot:+.2f}" if clv_tot_n > 0 else "")
+            f" avg CLV={avg_clv_rl:+.2f} runs"
+            + (f" | CLV Total avg={avg_clv_tot:+.2f} runs" if clv_tot_n > 0 else "")
         )
+    if price_clv_rl_n > 0:
+        print(f"MLB Price CLV Run Line: {price_clv_rl_n} bets  avg={avg_price_clv_rl:+.2f}%")
 
 
 def main() -> None:

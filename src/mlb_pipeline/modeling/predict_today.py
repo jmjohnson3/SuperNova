@@ -68,7 +68,11 @@ SELECT home_team  AS home_abbr,
        spread_home_link,
        spread_away_link,
        total_over_link,
-       total_under_link
+       total_under_link,
+       spread_home_price,
+       spread_away_price,
+       total_over_price,
+       total_under_price
 FROM odds.mlb_game_lines
 WHERE as_of_date = :d
   AND bookmaker_key = 'fanduel'
@@ -368,6 +372,7 @@ def _save_predictions(
     calib: dict | None = None,
     w_rl: float = 0.0,
     w_total: float = 0.0,
+    fd_links: dict | None = None,
 ) -> None:
     """Upsert game predictions into bets.mlb_game_predictions."""
     _ensure_bets_schema(engine)
@@ -379,7 +384,8 @@ def _save_predictions(
              market_run_line, market_total, edge_run_line, edge_total,
              run_line_bet_side, total_bet_side,
              kelly_fraction_rl, kelly_fraction_total,
-             win_prob_rl, win_prob_total)
+             win_prob_rl, win_prob_total,
+             market_rl_price, market_total_price)
         VALUES
             (:game_date_et, :game_slug, :season, :home_team_abbr, :away_team_abbr,
              :home_sp_name, :away_sp_name,
@@ -387,7 +393,8 @@ def _save_predictions(
              :market_run_line, :market_total, :edge_run_line, :edge_total,
              :run_line_bet_side, :total_bet_side,
              :kelly_fraction_rl, :kelly_fraction_total,
-             :win_prob_rl, :win_prob_total)
+             :win_prob_rl, :win_prob_total,
+             :market_rl_price, :market_total_price)
         ON CONFLICT (game_date_et, game_slug) DO UPDATE SET
             predicted_at_utc    = NOW(),
             home_sp_name        = EXCLUDED.home_sp_name,
@@ -404,7 +411,9 @@ def _save_predictions(
             kelly_fraction_rl   = EXCLUDED.kelly_fraction_rl,
             kelly_fraction_total= EXCLUDED.kelly_fraction_total,
             win_prob_rl         = EXCLUDED.win_prob_rl,
-            win_prob_total      = EXCLUDED.win_prob_total
+            win_prob_total      = EXCLUDED.win_prob_total,
+            market_rl_price     = EXCLUDED.market_rl_price,
+            market_total_price  = EXCLUDED.market_total_price
     """)
 
     _calib = calib or {}
@@ -438,6 +447,20 @@ def _save_predictions(
                 tot_bet = "under"
                 kf_t, wp_t = _kelly(-edge_t, sigma=sigma_t)
 
+        # Entry prices for price-based CLV tracking
+        _fdr = (fd_links or {}).get((r["home_team_abbr"], r["away_team_abbr"]))
+        mkt_rl_price = None
+        mkt_tot_price = None
+        if _fdr is not None:
+            if rl_bet == "home":
+                mkt_rl_price = getattr(_fdr, "spread_home_price", None)
+            elif rl_bet == "away":
+                mkt_rl_price = getattr(_fdr, "spread_away_price", None)
+            if tot_bet == "over":
+                mkt_tot_price = getattr(_fdr, "total_over_price", None)
+            elif tot_bet == "under":
+                mkt_tot_price = getattr(_fdr, "total_under_price", None)
+
         rows.append({
             "game_date_et":       et_day,
             "game_slug":          r["game_slug"],
@@ -459,6 +482,8 @@ def _save_predictions(
             "kelly_fraction_total": round(kf_t, 4) if kf_t  is not None else None,
             "win_prob_rl":        round(wp_rl, 4)  if wp_rl  is not None else None,
             "win_prob_total":     round(wp_t, 4)   if wp_t   is not None else None,
+            "market_rl_price":    int(mkt_rl_price)  if mkt_rl_price  is not None else None,
+            "market_total_price": int(mkt_tot_price) if mkt_tot_price is not None else None,
         })
 
     if rows:
@@ -815,7 +840,7 @@ def main() -> None:
 
     # Save predictions to DB
     try:
-        _save_predictions(out, engine, et_day, cfg, calib=calib, w_rl=w_rl, w_total=w_total)
+        _save_predictions(out, engine, et_day, cfg, calib=calib, w_rl=w_rl, w_total=w_total, fd_links=fd_links)
     except Exception as exc:
         log.warning("Could not save predictions to DB: %s", exc)
 
