@@ -157,17 +157,27 @@ def _refresh_matviews(pg_dsn: str) -> None:
                     log.exception("Failed to drop %s", matview)
 
         # ── Apply MLB007 SQL (CREATE MATERIALIZED VIEW IF NOT EXISTS + indexes) ──
-        for filename in _MLB_MATVIEW_REFRESH:
+        # Use per-statement try/except so a single failed CREATE (e.g. because a
+        # cascade-dropped base view hasn't been re-applied yet) doesn't abort all
+        # subsequent matview creates in the same file.
+        def _apply_matview_sql(filename: str) -> None:
             sql_path = _SQL_DIR / filename
-            try:
-                sql = sql_path.read_text(encoding="utf-8")
-                for stmt in sql.split(";"):
-                    stmt = stmt.strip()
-                    if stmt:
-                        cur.execute(stmt)
-                log.info("Applied %s", filename)
-            except Exception:
-                log.exception("Failed to apply %s", filename)
+            sql = sql_path.read_text(encoding="utf-8")
+            ok = skipped = 0
+            for stmt in sql.split(";"):
+                stmt = stmt.strip()
+                if not stmt:
+                    continue
+                try:
+                    cur.execute(stmt)
+                    ok += 1
+                except Exception as exc:
+                    log.warning("Statement in %s failed (skipping): %s", filename, exc)
+                    skipped += 1
+            log.info("Applied %s (%d ok, %d skipped)", filename, ok, skipped)
+
+        for filename in _MLB_MATVIEW_REFRESH:
+            _apply_matview_sql(filename)
 
         # ── Refresh all mat views ────────────────────────────────────────────────
         for stmt in _MLB_MATVIEW_REFRESH_SQL.strip().split(";"):
@@ -183,8 +193,14 @@ def _refresh_matviews(pg_dsn: str) -> None:
         # ── If any matview was dropped (cascading to game feature views),
         #    re-apply MLB011 (lineup quality) then MLB006 so those views are
         #    recreated with updated schemas. MLB006 references mlb_lineup_quality
-        #    so MLB011 must come first. ──
+        #    so MLB011 must come first.
+        #    Re-run MLB007 first to ensure any matviews whose base views were
+        #    cascade-dropped-and-since-restored are now created. ──
         if dropped_any:
+            # Re-apply MLB007 to pick up any matviews that failed on the first pass
+            # (their base views may now exist after the refresh cycle above).
+            _apply_matview_sql("MLB007_mlb_materialized_rolling.sql")
+
             conn.autocommit = False
             cur2 = conn.cursor()
             try:
