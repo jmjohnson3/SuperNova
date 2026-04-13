@@ -424,11 +424,13 @@ def _save_predictions(
             "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 3.0
         )
 
-        if edge_rl is not None and abs(edge_rl) >= cfg.min_edge_run_line:
+        both_sp = bool(r.get("both_sp_known", True))
+
+        if edge_rl is not None and abs(edge_rl) >= cfg.min_edge_run_line and both_sp:
             rl_bet = "home" if edge_rl > 0 else "away"
             kf_rl, wp_rl = _kelly(abs(edge_rl), sigma=sigma_rl)
 
-        if edge_t is not None:
+        if edge_t is not None and both_sp:
             if edge_t >= cfg.min_edge_total:
                 tot_bet = "over"
                 kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
@@ -617,6 +619,10 @@ def main() -> None:
     # Attach SP names
     out["home_sp_name"] = out["game_slug"].map(lambda s: sp_map.get(s, {}).get("home"))
     out["away_sp_name"] = out["game_slug"].map(lambda s: sp_map.get(s, {}).get("away"))
+    # Gate bets on confirmed SPs — if either SP is unknown the model is flying blind
+    out["both_sp_known"] = out["game_slug"].map(
+        lambda s: bool(sp_map.get(s, {}).get("home") and sp_map.get(s, {}).get("away"))
+    )
 
     # Compute edges vs market lines
     if "run_line_home" in df.columns:
@@ -639,9 +645,10 @@ def main() -> None:
         out["edge_run_line"]   = np.nan
         out["edge_total"]      = np.nan
 
-    # Count bet signals
-    n_rl_bets    = int(out["edge_run_line"].abs().ge(cfg.min_edge_run_line).sum()) if "edge_run_line" in out else 0
-    n_total_bets = int(out["edge_total"].abs().ge(cfg.min_edge_total).sum())        if "edge_total"   in out else 0
+    # Count bet signals (only for games with confirmed SPs)
+    sp_mask = out["both_sp_known"] if "both_sp_known" in out.columns else pd.Series(True, index=out.index)
+    n_rl_bets    = int((out["edge_run_line"].abs().ge(cfg.min_edge_run_line) & sp_mask).sum()) if "edge_run_line" in out else 0
+    n_total_bets = int((out["edge_total"].abs().ge(cfg.min_edge_total) & sp_mask).sum())        if "edge_total"   in out else 0
     n_high_edge  = n_rl_bets + n_total_bets
 
     if out["used_market_recon"].any():
@@ -707,10 +714,11 @@ def main() -> None:
         print(f"  {pred_label}")
 
         # Run line edge
-        edge_rl = r.get("edge_run_line")
-        mkt_rl  = r.get("market_run_line")
+        edge_rl   = r.get("edge_run_line")
+        mkt_rl    = r.get("market_run_line")
+        both_sp   = bool(r.get("both_sp_known", True))
 
-        if pd.notna(edge_rl) and abs(float(edge_rl)) >= cfg.min_edge_run_line:
+        if pd.notna(edge_rl) and abs(float(edge_rl)) >= cfg.min_edge_run_line and both_sp:
             e_rl = float(edge_rl)
             bet_side = "HOME" if e_rl > 0 else "AWAY"
             bet_team = home if e_rl > 0 else away
@@ -727,6 +735,12 @@ def main() -> None:
             else:
                 print(f"  Run line: {bet_team} {mkt_label}  * EDGE +{abs(e_rl):.2f}  [bet {bet_side}]")
                 print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
+        elif pd.notna(edge_rl) and abs(float(edge_rl)) >= cfg.min_edge_run_line and not both_sp:
+            mkt_label = f"{float(mkt_rl):+.1f}" if pd.notna(mkt_rl) else "n/a"
+            pred_side_label = home if float(edge_rl) > 0 else away
+            _sl_no_sp = ((_ld.spread_home_link if float(edge_rl) > 0 else _ld.spread_away_link) if _ld else None)
+            all_game_links.append(_sl_no_sp)
+            print(f"  Run line: {pred_side_label} {mkt_label}  (edge +{abs(float(edge_rl)):.2f} — SP TBD, bet suppressed)")
         elif pd.notna(mkt_rl):
             mkt_label = f"{float(mkt_rl):+.1f}"
             pred_side_label = home if pred_rd >= 0 else away
@@ -741,7 +755,7 @@ def main() -> None:
         edge_t  = r.get("edge_total")
         mkt_tot = r.get("market_total")
 
-        if pd.notna(edge_t) and float(edge_t) >= cfg.min_edge_total:
+        if pd.notna(edge_t) and float(edge_t) >= cfg.min_edge_total and both_sp:
             e_t = float(edge_t)
             kelly, p_win = _kelly(e_t, sigma=sigma_t)
             qk_bet = (kelly / 4) * 1000
@@ -755,7 +769,7 @@ def main() -> None:
             else:
                 print(f"  Total: OVER {mkt_t_label}  * EDGE +{e_t:.2f}  [bet OVER]")
                 print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
-        elif pd.notna(edge_t) and -float(edge_t) >= cfg.min_edge_total:
+        elif pd.notna(edge_t) and -float(edge_t) >= cfg.min_edge_total and both_sp:
             e_t = float(edge_t)
             kelly, p_win = _kelly(-e_t, sigma=sigma_t)
             qk_bet = (kelly / 4) * 1000
@@ -769,6 +783,10 @@ def main() -> None:
             else:
                 print(f"  Total: UNDER {mkt_t_label}  * EDGE +{-e_t:.2f}  [bet UNDER]")
                 print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
+        elif pd.notna(edge_t) and abs(float(edge_t)) >= cfg.min_edge_total and not both_sp:
+            mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
+            direction = "OVER" if float(edge_t) > 0 else "UNDER"
+            print(f"  Total: {direction} {mkt_t_label}  (edge +{abs(float(edge_t)):.2f} — SP TBD, bet suppressed)")
         elif pd.notna(mkt_tot):
             mkt_t_label = f"{float(mkt_tot):.1f}"
             pred_ou = "O" if pred_tot > float(mkt_tot) else "U"
