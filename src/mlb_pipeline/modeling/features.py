@@ -26,24 +26,26 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     X = X.copy()
 
     # ── Baseball Pythagorean expectation ─────────────────────────────────────
-    # Exponent 1.82 is the standard baseball value (vs NBA's 14).
-    # win_pct_pythag = RF^1.82 / (RF^1.82 + RA^1.82)
-    # Uses runs_avg_10 as offensive proxy; opponent's runs_avg_10 as defensive proxy.
+    # Standard formula: win_pct_pythag = RF^1.82 / (RF^1.82 + RA^1.82)
+    # Uses each team's own runs-scored (RF) and runs-allowed (RA) rolling averages.
     _EXP = 1.82
-
-    home_rf = X.get("home_runs_avg_10", pd.Series(dtype=float))
-    away_rf = X.get("away_runs_avg_10", pd.Series(dtype=float))
 
     def _pythag(rf: pd.Series, ra: pd.Series) -> pd.Series:
         rf_pow = rf.clip(lower=0.01) ** _EXP
         ra_pow = ra.clip(lower=0.01) ** _EXP
         return rf_pow / (rf_pow + ra_pow)
 
-    if "home_runs_avg_10" in X.columns and "away_runs_avg_10" in X.columns:
-        # Home offense (home_rf) vs home defense (away_rf = runs the away team scores,
-        # which equals runs allowed by the home team)
-        X["home_pythag"] = _pythag(home_rf, away_rf)
-        X["away_pythag"] = _pythag(away_rf, home_rf)
+    _pythag_cols = (
+        "home_runs_avg_10", "home_runs_allowed_avg_10",
+        "away_runs_avg_10", "away_runs_allowed_avg_10",
+    )
+    if all(c in X.columns for c in _pythag_cols):
+        home_rf = X["home_runs_avg_10"]
+        home_ra = X["home_runs_allowed_avg_10"]
+        away_rf = X["away_runs_avg_10"]
+        away_ra = X["away_runs_allowed_avg_10"]
+        X["home_pythag"] = _pythag(home_rf, home_ra)
+        X["away_pythag"] = _pythag(away_rf, away_ra)
         X["pythag_diff"] = X["home_pythag"] - X["away_pythag"]
 
     # Pythagorean vs actual win-pct: positive = team is "better than their record".

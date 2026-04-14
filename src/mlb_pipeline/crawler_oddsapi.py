@@ -14,7 +14,11 @@ _UTC = ZoneInfo("UTC")
 _MLB_OFF_SEASON_MONTHS = {11, 12, 1, 2}  # November, December, January, February
 
 _PROP_MARKETS = (
-    "pitcher_strikeouts,batter_hits,batter_home_runs,batter_total_bases,batter_walks"
+    "pitcher_strikeouts,"
+    "batter_hits,batter_hits_alternate,"
+    "batter_home_runs,batter_home_runs_alternate,"
+    "batter_total_bases,batter_total_bases_alternate,"
+    "batter_walks,batter_walks_alternate"
 )
 _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{event_id}/odds"
 

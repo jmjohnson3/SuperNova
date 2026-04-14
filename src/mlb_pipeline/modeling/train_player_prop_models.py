@@ -129,6 +129,12 @@ SELECT
          ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
     COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
     CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Day game flag (dome = always 0; day = ET hour < 17)
+    CASE WHEN v.roof_type = 'dome' THEN 0
+         WHEN EXTRACT(HOUR FROM g.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
+         ELSE 0 END                                               AS is_day_game,
+    -- Market total (game-level run environment; 7.5% NULL → median-imputed)
+    mkt_odds.market_total                                        AS market_total,
     -- Pitcher handedness
     ph.pitch_hand                                                AS pitcher_hand,
     -- Opponent lineup quality (mlb_lineup_quality: NULL for upcoming games, median-imputed)
@@ -144,6 +150,36 @@ SELECT
     sc_p.xba                 AS sc_xba,
     sc_p.xslg                AS sc_xslg,
     sc_p.xwoba               AS sc_xwoba,
+    -- Extended Statcast: pitcher's own arsenal whiff/K profile (crawler_statcast_extended)
+    pa_self.fb_whiff_pct          AS sc_sp_fb_whiff_pct,
+    pa_self.fb_k_pct              AS sc_sp_fb_k_pct,
+    pa_self.fb_put_away           AS sc_sp_fb_put_away,
+    pa_self.sl_percent            AS sc_sp_sl_pct,
+    pa_self.sl_whiff_pct          AS sc_sp_sl_whiff_pct,
+    pa_self.sl_k_pct              AS sc_sp_sl_k_pct,
+    pa_self.sl_run_value_per_100  AS sc_sp_sl_run_value_per_100,
+    pa_self.ch_percent            AS sc_sp_ch_pct,
+    pa_self.ch_whiff_pct          AS sc_sp_ch_whiff_pct,
+    pa_self.ch_k_pct              AS sc_sp_ch_k_pct,
+    -- Arsenal: FB/SI usage + SI whiff/K + diversity (previously unused)
+    pa_self.fb_percent            AS sc_sp_fb_pct,
+    pa_self.fb_hard_hit_pct       AS sc_sp_fb_hard_hit_pct,
+    pa_self.fb_xwoba              AS sc_sp_fb_xwoba,
+    pa_self.fb_run_value_per_100  AS sc_sp_fb_run_value_per_100,
+    pa_self.si_percent            AS sc_sp_si_pct,
+    pa_self.si_whiff_pct          AS sc_sp_si_whiff_pct,
+    pa_self.si_k_pct              AS sc_sp_si_k_pct,
+    pa_self.si_hard_hit_pct       AS sc_sp_si_hard_hit_pct,
+    pa_self.fastball_family_pct   AS sc_sp_fastball_family_pct,
+    pa_self.pitch_diversity       AS sc_sp_pitch_diversity,
+    -- Pitcher plate discipline (induced chase rate, whiff, zone%)
+    pd_p.oz_swing_pct             AS sc_sp_oz_swing_pct,
+    pd_p.iz_contact_pct           AS sc_sp_iz_contact_pct,
+    pd_p.oz_contact_pct           AS sc_sp_oz_contact_pct,
+    pd_p.whiff_pct                AS sc_sp_disc_whiff_pct,
+    -- Catcher framing (run value per 100 borderline pitches; + = better framer)
+    cf.framing_rv_per_100         AS catcher_framing_rv,
+    cf.framing_rate               AS catcher_framing_rate,
     -- Target
     pgl.strikeouts_pitcher AS strikeouts
 FROM features.mlb_pitcher_rolling_mat p
@@ -174,6 +210,37 @@ LEFT JOIN features.mlb_lineup_quality lq_opp
 LEFT JOIN raw.mlb_statcast_pitching sc_p
     ON sc_p.player_id = p.player_id
     AND sc_p.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Extended Statcast: pitcher's own arsenal whiff/K profile
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_self
+    ON pa_self.player_id = p.player_id
+    AND pa_self.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Market total (game-level run environment signal)
+LEFT JOIN LATERAL (
+    SELECT total_points AS market_total
+    FROM odds.mlb_game_lines
+    WHERE home_team = g.home_team_abbr
+      AND as_of_date = g.game_date_et
+      AND total_points IS NOT NULL
+    ORDER BY fetched_at_utc DESC
+    LIMIT 1
+) mkt_odds ON TRUE
+-- Pitcher plate discipline (own season-level discipline profile)
+LEFT JOIN raw.mlb_statcast_pitcher_discipline pd_p
+    ON pd_p.player_id = p.player_id
+    AND pd_p.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Catcher framing: find the pitcher's team catcher for this game, then join framing stats
+LEFT JOIN LATERAL (
+    SELECT player_id AS catcher_id
+    FROM raw.mlb_boxscore_player_stats
+    WHERE game_slug = g.game_slug
+      AND primary_position = 'C'
+      AND team_abbr = p.team_abbr
+    ORDER BY batting_order
+    LIMIT 1
+) cat_game ON TRUE
+LEFT JOIN raw.mlb_statcast_catcher_framing cf
+    ON cf.player_id = cat_game.catcher_id
+    AND cf.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 WHERE g.status = 'final'
   AND pgl.innings_pitched >= 3.0
   AND p.starts_in_window_10 >= 3
@@ -235,6 +302,12 @@ SELECT
          ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
     COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
     CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Day game flag (dome = always 0; day = ET hour < 17)
+    CASE WHEN v.roof_type = 'dome' THEN 0
+         WHEN EXTRACT(HOUR FROM g.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
+         ELSE 0 END                                               AS is_day_game,
+    -- Market total (game-level run environment; ~7.5% NULL → median-imputed)
+    mkt_odds.market_total                                        AS market_total,
     -- Lineup slot
     b.batting_order_avg_5,
     b.batting_order_avg_10,
@@ -292,6 +365,13 @@ SELECT
     sc_b.xslg                AS sc_xslg,
     sc_b.xwoba               AS sc_xwoba,
     sc_b.xiso                AS sc_xiso,
+    -- Extended Statcast: spray angle + barrels/PA (crawler_statcast_extended)
+    sc_b.pull_percent        AS sc_pull_pct,
+    sc_b.opposite_percent    AS sc_opposite_pct,
+    sc_b.popup_percent       AS sc_popup_pct,
+    sc_b.brl_pa              AS sc_brl_pa,
+    -- Extended Statcast: sprint speed
+    ss.sprint_speed          AS sprint_speed,
     -- Statcast: opposing SP's batted-ball-against profile
     sc_opp_p.barrel_batted_rate  AS opp_sp_sc_barrel_rate,
     sc_opp_p.hard_hit_percent    AS opp_sp_sc_hard_hit_pct,
@@ -300,6 +380,37 @@ SELECT
     sc_opp_p.xba                 AS opp_sp_sc_xba,
     sc_opp_p.xslg                AS opp_sp_sc_xslg,
     sc_opp_p.xwoba               AS opp_sp_sc_xwoba,
+    -- Extended Statcast: opposing SP arsenal (crawler_statcast_extended)
+    pa.fb_percent            AS opp_sp_fb_pct,
+    pa.fb_hard_hit_pct       AS opp_sp_fb_hard_hit_pct,
+    pa.fb_xwoba              AS opp_sp_fb_xwoba,
+    pa.fb_run_value_per_100  AS opp_sp_fb_run_value_per_100,
+    pa.fb_whiff_pct          AS opp_sp_fb_whiff_pct,
+    pa.fb_k_pct              AS opp_sp_fb_k_pct,
+    pa.sl_percent            AS opp_sp_sl_pct,
+    pa.sl_whiff_pct          AS opp_sp_sl_whiff_pct,
+    pa.sl_k_pct              AS opp_sp_sl_k_pct,
+    pa.sl_xwoba              AS opp_sp_sl_xwoba,
+    pa.ch_percent            AS opp_sp_ch_pct,
+    pa.ch_whiff_pct          AS opp_sp_ch_whiff_pct,
+    pa.ch_k_pct              AS opp_sp_ch_k_pct,
+    pa.fastball_family_pct   AS opp_sp_fastball_family_pct,
+    pa.pitch_diversity       AS opp_sp_pitch_diversity,
+    -- Arsenal: SI + SL/CH quality metrics (previously unused)
+    pa.si_percent            AS opp_sp_si_pct,
+    pa.si_whiff_pct          AS opp_sp_si_whiff_pct,
+    pa.si_k_pct              AS opp_sp_si_k_pct,
+    pa.si_hard_hit_pct       AS opp_sp_si_hard_hit_pct,
+    pa.sl_hard_hit_pct       AS opp_sp_sl_hard_hit_pct,
+    pa.sl_run_value_per_100  AS opp_sp_sl_run_value_per_100,
+    pa.ch_hard_hit_pct       AS opp_sp_ch_hard_hit_pct,
+    pa.ch_run_value_per_100  AS opp_sp_ch_run_value_per_100,
+    -- Batter plate discipline (chase rate, contact rates, swing-and-miss)
+    pd_b.oz_swing_pct        AS sc_b_oz_swing_pct,
+    pd_b.iz_contact_pct      AS sc_b_iz_contact_pct,
+    pd_b.oz_contact_pct      AS sc_b_oz_contact_pct,
+    pd_b.whiff_pct           AS sc_b_disc_whiff_pct,
+    pd_b.out_zone_pct        AS sc_b_out_zone_pct,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -371,6 +482,28 @@ LEFT JOIN raw.mlb_statcast_batting sc_b
 LEFT JOIN raw.mlb_statcast_pitching sc_opp_p
     ON sc_opp_p.player_id = sp.player_id
     AND sc_opp_p.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Extended Statcast: batter sprint speed
+LEFT JOIN raw.mlb_statcast_sprint_speed ss
+    ON ss.player_id = b.player_id
+    AND ss.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Extended Statcast: opposing SP fastball arsenal
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa
+    ON pa.player_id = sp.player_id
+    AND pa.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Market total (game-level run environment signal)
+LEFT JOIN LATERAL (
+    SELECT total_points AS market_total
+    FROM odds.mlb_game_lines
+    WHERE home_team = g.home_team_abbr
+      AND as_of_date = g.game_date_et
+      AND total_points IS NOT NULL
+    ORDER BY fetched_at_utc DESC
+    LIMIT 1
+) mkt_odds ON TRUE
+-- Batter plate discipline (chase rate, contact rates, swing-and-miss)
+LEFT JOIN raw.mlb_statcast_batter_discipline pd_b
+    ON pd_b.player_id = b.player_id
+    AND pd_b.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3

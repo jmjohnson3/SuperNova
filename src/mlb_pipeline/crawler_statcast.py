@@ -189,6 +189,19 @@ def _fetch_batter_data(year: int, cfg: StatcastConfig) -> dict[int, dict]:
         pid = _safe_int(row.get("player_id"))
         if not pid:
             continue
+        # Compute batted-ball type percentages from raw counts when % cols absent
+        _gb   = _safe_float(row.get("groundballs_percent") or row.get("gb"))
+        _fbld = _safe_float(row.get("flyballs_percent")    or row.get("fbld"))
+        _ld   = _safe_float(row.get("linedrives_percent"))
+        _bbe  = _safe_int(row.get("attempts") or row.get("bip"))
+        # If values look like counts (>1.0 and bbe is known), convert to pct
+        if _gb is not None and _fbld is not None and _bbe and _bbe > 0 and _gb > 1.0:
+            total = _gb + _fbld
+            _gb_pct   = round(_gb   / _bbe * 100, 1) if _bbe else None
+            _fbld_pct = round(_fbld / _bbe * 100, 1) if _bbe else None
+        else:
+            _gb_pct   = _gb
+            _fbld_pct = _fbld
         players[pid] = {
             "player_id": pid,
             "player_name": row.get("player_name") or row.get("last_name, first_name") or "",
@@ -196,13 +209,21 @@ def _fetch_batter_data(year: int, cfg: StatcastConfig) -> dict[int, dict]:
             "avg_exit_velocity": _safe_float(row.get("avg_hit_speed")),
             "max_exit_velocity": _safe_float(row.get("max_hit_speed")),
             "avg_launch_angle": _safe_float(row.get("avg_hit_angle")),
-            "barrel_batted_rate": _safe_float(row.get("barrel_batted_rate")),
-            "hard_hit_percent": _safe_float(row.get("hard_hit_percent") or row.get("ev95percent")),
-            "groundballs_percent": _safe_float(row.get("groundballs_percent")),
-            "flyballs_percent": _safe_float(row.get("flyballs_percent")),
-            "linedrives_percent": _safe_float(row.get("linedrives_percent")),
-            "batted_ball_events": _safe_int(row.get("attempts") or row.get("bip")),
-            "sweet_spot_percent": _safe_float(row.get("sweet_spot_percent")),
+            # brl_percent = barrels/BBE; barrel_batted_rate stores that value
+            "barrel_batted_rate": _safe_float(
+                row.get("barrel_batted_rate") or row.get("brl_percent")
+            ),
+            "hard_hit_percent": _safe_float(
+                row.get("hard_hit_percent") or row.get("ev95percent")
+            ),
+            "groundballs_percent": _gb_pct,
+            # fbld = fly balls + line drives combined; store as flyballs_percent proxy
+            "flyballs_percent": _fbld_pct,
+            "linedrives_percent": _ld,
+            "batted_ball_events": _bbe,
+            "sweet_spot_percent": _safe_float(
+                row.get("sweet_spot_percent") or row.get("anglesweetspotpercent")
+            ),
             # Expected stats filled in next step
             "xba": None, "xslg": None, "xwoba": None, "xiso": None, "xobp": None,
         }
@@ -251,6 +272,16 @@ def _fetch_pitcher_data(year: int, cfg: StatcastConfig) -> dict[int, dict]:
         pid = _safe_int(row.get("player_id"))
         if not pid:
             continue
+        _gb   = _safe_float(row.get("groundballs_percent") or row.get("gb"))
+        _fbld = _safe_float(row.get("flyballs_percent")    or row.get("fbld"))
+        _ld   = _safe_float(row.get("linedrives_percent"))
+        _bbe  = _safe_int(row.get("attempts") or row.get("bip"))
+        if _gb is not None and _fbld is not None and _bbe and _bbe > 0 and _gb > 1.0:
+            _gb_pct   = round(_gb   / _bbe * 100, 1)
+            _fbld_pct = round(_fbld / _bbe * 100, 1)
+        else:
+            _gb_pct   = _gb
+            _fbld_pct = _fbld
         players[pid] = {
             "player_id": pid,
             "player_name": row.get("player_name") or row.get("last_name, first_name") or "",
@@ -258,13 +289,19 @@ def _fetch_pitcher_data(year: int, cfg: StatcastConfig) -> dict[int, dict]:
             "avg_exit_velocity": _safe_float(row.get("avg_hit_speed")),
             "max_exit_velocity": _safe_float(row.get("max_hit_speed")),
             "avg_launch_angle": _safe_float(row.get("avg_hit_angle")),
-            "barrel_batted_rate": _safe_float(row.get("barrel_batted_rate")),
-            "hard_hit_percent": _safe_float(row.get("hard_hit_percent") or row.get("ev95percent")),
-            "groundballs_percent": _safe_float(row.get("groundballs_percent")),
-            "flyballs_percent": _safe_float(row.get("flyballs_percent")),
-            "linedrives_percent": _safe_float(row.get("linedrives_percent")),
-            "batted_ball_events": _safe_int(row.get("attempts") or row.get("bip")),
-            "sweet_spot_percent": _safe_float(row.get("sweet_spot_percent")),
+            "barrel_batted_rate": _safe_float(
+                row.get("barrel_batted_rate") or row.get("brl_percent")
+            ),
+            "hard_hit_percent": _safe_float(
+                row.get("hard_hit_percent") or row.get("ev95percent")
+            ),
+            "groundballs_percent": _gb_pct,
+            "flyballs_percent": _fbld_pct,
+            "linedrives_percent": _ld,
+            "batted_ball_events": _bbe,
+            "sweet_spot_percent": _safe_float(
+                row.get("sweet_spot_percent") or row.get("anglesweetspotpercent")
+            ),
             "xba": None, "xslg": None, "xwoba": None, "xiso": None, "xobp": None,
         }
 

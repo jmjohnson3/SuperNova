@@ -90,11 +90,26 @@ def _norm_team_name(name: str) -> str:
 
 # Odds API market key -> internal stat name
 _PROP_MARKET_MAP: dict[str, str] = {
-    "pitcher_strikeouts": "pitcher_strikeouts",
-    "batter_hits": "batter_hits",
-    "batter_home_runs": "batter_home_runs",
-    "batter_total_bases": "batter_total_bases",
+    "pitcher_strikeouts":           "pitcher_strikeouts",
+    "batter_hits":                  "batter_hits",
+    "batter_hits_alternate":        "batter_hits",
+    "batter_home_runs":             "batter_home_runs",
+    "batter_home_runs_alternate":   "batter_home_runs",
+    "batter_total_bases":           "batter_total_bases",
+    "batter_total_bases_alternate": "batter_total_bases",
+    "batter_walks":                 "batter_walks",
+    "batter_walks_alternate":       "batter_walks",
 }
+
+# Alternate markets are Over-only multi-line props (FanDuel's format for MLB batter props).
+# We only store FanDuel alternate data — books that also have standard lines (e.g. DraftKings)
+# are skipped for alternate markets to avoid overwriting the cleaner standard Over/Under row.
+_ALTERNATE_MARKETS = frozenset({
+    "batter_hits_alternate",
+    "batter_home_runs_alternate",
+    "batter_total_bases_alternate",
+    "batter_walks_alternate",
+})
 
 # ---------------------------------------------------------------------------
 # DDL
@@ -390,12 +405,18 @@ def _iter_prop_rows(
 ) -> Iterable[tuple]:
     """Yield tuples for odds.mlb_player_prop_lines from a single event payload.
 
-    Odds API prop format:
+    Standard market format (DraftKings, FanDuel pitcher_strikeouts):
       outcome.name        = "Over" or "Under"
       outcome.description = player name  (e.g. "Gerrit Cole")
       outcome.point       = line value
       outcome.price       = American odds integer
-      outcome.link        = betslip deeplink (optional, post-2026)
+      outcome.link        = betslip deeplink (optional)
+
+    Alternate market format (FanDuel batter props — Over-only, multi-line):
+      All outcomes have name="Over" with different point values per player.
+      We pick the single line with abs(price) closest to 0 (most even-money).
+      Only FanDuel rows are stored for alternate markets; other books that have
+      both standard and alternate are stored via the standard market only.
     """
     event_id = event_payload.get("id")
     commence_time_utc = event_payload.get("commence_time")
@@ -413,53 +434,99 @@ def _iter_prop_rows(
             if stat is None:
                 continue
 
-            # Group outcomes by player name
-            by_player: dict[str, dict] = {}
-            for outcome in (market.get("outcomes") or []):
-                side = (outcome.get("name") or "").strip().lower()   # "over" or "under"
-                player = (outcome.get("description") or "").strip()  # e.g. "Gerrit Cole"
-                if not player:
+            if market_key in _ALTERNATE_MARKETS:
+                # FanDuel alternate format: Over-only, multiple line values per player.
+                # Skip non-FanDuel bookmakers — they have standard lines already.
+                if bookmaker_key != "fanduel":
                     continue
-                if player not in by_player:
-                    by_player[player] = {
-                        "over": None,
-                        "under": None,
-                        "line": None,
-                        "over_link": None,
-                        "under_link": None,
-                    }
-                price = _to_int(outcome.get("price"))
-                point = _to_num(outcome.get("point"))
-                if side == "over":
-                    by_player[player]["over"] = price
-                    by_player[player]["line"] = point
-                    by_player[player]["over_link"] = outcome.get("link")
-                elif side == "under":
-                    by_player[player]["under"] = price
-                    if by_player[player]["line"] is None:
-                        by_player[player]["line"] = point
-                    by_player[player]["under_link"] = outcome.get("link")
 
-            for player_name, vals in by_player.items():
-                yield (
-                    as_of_date,
-                    fetched_at_utc,
-                    event_id,
-                    commence_time_utc,
-                    bookmaker_key,
-                    home_team,
-                    away_team,
-                    player_name,
-                    _normalize_name(player_name),
-                    stat,
-                    vals["line"],
-                    vals["over"],
-                    vals["under"],
-                    vals["over_link"],
-                    vals["under_link"],
-                    fetched_at_utc,       # updated_at_utc
-                    vals["line"],         # open_line: preserved by ON CONFLICT (not updated)
-                )
+                # Collect all Over outcomes per player, then pick the most even-money line.
+                by_player: dict[str, list[dict]] = {}
+                for outcome in (market.get("outcomes") or []):
+                    if (outcome.get("name") or "").strip().lower() != "over":
+                        continue
+                    player = (outcome.get("description") or "").strip()
+                    if not player:
+                        continue
+                    by_player.setdefault(player, []).append({
+                        "price": _to_int(outcome.get("price")),
+                        "point": _to_num(outcome.get("point")),
+                        "link":  outcome.get("link"),
+                    })
+
+                for player_name, candidates in by_player.items():
+                    if not candidates:
+                        continue
+                    # Pick the line with abs(price) closest to 0 — the most contested line.
+                    best = min(
+                        candidates,
+                        key=lambda x: abs(x["price"]) if x["price"] is not None else 999999,
+                    )
+                    yield (
+                        as_of_date,
+                        fetched_at_utc,
+                        event_id,
+                        commence_time_utc,
+                        bookmaker_key,
+                        home_team,
+                        away_team,
+                        player_name,
+                        _normalize_name(player_name),
+                        stat,
+                        best["point"],   # line
+                        best["price"],   # over_price
+                        None,            # under_price — FD alternate is Over-only
+                        best["link"],    # over_link
+                        None,            # under_link
+                        fetched_at_utc,
+                        best["point"],   # open_line
+                    )
+
+            else:
+                # Standard format: one Over + one Under per player.
+                by_player_std: dict[str, dict] = {}
+                for outcome in (market.get("outcomes") or []):
+                    side = (outcome.get("name") or "").strip().lower()   # "over" or "under"
+                    player = (outcome.get("description") or "").strip()
+                    if not player:
+                        continue
+                    if player not in by_player_std:
+                        by_player_std[player] = {
+                            "over": None, "under": None, "line": None,
+                            "over_link": None, "under_link": None,
+                        }
+                    price = _to_int(outcome.get("price"))
+                    point = _to_num(outcome.get("point"))
+                    if side == "over":
+                        by_player_std[player]["over"] = price
+                        by_player_std[player]["line"] = point
+                        by_player_std[player]["over_link"] = outcome.get("link")
+                    elif side == "under":
+                        by_player_std[player]["under"] = price
+                        if by_player_std[player]["line"] is None:
+                            by_player_std[player]["line"] = point
+                        by_player_std[player]["under_link"] = outcome.get("link")
+
+                for player_name, vals in by_player_std.items():
+                    yield (
+                        as_of_date,
+                        fetched_at_utc,
+                        event_id,
+                        commence_time_utc,
+                        bookmaker_key,
+                        home_team,
+                        away_team,
+                        player_name,
+                        _normalize_name(player_name),
+                        stat,
+                        vals["line"],
+                        vals["over"],
+                        vals["under"],
+                        vals["over_link"],
+                        vals["under_link"],
+                        fetched_at_utc,
+                        vals["line"],   # open_line: preserved by ON CONFLICT (not updated)
+                    )
 
 
 # ---------------------------------------------------------------------------
@@ -614,6 +681,8 @@ def parse_prop_odds(
     """Parse mlb_prop_odds payloads into odds.mlb_player_prop_lines.
 
     Stats parsed: pitcher_strikeouts, batter_hits, batter_home_runs, batter_total_bases.
+    FanDuel batter props come from *_alternate markets (Over-only, multi-line);
+    DraftKings batter props come from standard markets (Over + Under, single line).
 
     Incremental by default: when both as_of_date and since_date are None,
     computes since_date = MAX(existing as_of_date) - 1 day.

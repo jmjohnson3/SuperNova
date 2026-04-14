@@ -235,6 +235,11 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         "home_sp_id",
         "away_sp_id",
         "status",
+        # text identifiers — OHE causes team-specific noise (overfitting with ~15 games/team early season)
+        # team quality is captured by rolling stat features; venue is captured by venue_id + park factor cols
+        "home_team_abbr",
+        "away_team_abbr",
+        "venue_name",
     }
 
     X = df.drop(columns=[c for c in drop_cols if c in df.columns]).copy()
@@ -952,11 +957,11 @@ def main() -> None:
 
                 blend_alpha_rl  = 0.0
                 blend_alpha_tot = 0.0
-                if float(r_mae) < best_baseline_rl * 1.02:
+                if float(r_mae) < best_baseline_rl * 1.005:
                     w_d = 1.0 / dm_rl_mae
                     w_r = 1.0 / float(r_mae)
                     blend_alpha_rl = round(w_r / (w_d + w_r), 4)
-                if float(rt_mae) < best_baseline_tot * 1.02:
+                if float(rt_mae) < best_baseline_tot * 1.005:
                     w_d = 1.0 / dm_tot_mae
                     w_r = 1.0 / float(rt_mae)
                     blend_alpha_tot = round(w_r / (w_d + w_r), 4)

@@ -6,9 +6,11 @@ Loads pitcher/batter prop models and generates predictions for:
   - pitcher_strikeouts   (starting pitchers from raw.mlb_starting_pitchers)
   - batter_hits          (batters with ab_avg_10 >= 1.5 playing today)
   - batter_total_bases
+  - batter_home_runs
+  - batter_walks
 
 Edge formula:  edge = pred - book_line
-Bet signal:    |edge| >= threshold (K: 1.0, H: 0.4, TB: 0.5)
+Bet signal:    |edge| >= threshold (K: 1.0, H: 0.5, TB: 0.5, HR: 0.25, BB: 0.3)
 
 Discord output (DISCORD_FORMAT=1): compact grouped by game.
 DB: bets.mlb_prop_predictions — one row per (game_date_et, game_slug, player_id, stat).
@@ -64,7 +66,8 @@ class PredictConfig:
     min_n_games: int = 1
     # Bet thresholds (|edge| >=)
     threshold_strikeouts: float = 1.0
-    threshold_hits: float = 0.4
+    # Raised from 0.4 → 0.5: 0.4-0.5 edge bucket was marginal; ≥0.5 shows 65%+ win rate
+    threshold_hits: float = 0.5
     threshold_total_bases: float = 0.5
     threshold_home_runs: float = 0.25
     threshold_walks: float = 0.3
@@ -153,6 +156,12 @@ SELECT
          ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
     COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
     CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Day game flag (dome = always 0; day = ET hour < 17)
+    CASE WHEN v.roof_type = 'dome' THEN 0
+         WHEN EXTRACT(HOUR FROM ts.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
+         ELSE 0 END                                               AS is_day_game,
+    -- Market total (game-level run environment)
+    mkt_odds.market_total                                        AS market_total,
     -- Pitcher handedness
     ph.pitch_hand                                                AS pitcher_hand,
     -- Opponent lineup quality (NULL for upcoming games, median-imputed by model)
@@ -167,7 +176,37 @@ SELECT
     sc_p.flyballs_percent    AS sc_fb_pct,
     sc_p.xba                 AS sc_xba,
     sc_p.xslg                AS sc_xslg,
-    sc_p.xwoba               AS sc_xwoba
+    sc_p.xwoba               AS sc_xwoba,
+    -- Extended Statcast: pitcher's own arsenal whiff/K profile (crawler_statcast_extended)
+    pa_self.fb_whiff_pct          AS sc_sp_fb_whiff_pct,
+    pa_self.fb_k_pct              AS sc_sp_fb_k_pct,
+    pa_self.fb_put_away           AS sc_sp_fb_put_away,
+    pa_self.sl_percent            AS sc_sp_sl_pct,
+    pa_self.sl_whiff_pct          AS sc_sp_sl_whiff_pct,
+    pa_self.sl_k_pct              AS sc_sp_sl_k_pct,
+    pa_self.sl_run_value_per_100  AS sc_sp_sl_run_value_per_100,
+    pa_self.ch_percent            AS sc_sp_ch_pct,
+    pa_self.ch_whiff_pct          AS sc_sp_ch_whiff_pct,
+    pa_self.ch_k_pct              AS sc_sp_ch_k_pct,
+    -- Arsenal: FB/SI usage + SI whiff/K + diversity (previously unused)
+    pa_self.fb_percent            AS sc_sp_fb_pct,
+    pa_self.fb_hard_hit_pct       AS sc_sp_fb_hard_hit_pct,
+    pa_self.fb_xwoba              AS sc_sp_fb_xwoba,
+    pa_self.fb_run_value_per_100  AS sc_sp_fb_run_value_per_100,
+    pa_self.si_percent            AS sc_sp_si_pct,
+    pa_self.si_whiff_pct          AS sc_sp_si_whiff_pct,
+    pa_self.si_k_pct              AS sc_sp_si_k_pct,
+    pa_self.si_hard_hit_pct       AS sc_sp_si_hard_hit_pct,
+    pa_self.fastball_family_pct   AS sc_sp_fastball_family_pct,
+    pa_self.pitch_diversity       AS sc_sp_pitch_diversity,
+    -- Pitcher plate discipline (induced chase rate, whiff, zone pct)
+    pd_p.oz_swing_pct             AS sc_sp_oz_swing_pct,
+    pd_p.iz_contact_pct           AS sc_sp_iz_contact_pct,
+    pd_p.oz_contact_pct           AS sc_sp_oz_contact_pct,
+    pd_p.whiff_pct                AS sc_sp_disc_whiff_pct,
+    -- Catcher framing (run value per 100 borderline pitches; + = better framer)
+    cf.framing_rv_per_100         AS catcher_framing_rv,
+    cf.framing_rate               AS catcher_framing_rate
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -205,6 +244,39 @@ LEFT JOIN features.mlb_lineup_quality lq_opp
 LEFT JOIN raw.mlb_statcast_pitching sc_p
     ON sc_p.player_id = ts.player_id
     AND sc_p.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
+-- Extended Statcast: pitcher's own arsenal whiff/K profile
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_self
+    ON pa_self.player_id = ts.player_id
+    AND pa_self.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
+-- Market total (game-level run environment signal)
+LEFT JOIN LATERAL (
+    SELECT o.total_points AS market_total
+    FROM odds.mlb_game_lines o
+    JOIN raw.mlb_games mg ON mg.home_team_abbr = o.home_team
+    WHERE mg.game_slug = ts.game_slug
+      AND o.as_of_date = ts.game_date_et
+      AND o.total_points IS NOT NULL
+    ORDER BY o.fetched_at_utc DESC
+    LIMIT 1
+) mkt_odds ON TRUE
+-- Pitcher plate discipline (own season-level discipline profile)
+LEFT JOIN raw.mlb_statcast_pitcher_discipline pd_p
+    ON pd_p.player_id = ts.player_id
+    AND pd_p.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
+-- Catcher framing: find the most recent catcher from this pitcher's team, then join framing stats
+LEFT JOIN LATERAL (
+    SELECT bps.player_id AS catcher_id
+    FROM raw.mlb_boxscore_player_stats bps
+    JOIN raw.mlb_games mg ON mg.game_slug = bps.game_slug
+    WHERE bps.primary_position = 'C'
+      AND bps.team_abbr = ts.team_abbr
+      AND mg.game_date_et < %(game_date)s
+    ORDER BY mg.game_date_et DESC
+    LIMIT 1
+) cat_recent ON TRUE
+LEFT JOIN raw.mlb_statcast_catcher_framing cf
+    ON cf.player_id = cat_recent.catcher_id
+    AND cf.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -286,6 +358,12 @@ SELECT
          ELSE COALESCE(COS(RADIANS(wx.wind_direction_deg::FLOAT)), 0.0) END AS wind_cos,
     COALESCE(wx.precip_prob_pct::FLOAT, 0.0)                     AS precip_prob_pct,
     CASE WHEN v.roof_type = 'dome' THEN 1 ELSE 0 END             AS is_dome,
+    -- Day game flag (dome = always 0; day = ET hour < 17)
+    CASE WHEN v.roof_type = 'dome' THEN 0
+         WHEN EXTRACT(HOUR FROM tt.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
+         ELSE 0 END                                               AS is_day_game,
+    -- Market total (game-level run environment)
+    mkt_odds.market_total                                        AS market_total,
     -- Lineup slot
     br.batting_order_avg_5,
     br.batting_order_avg_10,
@@ -343,6 +421,13 @@ SELECT
     sc_b.xslg                AS sc_xslg,
     sc_b.xwoba               AS sc_xwoba,
     sc_b.xiso                AS sc_xiso,
+    -- Extended Statcast: spray angle + barrels/PA
+    sc_b.pull_percent        AS sc_pull_pct,
+    sc_b.opposite_percent    AS sc_opposite_pct,
+    sc_b.popup_percent       AS sc_popup_pct,
+    sc_b.brl_pa              AS sc_brl_pa,
+    -- Extended Statcast: sprint speed
+    ss.sprint_speed          AS sprint_speed,
     -- Statcast: opposing SP's batted-ball-against profile
     sc_opp_p.barrel_batted_rate  AS opp_sp_sc_barrel_rate,
     sc_opp_p.hard_hit_percent    AS opp_sp_sc_hard_hit_pct,
@@ -350,7 +435,38 @@ SELECT
     sc_opp_p.groundballs_percent AS opp_sp_sc_gb_pct,
     sc_opp_p.xba                 AS opp_sp_sc_xba,
     sc_opp_p.xslg                AS opp_sp_sc_xslg,
-    sc_opp_p.xwoba               AS opp_sp_sc_xwoba
+    sc_opp_p.xwoba               AS opp_sp_sc_xwoba,
+    -- Extended Statcast: opposing SP arsenal (crawler_statcast_extended)
+    pa.fb_percent            AS opp_sp_fb_pct,
+    pa.fb_hard_hit_pct       AS opp_sp_fb_hard_hit_pct,
+    pa.fb_xwoba              AS opp_sp_fb_xwoba,
+    pa.fb_run_value_per_100  AS opp_sp_fb_run_value_per_100,
+    pa.fb_whiff_pct          AS opp_sp_fb_whiff_pct,
+    pa.fb_k_pct              AS opp_sp_fb_k_pct,
+    pa.sl_percent            AS opp_sp_sl_pct,
+    pa.sl_whiff_pct          AS opp_sp_sl_whiff_pct,
+    pa.sl_k_pct              AS opp_sp_sl_k_pct,
+    pa.sl_xwoba              AS opp_sp_sl_xwoba,
+    pa.ch_percent            AS opp_sp_ch_pct,
+    pa.ch_whiff_pct          AS opp_sp_ch_whiff_pct,
+    pa.ch_k_pct              AS opp_sp_ch_k_pct,
+    pa.fastball_family_pct   AS opp_sp_fastball_family_pct,
+    pa.pitch_diversity       AS opp_sp_pitch_diversity,
+    -- Arsenal: SI + SL/CH quality metrics (previously unused)
+    pa.si_percent            AS opp_sp_si_pct,
+    pa.si_whiff_pct          AS opp_sp_si_whiff_pct,
+    pa.si_k_pct              AS opp_sp_si_k_pct,
+    pa.si_hard_hit_pct       AS opp_sp_si_hard_hit_pct,
+    pa.sl_hard_hit_pct       AS opp_sp_sl_hard_hit_pct,
+    pa.sl_run_value_per_100  AS opp_sp_sl_run_value_per_100,
+    pa.ch_hard_hit_pct       AS opp_sp_ch_hard_hit_pct,
+    pa.ch_run_value_per_100  AS opp_sp_ch_run_value_per_100,
+    -- Batter plate discipline (chase rate, contact rates, swing-and-miss)
+    pd_b.oz_swing_pct        AS sc_b_oz_swing_pct,
+    pd_b.iz_contact_pct      AS sc_b_iz_contact_pct,
+    pd_b.oz_contact_pct      AS sc_b_oz_contact_pct,
+    pd_b.whiff_pct           AS sc_b_disc_whiff_pct,
+    pd_b.out_zone_pct        AS sc_b_out_zone_pct
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -443,6 +559,29 @@ LEFT JOIN raw.mlb_statcast_batting sc_b
 LEFT JOIN raw.mlb_statcast_pitching sc_opp_p
     ON sc_opp_p.player_id = sp.player_id
     AND sc_opp_p.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
+-- Extended Statcast: batter sprint speed
+LEFT JOIN raw.mlb_statcast_sprint_speed ss
+    ON ss.player_id = rp.player_id
+    AND ss.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
+-- Extended Statcast: opposing SP fastball arsenal
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa
+    ON pa.player_id = sp.player_id
+    AND pa.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
+-- Market total (game-level run environment signal)
+LEFT JOIN LATERAL (
+    SELECT o.total_points AS market_total
+    FROM odds.mlb_game_lines o
+    JOIN games_today gt ON gt.home_team_abbr = o.home_team
+    WHERE gt.game_slug = tt.game_slug
+      AND o.as_of_date = tt.game_date_et
+      AND o.total_points IS NOT NULL
+    ORDER BY o.fetched_at_utc DESC
+    LIMIT 1
+) mkt_odds ON TRUE
+-- Batter plate discipline (chase rate, contact rates, swing-and-miss)
+LEFT JOIN raw.mlb_statcast_batter_discipline pd_b
+    ON pd_b.player_id = rp.player_id
+    AND pd_b.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id
@@ -460,7 +599,8 @@ SELECT
     under_link
 FROM odds.mlb_player_prop_lines
 WHERE as_of_date = %(game_date)s
-ORDER BY bookmaker_key, player_name_norm, stat
+  AND bookmaker_key = 'fanduel'
+ORDER BY player_name_norm, stat
 """
 
 SQL_PLAYER_NAMES = """
@@ -676,37 +816,32 @@ def _save_predictions(conn, rows: List[Dict]) -> None:
 def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
     """
     Returns {(player_name_norm, stat): {line, over_link, under_link}}.
-    Prefers FanDuel, falls back to DraftKings.
+    FanDuel only. Batter props come from FD alternate markets (Over-only);
+    pitcher strikeouts come from FD standard market (Over + Under).
     """
     df = pd.read_sql(SQL_PROP_LINES, conn, params={"game_date": game_date})
     if df.empty:
         return {}
 
-    result: Dict[Tuple[str, str], Dict] = {}
-    priority = {"fanduel": 0, "draftkings": 1}
+    def _clean(v):
+        if v is None:
+            return None
+        try:
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
+        return str(v) if v else None
 
+    result: Dict[Tuple[str, str], Dict] = {}
     for _, row in df.iterrows():
-        bk = str(row.get("bookmaker_key", ""))
-        if bk not in priority:
-            continue
         key = (str(row["player_name_norm"]), str(row["stat"]))
-        existing = result.get(key)
-        if existing is None or priority[bk] < priority.get(existing["bookmaker_key"], 99):
-            def _clean(v):
-                if v is None:
-                    return None
-                try:
-                    if pd.isna(v):
-                        return None
-                except (TypeError, ValueError):
-                    pass
-                return str(v) if v else None
-            result[key] = {
-                "bookmaker_key": bk,
-                "line": float(row["line"]) if row["line"] is not None else None,
-                "over_link": _clean(row.get("over_link")),
-                "under_link": _clean(row.get("under_link")),
-            }
+        result[key] = {
+            "bookmaker_key": "fanduel",
+            "line": float(row["line"]) if row["line"] is not None else None,
+            "over_link": _clean(row.get("over_link")),
+            "under_link": _clean(row.get("under_link")),
+        }
     return result
 
 
@@ -796,126 +931,249 @@ def _print_discord(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
     prop_lines: Dict,
-    game_map: Dict[str, Dict],  # game_slug -> {home, away, start_ts}
+    game_map: Dict[str, Dict],  # game_slug -> {home, away, start_ts_utc}
     cfg: PredictConfig,
 ) -> List[str]:
-    """Print Discord-formatted output. Returns list of FD bet links for parlay."""
+    """Print per-game prop output. Returns edge-play links for parlay.
+
+    DISCORD_FORMAT=1  →  compact mode: edge plays only, one line each, links
+                         clickable. Games with no edges are skipped entirely.
+    (no env var)      →  full table mode: all players in aligned columns.
+    """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
 
-    # Group by game
+    def _link_name(full_name: str) -> str:
+        """'Fernando Tatis Jr.' → 'Tatis Jr.',  'Michael King' → 'King'."""
+        parts = full_name.split()
+        if len(parts) >= 2 and parts[-1].rstrip(".").lower() in ("jr", "sr", "ii", "iii", "iv"):
+            return f"{parts[-2]} {parts[-1]}"
+        return parts[-1] if parts else full_name
+
+    # ── Table-mode helpers (used only when not is_discord) ────────────────────
+    NW, PW, LW, EW = 22, 5, 6, 6
+    SEP = "─" * (NW + PW + LW + EW)
+
+    def _hdr(section: str, stat: str) -> str:
+        return f"{section:<{NW}}{stat:>{PW}}{'LINE':>{LW}}{'EDGE':>{EW}}"
+
+    def _row(name: str, pred: float, pred_fmt: str, line, edge, starred: bool) -> str:
+        pfx = "* " if starred else "  "
+        nm = (pfx + name[:20]).ljust(NW)
+        ps = pred_fmt.format(pred)
+        if line is not None:
+            ls = ("O" if edge > 0 else "U") + f"{line:.1f}"
+            es = f"{edge:+.2f}"
+        else:
+            ls = es = ""
+        return f"{nm}{ps:>{PW}}{ls:>{LW}}{es:>{EW}}"
+
+    # ── Game loop ──────────────────────────────────────────────────────────────
     games_seen = sorted(
         set(r["game_slug"] for r in all_pitcher_rows + all_batter_rows),
-        key=lambda s: (game_map.get(s, {}).get("start_ts_utc", ""), s)
+        key=lambda s: (game_map.get(s, {}).get("start_ts_utc", ""), s),
     )
 
     for slug in games_seen:
         gm = game_map.get(slug, {})
-        home = gm.get("home", "???")
-        away = gm.get("away", "???")
+        home, away = gm.get("home", "???"), gm.get("away", "???")
         start_ts = gm.get("start_ts_utc")
+        time_str = ""
         if start_ts:
             try:
                 dt_et = pd.Timestamp(start_ts).tz_convert(_ET)
                 hour = dt_et.hour % 12 or 12
                 time_str = f"{hour}:{dt_et.strftime('%M %p')} ET"
             except Exception:
-                time_str = ""
+                pass
+
+        sp_rows = [r for r in all_pitcher_rows if r["game_slug"] == slug]
+        bat_rows = [r for r in all_batter_rows if r["game_slug"] == slug]
+        game_header = f"**{away} @ {home}**" + (f" · {time_str}" if time_str else "")
+
+        if is_discord:
+            pass  # collected below — Discord mode does one pass over all games
+
         else:
-            time_str = ""
+            # ── Full table mode ────────────────────────────────────────────────
+            print(game_header)
+            tbl: List[str] = []
 
-        header = f"**{away} @ {home}**" + (f" · {time_str}" if time_str else "")
-        print(header)
+            if sp_rows:
+                tbl += [_hdr("PITCHER", "K"), SEP]
+                for row in sp_rows:
+                    name = row.get("player_name", f"id={row['player_id']}")
+                    pred_k = row.get("pred_strikeouts")
+                    if pred_k is None:
+                        continue
+                    norm = _normalize_name(name)
+                    ld = prop_lines.get((norm, "pitcher_strikeouts"))
+                    line = ld["line"] if ld else None
+                    edge = (pred_k - line) if line is not None else None
+                    has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
+                    tbl.append(_row(name, pred_k, "{:.1f}", line, edge, has_edge))
+                    if has_edge and ld:
+                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                        if lnk:
+                            fd_links.append(lnk)
 
-        # Pitchers for this game
-        for row in all_pitcher_rows:
-            if row["game_slug"] != slug:
-                continue
-            name = row.get("player_name", f"id={row['player_id']}")
-            pred_k = row.get("pred_strikeouts")
-            if pred_k is None:
-                continue
+            if bat_rows:
+                if tbl:
+                    tbl.append("")
+                tbl += [_hdr("HITS", "H"), SEP]
+                for row in bat_rows:
+                    name = row.get("player_name", f"id={row['player_id']}")
+                    norm = _normalize_name(name)
+                    pred_h = row.get("pred_hits")
+                    if pred_h is None:
+                        continue
+                    _ci = math.sqrt(10.0 / max(row.get("n_games_prev_10") or 1, 1))
+                    ld = prop_lines.get((norm, "batter_hits"))
+                    line = ld["line"] if ld else None
+                    edge = (pred_h - line) if line is not None else None
+                    has_edge = edge is not None and abs(edge) >= cfg.threshold_hits * _ci
+                    tbl.append(_row(name, pred_h, "{:.2f}", line, edge, has_edge))
+                    if has_edge and ld:
+                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                        if lnk:
+                            fd_links.append(lnk)
 
-            norm = _normalize_name(name)
-            line_data = prop_lines.get((norm, "pitcher_strikeouts"))
-            line = line_data["line"] if line_data else None
-
-            edge = (pred_k - line) if (line is not None) else None
-            has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
-
-            if line is not None:
-                bk = line_data.get("bookmaker_key", "")
-                book_lbl = "FD" if bk == "fanduel" else "DK"
-                dir_str = "O" if edge > 0 else "U"
-                k_part = f"K {pred_k:.1f}/{dir_str}{line:.1f}"
-                if has_edge:
-                    bet_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
-                    link_str = f" [Bet {book_lbl}](<{bet_link}>)" if bet_link else ""
-                    if bet_link:
-                        fd_links.append(bet_link)
-                    print(f"  SP {name}: ★ {k_part} +{abs(edge):.1f}{link_str}")
-                else:
-                    bet_link = line_data.get("over_link") or line_data.get("under_link")
-                    link_str = f" [{book_lbl}](<{bet_link}>)" if bet_link else ""
-                    print(f"  SP {name}: {k_part}{link_str}")
-            else:
-                print(f"  SP {name}: K {pred_k:.1f}")
-
-        # Batters for this game — one compact line per player
-        for row in all_batter_rows:
-            if row["game_slug"] != slug:
-                continue
-            name = row.get("player_name", f"id={row['player_id']}")
-            norm = _normalize_name(name)
-
-            # CI scaling: widen effective threshold for thin-sample early-season players
-            _n_g = row.get("n_games_prev_10") or 0
-            _ci_scale = math.sqrt(10.0 / max(_n_g, 1))
-
-            parts: List[str] = []
-            for stat_lbl, pred_col, stat_key, threshold in [
-                ("H",  "pred_hits",        "batter_hits",         cfg.threshold_hits),
-                ("TB", "pred_total_bases",  "batter_total_bases",  cfg.threshold_total_bases),
-                ("HR", "pred_home_runs",    "batter_home_runs",    cfg.threshold_home_runs),
-                ("BB", "pred_walks",        "batter_walks",        cfg.threshold_walks),
+            for stat_lbl, hdr_lbl, pred_col, stat_key, thresh, fmt in [
+                ("TB", "TOTAL BASES", "pred_total_bases", "batter_total_bases", cfg.threshold_total_bases, "{:.2f}"),
+                ("HR", "HOME RUNS",   "pred_home_runs",   "batter_home_runs",   cfg.threshold_home_runs,   "{:.3f}"),
+                ("BB", "WALKS",       "pred_walks",       "batter_walks",       cfg.threshold_walks,        "{:.2f}"),
             ]:
-                pred_v = row.get(pred_col)
-                if pred_v is None:
-                    continue
+                stat_edges: List[tuple] = []
+                for row in bat_rows:
+                    name = row.get("player_name", f"id={row['player_id']}")
+                    norm = _normalize_name(name)
+                    pred_v = row.get(pred_col)
+                    if pred_v is None:
+                        continue
+                    _ci = math.sqrt(10.0 / max(row.get("n_games_prev_10") or 1, 1))
+                    ld = prop_lines.get((norm, stat_key))
+                    if not ld or ld.get("line") is None:
+                        continue
+                    line = ld["line"]
+                    edge = pred_v - line
+                    if abs(edge) >= thresh * _ci:
+                        stat_edges.append((name, pred_v, line, edge, ld))
+                if stat_edges:
+                    tbl += ["", _hdr(hdr_lbl, stat_lbl), SEP]
+                    for name, pred_v, line, edge, ld in stat_edges:
+                        tbl.append(_row(name, pred_v, fmt, line, edge, True))
+                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                        if lnk:
+                            fd_links.append(lnk)
 
-                line_data = prop_lines.get((norm, stat_key))
-                line = line_data["line"] if line_data else None
+            for line_txt in tbl:
+                print(line_txt)
+            print("")
 
-                # Skip HR/BB projections when there's no book line — too noisy
-                if line is None and stat_lbl in ("HR", "BB"):
-                    continue
+    if not is_discord:
+        return fd_links
 
-                edge = (pred_v - line) if (line is not None) else None
-                has_edge = edge is not None and abs(edge) >= threshold * _ci_scale
+    # ── Discord mode: collect all edge plays across every game, then print ─────
+    k_plays:  List[Dict] = []
+    tb_plays: List[Dict] = []
+    h_plays:  List[Dict] = []
+    hr_plays: List[Dict] = []
 
-                if line is not None:
-                    bk = line_data.get("bookmaker_key", "")
-                    book_lbl = "FD" if bk == "fanduel" else "DK"
-                    dir_str = "O" if edge > 0 else "U"
-                    if has_edge:
-                        bet_link = (line_data.get("over_link") if edge > 0 else line_data.get("under_link"))
-                        link_str = f" [Bet {book_lbl}](<{bet_link}>)" if bet_link else ""
-                        if bet_link:
-                            fd_links.append(bet_link)
-                        parts.append(f"★ {stat_lbl} {pred_v:.2f}/{dir_str}{line:.1f} +{abs(edge):.2f}{link_str}")
-                    else:
-                        bet_link = line_data.get("over_link") or line_data.get("under_link")
-                        link_str = f" [{book_lbl}](<{bet_link}>)" if bet_link else ""
-                        parts.append(f"{stat_lbl} {pred_v:.2f}/{dir_str}{line:.1f}{link_str}")
-                else:
-                    parts.append(f"{stat_lbl} {pred_v:.2f}")
+    for row in all_pitcher_rows:
+        name = row.get("player_name", f"id={row['player_id']}")
+        pred_k = row.get("pred_strikeouts")
+        if pred_k is None:
+            continue
+        norm = _normalize_name(name)
+        ld = prop_lines.get((norm, "pitcher_strikeouts"))
+        if not ld or ld.get("line") is None:
+            continue
+        line = ld["line"]
+        edge = pred_k - line
+        if abs(edge) < cfg.threshold_strikeouts:
+            continue
+        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+        k_plays.append({
+            "name": name, "team": row.get("team_abbr", ""),
+            "pred": pred_k, "line": line, "edge": edge,
+            "lnk": lnk, "book": "FD",
+        })
 
-            if parts:
-                print(f"  {name}: {' | '.join(parts)}")
+    # Batter sections: sorted by raw prediction (not edge).
+    # TB  → who will rack up the most total bases
+    # H   → who is most likely to get a hit
+    # HR  → who is most likely to homer
+    # FD alternate markets are Over-only so no bet links; FD line shown for reference.
+    for row in all_batter_rows:
+        name = row.get("player_name", f"id={row['player_id']}")
+        norm = _normalize_name(name)
+        team = row.get("team_abbr", "")
+        for pred_col, stat_key, plays_list in [
+            ("pred_hits",        "batter_hits",        h_plays),
+            ("pred_total_bases", "batter_total_bases", tb_plays),
+            ("pred_home_runs",   "batter_home_runs",   hr_plays),
+        ]:
+            pred_v = row.get(pred_col)
+            if pred_v is None:
+                continue
+            ld = prop_lines.get((norm, stat_key))
+            line = ld["line"] if ld else None
+            plays_list.append({
+                "name": name, "team": team,
+                "pred": pred_v, "line": line,
+            })
 
+    k_plays.sort(key=lambda x: abs(x["edge"]), reverse=True)
+    h_plays.sort(key=lambda x: x["pred"], reverse=True)
+    tb_plays.sort(key=lambda x: x["pred"], reverse=True)
+    hr_plays.sort(key=lambda x: x["pred"], reverse=True)
+
+    def _section_k(title: str, plays: List[Dict], stat: str, pred_fmt: str) -> None:
+        """K section: edge-based, with FD bet links."""
+        if not plays:
+            return
+        print(f"**{title}**")
+        for p in plays[:10]:
+            d = "O" if p["edge"] > 0 else "U"
+            ls = f"{d}{p['line']:.1f}"
+            ps = pred_fmt.format(p["pred"])
+            team_str = f" ({p['team']})" if p["team"] else ""
+            link_str = f" [Bet FD](<{p['lnk']}>)" if p["lnk"] else ""
+            print(f"★ {_link_name(p['name'])}{team_str} {stat} {ls} → {ps}{link_str}")
         print("")
 
-    return fd_links
+    def _section_batter(title: str, plays: List[Dict], stat: str, pred_fmt: str) -> None:
+        """Batter section: prediction-sorted, FD line shown for reference, no bet link."""
+        if not plays:
+            return
+        print(f"**{title}**")
+        for p in plays[:10]:
+            ps = pred_fmt.format(p["pred"])
+            team_str = f" ({p['team']})" if p["team"] else ""
+            line_str = f" O{p['line']:.1f}" if p["line"] is not None else ""
+            print(f"★ {_link_name(p['name'])}{team_str} {stat}{line_str} → {ps}")
+        print("")
+
+    def _parlay(title: str, links: List) -> None:
+        dedup = list(dict.fromkeys(l for l in links if l))
+        if not dedup:
+            return
+        n_chunks = math.ceil(len(dedup) / 25)
+        for i in range(0, len(dedup), 25):
+            url = build_fd_parlay_url(dedup[i:i + 25])
+            if url:
+                sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                print(f"**{title}{sfx}** [FD]({url})")
+
+    _section_k("Top Strikeouts",  k_plays,  "K",  "{:.1f}")
+    _section_batter("Top Total Bases", tb_plays, "TB", "{:.2f}")
+    _section_batter("Top Hits",        h_plays,  "H",  "{:.2f}")
+    _section_batter("Top Home Runs",   hr_plays, "HR", "{:.2f}")
+
+    _parlay("All Ks Parlay",   [p["lnk"] for p in k_plays])
+    _parlay("Best Props Parlay", [p["lnk"] for p in k_plays[:10]])
+
+    return []  # parlays already printed; outer parlay logic skipped
 
 
 def _print_best_bets(
@@ -924,7 +1182,8 @@ def _print_best_bets(
     prop_lines: Dict,
     cfg: PredictConfig,
 ) -> List[str]:
-    """Print best bets ranked by |edge|. Returns FD links for parlay."""
+    """Print best bets ranked by |edge| as a table. Returns FD links for parlay."""
+    is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
     best: List[Dict] = []
 
@@ -943,7 +1202,6 @@ def _print_best_bets(
                 "name": name, "stat": "K", "pred": pred_k,
                 "line": ld["line"], "edge": edge,
                 "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
-                "bookmaker_key": ld.get("bookmaker_key", ""),
                 "team": row.get("team_abbr", ""),
             })
 
@@ -978,18 +1236,61 @@ def _print_best_bets(
 
     if best:
         print("─" * 40)
-        print("**Best Props (ranked by edge)**")
+        print("**Best Props (ranked by |edge|)**")
+
         for b in best[:10]:
-            direction = "OVER" if b["edge"] > 0 else "UNDER"
-            book_lbl = "FD" if b.get("bookmaker_key") == "fanduel" else "DK"
-            bet_link = b.get("bet_link")
-            link_str = f"  [Bet {book_lbl}](<{bet_link}>)" if bet_link else ""
-            print(f"  {b['name']} ({b['team']}) {b['stat']} {direction} {b['line']} "
-                  f"| pred {b['pred']:.2f} | edge {b['edge']:+.2f}{link_str}")
-            if bet_link:
-                fd_links.append(bet_link)
+            parts = b["name"].split()
+            if len(parts) >= 2 and parts[-1].rstrip(".").lower() in ("jr", "sr", "ii", "iii", "iv"):
+                short = f"{parts[-2]} {parts[-1]} ({b['team']})"
+            else:
+                short = f"{parts[-1]} ({b['team']})"
+            ps = f"{b['pred']:.1f}" if b["stat"] == "K" else f"{b['pred']:.2f}"
+            d = "O" if b["edge"] > 0 else "U"
+            ls = f"{d}{b['line']:.1f}"
+            es = f"{b['edge']:+.2f}"
+            lnk = b.get("bet_link")
+            link_str = f" [Bet FD](<{lnk}>)" if lnk else " [FD]"
+            print(f"★ {short} {b['stat']} {ls} → {ps}{link_str}")
+            if lnk:
+                fd_links.append(lnk)
 
     return fd_links
+
+
+def _print_top_hr_hitters(
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+    top_n: int = 10,
+) -> None:
+    """Print the top predicted HR hitters for the day, sorted by pred_home_runs desc."""
+    hr_rows = [r for r in all_batter_rows if r.get("pred_home_runs") is not None]
+    if not hr_rows:
+        return
+    hr_rows.sort(key=lambda r: r["pred_home_runs"], reverse=True)
+
+    print("─" * 40)
+    print(f"**Top HR Hitters Today (top {min(top_n, len(hr_rows))})**")
+    for r in hr_rows[:top_n]:
+        name  = r.get("player_name", f"id={r['player_id']}")
+        norm  = _normalize_name(name)
+        team  = r.get("team_abbr", "?")
+        opp   = r.get("opponent_abbr", "?")
+        phr   = r["pred_home_runs"]
+
+        ld    = prop_lines.get((norm, "batter_home_runs"))
+        line  = ld["line"] if ld else None
+
+        if line is not None:
+            edge = phr - line
+            dir_str = "O" if edge > 0 else "U"
+            bet_link = ld.get("over_link") if edge > 0 else ld.get("under_link")
+            link_str = f"  [Bet FD](<{bet_link}>)" if bet_link else ""
+            print(
+                f"  {name} ({team} vs {opp}) — pred {phr:.3f} | "
+                f"{dir_str}{line:.1f} edge {edge:+.2f}{link_str}"
+            )
+        else:
+            print(f"  {name} ({team} vs {opp}) — pred {phr:.3f}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1226,32 +1527,40 @@ def predict_props(cfg: PredictConfig) -> None:
     print(header)
     print("")
 
-    fd_links = _print_discord(
-        all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg
-    )
-    best_links = _print_best_bets(
-        all_pitcher_rows, all_batter_rows, prop_lines, cfg
-    )
-    fd_links.extend(best_links)
+    is_discord = os.getenv("DISCORD_FORMAT") == "1"
 
-    # Best props parlay (high-edge bets only)
-    parlay_url = build_fd_parlay_url(fd_links)
-    if parlay_url:
-        print(f"\n**Best Props Parlay** [FD]({parlay_url})")
+    _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg)
 
-    # All props parlay — every player, model's predicted direction, chunked at 25 legs
-    all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
-    # Deduplicate while preserving order
-    seen: set[str] = set()
-    all_links_dedup = [l for l in all_links if l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
-    n_all = len(all_links_dedup)
-    n_chunks = math.ceil(n_all / 25) if n_all else 0
-    for i in range(0, n_all, 25):
-        chunk = all_links_dedup[i:i + 25]
-        ap = build_fd_parlay_url(chunk)
-        if ap:
-            suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
-            print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
+    if not is_discord:
+        fd_links = _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
+
+        # Top HR hitters leaderboard
+        _print_top_hr_hitters(all_batter_rows, prop_lines)
+
+        # Best props parlay (high-edge bets only) — chunked at 25 legs
+        seen_bp: set[str] = set()
+        fd_links_dedup = [l for l in fd_links if l not in seen_bp and not seen_bp.add(l)]  # type: ignore[func-returns-value]
+        n_bp = len(fd_links_dedup)
+        n_bp_chunks = math.ceil(n_bp / 25) if n_bp else 0
+        for i in range(0, n_bp, 25):
+            chunk = fd_links_dedup[i:i + 25]
+            parlay_url = build_fd_parlay_url(chunk)
+            if parlay_url:
+                suffix = f" {i // 25 + 1}/{n_bp_chunks}" if n_bp_chunks > 1 else ""
+                print(f"\n**Best Props Parlay{suffix}** [FD]({parlay_url})")
+
+        # All props parlay — every player, model's predicted direction, chunked at 25 legs
+        all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
+        seen: set[str] = set()
+        all_links_dedup = [l for l in all_links if l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
+        n_all = len(all_links_dedup)
+        n_chunks = math.ceil(n_all / 25) if n_all else 0
+        for i in range(0, n_all, 25):
+            chunk = all_links_dedup[i:i + 25]
+            ap = build_fd_parlay_url(chunk)
+            if ap:
+                suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
 
 
 def main() -> None:

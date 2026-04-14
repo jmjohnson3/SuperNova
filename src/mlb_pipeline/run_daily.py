@@ -207,7 +207,7 @@ def main() -> None:
         steps.append(Step(
             name="Train player prop models",
             module="mlb_pipeline.modeling.train_player_prop_models",
-            timeout_s=1800,
+            timeout_s=3600,
             critical=False,
         ))
 

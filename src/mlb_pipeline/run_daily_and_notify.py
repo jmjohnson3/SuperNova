@@ -4,16 +4,17 @@ mlb_pipeline.run_daily_and_notify
 Full MLB daily pipeline with Discord notifications.
 
 Steps:
-  1. MLB Stats API crawler   — schedule + boxscores
-  2. MSF crawler             — injuries/lineups (non-critical; 403 on game data)
-  3. Odds API crawler        — run lines, totals, prop lines
-  4. Statcast crawler        — Baseball Savant exit velo/barrel/expected stats (non-critical)
-  5. Parse + load            — parse_all (parsers + SQL views + mat views)
-  6. Elo ratings             — MOV-adjusted team Elo (non-critical)
-  7. Train game models       — XGBoost + LightGBM
-  8. Train player prop models — XGBoost + LightGBM (non-critical)
-  9. Game predictions        — post full output to Discord
-  10. Player prop projections — post full output to Discord
+  1. MLB Stats API crawler        — schedule + boxscores
+  2. MSF crawler                  — injuries/lineups (non-critical; 403 on game data)
+  3. Odds API crawler             — run lines, totals, prop lines
+  4. Statcast crawler             — Baseball Savant exit velo/barrel/expected stats (non-critical)
+  5. Statcast extended crawler    — spray angle, sprint speed, pitcher arsenal (non-critical)
+  6. Parse + load                 — parse_all (parsers + SQL views + mat views)
+  7. Elo ratings                  — MOV-adjusted team Elo (non-critical)
+  8. Train game models            — XGBoost + LightGBM
+  9. Train player prop models     — XGBoost + LightGBM (non-critical)
+  10. Game predictions            — post full output to Discord
+  11. Player prop projections     — post full output to Discord
 
 Set env var:
   MLB_DISCORD_WEBHOOK_URL   — Discord webhook URL for the #mlb channel
@@ -60,8 +61,9 @@ STEPS: list[Step] = [
          args=("--season", "2026-regular"),   critical=True,  post_output=False),
     Step("MSF Crawler",            "mlb_pipeline.crawler",          critical=False, post_output=False),
     Step("Odds Crawler",           "mlb_pipeline.crawler_oddsapi",  critical=True,  post_output=False),
-    Step("Statcast Crawler",       "mlb_pipeline.crawler_statcast", critical=False, post_output=False),
-    Step("Parse + Load",           "mlb_pipeline.parse_all",        critical=True,  post_output=False),
+    Step("Statcast Crawler",          "mlb_pipeline.crawler_statcast",          critical=False, post_output=False),
+    Step("Statcast Extended Crawler", "mlb_pipeline.crawler_statcast_extended", critical=False, post_output=False),
+    Step("Parse + Load",              "mlb_pipeline.parse_all",                 critical=True,  post_output=False),
     Step("Elo Ratings",            "mlb_pipeline.compute_elo",      critical=False, post_output=False),
     Step("Train Game Models",      "mlb_pipeline.modeling.train_game_models",
          critical=True, post_output=False),
