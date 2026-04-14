@@ -125,6 +125,8 @@ def _prep_features(
         ts = pd.to_datetime(df["start_ts_utc"], errors="coerce", utc=True)
         X["start_hour_utc"] = ts.dt.hour
         X["start_dow_utc"]  = ts.dt.dayofweek
+        ts_et = ts.dt.tz_convert("America/New_York")
+        X["is_day_game"] = (ts_et.dt.hour < 17).astype(int)
 
     # b2b flags → 0/1
     for bcol in ("home_is_b2b", "away_is_b2b"):

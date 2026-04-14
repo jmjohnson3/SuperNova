@@ -269,6 +269,9 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         ts = pd.to_datetime(X["start_ts_utc"], errors="coerce", utc=True)
         X["start_hour_utc"] = ts.dt.hour
         X["start_dow_utc"] = ts.dt.dayofweek
+        # Day game if first pitch before 5 PM ET (day/night splits are real in MLB)
+        ts_et = ts.dt.tz_convert("America/New_York")
+        X["is_day_game"] = (ts_et.dt.hour < 17).astype(int)
         X = X.drop(columns=["start_ts_utc"])
 
     # Ensure b2b flags are 0/1

@@ -276,12 +276,18 @@ def main() -> None:
     # Fetch weather for all games without data (archive for historical, forecast for today)
     # Must run AFTER _apply_sql_views so raw.mlb_weather table exists.
     try:
-        from mlb_pipeline.crawler_weather import fetch_all_missing_weather
+        from mlb_pipeline.crawler_weather import fetch_all_missing_weather, refresh_todays_weather
         with psycopg2.connect(_PG_DSN) as _c:
             n_wx = fetch_all_missing_weather(_c)
             _c.commit()
             if n_wx:
                 log.info("Fetched weather for %d games", n_wx)
+        # Always refresh today's forecast (most recent Open-Meteo forecast before predictions run)
+        with psycopg2.connect(_PG_DSN) as _c:
+            n_refresh = refresh_todays_weather(_c)
+            _c.commit()
+            if n_refresh:
+                log.info("Refreshed today's weather forecast for %d games", n_refresh)
     except Exception:
         log.exception("Weather crawl failed — continuing without weather data")
 

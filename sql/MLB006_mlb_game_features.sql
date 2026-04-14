@@ -364,7 +364,20 @@ SELECT
     ap.bullpen_ip_last_7                             AS away_bullpen_ip_last_7,
     ap.bp_era_7d                                     AS away_bp_era_7d,
     ap.sp_short_last                                 AS away_sp_short_last,
-    ap.bullpen_ip_last_7 - hp.bullpen_ip_last_7      AS bullpen_fatigue_7d_edge
+    ap.bullpen_ip_last_7 - hp.bullpen_ip_last_7      AS bullpen_fatigue_7d_edge,
+
+    -- ---- Group E: Series context (appended last — column reordering forbidden) ----
+    -- Game number within the current home series between these two teams.
+    -- 1 = opener, 2 = middle game, 3+ = series finale. Captures bullpen depth effects.
+    (
+        SELECT COUNT(*)
+        FROM raw.mlb_games g2
+        WHERE g2.home_team_abbr = g.home_team_abbr
+          AND g2.away_team_abbr = g.away_team_abbr
+          AND g2.game_date_et  <= g.game_date_et
+          AND g2.game_date_et  >= g.game_date_et - INTERVAL '4 days'
+          AND g2.status IN ('final', 'scheduled', 'in_progress')
+    )::INTEGER                                       AS series_game_number
 
 FROM raw.mlb_games g
 
@@ -776,7 +789,18 @@ SELECT
     ap.bullpen_ip_last_7                             AS away_bullpen_ip_last_7,
     ap.bp_era_7d                                     AS away_bp_era_7d,
     ap.sp_short_last                                 AS away_sp_short_last,
-    ap.bullpen_ip_last_7 - hp.bullpen_ip_last_7      AS bullpen_fatigue_7d_edge
+    ap.bullpen_ip_last_7 - hp.bullpen_ip_last_7      AS bullpen_fatigue_7d_edge,
+
+    -- ---- Group E: Series context ----
+    (
+        SELECT COUNT(*)
+        FROM raw.mlb_games g2
+        WHERE g2.home_team_abbr = g.home_team_abbr
+          AND g2.away_team_abbr = g.away_team_abbr
+          AND g2.game_date_et  <= g.game_date_et
+          AND g2.game_date_et  >= g.game_date_et - INTERVAL '4 days'
+          AND g2.status IN ('final', 'scheduled', 'in_progress')
+    )::INTEGER                                       AS series_game_number
 
 FROM raw.mlb_games g
 
