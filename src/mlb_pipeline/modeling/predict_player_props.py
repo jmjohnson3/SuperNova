@@ -615,8 +615,8 @@ SELECT
     under_link
 FROM odds.mlb_player_prop_lines
 WHERE as_of_date = %(game_date)s
-  AND bookmaker_key = 'fanduel'
-ORDER BY player_name_norm, stat
+  AND bookmaker_key IN ('fanduel', 'draftkings')
+ORDER BY player_name_norm, stat, bookmaker_key
 """
 
 SQL_PLAYER_NAMES = """
@@ -831,9 +831,12 @@ def _save_predictions(conn, rows: List[Dict]) -> None:
 
 def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
     """
-    Returns {(player_name_norm, stat): {line, over_link, under_link}}.
-    FanDuel only. Batter props come from FD alternate markets (Over-only);
-    pitcher strikeouts come from FD standard market (Over + Under).
+    Returns {(player_name_norm, stat): {line, over_link, under_link, bookmaker_key}}.
+
+    FanDuel is the primary source (line + over_link). DraftKings supplements
+    under_link/under_price for batter stats where FD has none — FD batter props
+    come from alternate markets (Over-only), while DK uses standard markets
+    (full Over + Under).
     """
     df = pd.read_sql(SQL_PROP_LINES, conn, params={"game_date": game_date})
     if df.empty:
@@ -849,15 +852,33 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
             pass
         return str(v) if v else None
 
-    result: Dict[Tuple[str, str], Dict] = {}
+    fd_rows: Dict[Tuple[str, str], Dict] = {}
+    dk_rows: Dict[Tuple[str, str], Dict] = {}
+
     for _, row in df.iterrows():
         key = (str(row["player_name_norm"]), str(row["stat"]))
-        result[key] = {
-            "bookmaker_key": "fanduel",
+        entry = {
+            "bookmaker_key": str(row["bookmaker_key"]),
             "line": float(row["line"]) if row["line"] is not None else None,
-            "over_link": _clean(row.get("over_link")),
+            "over_link":  _clean(row.get("over_link")),
             "under_link": _clean(row.get("under_link")),
         }
+        if str(row["bookmaker_key"]) == "fanduel":
+            fd_rows[key] = entry
+        else:
+            dk_rows[key] = entry
+
+    # Merge: FD primary; supplement under_link from DK where FD has none
+    result: Dict[Tuple[str, str], Dict] = {}
+    for key in set(fd_rows) | set(dk_rows):
+        if key in fd_rows:
+            entry = dict(fd_rows[key])
+            if not entry.get("under_link") and key in dk_rows:
+                entry["under_link"] = dk_rows[key].get("under_link")
+            result[key] = entry
+        else:
+            result[key] = dk_rows[key]
+
     return result
 
 
