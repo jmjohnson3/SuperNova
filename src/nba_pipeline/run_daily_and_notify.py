@@ -60,7 +60,7 @@ STEPS: list[Step] = [
     Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=False, post_output=False, timeout_s=14400),
     Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=14400),
     Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=14400),
-    Step("Train Player Prop Models",  "nba_pipeline.modeling.train_player_prop_models",   critical=True,  post_output=False, timeout_s=14400),
+    Step("Train Player Prop Models",  "nba_pipeline.modeling.train_player_prop_models",   critical=True,  post_output=False, timeout_s=28800),
     Step("Prop Lines Refresh",        "nba_pipeline.refresh_prop_links",                  critical=False, post_output=False, timeout_s=600),
     Step("Game Predictions",          "nba_pipeline.modeling.predict_today",              critical=False, post_output=True,  timeout_s=14400),
     Step("Alt Line Scan",             "nba_pipeline.modeling.scan_alt_lines_grid",         critical=False, post_output=True,  timeout_s=14400),

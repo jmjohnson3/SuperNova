@@ -119,6 +119,9 @@ SELECT
     -- Park factors
     bf.run_factor      AS park_run_factor,
     bf.hr_factor       AS park_hr_factor,
+    -- Home plate umpire rolling stats (ump_k9_10 is strongest predictor of K environment)
+    ur.ump_k9_10       AS ump_k9_avg_10,
+    ur.ump_bb9_10      AS ump_bb9_avg_10,
     -- Weather (dome-zeroed)
     wx.temperature_f,
     CASE WHEN v.roof_type = 'dome' THEN 0.0
@@ -199,6 +202,11 @@ LEFT JOIN features.mlb_ballpark_factors bf
 LEFT JOIN raw.mlb_weather wx ON wx.game_slug = g.game_slug
 LEFT JOIN raw.mlb_venues  v  ON v.venue_id   = g.venue_id
 LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = p.player_id
+-- Home plate umpire rolling stats (known from boxscores; NULL for upcoming games → median-imputed)
+LEFT JOIN raw.mlb_game_umpires gu
+    ON gu.game_slug = g.game_slug AND gu.ump_position = 'Home Plate'
+LEFT JOIN features.mlb_umpire_rolling_mat ur
+    ON ur.game_slug = g.game_slug AND ur.umpire_id = gu.umpire_id
 -- Opponent batting lineup quality (completed boxscores; NULL for today's upcoming games)
 LEFT JOIN features.mlb_lineup_quality lq_opp
     ON lq_opp.game_slug = p.game_slug
@@ -891,7 +899,8 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     if cfg.run_optuna:
         try:
             best_k_params = _run_optuna_for_stat(
-                cfg, df, X_raw, y_k, feature_cols, medians, "strikeouts"
+                cfg, df, X_raw, y_k, feature_cols, medians, "strikeouts",
+                objective="count:poisson",
             )
         except ImportError:
             log.warning("optuna not installed — skipping. pip install optuna")
@@ -901,12 +910,15 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     # Walk-forward evaluation
     wf_mae, wf_p68 = _run_walk_forward(
         df, X_raw, y_k, feature_cols, medians, cfg, "strikeouts",
+        objective="count:poisson",
         params_override=best_k_params,
     )
 
     # Final model
     xgb, lgb_model = _fit_final_model(
-        X_filled, y_k, cfg, "strikeouts", params_override=best_k_params
+        X_filled, y_k, cfg, "strikeouts",
+        objective="count:poisson",
+        params_override=best_k_params,
     )
 
     # Save
@@ -967,7 +979,7 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
             best["hits"]        = _run_optuna_for_stat(cfg, df, X_raw, y_hits,  feature_cols, medians, "hits",        "count:poisson")
             best["total_bases"] = _run_optuna_for_stat(cfg, df, X_raw, y_tb,    feature_cols, medians, "total_bases", "count:poisson")
             best["home_runs"]   = _run_optuna_for_stat(cfg, df, X_raw, y_hr,    feature_cols, medians, "home_runs",   "count:poisson")
-            best["walks_batter"]= _run_optuna_for_stat(cfg, df, X_raw, y_walks, feature_cols, medians, "walks_batter")
+            best["walks_batter"]= _run_optuna_for_stat(cfg, df, X_raw, y_walks, feature_cols, medians, "walks_batter", "count:poisson")
         except ImportError:
             log.warning("optuna not installed — skipping. pip install optuna")
         except Exception as e:
@@ -977,13 +989,13 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",         objective="count:poisson", params_override=best["hits"])
     tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
     hr_mae,    hr_p68    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
-    walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter", params_override=best["walks_batter"])
+    walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter", objective="count:poisson", params_override=best["walks_batter"])
 
     # Final models (using tuned params)
     xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",         objective="count:poisson", params_override=best["hits"])
     xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
     xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
-    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter", params_override=best["walks_batter"])
+    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter", objective="count:poisson", params_override=best["walks_batter"])
 
     # Save
     model_dir = cfg.model_dir
