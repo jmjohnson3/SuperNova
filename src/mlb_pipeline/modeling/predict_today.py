@@ -698,6 +698,67 @@ def main() -> None:
     )
     print(summary_line)
 
+    # Discord: print "BETS TODAY" summary block before per-game detail
+    if discord:
+        _bets_today: list[dict] = []
+        for _, _r in out.iterrows():
+            _edge_rl = _r.get("edge_run_line")
+            _edge_t  = _r.get("edge_total")
+            _both_sp = bool(_r.get("both_sp_known", True))
+            _home2   = _r["home_team_abbr"]
+            _away2   = _r["away_team_abbr"]
+            _fd2     = fd_links.get((_home2, _away2))
+            _ub      = bool(_r.get("used_market_recon", False))
+            _srl     = calib.get("resid_spread_rmse" if (_ub and w_rl > 0) else "direct_spread_rmse", 3.5)
+            _st      = calib.get("resid_total_rmse"  if (_ub and w_total > 0) else "direct_total_rmse", 3.0)
+            _sr2     = _r.get("start_ts_utc")
+            if pd.notna(_sr2):
+                _t2 = pd.to_datetime(_sr2, utc=True).tz_convert(_ET).strftime("%I:%M %p ET").lstrip("0")
+            else:
+                _t2 = "TBD"
+            _mrl2 = _r.get("market_run_line")
+            _mt2  = _r.get("market_total")
+
+            if pd.notna(_edge_rl) and abs(float(_edge_rl)) >= cfg.min_edge_run_line and _both_sp:
+                _e  = float(_edge_rl)
+                _bt = _home2 if _e > 0 else _away2
+                _vs = _away2 if _e > 0 else _home2
+                _ml = f"{float(_mrl2):+.1f}" if pd.notna(_mrl2) else "-1.5"
+                _k, _p = _kelly(abs(_e), sigma=_srl)
+                _lnk = (_fd2.spread_home_link if _e > 0 else _fd2.spread_away_link) if _fd2 else None
+                _bets_today.append({
+                    "desc": f"**{_bt} {_ml}** (vs {_vs} · {_t2})",
+                    "edge": abs(_e), "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
+                })
+            if pd.notna(_edge_t) and float(_edge_t) >= cfg.min_edge_total and _both_sp:
+                _e   = float(_edge_t)
+                _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
+                _k, _p = _kelly(_e, sigma=_st)
+                _lnk = _fd2.total_over_link if _fd2 else None
+                _bets_today.append({
+                    "desc": f"**OVER {_mtl}** ({_away2} @ {_home2} · {_t2})",
+                    "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
+                })
+            elif pd.notna(_edge_t) and -float(_edge_t) >= cfg.min_edge_total and _both_sp:
+                _e   = -float(_edge_t)
+                _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
+                _k, _p = _kelly(_e, sigma=_st)
+                _lnk = _fd2.total_under_link if _fd2 else None
+                _bets_today.append({
+                    "desc": f"**UNDER {_mtl}** ({_away2} @ {_home2} · {_t2})",
+                    "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
+                })
+
+        _bets_today.sort(key=lambda x: x["edge"], reverse=True)
+        if _bets_today:
+            print(f"\n**BETS TODAY ({len(_bets_today)})**")
+            for _b in _bets_today:
+                _ls = f"  [Bet FD](<{_b['link']}>)" if _b["link"] else ""
+                print(f"★ {_b['desc']}  edge +{_b['edge']:.2f}  p={_b['p']:.0%}  bet ${_b['qk']:.0f}/1k{_ls}")
+        else:
+            print("\n**No edge bets today**")
+        print("")
+
     best_links: list[str | None] = []      # FD links for high-edge bets (best bets parlay)
     all_game_links: list[str | None] = []  # model's predicted side for every game (all games parlay)
 

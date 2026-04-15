@@ -1089,12 +1089,8 @@ def _print_discord(
     if not is_discord:
         return fd_links
 
-    # ── Discord mode: collect all edge plays across every game, then print ─────
-    k_plays:  List[Dict] = []
-    tb_plays: List[Dict] = []
-    h_plays:  List[Dict] = []
-    hr_plays: List[Dict] = []
-
+    # ── Discord mode: collect ALL edge plays and show as one ranked list ────────
+    k_plays: List[Dict] = []
     for row in all_pitcher_rows:
         name = row.get("player_name", f"id={row['player_id']}")
         pred_k = row.get("pred_strikeouts")
@@ -1110,65 +1106,53 @@ def _print_discord(
             continue
         lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
         k_plays.append({
-            "name": name, "team": row.get("team_abbr", ""),
-            "pred": pred_k, "line": line, "edge": edge,
-            "lnk": lnk, "book": "FD",
+            "name": name, "team": row.get("team_abbr", ""), "stat": "K",
+            "pred": pred_k, "line": line, "edge": edge, "lnk": lnk,
         })
 
-    # Batter sections: sorted by raw prediction (not edge).
-    # TB  → who will rack up the most total bases
-    # H   → who is most likely to get a hit
-    # HR  → who is most likely to homer
-    # FD alternate markets are Over-only so no bet links; FD line shown for reference.
+    batter_edge_plays: List[Dict] = []
     for row in all_batter_rows:
         name = row.get("player_name", f"id={row['player_id']}")
         norm = _normalize_name(name)
         team = row.get("team_abbr", "")
-        for pred_col, stat_key, plays_list in [
-            ("pred_hits",        "batter_hits",        h_plays),
-            ("pred_total_bases", "batter_total_bases", tb_plays),
-            ("pred_home_runs",   "batter_home_runs",   hr_plays),
+        _n_g = row.get("n_games_prev_10") or 0
+        _ci = math.sqrt(10.0 / max(_n_g, 1))
+        for pred_col, stat_key, thresh, stat_lbl in [
+            ("pred_hits",        "batter_hits",        cfg.threshold_hits,        "H"),
+            ("pred_total_bases", "batter_total_bases",  cfg.threshold_total_bases, "TB"),
+            ("pred_home_runs",   "batter_home_runs",    cfg.threshold_home_runs,   "HR"),
+            ("pred_walks",       "batter_walks",        cfg.threshold_walks,       "BB"),
         ]:
             pred_v = row.get(pred_col)
             if pred_v is None:
                 continue
             ld = prop_lines.get((norm, stat_key))
-            line = ld["line"] if ld else None
-            plays_list.append({
-                "name": name, "team": team,
-                "pred": pred_v, "line": line,
-            })
+            if not ld or ld.get("line") is None:
+                continue
+            line = ld["line"]
+            edge = pred_v - line
+            if abs(edge) >= thresh * _ci:
+                lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                batter_edge_plays.append({
+                    "name": name, "team": team, "stat": stat_lbl,
+                    "pred": pred_v, "line": line, "edge": edge, "lnk": lnk,
+                })
 
-    k_plays.sort(key=lambda x: abs(x["edge"]), reverse=True)
-    h_plays.sort(key=lambda x: x["pred"], reverse=True)
-    tb_plays.sort(key=lambda x: x["pred"], reverse=True)
-    hr_plays.sort(key=lambda x: x["pred"], reverse=True)
+    all_prop_bets: List[Dict] = k_plays + batter_edge_plays
+    all_prop_bets.sort(key=lambda x: abs(x["edge"]), reverse=True)
 
-    def _section_k(title: str, plays: List[Dict], stat: str, pred_fmt: str) -> None:
-        """K section: edge-based, with FD bet links."""
-        if not plays:
-            return
-        print(f"**{title}**")
-        for p in plays[:10]:
-            d = "O" if p["edge"] > 0 else "U"
-            ls = f"{d}{p['line']:.1f}"
-            ps = pred_fmt.format(p["pred"])
-            team_str = f" ({p['team']})" if p["team"] else ""
-            link_str = f" [Bet FD](<{p['lnk']}>)" if p["lnk"] else ""
-            print(f"★ {_link_name(p['name'])}{team_str} {stat} {ls} → {ps}{link_str}")
+    if all_prop_bets:
+        print(f"**PROP BETS TODAY ({len(all_prop_bets)})**")
+        for b in all_prop_bets:
+            short = _link_name(b["name"])
+            d = "O" if b["edge"] > 0 else "U"
+            ls = f"{d}{b['line']:.1f}"
+            ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
+            lnk_str = f"  [Bet FD](<{b['lnk']}>)" if b["lnk"] else ""
+            print(f"★ {short} ({b['team']}) {b['stat']} {ls} → {ps}  edge {b['edge']:+.2f}{lnk_str}")
         print("")
-
-    def _section_batter(title: str, plays: List[Dict], stat: str, pred_fmt: str) -> None:
-        """Batter section: prediction-sorted, FD line shown for reference, no bet link."""
-        if not plays:
-            return
-        print(f"**{title}**")
-        for p in plays[:10]:
-            ps = pred_fmt.format(p["pred"])
-            team_str = f" ({p['team']})" if p["team"] else ""
-            line_str = f" O{p['line']:.1f}" if p["line"] is not None else ""
-            print(f"★ {_link_name(p['name'])}{team_str} {stat}{line_str} → {ps}")
-        print("")
+    else:
+        print("**No prop edge bets today**\n")
 
     def _parlay(title: str, links: List) -> None:
         dedup = list(dict.fromkeys(l for l in links if l))
@@ -1181,13 +1165,7 @@ def _print_discord(
                 sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
                 print(f"**{title}{sfx}** [FD]({url})")
 
-    _section_k("Top Strikeouts",  k_plays,  "K",  "{:.1f}")
-    _section_batter("Top Total Bases", tb_plays, "TB", "{:.2f}")
-    _section_batter("Top Hits",        h_plays,  "H",  "{:.2f}")
-    _section_batter("Top Home Runs",   hr_plays, "HR", "{:.2f}")
-
-    _parlay("All Ks Parlay",   [p["lnk"] for p in k_plays])
-    _parlay("Best Props Parlay", [p["lnk"] for p in k_plays[:10]])
+    _parlay("Prop Bets Parlay", [b["lnk"] for b in all_prop_bets if b["lnk"]])
 
     return []  # parlays already printed; outer parlay logic skipped
 
