@@ -10,7 +10,7 @@ Loads pitcher/batter prop models and generates predictions for:
   - batter_walks
 
 Edge formula:  edge = pred - book_line
-Bet signal:    |edge| >= threshold (K: 1.0, H: 0.5, TB: 0.5, HR: 0.25, BB: 0.3)
+Bet signal:    |edge| >= threshold (K: 2.0, H: 0.75, TB: 0.6, HR: 0.45, BB: 0.3)
 
 Discord output (DISCORD_FORMAT=1): compact grouped by game.
 DB: bets.mlb_prop_predictions — one row per (game_date_et, game_slug, player_id, stat).
@@ -65,11 +65,14 @@ class PredictConfig:
     min_ab_avg_10: float = 1.0
     min_n_games: int = 1
     # Bet thresholds (|edge| >=)
-    threshold_strikeouts: float = 1.0
-    # Raised from 0.4 → 0.5: 0.4-0.5 edge bucket was marginal; ≥0.5 shows 65%+ win rate
-    threshold_hits: float = 0.5
-    threshold_total_bases: float = 0.5
-    threshold_home_runs: float = 0.25
+    # Raised from 1.0 → 2.0: scan_prop_thresholds shows edge only above 1.0; optimal 2.0 (ROI +18%)
+    threshold_strikeouts: float = 2.0
+    # Raised from 0.5 → 0.75: optimal threshold per scan (75-25, ROI +43%); UNDER side dominant
+    threshold_hits: float = 0.75
+    # Raised from 0.5 → 0.6: OVER bets lose at all thresholds; 0.6 keeps 407 bets at +28% ROI
+    threshold_total_bases: float = 0.6
+    # Raised from 0.25 → 0.45: optimal per scan (303-22, ROI +78%); model always bets UNDER
+    threshold_home_runs: float = 0.45
     threshold_walks: float = 0.3
 
 
@@ -146,6 +149,9 @@ SELECT
     -- Park factors
     bf.run_factor       AS park_run_factor,
     bf.hr_factor        AS park_hr_factor,
+    -- Home plate umpire rolling stats (NULL for upcoming games → median-imputed)
+    ur.ump_k9_10        AS ump_k9_avg_10,
+    ur.ump_bb9_10       AS ump_bb9_avg_10,
     -- Weather (dome-zeroed)
     wx.temperature_f,
     CASE WHEN v.roof_type = 'dome' THEN 0.0
@@ -236,6 +242,16 @@ LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
     SELECT venue_id FROM raw.mlb_games WHERE game_slug = ts.game_slug LIMIT 1
 )
 LEFT JOIN raw.mlb_player_handedness ph ON ph.player_id = ts.player_id
+-- Home plate umpire (NULL for upcoming games → median-imputed)
+LEFT JOIN raw.mlb_game_umpires gu
+    ON gu.game_slug = ts.game_slug AND gu.ump_position = 'Home Plate'
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_umpire_rolling_mat
+    WHERE umpire_id = gu.umpire_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC LIMIT 1
+) ur ON TRUE
 -- Opponent batting lineup quality (NULL for upcoming games)
 LEFT JOIN features.mlb_lineup_quality lq_opp
     ON lq_opp.game_slug  = ts.game_slug
