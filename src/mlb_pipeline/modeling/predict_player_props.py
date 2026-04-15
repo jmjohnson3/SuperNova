@@ -868,16 +868,22 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
         else:
             dk_rows[key] = entry
 
-    # Merge: FD primary; supplement under_link from DK where FD has none
+    # Merge: FD primary; supplement under_link from DK where FD has none.
+    # Track which book provided the under_link so the UI can label correctly.
     result: Dict[Tuple[str, str], Dict] = {}
     for key in set(fd_rows) | set(dk_rows):
         if key in fd_rows:
             entry = dict(fd_rows[key])
             if not entry.get("under_link") and key in dk_rows:
-                entry["under_link"] = dk_rows[key].get("under_link")
+                entry["under_link"]      = dk_rows[key].get("under_link")
+                entry["under_link_book"] = "draftkings"
+            else:
+                entry["under_link_book"] = "fanduel"
             result[key] = entry
         else:
-            result[key] = dk_rows[key]
+            entry = dict(dk_rows[key])
+            entry["under_link_book"] = "draftkings"
+            result[key] = entry
 
     return result
 
@@ -1128,7 +1134,7 @@ def _print_discord(
         lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
         k_plays.append({
             "name": name, "team": row.get("team_abbr", ""), "stat": "K",
-            "pred": pred_k, "line": line, "edge": edge, "lnk": lnk,
+            "pred": pred_k, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
         })
 
     batter_edge_plays: List[Dict] = []
@@ -1154,9 +1160,10 @@ def _print_discord(
             edge = pred_v - line
             if abs(edge) >= thresh * _ci:
                 lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                book = "FD" if (edge > 0 or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
                 batter_edge_plays.append({
                     "name": name, "team": team, "stat": stat_lbl,
-                    "pred": pred_v, "line": line, "edge": edge, "lnk": lnk,
+                    "pred": pred_v, "line": line, "edge": edge, "lnk": lnk, "book": book,
                 })
 
     all_prop_bets: List[Dict] = k_plays + batter_edge_plays
@@ -1169,7 +1176,7 @@ def _print_discord(
             d = "O" if b["edge"] > 0 else "U"
             ls = f"{d}{b['line']:.1f}"
             ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
-            lnk_str = f"  [Bet FD](<{b['lnk']}>)" if b["lnk"] else ""
+            lnk_str = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b["lnk"] else ""
             print(f"★ {short} ({b['team']}) {b['stat']} {ls} → {ps}  edge {b['edge']:+.2f}{lnk_str}")
         print("")
     else:
