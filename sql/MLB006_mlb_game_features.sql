@@ -377,7 +377,47 @@ SELECT
           AND g2.game_date_et  <= g.game_date_et
           AND g2.game_date_et  >= g.game_date_et - INTERVAL '4 days'
           AND g2.status IN ('final', 'scheduled', 'in_progress')
-    )::INTEGER                                       AS series_game_number
+    )::INTEGER                                       AS series_game_number,
+
+    -- ---- Group F: SP k_pct_10 (individual SP last 10 starts K%) ----
+    -- Enables K% trend (5v10) calculation in features.py.
+    hsp.k_pct_10                                     AS home_sp_k_pct_10,
+    asp.k_pct_10                                     AS away_sp_k_pct_10,
+
+    -- ---- Group F: SP venue familiarity (career ERA/FIP at this ballpark) ----
+    -- Reliability-weighted in features.py by n_starts_at_venue.
+    hsp_venue.n_starts_at_venue                      AS home_sp_venue_starts,
+    hsp_venue.venue_era                              AS home_sp_venue_era,
+    hsp_venue.venue_k9                               AS home_sp_venue_k9,
+    hsp_venue.venue_fip                              AS home_sp_venue_fip,
+    asp_venue.n_starts_at_venue                      AS away_sp_venue_starts,
+    asp_venue.venue_era                              AS away_sp_venue_era,
+    asp_venue.venue_k9                               AS away_sp_venue_k9,
+    asp_venue.venue_fip                              AS away_sp_venue_fip,
+
+    -- ---- Group F: SP handedness (1 = left-handed, 0 = right-handed) ----
+    CASE WHEN hsp_hand.pitch_hand = 'L' THEN 1 ELSE 0 END AS home_sp_pitch_hand_L,
+    CASE WHEN asp_hand.pitch_hand = 'L' THEN 1 ELSE 0 END AS away_sp_pitch_hand_L,
+
+    -- ---- Group F: Team batting vs opposing SP handedness (rolling 40 games) ----
+    -- Home team batting stats split by hand (vs today's away SP hand = away_sp_pitch_hand_L)
+    htbh.team_avg_vs_lhp                             AS home_team_avg_vs_lhp,
+    htbh.team_avg_vs_rhp                             AS home_team_avg_vs_rhp,
+    htbh.team_obp_vs_lhp                             AS home_team_obp_vs_lhp,
+    htbh.team_obp_vs_rhp                             AS home_team_obp_vs_rhp,
+    htbh.team_slg_vs_lhp                             AS home_team_slg_vs_lhp,
+    htbh.team_slg_vs_rhp                             AS home_team_slg_vs_rhp,
+    htbh.games_vs_lhp                                AS home_games_vs_lhp,
+    htbh.games_vs_rhp                                AS home_games_vs_rhp,
+    -- Away team batting stats split by hand (vs today's home SP hand = home_sp_pitch_hand_L)
+    atbh.team_avg_vs_lhp                             AS away_team_avg_vs_lhp,
+    atbh.team_avg_vs_rhp                             AS away_team_avg_vs_rhp,
+    atbh.team_obp_vs_lhp                             AS away_team_obp_vs_lhp,
+    atbh.team_obp_vs_rhp                             AS away_team_obp_vs_rhp,
+    atbh.team_slg_vs_lhp                             AS away_team_slg_vs_lhp,
+    atbh.team_slg_vs_rhp                             AS away_team_slg_vs_rhp,
+    atbh.games_vs_lhp                                AS away_games_vs_lhp,
+    atbh.games_vs_rhp                                AS away_games_vs_rhp
 
 FROM raw.mlb_games g
 
@@ -455,6 +495,31 @@ LEFT JOIN features.mlb_lineup_quality alq
     ON alq.game_slug = g.game_slug
    AND alq.is_home = FALSE
 
+-- Group F: SP venue stats (training view joins on game_slug + player_id)
+LEFT JOIN features.mlb_sp_venue_stats_mat hsp_venue
+    ON hsp_venue.game_slug = g.game_slug
+   AND hsp_venue.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+
+LEFT JOIN features.mlb_sp_venue_stats_mat asp_venue
+    ON asp_venue.game_slug = g.game_slug
+   AND asp_venue.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+
+-- Group F: SP handedness
+LEFT JOIN raw.mlb_player_handedness hsp_hand
+    ON hsp_hand.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+
+LEFT JOIN raw.mlb_player_handedness asp_hand
+    ON asp_hand.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+
+-- Group F: Team batting vs SP handedness (training view: join on game_slug + team_abbr)
+LEFT JOIN features.mlb_team_batting_vs_hand_mat htbh
+    ON htbh.game_slug = g.game_slug
+   AND htbh.team_abbr = g.home_team_abbr
+
+LEFT JOIN features.mlb_team_batting_vs_hand_mat atbh
+    ON atbh.game_slug = g.game_slug
+   AND atbh.team_abbr = g.away_team_abbr
+
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
   AND g.away_score IS NOT NULL
@@ -503,6 +568,34 @@ latest_pitcher AS (
         *
     FROM features.mlb_pitcher_rolling_mat
     ORDER BY player_id, game_date_et DESC, game_slug DESC
+),
+-- Latest SP venue stats per (player, venue) — for prediction, pick the most
+-- recent row the pitcher has at the specific venue they'll pitch at today.
+latest_sp_venue AS (
+    SELECT DISTINCT ON (player_id, venue_id)
+        player_id,
+        venue_id,
+        n_starts_at_venue,
+        venue_era,
+        venue_k9,
+        venue_fip
+    FROM features.mlb_sp_venue_stats_mat
+    ORDER BY player_id, venue_id, game_date_et DESC, game_slug DESC
+),
+-- Latest team batting vs SP hand per team
+latest_batting_vs_hand AS (
+    SELECT DISTINCT ON (team_abbr)
+        team_abbr,
+        team_avg_vs_lhp,
+        team_avg_vs_rhp,
+        team_obp_vs_lhp,
+        team_obp_vs_rhp,
+        team_slg_vs_lhp,
+        team_slg_vs_rhp,
+        games_vs_lhp,
+        games_vs_rhp
+    FROM features.mlb_team_batting_vs_hand_mat
+    ORDER BY team_abbr, game_date_et DESC, game_slug DESC
 ),
 -- Head-to-head season record for upcoming games
 h2h AS (
@@ -800,7 +893,43 @@ SELECT
           AND g2.game_date_et  <= g.game_date_et
           AND g2.game_date_et  >= g.game_date_et - INTERVAL '4 days'
           AND g2.status IN ('final', 'scheduled', 'in_progress')
-    )::INTEGER                                       AS series_game_number
+    )::INTEGER                                       AS series_game_number,
+
+    -- ---- Group F: SP k_pct_10 ----
+    hsp.k_pct_10                                     AS home_sp_k_pct_10,
+    asp.k_pct_10                                     AS away_sp_k_pct_10,
+
+    -- ---- Group F: SP venue familiarity ----
+    hsp_venue.n_starts_at_venue                      AS home_sp_venue_starts,
+    hsp_venue.venue_era                              AS home_sp_venue_era,
+    hsp_venue.venue_k9                               AS home_sp_venue_k9,
+    hsp_venue.venue_fip                              AS home_sp_venue_fip,
+    asp_venue.n_starts_at_venue                      AS away_sp_venue_starts,
+    asp_venue.venue_era                              AS away_sp_venue_era,
+    asp_venue.venue_k9                               AS away_sp_venue_k9,
+    asp_venue.venue_fip                              AS away_sp_venue_fip,
+
+    -- ---- Group F: SP handedness ----
+    CASE WHEN hsp_hand.pitch_hand = 'L' THEN 1 ELSE 0 END AS home_sp_pitch_hand_L,
+    CASE WHEN asp_hand.pitch_hand = 'L' THEN 1 ELSE 0 END AS away_sp_pitch_hand_L,
+
+    -- ---- Group F: Team batting vs SP handedness ----
+    htbh.team_avg_vs_lhp                             AS home_team_avg_vs_lhp,
+    htbh.team_avg_vs_rhp                             AS home_team_avg_vs_rhp,
+    htbh.team_obp_vs_lhp                             AS home_team_obp_vs_lhp,
+    htbh.team_obp_vs_rhp                             AS home_team_obp_vs_rhp,
+    htbh.team_slg_vs_lhp                             AS home_team_slg_vs_lhp,
+    htbh.team_slg_vs_rhp                             AS home_team_slg_vs_rhp,
+    htbh.games_vs_lhp                                AS home_games_vs_lhp,
+    htbh.games_vs_rhp                                AS home_games_vs_rhp,
+    atbh.team_avg_vs_lhp                             AS away_team_avg_vs_lhp,
+    atbh.team_avg_vs_rhp                             AS away_team_avg_vs_rhp,
+    atbh.team_obp_vs_lhp                             AS away_team_obp_vs_lhp,
+    atbh.team_obp_vs_rhp                             AS away_team_obp_vs_rhp,
+    atbh.team_slg_vs_lhp                             AS away_team_slg_vs_lhp,
+    atbh.team_slg_vs_rhp                             AS away_team_slg_vs_rhp,
+    atbh.games_vs_lhp                                AS away_games_vs_lhp,
+    atbh.games_vs_rhp                                AS away_games_vs_rhp
 
 FROM raw.mlb_games g
 
@@ -859,6 +988,26 @@ LEFT JOIN features.mlb_lineup_quality hlq
 LEFT JOIN features.mlb_lineup_quality alq
     ON alq.game_slug = g.game_slug
    AND alq.is_home = FALSE
+
+-- Group F: SP venue stats (prediction view uses latest per player+venue)
+LEFT JOIN latest_sp_venue hsp_venue
+    ON hsp_venue.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND hsp_venue.venue_id  = g.venue_id
+
+LEFT JOIN latest_sp_venue asp_venue
+    ON asp_venue.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND asp_venue.venue_id  = g.venue_id
+
+-- Group F: SP handedness
+LEFT JOIN raw.mlb_player_handedness hsp_hand
+    ON hsp_hand.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+
+LEFT JOIN raw.mlb_player_handedness asp_hand
+    ON asp_hand.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+
+-- Group F: Team batting vs SP handedness (prediction: latest per team)
+LEFT JOIN latest_batting_vs_hand htbh ON htbh.team_abbr = g.home_team_abbr
+LEFT JOIN latest_batting_vs_hand atbh ON atbh.team_abbr = g.away_team_abbr
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE

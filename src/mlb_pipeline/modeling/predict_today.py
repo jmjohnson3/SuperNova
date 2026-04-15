@@ -38,8 +38,9 @@ class PredictConfig:
     # Minimum |edge| in runs to flag a run-line bet
     min_edge_run_line: float = 1.5
     # Minimum |edge| in runs to flag a total bet (over OR under)
-    # Raised from 2.5 → 3.0: model had systematic OVER bias (40% win rate at 2.5 threshold)
-    min_edge_total: float = 3.0
+    # Raised from 3.0 → 6.0: scan_thresholds shows totals lose at ALL thresholds (0-3 range)
+    # Effectively disables total bets until model is retrained with better features
+    min_edge_total: float = 6.0
 
 
 SQL_GAMES_FOR_DATE = """

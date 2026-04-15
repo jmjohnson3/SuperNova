@@ -138,6 +138,14 @@ def main() -> None:
     parser.add_argument("--skip-parse", action="store_true", help="Skip parse/load step.")
     parser.add_argument("--skip-train", action="store_true", help="Skip model training steps.")
     parser.add_argument("--skip-predict", action="store_true", help="Skip prediction steps.")
+    parser.add_argument(
+        "--close-only", action="store_true",
+        help=(
+            "Evening closing-line run (~2h before first pitch). "
+            "Re-crawls live odds, re-parses into odds.mlb_game_lines, then grades outcomes for CLV. "
+            "Skips parse/train/predict. Schedule this at ~5 PM ET for true closing line CLV."
+        ),
+    )
     args = parser.parse_args()
 
     console = _get_console()
@@ -154,93 +162,122 @@ def main() -> None:
 
     steps: list[Step] = []
 
-    if not args.skip_crawl:
+    if args.close_only:
+        # ── Evening closing-line run ─────────────────────────────────────────
+        # Re-crawl live odds so odds.mlb_game_lines gets a late-day snapshot
+        # (the live endpoint has no dedup; ON CONFLICT DO UPDATE overwrites the
+        # morning payload, then parse_oddsapi inserts a new row with the latest
+        # fetched_at_utc).  update_outcomes then picks the highest fetched_at_utc
+        # per game as the closing line for CLV.
         steps.append(Step(
-            name="Crawl MLB Stats API (schedule/boxscores)",
-            module="mlb_pipeline.crawler_statsapi",
-            args=("--season", "2026-regular"),
-            timeout_s=3600,
-            critical=True,
-        ))
-        steps.append(Step(
-            name="Crawl MSF (injuries/lineups)",
-            module="mlb_pipeline.crawler",
-            timeout_s=3600,
-            critical=False,  # MSF returns 403 for MLB game data; non-critical
-        ))
-        steps.append(Step(
-            name="Crawl odds (Odds API)",
+            name="Re-crawl closing odds (Odds API)",
             module="mlb_pipeline.crawler_oddsapi",
-            timeout_s=3600,
-            critical=True,
-        ))
-        steps.append(Step(
-            name="Crawl Statcast (Baseball Savant)",
-            module="mlb_pipeline.crawler_statcast",
-            timeout_s=300,
-            critical=False,
-        ))
-
-    if not args.skip_parse:
-        steps.append(Step(
-            name="Parse + load (parse_all)",
-            module="mlb_pipeline.parse_all",
-            timeout_s=7200,
-            critical=True,
-        ))
-
-    if not args.skip_parse:
-        steps.append(Step(
-            name="Compute Elo ratings",
-            module="mlb_pipeline.compute_elo",
-            timeout_s=300,
-            critical=False,
-        ))
-
-    if not args.skip_train:
-        steps.append(Step(
-            name="Train game models",
-            module="mlb_pipeline.modeling.train_game_models",
-            timeout_s=3600,
-            critical=True,
-        ))
-        steps.append(Step(
-            name="Train player prop models",
-            module="mlb_pipeline.modeling.train_player_prop_models",
-            timeout_s=3600,
-            critical=False,
-        ))
-
-    if not args.skip_predict:
-        steps.append(Step(
-            name="Predict today",
-            module="mlb_pipeline.modeling.predict_today",
+            args=("--skip-props",),   # props not needed for game CLV
             timeout_s=600,
+            critical=True,
+        ))
+        steps.append(Step(
+            name="Re-parse closing odds into odds.mlb_game_lines",
+            module="mlb_pipeline.parse_oddsapi",
+            timeout_s=300,
+            critical=True,
+        ))
+        steps.append(Step(
+            name="Grade outcomes + CLV (update_outcomes)",
+            module="mlb_pipeline.modeling.update_outcomes",
+            timeout_s=120,
+            critical=False,
+        ))
+    else:
+        # ── Normal full daily run ────────────────────────────────────────────
+        if not args.skip_crawl:
+            steps.append(Step(
+                name="Crawl MLB Stats API (schedule/boxscores)",
+                module="mlb_pipeline.crawler_statsapi",
+                args=("--season", "2026-regular"),
+                timeout_s=3600,
+                critical=True,
+            ))
+            steps.append(Step(
+                name="Crawl MSF (injuries/lineups)",
+                module="mlb_pipeline.crawler",
+                timeout_s=3600,
+                critical=False,  # MSF returns 403 for MLB game data; non-critical
+            ))
+            steps.append(Step(
+                name="Crawl odds (Odds API)",
+                module="mlb_pipeline.crawler_oddsapi",
+                timeout_s=3600,
+                critical=True,
+            ))
+            steps.append(Step(
+                name="Crawl Statcast (Baseball Savant)",
+                module="mlb_pipeline.crawler_statcast",
+                timeout_s=300,
+                critical=False,
+            ))
+
+        if not args.skip_parse:
+            steps.append(Step(
+                name="Parse + load (parse_all)",
+                module="mlb_pipeline.parse_all",
+                timeout_s=7200,
+                critical=True,
+            ))
+
+        if not args.skip_parse:
+            steps.append(Step(
+                name="Compute Elo ratings",
+                module="mlb_pipeline.compute_elo",
+                timeout_s=300,
+                critical=False,
+            ))
+
+        if not args.skip_train:
+            steps.append(Step(
+                name="Train game models",
+                module="mlb_pipeline.modeling.train_game_models",
+                timeout_s=3600,
+                critical=True,
+            ))
+            steps.append(Step(
+                name="Train player prop models",
+                module="mlb_pipeline.modeling.train_player_prop_models",
+                timeout_s=3600,
+                critical=False,
+            ))
+
+        if not args.skip_predict:
+            steps.append(Step(
+                name="Predict today",
+                module="mlb_pipeline.modeling.predict_today",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Predict player props",
+                module="mlb_pipeline.modeling.predict_player_props",
+                timeout_s=300,
+                critical=False,
+            ))
+
+        # Grade completed games + props (always runs regardless of skip flags)
+        steps.append(Step(
+            name="Grade outcomes (update_outcomes)",
+            module="mlb_pipeline.modeling.update_outcomes",
+            timeout_s=120,
             critical=False,
         ))
         steps.append(Step(
-            name="Predict player props",
-            module="mlb_pipeline.modeling.predict_player_props",
-            timeout_s=300,
+            name="Paper trading report",
+            module="mlb_pipeline.modeling.paper_trading_report",
+            args=("--days", "90"),
+            timeout_s=60,
             critical=False,
         ))
 
-    # Grade completed games + props (always runs regardless of skip flags)
-    steps.append(Step(
-        name="Grade outcomes (update_outcomes)",
-        module="mlb_pipeline.modeling.update_outcomes",
-        timeout_s=120,
-        critical=False,
-    ))
-    steps.append(Step(
-        name="Paper trading report",
-        module="mlb_pipeline.modeling.paper_trading_report",
-        args=("--days", "90"),
-        timeout_s=60,
-        critical=False,
-    ))
-
-    report_path = Path("reports") / f"mlb_daily_{et_day.isoformat()}.md"
+    _suffix = "_close" if args.close_only else ""
+    report_path = Path("reports") / f"mlb_daily_{et_day.isoformat()}{_suffix}.md"
 
     _p(console, f"[bold]ET date:[/bold] {et_day.isoformat()}" if console else f"ET date: {et_day.isoformat()}")
     _p(console, f"[dim]Report:[/dim] {report_path}" if console else f"Report: {report_path}")

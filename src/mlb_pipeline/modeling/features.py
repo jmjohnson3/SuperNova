@@ -370,6 +370,204 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 # Negative product = team is favoured AND has low ERA (good combo)
                 X[f"{_side}_elo_x_sp_quality"] = (_sign * X["elo_diff"]) / (X[_sp_era].clip(lower=1.0))
 
+    # ── SP recent form trends (5-start vs 10-start) ──────────────────────────
+    # Captures hot/cold SP stretches that season-average ERA misses entirely.
+    # Negative = pitcher improving (ERA lower in last 5 vs last 10 starts).
+    # Positive = pitcher declining (ERA higher recently = danger signal).
+    for _side in ("home", "away"):
+        _era5  = f"{_side}_sp_career_era_5"
+        _era10 = f"{_side}_sp_career_era_10"
+        if _era5 in X.columns and _era10 in X.columns:
+            X[f"{_side}_sp_era_trend_5v10"] = (
+                pd.to_numeric(X[_era5],  errors="coerce")
+                - pd.to_numeric(X[_era10], errors="coerce")
+            )
+        _fip5  = f"{_side}_sp_fip_5"
+        _fip10 = f"{_side}_sp_fip_10"
+        if _fip5 in X.columns and _fip10 in X.columns:
+            X[f"{_side}_sp_fip_trend_5v10"] = (
+                pd.to_numeric(X[_fip5],  errors="coerce")
+                - pd.to_numeric(X[_fip10], errors="coerce")
+            )
+        _k5  = f"{_side}_sp_k_pct_5"
+        _k10 = f"{_side}_sp_k_pct_10"
+        if _k5 in X.columns and _k10 in X.columns:
+            X[f"{_side}_sp_k_trend_5v10"] = (
+                pd.to_numeric(X[_k5],  errors="coerce")
+                - pd.to_numeric(X[_k10], errors="coerce")
+            )
+
+    # ERA trend differential: positive = away SP getting worse vs home SP (home form edge)
+    if "home_sp_era_trend_5v10" in X.columns and "away_sp_era_trend_5v10" in X.columns:
+        X["sp_era_trend_diff"] = (
+            X["away_sp_era_trend_5v10"] - X["home_sp_era_trend_5v10"]
+        )
+    if "home_sp_fip_trend_5v10" in X.columns and "away_sp_fip_trend_5v10" in X.columns:
+        X["sp_fip_trend_diff"] = (
+            X["away_sp_fip_trend_5v10"] - X["home_sp_fip_trend_5v10"]
+        )
+
+    # Combined SP form edge (average of ERA and FIP trend differentials)
+    if "sp_era_trend_diff" in X.columns and "sp_fip_trend_diff" in X.columns:
+        X["sp_form_edge"] = (X["sp_era_trend_diff"] + X["sp_fip_trend_diff"]) / 2.0
+    elif "sp_era_trend_diff" in X.columns:
+        X["sp_form_edge"] = X["sp_era_trend_diff"]
+
+    # ── SP venue familiarity (career ERA at this specific ballpark) ───────────
+    # Pitchers perform materially differently at specific parks (flyball pitcher at
+    # Coors vs. groundball pitcher at Petco). Reliability-weighted by prior starts.
+    for _side in ("home", "away"):
+        _v_era  = f"{_side}_sp_venue_era"
+        _c_era  = f"{_side}_sp_career_era_5"
+        _starts = f"{_side}_sp_venue_starts"
+        if _v_era in X.columns and _c_era in X.columns:
+            # Scale reliability 0→1 as starts 0→15 (cap at 15 to avoid single outlier dominance)
+            _rel = (
+                pd.to_numeric(X[_starts], errors="coerce").clip(upper=15.0) / 15.0
+            ).fillna(0.0) if _starts in X.columns else pd.Series(0.0, index=X.index)
+            # Positive = pitcher performs better at this venue vs recent career ERA
+            X[f"{_side}_sp_venue_advantage"] = (
+                pd.to_numeric(X[_c_era],  errors="coerce").fillna(4.0)
+                - pd.to_numeric(X[_v_era], errors="coerce").fillna(4.0)
+            ) * _rel
+
+    # Home advantage vs away disadvantage at this park
+    if "home_sp_venue_advantage" in X.columns and "away_sp_venue_advantage" in X.columns:
+        X["sp_venue_familiarity_diff"] = (
+            X["home_sp_venue_advantage"] - X["away_sp_venue_advantage"]
+        )
+
+    # ── Umpire × SP strikeout interactions for game model ────────────────────
+    # The umpire's strike zone directly affects how many Ks and walks happen.
+    # This is the #1 umpire-driven signal for totals.
+    if "ump_k9_5" in X.columns:
+        _ump_k9 = pd.to_numeric(X["ump_k9_5"], errors="coerce").fillna(7.5)
+        for _side in ("home", "away"):
+            _sp_k = f"{_side}_sp_k_pct_5"
+            if _sp_k in X.columns:
+                # Wide-zone ump amplifies a strikeout pitcher's K ability → fewer baserunners
+                X[f"ump_k9_x_{_side}_sp_k"] = (
+                    _ump_k9 * pd.to_numeric(X[_sp_k], errors="coerce").fillna(0.22)
+                )
+        # Average K environment for the whole game (both SPs × ump zone)
+        _h = "ump_k9_x_home_sp_k"
+        _a = "ump_k9_x_away_sp_k"
+        if _h in X.columns and _a in X.columns:
+            X["ump_sp_k_environment"] = (X[_h] + X[_a]) / 2.0
+
+    if "ump_bb9_5" in X.columns:
+        _ump_bb9 = pd.to_numeric(X["ump_bb9_5"], errors="coerce").fillna(3.0)
+        for _side in ("home", "away"):
+            _team_bb = f"{_side}_bb_pct_avg_10"
+            if _team_bb in X.columns:
+                # Generous ump + walk-prone team = more baserunners = more runs
+                X[f"ump_bb9_x_{_side}_team_bb"] = (
+                    _ump_bb9 * pd.to_numeric(X[_team_bb], errors="coerce").fillna(0.09)
+                )
+
+    # Direct ump scoring environment (strong predictor for game totals)
+    if "ump_rpg_5" in X.columns:
+        X["ump_runs_per_game"] = pd.to_numeric(X["ump_rpg_5"], errors="coerce")
+        # Umpire scoring environment amplified by park run factor
+        if "park_run_factor" in X.columns:
+            X["ump_rpg_x_park"] = (
+                X["ump_runs_per_game"]
+                * pd.to_numeric(X["park_run_factor"], errors="coerce").fillna(1.0)
+            )
+
+    # ── Weather interactions for game totals ─────────────────────────────────
+    # Cold temperatures suppress scoring — ball doesn't carry in cold air.
+    if "temperature_f" in X.columns:
+        _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(72.0)
+        _dome = pd.to_numeric(
+            X["is_dome"] if "is_dome" in X.columns else pd.Series(0.0, index=X.index),
+            errors="coerce",
+        ).fillna(0.0)
+        # Each degree below 60°F in an outdoor park reduces scoring slightly
+        X["temp_cold_penalty"] = (60.0 - _temp).clip(lower=0.0) * (1.0 - _dome)
+        # Binary flag: < 50°F outdoor = significant suppressor (~0.5 fewer runs vs warm avg)
+        X["is_cold_outdoor"] = ((_temp < 50.0) & (_dome < 0.5)).astype(int)
+
+    # Wind: wind_cos ≈ -1 means wind blowing OUT to CF (tailwind = more HRs + runs);
+    # wind_cos ≈ +1 means wind blowing IN from CF (headwind = suppresses scoring).
+    if "wind_cos" in X.columns:
+        _wind_cos = pd.to_numeric(X["wind_cos"], errors="coerce").fillna(0.0)
+        _wind_spd = pd.to_numeric(
+            X["wind_speed_mph"] if "wind_speed_mph" in X.columns else pd.Series(0.0, index=X.index),
+            errors="coerce",
+        ).fillna(0.0)
+        _pf = pd.to_numeric(
+            X["park_run_factor"] if "park_run_factor" in X.columns else pd.Series(1.0, index=X.index),
+            errors="coerce",
+        ).fillna(1.0)
+        # Negative cos (tailwind) × speed × park factor = run-scoring boost
+        X["wind_scoring_boost"] = -_wind_cos * _wind_spd * _pf / 10.0  # /10 to scale
+
+    # Precipitation risk suppresses totals (rain delays, shortened games)
+    if "precip_prob_pct" in X.columns:
+        _precip = pd.to_numeric(X["precip_prob_pct"], errors="coerce").fillna(0.0)
+        _dome = pd.to_numeric(
+            X["is_dome"] if "is_dome" in X.columns else pd.Series(0.0, index=X.index),
+            errors="coerce",
+        ).fillna(0.0)
+        X["precip_scoring_risk"] = _precip * (1.0 - _dome) / 100.0
+
+    # ── SP handedness vs opposing lineup (platoon advantage) ─────────────────
+    # Teams systematically hit better or worse vs one pitcher handedness.
+    # We select the relevant hand-split batting stat based on today's opposing SP.
+    # Reliability weighted by games_vs_lhp / games_vs_rhp (sample size).
+    for _bat_side, _sp_side in [("home", "away"), ("away", "home")]:
+        _sp_hand_L  = f"{_sp_side}_sp_pitch_hand_L"   # 1 if today's SP is LHP
+        _avg_vs_lhp = f"{_bat_side}_team_avg_vs_lhp"
+        _avg_vs_rhp = f"{_bat_side}_team_avg_vs_rhp"
+        _obp_vs_lhp = f"{_bat_side}_team_obp_vs_lhp"
+        _obp_vs_rhp = f"{_bat_side}_team_obp_vs_rhp"
+        _g_lhp      = f"{_bat_side}_games_vs_lhp"
+        _g_rhp      = f"{_bat_side}_games_vs_rhp"
+        _overall    = f"{_bat_side}_avg_avg_10"        # overall 10-game batting avg
+
+        if _sp_hand_L not in X.columns or _avg_vs_lhp not in X.columns:
+            continue
+
+        _is_lhp = pd.to_numeric(X[_sp_hand_L], errors="coerce").fillna(0.0)
+        _overall_avg = pd.to_numeric(
+            X[_overall] if _overall in X.columns else pd.Series(0.255, index=X.index),
+            errors="coerce",
+        ).fillna(0.255)
+
+        # Reliability weights: scale 0→1 as sample games 0→10
+        _g_vs_l = pd.to_numeric(
+            X[_g_lhp] if _g_lhp in X.columns else pd.Series(0.0, index=X.index),
+            errors="coerce",
+        ).fillna(0.0)
+        _g_vs_r = pd.to_numeric(
+            X[_g_rhp] if _g_rhp in X.columns else pd.Series(0.0, index=X.index),
+            errors="coerce",
+        ).fillna(0.0)
+        _rel_l = (_g_vs_l / 10.0).clip(upper=1.0)
+        _rel_r = (_g_vs_r / 10.0).clip(upper=1.0)
+
+        # Weighted batting avg vs the actual opposing SP handedness today
+        _avgl = pd.to_numeric(X[_avg_vs_lhp], errors="coerce").fillna(_overall_avg)
+        _avgr = pd.to_numeric(X[_avg_vs_rhp], errors="coerce").fillna(_overall_avg)
+        _bat_vs_sp_hand = (
+            _is_lhp * (_overall_avg + (_avgl - _overall_avg) * _rel_l)
+            + (1.0 - _is_lhp) * (_overall_avg + (_avgr - _overall_avg) * _rel_r)
+        )
+        # Delta vs overall batting: positive = team has platoon advantage today
+        X[f"{_bat_side}_hand_matchup_edge"] = _bat_vs_sp_hand - _overall_avg
+
+        # OPS-based version for stronger signal
+        if _obp_vs_lhp in X.columns and _obp_vs_rhp in X.columns:
+            _obpl = pd.to_numeric(X[_obp_vs_lhp], errors="coerce")
+            _obpr = pd.to_numeric(X[_obp_vs_rhp], errors="coerce")
+            _obp_vs_hand = _is_lhp * _obpl.fillna(0.32) + (1.0 - _is_lhp) * _obpr.fillna(0.32)
+            X[f"{_bat_side}_obp_vs_sp_hand"] = _obp_vs_hand
+
+    # Combined platoon edge: home batting advantage vs away SP hand minus away's vs home SP
+    if "home_hand_matchup_edge" in X.columns and "away_hand_matchup_edge" in X.columns:
+        X["platoon_matchup_diff"] = X["home_hand_matchup_edge"] - X["away_hand_matchup_edge"]
+
     return X
 
 
@@ -453,11 +651,16 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         denom = X["bb_sd_10"].where(X["bb_sd_10"] > 1e-6, other=np.nan)
         X["bb_trend_sig"] = X["bb_trend_5v10"] / denom
 
-    # ── Umpire walk-tendency ──────────────────────────────────────────────────
+    # ── Umpire zone-tendency interactions ────────────────────────────────────
     if "ump_bb9_avg_10" in X.columns and "bb_rate_avg_10" in X.columns:
         X["ump_bb9_x_batter_bb_rate"] = X["ump_bb9_avg_10"] * X["bb_rate_avg_10"]
     if "ump_bb9_avg_10" in X.columns and "bb_avg_10" in X.columns:
         X["ump_bb9_x_bb_avg_10"] = X["ump_bb9_avg_10"] * X["bb_avg_10"]
+    # Pitcher strikeout model: ump K9 × pitcher K rate (wide-zone ump amplifies K ability)
+    if "ump_k9_avg_10" in X.columns and "k_pct_5" in X.columns:
+        X["ump_k9_x_sp_k_pct"] = X["ump_k9_avg_10"] * X["k_pct_5"]
+    if "ump_k9_avg_10" in X.columns and "opp_k_pct_avg_10" in X.columns:
+        X["ump_k9_x_opp_k_pct"] = X["ump_k9_avg_10"] * X["opp_k_pct_avg_10"]
 
     # ── Lineup slot ───────────────────────────────────────────────────────────
     if "batting_order_avg_10" in X.columns:

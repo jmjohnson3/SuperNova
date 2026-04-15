@@ -264,7 +264,7 @@ def backfill_clv(conn) -> int:
                    market_rl_price, market_total_price
             FROM bets.mlb_game_predictions
             WHERE actual_home_score IS NOT NULL
-              AND clv_run_line IS NULL
+              AND (clv_run_line IS NULL OR clv_rl_price IS NULL)
               AND (run_line_bet_side IS NOT NULL OR total_bet_side IS NOT NULL)
         """)
         rows = cur.fetchall()

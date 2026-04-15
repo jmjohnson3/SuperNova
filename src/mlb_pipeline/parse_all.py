@@ -30,6 +30,8 @@ _MLB_SQL_VIEWS = [
     "MLB014_mlb_player_prev_season_stats.sql",       # full prior-season aggregate stats
     "MLB015_mlb_batter_vs_sp.sql",                   # batter vs specific SP career H2H base view
     "MLB016_mlb_elo_features.sql",                    # Elo rating features (depends on raw.mlb_elo)
+    "MLB017_mlb_sp_venue_stats.sql",                  # SP career stats per venue (Group F)
+    "MLB018_mlb_team_batting_vs_hand.sql",            # team batting vs LHP/RHP (Group F)
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -55,6 +57,8 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batting_vs_hand_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_batting_rolling_cross_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_prev_season_stats_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_vs_sp_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_venue_stats_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_vs_hand_mat;
 """
 
 
@@ -92,16 +96,18 @@ def _apply_sql_views(pg_dsn: str) -> None:
 
 
 _MATVIEW_TO_VIEW = {
-    "mlb_team_batting_rolling_mat":  "mlb_team_batting_rolling",
-    "mlb_team_pitching_rolling_mat": "mlb_team_pitching_rolling",
-    "mlb_pitcher_rolling_mat":       "mlb_pitcher_rolling",
-    "mlb_standings_rest_mat":        "mlb_standings_rest",
-    "mlb_player_batting_rolling_mat": "mlb_player_batting_rolling",
-    "mlb_umpire_rolling_mat":        "mlb_umpire_rolling",
-    "mlb_batting_vs_hand_mat":             "mlb_batting_vs_hand",
+    "mlb_team_batting_rolling_mat":       "mlb_team_batting_rolling",
+    "mlb_team_pitching_rolling_mat":      "mlb_team_pitching_rolling",
+    "mlb_pitcher_rolling_mat":            "mlb_pitcher_rolling",
+    "mlb_standings_rest_mat":             "mlb_standings_rest",
+    "mlb_player_batting_rolling_mat":     "mlb_player_batting_rolling",
+    "mlb_umpire_rolling_mat":             "mlb_umpire_rolling",
+    "mlb_batting_vs_hand_mat":            "mlb_batting_vs_hand",
     "mlb_player_batting_rolling_cross_mat": "mlb_player_batting_rolling_cross",
-    "mlb_player_prev_season_stats_mat":    "mlb_player_prev_season_stats",
+    "mlb_player_prev_season_stats_mat":   "mlb_player_prev_season_stats",
     "mlb_batter_vs_sp_mat":               "mlb_batter_vs_sp",
+    "mlb_sp_venue_stats_mat":             "mlb_sp_venue_stats",        # Group F
+    "mlb_team_batting_vs_hand_mat":       "mlb_team_batting_vs_hand",  # Group F
 }
 
 

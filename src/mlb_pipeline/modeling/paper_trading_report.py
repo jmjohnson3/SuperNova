@@ -120,6 +120,141 @@ def print_report(conn, days: int = 90) -> None:
         avg_price_ctot = float(ov["avg_price_clv_tot"] or 0)
         print(f"  Total    (price): {price_clv_tot_n} graded  avg CLV = {avg_price_ctot:+.2f}%")
 
+    # ── Game bets by edge bucket ──────────────────────────────────────────────
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                bet_type,
+                edge_bucket,
+                COUNT(*)                                                AS n,
+                SUM(CASE WHEN covered THEN 1 ELSE 0 END)               AS wins,
+                AVG(CASE WHEN clv IS NOT NULL THEN clv END)            AS avg_clv
+            FROM (
+                SELECT
+                    'run_line'                                          AS bet_type,
+                    CASE
+                        WHEN ABS(edge_run_line) < 1.0 THEN '0.0-1.0'
+                        WHEN ABS(edge_run_line) < 1.5 THEN '1.0-1.5'
+                        WHEN ABS(edge_run_line) < 2.0 THEN '1.5-2.0'
+                        WHEN ABS(edge_run_line) < 2.5 THEN '2.0-2.5'
+                        WHEN ABS(edge_run_line) < 3.0 THEN '2.5-3.0'
+                        ELSE '3.0+'
+                    END                                                 AS edge_bucket,
+                    run_line_covered                                    AS covered,
+                    clv_run_line                                        AS clv
+                FROM bets.mlb_game_predictions
+                WHERE game_date_et >= %s
+                  AND run_line_covered IS NOT NULL
+                  AND edge_run_line IS NOT NULL
+                UNION ALL
+                SELECT
+                    'total',
+                    CASE
+                        WHEN ABS(edge_total) < 1.0 THEN '0.0-1.0'
+                        WHEN ABS(edge_total) < 1.5 THEN '1.0-1.5'
+                        WHEN ABS(edge_total) < 2.0 THEN '1.5-2.0'
+                        WHEN ABS(edge_total) < 2.5 THEN '2.0-2.5'
+                        WHEN ABS(edge_total) < 3.0 THEN '2.5-3.0'
+                        ELSE '3.0+'
+                    END,
+                    total_covered,
+                    clv_total
+                FROM bets.mlb_game_predictions
+                WHERE game_date_et >= %s
+                  AND total_covered IS NOT NULL
+                  AND edge_total IS NOT NULL
+            ) sub
+            GROUP BY 1, 2
+            ORDER BY 1, 2
+        """, (cutoff, cutoff))
+        bucket_rows = cur.fetchall()
+
+    if bucket_rows:
+        print(f"\n  Game Bets by Edge Bucket  (last {days}d)")
+        print(f"  {'Type':<10}  {'Edge':>7}  {'W-L':<12}  {'Win%':>6}  {'ROI':>8}  {'AvgCLV':>8}")
+        print(f"  {'-'*10}  {'-'*7}  {'-'*12}  {'-'*6}  {'-'*8}  {'-'*8}")
+        for r in bucket_rows:
+            n, w = int(r["n"]), int(r["wins"])
+            clv_str = f"{float(r['avg_clv']):+.2f}" if r["avg_clv"] is not None else "  N/A"
+            print(f"  {r['bet_type']:<10}  {r['edge_bucket']:>7}  {w}-{n-w:<8}  "
+                  f"{_pct(w, n):>6}  {_roi(w, n):>+7.1f}%  {clv_str:>8}")
+
+    # ── Bet side breakdown ────────────────────────────────────────────────────
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                run_line_bet_side                                       AS side,
+                COUNT(*) FILTER (WHERE run_line_covered IS NOT NULL)   AS rl_n,
+                SUM(CASE WHEN run_line_covered THEN 1 ELSE 0 END)
+                    FILTER (WHERE run_line_covered IS NOT NULL)         AS rl_w,
+                total_bet_side                                          AS tot_side,
+                COUNT(*) FILTER (WHERE total_covered IS NOT NULL)      AS tot_n,
+                SUM(CASE WHEN total_covered THEN 1 ELSE 0 END)
+                    FILTER (WHERE total_covered IS NOT NULL)            AS tot_w
+            FROM bets.mlb_game_predictions
+            WHERE game_date_et >= %s
+            GROUP BY 1, 4
+            ORDER BY 1, 4
+        """, (cutoff,))
+        side_rows = cur.fetchall()
+
+    if side_rows:
+        seen_rl, seen_tot = set(), set()
+        rl_lines, tot_lines = [], []
+        for r in side_rows:
+            s = r["side"]
+            if s and s not in seen_rl:
+                seen_rl.add(s)
+                n, w = int(r["rl_n"] or 0), int(r["rl_w"] or 0)
+                if n:
+                    rl_lines.append(f"{s:<6} {w}-{n-w} ({_pct(w,n)}) ROI:{_roi(w,n):+.1f}%")
+            ts = r["tot_side"]
+            if ts and ts not in seen_tot:
+                seen_tot.add(ts)
+                n, w = int(r["tot_n"] or 0), int(r["tot_w"] or 0)
+                if n:
+                    tot_lines.append(f"{ts:<6} {w}-{n-w} ({_pct(w,n)}) ROI:{_roi(w,n):+.1f}%")
+        if rl_lines or tot_lines:
+            print(f"\n  Bet Side Breakdown")
+            if rl_lines:
+                print(f"  Run Line:  " + "   |   ".join(rl_lines))
+            if tot_lines:
+                print(f"  Total:     " + "   |   ".join(tot_lines))
+
+    # ── Day game vs night game split ──────────────────────────────────────────
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                (EXTRACT(HOUR FROM g.start_ts_utc AT TIME ZONE 'America/New_York') < 17)
+                    AS is_day_game,
+                COUNT(*) FILTER (WHERE p.run_line_covered IS NOT NULL)  AS rl_n,
+                SUM(CASE WHEN p.run_line_covered THEN 1 ELSE 0 END)
+                    FILTER (WHERE p.run_line_covered IS NOT NULL)        AS rl_w,
+                COUNT(*) FILTER (WHERE p.total_covered IS NOT NULL)     AS tot_n,
+                SUM(CASE WHEN p.total_covered THEN 1 ELSE 0 END)
+                    FILTER (WHERE p.total_covered IS NOT NULL)           AS tot_w
+            FROM bets.mlb_game_predictions p
+            JOIN raw.mlb_games g ON g.game_slug = p.game_slug
+            WHERE p.game_date_et >= %s
+              AND g.start_ts_utc IS NOT NULL
+              AND (p.run_line_covered IS NOT NULL OR p.total_covered IS NOT NULL)
+            GROUP BY 1
+            ORDER BY 1
+        """, (cutoff,))
+        day_rows = cur.fetchall()
+
+    if day_rows and len(day_rows) > 1:
+        print(f"\n  Day vs Night Game Split")
+        print(f"  {'Context':<10}  {'Run Line':<22}  {'Total'}")
+        print(f"  {'-'*10}  {'-'*22}  {'-'*22}")
+        for r in day_rows:
+            label = "Day" if r["is_day_game"] else "Night"
+            rln, rlw = int(r["rl_n"] or 0), int(r["rl_w"] or 0)
+            ton, tow = int(r["tot_n"] or 0), int(r["tot_w"] or 0)
+            rl_str  = f"{rlw}-{rln-rlw} ({_pct(rlw,rln)}) {_roi(rlw,rln):+.1f}%" if rln else "N/A"
+            tot_str = f"{tow}-{ton-tow} ({_pct(tow,ton)}) {_roi(tow,ton):+.1f}%" if ton else "N/A"
+            print(f"  {label:<10}  {rl_str:<22}  {tot_str}")
+
     # ── Weekly breakdown ─────────────────────────────────────────────────────
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""

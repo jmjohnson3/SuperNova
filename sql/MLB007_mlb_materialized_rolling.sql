@@ -113,3 +113,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS mlb_bvsp_pk
 -- Secondary index for inference LATERAL (most-recent career stats before date)
 CREATE INDEX IF NOT EXISTS mlb_bvsp_lookup
     ON features.mlb_batter_vs_sp_mat (batter_id, pitcher_id, game_date_et DESC);
+
+-- ============================================================
+-- SP venue career stats materialized view (MLB017)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_sp_venue_stats_mat AS
+SELECT * FROM features.mlb_sp_venue_stats;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_sp_venue_stats_mat_pk
+    ON features.mlb_sp_venue_stats_mat (game_slug, player_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_sp_venue_stats_mat_player_venue
+    ON features.mlb_sp_venue_stats_mat (player_id, venue_id, game_date_et DESC, game_slug DESC);
+
+-- ============================================================
+-- Team batting vs SP handedness materialized view (MLB018)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_team_batting_vs_hand_mat AS
+SELECT * FROM features.mlb_team_batting_vs_hand;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_team_batting_vs_hand_mat_pk
+    ON features.mlb_team_batting_vs_hand_mat (game_slug, team_abbr);
+CREATE INDEX IF NOT EXISTS idx_mlb_team_batting_vs_hand_mat_team_date
+    ON features.mlb_team_batting_vs_hand_mat (team_abbr, game_date_et DESC, game_slug DESC);
