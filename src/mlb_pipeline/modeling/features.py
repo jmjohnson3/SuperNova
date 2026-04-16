@@ -345,6 +345,28 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         if _bp7 in X.columns and _rest in X.columns:
             X[f"{_side}_bp_usage_per_rest"] = X[_bp7] / X[_rest].clip(lower=0.5)
 
+    # ── Individual reliever usage edge (Group G) ─────────────────────────────────
+    # Positive = away team used more relievers recently (home team has fresher pen)
+    for _w, _days in (("1d", "1"), ("2d", "2"), ("3d", "3")):
+        h = f"home_bp_relievers_last_{_w}"
+        a = f"away_bp_relievers_last_{_w}"
+        if h in X.columns and a in X.columns:
+            X[f"bp_relievers_edge_{_w}"] = (
+                pd.to_numeric(X[a], errors="coerce").fillna(0)
+                - pd.to_numeric(X[h], errors="coerce").fillna(0)
+            )
+
+    # Yesterday's reliever count × yesterday's IP: "hot pen" signal
+    # (many relievers AND high IP yesterday = deeply depleted bullpen)
+    for _side in ("home", "away"):
+        _cnt = f"{_side}_bp_relievers_last_1d"
+        _ip  = f"{_side}_bp_ip_last_1d"
+        if _cnt in X.columns and _ip in X.columns:
+            X[f"{_side}_bp_hot_1d"] = (
+                pd.to_numeric(X[_cnt], errors="coerce").fillna(0)
+                * pd.to_numeric(X[_ip],  errors="coerce").fillna(0)
+            )
+
     # ── SP quality × opponent batting interaction (Improvement 3) ────────────────
     # ERA × opposing batting average: pitcher quality vs opponent quality
     for _h, _a in [("home", "away"), ("away", "home")]:
@@ -413,6 +435,70 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     elif "sp_era_trend_diff" in X.columns:
         X["sp_form_edge"] = X["sp_era_trend_diff"]
 
+    # ── SP last-outing workload (Item #4) ────────────────────────────────────────
+    # last_start_ip = innings TODAY's SP threw in their most recent prior start.
+    # Short outing: was pulled before 5th inning → may signal poor form or injury.
+    # IP / rest days: high = more accumulated fatigue entering today.
+    for _side in ("home", "away"):
+        _ip   = f"{_side}_sp_last_ip"
+        _rest = f"{_side}_sp_days_rest"
+        if _ip in X.columns:
+            _lip = pd.to_numeric(X[_ip], errors="coerce").fillna(5.5)  # ~league avg
+            X[f"{_side}_sp_last_short"] = (_lip < 5.0).astype(int)
+            if _rest in X.columns:
+                _r = pd.to_numeric(X[_rest], errors="coerce").clip(lower=1.0).fillna(5.0)
+                X[f"{_side}_sp_ip_per_rest"] = _lip / _r
+
+    # Differential: positive = away SP carried more workload per rest day (home edge)
+    if "home_sp_ip_per_rest" in X.columns and "away_sp_ip_per_rest" in X.columns:
+        X["sp_workload_edge"] = X["away_sp_ip_per_rest"] - X["home_sp_ip_per_rest"]
+
+    # ── SP 20-start regression anchor ─────────────────────────────────────────
+    # 5-start ERA minus 20-start baseline: positive = recently worse than career norm
+    # → expect regression toward mean (caution flag). Negative = on a hot streak.
+    for _side in ("home", "away"):
+        _e5  = f"{_side}_sp_career_era_5"
+        _e20 = f"{_side}_sp_era_20"
+        _f5  = f"{_side}_sp_fip_5"
+        _f20 = f"{_side}_sp_fip_20"
+        if _e20 in X.columns and _e5 in X.columns:
+            X[f"{_side}_sp_era_5v20"] = (
+                pd.to_numeric(X[_e5],  errors="coerce").fillna(4.0)
+                - pd.to_numeric(X[_e20], errors="coerce").fillna(4.0)
+            )
+        if _f20 in X.columns and _f5 in X.columns:
+            X[f"{_side}_sp_fip_5v20"] = (
+                pd.to_numeric(X[_f5],  errors="coerce").fillna(4.0)
+                - pd.to_numeric(X[_f20], errors="coerce").fillna(4.0)
+            )
+    # Differential: positive = away SP more likely to regress (home pitching edge)
+    if "home_sp_era_5v20" in X.columns and "away_sp_era_5v20" in X.columns:
+        X["sp_era_regression_diff"] = (
+            X["away_sp_era_5v20"] - X["home_sp_era_5v20"]
+        )
+
+    # ── Last-start quality composite ──────────────────────────────────────────
+    # FIP of last outing = best single-number quality proxy for that start.
+    # K/IP rate in last start = command × stuff signal.
+    for _side in ("home", "away"):
+        _lfip = f"{_side}_sp_last_fip"
+        _lk   = f"{_side}_sp_last_k"
+        _lip  = f"{_side}_sp_last_ip"
+        if _lfip in X.columns:
+            X[f"{_side}_sp_last_quality"] = (
+                pd.to_numeric(X[_lfip], errors="coerce").fillna(4.0)
+            )
+        if _lk in X.columns and _lip in X.columns:
+            _lk_val  = pd.to_numeric(X[_lk],  errors="coerce").fillna(0.0)
+            _lip_val = pd.to_numeric(X[_lip], errors="coerce").clip(lower=0.1).fillna(5.5)
+            X[f"{_side}_sp_last_k_rate"] = _lk_val / _lip_val
+    # Positive = away SP had worse last-outing FIP (home pitching edge today)
+    if "home_sp_last_quality" in X.columns and "away_sp_last_quality" in X.columns:
+        X["sp_last_quality_diff"] = (
+            pd.to_numeric(X["away_sp_last_quality"], errors="coerce").fillna(4.0)
+            - pd.to_numeric(X["home_sp_last_quality"], errors="coerce").fillna(4.0)
+        )
+
     # ── SP venue familiarity (career ERA at this specific ballpark) ───────────
     # Pitchers perform materially differently at specific parks (flyball pitcher at
     # Coors vs. groundball pitcher at Petco). Reliability-weighted by prior starts.
@@ -474,6 +560,74 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 X["ump_runs_per_game"]
                 * pd.to_numeric(X["park_run_factor"], errors="coerce").fillna(1.0)
             )
+
+    # ── Combined total-suppression environment ────────────────────────────────
+    # These are ADDITIVE features for the total model — not home-vs-away differentials.
+    # Both starters' K-rate: high combined K% = fewer baserunners across the whole game.
+    _hspk = "home_sp_k_pct_5"
+    _aspk = "away_sp_k_pct_5"
+    if _hspk in X.columns and _aspk in X.columns:
+        X["combined_sp_k_pct"] = (
+            pd.to_numeric(X[_hspk], errors="coerce").fillna(0.22)
+            + pd.to_numeric(X[_aspk], errors="coerce").fillna(0.22)
+        ) / 2.0
+
+    # Both bullpens' K/9: high combined bullpen K9 suppresses late-inning run scoring.
+    _hbpk = "home_bp_k9_5"
+    _abpk = "away_bp_k9_5"
+    if _hbpk in X.columns and _abpk in X.columns:
+        X["combined_bp_k9"] = (
+            pd.to_numeric(X[_hbpk], errors="coerce").fillna(8.5)
+            + pd.to_numeric(X[_abpk], errors="coerce").fillna(8.5)
+        ) / 2.0
+        # Bullpen K differential for run-line: positive = home bullpen has higher K9
+        X["bp_k9_edge"] = (
+            pd.to_numeric(X[_hbpk], errors="coerce").fillna(8.5)
+            - pd.to_numeric(X[_abpk], errors="coerce").fillna(8.5)
+        )
+
+    # Full-game K environment: SP + bullpen combined × umpire zone
+    if "combined_sp_k_pct" in X.columns and "combined_bp_k9" in X.columns:
+        X["total_k_env"] = X["combined_sp_k_pct"] * X["combined_bp_k9"]
+        if "ump_sp_k_environment" in X.columns:
+            X["total_k_suppression"] = (
+                X["total_k_env"]
+                * pd.to_numeric(X["ump_sp_k_environment"], errors="coerce").fillna(1.5)
+            )
+
+    # ── Combined offensive environment (additive signals for total model) ──────
+    # These are SUM (not difference) of home + away stats — the kind of signal
+    # that predicts total run scoring rather than which team wins.
+    _additive_pairs = [
+        ("home_runs_avg_5",  "away_runs_avg_5",  "combined_runs_avg_5",  4.0),
+        ("home_runs_avg_10", "away_runs_avg_10", "combined_runs_avg_10", 4.0),
+        ("home_obp_avg_10",  "away_obp_avg_10",  "combined_obp_avg_10",  0.32),
+        ("home_slg_avg_10",  "away_slg_avg_10",  "combined_slg_avg_10",  0.40),
+        ("home_ops_10",      "away_ops_10",      "combined_ops_10",      0.72),
+    ]
+    for _hc, _ac, _name, _fill in _additive_pairs:
+        if _hc in X.columns and _ac in X.columns:
+            X[_name] = (
+                pd.to_numeric(X[_hc], errors="coerce").fillna(_fill)
+                + pd.to_numeric(X[_ac], errors="coerce").fillna(_fill)
+            )
+
+    # Combined SP ERA (both pitchers struggling = more runs expected)
+    for _suffix, _fill in [("5", 4.0), ("10", 4.0)]:
+        _hsp = f"home_sp_era_{_suffix}"
+        _asp = f"away_sp_era_{_suffix}"
+        if _hsp in X.columns and _asp in X.columns:
+            X[f"combined_sp_era_{_suffix}"] = (
+                pd.to_numeric(X[_hsp], errors="coerce").fillna(_fill)
+                + pd.to_numeric(X[_asp], errors="coerce").fillna(_fill)
+            )
+
+    # Park-adjusted total run environment
+    if "park_run_factor" in X.columns and "combined_runs_avg_10" in X.columns:
+        X["park_adj_total_env"] = (
+            pd.to_numeric(X["combined_runs_avg_10"], errors="coerce").fillna(8.5)
+            * pd.to_numeric(X["park_run_factor"], errors="coerce").fillna(1.0)
+        )
 
     # ── Weather interactions for game totals ─────────────────────────────────
     # Cold temperatures suppress scoring — ball doesn't carry in cold air.

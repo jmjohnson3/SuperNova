@@ -38,8 +38,10 @@ class PredictConfig:
     # Minimum |edge| in runs to flag a run-line bet
     min_edge_run_line: float = 1.5
     # Minimum |edge| in runs to flag a total bet (over OR under)
-    # Raised from 3.0 → 6.0: scan_thresholds shows totals lose at ALL thresholds (0-3 range)
-    # Effectively disables total bets until model is retrained with better features
+    # 2026-04-15 retrain (+ SP workload features): scan_thresholds still shows totals
+    # negative at every meaningful threshold (best: 5-7, -20.5% ROI @ 1.75; only 2-3 bets
+    # show +ROI but n<5 = noise). Keeping at 6.0 to effectively disable until a future
+    # retrain shows a genuine +ROI bucket with n>=15.
     min_edge_total: float = 6.0
 
 
@@ -307,6 +309,50 @@ def _compute_live_bias(engine) -> tuple[float, float]:
     except Exception as exc:
         log.warning("Could not compute live bias: %s", exc)
         return 0.0, 0.0
+
+
+def _compute_team_bias(engine, min_games: int = 4, shrinkage: float = 0.4) -> dict[str, float]:
+    """Rolling per-team mean prediction error (last 30 days).
+
+    Positive value = team has been over-rated (model predicted better than reality).
+    Requires min_games per team to apply correction; otherwise omits that team.
+
+    Attribution:
+      home team gets +error  (pred_run_diff - actual_run_diff)
+      away team gets -error  (they look better when home team is over-predicted)
+    Both perspectives pooled per team, then shrunk toward 0.
+    """
+    sql = text("""
+        SELECT home_team_abbr, away_team_abbr,
+               (pred_run_diff - actual_run_diff) AS error
+        FROM bets.mlb_game_predictions
+        WHERE actual_run_diff IS NOT NULL
+          AND pred_run_diff   IS NOT NULL
+          AND game_date_et >= CURRENT_DATE - INTERVAL '30 days'
+    """)
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sql).fetchall()
+        if not rows:
+            return {}
+        from collections import defaultdict
+        team_errors: dict[str, list[float]] = defaultdict(list)
+        for r in rows:
+            err = float(r[2] or 0.0)
+            team_errors[r[0]].append(err)    # home: +error
+            team_errors[r[1]].append(-err)   # away: -error
+        result: dict[str, float] = {}
+        for team, errs in team_errors.items():
+            if len(errs) >= min_games:
+                result[team] = shrinkage * (sum(errs) / len(errs))
+        if result:
+            log.info("Team bias correction: %d teams  top: %s",
+                     len(result),
+                     sorted(result.items(), key=lambda x: abs(x[1]), reverse=True)[:5])
+        return result
+    except Exception as exc:
+        log.warning("Could not compute team bias: %s", exc)
+        return {}
 
 
 def _kelly(
@@ -634,6 +680,25 @@ def main() -> None:
     bias_rl, bias_total = _compute_live_bias(engine)
     pred_run_diff_final = pred_run_diff_final - bias_rl
     pred_total_final    = pred_total_final    - bias_total
+
+    # Per-team bias correction
+    team_bias = _compute_team_bias(engine)
+    if team_bias:
+        home_teams = id_df["home_team_abbr"].values
+        away_teams = id_df["away_team_abbr"].values
+        for i, (ht, at) in enumerate(zip(home_teams, away_teams)):
+            home_adj = team_bias.get(ht, 0.0)
+            away_adj = team_bias.get(at, 0.0)
+            pred_run_diff_final[i] -= (home_adj - away_adj)
+
+    # Shrink extreme predictions — reduces overconfidence on high-edge bets.
+    # 10% linear shrinkage of predictions exceeding ±2.5 runs.
+    # At |pred|=3.5: shrinks to 3.40. At |pred|=4.0: shrinks to 3.85.
+    _SHRINK_ABOVE = 2.5
+    _SHRINK_RATE  = 0.10
+    _abs = np.abs(pred_run_diff_final)
+    _excess = np.maximum(_abs - _SHRINK_ABOVE, 0.0)
+    pred_run_diff_final = np.sign(pred_run_diff_final) * (_abs - _SHRINK_RATE * _excess)
 
     # Clip predictions to reasonable MLB ranges
     pred_run_diff_final = np.clip(pred_run_diff_final, -15.0, 15.0)

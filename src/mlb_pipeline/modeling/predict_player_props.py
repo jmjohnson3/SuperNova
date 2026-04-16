@@ -69,11 +69,13 @@ class PredictConfig:
     threshold_strikeouts: float = 2.0
     # Raised from 0.5 → 0.75: optimal threshold per scan (75-25, ROI +43%); UNDER side dominant
     threshold_hits: float = 0.75
-    # Raised from 0.5 → 0.6: OVER bets lose at all thresholds; 0.6 keeps 407 bets at +28% ROI
-    threshold_total_bases: float = 0.6
+    # Raised from 0.6 → 1.5: 2026-04-16 scan shows optimal 1.50 (15-5, ROI +43.2%, n=20);
+    # OVER bets lose at all thresholds — UNDER side dominant
+    threshold_total_bases: float = 1.5
     # Raised from 0.25 → 0.45: optimal per scan (303-22, ROI +78%); model always bets UNDER
     threshold_home_runs: float = 0.45
-    threshold_walks: float = 0.3
+    # Lowered from 0.30 → 0.05: 2026-04-16 scan shows optimal 0.05 (12-1, ROI +76.2%, n=13)
+    threshold_walks: float = 0.05
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1194,6 +1196,46 @@ def _print_discord(
                 print(f"**{title}{sfx}** [FD]({url})")
 
     _parlay("Prop Bets Parlay", [b["lnk"] for b in all_prop_bets if b["lnk"]])
+
+    # ── Top hitters leaderboard (Discord only) ────────────────────────────
+    if is_discord and all_batter_rows:
+        def _top_stat(stat_col: str, stat_key: str, top_n: int, label: str) -> None:
+            rows = [r for r in all_batter_rows if r.get(stat_col) is not None]
+            if not rows:
+                return
+            rows.sort(key=lambda r: r[stat_col], reverse=True)
+            lines_out = []
+            for r in rows[:top_n]:
+                name  = r.get("player_name", f"id={r['player_id']}")
+                team  = r.get("team_abbr", "?")
+                opp   = r.get("opponent_abbr", "?")
+                pred  = r[stat_col]
+                norm  = _normalize_name(name)
+                ld    = prop_lines.get((norm, stat_key))
+                line  = ld["line"] if ld else None
+                short = _link_name(name)
+                if line is not None:
+                    edge    = pred - line
+                    dir_str = "O" if edge > 0 else "U"
+                    bet_lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                    lnk_str = f"  [FD](<{bet_lnk}>)" if bet_lnk else ""
+                    if stat_col == "pred_home_runs":
+                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.3f} | {dir_str}{line:.1f} edge {edge:+.3f}{lnk_str}")
+                    else:
+                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.2f} | {dir_str}{line:.1f} edge {edge:+.2f}{lnk_str}")
+                else:
+                    if stat_col == "pred_home_runs":
+                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.3f}")
+                    else:
+                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.2f}")
+            if lines_out:
+                print(f"\n**{label}**")
+                for l in lines_out:
+                    print(l)
+
+        _top_stat("pred_home_runs",   "batter_home_runs",   1, "Top HR Hitter")
+        _top_stat("pred_total_bases", "batter_total_bases", 2, "Top TB Hitters")
+        _top_stat("pred_hits",        "batter_hits",        2, "Top H Hitters")
 
     return []  # parlays already printed; outer parlay logic skipped
 

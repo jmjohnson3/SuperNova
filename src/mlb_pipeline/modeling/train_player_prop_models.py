@@ -64,9 +64,10 @@ class TrainConfig:
     random_state: int = 42
 
     # Optuna hyperparameter tuning
+    # Reduced from 20/5 → 12/3: 36 fits/stat × 5 stats = 180 total (~3.5x faster, avoids 3600s timeout)
     run_optuna: bool = True
-    optuna_n_trials: int = 20
-    optuna_n_folds: int = 5   # last N walk-forward folds used for tuning
+    optuna_n_trials: int = 12
+    optuna_n_folds: int = 3   # last N walk-forward folds used for tuning
 
 
 # ─────────────────────────────────────────────────────────────────────────────
