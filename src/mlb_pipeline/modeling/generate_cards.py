@@ -288,49 +288,59 @@ def make_game_bets_card(bets: list[dict], et_date: date) -> Image.Image:
 
 def make_prop_card(
     players: list[dict],
-    stat_label: str,
-    dot_color: tuple,
-    stat_fmt: str,
+    stat_title: str,
     et_date: date,
 ) -> Image.Image:
-    """
-    players: list of dicts with keys:
-      player_name, team_abbr, pred_value, book_line, edge, opponent_abbr
-    """
+    """Simple pick card: big stat title + player name/team. No predictions or edges."""
+    PAD = 28
+    TITLE_H  = 90   # space for the big centred stat title
+    PLAYER_H = 72   # space per player row
     n = max(len(players), 1)
-    total_h = 80 + 50 + n * 98 + 30
+    total_h = 80 + TITLE_H + n * PLAYER_H + PAD
+
     img  = Image.new("RGB", (W, total_h), BG)
     draw = ImageDraw.Draw(img)
     f    = _fonts()
 
-    y = _draw_header(draw, f, stat_label, et_date)
-    y += 8
+    # Header (SUPERNOVA MLB + date, no subtitle)
+    y = _draw_header(draw, f, "", et_date)
 
-    section_txt = f"TOP {stat_label.upper()} HITTER{'S' if len(players) > 1 else ''}"
-    draw.text((24, y), section_txt, font=f["section"], fill=GRAY)
-    y += 28
+    # Big centred stat title in gold
+    title_font = _font("bahnschrift.ttf", 46)
+    tw = _text_w(draw, stat_title, title_font)
+    draw.text(((W - tw) // 2, y + 18), stat_title, font=title_font, fill=GOLD)
+    y += TITLE_H
+
+    # Thin divider below title
+    draw.rectangle([(PAD, y), (W - PAD, y + 1)], fill=DIVIDER)
+    y += 12
 
     for p in players:
-        name  = p.get("player_name") or "Unknown"
-        team  = p.get("team_abbr", "?")
-        opp   = p.get("opponent_abbr", "?")
-        pred  = float(p.get("pred_value") or 0)
-        line  = float(p["book_line"]) if p.get("book_line") is not None else None
-        edge  = float(p["edge"])      if p.get("edge")      is not None else None
+        name = p.get("player_name") or "Unknown"
+        team = p.get("team_abbr", "?")
 
-        # Shorten name: "Fernando Tatis Jr." → "Tatis Jr."
+        # Full last name (keep suffix like Jr.)
         parts = name.split()
         if len(parts) >= 2 and parts[-1].rstrip(".").lower() in ("jr", "sr", "ii", "iii", "iv"):
-            short = f"{parts[-2]} {parts[-1]}"
+            display = f"{parts[-2]} {parts[-1]}"
         elif len(parts) >= 2:
-            short = parts[-1]
+            display = parts[-1]
         else:
-            short = name
+            display = name
 
-        team_opp = f"{team} vs {opp}"
-        y = _draw_player_row(draw, f, y, short, team_opp, pred, line, edge, stat_fmt, dot_color)
+        # Player name (large, white) — centred
+        name_font = _font("arialbd.ttf", 34)
+        nw = _text_w(draw, display, name_font)
+        draw.text(((W - nw) // 2, y + 6), display, font=name_font, fill=WHITE)
 
-    return _finalize(img, y, total_h)
+        # Team (smaller, gold) — centred below name
+        team_font = _font("arial.ttf", 18)
+        tw2 = _text_w(draw, team, team_font)
+        draw.text(((W - tw2) // 2, y + 46), team, font=team_font, fill=GOLD)
+
+        y += PLAYER_H
+
+    return _finalize(img, y + PAD, total_h)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -438,12 +448,11 @@ async def generate_and_post(
     finally:
         conn.close()
 
-    # Dot colors per stat: red for HR (power), gold for TB (extra bases), blue for H (contact)
     cards = [
-        (make_game_bets_card(game_bets, et_date),                                            "mlb_game_bets.png"),
-        (make_prop_card(hr_players, "Home Runs",   RED,         "{:.3f}", et_date),          "mlb_hr.png"),
-        (make_prop_card(tb_players, "Total Bases", GOLD,        "{:.2f}", et_date),          "mlb_tb.png"),
-        (make_prop_card(h_players,  "Hits",        BLUE,        "{:.2f}", et_date),          "mlb_hits.png"),
+        (make_game_bets_card(game_bets, et_date),                      "mlb_game_bets.png"),
+        (make_prop_card(hr_players, "HOMERUN",      et_date),          "mlb_hr.png"),
+        (make_prop_card(tb_players, "2 TOTAL BASES", et_date),         "mlb_tb.png"),
+        (make_prop_card(h_players,  "1 HIT",         et_date),         "mlb_hits.png"),
     ]
 
     if save_dir:
