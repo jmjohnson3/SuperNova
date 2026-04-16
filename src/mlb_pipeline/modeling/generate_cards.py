@@ -319,17 +319,10 @@ def make_prop_card(
         name = p.get("player_name") or "Unknown"
         team = p.get("team_abbr", "?")
 
-        # Full last name (keep suffix like Jr.)
-        parts = name.split()
-        if len(parts) >= 2 and parts[-1].rstrip(".").lower() in ("jr", "sr", "ii", "iii", "iv"):
-            display = f"{parts[-2]} {parts[-1]}"
-        elif len(parts) >= 2:
-            display = parts[-1]
-        else:
-            display = name
+        display = name
 
-        # Player name (large, white) — centred
-        name_font = _font("arialbd.ttf", 34)
+        # Player name (large, white) — centred; shrink font if name is long
+        name_font = _font("arialbd.ttf", 34 if len(display) <= 18 else 26)
         nw = _text_w(draw, display, name_font)
         draw.text(((W - nw) // 2, y + 6), display, font=name_font, fill=WHITE)
 
