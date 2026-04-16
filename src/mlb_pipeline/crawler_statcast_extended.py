@@ -253,8 +253,8 @@ class ExtendedStatcastConfig:
     pg_dsn: str = _PG_DSN
     min_bbe_batter: int = 10      # min BBE for spray angle leaderboard
     min_sprint: int = 10          # min competitive sprint attempts
-    min_pitches: int = 50         # min pitches thrown for arsenal leaderboard
-    min_pa_disc: int = 50         # min PA for plate discipline leaderboard
+    min_pitches: int = 20         # min pitches thrown for arsenal leaderboard (was 50; lowered for April)
+    min_pa_disc: int = 20         # min PA for plate discipline leaderboard (was 50; lowered for April)
     min_framing: int = 50         # min borderline pitches for catcher framing
     request_delay: float = 2.5   # seconds between requests
 
