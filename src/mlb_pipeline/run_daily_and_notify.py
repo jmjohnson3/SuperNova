@@ -190,7 +190,12 @@ async def main() -> None:
     parser.add_argument("--skip-parse",   action="store_true")
     parser.add_argument("--skip-train",   action="store_true")
     parser.add_argument("--skip-predict", action="store_true")
+    parser.add_argument("--date", default=None, help="Game date YYYY-MM-DD (ET)")
     args = parser.parse_args()
+
+    from datetime import date as _date, datetime as _datetime
+    from zoneinfo import ZoneInfo as _ZI
+    et_day = _date.fromisoformat(args.date) if args.date else _datetime.now(_ZI("America/New_York")).date()
 
     _CRAWL_MODULES  = {"mlb_pipeline.crawler_statsapi", "mlb_pipeline.crawler",
                        "mlb_pipeline.crawler_oddsapi", "mlb_pipeline.crawler_statcast"}
@@ -260,6 +265,16 @@ async def main() -> None:
                 await _post(f"{header}\n_(no games for today's slate)_")
         else:
             await _post_status(step, secs, ok=True)
+
+    # ── Prediction cards (posted after both predict steps) ────────────────
+    predict_ok = not halted and not args.skip_predict
+    if predict_ok:
+        try:
+            from mlb_pipeline.modeling.generate_cards import generate_and_post as _gen_cards
+            await _gen_cards(MLB_DISCORD_WEBHOOK_URL, et_day)
+            log.info("Prediction cards posted to Discord.")
+        except Exception as _card_exc:
+            log.warning("Could not generate/post prediction cards: %s", _card_exc)
 
     total = time.time() - wall_start
     lines = [
