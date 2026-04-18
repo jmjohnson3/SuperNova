@@ -629,6 +629,34 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             * pd.to_numeric(X["park_run_factor"], errors="coerce").fillna(1.0)
         )
 
+    # ── SP Statcast quality features ─────────────────────────────────────────
+    # combined_* = additive (both SPs' quality) → signal for total runs model
+    # diff_*     = differential (home SP worse than away) → signal for run-line model
+    _sc_game_pairs = [
+        ("home_sp_sc_xwoba",        "away_sp_sc_xwoba",        "sp_sc_xwoba",        0.320),
+        ("home_sp_sc_barrel_rate",  "away_sp_sc_barrel_rate",  "sp_sc_barrel_rate",   6.0),
+        ("home_sp_sc_hard_hit_pct", "away_sp_sc_hard_hit_pct", "sp_sc_hard_hit_pct", 35.0),
+        ("home_sp_sc_exit_velo",    "away_sp_sc_exit_velo",    "sp_sc_exit_velo",    88.5),
+    ]
+    for _h, _a, _stem, _fill in _sc_game_pairs:
+        if _h in X.columns and _a in X.columns:
+            _hv = pd.to_numeric(X[_h], errors="coerce").fillna(_fill)
+            _av = pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
+            X[f"combined_{_stem}"] = _hv + _av   # higher = more runs expected
+            X[f"diff_{_stem}"]     = _hv - _av   # positive = home SP allows more
+
+    # Combined whiff environment (both SPs dominant → fewer total runs)
+    for _h, _a, _name, _fill in [
+        ("home_sp_sl_whiff_pct", "away_sp_sl_whiff_pct", "combined_sl_whiff_pct", 25.0),
+        ("home_sp_ch_whiff_pct", "away_sp_ch_whiff_pct", "combined_ch_whiff_pct", 20.0),
+        ("home_sp_fb_put_away",  "away_sp_fb_put_away",  "combined_fb_put_away",  15.0),
+    ]:
+        if _h in X.columns and _a in X.columns:
+            X[_name] = (
+                pd.to_numeric(X[_h], errors="coerce").fillna(_fill)
+                + pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
+            )
+
     # ── Weather interactions for game totals ─────────────────────────────────
     # Cold temperatures suppress scoring — ball doesn't carry in cold air.
     if "temperature_f" in X.columns:
@@ -764,6 +792,26 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["hits_vs_opp_era"] = X["hits_avg_10"] * (X["opp_sp_era_5"] / 4.0)
     if "tb_avg_10" in X.columns and "opp_sp_fip_5" in X.columns:
         X["tb_vs_opp_fip"] = X["tb_avg_10"] * (X["opp_sp_fip_5"] / 4.0)
+
+    # ── Opponent bullpen quality (batter props) ───────────────────────────────
+    # ~40 % of a batter's PAs are vs relievers; a weak or fatigued opponent BP
+    # meaningfully raises expected H/TB/HR for batters later in the lineup.
+    if "opp_bp_era_5" in X.columns:
+        _bp_era = pd.to_numeric(X["opp_bp_era_5"], errors="coerce").fillna(4.20)
+        # Deviation from league-average ERA (4.20); positive = hitter-friendly BP
+        X["opp_bp_era_adj"] = _bp_era - 4.20
+        # Rolling hit/TB rates scaled by BP quality (mirrors existing hits_vs_opp_era)
+        if "hits_avg_10" in X.columns:
+            X["hits_vs_opp_bp_era"] = X["hits_avg_10"].fillna(0.0) * (_bp_era / 4.0)
+        if "tb_avg_10" in X.columns:
+            X["tb_vs_opp_bp_era"] = X["tb_avg_10"].fillna(0.0) * (_bp_era / 4.0)
+
+    # Fatigue × quality: ERA weighted by recent workload (tired + bad BP is most hittable)
+    if "opp_bp_era_7d" in X.columns and "opp_bp_ip_last_7" in X.columns:
+        X["opp_bp_era7_x_ip7"] = (
+            pd.to_numeric(X["opp_bp_era_7d"],      errors="coerce").fillna(4.20)
+            * pd.to_numeric(X["opp_bp_ip_last_7"], errors="coerce").fillna(0.0)
+        )
 
     # ── Pitcher features ─────────────────────────────────────────────────────
     # K% × opponent K vulnerability (opponent batter K rate — higher = easier to K)

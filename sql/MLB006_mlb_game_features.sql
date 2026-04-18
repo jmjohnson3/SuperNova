@@ -168,6 +168,7 @@ SELECT
     hp.sp_k9_5                              AS home_team_sp_k9_5,
     hp.bp_era_5                             AS home_bp_era_5,
     hp.bp_whip_5                            AS home_bp_whip_5,
+    hp.bp_k9_5                              AS home_bp_k9_5,
     hp.runs_allowed_avg_10                  AS home_runs_allowed_avg_10,
     hp.era_10                               AS home_era_10,
     hp.whip_10                              AS home_whip_10,
@@ -179,6 +180,7 @@ SELECT
     hp.sp_k9_10                             AS home_team_sp_k9_10,
     hp.bp_era_10                            AS home_bp_era_10,
     hp.bp_whip_10                           AS home_bp_whip_10,
+    hp.bp_k9_10                             AS home_bp_k9_10,
     hp.bullpen_ip_last_3                    AS home_bullpen_ip_last_3,
 
     -- ---- Away team pitching rolling ----
@@ -193,6 +195,7 @@ SELECT
     ap.sp_k9_5                              AS away_team_sp_k9_5,
     ap.bp_era_5                             AS away_bp_era_5,
     ap.bp_whip_5                            AS away_bp_whip_5,
+    ap.bp_k9_5                              AS away_bp_k9_5,
     ap.runs_allowed_avg_10                  AS away_runs_allowed_avg_10,
     ap.era_10                               AS away_era_10,
     ap.whip_10                              AS away_whip_10,
@@ -204,6 +207,7 @@ SELECT
     ap.sp_k9_10                             AS away_team_sp_k9_10,
     ap.bp_era_10                            AS away_bp_era_10,
     ap.bp_whip_10                           AS away_bp_whip_10,
+    ap.bp_k9_10                             AS away_bp_k9_10,
     ap.bullpen_ip_last_3                    AS away_bullpen_ip_last_3,
 
     -- ---- Home SP rolling ----
@@ -228,6 +232,13 @@ SELECT
     hsp.k9_away_10                          AS home_sp_k9_away_10,
     hsp.fip_home_10                         AS home_sp_fip_home_10,
     hsp.fip_away_10                         AS home_sp_fip_away_10,
+    -- SP 20-start baseline (regression-to-mean anchor)
+    hsp.era_20                              AS home_sp_era_20,
+    hsp.fip_20                              AS home_sp_fip_20,
+    -- Last-start pitch quality (complements last_start_ip for full last-outing picture)
+    hsp.last_start_k                        AS home_sp_last_k,
+    hsp.last_start_bb                       AS home_sp_last_bb,
+    hsp.last_start_fip                      AS home_sp_last_fip,
 
     -- ---- Away SP rolling ----
     asp.era_5                               AS away_sp_career_era_5,
@@ -251,6 +262,13 @@ SELECT
     asp.k9_away_10                          AS away_sp_k9_away_10,
     asp.fip_home_10                         AS away_sp_fip_home_10,
     asp.fip_away_10                         AS away_sp_fip_away_10,
+    -- SP 20-start baseline (regression-to-mean anchor)
+    asp.era_20                              AS away_sp_era_20,
+    asp.fip_20                              AS away_sp_fip_20,
+    -- Last-start pitch quality (complements last_start_ip for full last-outing picture)
+    asp.last_start_k                        AS away_sp_last_k,
+    asp.last_start_bb                       AS away_sp_last_bb,
+    asp.last_start_fip                      AS away_sp_last_fip,
 
     -- ---- Standings + rest (home) ----
     hsr.wins                                AS home_wins,
@@ -417,7 +435,37 @@ SELECT
     atbh.team_slg_vs_lhp                             AS away_team_slg_vs_lhp,
     atbh.team_slg_vs_rhp                             AS away_team_slg_vs_rhp,
     atbh.games_vs_lhp                                AS away_games_vs_lhp,
-    atbh.games_vs_rhp                                AS away_games_vs_rhp
+    atbh.games_vs_rhp                                AS away_games_vs_rhp,
+
+    -- ---- Group G: Individual reliever rest/workload ----
+    hrr.bp_relievers_last_1d                         AS home_bp_relievers_last_1d,
+    hrr.bp_relievers_last_2d                         AS home_bp_relievers_last_2d,
+    hrr.bp_relievers_last_3d                         AS home_bp_relievers_last_3d,
+    hrr.bp_ip_last_1d                                AS home_bp_ip_last_1d,
+    arr.bp_relievers_last_1d                         AS away_bp_relievers_last_1d,
+    arr.bp_relievers_last_2d                         AS away_bp_relievers_last_2d,
+    arr.bp_relievers_last_3d                         AS away_bp_relievers_last_3d,
+    arr.bp_ip_last_1d                                AS away_bp_ip_last_1d,
+
+    -- ---- SP workload: last-start innings pitched (Item #4) ----
+    hsp.last_start_ip                               AS home_sp_last_ip,
+    asp.last_start_ip                               AS away_sp_last_ip,
+
+    -- ---- Group H: SP Statcast (quality of contact allowed) ----
+    sc_home_sp.barrel_batted_rate   AS home_sp_sc_barrel_rate,
+    sc_home_sp.hard_hit_percent     AS home_sp_sc_hard_hit_pct,
+    sc_home_sp.xwoba                AS home_sp_sc_xwoba,
+    sc_home_sp.avg_exit_velocity    AS home_sp_sc_exit_velo,
+    pa_home_sp.sl_whiff_pct         AS home_sp_sl_whiff_pct,
+    pa_home_sp.ch_whiff_pct         AS home_sp_ch_whiff_pct,
+    pa_home_sp.fb_put_away          AS home_sp_fb_put_away,
+    sc_away_sp.barrel_batted_rate   AS away_sp_sc_barrel_rate,
+    sc_away_sp.hard_hit_percent     AS away_sp_sc_hard_hit_pct,
+    sc_away_sp.xwoba                AS away_sp_sc_xwoba,
+    sc_away_sp.avg_exit_velocity    AS away_sp_sc_exit_velo,
+    pa_away_sp.sl_whiff_pct         AS away_sp_sl_whiff_pct,
+    pa_away_sp.ch_whiff_pct         AS away_sp_ch_whiff_pct,
+    pa_away_sp.fb_put_away          AS away_sp_fb_put_away
 
 FROM raw.mlb_games g
 
@@ -520,6 +568,32 @@ LEFT JOIN features.mlb_team_batting_vs_hand_mat atbh
     ON atbh.game_slug = g.game_slug
    AND atbh.team_abbr = g.away_team_abbr
 
+-- Group G: Individual reliever rest (training view: join on game_slug + team_abbr)
+LEFT JOIN features.mlb_reliever_rolling_mat hrr
+    ON hrr.game_slug = g.game_slug
+   AND hrr.team_abbr = g.home_team_abbr
+
+LEFT JOIN features.mlb_reliever_rolling_mat arr
+    ON arr.game_slug = g.game_slug
+   AND arr.team_abbr = g.away_team_abbr
+
+-- Group H: SP Statcast joins
+LEFT JOIN raw.mlb_statcast_pitching sc_home_sp
+    ON sc_home_sp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND sc_home_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_home_sp
+    ON pa_home_sp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND pa_home_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitching sc_away_sp
+    ON sc_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND sc_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_away_sp
+    ON pa_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND pa_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
   AND g.away_score IS NOT NULL
@@ -595,6 +669,13 @@ latest_batting_vs_hand AS (
         games_vs_lhp,
         games_vs_rhp
     FROM features.mlb_team_batting_vs_hand_mat
+    ORDER BY team_abbr, game_date_et DESC, game_slug DESC
+),
+-- Group G: Latest individual reliever rest/workload per team
+latest_reliever AS (
+    SELECT DISTINCT ON (team_abbr)
+        *
+    FROM features.mlb_reliever_rolling_mat
     ORDER BY team_abbr, game_date_et DESC, game_slug DESC
 ),
 -- Head-to-head season record for upcoming games
@@ -693,6 +774,7 @@ SELECT
     hp.sp_k9_5                              AS home_team_sp_k9_5,
     hp.bp_era_5                             AS home_bp_era_5,
     hp.bp_whip_5                            AS home_bp_whip_5,
+    hp.bp_k9_5                              AS home_bp_k9_5,
     hp.runs_allowed_avg_10                  AS home_runs_allowed_avg_10,
     hp.era_10                               AS home_era_10,
     hp.whip_10                              AS home_whip_10,
@@ -704,6 +786,7 @@ SELECT
     hp.sp_k9_10                             AS home_team_sp_k9_10,
     hp.bp_era_10                            AS home_bp_era_10,
     hp.bp_whip_10                           AS home_bp_whip_10,
+    hp.bp_k9_10                             AS home_bp_k9_10,
     hp.bullpen_ip_last_3                    AS home_bullpen_ip_last_3,
 
     -- ---- Away team pitching rolling ----
@@ -718,6 +801,7 @@ SELECT
     ap.sp_k9_5                              AS away_team_sp_k9_5,
     ap.bp_era_5                             AS away_bp_era_5,
     ap.bp_whip_5                            AS away_bp_whip_5,
+    ap.bp_k9_5                              AS away_bp_k9_5,
     ap.runs_allowed_avg_10                  AS away_runs_allowed_avg_10,
     ap.era_10                               AS away_era_10,
     ap.whip_10                              AS away_whip_10,
@@ -729,6 +813,7 @@ SELECT
     ap.sp_k9_10                             AS away_team_sp_k9_10,
     ap.bp_era_10                            AS away_bp_era_10,
     ap.bp_whip_10                           AS away_bp_whip_10,
+    ap.bp_k9_10                             AS away_bp_k9_10,
     ap.bullpen_ip_last_3                    AS away_bullpen_ip_last_3,
 
     -- ---- Home SP rolling ----
@@ -754,6 +839,13 @@ SELECT
     hsp.k9_away_10                          AS home_sp_k9_away_10,
     hsp.fip_home_10                         AS home_sp_fip_home_10,
     hsp.fip_away_10                         AS home_sp_fip_away_10,
+    -- SP 20-start baseline (regression-to-mean anchor)
+    hsp.era_20                              AS home_sp_era_20,
+    hsp.fip_20                              AS home_sp_fip_20,
+    -- Last-start pitch quality (complements last_start_ip for full last-outing picture)
+    hsp.last_start_k                        AS home_sp_last_k,
+    hsp.last_start_bb                       AS home_sp_last_bb,
+    hsp.last_start_fip                      AS home_sp_last_fip,
 
     -- ---- Away SP rolling ----
     asp.era_5                               AS away_sp_career_era_5,
@@ -778,6 +870,13 @@ SELECT
     asp.k9_away_10                          AS away_sp_k9_away_10,
     asp.fip_home_10                         AS away_sp_fip_home_10,
     asp.fip_away_10                         AS away_sp_fip_away_10,
+    -- SP 20-start baseline (regression-to-mean anchor)
+    asp.era_20                              AS away_sp_era_20,
+    asp.fip_20                              AS away_sp_fip_20,
+    -- Last-start pitch quality (complements last_start_ip for full last-outing picture)
+    asp.last_start_k                        AS away_sp_last_k,
+    asp.last_start_bb                       AS away_sp_last_bb,
+    asp.last_start_fip                      AS away_sp_last_fip,
 
     -- ---- Standings + rest (home) ----
     hsr.wins                                AS home_wins,
@@ -929,7 +1028,37 @@ SELECT
     atbh.team_slg_vs_lhp                             AS away_team_slg_vs_lhp,
     atbh.team_slg_vs_rhp                             AS away_team_slg_vs_rhp,
     atbh.games_vs_lhp                                AS away_games_vs_lhp,
-    atbh.games_vs_rhp                                AS away_games_vs_rhp
+    atbh.games_vs_rhp                                AS away_games_vs_rhp,
+
+    -- ---- Group G: Individual reliever rest/workload ----
+    hrr.bp_relievers_last_1d                         AS home_bp_relievers_last_1d,
+    hrr.bp_relievers_last_2d                         AS home_bp_relievers_last_2d,
+    hrr.bp_relievers_last_3d                         AS home_bp_relievers_last_3d,
+    hrr.bp_ip_last_1d                                AS home_bp_ip_last_1d,
+    arr.bp_relievers_last_1d                         AS away_bp_relievers_last_1d,
+    arr.bp_relievers_last_2d                         AS away_bp_relievers_last_2d,
+    arr.bp_relievers_last_3d                         AS away_bp_relievers_last_3d,
+    arr.bp_ip_last_1d                                AS away_bp_ip_last_1d,
+
+    -- ---- SP workload: last-start innings pitched (Item #4) ----
+    hsp.last_start_ip                               AS home_sp_last_ip,
+    asp.last_start_ip                               AS away_sp_last_ip,
+
+    -- ---- Group H: SP Statcast (quality of contact allowed) ----
+    sc_home_sp.barrel_batted_rate   AS home_sp_sc_barrel_rate,
+    sc_home_sp.hard_hit_percent     AS home_sp_sc_hard_hit_pct,
+    sc_home_sp.xwoba                AS home_sp_sc_xwoba,
+    sc_home_sp.avg_exit_velocity    AS home_sp_sc_exit_velo,
+    pa_home_sp.sl_whiff_pct         AS home_sp_sl_whiff_pct,
+    pa_home_sp.ch_whiff_pct         AS home_sp_ch_whiff_pct,
+    pa_home_sp.fb_put_away          AS home_sp_fb_put_away,
+    sc_away_sp.barrel_batted_rate   AS away_sp_sc_barrel_rate,
+    sc_away_sp.hard_hit_percent     AS away_sp_sc_hard_hit_pct,
+    sc_away_sp.xwoba                AS away_sp_sc_xwoba,
+    sc_away_sp.avg_exit_velocity    AS away_sp_sc_exit_velo,
+    pa_away_sp.sl_whiff_pct         AS away_sp_sl_whiff_pct,
+    pa_away_sp.ch_whiff_pct         AS away_sp_ch_whiff_pct,
+    pa_away_sp.fb_put_away          AS away_sp_fb_put_away
 
 FROM raw.mlb_games g
 
@@ -1008,6 +1137,27 @@ LEFT JOIN raw.mlb_player_handedness asp_hand
 -- Group F: Team batting vs SP handedness (prediction: latest per team)
 LEFT JOIN latest_batting_vs_hand htbh ON htbh.team_abbr = g.home_team_abbr
 LEFT JOIN latest_batting_vs_hand atbh ON atbh.team_abbr = g.away_team_abbr
+
+-- Group G: Individual reliever rest (prediction: latest per team)
+LEFT JOIN latest_reliever hrr ON hrr.team_abbr = g.home_team_abbr
+LEFT JOIN latest_reliever arr ON arr.team_abbr = g.away_team_abbr
+
+-- Group H: SP Statcast joins
+LEFT JOIN raw.mlb_statcast_pitching sc_home_sp
+    ON sc_home_sp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND sc_home_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_home_sp
+    ON pa_home_sp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND pa_home_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitching sc_away_sp
+    ON sc_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND sc_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_away_sp
+    ON pa_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND pa_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE

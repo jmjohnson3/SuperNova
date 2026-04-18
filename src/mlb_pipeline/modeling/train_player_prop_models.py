@@ -420,6 +420,12 @@ SELECT
     pd_b.oz_contact_pct      AS sc_b_oz_contact_pct,
     pd_b.whiff_pct           AS sc_b_disc_whiff_pct,
     pd_b.out_zone_pct        AS sc_b_out_zone_pct,
+    -- Opponent bullpen quality
+    opp_tp.bp_era_5          AS opp_bp_era_5,
+    opp_tp.bp_era_10         AS opp_bp_era_10,
+    opp_tp.bp_k9_5           AS opp_bp_k9_5,
+    opp_tp.bullpen_ip_last_7 AS opp_bp_ip_last_7,
+    opp_tp.bp_era_7d         AS opp_bp_era_7d,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -513,6 +519,13 @@ LEFT JOIN LATERAL (
 LEFT JOIN raw.mlb_statcast_batter_discipline pd_b
     ON pd_b.player_id = b.player_id
     AND pd_b.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Opponent team bullpen rolling stats (pre-game snapshot for this exact game)
+LEFT JOIN features.mlb_team_pitching_rolling_mat opp_tp
+    ON opp_tp.game_slug = b.game_slug
+    AND opp_tp.team_abbr = CASE
+        WHEN b.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+        ELSE g.home_team_abbr
+    END
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3

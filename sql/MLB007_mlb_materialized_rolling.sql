@@ -135,3 +135,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_team_batting_vs_hand_mat_pk
     ON features.mlb_team_batting_vs_hand_mat (game_slug, team_abbr);
 CREATE INDEX IF NOT EXISTS idx_mlb_team_batting_vs_hand_mat_team_date
     ON features.mlb_team_batting_vs_hand_mat (team_abbr, game_date_et DESC, game_slug DESC);
+
+-- ============================================================
+-- Individual reliever rest/workload materialized view (MLB019)
+-- ============================================================
+CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_reliever_rolling_mat AS
+SELECT * FROM features.mlb_reliever_rolling;
+
+CREATE UNIQUE INDEX IF NOT EXISTS mlb_reliever_rolling_mat_pk
+    ON features.mlb_reliever_rolling_mat (game_slug, team_abbr);
+
+CREATE INDEX IF NOT EXISTS mlb_reliever_rolling_mat_team_date
+    ON features.mlb_reliever_rolling_mat (team_abbr, game_date_et DESC);

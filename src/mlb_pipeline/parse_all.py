@@ -21,6 +21,7 @@ _MLB_SQL_VIEWS = [
     "MLB003_mlb_pitcher_rolling.sql",
     "MLB004_mlb_ballpark_factors.sql",
     "MLB005_mlb_standings_rest.sql",
+    "MLB019_mlb_reliever_rolling.sql",
     "MLB006_mlb_game_features.sql",
     "MLB008_mlb_player_batting_rolling.sql",
     "MLB009_mlb_umpire_rolling.sql",   # DDL + umpire rolling view
@@ -59,6 +60,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_player_prev_season_stats_mat
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_vs_sp_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_venue_stats_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_vs_hand_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_reliever_rolling_mat;
 """
 
 
@@ -108,6 +110,7 @@ _MATVIEW_TO_VIEW = {
     "mlb_batter_vs_sp_mat":               "mlb_batter_vs_sp",
     "mlb_sp_venue_stats_mat":             "mlb_sp_venue_stats",        # Group F
     "mlb_team_batting_vs_hand_mat":       "mlb_team_batting_vs_hand",  # Group F
+    "mlb_reliever_rolling_mat":           "mlb_reliever_rolling",      # Group G
 }
 
 

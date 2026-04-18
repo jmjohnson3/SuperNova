@@ -255,7 +255,7 @@ class ExtendedStatcastConfig:
     min_sprint: int = 10          # min competitive sprint attempts
     min_pitches: int = 20         # min pitches thrown for arsenal leaderboard (was 50; lowered for April)
     min_pa_disc: int = 20         # min PA for plate discipline leaderboard (was 50; lowered for April)
-    min_framing: int = 50         # min borderline pitches for catcher framing
+    min_framing: int = 20         # min borderline pitches for catcher framing (was 50; lowered for April)
     request_delay: float = 2.5   # seconds between requests
 
 

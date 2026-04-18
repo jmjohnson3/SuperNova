@@ -296,6 +296,8 @@ CREATE TABLE IF NOT EXISTS bets.mlb_game_predictions (
     win_prob_total      NUMERIC(5, 3),
     actual_home_score   INTEGER,
     actual_away_score   INTEGER,
+    actual_run_diff     NUMERIC(5,1),
+    actual_total        NUMERIC(5,1),
     run_line_covered    BOOLEAN,
     total_covered       BOOLEAN,
     closing_run_line    NUMERIC(4, 1),
@@ -318,6 +320,9 @@ ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS closing_rl_price 
 ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS closing_total_price NUMERIC;
 ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS clv_rl_price        NUMERIC;
 ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS clv_total_price     NUMERIC;
+-- Idempotent additions for actual_run_diff / actual_total (Bug #1 fix)
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS actual_run_diff NUMERIC(5,1);
+ALTER TABLE bets.mlb_game_predictions ADD COLUMN IF NOT EXISTS actual_total    NUMERIC(5,1);
 
 -- ============================================================
 -- bets.mlb_prop_predictions

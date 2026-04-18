@@ -484,7 +484,13 @@ SELECT
     pd_b.iz_contact_pct      AS sc_b_iz_contact_pct,
     pd_b.oz_contact_pct      AS sc_b_oz_contact_pct,
     pd_b.whiff_pct           AS sc_b_disc_whiff_pct,
-    pd_b.out_zone_pct        AS sc_b_out_zone_pct
+    pd_b.out_zone_pct        AS sc_b_out_zone_pct,
+    -- Opponent bullpen quality (team pitching rolling, BP split)
+    opp_tp.bp_era_5          AS opp_bp_era_5,
+    opp_tp.bp_era_10         AS opp_bp_era_10,
+    opp_tp.bp_k9_5           AS opp_bp_k9_5,
+    opp_tp.bullpen_ip_last_7 AS opp_bp_ip_last_7,
+    opp_tp.bp_era_7d         AS opp_bp_era_7d
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -600,6 +606,15 @@ LEFT JOIN LATERAL (
 LEFT JOIN raw.mlb_statcast_batter_discipline pd_b
     ON pd_b.player_id = rp.player_id
     AND pd_b.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
+-- Opponent team bullpen rolling stats (most recent entry before today)
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_team_pitching_rolling_mat
+    WHERE team_abbr = tt.opponent_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC, game_slug DESC
+    LIMIT 1
+) opp_tp ON TRUE
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id
@@ -1267,6 +1282,7 @@ def _print_best_bets(
                 "line": ld["line"], "edge": edge,
                 "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
                 "team": row.get("team_abbr", ""),
+                "game_slug": row.get("game_slug", ""),
             })
 
     for row in all_batter_rows:
@@ -1294,6 +1310,7 @@ def _print_best_bets(
                     "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
                     "bookmaker_key": ld.get("bookmaker_key", ""),
                     "team": row.get("team_abbr", ""),
+                    "game_slug": row.get("game_slug", ""),
                 })
 
     best.sort(key=lambda r: abs(r["edge"]), reverse=True)
@@ -1315,8 +1332,25 @@ def _print_best_bets(
             lnk = b.get("bet_link")
             link_str = f" [Bet FD](<{lnk}>)" if lnk else " [FD]"
             print(f"★ {short} {b['stat']} {ls} → {ps}{link_str}")
-            if lnk:
-                fd_links.append(lnk)
+
+    # Build parlay links with correlation filtering applied to the full ranked list:
+    # max 1 prop per player (HR + H + TB from the same player are correlated),
+    # max 2 props per game (multiple props from a high-scoring game are correlated).
+    _seen_players: set[str] = set()
+    _game_counts: dict[str, int] = {}
+    for b in best:  # already sorted by |edge| desc
+        lnk = b.get("bet_link")
+        if not lnk:
+            continue
+        if b["name"] in _seen_players:
+            continue
+        _slug = b.get("game_slug", "")
+        if _slug and _game_counts.get(_slug, 0) >= 2:
+            continue
+        fd_links.append(lnk)
+        _seen_players.add(b["name"])
+        if _slug:
+            _game_counts[_slug] = _game_counts.get(_slug, 0) + 1
 
     return fd_links
 

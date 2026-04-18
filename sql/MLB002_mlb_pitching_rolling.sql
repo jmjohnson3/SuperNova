@@ -112,7 +112,11 @@ derived AS (
         -- Bullpen WHIP
         CASE WHEN bp_ip > 0
              THEN (bp_h + bp_bb)::float / bp_ip
-             ELSE NULL END AS bp_whip
+             ELSE NULL END AS bp_whip,
+        -- Bullpen K/9
+        CASE WHEN bp_ip > 0
+             THEN 9.0 * bp_k / bp_ip
+             ELSE NULL END AS bp_k9
     FROM game_pitching
 ),
 -- Bullpen fatigue: sum of bullpen IP in last 3 calendar days
@@ -216,7 +220,11 @@ SELECT
 
     -- SP short outing: 1 if last start was < 4 IP (signals depleted bullpen)
     CASE WHEN slo.prev_sp_ip IS NOT NULL AND slo.prev_sp_ip < 4.0
-         THEN 1 ELSE 0 END AS sp_short_last
+         THEN 1 ELSE 0 END AS sp_short_last,
+
+    -- Bullpen K/9 rolling (appended to avoid column-reorder rejection)
+    AVG(d.bp_k9) OVER w5  AS bp_k9_5,
+    AVG(d.bp_k9) OVER w10 AS bp_k9_10
 
 FROM derived d
 JOIN bullpen_fatigue bf
