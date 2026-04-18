@@ -180,46 +180,52 @@ def print_report(conn, days: int = 90) -> None:
                   f"{_pct(w, n):>6}  {_roi(w, n):>+7.1f}%  {clv_str:>8}")
 
     # ── Bet side breakdown ────────────────────────────────────────────────────
+    # Use separate queries per market to avoid GROUP BY (rl_side, tot_side) giving
+    # one row per combination — which previously made 'away' show only the 6 games
+    # that happened to have both a run-line and a total bet simultaneously.
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
             SELECT
                 run_line_bet_side                                       AS side,
-                COUNT(*) FILTER (WHERE run_line_covered IS NOT NULL)   AS rl_n,
+                COUNT(*) FILTER (WHERE run_line_covered IS NOT NULL)   AS n,
                 SUM(CASE WHEN run_line_covered THEN 1 ELSE 0 END)
-                    FILTER (WHERE run_line_covered IS NOT NULL)         AS rl_w,
-                total_bet_side                                          AS tot_side,
-                COUNT(*) FILTER (WHERE total_covered IS NOT NULL)      AS tot_n,
-                SUM(CASE WHEN total_covered THEN 1 ELSE 0 END)
-                    FILTER (WHERE total_covered IS NOT NULL)            AS tot_w
+                    FILTER (WHERE run_line_covered IS NOT NULL)         AS w
             FROM bets.mlb_game_predictions
             WHERE game_date_et >= %s
-            GROUP BY 1, 4
-            ORDER BY 1, 4
+              AND run_line_bet_side IS NOT NULL
+            GROUP BY 1
+            ORDER BY 1
         """, (cutoff,))
-        side_rows = cur.fetchall()
+        rl_side_rows = cur.fetchall()
 
-    if side_rows:
-        seen_rl, seen_tot = set(), set()
-        rl_lines, tot_lines = [], []
-        for r in side_rows:
-            s = r["side"]
-            if s and s not in seen_rl:
-                seen_rl.add(s)
-                n, w = int(r["rl_n"] or 0), int(r["rl_w"] or 0)
-                if n:
-                    rl_lines.append(f"{s:<6} {w}-{n-w} ({_pct(w,n)}) ROI:{_roi(w,n):+.1f}%")
-            ts = r["tot_side"]
-            if ts and ts not in seen_tot:
-                seen_tot.add(ts)
-                n, w = int(r["tot_n"] or 0), int(r["tot_w"] or 0)
-                if n:
-                    tot_lines.append(f"{ts:<6} {w}-{n-w} ({_pct(w,n)}) ROI:{_roi(w,n):+.1f}%")
-        if rl_lines or tot_lines:
-            print(f"\n  Bet Side Breakdown")
-            if rl_lines:
-                print(f"  Run Line:  " + "   |   ".join(rl_lines))
-            if tot_lines:
-                print(f"  Total:     " + "   |   ".join(tot_lines))
+        cur.execute("""
+            SELECT
+                total_bet_side                                          AS side,
+                COUNT(*) FILTER (WHERE total_covered IS NOT NULL)      AS n,
+                SUM(CASE WHEN total_covered THEN 1 ELSE 0 END)
+                    FILTER (WHERE total_covered IS NOT NULL)            AS w
+            FROM bets.mlb_game_predictions
+            WHERE game_date_et >= %s
+              AND total_bet_side IS NOT NULL
+            GROUP BY 1
+            ORDER BY 1
+        """, (cutoff,))
+        tot_side_rows = cur.fetchall()
+
+    rl_lines  = [f"{r['side']:<6} {int(r['w'] or 0)}-{int(r['n'] or 0)-int(r['w'] or 0)}"
+                 f" ({_pct(int(r['w'] or 0), int(r['n'] or 0))})"
+                 f" ROI:{_roi(int(r['w'] or 0), int(r['n'] or 0)):+.1f}%"
+                 for r in rl_side_rows if r["side"] and int(r["n"] or 0)]
+    tot_lines = [f"{r['side']:<6} {int(r['w'] or 0)}-{int(r['n'] or 0)-int(r['w'] or 0)}"
+                 f" ({_pct(int(r['w'] or 0), int(r['n'] or 0))})"
+                 f" ROI:{_roi(int(r['w'] or 0), int(r['n'] or 0)):+.1f}%"
+                 for r in tot_side_rows if r["side"] and int(r["n"] or 0)]
+    if rl_lines or tot_lines:
+        print(f"\n  Bet Side Breakdown")
+        if rl_lines:
+            print(f"  Run Line:  " + "   |   ".join(rl_lines))
+        if tot_lines:
+            print(f"  Total:     " + "   |   ".join(tot_lines))
 
     # ── Day game vs night game split ──────────────────────────────────────────
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -346,7 +352,10 @@ def print_report(conn, days: int = 90) -> None:
             n = int(b["n"])
             over_rate = float(b["actual_over_rate"] or 0)
             avg_edge  = float(b["avg_edge"] or 0)
-            flag = "  (inflated!)" if over_rate < 0.42 else ""
+            # avg_edge < 0 → model predicts UNDER (book line is high) → UNDER bets expected
+            # avg_edge > 0 → model predicts OVER → OVER bets expected
+            # mismatch: over_rate < 0.5 but avg_edge > 0 = model betting OVER on under-heavy stat
+            flag = "  (⚠ betting wrong side)" if (avg_edge > 0 and over_rate < 0.42) else ""
             print(f"  {b['stat']:<25}  {n:>5}  {over_rate*100:>10.1f}%  {avg_edge:>+9.3f}{flag}")
 
     # ── Prop bet grading by edge bucket ──────────────────────────────────────

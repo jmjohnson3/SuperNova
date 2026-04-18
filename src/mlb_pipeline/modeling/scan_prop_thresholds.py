@@ -31,9 +31,9 @@ PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _STAT_CONFIGS: dict[str, dict] = {
     "pitcher_strikeouts": {"min": 0.25, "max": 3.00, "step": 0.25, "current": 2.00, "label": "Strikeouts"},
     "batter_hits":        {"min": 0.05, "max": 0.75, "step": 0.05, "current": 0.75, "label": "Hits"},
-    "batter_total_bases": {"min": 0.10, "max": 1.50, "step": 0.10, "current": 0.60, "label": "Total Bases"},
+    "batter_total_bases": {"min": 0.25, "max": 3.00, "step": 0.25, "current": 1.50, "label": "Total Bases"},
     "batter_home_runs":   {"min": 0.05, "max": 0.50, "step": 0.05, "current": 0.45, "label": "Home Runs"},
-    "batter_walks":       {"min": 0.05, "max": 0.50, "step": 0.05, "current": 0.30, "label": "Walks"},
+    "batter_walks":       {"min": 0.05, "max": 0.50, "step": 0.05, "current": 0.05, "label": "Walks"},
 }
 
 
