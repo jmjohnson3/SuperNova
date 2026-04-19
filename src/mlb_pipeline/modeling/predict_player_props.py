@@ -76,6 +76,8 @@ class PredictConfig:
     threshold_home_runs: float = 0.45
     # Lowered from 0.30 → 0.05: 2026-04-16 scan shows optimal 0.05 (12-1, ROI +76.2%, n=13)
     threshold_walks: float = 0.05
+    # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
+    fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1176,6 +1178,8 @@ def _print_discord(
             line = ld["line"]
             edge = pred_v - line
             if abs(edge) >= thresh * _ci:
+                if edge < 0 and stat_key in cfg.fd_over_only:
+                    continue  # FD doesn't offer UNDER for this stat
                 lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
                 book = "FD" if (edge > 0 or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
                 batter_edge_plays.append({
@@ -1304,6 +1308,8 @@ def _print_best_bets(
                 continue
             edge = pred_v - ld["line"]
             if abs(edge) >= threshold * _ci_scale:
+                if edge < 0 and stat_key in cfg.fd_over_only:
+                    continue  # FD doesn't offer UNDER for this stat
                 best.append({
                     "name": name, "stat": stat, "pred": pred_v,
                     "line": ld["line"], "edge": edge,
