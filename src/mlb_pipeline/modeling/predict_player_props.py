@@ -791,6 +791,54 @@ def _kelly_prop(edge: float, sigma: float, max_kelly: float = 0.05) -> float:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Bias correction
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Stats where additive bias correction is applied.
+# K and walks are excluded: near-zero bias and insufficient sample respectively.
+_BIAS_CORRECT_STATS = frozenset({"batter_hits", "batter_total_bases", "batter_home_runs"})
+
+
+def _load_bias_corrections(conn, lookback_days: int = 90) -> dict[str, float]:
+    """Return per-stat additive correction = mean(actual - pred) over recent history.
+
+    Queries graded predictions (actual_value filled) for *_BIAS_CORRECT_STATS only.
+    Falls back to 0.0 for any stat with fewer than 50 graded rows (too noisy).
+    Corrections are capped at ±0.5 to guard against data anomalies.
+    """
+    from datetime import timedelta
+    cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
+    corrections: dict[str, float] = {}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT stat,
+                       COUNT(*)                          AS n,
+                       AVG(actual_value - pred_value)   AS mean_bias
+                FROM bets.mlb_prop_predictions
+                WHERE over_hit IS NOT NULL
+                  AND pred_value IS NOT NULL
+                  AND actual_value IS NOT NULL
+                  AND game_date_et >= %s
+                  AND stat = ANY(%s)
+                GROUP BY stat
+                """,
+                (cutoff, list(_BIAS_CORRECT_STATS)),
+            )
+            for stat, n, mean_bias in cur.fetchall():
+                if n >= 50 and mean_bias is not None:
+                    corrections[stat] = max(-0.5, min(0.5, float(mean_bias)))
+                    log.info(
+                        "Bias correction %s: n=%d, offset=%+.3f",
+                        stat, n, corrections[stat],
+                    )
+    except Exception:
+        log.warning("Could not load bias corrections — using 0.0 for all stats")
+    return corrections
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # DB table
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1452,6 +1500,8 @@ def predict_props(cfg: PredictConfig) -> None:
     prop_lines = _load_prop_lines(conn, et_date)
     log.info("Loaded %d prop line entries for %s", len(prop_lines), et_date)
 
+    bias = _load_bias_corrections(conn)
+
     # ── Pitcher predictions ────────────────────────────────────────────────
     all_pitcher_rows: List[Dict] = []
     db_rows: List[Dict] = []
@@ -1561,9 +1611,11 @@ def predict_props(cfg: PredictConfig) -> None:
 
                 name = name_map.get(pid, f"id={pid}")
                 norm = _normalize_name(name)
-                ph    = max(0.0, float(pred_h[i]))
-                ptb   = max(0.0, float(pred_tb[i]))
-                phr   = max(0.0, float(pred_hr[i]))
+                # Apply additive bias correction (hits, TB, HR).
+                # K and walks excluded: near-zero bias / insufficient sample.
+                ph    = max(0.0, float(pred_h[i])     + bias.get("batter_hits",        0.0))
+                ptb   = max(0.0, float(pred_tb[i])    + bias.get("batter_total_bases", 0.0))
+                phr   = max(0.0, float(pred_hr[i])    + bias.get("batter_home_runs",   0.0))
                 pwalk = max(0.0, float(pred_walks[i]))
 
                 r = {
