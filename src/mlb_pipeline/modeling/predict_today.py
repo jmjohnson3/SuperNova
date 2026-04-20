@@ -38,11 +38,10 @@ class PredictConfig:
     # Minimum |edge| in runs to flag a run-line bet
     min_edge_run_line: float = 1.5
     # Minimum |edge| in runs to flag a total bet (over OR under)
-    # 2026-04-15 retrain (+ SP workload features): scan_thresholds still shows totals
-    # negative at every meaningful threshold (best: 5-7, -20.5% ROI @ 1.75; only 2-3 bets
-    # show +ROI but n<5 = noise). Keeping at 6.0 to effectively disable until a future
-    # retrain shows a genuine +ROI bucket with n>=15.
-    min_edge_total: float = 6.0
+    # 2026-04-19 retrain: model now includes market_total as a feature (was pruned before,
+    # causing edges to be pure noise). CV shows model MAE 3.534 < market baseline 3.648.
+    # Lowered to 1.5 for trial; monitor 2-3 weeks then re-run scan_thresholds.
+    min_edge_total: float = 1.5
 
 
 SQL_GAMES_FOR_DATE = """

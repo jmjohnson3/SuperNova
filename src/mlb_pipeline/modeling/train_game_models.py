@@ -105,9 +105,8 @@ def build_model(
 ) -> XGBRegressor:
     """Build XGBRegressor with config defaults, optionally overridden by Optuna params.
 
-    Use objective='reg:squarederror' for targets far from 0 (e.g. game totals ~9).
-    Huber loss with small huber_slope causes near-zero hessians when base_score=0.5
-    is far from the target range, breaking tree splits entirely.
+    Both run line and total models use Huber loss (reg:pseudohubererror).
+    Optuna tunes huber_slope so gradients stay informative for totals (~9 runs).
 
     Set use_early_stopping=False for final production models: train to a fixed
     n_estimators derived from CV best_iteration statistics rather than using a
@@ -215,7 +214,7 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
       y_total     — home_score + away_score, clipped to [1, 30]
     """
     y_run_diff = df["run_diff"].astype(float).clip(-15.0, 15.0)
-    y_total = df["total_runs"].astype(float).clip(1.0, 30.0)
+    y_total = df["total_runs"].astype(float).clip(0.0, 40.0)
 
     drop_cols = {
         "game_slug",
@@ -435,8 +434,12 @@ def _optuna_objective(
     return float(np.mean(mae_scores))
 
 
-RUN_LINE_OBJECTIVE = "reg:pseudohubererror"
-TOTAL_OBJECTIVE    = "reg:squarederror"
+RUN_LINE_OBJECTIVE      = "reg:pseudohubererror"
+# Direct total target is ~9 runs (far from 0); squarederror avoids near-zero Huber
+# hessians that prevent splits when base_score=0.5. Residual target is ≈0 ±4 runs —
+# Huber is ideal there and Optuna tunes huber_slope in the residual-only path.
+TOTAL_DIRECT_OBJECTIVE  = "reg:squarederror"
+TOTAL_RESID_OBJECTIVE   = "reg:pseudohubererror"
 
 
 def run_optuna_tuning(
@@ -452,8 +455,8 @@ def run_optuna_tuning(
     Returns (best_run_line_params, best_total_params).
 
     Run line uses Huber loss (robust to blowout outliers; targets near 0).
-    Total uses squared error (Huber hessians near 0 for targets ~9 can still work,
-    but squarederror is simpler and well-calibrated in this range).
+    Direct total uses squarederror (targets ~9 runs far from 0; avoids near-zero
+    Huber hessians). Residual total uses Huber (targets ≈0 ±4 runs; ideal for Huber).
     """
     import optuna
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -490,7 +493,7 @@ def run_optuna_tuning(
     total_study.optimize(
         lambda trial: _optuna_objective(
             trial, df, X_raw, y_total, feature_cols, tune_folds, "total",
-            objective=TOTAL_OBJECTIVE,
+            objective=TOTAL_DIRECT_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
         show_progress_bar=False,
@@ -512,7 +515,10 @@ def _select_top_features(
     max_keep: int = 120,
 ) -> tuple:
     """Fit two cheap selector XGBs; rank by mean gain; return (pruned_feature_cols, X_pruned).
-    Always retains one-hot dummies (season_ prefix)."""
+    Always retains one-hot dummies (season_ prefix) and market line anchors (run_line_home,
+    total_line, open_run_line_home, open_total_line, total_line_move, run_line_move).
+    Market anchors are critical for computing correct edges at inference; their low XGB
+    importance underestimates their value because they're often imputed with the median."""
     sel_s = XGBRegressor(n_estimators=200, random_state=42, verbosity=0)
     sel_t = XGBRegressor(n_estimators=200, random_state=42, verbosity=0)
     sel_s.fit(X_all, y_run_diff)
@@ -531,7 +537,17 @@ def _select_top_features(
         json.dumps({k: round(v, 6) for k, v in sorted_imp}, indent=2), encoding="utf-8"
     )
 
-    dummies = {c for c in feature_cols if c.startswith("season_")}
+    # Always keep season dummies and market line anchors; the latter have deceptively
+    # low XGB importance because ~50% of rows have imputed median values, but they are
+    # essential for edge = pred - market_line to be meaningful.
+    _market_anchors = {
+        "run_line_home", "total_line",
+        "open_run_line_home", "open_total_line",
+        "total_line_move", "run_line_move",
+    }
+    dummies = {c for c in feature_cols if c.startswith("season_")} | {
+        c for c in _market_anchors if c in feature_cols
+    }
 
     non_struct = [(c, avg.get(c, 0.0)) for c in feature_cols if c not in dummies]
     non_struct.sort(key=lambda x: -x[1])
@@ -675,7 +691,7 @@ def main() -> None:
 
             # DIRECT MODELS
             rl_model  = build_model(cfg, params_override=best_run_line_params, objective=RUN_LINE_OBJECTIVE)
-            tot_model = build_model(cfg, params_override=best_total_params,    objective=TOTAL_OBJECTIVE)
+            tot_model = build_model(cfg, params_override=best_total_params,    objective=TOTAL_DIRECT_OBJECTIVE)
 
             rl_model.fit(
                 X_fit, y_rl_train.iloc[fit_rel],
@@ -770,7 +786,7 @@ def main() -> None:
                 resid_fit, resid_eval = temporal_eval_split(resid_train_dates)
 
                 rl_resid_model  = build_model(cfg, params_override=best_run_line_params, objective=RUN_LINE_OBJECTIVE)
-                tot_resid_model = build_model(cfg, params_override=best_total_params,    objective=TOTAL_OBJECTIVE)
+                tot_resid_model = build_model(cfg, params_override=best_total_params,    objective=TOTAL_RESID_OBJECTIVE)
 
                 if resid_fit.sum() > 10 and resid_eval.sum() > 5:
                     rl_resid_model.fit(
@@ -1010,7 +1026,7 @@ def main() -> None:
                                n_estimators=rl_n_est,
                                use_early_stopping=False)
         tot_final = build_model(cfg, params_override=best_total_params,
-                                objective=TOTAL_OBJECTIVE,
+                                objective=TOTAL_DIRECT_OBJECTIVE,
                                 n_estimators=tot_n_est,
                                 use_early_stopping=False)
 
@@ -1089,7 +1105,7 @@ def main() -> None:
                                          n_estimators=resid_rl_n_est,
                                          use_early_stopping=False)
             tot_resid_final = build_model(cfg, params_override=best_total_params,
-                                          objective=TOTAL_OBJECTIVE,
+                                          objective=TOTAL_RESID_OBJECTIVE,
                                           n_estimators=resid_tot_n_est,
                                           use_early_stopping=False)
 
