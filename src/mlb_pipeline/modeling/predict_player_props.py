@@ -74,8 +74,12 @@ class PredictConfig:
     # Raised from 0.6 → 1.5: 2026-04-16 scan shows optimal 1.50 (15-5, ROI +43.2%, n=20);
     # OVER bets lose at all thresholds — UNDER side dominant
     threshold_total_bases: float = 1.5
-    # Raised from 0.25 → 0.45: optimal per scan (303-22, ROI +78%); model always bets UNDER
-    threshold_home_runs: float = 0.45
+    # Split OVER/UNDER thresholds for HR:
+    # UNDER threshold kept at 0.45 (scan optimal, ROI +78%) but UNDER bets aren't bookable at -500+.
+    # OVER threshold set to 0.05 — any positive edge above the 0.5 line qualifies.
+    # E[HR] for top hitters peaks around 0.45-0.55 after bias correction, so threshold must be low.
+    threshold_home_runs_over: float = 0.05
+    threshold_home_runs_under: float = 0.45
     # Lowered from 0.30 → 0.05: 2026-04-16 scan shows optimal 0.05 (12-1, ROI +76.2%, n=13)
     threshold_walks: float = 0.05
     # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
@@ -1152,7 +1156,7 @@ def _print_discord(
 
             for stat_lbl, hdr_lbl, pred_col, stat_key, thresh, fmt in [
                 ("TB", "TOTAL BASES", "pred_total_bases", "batter_total_bases", cfg.threshold_total_bases, "{:.2f}"),
-                ("HR", "HOME RUNS",   "pred_home_runs",   "batter_home_runs",   cfg.threshold_home_runs,   "{:.3f}"),
+                ("HR", "HOME RUNS",   "pred_home_runs",   "batter_home_runs",   None,                      "{:.3f}"),
                 ("BB", "WALKS",       "pred_walks",       "batter_walks",       cfg.threshold_walks,        "{:.2f}"),
             ]:
                 stat_edges: List[tuple] = []
@@ -1168,7 +1172,12 @@ def _print_discord(
                         continue
                     line = ld["line"]
                     edge = pred_v - line
-                    if abs(edge) >= thresh * _ci:
+                    # HR uses split OVER/UNDER thresholds; all others use a single thresh
+                    eff_thresh = (
+                        (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
+                        if thresh is None else thresh
+                    )
+                    if abs(edge) >= eff_thresh * _ci:
                         stat_edges.append((name, pred_v, line, edge, ld))
                 if stat_edges:
                     tbl += ["", _hdr(hdr_lbl, stat_lbl), SEP]
@@ -1216,7 +1225,7 @@ def _print_discord(
         for pred_col, stat_key, thresh, stat_lbl in [
             ("pred_hits",        "batter_hits",        cfg.threshold_hits,        "H"),
             ("pred_total_bases", "batter_total_bases",  cfg.threshold_total_bases, "TB"),
-            ("pred_home_runs",   "batter_home_runs",    cfg.threshold_home_runs,   "HR"),
+            ("pred_home_runs",   "batter_home_runs",    None,                      "HR"),
             ("pred_walks",       "batter_walks",        cfg.threshold_walks,       "BB"),
         ]:
             pred_v = row.get(pred_col)
@@ -1227,7 +1236,11 @@ def _print_discord(
                 continue
             line = ld["line"]
             edge = pred_v - line
-            if abs(edge) >= thresh * _ci:
+            eff_thresh = (
+                (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
+                if thresh is None else thresh
+            )
+            if abs(edge) >= eff_thresh * _ci:
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
                 lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
@@ -1347,7 +1360,7 @@ def _print_best_bets(
         for stat, pred_col, stat_key, threshold in [
             ("H",  "pred_hits",        "batter_hits",        cfg.threshold_hits),
             ("TB", "pred_total_bases",  "batter_total_bases", cfg.threshold_total_bases),
-            ("HR", "pred_home_runs",    "batter_home_runs",   cfg.threshold_home_runs),
+            ("HR", "pred_home_runs",    "batter_home_runs",   None),
             ("BB", "pred_walks",        "batter_walks",       cfg.threshold_walks),
         ]:
             pred_v = row.get(pred_col)
@@ -1357,7 +1370,11 @@ def _print_best_bets(
             if not ld or ld["line"] is None:
                 continue
             edge = pred_v - ld["line"]
-            if abs(edge) >= threshold * _ci_scale:
+            eff_thr = (
+                (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
+                if threshold is None else threshold
+            )
+            if abs(edge) >= eff_thr * _ci_scale:
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
                 best.append({
