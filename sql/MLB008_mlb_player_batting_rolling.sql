@@ -71,7 +71,12 @@ derived AS (
         -- HR rate (HR / AB)
         CASE WHEN ab > 0
              THEN hr::float / ab
-             ELSE NULL END                         AS game_hr_rate
+             ELSE NULL END                         AS game_hr_rate,
+        -- Extra-base hit weight: TB minus H (0=single, 1=double, 2=triple, 3=HR)
+        -- Captures XBH production on a continuous scale without needing raw 2B/3B counts
+        (tb - h)                                   AS xbh_weight,
+        -- Big-game flag: 1 when player achieves 2+ TB (direct proxy for OVER 1.5 line)
+        CASE WHEN tb >= 2 THEN 1.0 ELSE 0.0 END    AS is_big_tb_game
     FROM batter_gamelogs
 )
 SELECT
@@ -151,10 +156,20 @@ SELECT
     AVG(hr) FILTER (WHERE is_home = TRUE)  OVER w20  AS hr_home_avg_20,
     AVG(hr) FILTER (WHERE is_home = FALSE) OVER w20  AS hr_away_avg_20,
     AVG(bb) FILTER (WHERE is_home = TRUE)  OVER w20  AS bb_home_avg_20,
-    AVG(bb) FILTER (WHERE is_home = FALSE) OVER w20  AS bb_away_avg_20
+    AVG(bb) FILTER (WHERE is_home = FALSE) OVER w20  AS bb_away_avg_20,
+
+    -- TB hot streak / ceiling / big-game frequency
+    -- Appended at end per PostgreSQL CREATE OR REPLACE VIEW constraint
+    AVG(tb)             OVER w3   AS tb_avg_3,
+    MAX(tb)             OVER w10  AS tb_max_10,
+    AVG(is_big_tb_game) OVER w10  AS tb_over2_rate_10,
+    AVG(xbh_weight)     OVER w10  AS tb_xbh_weight_avg_10
 
 FROM derived
 WINDOW
+    w3  AS (PARTITION BY season, player_id
+            ORDER BY game_date_et, game_slug
+            ROWS BETWEEN 3  PRECEDING AND 1 PRECEDING),
     w5  AS (PARTITION BY season, player_id
             ORDER BY game_date_et, game_slug
             ROWS BETWEEN 5  PRECEDING AND 1 PRECEDING),

@@ -787,6 +787,36 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "tb_avg_10" in X.columns and "park_run_factor" in X.columns:
         X["tb_park_adj_10"] = X["tb_avg_10"] * X["park_run_factor"]
 
+    # TB ceiling/volatility features — help predict OVER (big-game likelihood),
+    # not just average TB. A player with high CV or high max has a fatter tail distribution.
+    if "tb_sd_10" in X.columns and "tb_avg_10" in X.columns:
+        _tb_mean = pd.to_numeric(X["tb_avg_10"], errors="coerce").fillna(1.2)
+        _tb_sd   = pd.to_numeric(X["tb_sd_10"],  errors="coerce").fillna(0.8)
+        # Coefficient of variation: high = volatile player with occasional big games
+        X["tb_cv_10"] = _tb_sd / _tb_mean.clip(lower=0.1)
+
+    # Power × opportunity interaction: ISO × expected AB count today
+    # Captures expected extra-base-hit production (power player + more PAs = more TB)
+    if "iso_avg_10" in X.columns and "ab_avg_10" in X.columns:
+        X["tb_power_opportunity"] = (
+            pd.to_numeric(X["iso_avg_10"], errors="coerce").fillna(0.12)
+            * pd.to_numeric(X["ab_avg_10"], errors="coerce").fillna(3.0)
+        )
+
+    # Statcast xSLG × park HR factor (expected slugging amplified by this specific park)
+    if "sc_xslg" in X.columns and "park_hr_factor" in X.columns:
+        X["sc_xslg_x_park"] = (
+            pd.to_numeric(X["sc_xslg"],         errors="coerce").fillna(0.38)
+            * pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+        )
+
+    # Barrels per PA × today's expected AB count (expected barrel count this game)
+    if "sc_brl_pa" in X.columns and "ab_avg_10" in X.columns:
+        X["sc_brl_x_ab"] = (
+            pd.to_numeric(X["sc_brl_pa"],   errors="coerce").fillna(0.035)
+            * pd.to_numeric(X["ab_avg_10"], errors="coerce").fillna(3.0)
+        )
+
     # Batter × Opponent SP interaction: batters facing strikeout-heavy pitchers get fewer hits
     if "hits_avg_10" in X.columns and "opp_sp_era_5" in X.columns:
         X["hits_vs_opp_era"] = X["hits_avg_10"] * (X["opp_sp_era_5"] / 4.0)

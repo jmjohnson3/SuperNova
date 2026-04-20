@@ -4,7 +4,7 @@ MLB player prop predictions for today's slate.
 
 Loads pitcher/batter prop models and generates predictions for:
   - pitcher_strikeouts   (starting pitchers from raw.mlb_starting_pitchers)
-  - batter_hits          (batters with ab_avg_10 >= 1.5 playing today)
+  - batter_hits          (batters with ab_avg_10 >= 2.5 playing today)
   - batter_total_bases
   - batter_home_runs
   - batter_walks
@@ -60,10 +60,12 @@ class PredictConfig:
     pg_dsn: str = _PG_DSN
     model_dir: Path = _MODEL_DIR
     et_date: date | None = None
-    # Minimum samples to include a batter
-    # Set to 1 to allow early-season predictions (e.g., Opening Day)
-    min_ab_avg_10: float = 1.0
-    min_n_games: int = 1
+    # Minimum samples to include a batter — must match training SQL filters
+    # (train_player_prop_models.py: ab_avg_10 >= 2.5, n_games_prev_10 >= 3)
+    # Lower values include part-time players the model never saw in training,
+    # causing OVER TB predictions at 0.5 lines to win only 46% (below breakeven).
+    min_ab_avg_10: float = 2.5
+    min_n_games: int = 3
     # Bet thresholds (|edge| >=)
     # Raised from 1.0 → 2.0: scan_prop_thresholds shows edge only above 1.0; optimal 2.0 (ROI +18%)
     threshold_strikeouts: float = 2.0
