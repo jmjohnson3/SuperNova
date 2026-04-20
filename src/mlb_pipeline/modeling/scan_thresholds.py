@@ -26,7 +26,7 @@ PG_DSN  = "postgresql://josh:password@localhost:5432/nba"
 
 # Current live thresholds — shown with a marker in the output
 _CURRENT_RL_THRESHOLD  = 1.5
-_CURRENT_TOT_THRESHOLD = 6.0
+_CURRENT_TOT_THRESHOLD = 1.5
 
 # Threshold scan range and step
 _SCAN_MIN  = 0.50
@@ -257,7 +257,7 @@ def run_scan(conn, days: int = 180, min_bets: int = 10) -> None:
     # ── How to apply the results ──────────────────────────────────────────────
     print(f"""
   HOW TO UPDATE THRESHOLDS
-  ─────────────────────────
+  -------------------------
   1. Identify the optimal threshold from the tables above (marked *).
   2. Update predict_today.py:
        _MIN_EDGE_RUN_LINE = <new value>   (currently {_CURRENT_RL_THRESHOLD})
