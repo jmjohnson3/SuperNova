@@ -21,6 +21,8 @@ import psycopg2.extras
 
 _ET = ZoneInfo("America/New_York")
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+# Markets where UNDER side is not realistically bettable for this workflow.
+_UNDER_UNBETTABLE_STATS = {"batter_home_runs", "batter_walks"}
 
 
 def _roi(wins: int, n: int) -> float:
@@ -169,6 +171,9 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
         seg = _seg_label(r["game_date_et"], split_date)
         stat = r["stat"]
         edge = float(r["edge"])
+        if stat in _UNDER_UNBETTABLE_STATS and edge < 0:
+            # Exclude unbettable UNDER rows from headline performance stats.
+            continue
         over_hit = bool(r["over_hit"])
         won = over_hit if edge > 0 else (not over_hit)
         side = "over" if edge > 0 else "under"
@@ -185,7 +190,7 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
         side_agg[k2]["n"] += 1
         side_agg[k2]["w"] += int(won)
 
-    print("\n[Props by Stat | PRE vs POST]")
+    print("\n[Props by Stat | PRE vs POST]  (HR/Walk UNDER excluded as unbettable)")
     print(f"{'Segment':<8} {'Stat':<22} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
     for seg in ("PRE", "POST"):
         for stat in sorted({k[1] for k in prop_agg.keys()}):
@@ -195,7 +200,7 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
                 continue
             print(f"{seg:<8} {stat:<22} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
 
-    print("\n[Props by Stat + Side | PRE vs POST]")
+    print("\n[Props by Stat + Side | PRE vs POST]  (HR/Walk UNDER excluded as unbettable)")
     print(f"{'Segment':<8} {'Stat':<22} {'Side':<6} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
     for seg in ("PRE", "POST"):
         for stat in sorted({k[1] for k in side_agg.keys()}):
