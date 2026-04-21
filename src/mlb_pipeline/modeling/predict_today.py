@@ -825,13 +825,10 @@ def main() -> None:
 
         _bets_today.sort(key=lambda x: x["edge"], reverse=True)
         if _bets_today:
-            shown = _bets_today[:12]  # mobile-friendly cap
             print(f"\n**BETS TODAY ({len(_bets_today)})**")
-            for _b in shown:
+            for _b in _bets_today:
                 _ls = f"  [Bet FD](<{_b['link']}>)" if _b["link"] else ""
                 print(f"• {_b['desc']}  +{_b['edge']:.2f}  p={_b['p']:.0%}{_ls}")
-            if len(_bets_today) > len(shown):
-                print(f"…and {len(_bets_today) - len(shown)} more (trimmed for mobile)")
 
             # Compact mobile mode: one parlay link, skip verbose per-game blocks.
             _dedup_links = list(dict.fromkeys([b["link"] for b in _bets_today if b.get("link")]))

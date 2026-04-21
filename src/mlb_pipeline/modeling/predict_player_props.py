@@ -1521,6 +1521,7 @@ def _print_discord(
         k_plays.append({
             "name": name, "team": row.get("team_abbr", ""), "stat": "K",
             "pred": pred_k, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
+            "game_slug": row.get("game_slug"),
         })
 
     batter_edge_plays: List[Dict] = []
@@ -1568,6 +1569,7 @@ def _print_discord(
                     "name": name, "team": team, "stat": stat_lbl,
                     "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": book,
                     "is_clf": clf_p is not None,
+                    "game_slug": row.get("game_slug"),
                 })
 
     all_prop_bets: List[Dict] = k_plays + batter_edge_plays
@@ -1575,13 +1577,35 @@ def _print_discord(
 
     if all_prop_bets:
         print(f"**PROP BETS TODAY ({len(all_prop_bets)})**")
+        grouped: Dict[str, List[Dict]] = {}
         for b in all_prop_bets:
-            short = _link_name(b["name"])
-            d = "O" if b["edge"] > 0 else "U"
-            ls = f"{d}{b['line']:.1f}"
-            ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
-            lnk_str = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b["lnk"] else ""
-            print(f"★ {short} ({b['team']}) {b['stat']} {ls} → {ps}  edge {b['edge']:+.2f}{lnk_str}")
+            grouped.setdefault(b.get("game_slug") or "unknown", []).append(b)
+
+        ordered_slugs = sorted(
+            grouped.keys(),
+            key=lambda s: (game_map.get(s, {}).get("start_ts_utc", ""), s),
+        )
+        for slug in ordered_slugs:
+            gm = game_map.get(slug, {})
+            home, away = gm.get("home", "???"), gm.get("away", "???")
+            start_ts = gm.get("start_ts_utc")
+            time_str = ""
+            if start_ts:
+                try:
+                    dt_et = pd.Timestamp(start_ts).tz_convert(_ET)
+                    hour = dt_et.hour % 12 or 12
+                    time_str = f"{hour}:{dt_et.strftime('%M %p')} ET"
+                except Exception:
+                    pass
+            hdr = f"**{away} @ {home}**" + (f" · {time_str}" if time_str else "")
+            print(hdr)
+            for b in grouped[slug]:
+                short = _link_name(b["name"])
+                d = "O" if b["edge"] > 0 else "U"
+                ls = f"{d}{b['line']:.1f}"
+                ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
+                lnk_str = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b["lnk"] else ""
+                print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{lnk_str}")
         print("")
     else:
         print("**No prop edge bets today**\n")
@@ -1599,8 +1623,8 @@ def _print_discord(
 
     _parlay("Prop Bets Parlay", [b["lnk"] for b in all_prop_bets if b["lnk"]])
 
-    # ── Top hitters leaderboard (Discord only) ────────────────────────────
-    if is_discord and all_batter_rows:
+    # ── Optional top hitters leaderboard (Discord only, opt-in) ───────────
+    if is_discord and os.getenv("DISCORD_TOP_LISTS") == "1" and all_batter_rows:
         def _top_stat(stat_col: str, stat_key: str, top_n: int, label: str) -> None:
             rows = [r for r in all_batter_rows if r.get(stat_col) is not None]
             if not rows:
