@@ -771,7 +771,9 @@ def main() -> None:
     print(summary_line)
 
     # Discord: print "BETS TODAY" summary block before per-game detail
+    compact_discord = False
     if discord:
+        compact_discord = True
         _bets_today: list[dict] = []
         for _, _r in out.iterrows():
             _edge_rl = _r.get("edge_run_line")
@@ -823,16 +825,35 @@ def main() -> None:
 
         _bets_today.sort(key=lambda x: x["edge"], reverse=True)
         if _bets_today:
+            shown = _bets_today[:12]  # mobile-friendly cap
             print(f"\n**BETS TODAY ({len(_bets_today)})**")
-            for _b in _bets_today:
+            for _b in shown:
                 _ls = f"  [Bet FD](<{_b['link']}>)" if _b["link"] else ""
-                print(f"★ {_b['desc']}  edge +{_b['edge']:.2f}  p={_b['p']:.0%}  bet ${_b['qk']:.0f}/1k{_ls}")
+                print(f"• {_b['desc']}  +{_b['edge']:.2f}  p={_b['p']:.0%}{_ls}")
+            if len(_bets_today) > len(shown):
+                print(f"…and {len(_bets_today) - len(shown)} more (trimmed for mobile)")
+
+            # Compact mobile mode: one parlay link, skip verbose per-game blocks.
+            _dedup_links = list(dict.fromkeys([b["link"] for b in _bets_today if b.get("link")]))
+            if _dedup_links:
+                _parlay = build_fd_parlay_url(_dedup_links[:25])
+                if _parlay:
+                    print(f"\n**Best Bets Parlay** [FD]({_parlay})")
         else:
             print("\n**No edge bets today**")
         print("")
 
     best_links: list[str | None] = []      # FD links for high-edge bets (best bets parlay)
     all_game_links: list[str | None] = []  # model's predicted side for every game (all games parlay)
+
+    if compact_discord:
+        # In compact Discord mode, summary list above is the primary output.
+        # Skip verbose per-game sections that are hard to read on mobile.
+        try:
+            _save_predictions(out, engine, et_day, cfg, calib=calib, w_rl=w_rl, w_total=w_total, fd_links=fd_links)
+        except Exception:
+            log.exception("Failed to save predictions")
+        return
 
     for _, r in out.iterrows():
         start_raw = r.get("start_ts_utc")
