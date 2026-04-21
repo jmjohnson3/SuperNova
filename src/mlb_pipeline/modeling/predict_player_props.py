@@ -1018,6 +1018,131 @@ def _load_bias_corrections(conn, lookback_days: int = 90) -> dict[str, float]:
     return corrections
 
 
+def _line_bucket_for_over_penalty(stat: str, line: float) -> str:
+    if stat == "batter_total_bases":
+        if line < 1.0:
+            return "TB 0.5"
+        if line < 2.0:
+            return "TB 1.5"
+        return "TB 2.5+"
+    if stat == "pitcher_strikeouts":
+        if line < 4.5:
+            return "K <4.5"
+        if line < 6.5:
+            return "K 4.5-6.0"
+        if line < 8.5:
+            return "K 6.5-8.0"
+        return "K 8.5+"
+    return "other"
+
+
+def _load_over_penalties(conn, lookback_days: int = 180, min_samples: int = 40) -> dict[tuple[str, str], float]:
+    """Load dynamic over-side penalties for weak OVER buckets.
+
+    Returns dict keyed by (stat, bucket) and fallback keys (stat, "__all__").
+    Penalty is subtracted from predicted value before edge calculation.
+    """
+    from datetime import timedelta
+
+    cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
+    penalties: dict[tuple[str, str], float] = {}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH base AS (
+                    SELECT
+                        stat,
+                        book_line::float AS line,
+                        over_hit,
+                        pred_value::float AS pred_value,
+                        actual_value::float AS actual_value,
+                        (pred_value::float - actual_value::float) AS pred_minus_actual
+                    FROM bets.mlb_prop_predictions
+                    WHERE game_date_et >= %s
+                      AND over_hit IS NOT NULL
+                      AND edge > 0
+                      AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
+                      AND book_line IS NOT NULL
+                      AND pred_value IS NOT NULL
+                      AND actual_value IS NOT NULL
+                )
+                SELECT
+                    stat,
+                    CASE
+                        WHEN stat = 'batter_total_bases' AND line < 1.0 THEN 'TB 0.5'
+                        WHEN stat = 'batter_total_bases' AND line < 2.0 THEN 'TB 1.5'
+                        WHEN stat = 'batter_total_bases' THEN 'TB 2.5+'
+                        WHEN stat = 'pitcher_strikeouts' AND line < 4.5 THEN 'K <4.5'
+                        WHEN stat = 'pitcher_strikeouts' AND line < 6.5 THEN 'K 4.5-6.0'
+                        WHEN stat = 'pitcher_strikeouts' AND line < 8.5 THEN 'K 6.5-8.0'
+                        ELSE 'K 8.5+'
+                    END AS bucket,
+                    COUNT(*) AS n,
+                    AVG(CASE WHEN over_hit THEN 1.0 ELSE 0.0 END) AS over_win_rate,
+                    AVG(pred_minus_actual) AS mean_pred_minus_actual
+                FROM base
+                GROUP BY 1, 2
+                """,
+                (cutoff,),
+            )
+            rows = cur.fetchall()
+
+            # Stat-level fallback
+            cur.execute(
+                """
+                SELECT
+                    stat,
+                    COUNT(*) AS n,
+                    AVG(CASE WHEN over_hit THEN 1.0 ELSE 0.0 END) AS over_win_rate,
+                    AVG(pred_value::float - actual_value::float) AS mean_pred_minus_actual
+                FROM bets.mlb_prop_predictions
+                WHERE game_date_et >= %s
+                  AND over_hit IS NOT NULL
+                  AND edge > 0
+                  AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
+                  AND pred_value IS NOT NULL
+                  AND actual_value IS NOT NULL
+                GROUP BY 1
+                """,
+                (cutoff,),
+            )
+            fallback_rows = cur.fetchall()
+
+        def _make_penalty(n: int, win_rate: float, pred_minus_actual: float) -> float:
+            if n < min_samples or win_rate is None:
+                return 0.0
+            w = float(win_rate)
+            pma = float(pred_minus_actual or 0.0)
+            # Only penalize weak OVER buckets.
+            if w >= 0.52:
+                return 0.0
+            raw = max(pma, (0.52 - w) * 2.0)
+            return float(max(0.05, min(0.75, raw)))
+
+        for stat, bucket, n, wr, pma in rows:
+            pen = _make_penalty(int(n or 0), float(wr or 0.0), float(pma or 0.0))
+            if pen > 0:
+                penalties[(stat, bucket)] = pen
+                log.info("Over penalty %s/%s: n=%d wr=%.3f pma=%+.3f pen=%.3f", stat, bucket, n, wr, pma, pen)
+        for stat, n, wr, pma in fallback_rows:
+            pen = _make_penalty(int(n or 0), float(wr or 0.0), float(pma or 0.0))
+            if pen > 0:
+                penalties[(stat, "__all__")] = pen
+                log.info("Over penalty %s/all: n=%d wr=%.3f pma=%+.3f pen=%.3f", stat, n, wr, pma, pen)
+    except Exception:
+        log.warning("Could not load over penalties — using none", exc_info=True)
+
+    return penalties
+
+
+def _over_penalty_for_line(stat: str, line: float | None, penalties: dict[tuple[str, str], float]) -> float:
+    if line is None:
+        return 0.0
+    bucket = _line_bucket_for_over_penalty(stat, float(line))
+    return float(penalties.get((stat, bucket), penalties.get((stat, "__all__"), 0.0)))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DB table
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1729,6 +1854,7 @@ def predict_props(cfg: PredictConfig) -> None:
     log.info("Loaded %d prop line entries for %s", len(prop_lines), et_date)
 
     bias = _load_bias_corrections(conn)
+    over_penalties = _load_over_penalties(conn)
 
     # ── Pitcher predictions ────────────────────────────────────────────────
     all_pitcher_rows: List[Dict] = []
@@ -1749,6 +1875,9 @@ def predict_props(cfg: PredictConfig) -> None:
                 norm = _normalize_name(name)
                 ld = prop_lines.get((norm, "pitcher_strikeouts"))
                 line = ld["line"] if ld else None
+                # Dynamic penalty to curb historically weak OVER buckets.
+                if line is not None:
+                    pk = max(0.0, pk - _over_penalty_for_line("pitcher_strikeouts", line, over_penalties))
                 edge = (pk - line) if line is not None else None
                 kel = _kelly_prop(abs(edge), sigma_k or cfg.threshold_strikeouts * 2) \
                       if edge is not None else 0.0
@@ -1873,6 +2002,12 @@ def predict_props(cfg: PredictConfig) -> None:
                 ptb   = max(0.0, float(pred_tb[i])    + bias.get("batter_total_bases", 0.0))
                 phr   = max(0.0, float(pred_hr[i])    + bias.get("batter_home_runs",   0.0))
                 pwalk = max(0.0, float(pred_walks[i]))
+
+                # Dynamic penalty to curb historically weak TB OVER buckets.
+                ld_tb = prop_lines.get((norm, "batter_total_bases"))
+                line_tb = ld_tb["line"] if ld_tb else None
+                if line_tb is not None:
+                    ptb = max(0.0, ptb - _over_penalty_for_line("batter_total_bases", line_tb, over_penalties))
 
                 # Collect binary CLF P(over) for each stat (None when clf unavailable or no line)
                 def _safe_clf(stat_key: str) -> Optional[float]:
