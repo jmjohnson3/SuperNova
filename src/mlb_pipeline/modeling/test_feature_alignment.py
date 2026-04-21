@@ -16,8 +16,29 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from .features import add_game_derived_features
+
+
+@pytest.fixture(scope="module")
+def model_dir() -> Path:
+    return Path(__file__).resolve().parent / "models"
+
+
+@pytest.fixture(scope="module")
+def feature_cols_and_medians(model_dir: Path) -> tuple[list[str], dict[str, float]]:
+    return load_model_artifacts(model_dir)
+
+
+@pytest.fixture(scope="module")
+def feature_cols(feature_cols_and_medians: tuple[list[str], dict[str, float]]) -> list[str]:
+    return feature_cols_and_medians[0]
+
+
+@pytest.fixture(scope="module")
+def feature_medians(feature_cols_and_medians: tuple[list[str], dict[str, float]]) -> dict[str, float]:
+    return feature_cols_and_medians[1]
 
 def load_model_artifacts(model_dir: Path) -> tuple[list[str], dict[str, float]]:
     """Load feature_columns.json and feature_medians.json."""

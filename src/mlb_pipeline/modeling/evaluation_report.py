@@ -1,0 +1,197 @@
+"""
+MLB model change evaluation report (pre vs post split date).
+
+Compares hit rate and ROI across:
+  - game predictions (run line / total)
+  - edge buckets
+  - props by stat and side
+
+Usage:
+  python -m mlb_pipeline.modeling.evaluation_report --split-date 2026-04-20
+  python -m mlb_pipeline.modeling.evaluation_report --split-date 2026-04-20 --days 180
+"""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+import psycopg2
+import psycopg2.extras
+
+_ET = ZoneInfo("America/New_York")
+_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+
+
+def _roi(wins: int, n: int) -> float:
+    if n <= 0:
+        return 0.0
+    return (wins * 100 - (n - wins) * 110) / (n * 110) * 100
+
+
+def _pct(num: int, den: int) -> float:
+    return (num / den * 100.0) if den else 0.0
+
+
+def _seg_label(d, split_date):
+    return "POST" if d >= split_date else "PRE"
+
+
+def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
+    cutoff = (datetime.now(_ET).date() - timedelta(days=days))
+    print(f"\nMLB EVALUATION REPORT | cutoff={cutoff} | split_date={split_date} | min_bets={min_bets}")
+    print("=" * 92)
+
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            WITH game_rows AS (
+                SELECT game_date_et, 'run_line'::text AS market, edge_run_line AS edge, run_line_covered AS won
+                FROM bets.mlb_game_predictions
+                WHERE game_date_et >= %(cutoff)s
+                  AND run_line_covered IS NOT NULL
+                  AND edge_run_line IS NOT NULL
+                UNION ALL
+                SELECT game_date_et, 'total'::text, edge_total AS edge, total_covered AS won
+                FROM bets.mlb_game_predictions
+                WHERE game_date_et >= %(cutoff)s
+                  AND total_covered IS NOT NULL
+                  AND edge_total IS NOT NULL
+            )
+            SELECT game_date_et, market, edge, won
+            FROM game_rows
+            """,
+            {"cutoff": cutoff},
+        )
+        game_rows = cur.fetchall()
+
+    # ── Overall game markets (PRE vs POST) ───────────────────────────────────
+    agg = {}
+    for r in game_rows:
+        seg = _seg_label(r["game_date_et"], split_date)
+        key = (seg, r["market"])
+        if key not in agg:
+            agg[key] = {"n": 0, "w": 0}
+        agg[key]["n"] += 1
+        agg[key]["w"] += int(bool(r["won"]))
+
+    print("\n[Game Predictions | PRE vs POST]")
+    print(f"{'Segment':<8} {'Market':<10} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
+    for seg in ("PRE", "POST"):
+        for market in ("run_line", "total"):
+            a = agg.get((seg, market), {"n": 0, "w": 0})
+            n, w = a["n"], a["w"]
+            if n < min_bets:
+                continue
+            print(f"{seg:<8} {market:<10} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
+
+    # ── Game edge buckets ─────────────────────────────────────────────────────
+    def _bucket(x: float) -> str:
+        ax = abs(float(x))
+        if ax < 1.0:
+            return "0.0-1.0"
+        if ax < 1.5:
+            return "1.0-1.5"
+        if ax < 2.0:
+            return "1.5-2.0"
+        if ax < 2.5:
+            return "2.0-2.5"
+        if ax < 3.0:
+            return "2.5-3.0"
+        return "3.0+"
+
+    buckets = {}
+    for r in game_rows:
+        seg = _seg_label(r["game_date_et"], split_date)
+        key = (seg, r["market"], _bucket(r["edge"]))
+        if key not in buckets:
+            buckets[key] = {"n": 0, "w": 0}
+        buckets[key]["n"] += 1
+        buckets[key]["w"] += int(bool(r["won"]))
+
+    print("\n[Game Predictions by Edge Bucket]")
+    print(f"{'Segment':<8} {'Market':<10} {'Edge':<8} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
+    bucket_order = ("0.0-1.0", "1.0-1.5", "1.5-2.0", "2.0-2.5", "2.5-3.0", "3.0+")
+    for seg in ("PRE", "POST"):
+        for market in ("run_line", "total"):
+            for b in bucket_order:
+                a = buckets.get((seg, market, b), {"n": 0, "w": 0})
+                n, w = a["n"], a["w"]
+                if n < min_bets:
+                    continue
+                print(f"{seg:<8} {market:<10} {b:<8} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
+
+    # ── Props by stat and side ────────────────────────────────────────────────
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT game_date_et, stat, edge, over_hit
+            FROM bets.mlb_prop_predictions
+            WHERE game_date_et >= %(cutoff)s
+              AND over_hit IS NOT NULL
+              AND edge IS NOT NULL
+            """,
+            {"cutoff": cutoff},
+        )
+        prop_rows = cur.fetchall()
+
+    prop_agg = {}
+    side_agg = {}
+    for r in prop_rows:
+        seg = _seg_label(r["game_date_et"], split_date)
+        stat = r["stat"]
+        edge = float(r["edge"])
+        over_hit = bool(r["over_hit"])
+        won = over_hit if edge > 0 else (not over_hit)
+        side = "over" if edge > 0 else "under"
+
+        k1 = (seg, stat)
+        if k1 not in prop_agg:
+            prop_agg[k1] = {"n": 0, "w": 0}
+        prop_agg[k1]["n"] += 1
+        prop_agg[k1]["w"] += int(won)
+
+        k2 = (seg, stat, side)
+        if k2 not in side_agg:
+            side_agg[k2] = {"n": 0, "w": 0}
+        side_agg[k2]["n"] += 1
+        side_agg[k2]["w"] += int(won)
+
+    print("\n[Props by Stat | PRE vs POST]")
+    print(f"{'Segment':<8} {'Stat':<22} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
+    for seg in ("PRE", "POST"):
+        for stat in sorted({k[1] for k in prop_agg.keys()}):
+            a = prop_agg.get((seg, stat), {"n": 0, "w": 0})
+            n, w = a["n"], a["w"]
+            if n < min_bets:
+                continue
+            print(f"{seg:<8} {stat:<22} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
+
+    print("\n[Props by Stat + Side | PRE vs POST]")
+    print(f"{'Segment':<8} {'Stat':<22} {'Side':<6} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
+    for seg in ("PRE", "POST"):
+        for stat in sorted({k[1] for k in side_agg.keys()}):
+            for side in ("over", "under"):
+                a = side_agg.get((seg, stat, side), {"n": 0, "w": 0})
+                n, w = a["n"], a["w"]
+                if n < min_bets:
+                    continue
+                print(f"{seg:<8} {stat:<22} {side:<6} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
+
+    print("\nDone.")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="MLB model change evaluation report (pre vs post split date).")
+    parser.add_argument("--split-date", required=True, help="YYYY-MM-DD. Dates >= split are POST.")
+    parser.add_argument("--days", type=int, default=180, help="Lookback window in days (default: 180).")
+    parser.add_argument("--min-bets", type=int, default=20, help="Hide rows below this sample size.")
+    args = parser.parse_args()
+
+    split_date = datetime.strptime(args.split_date, "%Y-%m-%d").date()
+    with psycopg2.connect(_PG_DSN) as conn:
+        run_report(conn, split_date=split_date, days=args.days, min_bets=args.min_bets)
+
+
+if __name__ == "__main__":
+    main()

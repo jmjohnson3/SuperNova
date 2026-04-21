@@ -56,7 +56,7 @@ _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _BREAKEVEN_PROB = 0.524  # P(win) needed to break even at -110 juice
 
 
-@dataclass(frozen=True)
+@dataclass
 class PredictConfig:
     pg_dsn: str = _PG_DSN
     model_dir: Path = _MODEL_DIR
@@ -88,6 +88,8 @@ class PredictConfig:
     threshold_clf: float = 0.03
     # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
     fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
+    # Optional per-stat threshold overrides loaded from model artifact JSON.
+    thresholds_file: str = "prop_thresholds.json"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -759,6 +761,93 @@ def _load_batter_clf_artifacts(model_dir: Path):
     if not models:
         return None
     return models, feat_clf, meds_clf, bt_clf
+
+
+def _apply_threshold_overrides(cfg: PredictConfig) -> None:
+    """Load threshold overrides from models/player_props/prop_thresholds.json.
+
+    Supported keys (either style):
+      - direct config names:
+          threshold_strikeouts, threshold_hits, threshold_total_bases,
+          threshold_home_runs_over, threshold_home_runs_under,
+          threshold_walks, threshold_clf
+      - stat-group names:
+          pitcher_strikeouts, batter_hits, batter_total_bases, batter_walks,
+          batter_home_runs (with over/under or abs_edge),
+          clf_prob_edge
+    """
+    path = cfg.model_dir / cfg.thresholds_file
+    if not path.exists():
+        return
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse threshold overrides at %s: %s", path, exc)
+        return
+
+    def _set(attr: str, val) -> None:
+        try:
+            f = float(val)
+        except Exception:
+            return
+        if f >= 0.0:
+            setattr(cfg, attr, f)
+
+    # Direct names
+    for key in (
+        "threshold_strikeouts",
+        "threshold_hits",
+        "threshold_total_bases",
+        "threshold_home_runs_over",
+        "threshold_home_runs_under",
+        "threshold_walks",
+        "threshold_clf",
+    ):
+        if key in raw:
+            _set(key, raw[key])
+
+    # Stat-group names
+    if "pitcher_strikeouts" in raw:
+        v = raw["pitcher_strikeouts"]
+        _set("threshold_strikeouts", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_hits" in raw:
+        v = raw["batter_hits"]
+        _set("threshold_hits", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_total_bases" in raw:
+        v = raw["batter_total_bases"]
+        _set("threshold_total_bases", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_walks" in raw:
+        v = raw["batter_walks"]
+        _set("threshold_walks", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_home_runs" in raw:
+        v = raw["batter_home_runs"]
+        if isinstance(v, dict):
+            if "over" in v:
+                _set("threshold_home_runs_over", v["over"])
+            if "under" in v:
+                _set("threshold_home_runs_under", v["under"])
+            if "abs_edge" in v:
+                _set("threshold_home_runs_over", v["abs_edge"])
+                _set("threshold_home_runs_under", v["abs_edge"])
+        else:
+            _set("threshold_home_runs_over", v)
+            _set("threshold_home_runs_under", v)
+    if "clf_prob_edge" in raw:
+        v = raw["clf_prob_edge"]
+        _set("threshold_clf", v.get("abs_edge") if isinstance(v, dict) else v)
+
+    log.info(
+        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f BB=%.2f CLF=%.3f",
+        path,
+        cfg.threshold_strikeouts,
+        cfg.threshold_hits,
+        cfg.threshold_total_bases,
+        cfg.threshold_home_runs_over,
+        cfg.threshold_home_runs_under,
+        cfg.threshold_walks,
+        cfg.threshold_clf,
+    )
 
 
 def _load_pitcher_clf_artifacts(model_dir: Path):
@@ -1944,6 +2033,7 @@ def main() -> None:
         et_date = _date.fromisoformat(os.getenv("MLB_ET_DATE"))
 
     cfg = PredictConfig(et_date=et_date)
+    _apply_threshold_overrides(cfg)
     predict_props(cfg)
 
 

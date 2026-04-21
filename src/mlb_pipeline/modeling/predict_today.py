@@ -240,6 +240,10 @@ def _compute_blend_weight_run_line(calib: dict) -> float:
     Quality gate: residual model must be within 2% of the best baseline MAE.
     Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
+    saved_alpha = calib.get("blend_alpha_spread")
+    if isinstance(saved_alpha, (int, float)) and 0.0 <= float(saved_alpha) <= 1.0:
+        return float(saved_alpha)
+
     direct_mae_market = calib.get("direct_spread_mae_market",
                                    calib.get("direct_rl_mae", calib.get("direct_spread_mae", 4.0)))
     market_mae = calib.get("market_spread_mae", direct_mae_market)
@@ -261,6 +265,10 @@ def _compute_blend_weight_run_line(calib: dict) -> float:
 
 def _compute_blend_weight_total(calib: dict) -> float:
     """Inverse-MAE blend weight for the total residual model."""
+    saved_alpha = calib.get("blend_alpha_total")
+    if isinstance(saved_alpha, (int, float)) and 0.0 <= float(saved_alpha) <= 1.0:
+        return float(saved_alpha)
+
     direct_mae_market = calib.get("direct_total_mae_market",
                                    calib.get("direct_total_mae", 4.0))
     market_mae = calib.get("market_total_mae", direct_mae_market)
