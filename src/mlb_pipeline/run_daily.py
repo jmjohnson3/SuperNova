@@ -246,6 +246,12 @@ def main() -> None:
                 timeout_s=3600,
                 critical=False,
             ))
+            steps.append(Step(
+                name="Train binary prop classifiers",
+                module="mlb_pipeline.modeling.train_binary_prop_models",
+                timeout_s=3600,
+                critical=False,
+            ))
 
         if not args.skip_predict:
             steps.append(Step(
