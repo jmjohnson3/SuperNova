@@ -65,6 +65,20 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
         )
         game_rows = cur.fetchall()
 
+    if game_rows:
+        g_dates = [r["game_date_et"] for r in game_rows]
+        g_pre = sum(1 for d in g_dates if d < split_date)
+        g_post = sum(1 for d in g_dates if d >= split_date)
+        print(
+            f"Game rows loaded: {len(game_rows)} "
+            f"(PRE={g_pre}, POST={g_post}) | range={min(g_dates)}..{max(g_dates)}"
+        )
+        if g_post == 0:
+            print(
+                "WARNING: No POST game rows for this split date. "
+                "Use an earlier --split-date or confirm recent predictions were saved."
+            )
+
     # ── Overall game markets (PRE vs POST) ───────────────────────────────────
     agg = {}
     for r in game_rows:
@@ -134,6 +148,20 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
             {"cutoff": cutoff},
         )
         prop_rows = cur.fetchall()
+
+    if prop_rows:
+        p_dates = [r["game_date_et"] for r in prop_rows]
+        p_pre = sum(1 for d in p_dates if d < split_date)
+        p_post = sum(1 for d in p_dates if d >= split_date)
+        print(
+            f"Prop rows loaded: {len(prop_rows)} "
+            f"(PRE={p_pre}, POST={p_post}) | range={min(p_dates)}..{max(p_dates)}"
+        )
+        if p_post == 0:
+            print(
+                "WARNING: No POST prop rows for this split date. "
+                "Use an earlier --split-date or confirm recent predictions were saved."
+            )
 
     prop_agg = {}
     side_agg = {}
