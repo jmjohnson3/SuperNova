@@ -270,7 +270,7 @@ _SQL_LOAD_PROP_ODDS = """
 SELECT as_of_date, fetched_at_utc, payload
 FROM raw.api_responses
 WHERE provider = 'oddsapi'
-  AND endpoint = 'mlb_prop_odds'
+  AND endpoint IN ('mlb_prop_odds', 'mlb_prop_odds_historical')
   AND (%(as_of_date)s IS NULL OR as_of_date = %(as_of_date)s)
   AND (%(since_date)s IS NULL OR as_of_date >= %(since_date)s)
 ORDER BY fetched_at_utc;

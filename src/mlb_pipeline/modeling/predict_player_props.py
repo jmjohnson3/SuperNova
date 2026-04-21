@@ -53,6 +53,7 @@ _ET = ZoneInfo("America/New_York")
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
+_BREAKEVEN_PROB = 0.524  # P(win) needed to break even at -110 juice
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,9 @@ class PredictConfig:
     threshold_home_runs_under: float = 0.45
     # Lowered from 0.30 → 0.05: 2026-04-16 scan shows optimal 0.05 (12-1, ROI +76.2%, n=13)
     threshold_walks: float = 0.05
+    # Binary CLF threshold: P(over) - 0.524 >= this value to flag a bet.
+    # 0.03 = P(over) > 55.4% — modest edge above breakeven.
+    threshold_clf: float = 0.03
     # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
     fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
 
@@ -718,6 +722,89 @@ def _load_batter_artifacts(model_dir: Path):
     return xgb_h, lgb_h, xgb_tb, lgb_tb_m, xgb_hr, lgb_hr, xgb_walks, lgb_walks, feat, meds, bt
 
 
+def _load_batter_clf_artifacts(model_dir: Path):
+    """Load binary classifier models for batter props.
+    Returns (models_dict, feat_clf, meds_clf, bt_clf) where models_dict
+    maps stat_key → (xgb_model, lgb_booster_or_None).
+    Returns None if artifacts are missing.
+    """
+    feat_path = model_dir / "feature_columns_clf_batters.json"
+    if not feat_path.exists():
+        return None
+
+    feat_clf = json.loads(feat_path.read_text())
+    meds_clf = json.loads((model_dir / "feature_medians_clf_batters.json").read_text())
+    bt_clf_path = model_dir / "backtest_clf.json"
+    bt_clf = json.loads(bt_clf_path.read_text()) if bt_clf_path.exists() else {}
+
+    models: Dict[str, Tuple] = {}
+    stat_files = {
+        "batter_hits":        ("hits_clf_xgb.json",        "lgb_hits_clf.txt"),
+        "batter_total_bases": ("total_bases_clf_xgb.json", "lgb_total_bases_clf.txt"),
+        "batter_home_runs":   ("home_runs_clf_xgb.json",   "lgb_home_runs_clf.txt"),
+        "batter_walks":       ("walks_batter_clf_xgb.json", "lgb_walks_batter_clf.txt"),
+    }
+    for stat_key, (xgb_file, lgb_file) in stat_files.items():
+        xgb_path = model_dir / xgb_file
+        if not xgb_path.exists():
+            continue
+        xgb_m = XGBRegressor()
+        xgb_m.load_model(str(xgb_path))
+        lgb_m = None
+        lgb_path = model_dir / lgb_file
+        if _HAS_LGB and lgb_path.exists():
+            lgb_m = lgb.Booster(model_file=str(lgb_path))
+        models[stat_key] = (xgb_m, lgb_m)
+
+    if not models:
+        return None
+    return models, feat_clf, meds_clf, bt_clf
+
+
+def _load_pitcher_clf_artifacts(model_dir: Path):
+    """Load binary classifier model for pitcher strikeouts.
+    Returns (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf) or None.
+    """
+    feat_path = model_dir / "feature_columns_clf_pitchers.json"
+    xgb_path  = model_dir / "strikeouts_clf_xgb.json"
+    if not feat_path.exists() or not xgb_path.exists():
+        return None
+
+    feat_clf = json.loads(feat_path.read_text())
+    meds_clf = json.loads((model_dir / "feature_medians_clf_pitchers.json").read_text())
+    bt_clf_path = model_dir / "backtest_clf.json"
+    bt_clf = json.loads(bt_clf_path.read_text()) if bt_clf_path.exists() else {}
+
+    xgb_clf = XGBRegressor()
+    xgb_clf.load_model(str(xgb_path))
+    lgb_clf = None
+    lgb_path = model_dir / "lgb_strikeouts_clf.txt"
+    if _HAS_LGB and lgb_path.exists():
+        lgb_clf = lgb.Booster(model_file=str(lgb_path))
+
+    return xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf
+
+
+def _prep_features_clf(
+    X_base: pd.DataFrame,
+    book_lines: np.ndarray,
+    feat_clf: List[str],
+    meds_clf: Dict[str, float],
+) -> pd.DataFrame:
+    """Add per-player book_line to base feature matrix and align to clf schema.
+
+    X_base must already be processed by _prep_features() (derived features applied).
+    book_lines is a float array of length len(X_base); NaN where no line available.
+    """
+    X = X_base.copy()
+    X["book_line"] = book_lines
+    X = X.reindex(columns=feat_clf)
+    for c, m in meds_clf.items():
+        if c in X.columns:
+            X[c] = X[c].fillna(m)
+    return X.fillna(0.0)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Feature prep
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1171,14 +1258,21 @@ def _print_discord(
                     if not ld or ld.get("line") is None:
                         continue
                     line = ld["line"]
-                    edge = pred_v - line
-                    # HR uses split OVER/UNDER thresholds; all others use a single thresh
-                    eff_thresh = (
-                        (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
-                        if thresh is None else thresh
-                    )
+                    # Use binary CLF P(over) when available
+                    clf_p = (row.get("clf_p_over") or {}).get(stat_key)
+                    if clf_p is not None:
+                        edge = clf_p - _BREAKEVEN_PROB
+                        eff_thresh = cfg.threshold_clf
+                        display_pred = clf_p
+                    else:
+                        edge = pred_v - line
+                        eff_thresh = (
+                            (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
+                            if thresh is None else thresh
+                        )
+                        display_pred = pred_v
                     if abs(edge) >= eff_thresh * _ci:
-                        stat_edges.append((name, pred_v, line, edge, ld))
+                        stat_edges.append((name, display_pred, line, edge, ld))
                 if stat_edges:
                     tbl += ["", _hdr(hdr_lbl, stat_lbl), SEP]
                     for name, pred_v, line, edge, ld in stat_edges:
@@ -1222,6 +1316,7 @@ def _print_discord(
         team = row.get("team_abbr", "")
         _n_g = row.get("n_games_prev_10") or 0
         _ci = math.sqrt(10.0 / max(_n_g, 1))
+        _clf_pover = row.get("clf_p_over", {})
         for pred_col, stat_key, thresh, stat_lbl in [
             ("pred_hits",        "batter_hits",        cfg.threshold_hits,        "H"),
             ("pred_total_bases", "batter_total_bases",  cfg.threshold_total_bases, "TB"),
@@ -1235,11 +1330,21 @@ def _print_discord(
             if not ld or ld.get("line") is None:
                 continue
             line = ld["line"]
-            edge = pred_v - line
-            eff_thresh = (
-                (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
-                if thresh is None else thresh
-            )
+
+            # Use binary CLF P(over) when available — edge is in probability space
+            clf_p = _clf_pover.get(stat_key)
+            if clf_p is not None:
+                edge = clf_p - _BREAKEVEN_PROB
+                eff_thresh = cfg.threshold_clf
+                display_pred = clf_p  # show P(over) directly
+            else:
+                edge = pred_v - line
+                eff_thresh = (
+                    (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
+                    if thresh is None else thresh
+                )
+                display_pred = pred_v
+
             if abs(edge) >= eff_thresh * _ci:
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
@@ -1247,7 +1352,8 @@ def _print_discord(
                 book = "FD" if (edge > 0 or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
                 batter_edge_plays.append({
                     "name": name, "team": team, "stat": stat_lbl,
-                    "pred": pred_v, "line": line, "edge": edge, "lnk": lnk, "book": book,
+                    "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": book,
+                    "is_clf": clf_p is not None,
                 })
 
     all_prop_bets: List[Dict] = k_plays + batter_edge_plays
@@ -1488,6 +1594,9 @@ def predict_props(cfg: PredictConfig) -> None:
     xgb_k = lgb_k = feat_p = meds_p = bt = None
     xgb_h = lgb_h = xgb_tb_m = lgb_tb_m = None
     xgb_hr = lgb_hr = xgb_walks_m = lgb_walks_m = feat_b = meds_b = None
+    # Binary classifier models (optional — loaded if training has been run)
+    pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf)
+    batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf)
 
     if pitcher_artifacts_ok:
         try:
@@ -1495,6 +1604,12 @@ def predict_props(cfg: PredictConfig) -> None:
         except Exception:
             log.exception("Failed to load pitcher artifacts")
             pitcher_artifacts_ok = False
+        try:
+            pitcher_clf_arts = _load_pitcher_clf_artifacts(model_dir)
+            if pitcher_clf_arts:
+                log.info("Loaded pitcher binary CLF model")
+        except Exception:
+            log.warning("Could not load pitcher CLF artifacts — using regression only")
 
     if batter_artifacts_ok:
         try:
@@ -1504,6 +1619,13 @@ def predict_props(cfg: PredictConfig) -> None:
         except Exception:
             log.exception("Failed to load batter artifacts")
             batter_artifacts_ok = False
+        try:
+            batter_clf_arts = _load_batter_clf_artifacts(model_dir)
+            if batter_clf_arts:
+                log.info("Loaded batter binary CLF models: %s",
+                         list(batter_clf_arts[0].keys()))
+        except Exception:
+            log.warning("Could not load batter CLF artifacts — using regression only")
 
     if not pitcher_artifacts_ok and not batter_artifacts_ok:
         log.warning("No prop models found. Run train_player_prop_models first.")
@@ -1617,6 +1739,35 @@ def predict_props(cfg: PredictConfig) -> None:
             sigma_hr    = bt.get("ci_home_runs")   if bt else None
             sigma_walks = bt.get("ci_walks")       if bt else None
 
+            # Binary classifier predictions (if models trained)
+            # One P(over) array per stat — indexed same as df_b rows
+            clf_pover: Dict[str, Optional[np.ndarray]] = {
+                "batter_hits": None, "batter_total_bases": None,
+                "batter_home_runs": None, "batter_walks": None,
+            }
+            if batter_clf_arts is not None:
+                clf_models, feat_clf, meds_clf, _bt_clf = batter_clf_arts
+                # Build normalized name array for vectorized line lookup
+                pids_arr = df_b["player_id"].astype(int).values
+                norms_arr = np.array([_normalize_name(name_map.get(p, "")) for p in pids_arr])
+
+                for stat_key in clf_pover:
+                    if stat_key not in clf_models:
+                        continue
+                    lines_arr = np.array([
+                        (prop_lines.get((nm, stat_key)) or {}).get("line", np.nan)
+                        for nm in norms_arr
+                    ], dtype=float)
+                    X_clf = _prep_features_clf(X_b, lines_arr, feat_clf, meds_clf)
+                    xgb_c, lgb_c = clf_models[stat_key]
+                    pover = np.clip(_predict_ensemble(X_clf, xgb_c, lgb_c), 0.01, 0.99)
+                    # Mask rows with no line — use NaN so they fall back to regression
+                    pover[np.isnan(lines_arr)] = np.nan
+                    clf_pover[stat_key] = pover
+                    over_pct = float(np.nanmean(pover > 0.524)) * 100
+                    log.info("CLF %s: %d preds, %.1f%% positive P(over)>breakeven",
+                             stat_key, int(np.sum(~np.isnan(pover))), over_pct)
+
             seen = set()
             for i, (_, row) in enumerate(df_b.iterrows()):
                 pid = int(row["player_id"])
@@ -1628,12 +1779,19 @@ def predict_props(cfg: PredictConfig) -> None:
 
                 name = name_map.get(pid, f"id={pid}")
                 norm = _normalize_name(name)
-                # Apply additive bias correction (hits, TB, HR).
-                # K and walks excluded: near-zero bias / insufficient sample.
+                # Regression predictions with additive bias correction
                 ph    = max(0.0, float(pred_h[i])     + bias.get("batter_hits",        0.0))
                 ptb   = max(0.0, float(pred_tb[i])    + bias.get("batter_total_bases", 0.0))
                 phr   = max(0.0, float(pred_hr[i])    + bias.get("batter_home_runs",   0.0))
                 pwalk = max(0.0, float(pred_walks[i]))
+
+                # Collect binary CLF P(over) for each stat (None when clf unavailable or no line)
+                def _safe_clf(stat_key: str) -> Optional[float]:
+                    arr = clf_pover.get(stat_key)
+                    if arr is None:
+                        return None
+                    v = float(arr[i])
+                    return None if np.isnan(v) else v
 
                 r = {
                     "game_slug": slug,
@@ -1649,10 +1807,17 @@ def predict_props(cfg: PredictConfig) -> None:
                     "pred_total_bases": ptb,
                     "pred_home_runs": phr,
                     "pred_walks": pwalk,
+                    # Binary CLF P(over) per stat — None when clf not trained or line unavailable
+                    "clf_p_over": {
+                        "batter_hits":        _safe_clf("batter_hits"),
+                        "batter_total_bases": _safe_clf("batter_total_bases"),
+                        "batter_home_runs":   _safe_clf("batter_home_runs"),
+                        "batter_walks":       _safe_clf("batter_walks"),
+                    },
                 }
                 all_batter_rows.append(r)
 
-                for stat_key, stat_label, pred_v, sigma in [
+                for stat_key, stat_label, reg_pred, sigma in [
                     ("batter_hits",        "batter_hits",        ph,    sigma_h),
                     ("batter_total_bases", "batter_total_bases", ptb,   sigma_tb),
                     ("batter_home_runs",   "batter_home_runs",   phr,   sigma_hr),
@@ -1660,8 +1825,29 @@ def predict_props(cfg: PredictConfig) -> None:
                 ]:
                     ld = prop_lines.get((norm, stat_key))
                     line = ld["line"] if ld else None
-                    edge = (pred_v - line) if line is not None else None
-                    kel = _kelly_prop(abs(edge), sigma or 0.5) if edge is not None else 0.0
+
+                    # Use binary CLF edge when model exists and line is available
+                    clf_arr = clf_pover.get(stat_key)
+                    p_over_i = float(clf_arr[i]) if clf_arr is not None else np.nan
+                    use_clf = (clf_arr is not None and not np.isnan(p_over_i)
+                               and line is not None)
+
+                    if use_clf:
+                        # CLF: pred_value = P(over), edge = P(over) - breakeven
+                        pred_v = p_over_i
+                        edge   = p_over_i - _BREAKEVEN_PROB
+                        # Kelly: full Kelly capped at 5%
+                        kel = min(max(0.0, edge / (1.0 - _BREAKEVEN_PROB)), 0.05)
+                    elif line is not None:
+                        # Regression fallback
+                        pred_v = reg_pred
+                        edge   = reg_pred - line
+                        kel    = _kelly_prop(abs(edge), sigma or 0.5)
+                    else:
+                        pred_v = reg_pred
+                        edge   = None
+                        kel    = 0.0
+
                     db_rows.append({
                         "game_date_et": et_date,
                         "game_slug": slug,
