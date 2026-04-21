@@ -69,6 +69,8 @@ STEPS: list[Step] = [
          critical=True, post_output=False),
     Step("Train Player Prop Models", "mlb_pipeline.modeling.train_player_prop_models",
          critical=False, post_output=False),
+    Step("Train Binary Prop Classifiers", "mlb_pipeline.modeling.train_binary_prop_models",
+         critical=False, post_output=False),
     Step("Game Predictions",       "mlb_pipeline.modeling.predict_today",
          critical=False, post_output=True),
     Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
@@ -201,7 +203,8 @@ async def main() -> None:
                        "mlb_pipeline.crawler_oddsapi", "mlb_pipeline.crawler_statcast"}
     _PARSE_MODULES  = {"mlb_pipeline.parse_all", "mlb_pipeline.compute_elo"}
     _TRAIN_MODULES  = {"mlb_pipeline.modeling.train_game_models",
-                       "mlb_pipeline.modeling.train_player_prop_models"}
+                       "mlb_pipeline.modeling.train_player_prop_models",
+                       "mlb_pipeline.modeling.train_binary_prop_models"}
     _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
                         "mlb_pipeline.modeling.predict_player_props"}
 
