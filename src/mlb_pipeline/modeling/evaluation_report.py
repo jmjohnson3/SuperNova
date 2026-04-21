@@ -206,6 +206,126 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
                     continue
                 print(f"{seg:<8} {stat:<22} {side:<6} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
 
+    # ── Over-side diagnostics for bettable props ─────────────────────────────
+    # Focus on why OVER sides may underperform (esp. TB and K), and on markets
+    # where users can only bet OVER (HR, walks at many books).
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT
+                game_date_et,
+                stat,
+                pred_value,
+                book_line,
+                edge,
+                over_hit,
+                actual_value
+            FROM bets.mlb_prop_predictions
+            WHERE game_date_et >= %(cutoff)s
+              AND stat IN ('pitcher_strikeouts', 'batter_total_bases', 'batter_home_runs', 'batter_walks')
+              AND over_hit IS NOT NULL
+              AND edge IS NOT NULL
+              AND book_line IS NOT NULL
+            """,
+            {"cutoff": cutoff},
+        )
+        over_diag = cur.fetchall()
+
+    # OVER-only summary
+    over_stats = {}
+    for r in over_diag:
+        if float(r["edge"]) <= 0:
+            continue
+        seg = _seg_label(r["game_date_et"], split_date)
+        stat = r["stat"]
+        key = (seg, stat)
+        if key not in over_stats:
+            over_stats[key] = {
+                "n": 0, "w": 0, "edge_sum": 0.0,
+                "pred_sum": 0.0, "line_sum": 0.0,
+                "cal_n": 0, "pred_minus_actual_sum": 0.0,
+            }
+        a = over_stats[key]
+        a["n"] += 1
+        a["w"] += int(bool(r["over_hit"]))
+        a["edge_sum"] += float(r["edge"])
+        a["pred_sum"] += float(r["pred_value"] or 0.0)
+        a["line_sum"] += float(r["book_line"] or 0.0)
+        if r["actual_value"] is not None:
+            a["cal_n"] += 1
+            a["pred_minus_actual_sum"] += float(r["pred_value"]) - float(r["actual_value"])
+
+    print("\n[OVER-side Diagnostics | Why OVER may be weak]")
+    print(
+        f"{'Segment':<8} {'Stat':<20} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8} "
+        f"{'AvgEdge':>8} {'AvgPred':>8} {'AvgLine':>8} {'Pred-Act':>9}"
+    )
+    for seg in ("PRE", "POST"):
+        for stat in ("pitcher_strikeouts", "batter_total_bases", "batter_home_runs", "batter_walks"):
+            a = over_stats.get((seg, stat), None)
+            if not a:
+                continue
+            n, w = a["n"], a["w"]
+            if n < min_bets:
+                continue
+            avg_edge = a["edge_sum"] / n
+            avg_pred = a["pred_sum"] / n
+            avg_line = a["line_sum"] / n
+            pred_act = (a["pred_minus_actual_sum"] / a["cal_n"]) if a["cal_n"] else float("nan")
+            pred_act_s = f"{pred_act:+.2f}" if a["cal_n"] else "   n/a"
+            print(
+                f"{seg:<8} {stat:<20} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}% "
+                f"{avg_edge:>8.2f} {avg_pred:>8.2f} {avg_line:>8.2f} {pred_act_s:>9}"
+            )
+
+    # OVER-only by line bucket (helps detect systematic miss by offered line tier)
+    def _line_bucket(stat: str, line: float) -> str:
+        if stat == "batter_total_bases":
+            if line < 1.0:
+                return "TB 0.5"
+            if line < 2.0:
+                return "TB 1.5"
+            return "TB 2.5+"
+        if stat == "pitcher_strikeouts":
+            if line < 4.5:
+                return "K <4.5"
+            if line < 6.5:
+                return "K 4.5-6.0"
+            if line < 8.5:
+                return "K 6.5-8.0"
+            return "K 8.5+"
+        if stat == "batter_home_runs":
+            return "HR 0.5"
+        if stat == "batter_walks":
+            if line < 1.0:
+                return "BB 0.5"
+            return "BB 1.5+"
+        return "other"
+
+    bucket_agg = {}
+    for r in over_diag:
+        if float(r["edge"]) <= 0:
+            continue
+        seg = _seg_label(r["game_date_et"], split_date)
+        stat = r["stat"]
+        b = _line_bucket(stat, float(r["book_line"]))
+        key = (seg, stat, b)
+        if key not in bucket_agg:
+            bucket_agg[key] = {"n": 0, "w": 0}
+        bucket_agg[key]["n"] += 1
+        bucket_agg[key]["w"] += int(bool(r["over_hit"]))
+
+    print("\n[OVER-side by Line Bucket]")
+    print(f"{'Segment':<8} {'Stat':<20} {'LineBucket':<12} {'Bets':>6} {'W-L':>11} {'Win%':>8} {'ROI':>8}")
+    for seg in ("PRE", "POST"):
+        for stat in ("pitcher_strikeouts", "batter_total_bases", "batter_home_runs", "batter_walks"):
+            rows = [(k, v) for k, v in bucket_agg.items() if k[0] == seg and k[1] == stat]
+            for (k_seg, k_stat, k_bucket), a in sorted(rows, key=lambda x: x[0][2]):
+                n, w = a["n"], a["w"]
+                if n < min_bets:
+                    continue
+                print(f"{k_seg:<8} {k_stat:<20} {k_bucket:<12} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}%")
+
     print("\nDone.")
 
 
