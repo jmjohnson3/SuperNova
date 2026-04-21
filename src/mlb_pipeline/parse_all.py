@@ -22,7 +22,8 @@ _MLB_SQL_VIEWS = [
     "MLB004_mlb_ballpark_factors.sql",
     "MLB005_mlb_standings_rest.sql",
     "MLB019_mlb_reliever_rolling.sql",
-    "MLB006_mlb_game_features.sql",
+    # MLB006 depends on rolling matviews (e.g. mlb_pitcher_rolling_mat).
+    # Apply it after _refresh_matviews() via _MLB_POST_MATVIEW_VIEWS.
     "MLB008_mlb_player_batting_rolling.sql",
     "MLB009_mlb_umpire_rolling.sql",   # DDL + umpire rolling view
     "MLB010_mlb_weather_ddl.sql",      # weather table DDL
