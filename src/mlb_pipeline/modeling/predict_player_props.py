@@ -1489,6 +1489,7 @@ def _collect_top_hr_parlay_links(
     all_batter_rows: List[Dict],
     prop_lines: Dict,
     top_n: int = 10,
+    max_per_game: int = 2,
 ) -> List[str]:
     """Collect top-N HR prediction links (deduped) for a single HR-focused parlay."""
     rows = [r for r in all_batter_rows if r.get("pred_home_runs") is not None]
@@ -1496,10 +1497,14 @@ def _collect_top_hr_parlay_links(
     links: List[str] = []
     seen_links: set[str] = set()
     seen_players: set[tuple] = set()
+    game_counts: Dict[str, int] = {}
 
     for r in rows:
         pkey = (r.get("game_slug"), r.get("player_id"))
         if pkey in seen_players:
+            continue
+        slug = str(r.get("game_slug") or "")
+        if slug and game_counts.get(slug, 0) >= max(int(max_per_game), 1):
             continue
         seen_players.add(pkey)
         norm = _normalize_name(r.get("player_name", f"id={r['player_id']}"))
@@ -1512,6 +1517,8 @@ def _collect_top_hr_parlay_links(
             continue
         seen_links.add(lnk)
         links.append(lnk)
+        if slug:
+            game_counts[slug] = game_counts.get(slug, 0) + 1
         if len(links) >= max(int(top_n), 1):
             break
     return links
