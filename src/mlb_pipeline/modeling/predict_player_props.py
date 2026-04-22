@@ -1439,8 +1439,14 @@ def _collect_prop_links_by_stat(
         "batter_home_runs": [],
         "batter_walks": [],
     }
+    seen_pitcher: set[tuple] = set()
+    seen_batter: set[tuple] = set()
 
     for row in all_pitcher_rows:
+        pkey = (row.get("game_slug"), row.get("player_id"), "pitcher_strikeouts")
+        if pkey in seen_pitcher:
+            continue
+        seen_pitcher.add(pkey)
         pred_k = row.get("pred_strikeouts")
         if pred_k is None:
             continue
@@ -1461,6 +1467,10 @@ def _collect_prop_links_by_stat(
             ("pred_home_runs", "batter_home_runs"),
             ("pred_walks", "batter_walks"),
         ]:
+            bkey = (row.get("game_slug"), row.get("player_id"), stat_key)
+            if bkey in seen_batter:
+                continue
+            seen_batter.add(bkey)
             pred_v = row.get(pred_col)
             if pred_v is None:
                 continue
@@ -1473,6 +1483,38 @@ def _collect_prop_links_by_stat(
                 out[stat_key].append(link)
 
     return out
+
+
+def _collect_top_hr_parlay_links(
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+    top_n: int = 10,
+) -> List[str]:
+    """Collect top-N HR prediction links (deduped) for a single HR-focused parlay."""
+    rows = [r for r in all_batter_rows if r.get("pred_home_runs") is not None]
+    rows.sort(key=lambda r: float(r.get("pred_home_runs") or 0.0), reverse=True)
+    links: List[str] = []
+    seen_links: set[str] = set()
+    seen_players: set[tuple] = set()
+
+    for r in rows:
+        pkey = (r.get("game_slug"), r.get("player_id"))
+        if pkey in seen_players:
+            continue
+        seen_players.add(pkey)
+        norm = _normalize_name(r.get("player_name", f"id={r['player_id']}"))
+        ld = prop_lines.get((norm, "batter_home_runs"))
+        if not ld:
+            continue
+        # HR parlay is intended as top HR picks, so prioritize OVER links.
+        lnk = ld.get("over_link")
+        if not lnk or lnk in seen_links:
+            continue
+        seen_links.add(lnk)
+        links.append(lnk)
+        if len(links) >= max(int(top_n), 1):
+            break
+    return links
 
 
 def _print_discord(
@@ -1517,6 +1559,15 @@ def _print_discord(
                     continue
                 idx = i // 25 + 1
                 print(f"• {label} Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
+
+        # Dedicated Top-10 HR parlay (single slip unless links are missing).
+        top_hr_links = _collect_top_hr_parlay_links(all_batter_rows, prop_lines, top_n=10)
+        if top_hr_links:
+            top_hr_url = build_fd_parlay_url(top_hr_links[:25])
+            if top_hr_url:
+                printed_any = True
+                print(f"• Top 10 HR Parlay: [FD]({top_hr_url})")
+
         if not printed_any:
             print("**No player-prop parlay links for today**")
         print("")
