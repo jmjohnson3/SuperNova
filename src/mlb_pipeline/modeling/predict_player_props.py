@@ -1435,12 +1435,34 @@ def _print_discord(
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
-    DISCORD_FORMAT=1  →  compact mode: edge plays only, one line each, links
-                         clickable. Games with no edges are skipped entirely.
+    DISCORD_FORMAT=1  →  parlay-only mode: suppresses verbose player tables and
+                         prints chunked (25-leg max) FD parlay links.
     (no env var)      →  full table mode: all players in aligned columns.
     """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
+
+    # Discord mode: suppress verbose per-player tables and emit only chunked
+    # FD parlay links (max 25 legs each) to avoid message spam.
+    if is_discord:
+        all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
+        seen: set[str] = set()
+        dedup = [l for l in all_links if l and l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
+        if not dedup:
+            print("**No player-prop parlay links for today**")
+            return []
+
+        n_chunks = math.ceil(len(dedup) / 25)
+        print(f"**Player Props Parlays ({len(dedup)} legs, {n_chunks} slips)**")
+        for i in range(0, len(dedup), 25):
+            chunk = dedup[i:i + 25]
+            parlay_url = build_fd_parlay_url(chunk)
+            if not parlay_url:
+                continue
+            idx = i // 25 + 1
+            print(f"• Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
+        print("")
+        return []
 
     def _link_name(full_name: str) -> str:
         """'Fernando Tatis Jr.' → 'Tatis Jr.',  'Michael King' → 'King'."""
