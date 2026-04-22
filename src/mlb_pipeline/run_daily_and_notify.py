@@ -19,6 +19,7 @@ Steps:
 Set env var:
   MLB_DISCORD_WEBHOOK_URL   — Discord webhook URL for the #mlb channel
   DISCORD_FORMAT=1          — set automatically by this script for prediction steps
+  MLB_POST_PREDICTION_CARDS — set to 1/true/yes to post PNG cards to Discord
 """
 from __future__ import annotations
 
@@ -39,6 +40,9 @@ MLB_DISCORD_WEBHOOK_URL = os.getenv(
     "MLB_DISCORD_WEBHOOK_URL",
     "https://discord.com/api/webhooks/1487880251886403596/fB9WT_Krl2QdOV8MD6o0Pzdp-BgnsJ8wISAJ6-Xi0wMVQfViVjbKU2wV4VC9f52Iwo9n",
 )
+MLB_POST_PREDICTION_CARDS = os.getenv("MLB_POST_PREDICTION_CARDS", "0").strip().lower() in {
+    "1", "true", "yes", "on",
+}
 
 DISCORD_LIMIT = 1950
 
@@ -269,15 +273,17 @@ async def main() -> None:
         else:
             await _post_status(step, secs, ok=True)
 
-    # ── Prediction cards (posted after both predict steps) ────────────────
+    # ── Optional prediction cards (PNG images) ─────────────────────────────
     predict_ok = not halted and not args.skip_predict
-    if predict_ok:
+    if predict_ok and MLB_POST_PREDICTION_CARDS:
         try:
             from mlb_pipeline.modeling.generate_cards import generate_and_post as _gen_cards
             await _gen_cards(MLB_DISCORD_WEBHOOK_URL, et_day)
             log.info("Prediction cards posted to Discord.")
         except Exception as _card_exc:
             log.warning("Could not generate/post prediction cards: %s", _card_exc)
+    elif predict_ok:
+        log.info("Skipping Discord prediction cards (MLB_POST_PREDICTION_CARDS is disabled).")
 
     total = time.time() - wall_start
     lines = [
