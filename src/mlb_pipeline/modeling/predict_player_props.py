@@ -1645,7 +1645,6 @@ def _print_discord(
 
     # Discord mode: print concise Top-10 props + chunked all-props parlays.
     if is_discord:
-        _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
         by_stat = _collect_prop_links_by_stat(all_pitcher_rows, all_batter_rows, prop_lines)
         printed_any = False
         for stat_key, label in [
@@ -1669,6 +1668,21 @@ def _print_discord(
                     continue
                 idx = i // 25 + 1
                 print(f"• {label} Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
+
+        # All-game parlay links (all model-direction props), chunked by FD leg cap.
+        all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
+        seen_all: set[str] = set()
+        all_dedup = [l for l in all_links if l and l not in seen_all and not seen_all.add(l)]  # type: ignore[func-returns-value]
+        if all_dedup:
+            printed_any = True
+            n_chunks = math.ceil(len(all_dedup) / 25)
+            for i in range(0, len(all_dedup), 25):
+                chunk = all_dedup[i:i + 25]
+                parlay_url = build_fd_parlay_url(chunk)
+                if not parlay_url:
+                    continue
+                idx = i // 25 + 1
+                print(f"• All Game Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
 
         # Dedicated Top-10 HR parlay (single slip unless links are missing).
         top_hr_links = _collect_top_hr_parlay_links(all_batter_rows, prop_lines, top_n=10)
