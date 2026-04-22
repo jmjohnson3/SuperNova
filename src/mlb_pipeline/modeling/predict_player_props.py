@@ -1435,21 +1435,21 @@ def _print_discord(
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
-    DISCORD_FORMAT=1  →  parlay-only mode: suppresses verbose player tables and
-                         prints chunked (25-leg max) FD parlay links.
+    DISCORD_FORMAT=1  →  compact mode: prints Top-10 props and chunked (25-leg max)
+                         all-props FD parlay links.
     (no env var)      →  full table mode: all players in aligned columns.
     """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
 
-    # Discord mode: suppress verbose per-player tables and emit only chunked
-    # FD parlay links (max 25 legs each) to avoid message spam.
+    # Discord mode: print concise Top-10 props + chunked all-props parlays.
     if is_discord:
+        _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
         all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
         seen: set[str] = set()
         dedup = [l for l in all_links if l and l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
         if not dedup:
-            print("**No player-prop parlay links for today**")
+            print("**No all-props parlay links for today**")
             return []
 
         n_chunks = math.ceil(len(dedup) / 25)
