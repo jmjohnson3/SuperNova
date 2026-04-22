@@ -93,6 +93,11 @@ class PredictConfig:
     fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
     # Optional per-stat threshold overrides loaded from model artifact JSON.
     thresholds_file: str = "prop_thresholds.json"
+    # Lottery parlay mode: K/H/TB only (no HR), biased to plus-money alt lines.
+    lottery_mode: bool = False
+    lottery_legs: int = 5
+    lottery_min_american: int = 250
+    lottery_max_per_game: int = 2
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1524,6 +1529,104 @@ def _collect_top_hr_parlay_links(
     return links
 
 
+def _collect_lottery_parlay_links(
+    all_pitcher_rows: List[Dict],
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+    cfg: PredictConfig,
+) -> List[str]:
+    """Collect high-odds positive-EV lottery legs for K/H/TB (no HR)."""
+    candidates: List[Dict] = []
+
+    def _odds_ok(odds: Optional[int]) -> bool:
+        return odds is not None and odds >= int(cfg.lottery_min_american)
+
+    # Pitcher strikeouts
+    for r in all_pitcher_rows:
+        name = r.get("player_name", f"id={r.get('player_id')}")
+        norm = _normalize_name(name)
+        ld = prop_lines.get((norm, "pitcher_strikeouts"))
+        if not ld or ld.get("line") is None:
+            continue
+        over_odds = ld.get("over_price")
+        if not _odds_ok(over_odds):
+            continue
+        p_over = (r.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        if p_over is None:
+            p_over = _prob_over_from_regression(
+                r.get("pred_strikeouts"),
+                ld.get("line"),
+                r.get("sigma_strikeouts"),
+            )
+        ev = _ev_from_american(float(p_over), over_odds)
+        if ev < cfg.min_ev:
+            continue
+        candidates.append({
+            "ev": float(ev),
+            "link": ld.get("over_link"),
+            "game_slug": r.get("game_slug"),
+            "player_key": (r.get("game_slug"), r.get("player_id"), "pitcher_strikeouts"),
+        })
+
+    # Batter hits + total bases (exclude HR by design)
+    for r in all_batter_rows:
+        name = r.get("player_name", f"id={r.get('player_id')}")
+        norm = _normalize_name(name)
+        sigma_map = r.get("sigma_map") or {}
+        clf_map = r.get("clf_p_over") or {}
+        for stat_key, pred_col in [
+            ("batter_hits", "pred_hits"),
+            ("batter_total_bases", "pred_total_bases"),
+        ]:
+            ld = prop_lines.get((norm, stat_key))
+            if not ld or ld.get("line") is None:
+                continue
+            over_odds = ld.get("over_price")
+            if not _odds_ok(over_odds):
+                continue
+            p_over = clf_map.get(stat_key)
+            if p_over is None:
+                p_over = _prob_over_from_regression(
+                    r.get(pred_col),
+                    ld.get("line"),
+                    sigma_map.get(stat_key),
+                )
+            ev = _ev_from_american(float(p_over), over_odds)
+            if ev < cfg.min_ev:
+                continue
+            candidates.append({
+                "ev": float(ev),
+                "link": ld.get("over_link"),
+                "game_slug": r.get("game_slug"),
+                "player_key": (r.get("game_slug"), r.get("player_id"), stat_key),
+            })
+
+    # Highest EV first, then dedupe and per-game cap.
+    candidates.sort(key=lambda c: c["ev"], reverse=True)
+    out: List[str] = []
+    seen_links: set[str] = set()
+    seen_player_stat: set[tuple] = set()
+    game_counts: Dict[str, int] = {}
+    for c in candidates:
+        link = c.get("link")
+        if not link or link in seen_links:
+            continue
+        pkey = c["player_key"]
+        if pkey in seen_player_stat:
+            continue
+        slug = str(c.get("game_slug") or "")
+        if slug and game_counts.get(slug, 0) >= max(int(cfg.lottery_max_per_game), 1):
+            continue
+        seen_links.add(link)
+        seen_player_stat.add(pkey)
+        out.append(link)
+        if slug:
+            game_counts[slug] = game_counts.get(slug, 0) + 1
+        if len(out) >= max(int(cfg.lottery_legs), 1):
+            break
+    return out
+
+
 def _print_discord(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
@@ -1574,6 +1677,19 @@ def _print_discord(
             if top_hr_url:
                 printed_any = True
                 print(f"• Top 10 HR Parlay: [FD]({top_hr_url})")
+
+        if cfg.lottery_mode:
+            lottery_links = _collect_lottery_parlay_links(
+                all_pitcher_rows, all_batter_rows, prop_lines, cfg
+            )
+            if lottery_links:
+                lottery_url = build_fd_parlay_url(lottery_links[:25])
+                if lottery_url:
+                    printed_any = True
+                    print(f"• Lottery Parlay (no HR, alt-line bias): [FD]({lottery_url})")
+            else:
+                printed_any = True
+                print("• Lottery Parlay: no qualifying lottery legs today")
 
         if not printed_any:
             print("**No player-prop parlay links for today**")
@@ -2502,6 +2618,10 @@ def main() -> None:
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", type=str, default=None)
+    parser.add_argument("--lottery-mode", action="store_true")
+    parser.add_argument("--lottery-legs", type=int, default=None)
+    parser.add_argument("--lottery-min-american", type=int, default=None)
+    parser.add_argument("--lottery-max-per-game", type=int, default=None)
     args = parser.parse_args()
 
     et_date = None
@@ -2512,7 +2632,26 @@ def main() -> None:
         from datetime import date as _date
         et_date = _date.fromisoformat(os.getenv("MLB_ET_DATE"))
 
-    cfg = PredictConfig(et_date=et_date)
+    lottery_mode = args.lottery_mode or (os.getenv("MLB_LOTTERY_MODE") == "1")
+    lottery_legs = args.lottery_legs if args.lottery_legs is not None else int(os.getenv("MLB_LOTTERY_LEGS", "5"))
+    lottery_min_american = (
+        args.lottery_min_american
+        if args.lottery_min_american is not None
+        else int(os.getenv("MLB_LOTTERY_MIN_AMERICAN", "250"))
+    )
+    lottery_max_per_game = (
+        args.lottery_max_per_game
+        if args.lottery_max_per_game is not None
+        else int(os.getenv("MLB_LOTTERY_MAX_PER_GAME", "2"))
+    )
+
+    cfg = PredictConfig(
+        et_date=et_date,
+        lottery_mode=lottery_mode,
+        lottery_legs=lottery_legs,
+        lottery_min_american=lottery_min_american,
+        lottery_max_per_game=lottery_max_per_game,
+    )
     _apply_threshold_overrides(cfg)
     predict_props(cfg)
 
