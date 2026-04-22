@@ -1426,6 +1426,55 @@ def _collect_all_prop_links(
     return links
 
 
+def _collect_prop_links_by_stat(
+    all_pitcher_rows: List[Dict],
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+) -> Dict[str, List[str]]:
+    """Collect model-direction prop links grouped by stat key."""
+    out: Dict[str, List[str]] = {
+        "pitcher_strikeouts": [],
+        "batter_hits": [],
+        "batter_total_bases": [],
+        "batter_home_runs": [],
+        "batter_walks": [],
+    }
+
+    for row in all_pitcher_rows:
+        pred_k = row.get("pred_strikeouts")
+        if pred_k is None:
+            continue
+        norm = _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+        ld = prop_lines.get((norm, "pitcher_strikeouts"))
+        if not ld or ld.get("line") is None:
+            continue
+        edge = pred_k - ld["line"]
+        link = ld.get("over_link") if edge >= 0 else ld.get("under_link")
+        if link:
+            out["pitcher_strikeouts"].append(link)
+
+    for row in all_batter_rows:
+        norm = _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+        for pred_col, stat_key in [
+            ("pred_hits", "batter_hits"),
+            ("pred_total_bases", "batter_total_bases"),
+            ("pred_home_runs", "batter_home_runs"),
+            ("pred_walks", "batter_walks"),
+        ]:
+            pred_v = row.get(pred_col)
+            if pred_v is None:
+                continue
+            ld = prop_lines.get((norm, stat_key))
+            if not ld or ld.get("line") is None:
+                continue
+            edge = pred_v - ld["line"]
+            link = ld.get("over_link") if edge >= 0 else ld.get("under_link")
+            if link:
+                out[stat_key].append(link)
+
+    return out
+
+
 def _print_discord(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
@@ -1436,7 +1485,7 @@ def _print_discord(
     """Print per-game prop output. Returns edge-play links for parlay.
 
     DISCORD_FORMAT=1  →  compact mode: prints Top-10 props and chunked (25-leg max)
-                         all-props FD parlay links.
+                         stat-specific FD parlay links (K / H / TB / HR / BB).
     (no env var)      →  full table mode: all players in aligned columns.
     """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
@@ -1445,22 +1494,31 @@ def _print_discord(
     # Discord mode: print concise Top-10 props + chunked all-props parlays.
     if is_discord:
         _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
-        all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
-        seen: set[str] = set()
-        dedup = [l for l in all_links if l and l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
-        if not dedup:
-            print("**No all-props parlay links for today**")
-            return []
-
-        n_chunks = math.ceil(len(dedup) / 25)
-        print(f"**Player Props Parlays ({len(dedup)} legs, {n_chunks} slips)**")
-        for i in range(0, len(dedup), 25):
-            chunk = dedup[i:i + 25]
-            parlay_url = build_fd_parlay_url(chunk)
-            if not parlay_url:
+        by_stat = _collect_prop_links_by_stat(all_pitcher_rows, all_batter_rows, prop_lines)
+        printed_any = False
+        for stat_key, label in [
+            ("pitcher_strikeouts", "Strikeout"),
+            ("batter_hits", "Hits"),
+            ("batter_total_bases", "2 Total Bases"),
+            ("batter_home_runs", "Home Runs"),
+            ("batter_walks", "Walks"),
+        ]:
+            links = by_stat.get(stat_key, [])
+            seen: set[str] = set()
+            dedup = [l for l in links if l and l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
+            if not dedup:
                 continue
-            idx = i // 25 + 1
-            print(f"• Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
+            printed_any = True
+            n_chunks = math.ceil(len(dedup) / 25)
+            for i in range(0, len(dedup), 25):
+                chunk = dedup[i:i + 25]
+                parlay_url = build_fd_parlay_url(chunk)
+                if not parlay_url:
+                    continue
+                idx = i // 25 + 1
+                print(f"• {label} Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
+        if not printed_any:
+            print("**No player-prop parlay links for today**")
         print("")
         return []
 
