@@ -1558,8 +1558,8 @@ def _collect_lottery_parlay_links(
                 ld.get("line"),
                 r.get("sigma_strikeouts"),
             )
-        ev = _ev_from_american(float(p_over), over_odds)
-        if ev < cfg.min_ev:
+        ev = _ev_per_unit(float(p_over), over_odds)
+        if ev is None or ev < cfg.min_ev:
             continue
         candidates.append({
             "ev": float(ev),
@@ -1591,8 +1591,8 @@ def _collect_lottery_parlay_links(
                     ld.get("line"),
                     sigma_map.get(stat_key),
                 )
-            ev = _ev_from_american(float(p_over), over_odds)
-            if ev < cfg.min_ev:
+            ev = _ev_per_unit(float(p_over), over_odds)
+            if ev is None or ev < cfg.min_ev:
                 continue
             candidates.append({
                 "ev": float(ev),
