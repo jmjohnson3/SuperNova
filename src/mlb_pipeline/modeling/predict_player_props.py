@@ -2632,7 +2632,14 @@ def main() -> None:
         from datetime import date as _date
         et_date = _date.fromisoformat(os.getenv("MLB_ET_DATE"))
 
-    lottery_mode = args.lottery_mode or (os.getenv("MLB_LOTTERY_MODE") == "1")
+    lottery_mode_env = os.getenv("MLB_LOTTERY_MODE")
+    if args.lottery_mode:
+        lottery_mode = True
+    elif lottery_mode_env is not None:
+        lottery_mode = lottery_mode_env.strip().lower() in {"1", "true", "yes", "on"}
+    else:
+        # Discord compact output defaults to showing a lottery section.
+        lottery_mode = os.getenv("DISCORD_FORMAT") == "1"
     lottery_legs = args.lottery_legs if args.lottery_legs is not None else int(os.getenv("MLB_LOTTERY_LEGS", "5"))
     lottery_min_american = (
         args.lottery_min_american
