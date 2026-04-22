@@ -133,11 +133,29 @@ async def _post(content: str) -> None:
                     log.warning("Discord rate-limited — waiting %.1fs", retry_after)
                     await asyncio.sleep(retry_after)
                     continue
-                r.raise_for_status()
-            except httpx.TimeoutException:
+                # Transient Discord-side failures (e.g., 5xx) should not halt the pipeline.
+                if 500 <= r.status_code < 600 and attempt < 3:
+                    wait_s = 1.5 * (attempt + 1)
+                    log.warning("Discord server error %d — retrying in %.1fs", r.status_code, wait_s)
+                    await asyncio.sleep(wait_s)
+                    continue
+                if 400 <= r.status_code < 500:
+                    log.error("Discord post failed (%d): %s", r.status_code, (r.text or "")[:400])
+                    return
+                if attempt < 3:
+                    wait_s = 1.5 * (attempt + 1)
+                    log.warning("Discord post failed (%d) — retrying in %.1fs", r.status_code, wait_s)
+                    await asyncio.sleep(wait_s)
+                    continue
+                log.error("Discord post failed after retries (%d): %s", r.status_code, (r.text or "")[:400])
+                return
+            except (httpx.TimeoutException, httpx.RequestError) as exc:
                 if attempt >= 3:
-                    raise
-                await asyncio.sleep(2.0 * (attempt + 1))
+                    log.error("Discord post request failed after retries: %s", exc)
+                    return
+                wait_s = 2.0 * (attempt + 1)
+                log.warning("Discord post request error (%s) — retrying in %.1fs", exc.__class__.__name__, wait_s)
+                await asyncio.sleep(wait_s)
 
 
 def _build_rich_chunks(header: str, body: str) -> list[str]:
