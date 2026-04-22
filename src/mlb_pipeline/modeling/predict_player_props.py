@@ -1739,64 +1739,30 @@ def _print_discord(
                 d = b.get("side", ("O" if b["edge"] > 0 else "U"))
                 ls = f"{d}{b['line']:.1f}"
                 ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
-                lnk_str = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b["lnk"] else ""
-                print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{lnk_str}")
+                print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}")
         print("")
     else:
         print("**No prop edge bets today**\n")
 
-    def _parlay(title: str, links: List) -> None:
-        dedup = list(dict.fromkeys(l for l in links if l))
-        if not dedup:
-            return
-        n_chunks = math.ceil(len(dedup) / 25)
-        for i in range(0, len(dedup), 25):
-            url = build_fd_parlay_url(dedup[i:i + 25])
-            if url:
-                sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
-                print(f"**{title}{sfx}** [FD]({url})")
-
-    _parlay("Prop Bets Parlay", [b["lnk"] for b in all_prop_bets if b["lnk"]])
-
-    # ── Optional top hitters leaderboard (Discord only, opt-in) ───────────
-    if is_discord and os.getenv("DISCORD_TOP_LISTS") == "1" and all_batter_rows:
-        def _top_stat(stat_col: str, stat_key: str, top_n: int, label: str) -> None:
+    # Discord leaderboard: prediction-only top 10 lists (no links/images)
+    if is_discord and all_batter_rows:
+        def _top10_pred(stat_col: str, label: str, fmt: str) -> None:
             rows = [r for r in all_batter_rows if r.get(stat_col) is not None]
             if not rows:
                 return
             rows.sort(key=lambda r: r[stat_col], reverse=True)
-            lines_out = []
-            for r in rows[:top_n]:
-                name  = r.get("player_name", f"id={r['player_id']}")
-                team  = r.get("team_abbr", "?")
-                opp   = r.get("opponent_abbr", "?")
-                pred  = r[stat_col]
-                norm  = _normalize_name(name)
-                ld    = prop_lines.get((norm, stat_key))
-                line  = ld["line"] if ld else None
-                short = _link_name(name)
-                if line is not None:
-                    edge    = pred - line
-                    dir_str = "O" if edge > 0 else "U"
-                    bet_lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
-                    lnk_str = f"  [FD](<{bet_lnk}>)" if bet_lnk else ""
-                    if stat_col == "pred_home_runs":
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.3f} | {dir_str}{line:.1f} edge {edge:+.3f}{lnk_str}")
-                    else:
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.2f} | {dir_str}{line:.1f} edge {edge:+.2f}{lnk_str}")
-                else:
-                    if stat_col == "pred_home_runs":
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.3f}")
-                    else:
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.2f}")
-            if lines_out:
-                print(f"\n**{label}**")
-                for l in lines_out:
-                    print(l)
+            print(f"**{label} (Top 10)**")
+            for i, r in enumerate(rows[:10], start=1):
+                name = r.get("player_name", f"id={r['player_id']}")
+                team = r.get("team_abbr", "?")
+                opp = r.get("opponent_abbr", "?")
+                pred = r.get(stat_col)
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {fmt.format(pred)}")
+            print("")
 
-        _top_stat("pred_home_runs",   "batter_home_runs",   1, "Top HR Hitter")
-        _top_stat("pred_total_bases", "batter_total_bases", 2, "Top TB Hitters")
-        _top_stat("pred_hits",        "batter_hits",        2, "Top H Hitters")
+        _top10_pred("pred_hits", "Top Hits Predictions", "{:.2f}")
+        _top10_pred("pred_total_bases", "Top Total Bases Predictions", "{:.2f}")
+        _top10_pred("pred_home_runs", "Top Home Runs Predictions", "{:.3f}")
 
     return []  # parlays already printed; outer parlay logic skipped
 
