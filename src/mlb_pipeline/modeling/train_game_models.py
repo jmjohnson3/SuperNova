@@ -402,6 +402,7 @@ def _optuna_objective(
     feature_cols: List[str],
     folds: List[Tuple[pd.Timestamp, pd.Timestamp]],
     target_name: str,
+    recency_half_life_days: int,
     objective: str = "reg:pseudohubererror",
 ) -> float:
     params = {
@@ -440,6 +441,12 @@ def _optuna_objective(
 
         train_dates = df.loc[train_mask, "game_date_et"]
         fit_rel, eval_rel = temporal_eval_split(train_dates)
+        recency_weights = compute_recency_weights(
+            train_dates,
+            half_life_days=recency_half_life_days,
+        )
+        recency_weights_fit = recency_weights[fit_rel]
+        recency_weights_eval = recency_weights[eval_rel]
 
         model = XGBRegressor(
             n_estimators=2000,
@@ -452,7 +459,9 @@ def _optuna_objective(
         )
         model.fit(
             X_train.iloc[fit_rel], y_train.iloc[fit_rel],
+            sample_weight=recency_weights_fit,
             eval_set=[(X_train.iloc[eval_rel], y_train.iloc[eval_rel])],
+            sample_weight_eval_set=[recency_weights_eval],
             verbose=False,
         )
 
@@ -510,6 +519,7 @@ def run_optuna_tuning(
     run_line_study.optimize(
         lambda trial: _optuna_objective(
             trial, df, X_raw, y_run_diff, feature_cols, tune_folds, "run_line",
+            recency_half_life_days=cfg.recency_half_life_days,
             objective=RUN_LINE_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
@@ -524,6 +534,7 @@ def run_optuna_tuning(
     total_study.optimize(
         lambda trial: _optuna_objective(
             trial, df, X_raw, y_total, feature_cols, tune_folds, "total",
+            recency_half_life_days=cfg.recency_half_life_days,
             objective=TOTAL_DIRECT_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
