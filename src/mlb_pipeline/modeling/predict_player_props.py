@@ -1739,7 +1739,7 @@ def _print_discord(
                 d = b.get("side", ("O" if b["edge"] > 0 else "U"))
                 ls = f"{d}{b['line']:.1f}"
                 ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
-                link_txt = f" | Bet {b.get('book', 'FD')}: <{b['lnk']}>" if b.get("lnk") else ""
+                link_txt = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b.get("lnk") else ""
                 print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{link_txt}")
         print("")
     else:
