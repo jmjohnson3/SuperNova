@@ -86,6 +86,9 @@ class PredictConfig:
     # Binary CLF threshold: P(over) - 0.524 >= this value to flag a bet.
     # 0.03 = P(over) > 55.4% — modest edge above breakeven.
     threshold_clf: float = 0.03
+    # Minimum expected value per 1.0 unit stake to consider a bet.
+    # Example: 0.02 means +2% EV.
+    min_ev: float = 0.02
     # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
     fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
     # Optional per-stat threshold overrides loaded from model artifact JSON.
@@ -805,6 +808,7 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
         "threshold_home_runs_under",
         "threshold_walks",
         "threshold_clf",
+        "min_ev",
     ):
         if key in raw:
             _set(key, raw[key])
@@ -840,7 +844,7 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
         _set("threshold_clf", v.get("abs_edge") if isinstance(v, dict) else v)
 
     log.info(
-        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f BB=%.2f CLF=%.3f",
+        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f BB=%.2f CLF=%.3f EV=%.3f",
         path,
         cfg.threshold_strikeouts,
         cfg.threshold_hits,
@@ -849,6 +853,7 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
         cfg.threshold_home_runs_under,
         cfg.threshold_walks,
         cfg.threshold_clf,
+        cfg.min_ev,
     )
 
 
@@ -987,6 +992,41 @@ def _kelly_prop(edge: float, sigma: float, max_kelly: float = 0.05) -> float:
     # Kelly fraction = (p * 2 - 1) for 1:1 odds (simplified for -110 juice)
     k = max(0.0, (p - 0.5238) / 0.4762)  # break-even is 52.38% at -110
     return min(k, max_kelly)
+
+
+def _american_to_profit_mult(price: Optional[float]) -> Optional[float]:
+    """American odds -> net profit multiplier on 1 unit stake."""
+    if price is None:
+        return None
+    try:
+        p = float(price)
+    except Exception:
+        return None
+    if p == 0:
+        return None
+    if p > 0:
+        return p / 100.0
+    return 100.0 / abs(p)
+
+
+def _ev_per_unit(p_win: Optional[float], price: Optional[float]) -> Optional[float]:
+    """Expected net return for 1.0 unit stake."""
+    if p_win is None:
+        return None
+    b = _american_to_profit_mult(price)
+    if b is None:
+        return None
+    p = max(0.0, min(1.0, float(p_win)))
+    return p * b - (1.0 - p)
+
+
+def _prob_over_from_regression(pred: Optional[float], line: Optional[float], sigma: Optional[float]) -> Optional[float]:
+    """Approximate P(over) from regression edge using logistic(edge / sigma)."""
+    if pred is None or line is None or sigma is None:
+        return None
+    s = max(float(sigma), 1e-6)
+    z = (float(pred) - float(line)) / s
+    return 1.0 / (1.0 + math.exp(-z))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1253,6 +1293,8 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
         entry = {
             "bookmaker_key": str(row["bookmaker_key"]),
             "line": float(row["line"]) if row["line"] is not None else None,
+            "over_price": float(row["over_price"]) if row.get("over_price") is not None else None,
+            "under_price": float(row["under_price"]) if row.get("under_price") is not None else None,
             "over_link":  _clean(row.get("over_link")),
             "under_link": _clean(row.get("under_link")),
         }
@@ -1270,6 +1312,8 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
             if not entry.get("under_link") and key in dk_rows:
                 entry["under_link"]      = dk_rows[key].get("under_link")
                 entry["under_link_book"] = "draftkings"
+            if entry.get("under_price") is None and key in dk_rows:
+                entry["under_price"] = dk_rows[key].get("under_price")
             else:
                 entry["under_link_book"] = "fanduel"
             result[key] = entry
@@ -1315,6 +1359,25 @@ def _fmt_edge(edge: Optional[float], threshold: float, direction: str = "OVER") 
     if abs_e >= threshold:
         return f"★ {direction} +{abs_e:.2f}"
     return f"[{direction} +{abs_e:.2f}]" if abs_e > 0 else "[no edge]"
+
+
+def _best_side_from_ev(ld: Dict, p_over: Optional[float], min_ev: float) -> Optional[Dict]:
+    """Return best EV side dict when EV is computable and above threshold."""
+    if p_over is None:
+        return None
+    ev_over = _ev_per_unit(p_over, ld.get("over_price"))
+    ev_under = _ev_per_unit(1.0 - p_over, ld.get("under_price"))
+    cands = []
+    if ev_over is not None and ld.get("over_link"):
+        cands.append(("over", ev_over, ld.get("over_price"), ld.get("over_link")))
+    if ev_under is not None and ld.get("under_link"):
+        cands.append(("under", ev_under, ld.get("under_price"), ld.get("under_link")))
+    if not cands:
+        return None
+    side, ev, price, link = max(cands, key=lambda t: t[1])
+    if ev < min_ev:
+        return None
+    return {"side": side, "ev": float(ev), "price": price, "link": link}
 
 
 def _collect_all_prop_links(
@@ -1446,17 +1509,22 @@ def _print_discord(
                     ld = prop_lines.get((norm, "pitcher_strikeouts"))
                     line = ld["line"] if ld else None
                     clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
-                    if clf_p is not None and line is not None:
-                        edge = clf_p - _BREAKEVEN_PROB
-                        has_edge = abs(edge) >= cfg.threshold_clf
-                        display_pred, fmt = clf_p, "{:.3f}"
+                    p_over = clf_p if clf_p is not None else _prob_over_from_regression(
+                        pred_k, line, row.get("sigma_strikeouts")
+                    )
+                    ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
+                    if ev_pick is not None:
+                        edge = ev_pick["ev"]
+                        has_edge = True
+                        display_pred, fmt = (p_over if clf_p is not None else pred_k), "{:.3f}" if clf_p is not None else "{:.1f}"
+                        lnk = ev_pick["link"]
                     else:
                         edge = (pred_k - line) if line is not None else None
                         has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
                         display_pred, fmt = pred_k, "{:.1f}"
+                        lnk = ld.get("over_link") if (ld and edge is not None and edge > 0) else (ld.get("under_link") if ld else None)
                     tbl.append(_row(name, display_pred, fmt, line, edge, has_edge))
                     if has_edge and ld:
-                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
                         if lnk:
                             fd_links.append(lnk)
 
@@ -1474,10 +1542,12 @@ def _print_discord(
                     ld = prop_lines.get((norm, "batter_hits"))
                     line = ld["line"] if ld else None
                     edge = (pred_h - line) if line is not None else None
-                    has_edge = edge is not None and abs(edge) >= cfg.threshold_hits * _ci
+                    p_over = _prob_over_from_regression(pred_h, line, (row.get("sigma_map") or {}).get("batter_hits"))
+                    ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
+                    has_edge = (ev_pick is not None) or (edge is not None and abs(edge) >= cfg.threshold_hits * _ci)
                     tbl.append(_row(name, pred_h, "{:.2f}", line, edge, has_edge))
                     if has_edge and ld:
-                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                        lnk = ev_pick["link"] if ev_pick is not None else (ld.get("over_link") if edge > 0 else ld.get("under_link"))
                         if lnk:
                             fd_links.append(lnk)
 
@@ -1504,6 +1574,7 @@ def _print_discord(
                         edge = clf_p - _BREAKEVEN_PROB
                         eff_thresh = cfg.threshold_clf
                         display_pred = clf_p
+                        p_over = clf_p
                     else:
                         edge = pred_v - line
                         eff_thresh = (
@@ -1511,7 +1582,9 @@ def _print_discord(
                             if thresh is None else thresh
                         )
                         display_pred = pred_v
-                    if abs(edge) >= eff_thresh * _ci:
+                        p_over = _prob_over_from_regression(pred_v, line, (row.get("sigma_map") or {}).get(stat_key))
+                    ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+                    if ev_pick is not None or abs(edge) >= eff_thresh * _ci:
                         stat_edges.append((name, display_pred, line, edge, ld))
                 if stat_edges:
                     tbl += ["", _hdr(hdr_lbl, stat_lbl), SEP]
@@ -1540,21 +1613,28 @@ def _print_discord(
         if not ld or ld.get("line") is None:
             continue
         line = ld["line"]
+        p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
         clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
-        if clf_p is not None:
-            edge = clf_p - _BREAKEVEN_PROB
-            if abs(edge) < cfg.threshold_clf:
-                continue
-            display_pred = clf_p
+        p_over = clf_p if clf_p is not None else p_over_reg
+        ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+        if ev_pick is not None:
+            edge = ev_pick["ev"]
+            display_pred = p_over if clf_p is not None else pred_k
+            lnk = ev_pick["link"]
+            side = "O" if ev_pick["side"] == "over" else "U"
         else:
-            edge = pred_k - line
-            if abs(edge) < cfg.threshold_strikeouts:
+            edge = (clf_p - _BREAKEVEN_PROB) if clf_p is not None else (pred_k - line)
+            min_thr = cfg.threshold_clf if clf_p is not None else cfg.threshold_strikeouts
+            if abs(edge) < min_thr:
                 continue
-            display_pred = pred_k
-        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+            display_pred = p_over if clf_p is not None else pred_k
+            lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+            side = "O" if edge > 0 else "U"
         k_plays.append({
             "name": name, "team": row.get("team_abbr", ""), "stat": "K",
             "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
+            "is_ev": ev_pick is not None,
+            "side": side,
             "game_slug": row.get("game_slug"),
         })
 
@@ -1586,6 +1666,7 @@ def _print_discord(
                 edge = clf_p - _BREAKEVEN_PROB
                 eff_thresh = cfg.threshold_clf
                 display_pred = clf_p  # show P(over) directly
+                p_over = clf_p
             else:
                 edge = pred_v - line
                 eff_thresh = (
@@ -1593,16 +1674,36 @@ def _print_discord(
                     if thresh is None else thresh
                 )
                 display_pred = pred_v
+                p_over = _prob_over_from_regression(pred_v, line, (row.get("sigma_map") or {}).get(stat_key))
 
-            if abs(edge) >= eff_thresh * _ci:
+            ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+            if ev_pick is not None:
+                side_over = ev_pick["side"] == "over"
+                if (not side_over) and stat_key in cfg.fd_over_only:
+                    continue
+                edge_for_rank = ev_pick["ev"]
+                lnk = ev_pick["link"]
+                book = "FD" if (side_over or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
+                side = "O" if side_over else "U"
+                is_pick = True
+            else:
+                if abs(edge) < eff_thresh * _ci:
+                    continue
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
                 lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
                 book = "FD" if (edge > 0 or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
+                edge_for_rank = edge
+                side = "O" if edge > 0 else "U"
+                is_pick = True
+
+            if is_pick:
                 batter_edge_plays.append({
                     "name": name, "team": team, "stat": stat_lbl,
-                    "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": book,
+                    "pred": display_pred, "line": line, "edge": edge_for_rank, "lnk": lnk, "book": book,
                     "is_clf": clf_p is not None,
+                    "is_ev": ev_pick is not None,
+                    "side": side,
                     "game_slug": row.get("game_slug"),
                 })
 
@@ -1635,7 +1736,7 @@ def _print_discord(
             print(hdr)
             for b in grouped[slug]:
                 short = _link_name(b["name"])
-                d = "O" if b["edge"] > 0 else "U"
+                d = b.get("side", ("O" if b["edge"] > 0 else "U"))
                 ls = f"{d}{b['line']:.1f}"
                 ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
                 lnk_str = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b["lnk"] else ""
@@ -1720,22 +1821,37 @@ def _print_best_bets(
         ld = prop_lines.get((norm, "pitcher_strikeouts"))
         if not ld or ld["line"] is None:
             continue
+        line = ld["line"]
+        p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
         clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
-        if clf_p is not None:
-            edge = clf_p - _BREAKEVEN_PROB
-            is_edge = abs(edge) >= cfg.threshold_clf
-            display_pred = clf_p
+        p_over = clf_p if clf_p is not None else p_over_reg
+        ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+        if ev_pick is not None:
+            edge = ev_pick["ev"]
+            is_edge = True
+            display_pred = p_over if clf_p is not None else pred_k
+            bet_link = ev_pick["link"]
+            side = "O" if ev_pick["side"] == "over" else "U"
         else:
-            edge = pred_k - ld["line"]
-            is_edge = abs(edge) >= cfg.threshold_strikeouts
-            display_pred = pred_k
+            if clf_p is not None:
+                edge = clf_p - _BREAKEVEN_PROB
+                is_edge = abs(edge) >= cfg.threshold_clf
+                display_pred = clf_p
+            else:
+                edge = pred_k - line
+                is_edge = abs(edge) >= cfg.threshold_strikeouts
+                display_pred = pred_k
+            bet_link = ld.get("over_link") if edge > 0 else ld.get("under_link")
+            side = "O" if edge > 0 else "U"
         if is_edge:
             best.append({
                 "name": name, "stat": "K", "pred": display_pred,
-                "line": ld["line"], "edge": edge,
-                "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                "line": line, "edge": edge,
+                "bet_link": bet_link,
                 "team": row.get("team_abbr", ""),
                 "game_slug": row.get("game_slug", ""),
+                "is_ev": ev_pick is not None,
+                "side": side,
             })
 
     for row in all_batter_rows:
@@ -1755,21 +1871,44 @@ def _print_best_bets(
             ld = prop_lines.get((norm, stat_key))
             if not ld or ld["line"] is None:
                 continue
-            edge = pred_v - ld["line"]
+            line = ld["line"]
+            edge = pred_v - line
             eff_thr = (
                 (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
                 if threshold is None else threshold
             )
-            if abs(edge) >= eff_thr * _ci_scale:
+            clf_p = (row.get("clf_p_over") or {}).get(stat_key)
+            p_over = clf_p if clf_p is not None else _prob_over_from_regression(
+                pred_v, line, (row.get("sigma_map") or {}).get(stat_key)
+            )
+            ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+
+            if ev_pick is not None:
+                side_over = ev_pick["side"] == "over"
+                if (not side_over) and stat_key in cfg.fd_over_only:
+                    continue
+                edge_pick = ev_pick["ev"]
+                bet_link = ev_pick["link"]
+                side = "O" if side_over else "U"
+            else:
+                if abs(edge) < eff_thr * _ci_scale:
+                    continue
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
+                edge_pick = edge
+                bet_link = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                side = "O" if edge > 0 else "U"
+
+            if ev_pick is not None or abs(edge) >= eff_thr * _ci_scale:
                 best.append({
                     "name": name, "stat": stat, "pred": pred_v,
-                    "line": ld["line"], "edge": edge,
-                    "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                    "line": line, "edge": edge_pick,
+                    "bet_link": bet_link,
                     "bookmaker_key": ld.get("bookmaker_key", ""),
                     "team": row.get("team_abbr", ""),
                     "game_slug": row.get("game_slug", ""),
+                    "is_ev": ev_pick is not None,
+                    "side": side,
                 })
 
     best.sort(key=lambda r: abs(r["edge"]), reverse=True)
@@ -1785,7 +1924,7 @@ def _print_best_bets(
             else:
                 short = f"{parts[-1]} ({b['team']})"
             ps = f"{b['pred']:.1f}" if b["stat"] == "K" else f"{b['pred']:.2f}"
-            d = "O" if b["edge"] > 0 else "U"
+            d = b.get("side", ("O" if b["edge"] > 0 else "U"))
             ls = f"{d}{b['line']:.1f}"
             es = f"{b['edge']:+.2f}"
             lnk = b.get("bet_link")
@@ -1985,6 +2124,7 @@ def predict_props(cfg: PredictConfig) -> None:
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_strikeouts": pk,
                     "clf_p_over": {"pitcher_strikeouts": p_over_k},
+                    "sigma_strikeouts": sigma_k,
                 }
                 all_pitcher_rows.append(r)
                 db_rows.append({
@@ -2131,6 +2271,12 @@ def predict_props(cfg: PredictConfig) -> None:
                         "batter_total_bases": _safe_clf("batter_total_bases"),
                         "batter_home_runs":   _safe_clf("batter_home_runs"),
                         "batter_walks":       _safe_clf("batter_walks"),
+                    },
+                    "sigma_map": {
+                        "batter_hits": sigma_h,
+                        "batter_total_bases": sigma_tb,
+                        "batter_home_runs": sigma_hr,
+                        "batter_walks": sigma_walks,
                     },
                 }
                 all_batter_rows.append(r)
