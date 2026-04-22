@@ -726,7 +726,7 @@ def _load_batter_artifacts(model_dir: Path):
 
 def _load_batter_clf_artifacts(model_dir: Path):
     """Load binary classifier models for batter props.
-    Returns (models_dict, feat_clf, meds_clf, bt_clf) where models_dict
+    Returns (models_dict, feat_clf, meds_clf, bt_clf, cal_map) where models_dict
     maps stat_key → (xgb_model, lgb_booster_or_None).
     Returns None if artifacts are missing.
     """
@@ -738,6 +738,8 @@ def _load_batter_clf_artifacts(model_dir: Path):
     meds_clf = json.loads((model_dir / "feature_medians_clf_batters.json").read_text())
     bt_clf_path = model_dir / "backtest_clf.json"
     bt_clf = json.loads(bt_clf_path.read_text()) if bt_clf_path.exists() else {}
+    cal_path = model_dir / "clf_calibration_batters.json"
+    cal_map = json.loads(cal_path.read_text()) if cal_path.exists() else {}
 
     models: Dict[str, Tuple] = {}
     stat_files = {
@@ -760,7 +762,7 @@ def _load_batter_clf_artifacts(model_dir: Path):
 
     if not models:
         return None
-    return models, feat_clf, meds_clf, bt_clf
+    return models, feat_clf, meds_clf, bt_clf, cal_map
 
 
 def _apply_threshold_overrides(cfg: PredictConfig) -> None:
@@ -852,7 +854,7 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
 
 def _load_pitcher_clf_artifacts(model_dir: Path):
     """Load binary classifier model for pitcher strikeouts.
-    Returns (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf) or None.
+    Returns (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map) or None.
     """
     feat_path = model_dir / "feature_columns_clf_pitchers.json"
     xgb_path  = model_dir / "strikeouts_clf_xgb.json"
@@ -863,6 +865,8 @@ def _load_pitcher_clf_artifacts(model_dir: Path):
     meds_clf = json.loads((model_dir / "feature_medians_clf_pitchers.json").read_text())
     bt_clf_path = model_dir / "backtest_clf.json"
     bt_clf = json.loads(bt_clf_path.read_text()) if bt_clf_path.exists() else {}
+    cal_path = model_dir / "clf_calibration_pitchers.json"
+    cal_map = json.loads(cal_path.read_text()) if cal_path.exists() else {}
 
     xgb_clf = XGBRegressor()
     xgb_clf.load_model(str(xgb_path))
@@ -871,7 +875,22 @@ def _load_pitcher_clf_artifacts(model_dir: Path):
     if _HAS_LGB and lgb_path.exists():
         lgb_clf = lgb.Booster(model_file=str(lgb_path))
 
-    return xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf
+    return xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map
+
+
+def _apply_platt_calibration(p: np.ndarray, cal: Optional[Dict]) -> np.ndarray:
+    """Apply persisted Platt calibration (if present), else identity."""
+    if not cal or cal.get("method") != "platt":
+        return p
+    try:
+        a = float(cal.get("a"))
+        b = float(cal.get("b"))
+    except Exception:
+        return p
+    p_safe = np.clip(np.asarray(p, dtype=float), 1e-6, 1 - 1e-6)
+    z = np.log(p_safe / (1.0 - p_safe))
+    out = 1.0 / (1.0 + np.exp(-(a * z + b)))
+    return np.clip(out, 1e-6, 1 - 1e-6)
 
 
 def _prep_features_clf(
@@ -1426,9 +1445,16 @@ def _print_discord(
                     norm = _normalize_name(name)
                     ld = prop_lines.get((norm, "pitcher_strikeouts"))
                     line = ld["line"] if ld else None
-                    edge = (pred_k - line) if line is not None else None
-                    has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
-                    tbl.append(_row(name, pred_k, "{:.1f}", line, edge, has_edge))
+                    clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+                    if clf_p is not None and line is not None:
+                        edge = clf_p - _BREAKEVEN_PROB
+                        has_edge = abs(edge) >= cfg.threshold_clf
+                        display_pred, fmt = clf_p, "{:.3f}"
+                    else:
+                        edge = (pred_k - line) if line is not None else None
+                        has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
+                        display_pred, fmt = pred_k, "{:.1f}"
+                    tbl.append(_row(name, display_pred, fmt, line, edge, has_edge))
                     if has_edge and ld:
                         lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
                         if lnk:
@@ -1514,13 +1540,21 @@ def _print_discord(
         if not ld or ld.get("line") is None:
             continue
         line = ld["line"]
-        edge = pred_k - line
-        if abs(edge) < cfg.threshold_strikeouts:
-            continue
+        clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        if clf_p is not None:
+            edge = clf_p - _BREAKEVEN_PROB
+            if abs(edge) < cfg.threshold_clf:
+                continue
+            display_pred = clf_p
+        else:
+            edge = pred_k - line
+            if abs(edge) < cfg.threshold_strikeouts:
+                continue
+            display_pred = pred_k
         lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
         k_plays.append({
             "name": name, "team": row.get("team_abbr", ""), "stat": "K",
-            "pred": pred_k, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
+            "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
             "game_slug": row.get("game_slug"),
         })
 
@@ -1686,10 +1720,18 @@ def _print_best_bets(
         ld = prop_lines.get((norm, "pitcher_strikeouts"))
         if not ld or ld["line"] is None:
             continue
-        edge = pred_k - ld["line"]
-        if abs(edge) >= cfg.threshold_strikeouts:
+        clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        if clf_p is not None:
+            edge = clf_p - _BREAKEVEN_PROB
+            is_edge = abs(edge) >= cfg.threshold_clf
+            display_pred = clf_p
+        else:
+            edge = pred_k - ld["line"]
+            is_edge = abs(edge) >= cfg.threshold_strikeouts
+            display_pred = pred_k
+        if is_edge:
             best.append({
-                "name": name, "stat": "K", "pred": pred_k,
+                "name": name, "stat": "K", "pred": display_pred,
                 "line": ld["line"], "edge": edge,
                 "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
                 "team": row.get("team_abbr", ""),
@@ -1833,8 +1875,8 @@ def predict_props(cfg: PredictConfig) -> None:
     xgb_h = lgb_h = xgb_tb_m = lgb_tb_m = None
     xgb_hr = lgb_hr = xgb_walks_m = lgb_walks_m = feat_b = meds_b = None
     # Binary classifier models (optional — loaded if training has been run)
-    pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf)
-    batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf)
+    pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map)
+    batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf, cal_map)
 
     if pitcher_artifacts_ok:
         try:
@@ -1892,6 +1934,21 @@ def predict_props(cfg: PredictConfig) -> None:
             X_p = _prep_features(df_p, _PITCHER_META, feat_p, meds_p)
             pred_k = _predict_ensemble(X_p, xgb_k, lgb_k)
             sigma_k = bt.get("ci_strikeouts") if bt else None
+            clf_pover_k: Optional[np.ndarray] = None
+            if pitcher_clf_arts is not None:
+                xgb_clf, lgb_clf, feat_p_clf, meds_p_clf, _bt_p_clf, cal_p_map = pitcher_clf_arts
+                norms_p = np.array([
+                    _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+                    for _, row in df_p.iterrows()
+                ])
+                lines_p = np.array([
+                    (prop_lines.get((nm, "pitcher_strikeouts")) or {}).get("line", np.nan)
+                    for nm in norms_p
+                ], dtype=float)
+                X_p_clf = _prep_features_clf(X_p, lines_p, feat_p_clf, meds_p_clf)
+                raw_p = np.clip(_predict_ensemble(X_p_clf, xgb_clf, lgb_clf), 0.01, 0.99)
+                clf_pover_k = _apply_platt_calibration(raw_p, cal_p_map.get("pitcher_strikeouts"))
+                clf_pover_k[np.isnan(lines_p)] = np.nan
 
             for i, (_, row) in enumerate(df_p.iterrows()):
                 pk = max(0.0, float(pred_k[i]))
@@ -1902,9 +1959,20 @@ def predict_props(cfg: PredictConfig) -> None:
                 # Dynamic penalty to curb historically weak OVER buckets.
                 if line is not None:
                     pk = max(0.0, pk - _over_penalty_for_line("pitcher_strikeouts", line, over_penalties))
-                edge = (pk - line) if line is not None else None
-                kel = _kelly_prop(abs(edge), sigma_k or cfg.threshold_strikeouts * 2) \
-                      if edge is not None else 0.0
+                p_over_k = None
+                if clf_pover_k is not None:
+                    v = float(clf_pover_k[i])
+                    p_over_k = None if np.isnan(v) else v
+
+                if p_over_k is not None and line is not None:
+                    edge = p_over_k - _BREAKEVEN_PROB
+                    kel = min(max(0.0, edge / (1.0 - _BREAKEVEN_PROB)), 0.05)
+                    pred_for_db = p_over_k
+                else:
+                    edge = (pk - line) if line is not None else None
+                    kel = _kelly_prop(abs(edge), sigma_k or cfg.threshold_strikeouts * 2) \
+                          if edge is not None else 0.0
+                    pred_for_db = pk
 
                 r = {
                     "game_slug": row["game_slug"],
@@ -1916,6 +1984,7 @@ def predict_props(cfg: PredictConfig) -> None:
                     "opponent_abbr": row.get("opponent_abbr"),
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_strikeouts": pk,
+                    "clf_p_over": {"pitcher_strikeouts": p_over_k},
                 }
                 all_pitcher_rows.append(r)
                 db_rows.append({
@@ -1925,7 +1994,7 @@ def predict_props(cfg: PredictConfig) -> None:
                     "player_name": name,
                     "team_abbr": row.get("team_abbr"),
                     "stat": "pitcher_strikeouts",
-                    "pred_value": round(pk, 3),
+                    "pred_value": round(pred_for_db, 3),
                     "book_line": line,
                     "edge": round(edge, 3) if edge is not None else None,
                     "kelly_fraction": round(kel, 4),
@@ -1988,7 +2057,7 @@ def predict_props(cfg: PredictConfig) -> None:
                 "batter_home_runs": None, "batter_walks": None,
             }
             if batter_clf_arts is not None:
-                clf_models, feat_clf, meds_clf, _bt_clf = batter_clf_arts
+                clf_models, feat_clf, meds_clf, _bt_clf, cal_map_b = batter_clf_arts
                 # Build normalized name array for vectorized line lookup
                 pids_arr = df_b["player_id"].astype(int).values
                 norms_arr = np.array([_normalize_name(name_map.get(p, "")) for p in pids_arr])
@@ -2002,7 +2071,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     ], dtype=float)
                     X_clf = _prep_features_clf(X_b, lines_arr, feat_clf, meds_clf)
                     xgb_c, lgb_c = clf_models[stat_key]
-                    pover = np.clip(_predict_ensemble(X_clf, xgb_c, lgb_c), 0.01, 0.99)
+                    raw_p = np.clip(_predict_ensemble(X_clf, xgb_c, lgb_c), 0.01, 0.99)
+                    pover = _apply_platt_calibration(raw_p, cal_map_b.get(stat_key))
                     # Mask rows with no line — use NaN so they fall back to regression
                     pover[np.isnan(lines_arr)] = np.nan
                     clf_pover[stat_key] = pover
