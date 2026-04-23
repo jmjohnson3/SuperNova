@@ -891,18 +891,31 @@ def _load_pitcher_clf_artifacts(model_dir: Path):
 
 
 def _apply_platt_calibration(p: np.ndarray, cal: Optional[Dict]) -> np.ndarray:
-    """Apply persisted Platt calibration (if present), else identity."""
-    if not cal or cal.get("method") != "platt":
-        return p
-    try:
-        a = float(cal.get("a"))
-        b = float(cal.get("b"))
-    except Exception:
-        return p
+    """Apply persisted probability calibration (platt or isotonic)."""
     p_safe = np.clip(np.asarray(p, dtype=float), 1e-6, 1 - 1e-6)
-    z = np.log(p_safe / (1.0 - p_safe))
-    out = 1.0 / (1.0 + np.exp(-(a * z + b)))
-    return np.clip(out, 1e-6, 1 - 1e-6)
+    if not cal:
+        return p_safe
+    method = str(cal.get("method") or "").lower()
+    if method == "platt":
+        try:
+            a = float(cal.get("a"))
+            b = float(cal.get("b"))
+        except Exception:
+            return p_safe
+        z = np.log(p_safe / (1.0 - p_safe))
+        out = 1.0 / (1.0 + np.exp(-(a * z + b)))
+        return np.clip(out, 1e-6, 1 - 1e-6)
+    if method == "isotonic":
+        try:
+            x = np.asarray(cal.get("x"), dtype=float)
+            y = np.asarray(cal.get("y"), dtype=float)
+        except Exception:
+            return p_safe
+        if x.size < 2 or y.size < 2:
+            return p_safe
+        out = np.interp(p_safe, x, y)
+        return np.clip(out, 1e-6, 1 - 1e-6)
+    return p_safe
 
 
 def _clf_line_bucket(stat: str, line: Optional[float]) -> str:

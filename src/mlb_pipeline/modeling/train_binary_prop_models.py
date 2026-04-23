@@ -41,6 +41,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_dtype
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, roc_auc_score
 from xgboost import XGBRegressor
@@ -471,6 +472,104 @@ def _fit_platt_calibration(
     }
 
 
+def _fit_isotonic_calibration(
+    preds: np.ndarray,
+    actuals: np.ndarray,
+) -> Optional[Dict[str, float]]:
+    """Fit isotonic calibrator on raw probabilities."""
+    if preds.size < 50 or actuals.size != preds.size:
+        return None
+    y = np.asarray(actuals, dtype=float)
+    if np.unique(y).size < 2:
+        return None
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    try:
+        iso = IsotonicRegression(out_of_bounds="clip")
+        iso.fit(p, y)
+        cal = np.clip(iso.predict(p), 1e-6, 1 - 1e-6)
+    except Exception:
+        log.exception("Isotonic calibration fit failed")
+        return None
+    x_thr = getattr(iso, "X_thresholds_", None)
+    y_thr = getattr(iso, "y_thresholds_", None)
+    if x_thr is None or y_thr is None:
+        return None
+    return {
+        "method": "isotonic",
+        "x": [float(v) for v in x_thr],
+        "y": [float(v) for v in y_thr],
+        "n_oof": int(preds.size),
+        "brier_raw": float(brier_score_loss(y, p)),
+        "brier_calibrated": float(brier_score_loss(y, cal)),
+    }
+
+
+def _apply_calibration(preds: np.ndarray, cal: Optional[Dict]) -> np.ndarray:
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    if not cal:
+        return p
+    method = str(cal.get("method") or "").lower()
+    if method == "platt":
+        try:
+            a = float(cal.get("a"))
+            b = float(cal.get("b"))
+        except Exception:
+            return p
+        z = np.log(p / (1.0 - p))
+        return np.clip(1.0 / (1.0 + np.exp(-(a * z + b))), 1e-6, 1 - 1e-6)
+    if method == "isotonic":
+        try:
+            x = np.asarray(cal.get("x"), dtype=float)
+            y = np.asarray(cal.get("y"), dtype=float)
+        except Exception:
+            return p
+        if x.size < 2 or y.size < 2:
+            return p
+        return np.clip(np.interp(p, x, y), 1e-6, 1 - 1e-6)
+    return p
+
+
+def _fit_best_calibration(
+    preds: np.ndarray,
+    actuals: np.ndarray,
+) -> Optional[Dict[str, float]]:
+    """Select best calibrator (Platt vs isotonic) using a holdout split."""
+    n = int(preds.size)
+    if n < 80 or actuals.size != preds.size:
+        return None
+    y = np.asarray(actuals, dtype=float)
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    split = max(50, int(n * 0.8))
+    if split >= n - 20:
+        split = n - 20
+    if split < 30:
+        return None
+
+    p_tr, y_tr = p[:split], y[:split]
+    p_va, y_va = p[split:], y[split:]
+    if np.unique(y_tr).size < 2 or np.unique(y_va).size < 2:
+        return None
+
+    cands: list[Dict] = []
+    platt = _fit_platt_calibration(p_tr, y_tr)
+    if platt is not None:
+        pv = _apply_calibration(p_va, platt)
+        cands.append({**platt, "brier_holdout": float(brier_score_loss(y_va, pv))})
+    isotonic = _fit_isotonic_calibration(p_tr, y_tr)
+    if isotonic is not None:
+        pv = _apply_calibration(p_va, isotonic)
+        cands.append({**isotonic, "brier_holdout": float(brier_score_loss(y_va, pv))})
+    if not cands:
+        return None
+
+    best = min(cands, key=lambda d: d["brier_holdout"])
+    p_full_cal = _apply_calibration(p, best)
+    best["brier_calibrated"] = float(brier_score_loss(y, p_full_cal))
+    best["brier_raw"] = float(brier_score_loss(y, p))
+    best["n_oof"] = int(n)
+    return best
+
+
 def _fit_final_clf(
     X: pd.DataFrame,
     y: pd.Series,
@@ -555,7 +654,7 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
         )
         results[f"brier_{target_col}"] = brier
         results[f"auc_{target_col}"] = auc
-        cal = _fit_platt_calibration(oof_preds, oof_actual)
+        cal = _fit_best_calibration(oof_preds, oof_actual)
         if cal is not None:
             calibration_map[odds_stat] = cal
             log.info(
@@ -643,7 +742,7 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
         )
         results[f"brier_{target_col}"] = brier
         results[f"auc_{target_col}"] = auc
-        cal = _fit_platt_calibration(oof_preds, oof_actual)
+        cal = _fit_best_calibration(oof_preds, oof_actual)
         if cal is not None:
             calibration_map[odds_stat] = cal
             log.info(
