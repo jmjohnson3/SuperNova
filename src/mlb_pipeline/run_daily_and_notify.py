@@ -77,6 +77,8 @@ STEPS: list[Step] = [
          critical=False, post_output=False),
     Step("Optimize Prop Thresholds", "mlb_pipeline.modeling.optimize_prop_thresholds",
          critical=False, post_output=False),
+    Step("Monitor Prop Calibration", "mlb_pipeline.modeling.monitor_prop_calibration",
+         critical=False, post_output=False),
     Step("Game Predictions",       "mlb_pipeline.modeling.predict_today",
          critical=False, post_output=True),
     Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
@@ -229,7 +231,8 @@ async def main() -> None:
     _TRAIN_MODULES  = {"mlb_pipeline.modeling.train_game_models",
                        "mlb_pipeline.modeling.train_player_prop_models",
                        "mlb_pipeline.modeling.train_binary_prop_models",
-                       "mlb_pipeline.modeling.optimize_prop_thresholds"}
+                       "mlb_pipeline.modeling.optimize_prop_thresholds",
+                       "mlb_pipeline.modeling.monitor_prop_calibration"}
     _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
                         "mlb_pipeline.modeling.predict_player_props"}
 

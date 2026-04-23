@@ -93,6 +93,8 @@ class PredictConfig:
     fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
     # Optional per-stat threshold overrides loaded from model artifact JSON.
     thresholds_file: str = "prop_thresholds.json"
+    # Optional classifier bucket controls file; used to disable drifted CLF buckets.
+    clf_controls_file: str = "clf_bucket_controls.json"
     # Lottery parlay mode: K/H/TB only (no HR), biased to plus-money alt lines.
     lottery_mode: bool = False
     lottery_legs: int = 5
@@ -901,6 +903,68 @@ def _apply_platt_calibration(p: np.ndarray, cal: Optional[Dict]) -> np.ndarray:
     z = np.log(p_safe / (1.0 - p_safe))
     out = 1.0 / (1.0 + np.exp(-(a * z + b)))
     return np.clip(out, 1e-6, 1 - 1e-6)
+
+
+def _clf_line_bucket(stat: str, line: Optional[float]) -> str:
+    if line is None:
+        return "__no_line__"
+    try:
+        l = float(line)
+    except Exception:
+        return "__no_line__"
+    if stat == "pitcher_strikeouts":
+        return _line_bucket_for_over_penalty(stat, l)
+    if stat == "batter_total_bases":
+        return _line_bucket_for_over_penalty(stat, l)
+    if stat == "batter_hits":
+        if l < 1.0:
+            return "H 0.5"
+        if l < 2.0:
+            return "H 1.5"
+        return "H 2.5+"
+    if stat == "batter_walks":
+        if l < 1.0:
+            return "BB 0.5"
+        return "BB 1.5+"
+    if stat == "batter_home_runs":
+        if l < 1.0:
+            return "HR 0.5"
+        return "HR 1.5+"
+    return "other"
+
+
+def _load_clf_bucket_controls(model_dir: Path, file_name: str) -> dict[tuple[str, str], bool]:
+    """Load optional bucket disable map for CLF usage."""
+    path = model_dir / file_name
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse CLF controls at %s: %s", path, exc)
+        return {}
+    disabled = raw.get("disabled_buckets") or {}
+    out: dict[tuple[str, str], bool] = {}
+    if isinstance(disabled, dict):
+        for stat, buckets in disabled.items():
+            if not isinstance(buckets, list):
+                continue
+            for b in buckets:
+                out[(str(stat), str(b))] = True
+    if out:
+        log.info("Loaded CLF bucket controls from %s (%d disabled buckets)", path, len(out))
+    return out
+
+
+def _clf_bucket_is_disabled(
+    controls: dict[tuple[str, str], bool],
+    stat: str,
+    line: Optional[float],
+) -> bool:
+    if not controls:
+        return False
+    b = _clf_line_bucket(stat, line)
+    return bool(controls.get((stat, b), False))
 
 
 def _prep_features_clf(
@@ -2280,6 +2344,7 @@ def predict_props(cfg: PredictConfig) -> None:
 
     bias = _load_bias_corrections(conn)
     over_penalties = _load_over_penalties(conn)
+    clf_controls = _load_clf_bucket_controls(cfg.model_dir, cfg.clf_controls_file)
 
     # ── Pitcher predictions ────────────────────────────────────────────────
     all_pitcher_rows: List[Dict] = []
@@ -2323,7 +2388,11 @@ def predict_props(cfg: PredictConfig) -> None:
                     v = float(clf_pover_k[i])
                     p_over_k = None if np.isnan(v) else v
 
-                if p_over_k is not None and line is not None:
+                if (
+                    p_over_k is not None
+                    and line is not None
+                    and not _clf_bucket_is_disabled(clf_controls, "pitcher_strikeouts", line)
+                ):
                     edge = p_over_k - _BREAKEVEN_PROB
                     kel = min(max(0.0, edge / (1.0 - _BREAKEVEN_PROB)), 0.05)
                     pred_for_db = p_over_k
@@ -2513,8 +2582,12 @@ def predict_props(cfg: PredictConfig) -> None:
                     # Use binary CLF edge when model exists and line is available
                     clf_arr = clf_pover.get(stat_key)
                     p_over_i = float(clf_arr[i]) if clf_arr is not None else np.nan
-                    use_clf = (clf_arr is not None and not np.isnan(p_over_i)
-                               and line is not None)
+                    use_clf = (
+                        clf_arr is not None
+                        and not np.isnan(p_over_i)
+                        and line is not None
+                        and not _clf_bucket_is_disabled(clf_controls, stat_key, line)
+                    )
 
                     if use_clf:
                         # CLF: pred_value = P(over), edge = P(over) - breakeven
