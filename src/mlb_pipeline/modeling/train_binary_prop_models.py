@@ -23,6 +23,7 @@ Artifacts saved to models/player_props/:
   strikeouts_clf_xgb.json,   lgb_strikeouts_clf.txt
   feature_columns_clf_batters.json,  feature_medians_clf_batters.json
   feature_columns_clf_pitchers.json, feature_medians_clf_pitchers.json
+  clf_calibration_batters.json, clf_calibration_pitchers.json
   backtest_clf.json
 """
 from __future__ import annotations
@@ -40,6 +41,8 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_dtype
+from sklearn.isotonic import IsotonicRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, roc_auc_score
 from xgboost import XGBRegressor
 
@@ -348,13 +351,17 @@ def _run_walk_forward_clf(
     medians: Dict[str, float],
     cfg: ClfConfig,
     stat_name: str,
-) -> Tuple[float, float]:
-    """Walk-forward CV for binary classifier. Returns (brier_score, auc)."""
+) -> Tuple[float, float, np.ndarray, np.ndarray]:
+    """Walk-forward CV for binary classifier.
+
+    Returns:
+      (brier_score, auc, oof_preds, oof_actual)
+    """
     folds = _walk_forward_folds(df, cfg.min_train_days, cfg.test_window_days, cfg.step_days)
     if not folds:
         log.warning("No walk-forward folds for %s (need %d days of prop line data)",
                     stat_name, cfg.min_train_days)
-        return float("nan"), float("nan")
+        return float("nan"), float("nan"), np.array([], dtype=float), np.array([], dtype=float)
 
     oof_preds, oof_actual = [], []
 
@@ -405,7 +412,7 @@ def _run_walk_forward_clf(
         oof_actual.extend(y_te.values)
 
     if len(oof_preds) < 20:
-        return float("nan"), float("nan")
+        return float("nan"), float("nan"), np.array([], dtype=float), np.array([], dtype=float)
 
     oof_preds = np.array(oof_preds)
     oof_actual = np.array(oof_actual)
@@ -421,7 +428,146 @@ def _run_walk_forward_clf(
         "Walk-forward CLF %s | Brier=%.4f AUC=%.4f | %d OOF rows, %d folds | OVER%%=%.1f%%",
         stat_name, brier, auc, len(oof_actual), len(folds), over_rate * 100,
     )
-    return brier, auc
+    return brier, auc, oof_preds, oof_actual
+
+
+def _fit_platt_calibration(
+    preds: np.ndarray,
+    actuals: np.ndarray,
+) -> Optional[Dict[str, float]]:
+    """Fit Platt scaling parameters on OOF predictions.
+
+    We calibrate on logit(pred) using logistic regression:
+      P_cal = sigmoid(a * logit(P_raw) + b)
+    """
+    if preds.size < 50 or actuals.size != preds.size:
+        return None
+
+    y = np.asarray(actuals, dtype=float)
+    if np.unique(y).size < 2:
+        return None
+
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    x_logit = np.log(p / (1.0 - p)).reshape(-1, 1)
+
+    try:
+        lr = LogisticRegression(solver="lbfgs", max_iter=2000)
+        lr.fit(x_logit, y.astype(int))
+    except Exception:
+        log.exception("Platt calibration fit failed")
+        return None
+
+    a = float(lr.coef_[0][0])
+    b = float(lr.intercept_[0])
+    cal = 1.0 / (1.0 + np.exp(-(a * x_logit.ravel() + b)))
+    cal = np.clip(cal, 1e-6, 1 - 1e-6)
+
+    return {
+        "method": "platt",
+        "a": a,
+        "b": b,
+        "n_oof": int(preds.size),
+        "brier_raw": float(brier_score_loss(y, p)),
+        "brier_calibrated": float(brier_score_loss(y, cal)),
+    }
+
+
+def _fit_isotonic_calibration(
+    preds: np.ndarray,
+    actuals: np.ndarray,
+) -> Optional[Dict[str, float]]:
+    """Fit isotonic calibrator on raw probabilities."""
+    if preds.size < 50 or actuals.size != preds.size:
+        return None
+    y = np.asarray(actuals, dtype=float)
+    if np.unique(y).size < 2:
+        return None
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    try:
+        iso = IsotonicRegression(out_of_bounds="clip")
+        iso.fit(p, y)
+        cal = np.clip(iso.predict(p), 1e-6, 1 - 1e-6)
+    except Exception:
+        log.exception("Isotonic calibration fit failed")
+        return None
+    x_thr = getattr(iso, "X_thresholds_", None)
+    y_thr = getattr(iso, "y_thresholds_", None)
+    if x_thr is None or y_thr is None:
+        return None
+    return {
+        "method": "isotonic",
+        "x": [float(v) for v in x_thr],
+        "y": [float(v) for v in y_thr],
+        "n_oof": int(preds.size),
+        "brier_raw": float(brier_score_loss(y, p)),
+        "brier_calibrated": float(brier_score_loss(y, cal)),
+    }
+
+
+def _apply_calibration(preds: np.ndarray, cal: Optional[Dict]) -> np.ndarray:
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    if not cal:
+        return p
+    method = str(cal.get("method") or "").lower()
+    if method == "platt":
+        try:
+            a = float(cal.get("a"))
+            b = float(cal.get("b"))
+        except Exception:
+            return p
+        z = np.log(p / (1.0 - p))
+        return np.clip(1.0 / (1.0 + np.exp(-(a * z + b))), 1e-6, 1 - 1e-6)
+    if method == "isotonic":
+        try:
+            x = np.asarray(cal.get("x"), dtype=float)
+            y = np.asarray(cal.get("y"), dtype=float)
+        except Exception:
+            return p
+        if x.size < 2 or y.size < 2:
+            return p
+        return np.clip(np.interp(p, x, y), 1e-6, 1 - 1e-6)
+    return p
+
+
+def _fit_best_calibration(
+    preds: np.ndarray,
+    actuals: np.ndarray,
+) -> Optional[Dict[str, float]]:
+    """Select best calibrator (Platt vs isotonic) using a holdout split."""
+    n = int(preds.size)
+    if n < 80 or actuals.size != preds.size:
+        return None
+    y = np.asarray(actuals, dtype=float)
+    p = np.clip(np.asarray(preds, dtype=float), 1e-6, 1 - 1e-6)
+    split = max(50, int(n * 0.8))
+    if split >= n - 20:
+        split = n - 20
+    if split < 30:
+        return None
+
+    p_tr, y_tr = p[:split], y[:split]
+    p_va, y_va = p[split:], y[split:]
+    if np.unique(y_tr).size < 2 or np.unique(y_va).size < 2:
+        return None
+
+    cands: list[Dict] = []
+    platt = _fit_platt_calibration(p_tr, y_tr)
+    if platt is not None:
+        pv = _apply_calibration(p_va, platt)
+        cands.append({**platt, "brier_holdout": float(brier_score_loss(y_va, pv))})
+    isotonic = _fit_isotonic_calibration(p_tr, y_tr)
+    if isotonic is not None:
+        pv = _apply_calibration(p_va, isotonic)
+        cands.append({**isotonic, "brier_holdout": float(brier_score_loss(y_va, pv))})
+    if not cands:
+        return None
+
+    best = min(cands, key=lambda d: d["brier_holdout"])
+    p_full_cal = _apply_calibration(p, best)
+    best["brier_calibrated"] = float(brier_score_loss(y, p_full_cal))
+    best["brier_raw"] = float(brier_score_loss(y, p))
+    best["n_oof"] = int(n)
+    return best
 
 
 def _fit_final_clf(
@@ -472,6 +618,7 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
     model_dir.mkdir(parents=True, exist_ok=True)
 
     results: Dict = {}
+    calibration_map: Dict[str, Dict[str, float]] = {}
     feature_cols_saved = None
     medians_saved = None
 
@@ -502,9 +649,18 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
         X_filled = apply_medians(X_raw, medians, feature_cols)
 
         # Walk-forward evaluation
-        brier, auc = _run_walk_forward_clf(df_stat, X_raw, y, feature_cols, medians, cfg, target_col)
+        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+            df_stat, X_raw, y, feature_cols, medians, cfg, target_col
+        )
         results[f"brier_{target_col}"] = brier
         results[f"auc_{target_col}"] = auc
+        cal = _fit_best_calibration(oof_preds, oof_actual)
+        if cal is not None:
+            calibration_map[odds_stat] = cal
+            log.info(
+                "Saved %s calibration (%s) | OOF n=%d Brier raw=%.4f cal=%.4f",
+                odds_stat, cal["method"], cal["n_oof"], cal["brier_raw"], cal["brier_calibrated"],
+            )
 
         # Final model
         xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, target_col)
@@ -527,6 +683,10 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
         (model_dir / "feature_medians_clf_batters.json").write_text(
             json.dumps(medians_saved), encoding="utf-8"
         )
+    if calibration_map:
+        cal_path = model_dir / "clf_calibration_batters.json"
+        cal_path.write_text(json.dumps(calibration_map, indent=2), encoding="utf-8")
+        log.info("Saved batter CLF calibration to %s", cal_path)
 
     return results
 
@@ -552,6 +712,7 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
     model_dir.mkdir(parents=True, exist_ok=True)
 
     results: Dict = {}
+    calibration_map: Dict[str, Dict[str, float]] = {}
 
     for target_col, (odds_stat, bookmaker) in _PITCHER_STAT_MAP.items():
         log.info("=== Binary CLF: %s → %s ===", target_col, odds_stat)
@@ -576,9 +737,18 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
         medians = fit_medians(X_raw)
         X_filled = apply_medians(X_raw, medians, feature_cols)
 
-        brier, auc = _run_walk_forward_clf(df_stat, X_raw, y, feature_cols, medians, cfg, target_col)
+        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+            df_stat, X_raw, y, feature_cols, medians, cfg, target_col
+        )
         results[f"brier_{target_col}"] = brier
         results[f"auc_{target_col}"] = auc
+        cal = _fit_best_calibration(oof_preds, oof_actual)
+        if cal is not None:
+            calibration_map[odds_stat] = cal
+            log.info(
+                "Saved %s calibration (%s) | OOF n=%d Brier raw=%.4f cal=%.4f",
+                odds_stat, cal["method"], cal["n_oof"], cal["brier_raw"], cal["brier_calibrated"],
+            )
 
         xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, target_col)
 
@@ -592,6 +762,11 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
         (model_dir / "feature_medians_clf_pitchers.json").write_text(
             json.dumps(medians), encoding="utf-8"
         )
+
+    if calibration_map:
+        cal_path = model_dir / "clf_calibration_pitchers.json"
+        cal_path.write_text(json.dumps(calibration_map, indent=2), encoding="utf-8")
+        log.info("Saved pitcher CLF calibration to %s", cal_path)
 
     return results
 

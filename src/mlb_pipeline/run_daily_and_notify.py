@@ -19,6 +19,7 @@ Steps:
 Set env var:
   MLB_DISCORD_WEBHOOK_URL   — Discord webhook URL for the #mlb channel
   DISCORD_FORMAT=1          — set automatically by this script for prediction steps
+  MLB_POST_PREDICTION_CARDS — set to 1/true/yes to post PNG cards to Discord
 """
 from __future__ import annotations
 
@@ -39,6 +40,9 @@ MLB_DISCORD_WEBHOOK_URL = os.getenv(
     "MLB_DISCORD_WEBHOOK_URL",
     "https://discord.com/api/webhooks/1487880251886403596/fB9WT_Krl2QdOV8MD6o0Pzdp-BgnsJ8wISAJ6-Xi0wMVQfViVjbKU2wV4VC9f52Iwo9n",
 )
+MLB_POST_PREDICTION_CARDS = os.getenv("MLB_POST_PREDICTION_CARDS", "0").strip().lower() in {
+    "1", "true", "yes", "on",
+}
 
 DISCORD_LIMIT = 1950
 
@@ -70,6 +74,10 @@ STEPS: list[Step] = [
     Step("Train Player Prop Models", "mlb_pipeline.modeling.train_player_prop_models",
          critical=False, post_output=False),
     Step("Train Binary Prop Classifiers", "mlb_pipeline.modeling.train_binary_prop_models",
+         critical=False, post_output=False),
+    Step("Optimize Prop Thresholds", "mlb_pipeline.modeling.optimize_prop_thresholds",
+         critical=False, post_output=False),
+    Step("Monitor Prop Calibration", "mlb_pipeline.modeling.monitor_prop_calibration",
          critical=False, post_output=False),
     Step("Game Predictions",       "mlb_pipeline.modeling.predict_today",
          critical=False, post_output=True),
@@ -129,11 +137,29 @@ async def _post(content: str) -> None:
                     log.warning("Discord rate-limited — waiting %.1fs", retry_after)
                     await asyncio.sleep(retry_after)
                     continue
-                r.raise_for_status()
-            except httpx.TimeoutException:
+                # Transient Discord-side failures (e.g., 5xx) should not halt the pipeline.
+                if 500 <= r.status_code < 600 and attempt < 3:
+                    wait_s = 1.5 * (attempt + 1)
+                    log.warning("Discord server error %d — retrying in %.1fs", r.status_code, wait_s)
+                    await asyncio.sleep(wait_s)
+                    continue
+                if 400 <= r.status_code < 500:
+                    log.error("Discord post failed (%d): %s", r.status_code, (r.text or "")[:400])
+                    return
+                if attempt < 3:
+                    wait_s = 1.5 * (attempt + 1)
+                    log.warning("Discord post failed (%d) — retrying in %.1fs", r.status_code, wait_s)
+                    await asyncio.sleep(wait_s)
+                    continue
+                log.error("Discord post failed after retries (%d): %s", r.status_code, (r.text or "")[:400])
+                return
+            except (httpx.TimeoutException, httpx.RequestError) as exc:
                 if attempt >= 3:
-                    raise
-                await asyncio.sleep(2.0 * (attempt + 1))
+                    log.error("Discord post request failed after retries: %s", exc)
+                    return
+                wait_s = 2.0 * (attempt + 1)
+                log.warning("Discord post request error (%s) — retrying in %.1fs", exc.__class__.__name__, wait_s)
+                await asyncio.sleep(wait_s)
 
 
 def _build_rich_chunks(header: str, body: str) -> list[str]:
@@ -204,7 +230,9 @@ async def main() -> None:
     _PARSE_MODULES  = {"mlb_pipeline.parse_all", "mlb_pipeline.compute_elo"}
     _TRAIN_MODULES  = {"mlb_pipeline.modeling.train_game_models",
                        "mlb_pipeline.modeling.train_player_prop_models",
-                       "mlb_pipeline.modeling.train_binary_prop_models"}
+                       "mlb_pipeline.modeling.train_binary_prop_models",
+                       "mlb_pipeline.modeling.optimize_prop_thresholds",
+                       "mlb_pipeline.modeling.monitor_prop_calibration"}
     _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
                         "mlb_pipeline.modeling.predict_player_props"}
 
@@ -269,15 +297,17 @@ async def main() -> None:
         else:
             await _post_status(step, secs, ok=True)
 
-    # ── Prediction cards (posted after both predict steps) ────────────────
+    # ── Optional prediction cards (PNG images) ─────────────────────────────
     predict_ok = not halted and not args.skip_predict
-    if predict_ok:
+    if predict_ok and MLB_POST_PREDICTION_CARDS:
         try:
             from mlb_pipeline.modeling.generate_cards import generate_and_post as _gen_cards
             await _gen_cards(MLB_DISCORD_WEBHOOK_URL, et_day)
             log.info("Prediction cards posted to Discord.")
         except Exception as _card_exc:
             log.warning("Could not generate/post prediction cards: %s", _card_exc)
+    elif predict_ok:
+        log.info("Skipping Discord prediction cards (MLB_POST_PREDICTION_CARDS is disabled).")
 
     total = time.time() - wall_start
     lines = [

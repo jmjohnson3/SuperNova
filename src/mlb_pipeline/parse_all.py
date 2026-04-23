@@ -22,7 +22,8 @@ _MLB_SQL_VIEWS = [
     "MLB004_mlb_ballpark_factors.sql",
     "MLB005_mlb_standings_rest.sql",
     "MLB019_mlb_reliever_rolling.sql",
-    "MLB006_mlb_game_features.sql",
+    # MLB006 depends on rolling matviews (e.g. mlb_pitcher_rolling_mat).
+    # Apply it after _refresh_matviews() via _MLB_POST_MATVIEW_VIEWS.
     "MLB008_mlb_player_batting_rolling.sql",
     "MLB009_mlb_umpire_rolling.sql",   # DDL + umpire rolling view
     "MLB010_mlb_weather_ddl.sql",      # weather table DDL
@@ -84,6 +85,7 @@ def _apply_sql_views(pg_dsn: str) -> None:
     conn.autocommit = True
     cur = conn.cursor()
 
+    failed: list[str] = []
     for filename in _MLB_SQL_VIEWS:
         sql_path = _SQL_DIR / filename
         try:
@@ -92,6 +94,13 @@ def _apply_sql_views(pg_dsn: str) -> None:
             log.info("Applied %s", filename)
         except Exception:
             log.exception("Failed to apply %s — continuing with remaining views", filename)
+            failed.append(filename)
+
+    if failed:
+        raise RuntimeError(
+            "One or more MLB SQL view files failed to apply: "
+            + ", ".join(failed)
+        )
 
     log.info("All MLB SQL views applied")
     conn.close()
@@ -152,6 +161,8 @@ def _refresh_matviews(pg_dsn: str) -> None:
         conn.autocommit = True
         cur = conn.cursor()
 
+        failed_ops: list[str] = []
+
         # ── Drop matviews whose column count is out of sync with the base view ──
         dropped_any = False
         for matview, base_view in _MATVIEW_TO_VIEW.items():
@@ -164,6 +175,7 @@ def _refresh_matviews(pg_dsn: str) -> None:
                     dropped_any = True
                 except Exception:
                     log.exception("Failed to drop %s", matview)
+                    failed_ops.append(f"drop:{matview}")
 
         # ── Apply MLB007 SQL (CREATE MATERIALIZED VIEW IF NOT EXISTS + indexes) ──
         # Use per-statement try/except so a single failed CREATE (e.g. because a
@@ -183,6 +195,7 @@ def _refresh_matviews(pg_dsn: str) -> None:
                 except Exception as exc:
                     log.warning("Statement in %s failed (skipping): %s", filename, exc)
                     skipped += 1
+                    failed_ops.append(f"{filename}:{stmt[:80]}")
             log.info("Applied %s (%d ok, %d skipped)", filename, ok, skipped)
 
         for filename in _MLB_MATVIEW_REFRESH:
@@ -198,6 +211,7 @@ def _refresh_matviews(pg_dsn: str) -> None:
                 log.info("Refreshed: %s", stmt.split()[-1])
             except Exception:
                 log.exception("Failed to refresh: %s", stmt)
+                failed_ops.append(f"refresh:{stmt}")
 
         # ── If any matview was dropped (cascading to game feature views),
         #    re-apply MLB011 (lineup quality) then MLB006 so those views are
@@ -220,8 +234,16 @@ def _refresh_matviews(pg_dsn: str) -> None:
             except Exception:
                 conn.rollback()
                 log.exception("Failed to re-apply MLB011/MLB006 after matview drop")
+                failed_ops.append("reapply:MLB011+MLB006")
             finally:
                 conn.autocommit = True
+
+        if failed_ops:
+            raise RuntimeError(
+                "One or more matview operations failed: "
+                + " | ".join(failed_ops[:20])
+                + (" | ..." if len(failed_ops) > 20 else "")
+            )
 
     except Exception:
         log.exception("_refresh_matviews: failed to connect")
@@ -241,6 +263,7 @@ def _apply_post_matview_views(pg_dsn: str) -> None:
         conn = psycopg2.connect(pg_dsn)
         conn.autocommit = True
         cur = conn.cursor()
+        failed: list[str] = []
         for filename in _MLB_POST_MATVIEW_VIEWS:
             sql_path = _SQL_DIR / filename
             try:
@@ -249,6 +272,11 @@ def _apply_post_matview_views(pg_dsn: str) -> None:
                 log.info("Applied (post-matview) %s", filename)
             except Exception:
                 log.exception("Failed to apply (post-matview) %s — continuing", filename)
+                failed.append(filename)
+        if failed:
+            raise RuntimeError(
+                "Post-matview SQL apply failed for: " + ", ".join(failed)
+            )
     except Exception:
         log.exception("_apply_post_matview_views: failed to connect")
     finally:

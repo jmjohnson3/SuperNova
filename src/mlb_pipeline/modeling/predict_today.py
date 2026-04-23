@@ -240,6 +240,10 @@ def _compute_blend_weight_run_line(calib: dict) -> float:
     Quality gate: residual model must be within 2% of the best baseline MAE.
     Falls back to 0.0 (direct-only) when gate fails or values are missing.
     """
+    saved_alpha = calib.get("blend_alpha_spread")
+    if isinstance(saved_alpha, (int, float)) and 0.0 <= float(saved_alpha) <= 1.0:
+        return float(saved_alpha)
+
     direct_mae_market = calib.get("direct_spread_mae_market",
                                    calib.get("direct_rl_mae", calib.get("direct_spread_mae", 4.0)))
     market_mae = calib.get("market_spread_mae", direct_mae_market)
@@ -261,6 +265,10 @@ def _compute_blend_weight_run_line(calib: dict) -> float:
 
 def _compute_blend_weight_total(calib: dict) -> float:
     """Inverse-MAE blend weight for the total residual model."""
+    saved_alpha = calib.get("blend_alpha_total")
+    if isinstance(saved_alpha, (int, float)) and 0.0 <= float(saved_alpha) <= 1.0:
+        return float(saved_alpha)
+
     direct_mae_market = calib.get("direct_total_mae_market",
                                    calib.get("direct_total_mae", 4.0))
     market_mae = calib.get("market_total_mae", direct_mae_market)
@@ -763,8 +771,12 @@ def main() -> None:
     print(summary_line)
 
     # Discord: print "BETS TODAY" summary block before per-game detail
+    compact_discord = False
     if discord:
+        compact_discord = True
         _bets_today: list[dict] = []
+        _rl_bet_links: list[str] = []
+        _total_bet_links: list[str] = []
         for _, _r in out.iterrows():
             _edge_rl = _r.get("edge_run_line")
             _edge_t  = _r.get("edge_total")
@@ -790,6 +802,8 @@ def main() -> None:
                 _ml = f"{float(_mrl2):+.1f}" if pd.notna(_mrl2) else "-1.5"
                 _k, _p = _kelly(abs(_e), sigma=_srl)
                 _lnk = (_fd2.spread_home_link if _e > 0 else _fd2.spread_away_link) if _fd2 else None
+                if _lnk:
+                    _rl_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**{_bt} {_ml}** (vs {_vs} · {_t2})",
                     "edge": abs(_e), "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
@@ -799,6 +813,8 @@ def main() -> None:
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
                 _k, _p = _kelly(_e, sigma=_st)
                 _lnk = _fd2.total_over_link if _fd2 else None
+                if _lnk:
+                    _total_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**OVER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
@@ -808,6 +824,8 @@ def main() -> None:
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
                 _k, _p = _kelly(_e, sigma=_st)
                 _lnk = _fd2.total_under_link if _fd2 else None
+                if _lnk:
+                    _total_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**UNDER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
@@ -818,13 +836,36 @@ def main() -> None:
             print(f"\n**BETS TODAY ({len(_bets_today)})**")
             for _b in _bets_today:
                 _ls = f"  [Bet FD](<{_b['link']}>)" if _b["link"] else ""
-                print(f"★ {_b['desc']}  edge +{_b['edge']:.2f}  p={_b['p']:.0%}  bet ${_b['qk']:.0f}/1k{_ls}")
+                print(f"• {_b['desc']}  +{_b['edge']:.2f}  p={_b['p']:.0%}{_ls}")
+
+            def _print_chunked_parlays(title: str, links: list[str]) -> None:
+                dedup = list(dict.fromkeys([l for l in links if l]))
+                if not dedup:
+                    return
+                n_chunks = math.ceil(len(dedup) / 25)
+                for i in range(0, len(dedup), 25):
+                    url = build_fd_parlay_url(dedup[i:i + 25])
+                    if not url:
+                        continue
+                    sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                    print(f"\n**{title}{sfx}** [FD]({url})")
+
+            # Compact mobile mode: one combined parlay of all high-edge run line + total bets.
+            _print_chunked_parlays("All Run Line + Total Bets Parlay", _rl_bet_links + _total_bet_links)
         else:
             print("\n**No edge bets today**")
         print("")
 
     best_links: list[str | None] = []      # FD links for high-edge bets (best bets parlay)
-    all_game_links: list[str | None] = []  # model's predicted side for every game (all games parlay)
+
+    if compact_discord:
+        # In compact Discord mode, summary list above is the primary output.
+        # Skip verbose per-game sections that are hard to read on mobile.
+        try:
+            _save_predictions(out, engine, et_day, cfg, calib=calib, w_rl=w_rl, w_total=w_total, fd_links=fd_links)
+        except Exception:
+            log.exception("Failed to save predictions")
+        return
 
     for _, r in out.iterrows():
         start_raw = r.get("start_ts_utc")
@@ -882,7 +923,6 @@ def main() -> None:
             # FD link: home covers → spread_home_link; away covers → spread_away_link
             _sl = (_ld.spread_home_link if e_rl > 0 else _ld.spread_away_link) if _ld else None
             best_links.append(_sl)
-            all_game_links.append(_sl)
             _link_str = f"  [Bet FD](<{_sl}>)" if (_sl and discord) else ""
             if discord:
                 print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}]**{_link_str}")
@@ -893,13 +933,11 @@ def main() -> None:
             mkt_label = f"{float(mkt_rl):+.1f}" if pd.notna(mkt_rl) else "n/a"
             pred_side_label = home if float(edge_rl) > 0 else away
             _sl_no_sp = ((_ld.spread_home_link if float(edge_rl) > 0 else _ld.spread_away_link) if _ld else None)
-            all_game_links.append(_sl_no_sp)
             print(f"  Run line: {pred_side_label} {mkt_label}  (edge +{abs(float(edge_rl)):.2f} — SP TBD, bet suppressed)")
         elif pd.notna(mkt_rl):
             mkt_label = f"{float(mkt_rl):+.1f}"
             pred_side_label = home if pred_rd >= 0 else away
             _sl_no_edge = (_ld.spread_home_link if pred_rd >= 0 else _ld.spread_away_link) if _ld else None
-            all_game_links.append(_sl_no_edge)
             _link_str = f"  [FD](<{_sl_no_edge}>)" if (_sl_no_edge and discord) else ""
             print(f"  Run line: {pred_side_label} {mkt_label}{_link_str}")
         else:
@@ -916,7 +954,6 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_over_link if _ld else None
             best_links.append(_tl)
-            all_game_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
                 print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER]**{_link_str}")
@@ -930,7 +967,6 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_under_link if _ld else None
             best_links.append(_tl)
-            all_game_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
                 print(f"  Total: UNDER {mkt_t_label}  * **EDGE +{-e_t:.2f}  [bet UNDER]**{_link_str}")
@@ -945,7 +981,6 @@ def main() -> None:
             mkt_t_label = f"{float(mkt_tot):.1f}"
             pred_ou = "O" if pred_tot > float(mkt_tot) else "U"
             _tl_no_edge = (_ld.total_over_link if pred_tot > float(mkt_tot) else _ld.total_under_link) if (_ld and pd.notna(mkt_tot)) else None
-            all_game_links.append(_tl_no_edge)
             _link_str = f"  [FD](<{_tl_no_edge}>)" if (_tl_no_edge and discord) else ""
             print(f"  Total: {pred_ou}{mkt_t_label}{_link_str}")
         else:
@@ -965,7 +1000,6 @@ def main() -> None:
                     print(f"\n**{title}{sfx}** [FD]({url})")
 
         _game_parlay("Best Bets Parlay", best_links)
-        _game_parlay("All Games Parlay", all_game_links)
 
     # Save predictions to DB
     try:

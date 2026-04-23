@@ -56,7 +56,7 @@ _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _BREAKEVEN_PROB = 0.524  # P(win) needed to break even at -110 juice
 
 
-@dataclass(frozen=True)
+@dataclass
 class PredictConfig:
     pg_dsn: str = _PG_DSN
     model_dir: Path = _MODEL_DIR
@@ -86,8 +86,20 @@ class PredictConfig:
     # Binary CLF threshold: P(over) - 0.524 >= this value to flag a bet.
     # 0.03 = P(over) > 55.4% — modest edge above breakeven.
     threshold_clf: float = 0.03
+    # Minimum expected value per 1.0 unit stake to consider a bet.
+    # Example: 0.02 means +2% EV.
+    min_ev: float = 0.02
     # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
     fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
+    # Optional per-stat threshold overrides loaded from model artifact JSON.
+    thresholds_file: str = "prop_thresholds.json"
+    # Optional classifier bucket controls file; used to disable drifted CLF buckets.
+    clf_controls_file: str = "clf_bucket_controls.json"
+    # Lottery parlay mode: K/H/TB only (no HR), biased to plus-money alt lines.
+    lottery_mode: bool = False
+    lottery_legs: int = 5
+    lottery_min_american: int = 250
+    lottery_max_per_game: int = 2
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -724,7 +736,7 @@ def _load_batter_artifacts(model_dir: Path):
 
 def _load_batter_clf_artifacts(model_dir: Path):
     """Load binary classifier models for batter props.
-    Returns (models_dict, feat_clf, meds_clf, bt_clf) where models_dict
+    Returns (models_dict, feat_clf, meds_clf, bt_clf, cal_map) where models_dict
     maps stat_key → (xgb_model, lgb_booster_or_None).
     Returns None if artifacts are missing.
     """
@@ -736,6 +748,8 @@ def _load_batter_clf_artifacts(model_dir: Path):
     meds_clf = json.loads((model_dir / "feature_medians_clf_batters.json").read_text())
     bt_clf_path = model_dir / "backtest_clf.json"
     bt_clf = json.loads(bt_clf_path.read_text()) if bt_clf_path.exists() else {}
+    cal_path = model_dir / "clf_calibration_batters.json"
+    cal_map = json.loads(cal_path.read_text()) if cal_path.exists() else {}
 
     models: Dict[str, Tuple] = {}
     stat_files = {
@@ -758,12 +772,101 @@ def _load_batter_clf_artifacts(model_dir: Path):
 
     if not models:
         return None
-    return models, feat_clf, meds_clf, bt_clf
+    return models, feat_clf, meds_clf, bt_clf, cal_map
+
+
+def _apply_threshold_overrides(cfg: PredictConfig) -> None:
+    """Load threshold overrides from models/player_props/prop_thresholds.json.
+
+    Supported keys (either style):
+      - direct config names:
+          threshold_strikeouts, threshold_hits, threshold_total_bases,
+          threshold_home_runs_over, threshold_home_runs_under,
+          threshold_walks, threshold_clf
+      - stat-group names:
+          pitcher_strikeouts, batter_hits, batter_total_bases, batter_walks,
+          batter_home_runs (with over/under or abs_edge),
+          clf_prob_edge
+    """
+    path = cfg.model_dir / cfg.thresholds_file
+    if not path.exists():
+        return
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse threshold overrides at %s: %s", path, exc)
+        return
+
+    def _set(attr: str, val) -> None:
+        try:
+            f = float(val)
+        except Exception:
+            return
+        if f >= 0.0:
+            setattr(cfg, attr, f)
+
+    # Direct names
+    for key in (
+        "threshold_strikeouts",
+        "threshold_hits",
+        "threshold_total_bases",
+        "threshold_home_runs_over",
+        "threshold_home_runs_under",
+        "threshold_walks",
+        "threshold_clf",
+        "min_ev",
+    ):
+        if key in raw:
+            _set(key, raw[key])
+
+    # Stat-group names
+    if "pitcher_strikeouts" in raw:
+        v = raw["pitcher_strikeouts"]
+        _set("threshold_strikeouts", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_hits" in raw:
+        v = raw["batter_hits"]
+        _set("threshold_hits", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_total_bases" in raw:
+        v = raw["batter_total_bases"]
+        _set("threshold_total_bases", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_walks" in raw:
+        v = raw["batter_walks"]
+        _set("threshold_walks", v.get("abs_edge") if isinstance(v, dict) else v)
+    if "batter_home_runs" in raw:
+        v = raw["batter_home_runs"]
+        if isinstance(v, dict):
+            if "over" in v:
+                _set("threshold_home_runs_over", v["over"])
+            if "under" in v:
+                _set("threshold_home_runs_under", v["under"])
+            if "abs_edge" in v:
+                _set("threshold_home_runs_over", v["abs_edge"])
+                _set("threshold_home_runs_under", v["abs_edge"])
+        else:
+            _set("threshold_home_runs_over", v)
+            _set("threshold_home_runs_under", v)
+    if "clf_prob_edge" in raw:
+        v = raw["clf_prob_edge"]
+        _set("threshold_clf", v.get("abs_edge") if isinstance(v, dict) else v)
+
+    log.info(
+        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f BB=%.2f CLF=%.3f EV=%.3f",
+        path,
+        cfg.threshold_strikeouts,
+        cfg.threshold_hits,
+        cfg.threshold_total_bases,
+        cfg.threshold_home_runs_over,
+        cfg.threshold_home_runs_under,
+        cfg.threshold_walks,
+        cfg.threshold_clf,
+        cfg.min_ev,
+    )
 
 
 def _load_pitcher_clf_artifacts(model_dir: Path):
     """Load binary classifier model for pitcher strikeouts.
-    Returns (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf) or None.
+    Returns (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map) or None.
     """
     feat_path = model_dir / "feature_columns_clf_pitchers.json"
     xgb_path  = model_dir / "strikeouts_clf_xgb.json"
@@ -774,6 +877,8 @@ def _load_pitcher_clf_artifacts(model_dir: Path):
     meds_clf = json.loads((model_dir / "feature_medians_clf_pitchers.json").read_text())
     bt_clf_path = model_dir / "backtest_clf.json"
     bt_clf = json.loads(bt_clf_path.read_text()) if bt_clf_path.exists() else {}
+    cal_path = model_dir / "clf_calibration_pitchers.json"
+    cal_map = json.loads(cal_path.read_text()) if cal_path.exists() else {}
 
     xgb_clf = XGBRegressor()
     xgb_clf.load_model(str(xgb_path))
@@ -782,7 +887,97 @@ def _load_pitcher_clf_artifacts(model_dir: Path):
     if _HAS_LGB and lgb_path.exists():
         lgb_clf = lgb.Booster(model_file=str(lgb_path))
 
-    return xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf
+    return xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map
+
+
+def _apply_platt_calibration(p: np.ndarray, cal: Optional[Dict]) -> np.ndarray:
+    """Apply persisted probability calibration (platt or isotonic)."""
+    p_safe = np.clip(np.asarray(p, dtype=float), 1e-6, 1 - 1e-6)
+    if not cal:
+        return p_safe
+    method = str(cal.get("method") or "").lower()
+    if method == "platt":
+        try:
+            a = float(cal.get("a"))
+            b = float(cal.get("b"))
+        except Exception:
+            return p_safe
+        z = np.log(p_safe / (1.0 - p_safe))
+        out = 1.0 / (1.0 + np.exp(-(a * z + b)))
+        return np.clip(out, 1e-6, 1 - 1e-6)
+    if method == "isotonic":
+        try:
+            x = np.asarray(cal.get("x"), dtype=float)
+            y = np.asarray(cal.get("y"), dtype=float)
+        except Exception:
+            return p_safe
+        if x.size < 2 or y.size < 2:
+            return p_safe
+        out = np.interp(p_safe, x, y)
+        return np.clip(out, 1e-6, 1 - 1e-6)
+    return p_safe
+
+
+def _clf_line_bucket(stat: str, line: Optional[float]) -> str:
+    if line is None:
+        return "__no_line__"
+    try:
+        l = float(line)
+    except Exception:
+        return "__no_line__"
+    if stat == "pitcher_strikeouts":
+        return _line_bucket_for_over_penalty(stat, l)
+    if stat == "batter_total_bases":
+        return _line_bucket_for_over_penalty(stat, l)
+    if stat == "batter_hits":
+        if l < 1.0:
+            return "H 0.5"
+        if l < 2.0:
+            return "H 1.5"
+        return "H 2.5+"
+    if stat == "batter_walks":
+        if l < 1.0:
+            return "BB 0.5"
+        return "BB 1.5+"
+    if stat == "batter_home_runs":
+        if l < 1.0:
+            return "HR 0.5"
+        return "HR 1.5+"
+    return "other"
+
+
+def _load_clf_bucket_controls(model_dir: Path, file_name: str) -> dict[tuple[str, str], bool]:
+    """Load optional bucket disable map for CLF usage."""
+    path = model_dir / file_name
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse CLF controls at %s: %s", path, exc)
+        return {}
+    disabled = raw.get("disabled_buckets") or {}
+    out: dict[tuple[str, str], bool] = {}
+    if isinstance(disabled, dict):
+        for stat, buckets in disabled.items():
+            if not isinstance(buckets, list):
+                continue
+            for b in buckets:
+                out[(str(stat), str(b))] = True
+    if out:
+        log.info("Loaded CLF bucket controls from %s (%d disabled buckets)", path, len(out))
+    return out
+
+
+def _clf_bucket_is_disabled(
+    controls: dict[tuple[str, str], bool],
+    stat: str,
+    line: Optional[float],
+) -> bool:
+    if not controls:
+        return False
+    b = _clf_line_bucket(stat, line)
+    return bool(controls.get((stat, b), False))
 
 
 def _prep_features_clf(
@@ -881,6 +1076,41 @@ def _kelly_prop(edge: float, sigma: float, max_kelly: float = 0.05) -> float:
     return min(k, max_kelly)
 
 
+def _american_to_profit_mult(price: Optional[float]) -> Optional[float]:
+    """American odds -> net profit multiplier on 1 unit stake."""
+    if price is None:
+        return None
+    try:
+        p = float(price)
+    except Exception:
+        return None
+    if p == 0:
+        return None
+    if p > 0:
+        return p / 100.0
+    return 100.0 / abs(p)
+
+
+def _ev_per_unit(p_win: Optional[float], price: Optional[float]) -> Optional[float]:
+    """Expected net return for 1.0 unit stake."""
+    if p_win is None:
+        return None
+    b = _american_to_profit_mult(price)
+    if b is None:
+        return None
+    p = max(0.0, min(1.0, float(p_win)))
+    return p * b - (1.0 - p)
+
+
+def _prob_over_from_regression(pred: Optional[float], line: Optional[float], sigma: Optional[float]) -> Optional[float]:
+    """Approximate P(over) from regression edge using logistic(edge / sigma)."""
+    if pred is None or line is None or sigma is None:
+        return None
+    s = max(float(sigma), 1e-6)
+    z = (float(pred) - float(line)) / s
+    return 1.0 / (1.0 + math.exp(-z))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Bias correction
 # ─────────────────────────────────────────────────────────────────────────────
@@ -927,6 +1157,148 @@ def _load_bias_corrections(conn, lookback_days: int = 90) -> dict[str, float]:
     except Exception:
         log.warning("Could not load bias corrections — using 0.0 for all stats")
     return corrections
+
+
+def _line_bucket_for_over_penalty(stat: str, line: float) -> str:
+    if stat == "batter_total_bases":
+        if line < 1.0:
+            return "TB 0.5"
+        if line < 2.0:
+            return "TB 1.5"
+        return "TB 2.5+"
+    if stat == "pitcher_strikeouts":
+        if line < 4.5:
+            return "K <4.5"
+        if line < 6.5:
+            return "K 4.5-6.0"
+        if line < 8.5:
+            return "K 6.5-8.0"
+        return "K 8.5+"
+    return "other"
+
+
+def _load_side_penalties(
+    conn,
+    lookback_days: int = 180,
+    min_samples: int = 40,
+    shrinkage: float = 0.5,
+) -> dict[tuple[str, str, str], float]:
+    """Load dynamic side-specific penalties for weak buckets with shrinkage.
+
+    Keys are (stat, bucket, side) with side in {"over","under"} plus stat-level
+    fallback (stat, "__all__", side).
+    """
+    from datetime import timedelta
+
+    cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
+    penalties: dict[tuple[str, str, str], float] = {}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH base AS (
+                    SELECT
+                        stat,
+                        book_line::float AS line,
+                        CASE WHEN edge >= 0 THEN 'over' ELSE 'under' END AS side,
+                        over_hit,
+                        pred_value::float AS pred_value,
+                        actual_value::float AS actual_value,
+                        (pred_value::float - actual_value::float) AS pred_minus_actual
+                    FROM bets.mlb_prop_predictions
+                    WHERE game_date_et >= %s
+                      AND over_hit IS NOT NULL
+                      AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
+                      AND book_line IS NOT NULL
+                      AND pred_value IS NOT NULL
+                      AND actual_value IS NOT NULL
+                )
+                SELECT
+                    stat,
+                    CASE
+                        WHEN stat = 'batter_total_bases' AND line < 1.0 THEN 'TB 0.5'
+                        WHEN stat = 'batter_total_bases' AND line < 2.0 THEN 'TB 1.5'
+                        WHEN stat = 'batter_total_bases' THEN 'TB 2.5+'
+                        WHEN stat = 'pitcher_strikeouts' AND line < 4.5 THEN 'K <4.5'
+                        WHEN stat = 'pitcher_strikeouts' AND line < 6.5 THEN 'K 4.5-6.0'
+                        WHEN stat = 'pitcher_strikeouts' AND line < 8.5 THEN 'K 6.5-8.0'
+                        ELSE 'K 8.5+'
+                    END AS bucket,
+                    side,
+                    COUNT(*) AS n,
+                    AVG(CASE WHEN (side = 'over' AND over_hit) OR (side = 'under' AND NOT over_hit) THEN 1.0 ELSE 0.0 END) AS side_win_rate,
+                    AVG(pred_minus_actual) AS mean_pred_minus_actual
+                FROM base
+                GROUP BY 1, 2, 3
+                """,
+                (cutoff,),
+            )
+            rows = cur.fetchall()
+
+            # Stat-level fallback
+            cur.execute(
+                """
+                SELECT
+                    stat,
+                    CASE WHEN edge >= 0 THEN 'over' ELSE 'under' END AS side,
+                    COUNT(*) AS n,
+                    AVG(CASE WHEN (edge >= 0 AND over_hit) OR (edge < 0 AND NOT over_hit) THEN 1.0 ELSE 0.0 END) AS side_win_rate,
+                    AVG(pred_value::float - actual_value::float) AS mean_pred_minus_actual
+                FROM bets.mlb_prop_predictions
+                WHERE game_date_et >= %s
+                  AND over_hit IS NOT NULL
+                  AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
+                  AND pred_value IS NOT NULL
+                  AND actual_value IS NOT NULL
+                GROUP BY 1, 2
+                """,
+                (cutoff,),
+            )
+            fallback_rows = cur.fetchall()
+
+        def _make_penalty(side: str, n: int, win_rate: float, pred_minus_actual: float) -> float:
+            if n < min_samples or win_rate is None:
+                return 0.0
+            w = float(win_rate)
+            pma = float(pred_minus_actual or 0.0)
+            if w >= 0.52:
+                return 0.0
+            # over: pred too high (pma > 0) hurts over; under: pred too low (pma < 0) hurts under
+            directional = pma if side == "over" else -pma
+            raw = max(0.0, directional, (0.52 - w) * 2.0)
+            return float(max(0.03, min(0.75, shrinkage * raw)))
+
+        for stat, bucket, side, n, wr, pma in rows:
+            pen = _make_penalty(str(side), int(n or 0), float(wr or 0.0), float(pma or 0.0))
+            if pen > 0:
+                penalties[(stat, bucket, str(side))] = pen
+                log.info(
+                    "Side penalty %s/%s/%s: n=%d wr=%.3f pma=%+.3f pen=%.3f",
+                    stat, bucket, side, n, wr, pma, pen
+                )
+        for stat, side, n, wr, pma in fallback_rows:
+            pen = _make_penalty(str(side), int(n or 0), float(wr or 0.0), float(pma or 0.0))
+            if pen > 0:
+                penalties[(stat, "__all__", str(side))] = pen
+                log.info("Side penalty %s/all/%s: n=%d wr=%.3f pma=%+.3f pen=%.3f", stat, side, n, wr, pma, pen)
+    except Exception:
+        log.warning("Could not load side penalties — using none", exc_info=True)
+
+    return penalties
+
+
+def _side_penalty_for_line(
+    stat: str,
+    line: float | None,
+    side: str,
+    penalties: dict[tuple[str, str, str], float],
+) -> float:
+    if line is None:
+        return 0.0
+    bucket = _line_bucket_for_over_penalty(stat, float(line))
+    return float(
+        penalties.get((stat, bucket, side), penalties.get((stat, "__all__", side), 0.0))
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1020,6 +1392,8 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
         entry = {
             "bookmaker_key": str(row["bookmaker_key"]),
             "line": float(row["line"]) if row["line"] is not None else None,
+            "over_price": float(row["over_price"]) if row.get("over_price") is not None else None,
+            "under_price": float(row["under_price"]) if row.get("under_price") is not None else None,
             "over_link":  _clean(row.get("over_link")),
             "under_link": _clean(row.get("under_link")),
         }
@@ -1037,6 +1411,8 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
             if not entry.get("under_link") and key in dk_rows:
                 entry["under_link"]      = dk_rows[key].get("under_link")
                 entry["under_link_book"] = "draftkings"
+            if entry.get("under_price") is None and key in dk_rows:
+                entry["under_price"] = dk_rows[key].get("under_price")
             else:
                 entry["under_link_book"] = "fanduel"
             result[key] = entry
@@ -1082,6 +1458,25 @@ def _fmt_edge(edge: Optional[float], threshold: float, direction: str = "OVER") 
     if abs_e >= threshold:
         return f"★ {direction} +{abs_e:.2f}"
     return f"[{direction} +{abs_e:.2f}]" if abs_e > 0 else "[no edge]"
+
+
+def _best_side_from_ev(ld: Dict, p_over: Optional[float], min_ev: float) -> Optional[Dict]:
+    """Return best EV side dict when EV is computable and above threshold."""
+    if p_over is None:
+        return None
+    ev_over = _ev_per_unit(p_over, ld.get("over_price"))
+    ev_under = _ev_per_unit(1.0 - p_over, ld.get("under_price"))
+    cands = []
+    if ev_over is not None and ld.get("over_link"):
+        cands.append(("over", ev_over, ld.get("over_price"), ld.get("over_link")))
+    if ev_under is not None and ld.get("under_link"):
+        cands.append(("under", ev_under, ld.get("under_price"), ld.get("under_link")))
+    if not cands:
+        return None
+    side, ev, price, link = max(cands, key=lambda t: t[1])
+    if ev < min_ev:
+        return None
+    return {"side": side, "ev": float(ev), "price": price, "link": link}
 
 
 def _collect_all_prop_links(
@@ -1130,6 +1525,202 @@ def _collect_all_prop_links(
     return links
 
 
+def _collect_prop_links_by_stat(
+    all_pitcher_rows: List[Dict],
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+) -> Dict[str, List[str]]:
+    """Collect model-direction prop links grouped by stat key."""
+    out: Dict[str, List[str]] = {
+        "pitcher_strikeouts": [],
+        "batter_hits": [],
+        "batter_total_bases": [],
+        "batter_home_runs": [],
+        "batter_walks": [],
+    }
+    seen_pitcher: set[tuple] = set()
+    seen_batter: set[tuple] = set()
+
+    for row in all_pitcher_rows:
+        pkey = (row.get("game_slug"), row.get("player_id"), "pitcher_strikeouts")
+        if pkey in seen_pitcher:
+            continue
+        seen_pitcher.add(pkey)
+        pred_k = row.get("pred_strikeouts")
+        if pred_k is None:
+            continue
+        norm = _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+        ld = prop_lines.get((norm, "pitcher_strikeouts"))
+        if not ld or ld.get("line") is None:
+            continue
+        edge = pred_k - ld["line"]
+        link = ld.get("over_link") if edge >= 0 else ld.get("under_link")
+        if link:
+            out["pitcher_strikeouts"].append(link)
+
+    for row in all_batter_rows:
+        norm = _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+        for pred_col, stat_key in [
+            ("pred_hits", "batter_hits"),
+            ("pred_total_bases", "batter_total_bases"),
+            ("pred_home_runs", "batter_home_runs"),
+            ("pred_walks", "batter_walks"),
+        ]:
+            bkey = (row.get("game_slug"), row.get("player_id"), stat_key)
+            if bkey in seen_batter:
+                continue
+            seen_batter.add(bkey)
+            pred_v = row.get(pred_col)
+            if pred_v is None:
+                continue
+            ld = prop_lines.get((norm, stat_key))
+            if not ld or ld.get("line") is None:
+                continue
+            edge = pred_v - ld["line"]
+            link = ld.get("over_link") if edge >= 0 else ld.get("under_link")
+            if link:
+                out[stat_key].append(link)
+
+    return out
+
+
+def _collect_top_hr_parlay_links(
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+    top_n: int = 10,
+    max_per_game: int = 2,
+) -> List[str]:
+    """Collect top-N HR prediction links (deduped) for a single HR-focused parlay."""
+    rows = [r for r in all_batter_rows if r.get("pred_home_runs") is not None]
+    rows.sort(key=lambda r: float(r.get("pred_home_runs") or 0.0), reverse=True)
+    links: List[str] = []
+    seen_links: set[str] = set()
+    seen_players: set[tuple] = set()
+    game_counts: Dict[str, int] = {}
+
+    for r in rows:
+        pkey = (r.get("game_slug"), r.get("player_id"))
+        if pkey in seen_players:
+            continue
+        slug = str(r.get("game_slug") or "")
+        if slug and game_counts.get(slug, 0) >= max(int(max_per_game), 1):
+            continue
+        seen_players.add(pkey)
+        norm = _normalize_name(r.get("player_name", f"id={r['player_id']}"))
+        ld = prop_lines.get((norm, "batter_home_runs"))
+        if not ld:
+            continue
+        # HR parlay is intended as top HR picks, so prioritize OVER links.
+        lnk = ld.get("over_link")
+        if not lnk or lnk in seen_links:
+            continue
+        seen_links.add(lnk)
+        links.append(lnk)
+        if slug:
+            game_counts[slug] = game_counts.get(slug, 0) + 1
+        if len(links) >= max(int(top_n), 1):
+            break
+    return links
+
+
+def _collect_lottery_parlay_links(
+    all_pitcher_rows: List[Dict],
+    all_batter_rows: List[Dict],
+    prop_lines: Dict,
+    cfg: PredictConfig,
+) -> List[str]:
+    """Collect high-odds positive-EV lottery legs for K/H/TB (no HR)."""
+    candidates: List[Dict] = []
+
+    def _odds_ok(odds: Optional[int]) -> bool:
+        return odds is not None and odds >= int(cfg.lottery_min_american)
+
+    # Pitcher strikeouts
+    for r in all_pitcher_rows:
+        name = r.get("player_name", f"id={r.get('player_id')}")
+        norm = _normalize_name(name)
+        ld = prop_lines.get((norm, "pitcher_strikeouts"))
+        if not ld or ld.get("line") is None:
+            continue
+        over_odds = ld.get("over_price")
+        if not _odds_ok(over_odds):
+            continue
+        p_over = (r.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        if p_over is None:
+            p_over = _prob_over_from_regression(
+                r.get("pred_strikeouts"),
+                ld.get("line"),
+                r.get("sigma_strikeouts"),
+            )
+        ev = _ev_per_unit(float(p_over), over_odds)
+        if ev is None or ev < cfg.min_ev:
+            continue
+        candidates.append({
+            "ev": float(ev),
+            "link": ld.get("over_link"),
+            "game_slug": r.get("game_slug"),
+            "player_key": (r.get("game_slug"), r.get("player_id"), "pitcher_strikeouts"),
+        })
+
+    # Batter hits + total bases (exclude HR by design)
+    for r in all_batter_rows:
+        name = r.get("player_name", f"id={r.get('player_id')}")
+        norm = _normalize_name(name)
+        sigma_map = r.get("sigma_map") or {}
+        clf_map = r.get("clf_p_over") or {}
+        for stat_key, pred_col in [
+            ("batter_hits", "pred_hits"),
+            ("batter_total_bases", "pred_total_bases"),
+        ]:
+            ld = prop_lines.get((norm, stat_key))
+            if not ld or ld.get("line") is None:
+                continue
+            over_odds = ld.get("over_price")
+            if not _odds_ok(over_odds):
+                continue
+            p_over = clf_map.get(stat_key)
+            if p_over is None:
+                p_over = _prob_over_from_regression(
+                    r.get(pred_col),
+                    ld.get("line"),
+                    sigma_map.get(stat_key),
+                )
+            ev = _ev_per_unit(float(p_over), over_odds)
+            if ev is None or ev < cfg.min_ev:
+                continue
+            candidates.append({
+                "ev": float(ev),
+                "link": ld.get("over_link"),
+                "game_slug": r.get("game_slug"),
+                "player_key": (r.get("game_slug"), r.get("player_id"), stat_key),
+            })
+
+    # Highest EV first, then dedupe and per-game cap.
+    candidates.sort(key=lambda c: c["ev"], reverse=True)
+    out: List[str] = []
+    seen_links: set[str] = set()
+    seen_player_stat: set[tuple] = set()
+    game_counts: Dict[str, int] = {}
+    for c in candidates:
+        link = c.get("link")
+        if not link or link in seen_links:
+            continue
+        pkey = c["player_key"]
+        if pkey in seen_player_stat:
+            continue
+        slug = str(c.get("game_slug") or "")
+        if slug and game_counts.get(slug, 0) >= max(int(cfg.lottery_max_per_game), 1):
+            continue
+        seen_links.add(link)
+        seen_player_stat.add(pkey)
+        out.append(link)
+        if slug:
+            game_counts[slug] = game_counts.get(slug, 0) + 1
+        if len(out) >= max(int(cfg.lottery_legs), 1):
+            break
+    return out
+
+
 def _print_discord(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
@@ -1139,12 +1730,64 @@ def _print_discord(
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
-    DISCORD_FORMAT=1  →  compact mode: edge plays only, one line each, links
-                         clickable. Games with no edges are skipped entirely.
+    DISCORD_FORMAT=1  →  compact mode: prints Top-10 props and chunked (25-leg max)
+                         stat-specific FD parlay links (K / H / TB / HR / BB).
     (no env var)      →  full table mode: all players in aligned columns.
     """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
+
+    # Discord mode: print concise Top-10 props + chunked all-props parlays.
+    if is_discord:
+        by_stat = _collect_prop_links_by_stat(all_pitcher_rows, all_batter_rows, prop_lines)
+        printed_any = False
+        for stat_key, label in [
+            ("pitcher_strikeouts", "Strikeout"),
+            ("batter_hits", "Hits"),
+            ("batter_total_bases", "2 Total Bases"),
+            ("batter_home_runs", "Home Runs"),
+            ("batter_walks", "Walks"),
+        ]:
+            links = by_stat.get(stat_key, [])
+            seen: set[str] = set()
+            dedup = [l for l in links if l and l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
+            if not dedup:
+                continue
+            printed_any = True
+            n_chunks = math.ceil(len(dedup) / 25)
+            for i in range(0, len(dedup), 25):
+                chunk = dedup[i:i + 25]
+                parlay_url = build_fd_parlay_url(chunk)
+                if not parlay_url:
+                    continue
+                idx = i // 25 + 1
+                print(f"• {label} Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
+
+        # Dedicated Top-10 HR parlay (single slip unless links are missing).
+        top_hr_links = _collect_top_hr_parlay_links(all_batter_rows, prop_lines, top_n=10)
+        if top_hr_links:
+            top_hr_url = build_fd_parlay_url(top_hr_links[:25])
+            if top_hr_url:
+                printed_any = True
+                print(f"• Top 10 HR Parlay: [FD]({top_hr_url})")
+
+        if cfg.lottery_mode:
+            lottery_links = _collect_lottery_parlay_links(
+                all_pitcher_rows, all_batter_rows, prop_lines, cfg
+            )
+            if lottery_links:
+                lottery_url = build_fd_parlay_url(lottery_links[:25])
+                if lottery_url:
+                    printed_any = True
+                    print(f"• Lottery Parlay (no HR, alt-line bias): [FD]({lottery_url})")
+            else:
+                printed_any = True
+                print("• Lottery Parlay: no qualifying lottery legs today")
+
+        if not printed_any:
+            print("**No player-prop parlay links for today**")
+        print("")
+        return []
 
     def _link_name(full_name: str) -> str:
         """'Fernando Tatis Jr.' → 'Tatis Jr.',  'Michael King' → 'King'."""
@@ -1212,11 +1855,23 @@ def _print_discord(
                     norm = _normalize_name(name)
                     ld = prop_lines.get((norm, "pitcher_strikeouts"))
                     line = ld["line"] if ld else None
-                    edge = (pred_k - line) if line is not None else None
-                    has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
-                    tbl.append(_row(name, pred_k, "{:.1f}", line, edge, has_edge))
+                    clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+                    p_over = clf_p if clf_p is not None else _prob_over_from_regression(
+                        pred_k, line, row.get("sigma_strikeouts")
+                    )
+                    ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
+                    if ev_pick is not None:
+                        edge = ev_pick["ev"]
+                        has_edge = True
+                        display_pred, fmt = (p_over if clf_p is not None else pred_k), "{:.3f}" if clf_p is not None else "{:.1f}"
+                        lnk = ev_pick["link"]
+                    else:
+                        edge = (pred_k - line) if line is not None else None
+                        has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
+                        display_pred, fmt = pred_k, "{:.1f}"
+                        lnk = ld.get("over_link") if (ld and edge is not None and edge > 0) else (ld.get("under_link") if ld else None)
+                    tbl.append(_row(name, display_pred, fmt, line, edge, has_edge))
                     if has_edge and ld:
-                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
                         if lnk:
                             fd_links.append(lnk)
 
@@ -1234,10 +1889,12 @@ def _print_discord(
                     ld = prop_lines.get((norm, "batter_hits"))
                     line = ld["line"] if ld else None
                     edge = (pred_h - line) if line is not None else None
-                    has_edge = edge is not None and abs(edge) >= cfg.threshold_hits * _ci
+                    p_over = _prob_over_from_regression(pred_h, line, (row.get("sigma_map") or {}).get("batter_hits"))
+                    ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
+                    has_edge = (ev_pick is not None) or (edge is not None and abs(edge) >= cfg.threshold_hits * _ci)
                     tbl.append(_row(name, pred_h, "{:.2f}", line, edge, has_edge))
                     if has_edge and ld:
-                        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                        lnk = ev_pick["link"] if ev_pick is not None else (ld.get("over_link") if edge > 0 else ld.get("under_link"))
                         if lnk:
                             fd_links.append(lnk)
 
@@ -1264,6 +1921,7 @@ def _print_discord(
                         edge = clf_p - _BREAKEVEN_PROB
                         eff_thresh = cfg.threshold_clf
                         display_pred = clf_p
+                        p_over = clf_p
                     else:
                         edge = pred_v - line
                         eff_thresh = (
@@ -1271,7 +1929,9 @@ def _print_discord(
                             if thresh is None else thresh
                         )
                         display_pred = pred_v
-                    if abs(edge) >= eff_thresh * _ci:
+                        p_over = _prob_over_from_regression(pred_v, line, (row.get("sigma_map") or {}).get(stat_key))
+                    ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+                    if ev_pick is not None or abs(edge) >= eff_thresh * _ci:
                         stat_edges.append((name, display_pred, line, edge, ld))
                 if stat_edges:
                     tbl += ["", _hdr(hdr_lbl, stat_lbl), SEP]
@@ -1300,13 +1960,29 @@ def _print_discord(
         if not ld or ld.get("line") is None:
             continue
         line = ld["line"]
-        edge = pred_k - line
-        if abs(edge) < cfg.threshold_strikeouts:
-            continue
-        lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+        p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
+        clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        p_over = clf_p if clf_p is not None else p_over_reg
+        ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+        if ev_pick is not None:
+            edge = ev_pick["ev"]
+            display_pred = p_over if clf_p is not None else pred_k
+            lnk = ev_pick["link"]
+            side = "O" if ev_pick["side"] == "over" else "U"
+        else:
+            edge = (clf_p - _BREAKEVEN_PROB) if clf_p is not None else (pred_k - line)
+            min_thr = cfg.threshold_clf if clf_p is not None else cfg.threshold_strikeouts
+            if abs(edge) < min_thr:
+                continue
+            display_pred = p_over if clf_p is not None else pred_k
+            lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
+            side = "O" if edge > 0 else "U"
         k_plays.append({
             "name": name, "team": row.get("team_abbr", ""), "stat": "K",
-            "pred": pred_k, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
+            "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
+            "is_ev": ev_pick is not None,
+            "side": side,
+            "game_slug": row.get("game_slug"),
         })
 
     batter_edge_plays: List[Dict] = []
@@ -1337,6 +2013,7 @@ def _print_discord(
                 edge = clf_p - _BREAKEVEN_PROB
                 eff_thresh = cfg.threshold_clf
                 display_pred = clf_p  # show P(over) directly
+                p_over = clf_p
             else:
                 edge = pred_v - line
                 eff_thresh = (
@@ -1344,16 +2021,37 @@ def _print_discord(
                     if thresh is None else thresh
                 )
                 display_pred = pred_v
+                p_over = _prob_over_from_regression(pred_v, line, (row.get("sigma_map") or {}).get(stat_key))
 
-            if abs(edge) >= eff_thresh * _ci:
+            ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+            if ev_pick is not None:
+                side_over = ev_pick["side"] == "over"
+                if (not side_over) and stat_key in cfg.fd_over_only:
+                    continue
+                edge_for_rank = ev_pick["ev"]
+                lnk = ev_pick["link"]
+                book = "FD" if (side_over or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
+                side = "O" if side_over else "U"
+                is_pick = True
+            else:
+                if abs(edge) < eff_thresh * _ci:
+                    continue
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
                 lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
                 book = "FD" if (edge > 0 or ld.get("under_link_book", "fanduel") == "fanduel") else "DK"
+                edge_for_rank = edge
+                side = "O" if edge > 0 else "U"
+                is_pick = True
+
+            if is_pick:
                 batter_edge_plays.append({
                     "name": name, "team": team, "stat": stat_lbl,
-                    "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": book,
+                    "pred": display_pred, "line": line, "edge": edge_for_rank, "lnk": lnk, "book": book,
                     "is_clf": clf_p is not None,
+                    "is_ev": ev_pick is not None,
+                    "side": side,
+                    "game_slug": row.get("game_slug"),
                 })
 
     all_prop_bets: List[Dict] = k_plays + batter_edge_plays
@@ -1361,69 +2059,58 @@ def _print_discord(
 
     if all_prop_bets:
         print(f"**PROP BETS TODAY ({len(all_prop_bets)})**")
+        grouped: Dict[str, List[Dict]] = {}
         for b in all_prop_bets:
-            short = _link_name(b["name"])
-            d = "O" if b["edge"] > 0 else "U"
-            ls = f"{d}{b['line']:.1f}"
-            ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
-            lnk_str = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b["lnk"] else ""
-            print(f"★ {short} ({b['team']}) {b['stat']} {ls} → {ps}  edge {b['edge']:+.2f}{lnk_str}")
+            grouped.setdefault(b.get("game_slug") or "unknown", []).append(b)
+
+        ordered_slugs = sorted(
+            grouped.keys(),
+            key=lambda s: (game_map.get(s, {}).get("start_ts_utc", ""), s),
+        )
+        for slug in ordered_slugs:
+            gm = game_map.get(slug, {})
+            home, away = gm.get("home", "???"), gm.get("away", "???")
+            start_ts = gm.get("start_ts_utc")
+            time_str = ""
+            if start_ts:
+                try:
+                    dt_et = pd.Timestamp(start_ts).tz_convert(_ET)
+                    hour = dt_et.hour % 12 or 12
+                    time_str = f"{hour}:{dt_et.strftime('%M %p')} ET"
+                except Exception:
+                    pass
+            hdr = f"**{away} @ {home}**" + (f" · {time_str}" if time_str else "")
+            print(hdr)
+            for b in grouped[slug]:
+                short = _link_name(b["name"])
+                d = b.get("side", ("O" if b["edge"] > 0 else "U"))
+                ls = f"{d}{b['line']:.1f}"
+                ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
+                link_txt = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b.get("lnk") else ""
+                print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{link_txt}")
         print("")
     else:
         print("**No prop edge bets today**\n")
 
-    def _parlay(title: str, links: List) -> None:
-        dedup = list(dict.fromkeys(l for l in links if l))
-        if not dedup:
-            return
-        n_chunks = math.ceil(len(dedup) / 25)
-        for i in range(0, len(dedup), 25):
-            url = build_fd_parlay_url(dedup[i:i + 25])
-            if url:
-                sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
-                print(f"**{title}{sfx}** [FD]({url})")
-
-    _parlay("Prop Bets Parlay", [b["lnk"] for b in all_prop_bets if b["lnk"]])
-
-    # ── Top hitters leaderboard (Discord only) ────────────────────────────
+    # Discord leaderboard: prediction-only top 10 lists (no links/images)
     if is_discord and all_batter_rows:
-        def _top_stat(stat_col: str, stat_key: str, top_n: int, label: str) -> None:
+        def _top10_pred(stat_col: str, label: str, fmt: str) -> None:
             rows = [r for r in all_batter_rows if r.get(stat_col) is not None]
             if not rows:
                 return
             rows.sort(key=lambda r: r[stat_col], reverse=True)
-            lines_out = []
-            for r in rows[:top_n]:
-                name  = r.get("player_name", f"id={r['player_id']}")
-                team  = r.get("team_abbr", "?")
-                opp   = r.get("opponent_abbr", "?")
-                pred  = r[stat_col]
-                norm  = _normalize_name(name)
-                ld    = prop_lines.get((norm, stat_key))
-                line  = ld["line"] if ld else None
-                short = _link_name(name)
-                if line is not None:
-                    edge    = pred - line
-                    dir_str = "O" if edge > 0 else "U"
-                    bet_lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
-                    lnk_str = f"  [FD](<{bet_lnk}>)" if bet_lnk else ""
-                    if stat_col == "pred_home_runs":
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.3f} | {dir_str}{line:.1f} edge {edge:+.3f}{lnk_str}")
-                    else:
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.2f} | {dir_str}{line:.1f} edge {edge:+.2f}{lnk_str}")
-                else:
-                    if stat_col == "pred_home_runs":
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.3f}")
-                    else:
-                        lines_out.append(f"  {short} ({team} vs {opp}) pred {pred:.2f}")
-            if lines_out:
-                print(f"\n**{label}**")
-                for l in lines_out:
-                    print(l)
+            print(f"**{label} (Top 10)**")
+            for i, r in enumerate(rows[:10], start=1):
+                name = r.get("player_name", f"id={r['player_id']}")
+                team = r.get("team_abbr", "?")
+                opp = r.get("opponent_abbr", "?")
+                pred = r.get(stat_col)
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {fmt.format(pred)}")
+            print("")
 
-        _top_stat("pred_home_runs",   "batter_home_runs",   1, "Top HR Hitter")
-        _top_stat("pred_total_bases", "batter_total_bases", 2, "Top TB Hitters")
-        _top_stat("pred_hits",        "batter_hits",        2, "Top H Hitters")
+        _top10_pred("pred_hits", "Top Hits Predictions", "{:.2f}")
+        _top10_pred("pred_total_bases", "Top Total Bases Predictions", "{:.2f}")
+        _top10_pred("pred_home_runs", "Top Home Runs Predictions", "{:.3f}")
 
     return []  # parlays already printed; outer parlay logic skipped
 
@@ -1448,14 +2135,37 @@ def _print_best_bets(
         ld = prop_lines.get((norm, "pitcher_strikeouts"))
         if not ld or ld["line"] is None:
             continue
-        edge = pred_k - ld["line"]
-        if abs(edge) >= cfg.threshold_strikeouts:
+        line = ld["line"]
+        p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
+        clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        p_over = clf_p if clf_p is not None else p_over_reg
+        ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+        if ev_pick is not None:
+            edge = ev_pick["ev"]
+            is_edge = True
+            display_pred = p_over if clf_p is not None else pred_k
+            bet_link = ev_pick["link"]
+            side = "O" if ev_pick["side"] == "over" else "U"
+        else:
+            if clf_p is not None:
+                edge = clf_p - _BREAKEVEN_PROB
+                is_edge = abs(edge) >= cfg.threshold_clf
+                display_pred = clf_p
+            else:
+                edge = pred_k - line
+                is_edge = abs(edge) >= cfg.threshold_strikeouts
+                display_pred = pred_k
+            bet_link = ld.get("over_link") if edge > 0 else ld.get("under_link")
+            side = "O" if edge > 0 else "U"
+        if is_edge:
             best.append({
-                "name": name, "stat": "K", "pred": pred_k,
-                "line": ld["line"], "edge": edge,
-                "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                "name": name, "stat": "K", "pred": display_pred,
+                "line": line, "edge": edge,
+                "bet_link": bet_link,
                 "team": row.get("team_abbr", ""),
                 "game_slug": row.get("game_slug", ""),
+                "is_ev": ev_pick is not None,
+                "side": side,
             })
 
     for row in all_batter_rows:
@@ -1475,21 +2185,44 @@ def _print_best_bets(
             ld = prop_lines.get((norm, stat_key))
             if not ld or ld["line"] is None:
                 continue
-            edge = pred_v - ld["line"]
+            line = ld["line"]
+            edge = pred_v - line
             eff_thr = (
                 (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
                 if threshold is None else threshold
             )
-            if abs(edge) >= eff_thr * _ci_scale:
+            clf_p = (row.get("clf_p_over") or {}).get(stat_key)
+            p_over = clf_p if clf_p is not None else _prob_over_from_regression(
+                pred_v, line, (row.get("sigma_map") or {}).get(stat_key)
+            )
+            ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+
+            if ev_pick is not None:
+                side_over = ev_pick["side"] == "over"
+                if (not side_over) and stat_key in cfg.fd_over_only:
+                    continue
+                edge_pick = ev_pick["ev"]
+                bet_link = ev_pick["link"]
+                side = "O" if side_over else "U"
+            else:
+                if abs(edge) < eff_thr * _ci_scale:
+                    continue
                 if edge < 0 and stat_key in cfg.fd_over_only:
                     continue  # FD doesn't offer UNDER for this stat
+                edge_pick = edge
+                bet_link = ld.get("over_link") if edge > 0 else ld.get("under_link")
+                side = "O" if edge > 0 else "U"
+
+            if ev_pick is not None or abs(edge) >= eff_thr * _ci_scale:
                 best.append({
                     "name": name, "stat": stat, "pred": pred_v,
-                    "line": ld["line"], "edge": edge,
-                    "bet_link": ld.get("over_link") if edge > 0 else ld.get("under_link"),
+                    "line": line, "edge": edge_pick,
+                    "bet_link": bet_link,
                     "bookmaker_key": ld.get("bookmaker_key", ""),
                     "team": row.get("team_abbr", ""),
                     "game_slug": row.get("game_slug", ""),
+                    "is_ev": ev_pick is not None,
+                    "side": side,
                 })
 
     best.sort(key=lambda r: abs(r["edge"]), reverse=True)
@@ -1505,7 +2238,7 @@ def _print_best_bets(
             else:
                 short = f"{parts[-1]} ({b['team']})"
             ps = f"{b['pred']:.1f}" if b["stat"] == "K" else f"{b['pred']:.2f}"
-            d = "O" if b["edge"] > 0 else "U"
+            d = b.get("side", ("O" if b["edge"] > 0 else "U"))
             ls = f"{d}{b['line']:.1f}"
             es = f"{b['edge']:+.2f}"
             lnk = b.get("bet_link")
@@ -1595,8 +2328,8 @@ def predict_props(cfg: PredictConfig) -> None:
     xgb_h = lgb_h = xgb_tb_m = lgb_tb_m = None
     xgb_hr = lgb_hr = xgb_walks_m = lgb_walks_m = feat_b = meds_b = None
     # Binary classifier models (optional — loaded if training has been run)
-    pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf)
-    batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf)
+    pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map)
+    batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf, cal_map)
 
     if pitcher_artifacts_ok:
         try:
@@ -1640,6 +2373,8 @@ def predict_props(cfg: PredictConfig) -> None:
     log.info("Loaded %d prop line entries for %s", len(prop_lines), et_date)
 
     bias = _load_bias_corrections(conn)
+    side_penalties = _load_side_penalties(conn)
+    clf_controls = _load_clf_bucket_controls(cfg.model_dir, cfg.clf_controls_file)
 
     # ── Pitcher predictions ────────────────────────────────────────────────
     all_pitcher_rows: List[Dict] = []
@@ -1653,6 +2388,21 @@ def predict_props(cfg: PredictConfig) -> None:
             X_p = _prep_features(df_p, _PITCHER_META, feat_p, meds_p)
             pred_k = _predict_ensemble(X_p, xgb_k, lgb_k)
             sigma_k = bt.get("ci_strikeouts") if bt else None
+            clf_pover_k: Optional[np.ndarray] = None
+            if pitcher_clf_arts is not None:
+                xgb_clf, lgb_clf, feat_p_clf, meds_p_clf, _bt_p_clf, cal_p_map = pitcher_clf_arts
+                norms_p = np.array([
+                    _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+                    for _, row in df_p.iterrows()
+                ])
+                lines_p = np.array([
+                    (prop_lines.get((nm, "pitcher_strikeouts")) or {}).get("line", np.nan)
+                    for nm in norms_p
+                ], dtype=float)
+                X_p_clf = _prep_features_clf(X_p, lines_p, feat_p_clf, meds_p_clf)
+                raw_p = np.clip(_predict_ensemble(X_p_clf, xgb_clf, lgb_clf), 0.01, 0.99)
+                clf_pover_k = _apply_platt_calibration(raw_p, cal_p_map.get("pitcher_strikeouts"))
+                clf_pover_k[np.isnan(lines_p)] = np.nan
 
             for i, (_, row) in enumerate(df_p.iterrows()):
                 pk = max(0.0, float(pred_k[i]))
@@ -1660,9 +2410,33 @@ def predict_props(cfg: PredictConfig) -> None:
                 norm = _normalize_name(name)
                 ld = prop_lines.get((norm, "pitcher_strikeouts"))
                 line = ld["line"] if ld else None
-                edge = (pk - line) if line is not None else None
-                kel = _kelly_prop(abs(edge), sigma_k or cfg.threshold_strikeouts * 2) \
-                      if edge is not None else 0.0
+                # Dynamic side-penalty (with shrinkage) for weak directional buckets.
+                if line is not None:
+                    raw_edge_k = pk - line
+                    side_k = "over" if raw_edge_k >= 0 else "under"
+                    pen_k = _side_penalty_for_line("pitcher_strikeouts", line, side_k, side_penalties)
+                    if side_k == "over":
+                        pk = max(0.0, pk - pen_k)
+                    else:
+                        pk = max(0.0, pk + pen_k)
+                p_over_k = None
+                if clf_pover_k is not None:
+                    v = float(clf_pover_k[i])
+                    p_over_k = None if np.isnan(v) else v
+
+                if (
+                    p_over_k is not None
+                    and line is not None
+                    and not _clf_bucket_is_disabled(clf_controls, "pitcher_strikeouts", line)
+                ):
+                    edge = p_over_k - _BREAKEVEN_PROB
+                    kel = min(max(0.0, edge / (1.0 - _BREAKEVEN_PROB)), 0.05)
+                    pred_for_db = p_over_k
+                else:
+                    edge = (pk - line) if line is not None else None
+                    kel = _kelly_prop(abs(edge), sigma_k or cfg.threshold_strikeouts * 2) \
+                          if edge is not None else 0.0
+                    pred_for_db = pk
 
                 r = {
                     "game_slug": row["game_slug"],
@@ -1674,6 +2448,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     "opponent_abbr": row.get("opponent_abbr"),
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_strikeouts": pk,
+                    "clf_p_over": {"pitcher_strikeouts": p_over_k},
+                    "sigma_strikeouts": sigma_k,
                 }
                 all_pitcher_rows.append(r)
                 db_rows.append({
@@ -1683,7 +2459,7 @@ def predict_props(cfg: PredictConfig) -> None:
                     "player_name": name,
                     "team_abbr": row.get("team_abbr"),
                     "stat": "pitcher_strikeouts",
-                    "pred_value": round(pk, 3),
+                    "pred_value": round(pred_for_db, 3),
                     "book_line": line,
                     "edge": round(edge, 3) if edge is not None else None,
                     "kelly_fraction": round(kel, 4),
@@ -1746,7 +2522,7 @@ def predict_props(cfg: PredictConfig) -> None:
                 "batter_home_runs": None, "batter_walks": None,
             }
             if batter_clf_arts is not None:
-                clf_models, feat_clf, meds_clf, _bt_clf = batter_clf_arts
+                clf_models, feat_clf, meds_clf, _bt_clf, cal_map_b = batter_clf_arts
                 # Build normalized name array for vectorized line lookup
                 pids_arr = df_b["player_id"].astype(int).values
                 norms_arr = np.array([_normalize_name(name_map.get(p, "")) for p in pids_arr])
@@ -1760,7 +2536,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     ], dtype=float)
                     X_clf = _prep_features_clf(X_b, lines_arr, feat_clf, meds_clf)
                     xgb_c, lgb_c = clf_models[stat_key]
-                    pover = np.clip(_predict_ensemble(X_clf, xgb_c, lgb_c), 0.01, 0.99)
+                    raw_p = np.clip(_predict_ensemble(X_clf, xgb_c, lgb_c), 0.01, 0.99)
+                    pover = _apply_platt_calibration(raw_p, cal_map_b.get(stat_key))
                     # Mask rows with no line — use NaN so they fall back to regression
                     pover[np.isnan(lines_arr)] = np.nan
                     clf_pover[stat_key] = pover
@@ -1814,6 +2591,12 @@ def predict_props(cfg: PredictConfig) -> None:
                         "batter_home_runs":   _safe_clf("batter_home_runs"),
                         "batter_walks":       _safe_clf("batter_walks"),
                     },
+                    "sigma_map": {
+                        "batter_hits": sigma_h,
+                        "batter_total_bases": sigma_tb,
+                        "batter_home_runs": sigma_hr,
+                        "batter_walks": sigma_walks,
+                    },
                 }
                 all_batter_rows.append(r)
 
@@ -1829,8 +2612,12 @@ def predict_props(cfg: PredictConfig) -> None:
                     # Use binary CLF edge when model exists and line is available
                     clf_arr = clf_pover.get(stat_key)
                     p_over_i = float(clf_arr[i]) if clf_arr is not None else np.nan
-                    use_clf = (clf_arr is not None and not np.isnan(p_over_i)
-                               and line is not None)
+                    use_clf = (
+                        clf_arr is not None
+                        and not np.isnan(p_over_i)
+                        and line is not None
+                        and not _clf_bucket_is_disabled(clf_controls, stat_key, line)
+                    )
 
                     if use_clf:
                         # CLF: pred_value = P(over), edge = P(over) - breakeven
@@ -1841,7 +2628,14 @@ def predict_props(cfg: PredictConfig) -> None:
                     elif line is not None:
                         # Regression fallback
                         pred_v = reg_pred
-                        edge   = reg_pred - line
+                        edge_raw = reg_pred - line
+                        side = "over" if edge_raw >= 0 else "under"
+                        pen = _side_penalty_for_line(stat_key, line, side, side_penalties)
+                        if side == "over":
+                            pred_v = max(0.0, reg_pred - pen)
+                        else:
+                            pred_v = max(0.0, reg_pred + pen)
+                        edge   = pred_v - line
                         kel    = _kelly_prop(abs(edge), sigma or 0.5)
                     else:
                         pred_v = reg_pred
@@ -1933,6 +2727,10 @@ def main() -> None:
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", type=str, default=None)
+    parser.add_argument("--lottery-mode", action="store_true")
+    parser.add_argument("--lottery-legs", type=int, default=None)
+    parser.add_argument("--lottery-min-american", type=int, default=None)
+    parser.add_argument("--lottery-max-per-game", type=int, default=None)
     args = parser.parse_args()
 
     et_date = None
@@ -1943,7 +2741,34 @@ def main() -> None:
         from datetime import date as _date
         et_date = _date.fromisoformat(os.getenv("MLB_ET_DATE"))
 
-    cfg = PredictConfig(et_date=et_date)
+    lottery_mode_env = os.getenv("MLB_LOTTERY_MODE")
+    if args.lottery_mode:
+        lottery_mode = True
+    elif lottery_mode_env is not None:
+        lottery_mode = lottery_mode_env.strip().lower() in {"1", "true", "yes", "on"}
+    else:
+        # Discord compact output defaults to showing a lottery section.
+        lottery_mode = os.getenv("DISCORD_FORMAT") == "1"
+    lottery_legs = args.lottery_legs if args.lottery_legs is not None else int(os.getenv("MLB_LOTTERY_LEGS", "5"))
+    lottery_min_american = (
+        args.lottery_min_american
+        if args.lottery_min_american is not None
+        else int(os.getenv("MLB_LOTTERY_MIN_AMERICAN", "250"))
+    )
+    lottery_max_per_game = (
+        args.lottery_max_per_game
+        if args.lottery_max_per_game is not None
+        else int(os.getenv("MLB_LOTTERY_MAX_PER_GAME", "2"))
+    )
+
+    cfg = PredictConfig(
+        et_date=et_date,
+        lottery_mode=lottery_mode,
+        lottery_legs=lottery_legs,
+        lottery_min_american=lottery_min_american,
+        lottery_max_per_game=lottery_max_per_game,
+    )
+    _apply_threshold_overrides(cfg)
     predict_props(cfg)
 
 

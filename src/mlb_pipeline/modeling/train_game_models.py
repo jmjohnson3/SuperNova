@@ -61,6 +61,9 @@ class TrainConfig:
     run_optuna: bool = True
     optuna_n_trials: int = 60  # Improvement 4: increased from 40 to 60
     optuna_n_folds: int = 5      # walk-forward folds used for tuning
+    # Recency weighting half-life (days): sample weight halves every N days of age.
+    # Age is measured from the most recent training date in each fold.
+    recency_half_life_days: int = 90
 
 
 SQL_GAME_TRAINING_FEATURES = """
@@ -362,6 +365,34 @@ def walk_forward_folds(
     return folds
 
 
+def compute_recency_weights(
+    dates: pd.Series,
+    *,
+    half_life_days: int,
+) -> np.ndarray:
+    """Return normalized recency weights using true half-life decay.
+
+    Weight formula:
+      w = exp(-ln(2) * age_days / half_life_days)
+
+    where age_days is measured from the most recent date in `dates`.
+    """
+    if len(dates) == 0:
+        return np.array([], dtype=float)
+
+    safe_half_life = max(int(half_life_days), 1)
+    d = pd.to_datetime(dates)
+    max_dt = d.max()
+    age_days = (max_dt - d).dt.days.astype(float).to_numpy()
+    w = np.exp(-np.log(2.0) * age_days / float(safe_half_life))
+
+    # Keep the mean at 1.0 so regularization behavior stays comparable.
+    mean_w = float(np.mean(w))
+    if mean_w > 0:
+        w = w / mean_w
+    return w
+
+
 # ── Optuna hyperparameter tuning ─────────────────────────────────────────────
 def _optuna_objective(
     trial,
@@ -371,6 +402,7 @@ def _optuna_objective(
     feature_cols: List[str],
     folds: List[Tuple[pd.Timestamp, pd.Timestamp]],
     target_name: str,
+    recency_half_life_days: int,
     objective: str = "reg:pseudohubererror",
 ) -> float:
     params = {
@@ -409,6 +441,12 @@ def _optuna_objective(
 
         train_dates = df.loc[train_mask, "game_date_et"]
         fit_rel, eval_rel = temporal_eval_split(train_dates)
+        recency_weights = compute_recency_weights(
+            train_dates,
+            half_life_days=recency_half_life_days,
+        )
+        recency_weights_fit = recency_weights[fit_rel]
+        recency_weights_eval = recency_weights[eval_rel]
 
         model = XGBRegressor(
             n_estimators=2000,
@@ -421,7 +459,9 @@ def _optuna_objective(
         )
         model.fit(
             X_train.iloc[fit_rel], y_train.iloc[fit_rel],
+            sample_weight=recency_weights_fit,
             eval_set=[(X_train.iloc[eval_rel], y_train.iloc[eval_rel])],
+            sample_weight_eval_set=[recency_weights_eval],
             verbose=False,
         )
 
@@ -479,6 +519,7 @@ def run_optuna_tuning(
     run_line_study.optimize(
         lambda trial: _optuna_objective(
             trial, df, X_raw, y_run_diff, feature_cols, tune_folds, "run_line",
+            recency_half_life_days=cfg.recency_half_life_days,
             objective=RUN_LINE_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
@@ -493,6 +534,7 @@ def run_optuna_tuning(
     total_study.optimize(
         lambda trial: _optuna_objective(
             trial, df, X_raw, y_total, feature_cols, tune_folds, "total",
+            recency_half_life_days=cfg.recency_half_life_days,
             objective=TOTAL_DIRECT_OBJECTIVE,
         ),
         n_trials=cfg.optuna_n_trials,
@@ -681,12 +723,13 @@ def main() -> None:
             X_fit  = X_train.iloc[fit_rel]
             X_eval = X_train.iloc[eval_rel]
 
-            # ── Improvement 2: Recency weighting for direct models ────────────────
-            # Compute sample weights based on game date recency (half-life ~90 days)
+            # ── Recency weighting for direct models ────────────────────────────────
+            # True half-life decay from most-recent training date.
             _train_dates = df.loc[train_mask, "game_date_et"]
-            _days_elapsed = (_train_dates - _train_dates.min()).dt.days.values.astype(float)
-            _recency_weights = np.exp(_days_elapsed / 90.0)
-            _recency_weights = _recency_weights / _recency_weights.mean()  # normalize
+            _recency_weights = compute_recency_weights(
+                _train_dates,
+                half_life_days=cfg.recency_half_life_days,
+            )
             _recency_weights_fit = _recency_weights[fit_rel]
 
             # DIRECT MODELS
@@ -784,6 +827,11 @@ def main() -> None:
 
                 resid_train_dates = df.loc[train_mask & has_market_train, "game_date_et"]
                 resid_fit, resid_eval = temporal_eval_split(resid_train_dates)
+                resid_weights = compute_recency_weights(
+                    resid_train_dates,
+                    half_life_days=cfg.recency_half_life_days,
+                )
+                resid_weights_fit = resid_weights[resid_fit]
 
                 rl_resid_model  = build_model(cfg, params_override=best_run_line_params, objective=RUN_LINE_OBJECTIVE)
                 tot_resid_model = build_model(cfg, params_override=best_total_params,    objective=TOTAL_RESID_OBJECTIVE)
@@ -791,11 +839,13 @@ def main() -> None:
                 if resid_fit.sum() > 10 and resid_eval.sum() > 5:
                     rl_resid_model.fit(
                         X_train_resid.iloc[resid_fit], y_rl_resid_train.iloc[resid_fit],
+                        sample_weight=resid_weights_fit,
                         eval_set=[(X_train_resid.iloc[resid_eval], y_rl_resid_train.iloc[resid_eval])],
                         verbose=False,
                     )
                     tot_resid_model.fit(
                         X_train_resid.iloc[resid_fit], y_tot_resid_train.iloc[resid_fit],
+                        sample_weight=resid_weights_fit,
                         eval_set=[(X_train_resid.iloc[resid_eval], y_tot_resid_train.iloc[resid_eval])],
                         verbose=False,
                     )
