@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS odds.mlb_player_prop_lines (
     over_link           TEXT,
     under_link          TEXT,
     fetched_at_utc      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (as_of_date, bookmaker_key, player_name_norm, stat)
+    UNIQUE (as_of_date, bookmaker_key, player_name_norm, stat, line)
 );
 
 CREATE INDEX IF NOT EXISTS idx_mlb_prop_lines_date_player

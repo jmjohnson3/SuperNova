@@ -1,0 +1,32 @@
+{
+  "generated_at_utc": "2026-04-23T09:18:32Z",
+  "lookback_days": 180,
+  "holdout_days": 21,
+  "min_train_bets": 40,
+  "min_holdout_bets": 20,
+  "threshold_strikeouts": 2.0,
+  "threshold_hits": 0.75,
+  "threshold_total_bases": 1.5,
+  "threshold_home_runs_over": 0.05,
+  "threshold_home_runs_under": 0.05,
+  "threshold_walks": 0.05,
+  "threshold_clf": 0.03,
+  "min_ev": 0.02,
+  "_diagnostics": {
+    "pitcher_strikeouts": {
+      "reason": "no_candidates"
+    },
+    "batter_hits": {
+      "reason": "no_candidates"
+    },
+    "batter_total_bases": {
+      "reason": "no_candidates"
+    },
+    "batter_home_runs": {
+      "reason": "no_candidates"
+    },
+    "batter_walks": {
+      "reason": "no_candidates"
+    }
+  }
+}

@@ -95,10 +95,11 @@ class PredictConfig:
     thresholds_file: str = "prop_thresholds.json"
     # Optional classifier bucket controls file; used to disable drifted CLF buckets.
     clf_controls_file: str = "clf_bucket_controls.json"
-    # Lottery parlay mode: K/H/TB only (no HR), biased to plus-money alt lines.
+    # Lottery parlay mode: HR/K/H/TB biased to plus-money lines with binary clf edge.
     lottery_mode: bool = False
     lottery_legs: int = 5
-    lottery_min_american: int = 250
+    lottery_min_american: int = 300   # floor: at least +300 per leg
+    lottery_max_american: int = 900   # ceiling: cap at +900 to avoid true longshots
     lottery_max_per_game: int = 2
 
 
@@ -1384,7 +1385,9 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
             pass
         return str(v) if v else None
 
-    fd_rows: Dict[Tuple[str, str], Dict] = {}
+    # FD now stores multiple lines per player per stat (alt market rows).
+    # Build fd_by_line[(player, stat)][line_val] = entry so we can pick correctly.
+    fd_by_line: Dict[Tuple[str, str], Dict[float, Dict]] = {}
     dk_rows: Dict[Tuple[str, str], Dict] = {}
 
     for _, row in df.iterrows():
@@ -1398,28 +1401,94 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
             "under_link": _clean(row.get("under_link")),
         }
         if str(row["bookmaker_key"]) == "fanduel":
-            fd_rows[key] = entry
+            line_val = entry["line"]
+            if line_val is not None:
+                fd_by_line.setdefault(key, {})[line_val] = entry
         else:
-            dk_rows[key] = entry
+            # DK standard market: one row per player per stat (lowest line).
+            # If multiple DK lines exist, prefer the lowest (standard market line).
+            if key not in dk_rows or (
+                entry["line"] is not None
+                and dk_rows[key]["line"] is not None
+                and entry["line"] < dk_rows[key]["line"]
+            ):
+                dk_rows[key] = entry
 
-    # Merge: FD primary; supplement under_link from DK where FD has none.
-    # Track which book provided the under_link so the UI can label correctly.
+    # Merge: DK standard line is primary for line value (1.5 hits, 1.5 TB, 0.5 HR).
+    # FD supplies over_link + over_price at the matching line.  For FD-only stats
+    # (HR where DK doesn't have a line) pick the FD line closest to even-money.
     result: Dict[Tuple[str, str], Dict] = {}
-    for key in set(fd_rows) | set(dk_rows):
-        if key in fd_rows:
-            entry = dict(fd_rows[key])
-            if not entry.get("under_link") and key in dk_rows:
-                entry["under_link"]      = dk_rows[key].get("under_link")
-                entry["under_link_book"] = "draftkings"
-            if entry.get("under_price") is None and key in dk_rows:
-                entry["under_price"] = dk_rows[key].get("under_price")
-            else:
-                entry["under_link_book"] = "fanduel"
-            result[key] = entry
-        else:
+    for key in set(fd_by_line) | set(dk_rows):
+        fd_lines = fd_by_line.get(key, {})
+
+        if key in dk_rows:
             entry = dict(dk_rows[key])
+            dk_line = entry.get("line")
+            # Attach FD over_link for the matching line; fall back to closest.
+            fd_at_match = fd_lines.get(dk_line) if dk_line is not None else None
+            if fd_at_match is None and fd_lines:
+                # Pick FD line closest to DK line value.
+                fd_at_match = fd_lines[min(fd_lines, key=lambda x: abs(x - (dk_line or 0)))]
+            if fd_at_match:
+                entry["over_link"]  = fd_at_match.get("over_link") or entry.get("over_link")
+                entry["over_price"] = fd_at_match.get("over_price") if fd_at_match.get("over_price") is not None else entry.get("over_price")
+            if not entry.get("under_link") and key in dk_rows:
+                pass  # already have DK under_link in entry
             entry["under_link_book"] = "draftkings"
             result[key] = entry
+        else:
+            # FD-only stat (e.g., HR with no DK line): pick most even-money FD line.
+            best_line = min(fd_lines, key=lambda x: abs(fd_lines[x].get("over_price") or 99999))
+            entry = dict(fd_lines[best_line])
+            entry["under_link_book"] = "fanduel"
+            result[key] = entry
+
+    return result
+
+
+def _load_all_alt_lines(conn, game_date: date) -> Dict[Tuple[str, str], List[Dict]]:
+    """Return ALL FD alternate prop lines per (player_name_norm, stat), sorted low→high.
+
+    Used by the lottery parlay to pick the highest line where the model has edge.
+    Excludes HR (handled by the dedicated HR parlay).
+    """
+    df = pd.read_sql(SQL_PROP_LINES, conn, params={"game_date": game_date})
+    if df.empty:
+        return {}
+
+    result: Dict[Tuple[str, str], List[Dict]] = {}
+
+    def _clean(v):
+        if v is None:
+            return None
+        try:
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
+        return str(v) if v else None
+
+    for _, row in df.iterrows():
+        if str(row["bookmaker_key"]) != "fanduel":
+            continue
+        stat = str(row["stat"])
+        if stat == "batter_home_runs":
+            continue  # HR has its own parlay
+        line_val = float(row["line"]) if row["line"] is not None else None
+        over_price = float(row["over_price"]) if row.get("over_price") is not None else None
+        over_link = _clean(row.get("over_link"))
+        if line_val is None or over_price is None or not over_link:
+            continue
+        key = (str(row["player_name_norm"]), stat)
+        result.setdefault(key, []).append({
+            "line": line_val,
+            "over_price": over_price,
+            "over_link": over_link,
+        })
+
+    # Sort each player's lines from lowest to highest.
+    for key in result:
+        result[key].sort(key=lambda x: x["line"])
 
     return result
 
@@ -1628,74 +1697,108 @@ def _collect_lottery_parlay_links(
     all_batter_rows: List[Dict],
     prop_lines: Dict,
     cfg: PredictConfig,
+    all_alt_lines: Optional[Dict] = None,
 ) -> List[str]:
-    """Collect high-odds positive-EV lottery legs for K/H/TB (no HR)."""
+    """Collect matchup-based lottery legs using the highest alt line where model has edge.
+
+    For each pitcher/batter we look at every available FD alt line (low→high) and
+    find the HIGHEST line value where P(OVER) is still positive-EV at the offered
+    odds.  This surfaces bets like "Skubal K OVER 8.5 at +350" or
+    "Freeman TB OVER 3.5 at +500" when the model's regression prediction supports it.
+    No HR — those have a dedicated parlay.
+    """
+    lo = int(cfg.lottery_min_american)
+    hi = int(cfg.lottery_max_american)
     candidates: List[Dict] = []
 
-    def _odds_ok(odds: Optional[int]) -> bool:
-        return odds is not None and odds >= int(cfg.lottery_min_american)
+    def _in_range(odds: Optional[float]) -> bool:
+        return odds is not None and lo <= float(odds) <= hi
 
-    # Pitcher strikeouts
+    # ── Pitcher strikeouts: highest alt K line with model edge ──────────────
     for r in all_pitcher_rows:
         name = r.get("player_name", f"id={r.get('player_id')}")
         norm = _normalize_name(name)
-        ld = prop_lines.get((norm, "pitcher_strikeouts"))
-        if not ld or ld.get("line") is None:
+        pred_k = r.get("pred_strikeouts")
+        sigma_k = r.get("sigma_strikeouts")
+        if pred_k is None or sigma_k is None:
             continue
-        over_odds = ld.get("over_price")
-        if not _odds_ok(over_odds):
-            continue
-        p_over = (r.get("clf_p_over") or {}).get("pitcher_strikeouts")
-        if p_over is None:
-            p_over = _prob_over_from_regression(
-                r.get("pred_strikeouts"),
-                ld.get("line"),
-                r.get("sigma_strikeouts"),
-            )
-        ev = _ev_per_unit(float(p_over), over_odds)
-        if ev is None or ev < cfg.min_ev:
-            continue
-        candidates.append({
-            "ev": float(ev),
-            "link": ld.get("over_link"),
-            "game_slug": r.get("game_slug"),
-            "player_key": (r.get("game_slug"), r.get("player_id"), "pitcher_strikeouts"),
-        })
+        # All available K lines for this pitcher (already sorted low→high)
+        k_lines = (all_alt_lines or {}).get((norm, "pitcher_strikeouts"), [])
+        if not k_lines:
+            # Fall back to main line dict
+            ld = prop_lines.get((norm, "pitcher_strikeouts"))
+            if ld and ld.get("line") is not None:
+                k_lines = [{"line": ld["line"], "over_price": ld.get("over_price"),
+                             "over_link": ld.get("over_link")}]
+        # Walk from highest to lowest; pick the highest qualifying line
+        best = None
+        for ld in reversed(k_lines):
+            line_val = ld.get("line")
+            over_odds = ld.get("over_price")
+            if not _in_range(over_odds):
+                continue
+            p_over = _prob_over_from_regression(pred_k, line_val, sigma_k)
+            if p_over is None:
+                continue
+            ev = _ev_per_unit(float(p_over), over_odds)
+            if ev is not None and ev >= cfg.min_ev:
+                best = {"ev": float(ev), "p_over": float(p_over), "odds": float(over_odds),
+                        "line": line_val, "link": ld.get("over_link")}
+                break  # highest qualifying line found
+        if best and best.get("link"):
+            candidates.append({
+                **best,
+                "game_slug": r.get("game_slug"),
+                "player_key": (r.get("game_slug"), r.get("player_id"), "pitcher_strikeouts"),
+                "label": f"{name} K O{best['line']} ({best['odds']:+.0f})",
+            })
 
-    # Batter hits + total bases (exclude HR by design)
+    # ── Batters: highest alt TB / hits line with model edge ─────────────────
     for r in all_batter_rows:
         name = r.get("player_name", f"id={r.get('player_id')}")
         norm = _normalize_name(name)
         sigma_map = r.get("sigma_map") or {}
-        clf_map = r.get("clf_p_over") or {}
-        for stat_key, pred_col in [
-            ("batter_hits", "pred_hits"),
-            ("batter_total_bases", "pred_total_bases"),
-        ]:
-            ld = prop_lines.get((norm, stat_key))
-            if not ld or ld.get("line") is None:
-                continue
-            over_odds = ld.get("over_price")
-            if not _odds_ok(over_odds):
-                continue
-            p_over = clf_map.get(stat_key)
-            if p_over is None:
-                p_over = _prob_over_from_regression(
-                    r.get(pred_col),
-                    ld.get("line"),
-                    sigma_map.get(stat_key),
-                )
-            ev = _ev_per_unit(float(p_over), over_odds)
-            if ev is None or ev < cfg.min_ev:
-                continue
-            candidates.append({
-                "ev": float(ev),
-                "link": ld.get("over_link"),
-                "game_slug": r.get("game_slug"),
-                "player_key": (r.get("game_slug"), r.get("player_id"), stat_key),
-            })
 
-    # Highest EV first, then dedupe and per-game cap.
+        for stat_key, pred_col in [
+            ("batter_total_bases", "pred_total_bases"),
+            ("batter_hits",        "pred_hits"),
+        ]:
+            pred_v = r.get(pred_col)
+            sigma_v = sigma_map.get(stat_key)
+            if pred_v is None or sigma_v is None:
+                continue
+            # All available alt lines for this player/stat (sorted low→high)
+            alt_lines = (all_alt_lines or {}).get((norm, stat_key), [])
+            if not alt_lines:
+                ld = prop_lines.get((norm, stat_key))
+                if ld and ld.get("line") is not None:
+                    alt_lines = [{"line": ld["line"], "over_price": ld.get("over_price"),
+                                  "over_link": ld.get("over_link")}]
+            # Walk highest→lowest, pick the highest where model still shows edge
+            best = None
+            for ld in reversed(alt_lines):
+                line_val = ld.get("line")
+                over_odds = ld.get("over_price")
+                if not _in_range(over_odds):
+                    continue
+                p_over = _prob_over_from_regression(pred_v, line_val, sigma_v)
+                if p_over is None:
+                    continue
+                ev = _ev_per_unit(float(p_over), over_odds)
+                if ev is not None and ev >= cfg.min_ev:
+                    best = {"ev": float(ev), "p_over": float(p_over),
+                            "odds": float(over_odds), "line": line_val,
+                            "link": ld.get("over_link")}
+                    break
+            if best and best.get("link"):
+                candidates.append({
+                    **best,
+                    "game_slug": r.get("game_slug"),
+                    "player_key": (r.get("game_slug"), r.get("player_id"), stat_key),
+                    "label": f"{name} {stat_key.split('_')[-1].upper()} O{best['line']} ({best['odds']:+.0f})",
+                })
+
+    # ── Sort by EV desc, dedupe, per-game cap, pick top N ──────────────────
     candidates.sort(key=lambda c: c["ev"], reverse=True)
     out: List[str] = []
     seen_links: set[str] = set()
@@ -1727,6 +1830,7 @@ def _print_discord(
     prop_lines: Dict,
     game_map: Dict[str, Dict],  # game_slug -> {home, away, start_ts_utc}
     cfg: PredictConfig,
+    all_alt_lines: Optional[Dict] = None,
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
@@ -1773,13 +1877,14 @@ def _print_discord(
 
         if cfg.lottery_mode:
             lottery_links = _collect_lottery_parlay_links(
-                all_pitcher_rows, all_batter_rows, prop_lines, cfg
+                all_pitcher_rows, all_batter_rows, prop_lines, cfg,
+                all_alt_lines=all_alt_lines,
             )
             if lottery_links:
                 lottery_url = build_fd_parlay_url(lottery_links[:25])
                 if lottery_url:
                     printed_any = True
-                    print(f"• Lottery Parlay (no HR, alt-line bias): [FD]({lottery_url})")
+                    print(f"• Lottery Parlay ({cfg.lottery_legs} legs, +{cfg.lottery_min_american}–+{cfg.lottery_max_american}): [FD]({lottery_url})")
             else:
                 printed_any = True
                 print("• Lottery Parlay: no qualifying lottery legs today")
@@ -2371,6 +2476,8 @@ def predict_props(cfg: PredictConfig) -> None:
 
     prop_lines = _load_prop_lines(conn, et_date)
     log.info("Loaded %d prop line entries for %s", len(prop_lines), et_date)
+    all_alt_lines = _load_all_alt_lines(conn, et_date)
+    log.info("Loaded alt lines for %d (player, stat) keys", len(all_alt_lines))
 
     bias = _load_bias_corrections(conn)
     side_penalties = _load_side_penalties(conn)
@@ -2684,7 +2791,8 @@ def predict_props(cfg: PredictConfig) -> None:
 
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
 
-    _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg)
+    _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg,
+                   all_alt_lines=all_alt_lines)
 
     if not is_discord:
         fd_links = _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
@@ -2717,6 +2825,19 @@ def predict_props(cfg: PredictConfig) -> None:
                 suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
                 print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
 
+        # Lottery parlay — matchup-based highest alt line with model edge (+300–+900)
+        if cfg.lottery_mode:
+            lottery_links = _collect_lottery_parlay_links(
+                all_pitcher_rows, all_batter_rows, prop_lines, cfg,
+                all_alt_lines=all_alt_lines,
+            )
+            if lottery_links:
+                lottery_url = build_fd_parlay_url(lottery_links[:25])
+                if lottery_url:
+                    print(f"\n**Lottery Parlay** ({cfg.lottery_legs} legs, +{cfg.lottery_min_american}–+{cfg.lottery_max_american}) [FD]({lottery_url})")
+            else:
+                print("\n**Lottery Parlay**: no qualifying legs today")
+
 
 def main() -> None:
     logging.basicConfig(
@@ -2730,6 +2851,7 @@ def main() -> None:
     parser.add_argument("--lottery-mode", action="store_true")
     parser.add_argument("--lottery-legs", type=int, default=None)
     parser.add_argument("--lottery-min-american", type=int, default=None)
+    parser.add_argument("--lottery-max-american", type=int, default=None)
     parser.add_argument("--lottery-max-per-game", type=int, default=None)
     args = parser.parse_args()
 
@@ -2753,7 +2875,12 @@ def main() -> None:
     lottery_min_american = (
         args.lottery_min_american
         if args.lottery_min_american is not None
-        else int(os.getenv("MLB_LOTTERY_MIN_AMERICAN", "250"))
+        else int(os.getenv("MLB_LOTTERY_MIN_AMERICAN", "300"))
+    )
+    lottery_max_american = (
+        args.lottery_max_american
+        if args.lottery_max_american is not None
+        else int(os.getenv("MLB_LOTTERY_MAX_AMERICAN", "900"))
     )
     lottery_max_per_game = (
         args.lottery_max_per_game
@@ -2766,6 +2893,7 @@ def main() -> None:
         lottery_mode=lottery_mode,
         lottery_legs=lottery_legs,
         lottery_min_american=lottery_min_american,
+        lottery_max_american=lottery_max_american,
         lottery_max_per_game=lottery_max_per_game,
     )
     _apply_threshold_overrides(cfg)

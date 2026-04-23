@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS odds.mlb_player_prop_lines (
     under_link        TEXT,
     open_line         NUMERIC,
     updated_at_utc    TIMESTAMPTZ,
-    UNIQUE (as_of_date, event_id, bookmaker_key, player_name_norm, stat)
+    UNIQUE (as_of_date, event_id, bookmaker_key, player_name_norm, stat, line)
 );
 
 CREATE INDEX IF NOT EXISTS idx_mlb_prop_lines_date_bk
@@ -226,7 +226,7 @@ INSERT INTO odds.mlb_player_prop_lines (
   open_line
 )
 VALUES %s
-ON CONFLICT (as_of_date, event_id, bookmaker_key, player_name_norm, stat)
+ON CONFLICT (as_of_date, event_id, bookmaker_key, player_name_norm, stat, line)
 DO UPDATE SET
   fetched_at_utc    = EXCLUDED.fetched_at_utc,
   commence_time_utc = EXCLUDED.commence_time_utc,
@@ -457,30 +457,32 @@ def _iter_prop_rows(
                 for player_name, candidates in by_player.items():
                     if not candidates:
                         continue
-                    # Pick the line with abs(price) closest to 0 — the most contested line.
-                    best = min(
-                        candidates,
-                        key=lambda x: abs(x["price"]) if x["price"] is not None else 999999,
-                    )
-                    yield (
-                        as_of_date,
-                        fetched_at_utc,
-                        event_id,
-                        commence_time_utc,
-                        bookmaker_key,
-                        home_team,
-                        away_team,
-                        player_name,
-                        _normalize_name(player_name),
-                        stat,
-                        best["point"],   # line
-                        best["price"],   # over_price
-                        None,            # under_price — FD alternate is Over-only
-                        best["link"],    # over_link
-                        None,            # under_link
-                        fetched_at_utc,
-                        best["point"],   # open_line
-                    )
+                    # Store ALL available lines so the lottery parlay can pick the
+                    # highest line where the model still has edge.  The DB unique
+                    # constraint now includes `line`, so each (player, stat, line)
+                    # gets its own row.
+                    for cand in candidates:
+                        if cand.get("point") is None or cand.get("price") is None:
+                            continue
+                        yield (
+                            as_of_date,
+                            fetched_at_utc,
+                            event_id,
+                            commence_time_utc,
+                            bookmaker_key,
+                            home_team,
+                            away_team,
+                            player_name,
+                            _normalize_name(player_name),
+                            stat,
+                            cand["point"],   # line
+                            cand["price"],   # over_price
+                            None,            # under_price — FD alternate is Over-only
+                            cand["link"],    # over_link
+                            None,            # under_link
+                            fetched_at_utc,
+                            cand["point"],   # open_line
+                        )
 
             else:
                 # Standard format: one Over + one Under per player.
