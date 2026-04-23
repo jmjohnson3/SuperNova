@@ -1164,16 +1164,21 @@ def _line_bucket_for_over_penalty(stat: str, line: float) -> str:
     return "other"
 
 
-def _load_over_penalties(conn, lookback_days: int = 180, min_samples: int = 40) -> dict[tuple[str, str], float]:
-    """Load dynamic over-side penalties for weak OVER buckets.
+def _load_side_penalties(
+    conn,
+    lookback_days: int = 180,
+    min_samples: int = 40,
+    shrinkage: float = 0.5,
+) -> dict[tuple[str, str, str], float]:
+    """Load dynamic side-specific penalties for weak buckets with shrinkage.
 
-    Returns dict keyed by (stat, bucket) and fallback keys (stat, "__all__").
-    Penalty is subtracted from predicted value before edge calculation.
+    Keys are (stat, bucket, side) with side in {"over","under"} plus stat-level
+    fallback (stat, "__all__", side).
     """
     from datetime import timedelta
 
     cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
-    penalties: dict[tuple[str, str], float] = {}
+    penalties: dict[tuple[str, str, str], float] = {}
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -1182,6 +1187,7 @@ def _load_over_penalties(conn, lookback_days: int = 180, min_samples: int = 40) 
                     SELECT
                         stat,
                         book_line::float AS line,
+                        CASE WHEN edge >= 0 THEN 'over' ELSE 'under' END AS side,
                         over_hit,
                         pred_value::float AS pred_value,
                         actual_value::float AS actual_value,
@@ -1189,7 +1195,6 @@ def _load_over_penalties(conn, lookback_days: int = 180, min_samples: int = 40) 
                     FROM bets.mlb_prop_predictions
                     WHERE game_date_et >= %s
                       AND over_hit IS NOT NULL
-                      AND edge > 0
                       AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
                       AND book_line IS NOT NULL
                       AND pred_value IS NOT NULL
@@ -1206,11 +1211,12 @@ def _load_over_penalties(conn, lookback_days: int = 180, min_samples: int = 40) 
                         WHEN stat = 'pitcher_strikeouts' AND line < 8.5 THEN 'K 6.5-8.0'
                         ELSE 'K 8.5+'
                     END AS bucket,
+                    side,
                     COUNT(*) AS n,
-                    AVG(CASE WHEN over_hit THEN 1.0 ELSE 0.0 END) AS over_win_rate,
+                    AVG(CASE WHEN (side = 'over' AND over_hit) OR (side = 'under' AND NOT over_hit) THEN 1.0 ELSE 0.0 END) AS side_win_rate,
                     AVG(pred_minus_actual) AS mean_pred_minus_actual
                 FROM base
-                GROUP BY 1, 2
+                GROUP BY 1, 2, 3
                 """,
                 (cutoff,),
             )
@@ -1221,54 +1227,65 @@ def _load_over_penalties(conn, lookback_days: int = 180, min_samples: int = 40) 
                 """
                 SELECT
                     stat,
+                    CASE WHEN edge >= 0 THEN 'over' ELSE 'under' END AS side,
                     COUNT(*) AS n,
-                    AVG(CASE WHEN over_hit THEN 1.0 ELSE 0.0 END) AS over_win_rate,
+                    AVG(CASE WHEN (edge >= 0 AND over_hit) OR (edge < 0 AND NOT over_hit) THEN 1.0 ELSE 0.0 END) AS side_win_rate,
                     AVG(pred_value::float - actual_value::float) AS mean_pred_minus_actual
                 FROM bets.mlb_prop_predictions
                 WHERE game_date_et >= %s
                   AND over_hit IS NOT NULL
-                  AND edge > 0
                   AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
                   AND pred_value IS NOT NULL
                   AND actual_value IS NOT NULL
-                GROUP BY 1
+                GROUP BY 1, 2
                 """,
                 (cutoff,),
             )
             fallback_rows = cur.fetchall()
 
-        def _make_penalty(n: int, win_rate: float, pred_minus_actual: float) -> float:
+        def _make_penalty(side: str, n: int, win_rate: float, pred_minus_actual: float) -> float:
             if n < min_samples or win_rate is None:
                 return 0.0
             w = float(win_rate)
             pma = float(pred_minus_actual or 0.0)
-            # Only penalize weak OVER buckets.
             if w >= 0.52:
                 return 0.0
-            raw = max(pma, (0.52 - w) * 2.0)
-            return float(max(0.05, min(0.75, raw)))
+            # over: pred too high (pma > 0) hurts over; under: pred too low (pma < 0) hurts under
+            directional = pma if side == "over" else -pma
+            raw = max(0.0, directional, (0.52 - w) * 2.0)
+            return float(max(0.03, min(0.75, shrinkage * raw)))
 
-        for stat, bucket, n, wr, pma in rows:
-            pen = _make_penalty(int(n or 0), float(wr or 0.0), float(pma or 0.0))
+        for stat, bucket, side, n, wr, pma in rows:
+            pen = _make_penalty(str(side), int(n or 0), float(wr or 0.0), float(pma or 0.0))
             if pen > 0:
-                penalties[(stat, bucket)] = pen
-                log.info("Over penalty %s/%s: n=%d wr=%.3f pma=%+.3f pen=%.3f", stat, bucket, n, wr, pma, pen)
-        for stat, n, wr, pma in fallback_rows:
-            pen = _make_penalty(int(n or 0), float(wr or 0.0), float(pma or 0.0))
+                penalties[(stat, bucket, str(side))] = pen
+                log.info(
+                    "Side penalty %s/%s/%s: n=%d wr=%.3f pma=%+.3f pen=%.3f",
+                    stat, bucket, side, n, wr, pma, pen
+                )
+        for stat, side, n, wr, pma in fallback_rows:
+            pen = _make_penalty(str(side), int(n or 0), float(wr or 0.0), float(pma or 0.0))
             if pen > 0:
-                penalties[(stat, "__all__")] = pen
-                log.info("Over penalty %s/all: n=%d wr=%.3f pma=%+.3f pen=%.3f", stat, n, wr, pma, pen)
+                penalties[(stat, "__all__", str(side))] = pen
+                log.info("Side penalty %s/all/%s: n=%d wr=%.3f pma=%+.3f pen=%.3f", stat, side, n, wr, pma, pen)
     except Exception:
-        log.warning("Could not load over penalties — using none", exc_info=True)
+        log.warning("Could not load side penalties — using none", exc_info=True)
 
     return penalties
 
 
-def _over_penalty_for_line(stat: str, line: float | None, penalties: dict[tuple[str, str], float]) -> float:
+def _side_penalty_for_line(
+    stat: str,
+    line: float | None,
+    side: str,
+    penalties: dict[tuple[str, str, str], float],
+) -> float:
     if line is None:
         return 0.0
     bucket = _line_bucket_for_over_penalty(stat, float(line))
-    return float(penalties.get((stat, bucket), penalties.get((stat, "__all__"), 0.0)))
+    return float(
+        penalties.get((stat, bucket, side), penalties.get((stat, "__all__", side), 0.0))
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2343,7 +2360,7 @@ def predict_props(cfg: PredictConfig) -> None:
     log.info("Loaded %d prop line entries for %s", len(prop_lines), et_date)
 
     bias = _load_bias_corrections(conn)
-    over_penalties = _load_over_penalties(conn)
+    side_penalties = _load_side_penalties(conn)
     clf_controls = _load_clf_bucket_controls(cfg.model_dir, cfg.clf_controls_file)
 
     # ── Pitcher predictions ────────────────────────────────────────────────
@@ -2380,9 +2397,15 @@ def predict_props(cfg: PredictConfig) -> None:
                 norm = _normalize_name(name)
                 ld = prop_lines.get((norm, "pitcher_strikeouts"))
                 line = ld["line"] if ld else None
-                # Dynamic penalty to curb historically weak OVER buckets.
+                # Dynamic side-penalty (with shrinkage) for weak directional buckets.
                 if line is not None:
-                    pk = max(0.0, pk - _over_penalty_for_line("pitcher_strikeouts", line, over_penalties))
+                    raw_edge_k = pk - line
+                    side_k = "over" if raw_edge_k >= 0 else "under"
+                    pen_k = _side_penalty_for_line("pitcher_strikeouts", line, side_k, side_penalties)
+                    if side_k == "over":
+                        pk = max(0.0, pk - pen_k)
+                    else:
+                        pk = max(0.0, pk + pen_k)
                 p_over_k = None
                 if clf_pover_k is not None:
                     v = float(clf_pover_k[i])
@@ -2526,12 +2549,6 @@ def predict_props(cfg: PredictConfig) -> None:
                 phr   = max(0.0, float(pred_hr[i])    + bias.get("batter_home_runs",   0.0))
                 pwalk = max(0.0, float(pred_walks[i]))
 
-                # Dynamic penalty to curb historically weak TB OVER buckets.
-                ld_tb = prop_lines.get((norm, "batter_total_bases"))
-                line_tb = ld_tb["line"] if ld_tb else None
-                if line_tb is not None:
-                    ptb = max(0.0, ptb - _over_penalty_for_line("batter_total_bases", line_tb, over_penalties))
-
                 # Collect binary CLF P(over) for each stat (None when clf unavailable or no line)
                 def _safe_clf(stat_key: str) -> Optional[float]:
                     arr = clf_pover.get(stat_key)
@@ -2598,7 +2615,14 @@ def predict_props(cfg: PredictConfig) -> None:
                     elif line is not None:
                         # Regression fallback
                         pred_v = reg_pred
-                        edge   = reg_pred - line
+                        edge_raw = reg_pred - line
+                        side = "over" if edge_raw >= 0 else "under"
+                        pen = _side_penalty_for_line(stat_key, line, side, side_penalties)
+                        if side == "over":
+                            pred_v = max(0.0, reg_pred - pen)
+                        else:
+                            pred_v = max(0.0, reg_pred + pen)
+                        edge   = pred_v - line
                         kel    = _kelly_prop(abs(edge), sigma or 0.5)
                     else:
                         pred_v = reg_pred
