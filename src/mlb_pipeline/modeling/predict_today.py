@@ -775,6 +775,8 @@ def main() -> None:
     if discord:
         compact_discord = True
         _bets_today: list[dict] = []
+        _rl_bet_links: list[str] = []
+        _total_bet_links: list[str] = []
         for _, _r in out.iterrows():
             _edge_rl = _r.get("edge_run_line")
             _edge_t  = _r.get("edge_total")
@@ -800,6 +802,8 @@ def main() -> None:
                 _ml = f"{float(_mrl2):+.1f}" if pd.notna(_mrl2) else "-1.5"
                 _k, _p = _kelly(abs(_e), sigma=_srl)
                 _lnk = (_fd2.spread_home_link if _e > 0 else _fd2.spread_away_link) if _fd2 else None
+                if _lnk:
+                    _rl_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**{_bt} {_ml}** (vs {_vs} · {_t2})",
                     "edge": abs(_e), "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
@@ -809,6 +813,8 @@ def main() -> None:
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
                 _k, _p = _kelly(_e, sigma=_st)
                 _lnk = _fd2.total_over_link if _fd2 else None
+                if _lnk:
+                    _total_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**OVER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
@@ -818,6 +824,8 @@ def main() -> None:
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
                 _k, _p = _kelly(_e, sigma=_st)
                 _lnk = _fd2.total_under_link if _fd2 else None
+                if _lnk:
+                    _total_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**UNDER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
@@ -830,12 +838,22 @@ def main() -> None:
                 _ls = f"  [Bet FD](<{_b['link']}>)" if _b["link"] else ""
                 print(f"• {_b['desc']}  +{_b['edge']:.2f}  p={_b['p']:.0%}{_ls}")
 
-            # Compact mobile mode: one parlay link, skip verbose per-game blocks.
-            _dedup_links = list(dict.fromkeys([b["link"] for b in _bets_today if b.get("link")]))
-            if _dedup_links:
-                _parlay = build_fd_parlay_url(_dedup_links[:25])
-                if _parlay:
-                    print(f"\n**Best Bets Parlay** [FD]({_parlay})")
+            def _print_chunked_parlays(title: str, links: list[str]) -> None:
+                dedup = list(dict.fromkeys([l for l in links if l]))
+                if not dedup:
+                    return
+                n_chunks = math.ceil(len(dedup) / 25)
+                for i in range(0, len(dedup), 25):
+                    url = build_fd_parlay_url(dedup[i:i + 25])
+                    if not url:
+                        continue
+                    sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                    print(f"\n**{title}{sfx}** [FD]({url})")
+
+            # Compact mobile mode: all high-edge run line and total bets, grouped.
+            _print_chunked_parlays("All Run Line Bets Parlay", _rl_bet_links)
+            _print_chunked_parlays("All Total Bets Parlay", _total_bet_links)
+            _print_chunked_parlays("All Run Line + Total Bets Parlay", _rl_bet_links + _total_bet_links)
         else:
             print("\n**No edge bets today**")
         print("")
