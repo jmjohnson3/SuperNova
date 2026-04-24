@@ -347,6 +347,34 @@ CREATE TABLE IF NOT EXISTS bets.mlb_prop_predictions (
 );
 
 -- ============================================================
+-- bets.mlb_lottery_picks
+-- One row per selected lottery leg per day.
+-- actual_value / over_hit filled by _grade_lottery_picks() on next run.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS bets.mlb_lottery_picks (
+    id              BIGSERIAL PRIMARY KEY,
+    game_date_et    DATE        NOT NULL,
+    game_slug       TEXT        NOT NULL,
+    player_id       INTEGER     NOT NULL,
+    player_name     TEXT        NOT NULL,
+    team_abbr       TEXT,
+    stat            TEXT        NOT NULL,   -- 'pitcher_strikeouts', 'batter_hits', etc.
+    pred_value      NUMERIC(7, 3),          -- regression model prediction
+    book_line       NUMERIC(6, 1) NOT NULL, -- alt line selected (e.g. 2.5, 3.5)
+    p_over          NUMERIC(6, 4),          -- Poisson P(stat > book_line)
+    ev              NUMERIC(8, 4),          -- raw EV at offered odds
+    streak_mult     NUMERIC(6, 4),          -- recency multiplier used for ranking
+    ranked_ev       NUMERIC(8, 4),          -- ev * streak_mult (sort key)
+    over_odds       INTEGER,                -- American odds offered (e.g. 500)
+    actual_value    NUMERIC(6, 1),          -- filled after game completes
+    over_hit        BOOLEAN,                -- filled after game completes
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (game_date_et, game_slug, player_id, stat)
+);
+CREATE INDEX IF NOT EXISTS idx_mlb_lottery_picks_date
+    ON bets.mlb_lottery_picks (game_date_et);
+
+-- ============================================================
 -- raw.mlb_elo
 -- (Elo ratings per team per game, computed by compute_elo.py)
 -- ============================================================

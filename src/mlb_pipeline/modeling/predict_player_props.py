@@ -1789,6 +1789,11 @@ def _collect_lottery_parlay_links(
                 **best,
                 "ranked_ev": best["ev"] * smult,
                 "game_slug": r.get("game_slug"),
+                "player_id": r.get("player_id"),
+                "player_name": name,
+                "team_abbr": r.get("team_abbr"),
+                "stat": "pitcher_strikeouts",
+                "pred_value": pred_k,
                 "player_key": (r.get("game_slug"), r.get("player_id"), "pitcher_strikeouts"),
                 "label": f"{name} K O{best['line']} ({best['odds']:+.0f})",
             })
@@ -1837,13 +1842,18 @@ def _collect_lottery_parlay_links(
                     **best,
                     "ranked_ev": best["ev"] * smult,
                     "game_slug": r.get("game_slug"),
+                    "player_id": r.get("player_id"),
+                    "player_name": name,
+                    "team_abbr": r.get("team_abbr"),
+                    "stat": stat_key,
+                    "pred_value": pred_v,
                     "player_key": (r.get("game_slug"), r.get("player_id"), stat_key),
                     "label": f"{name} {stat_key.split('_')[-1].upper()} O{best['line']} ({best['odds']:+.0f})",
                 })
 
     # ── Sort by streak-adjusted EV desc, dedupe, per-game cap, pick top N ──
     candidates.sort(key=lambda c: c["ranked_ev"], reverse=True)
-    out: List[str] = []
+    out: List[Dict] = []
     seen_links: set[str] = set()
     seen_player_stat: set[tuple] = set()
     game_counts: Dict[str, int] = {}
@@ -1859,12 +1869,102 @@ def _collect_lottery_parlay_links(
             continue
         seen_links.add(link)
         seen_player_stat.add(pkey)
-        out.append(link)
+        out.append(c)
         if slug:
             game_counts[slug] = game_counts.get(slug, 0) + 1
         if len(out) >= max(int(cfg.lottery_legs), 1):
             break
     return out
+
+
+# ---------------------------------------------------------------------------
+# Lottery persistence helpers
+# ---------------------------------------------------------------------------
+
+_LOTTERY_UPSERT_SQL = """
+    INSERT INTO bets.mlb_lottery_picks
+        (game_date_et, game_slug, player_id, player_name, team_abbr,
+         stat, pred_value, book_line, p_over, ev, streak_mult, ranked_ev, over_odds)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (game_date_et, game_slug, player_id, stat) DO UPDATE SET
+        pred_value  = EXCLUDED.pred_value,
+        book_line   = EXCLUDED.book_line,
+        p_over      = EXCLUDED.p_over,
+        ev          = EXCLUDED.ev,
+        streak_mult = EXCLUDED.streak_mult,
+        ranked_ev   = EXCLUDED.ranked_ev,
+        over_odds   = EXCLUDED.over_odds
+"""
+
+_LOTTERY_GRADE_SQL = """
+    UPDATE bets.mlb_lottery_picks lp
+    SET actual_value = CASE lp.stat
+            WHEN 'pitcher_strikeouts' THEN gl.strikeouts_pitcher::numeric
+            WHEN 'batter_hits'        THEN gl.hits::numeric
+            WHEN 'batter_total_bases' THEN gl.total_bases::numeric
+            WHEN 'batter_home_runs'   THEN gl.home_runs::numeric
+            WHEN 'batter_walks'       THEN gl.walks_batter::numeric
+        END,
+        over_hit = CASE lp.stat
+            WHEN 'pitcher_strikeouts' THEN gl.strikeouts_pitcher > lp.book_line
+            WHEN 'batter_hits'        THEN gl.hits > lp.book_line
+            WHEN 'batter_total_bases' THEN gl.total_bases > lp.book_line
+            WHEN 'batter_home_runs'   THEN gl.home_runs > lp.book_line
+            WHEN 'batter_walks'       THEN gl.walks_batter > lp.book_line
+        END
+    FROM raw.mlb_player_gamelogs gl
+    WHERE gl.game_slug = lp.game_slug
+      AND gl.player_id = lp.player_id
+      AND lp.actual_value IS NULL
+"""
+
+
+def _save_lottery_picks(conn, legs: List[Dict], game_date: date) -> None:
+    """Upsert today's lottery leg selections into bets.mlb_lottery_picks."""
+    if not legs:
+        return
+    cur = conn.cursor()
+    rows = []
+    for leg in legs:
+        pid = leg.get("player_id")
+        slug = leg.get("game_slug")
+        if not pid or not slug:
+            continue
+        rows.append((
+            game_date,
+            slug,
+            int(pid),
+            leg.get("player_name", ""),
+            leg.get("team_abbr"),
+            leg.get("stat", ""),
+            leg.get("pred_value"),
+            leg["line"],
+            leg.get("p_over"),
+            leg["ev"],
+            leg.get("streak_mult", 1.0),
+            leg.get("ranked_ev"),
+            int(leg["odds"]) if leg.get("odds") is not None else None,
+        ))
+    if not rows:
+        return
+    cur.executemany(_LOTTERY_UPSERT_SQL, rows)
+    conn.commit()
+    log.info("Saved %d lottery legs to bets.mlb_lottery_picks for %s", len(rows), game_date)
+
+
+def _grade_lottery_picks(conn) -> int:
+    """Fill actual_value / over_hit for any ungraded lottery picks.
+
+    Joins on raw.mlb_player_gamelogs so grading happens automatically once
+    the day's boxscores are parsed.  Returns the number of rows updated.
+    """
+    cur = conn.cursor()
+    cur.execute(_LOTTERY_GRADE_SQL)
+    n = cur.rowcount
+    conn.commit()
+    if n:
+        log.info("Graded %d lottery pick(s) in bets.mlb_lottery_picks", n)
+    return n
 
 
 def _print_discord(
@@ -1874,6 +1974,7 @@ def _print_discord(
     game_map: Dict[str, Dict],  # game_slug -> {home, away, start_ts_utc}
     cfg: PredictConfig,
     all_alt_lines: Optional[Dict] = None,
+    lottery_legs: Optional[List[Dict]] = None,
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
@@ -1919,12 +2020,12 @@ def _print_discord(
                 print(f"• Top 10 HR Parlay: [FD]({top_hr_url})")
 
         if cfg.lottery_mode:
-            lottery_links = _collect_lottery_parlay_links(
+            _legs = lottery_legs if lottery_legs is not None else _collect_lottery_parlay_links(
                 all_pitcher_rows, all_batter_rows, prop_lines, cfg,
                 all_alt_lines=all_alt_lines,
             )
-            if lottery_links:
-                lottery_url = build_fd_parlay_url(lottery_links[:25])
+            if _legs:
+                lottery_url = build_fd_parlay_url([c["link"] for c in _legs[:25]])
                 if lottery_url:
                     printed_any = True
                     print(f"• Lottery Parlay ({cfg.lottery_legs} legs, +{cfg.lottery_min_american}–+{cfg.lottery_max_american}): [FD]({lottery_url})")
@@ -2807,6 +2908,17 @@ def predict_props(cfg: PredictConfig) -> None:
 
     # ── Save to DB ────────────────────────────────────────────────────────
     _save_predictions(conn, db_rows)
+
+    # ── Collect lottery legs once (no conn needed) then persist ───────────
+    lottery_legs_collected: List[Dict] = []
+    if cfg.lottery_mode:
+        lottery_legs_collected = _collect_lottery_parlay_links(
+            all_pitcher_rows, all_batter_rows, prop_lines, cfg,
+            all_alt_lines=all_alt_lines,
+        )
+        _save_lottery_picks(conn, lottery_legs_collected, et_date)
+    _grade_lottery_picks(conn)
+
     conn.close()
 
     if not all_pitcher_rows and not all_batter_rows:
@@ -2835,7 +2947,7 @@ def predict_props(cfg: PredictConfig) -> None:
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
 
     _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg,
-                   all_alt_lines=all_alt_lines)
+                   all_alt_lines=all_alt_lines, lottery_legs=lottery_legs_collected)
 
     if not is_discord:
         fd_links = _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
@@ -2868,14 +2980,10 @@ def predict_props(cfg: PredictConfig) -> None:
                 suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
                 print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
 
-        # Lottery parlay — matchup-based highest alt line with model edge (+300–+900)
+        # Lottery parlay — use pre-collected legs (already saved to DB above)
         if cfg.lottery_mode:
-            lottery_links = _collect_lottery_parlay_links(
-                all_pitcher_rows, all_batter_rows, prop_lines, cfg,
-                all_alt_lines=all_alt_lines,
-            )
-            if lottery_links:
-                lottery_url = build_fd_parlay_url(lottery_links[:25])
+            if lottery_legs_collected:
+                lottery_url = build_fd_parlay_url([c["link"] for c in lottery_legs_collected[:25]])
                 if lottery_url:
                     print(f"\n**Lottery Parlay** ({cfg.lottery_legs} legs, +{cfg.lottery_min_american}–+{cfg.lottery_max_american}) [FD]({lottery_url})")
             else:
