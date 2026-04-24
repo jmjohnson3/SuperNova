@@ -1703,6 +1703,29 @@ def _collect_top_hr_parlay_links(
     return links
 
 
+def _streak_mult(short_avg: Optional[float], long_avg: Optional[float],
+                 sensitivity: float = 0.4, floor: float = 0.5, cap: float = 2.0) -> float:
+    """Return an EV ranking multiplier based on recent vs baseline performance.
+
+    mult > 1.0  →  player is running hot  (boost in lottery ranking)
+    mult < 1.0  →  player is running cold (penalty in lottery ranking)
+    mult = 1.0  →  at baseline or insufficient data
+
+    sensitivity=0.4 means a player 2x their baseline gets mult=1.4,
+    and a player at half their baseline gets mult=0.8.
+    The multiplier does NOT change P(over) — only affects sort order.
+    """
+    try:
+        s = float(short_avg)
+        l = float(long_avg)
+    except (TypeError, ValueError):
+        return 1.0
+    if l <= 0.05:   # too close to zero; ratio would be unreliable
+        return 1.0
+    ratio = s / l
+    return max(floor, min(cap, 1.0 + sensitivity * (ratio - 1.0)))
+
+
 def _collect_lottery_parlay_links(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
@@ -1717,6 +1740,9 @@ def _collect_lottery_parlay_links(
     odds.  This surfaces bets like "Skubal K OVER 8.5 at +350" or
     "Freeman TB OVER 3.5 at +500" when the model's regression prediction supports it.
     No HR — those have a dedicated parlay.
+
+    Candidates are ranked by EV × streak_mult so hot-streak players rise to the top
+    and cold-streak players fall even if their raw EV is marginally positive.
     """
     lo = int(cfg.lottery_min_american)
     hi = int(cfg.lottery_max_american)
@@ -1733,6 +1759,8 @@ def _collect_lottery_parlay_links(
         sigma_k = r.get("sigma_strikeouts")
         if pred_k is None or sigma_k is None:
             continue
+        # Streak signal: K/9 last 5 starts vs last 10 starts
+        smult = _streak_mult(r.get("k9_5"), r.get("k9_10"))
         # All available K lines for this pitcher (already sorted low→high)
         k_lines = (all_alt_lines or {}).get((norm, "pitcher_strikeouts"), [])
         if not k_lines:
@@ -1754,11 +1782,12 @@ def _collect_lottery_parlay_links(
             ev = _ev_per_unit(float(p_over), over_odds)
             if ev is not None and ev >= cfg.min_ev:
                 best = {"ev": float(ev), "p_over": float(p_over), "odds": float(over_odds),
-                        "line": line_val, "link": ld.get("over_link")}
+                        "line": line_val, "link": ld.get("over_link"), "streak_mult": smult}
                 break  # highest qualifying line found
         if best and best.get("link"):
             candidates.append({
                 **best,
+                "ranked_ev": best["ev"] * smult,
                 "game_slug": r.get("game_slug"),
                 "player_key": (r.get("game_slug"), r.get("player_id"), "pitcher_strikeouts"),
                 "label": f"{name} K O{best['line']} ({best['odds']:+.0f})",
@@ -1770,14 +1799,16 @@ def _collect_lottery_parlay_links(
         norm = _normalize_name(name)
         sigma_map = r.get("sigma_map") or {}
 
-        for stat_key, pred_col in [
-            ("batter_total_bases", "pred_total_bases"),
-            ("batter_hits",        "pred_hits"),
+        for stat_key, pred_col, short_col, long_col in [
+            ("batter_total_bases", "pred_total_bases", "tb_avg_5",   "tb_avg_20"),
+            ("batter_hits",        "pred_hits",        "hits_avg_5", "hits_avg_20"),
         ]:
             pred_v = r.get(pred_col)
             sigma_v = sigma_map.get(stat_key)
             if pred_v is None or sigma_v is None:
                 continue
+            # Streak signal: last-5 average vs last-20 baseline
+            smult = _streak_mult(r.get(short_col), r.get(long_col))
             # All available alt lines for this player/stat (sorted low→high)
             alt_lines = (all_alt_lines or {}).get((norm, stat_key), [])
             if not alt_lines:
@@ -1799,18 +1830,19 @@ def _collect_lottery_parlay_links(
                 if ev is not None and ev >= cfg.min_ev:
                     best = {"ev": float(ev), "p_over": float(p_over),
                             "odds": float(over_odds), "line": line_val,
-                            "link": ld.get("over_link")}
+                            "link": ld.get("over_link"), "streak_mult": smult}
                     break
             if best and best.get("link"):
                 candidates.append({
                     **best,
+                    "ranked_ev": best["ev"] * smult,
                     "game_slug": r.get("game_slug"),
                     "player_key": (r.get("game_slug"), r.get("player_id"), stat_key),
                     "label": f"{name} {stat_key.split('_')[-1].upper()} O{best['line']} ({best['odds']:+.0f})",
                 })
 
-    # ── Sort by EV desc, dedupe, per-game cap, pick top N ──────────────────
-    candidates.sort(key=lambda c: c["ev"], reverse=True)
+    # ── Sort by streak-adjusted EV desc, dedupe, per-game cap, pick top N ──
+    candidates.sort(key=lambda c: c["ranked_ev"], reverse=True)
     out: List[str] = []
     seen_links: set[str] = set()
     seen_player_stat: set[tuple] = set()
