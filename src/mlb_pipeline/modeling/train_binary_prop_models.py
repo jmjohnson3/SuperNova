@@ -106,6 +106,29 @@ WHERE bookmaker_key = ANY(%(bookmakers)s)
 GROUP BY as_of_date, player_name_norm, stat, bookmaker_key
 """
 
+# Alt-line query: returns ALL distinct lines per player per date (no averaging).
+# Used by train_alt_line_* so each (player, game, line) triple is its own training row.
+_SQL_ALT_PROP_LINES = """
+SELECT as_of_date, player_name_norm, stat, bookmaker_key, line
+FROM odds.mlb_player_prop_lines
+WHERE bookmaker_key = ANY(%(bookmakers)s)
+  AND stat = ANY(%(stats)s)
+  AND line IS NOT NULL
+GROUP BY as_of_date, player_name_norm, stat, bookmaker_key, line
+"""
+
+# FanDuel alt-line stat maps
+# FD carries 4+ alt lines per player per stat: hits@0.5/1.5/2.5/3.5,
+# TB@1.5/2.5/3.5/4.5, K@3.5–7.5.  Each line becomes its own training row
+# so the model learns P(over|features, book_line) across the full spectrum.
+_BATTER_ALT_STAT_MAP = {
+    "hits":        ("batter_hits",        "fanduel"),
+    "total_bases": ("batter_total_bases", "fanduel"),
+}
+_PITCHER_ALT_STAT_MAP = {
+    "strikeouts": ("pitcher_strikeouts", "fanduel"),
+}
+
 
 @dataclass(frozen=True)
 class ClfConfig:
@@ -772,6 +795,201 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Alt-line binary classifiers (FanDuel all-lines)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _load_alt_prop_lines(conn, stat_bookmaker_pairs: List[Tuple[str, str]]) -> pd.DataFrame:
+    """Load all distinct prop lines (no averaging) for alt-line CLF training."""
+    stats = list({s for s, _ in stat_bookmaker_pairs})
+    bookmakers = list({b for _, b in stat_bookmaker_pairs})
+    with conn.cursor() as cur:
+        cur.execute(_SQL_ALT_PROP_LINES, {"stats": stats, "bookmakers": bookmakers})
+        rows = cur.fetchall()
+    if not rows:
+        return pd.DataFrame(columns=["as_of_date", "player_name_norm", "stat", "bookmaker_key", "line"])
+    df = pd.DataFrame(rows, columns=["as_of_date", "player_name_norm", "stat", "bookmaker_key", "line"])
+    df["as_of_date"] = pd.to_datetime(df["as_of_date"]).dt.date
+    df["line"] = df["line"].astype(float)
+    return df
+
+
+def train_alt_line_batter_clf(cfg: ClfConfig) -> Dict:
+    """Train batter alt-line classifiers using FanDuel data at all available line values.
+
+    Each (player, game, alt_line) triple becomes its own training row so the model
+    learns P(over | features, book_line) across the full line spectrum.
+    Artifacts saved with *_alt_clf_* prefix.
+    """
+    conn = psycopg2.connect(cfg.pg_dsn)
+
+    log.info("Loading batter training data for alt-line CLF...")
+    df_base = pd.read_sql(SQL_BATTER_TRAIN, conn)
+    df_base["game_date_et"] = pd.to_datetime(df_base["game_date_et"])
+
+    log.info("Loading player names and FD alt prop lines...")
+    name_map = _load_player_names(conn)
+    stat_bk_pairs = list(_BATTER_ALT_STAT_MAP.values())
+    lines_df = _load_alt_prop_lines(conn, stat_bk_pairs)
+    conn.close()
+
+    log.info("Alt-line batter: base rows=%d | name_map=%d | line rows=%d",
+             len(df_base), len(name_map), len(lines_df))
+
+    model_dir = cfg.model_dir
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    results: Dict = {}
+    calibration_map: Dict[str, Dict] = {}
+    feature_cols_saved = None
+    medians_saved = None
+
+    for target_col, (odds_stat, bookmaker) in _BATTER_ALT_STAT_MAP.items():
+        log.info("=== Alt-line CLF: %s → %s ===", target_col, odds_stat)
+
+        df_stat = _join_lines_for_stat(df_base, name_map, lines_df, target_col, odds_stat, bookmaker)
+        if df_stat.empty or len(df_stat) < 200:
+            log.warning("Skipping %s — only %d rows after alt line join", target_col, len(df_stat))
+            results[f"brier_{target_col}_alt"] = float("nan")
+            results[f"auc_{target_col}_alt"] = float("nan")
+            continue
+
+        log.info("  %s: %d rows | date range %s to %s | OVER=%.1f%% | line avg=%.2f",
+                 target_col, len(df_stat),
+                 df_stat["game_date_et"].min().date(),
+                 df_stat["game_date_et"].max().date(),
+                 df_stat["over_hit"].mean() * 100,
+                 df_stat["book_line"].mean())
+
+        # Line distribution log
+        for line_v, cnt in sorted(df_stat["book_line"].value_counts().items()):
+            log.info("    line=%.1f: %d rows (OVER=%.1f%%)",
+                     line_v, cnt,
+                     df_stat.loc[df_stat["book_line"] == line_v, "over_hit"].mean() * 100)
+
+        y = df_stat["over_hit"].astype(float)
+        extra_drop = [c for c in _BATTER_TARGETS if c != target_col] + ["over_hit"]
+        X_raw = _prep_X_clf(df_stat, _BATTER_TARGETS, _BATTER_META, extra_drop=extra_drop)
+
+        feature_cols = list(X_raw.columns)
+        medians = fit_medians(X_raw)
+        X_filled = apply_medians(X_raw, medians, feature_cols)
+
+        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+            df_stat, X_raw, y, feature_cols, medians, cfg, f"{target_col}_alt"
+        )
+        results[f"brier_{target_col}_alt"] = brier
+        results[f"auc_{target_col}_alt"] = auc
+        cal = _fit_best_calibration(oof_preds, oof_actual)
+        if cal is not None:
+            calibration_map[odds_stat] = cal
+            log.info("Alt CLF %s calibration (%s) | Brier raw=%.4f cal=%.4f",
+                     odds_stat, cal["method"], cal["brier_raw"], cal["brier_calibrated"])
+
+        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, f"{target_col}_alt")
+
+        xgb.save_model(str(model_dir / f"{target_col}_alt_clf_xgb.json"))
+        if lgb_model is not None:
+            lgb_model.booster_.save_model(str(model_dir / f"lgb_{target_col}_alt_clf.txt"))
+
+        if feature_cols_saved is None:
+            feature_cols_saved = feature_cols
+            medians_saved = medians
+
+    if feature_cols_saved:
+        (model_dir / "feature_columns_alt_clf_batters.json").write_text(
+            json.dumps(feature_cols_saved), encoding="utf-8"
+        )
+        (model_dir / "feature_medians_alt_clf_batters.json").write_text(
+            json.dumps(medians_saved), encoding="utf-8"
+        )
+    if calibration_map:
+        cal_path = model_dir / "clf_calibration_alt_batters.json"
+        cal_path.write_text(json.dumps(calibration_map, indent=2), encoding="utf-8")
+        log.info("Saved batter alt CLF calibration to %s", cal_path)
+
+    return results
+
+
+def train_alt_line_pitcher_clf(cfg: ClfConfig) -> Dict:
+    """Train pitcher alt-line strikeout classifier using FanDuel data at all K lines."""
+    conn = psycopg2.connect(cfg.pg_dsn)
+
+    log.info("Loading pitcher training data for alt-line CLF...")
+    df_base = pd.read_sql(SQL_PITCHER_TRAIN, conn)
+    df_base["game_date_et"] = pd.to_datetime(df_base["game_date_et"])
+
+    log.info("Loading pitcher names and FD alt K lines...")
+    name_map = _load_player_names(conn)
+    lines_df = _load_alt_prop_lines(conn, list(_PITCHER_ALT_STAT_MAP.values()))
+    conn.close()
+
+    model_dir = cfg.model_dir
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    results: Dict = {}
+    calibration_map: Dict[str, Dict] = {}
+
+    for target_col, (odds_stat, bookmaker) in _PITCHER_ALT_STAT_MAP.items():
+        log.info("=== Alt-line CLF: %s → %s ===", target_col, odds_stat)
+
+        df_stat = _join_lines_for_stat(df_base, name_map, lines_df, target_col, odds_stat, bookmaker)
+        if df_stat.empty or len(df_stat) < 100:
+            log.warning("Skipping %s — only %d rows after alt line join", target_col, len(df_stat))
+            results[f"brier_{target_col}_alt"] = float("nan")
+            results[f"auc_{target_col}_alt"] = float("nan")
+            continue
+
+        log.info("  %s: %d rows | OVER=%.1f%% | line avg=%.2f",
+                 target_col, len(df_stat),
+                 df_stat["over_hit"].mean() * 100,
+                 df_stat["book_line"].mean())
+
+        for line_v, cnt in sorted(df_stat["book_line"].value_counts().items()):
+            log.info("    line=%.1f: %d rows (OVER=%.1f%%)",
+                     line_v, cnt,
+                     df_stat.loc[df_stat["book_line"] == line_v, "over_hit"].mean() * 100)
+
+        y = df_stat["over_hit"].astype(float)
+        extra_drop = [c for c in _PITCHER_TARGETS if c != target_col] + ["over_hit"]
+        X_raw = _prep_X_clf(df_stat, _PITCHER_TARGETS, _PITCHER_META, extra_drop=extra_drop)
+
+        feature_cols = list(X_raw.columns)
+        medians = fit_medians(X_raw)
+        X_filled = apply_medians(X_raw, medians, feature_cols)
+
+        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+            df_stat, X_raw, y, feature_cols, medians, cfg, f"{target_col}_alt"
+        )
+        results[f"brier_{target_col}_alt"] = brier
+        results[f"auc_{target_col}_alt"] = auc
+        cal = _fit_best_calibration(oof_preds, oof_actual)
+        if cal is not None:
+            calibration_map[odds_stat] = cal
+            log.info("Alt CLF %s calibration (%s) | Brier raw=%.4f cal=%.4f",
+                     odds_stat, cal["method"], cal["brier_raw"], cal["brier_calibrated"])
+
+        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, f"{target_col}_alt")
+
+        xgb.save_model(str(model_dir / f"{target_col}_alt_clf_xgb.json"))
+        if lgb_model is not None:
+            lgb_model.booster_.save_model(str(model_dir / f"lgb_{target_col}_alt_clf.txt"))
+
+        (model_dir / "feature_columns_alt_clf_pitchers.json").write_text(
+            json.dumps(feature_cols), encoding="utf-8"
+        )
+        (model_dir / "feature_medians_alt_clf_pitchers.json").write_text(
+            json.dumps(medians), encoding="utf-8"
+        )
+
+    if calibration_map:
+        cal_path = model_dir / "clf_calibration_alt_pitchers.json"
+        cal_path.write_text(json.dumps(calibration_map, indent=2), encoding="utf-8")
+        log.info("Saved pitcher alt CLF calibration to %s", cal_path)
+
+    return results
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -784,15 +1002,22 @@ def main() -> None:
 
     log.info("=== MLB binary prop model training ===")
 
-    pitcher_results = train_pitcher_clf(cfg)
-    batter_results  = train_batter_clf(cfg)
+    pitcher_results     = train_pitcher_clf(cfg)
+    batter_results      = train_batter_clf(cfg)
+    pitcher_alt_results = train_alt_line_pitcher_clf(cfg)
+    batter_alt_results  = train_alt_line_batter_clf(cfg)
 
     all_results = {**pitcher_results, **batter_results}
+    all_alt_results = {**pitcher_alt_results, **batter_alt_results}
 
     (cfg.model_dir / "backtest_clf.json").write_text(
         json.dumps(all_results, indent=2), encoding="utf-8"
     )
+    (cfg.model_dir / "backtest_alt_clf.json").write_text(
+        json.dumps(all_alt_results, indent=2), encoding="utf-8"
+    )
     log.info("Saved backtest_clf.json: %s", all_results)
+    log.info("Saved backtest_alt_clf.json: %s", all_alt_results)
     log.info("MLB binary prop training complete.")
 
 

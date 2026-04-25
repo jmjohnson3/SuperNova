@@ -777,6 +777,136 @@ def _load_batter_clf_artifacts(model_dir: Path):
     return models, feat_clf, meds_clf, bt_clf, cal_map
 
 
+def _load_batter_alt_clf_artifacts(model_dir: Path):
+    """Load FanDuel alt-line binary classifiers for batters (hits, total_bases).
+
+    These are trained on all FD alt lines (0.5/1.5/2.5/3.5 for hits, etc.) so
+    book_line is a proper feature spanning the full odds spectrum.
+    Returns (models_dict, feat_clf, meds_clf, cal_map) or None.
+    """
+    feat_path = model_dir / "feature_columns_alt_clf_batters.json"
+    if not feat_path.exists():
+        return None
+
+    feat_clf = json.loads(feat_path.read_text())
+    meds_clf = json.loads((model_dir / "feature_medians_alt_clf_batters.json").read_text())
+    cal_path = model_dir / "clf_calibration_alt_batters.json"
+    cal_map = json.loads(cal_path.read_text()) if cal_path.exists() else {}
+
+    models: Dict[str, Tuple] = {}
+    stat_files = {
+        "batter_hits":        ("hits_alt_clf_xgb.json",        "lgb_hits_alt_clf.txt"),
+        "batter_total_bases": ("total_bases_alt_clf_xgb.json", "lgb_total_bases_alt_clf.txt"),
+    }
+    for stat_key, (xgb_file, lgb_file) in stat_files.items():
+        xgb_path = model_dir / xgb_file
+        if not xgb_path.exists():
+            continue
+        xgb_m = XGBRegressor()
+        xgb_m.load_model(str(xgb_path))
+        lgb_m = None
+        lgb_path = model_dir / lgb_file
+        if _HAS_LGB and lgb_path.exists():
+            lgb_m = lgb.Booster(model_file=str(lgb_path))
+        models[stat_key] = (xgb_m, lgb_m)
+
+    if not models:
+        return None
+    return models, feat_clf, meds_clf, cal_map
+
+
+def _load_pitcher_alt_clf_artifacts(model_dir: Path):
+    """Load FanDuel alt-line binary classifier for pitcher strikeouts.
+
+    Trained on all FD K lines (3.5–7.5) so the model captures P(over|book_line).
+    Returns (xgb_clf, lgb_clf, feat_clf, meds_clf, cal_map) or None.
+    """
+    feat_path = model_dir / "feature_columns_alt_clf_pitchers.json"
+    xgb_path  = model_dir / "strikeouts_alt_clf_xgb.json"
+    if not feat_path.exists() or not xgb_path.exists():
+        return None
+
+    feat_clf = json.loads(feat_path.read_text())
+    meds_clf = json.loads((model_dir / "feature_medians_alt_clf_pitchers.json").read_text())
+    cal_path = model_dir / "clf_calibration_alt_pitchers.json"
+    cal_map = json.loads(cal_path.read_text()) if cal_path.exists() else {}
+
+    xgb_clf = XGBRegressor()
+    xgb_clf.load_model(str(xgb_path))
+    lgb_clf = None
+    lgb_path = model_dir / "lgb_strikeouts_alt_clf.txt"
+    if _HAS_LGB and lgb_path.exists():
+        lgb_clf = lgb.Booster(model_file=str(lgb_path))
+
+    return xgb_clf, lgb_clf, feat_clf, meds_clf, cal_map
+
+
+def _compute_alt_clf_probs(
+    X_base: "pd.DataFrame",
+    norm_names: List[str],
+    all_alt_lines: Dict,
+    stats: List[str],
+    meta_cols: List[str],
+    alt_clf_arts,
+) -> Dict:
+    """Batch-compute alt CLF P(over) for all (player, stat, alt_line) combos today.
+
+    X_base is the pre-processed (derived features applied, medians filled) feature
+    matrix for all players.  alt_clf_arts is the return value of
+    _load_batter_alt_clf_artifacts or _load_pitcher_alt_clf_artifacts.
+
+    Returns dict mapping (norm_name, stat, line_val_float) → calibrated P(over).
+    """
+    if alt_clf_arts is None or X_base is None or X_base.empty:
+        return {}
+
+    # Unpack based on whether it's batter (models_dict) or pitcher (single model)
+    if isinstance(alt_clf_arts[0], dict):
+        # Batter: (models_dict, feat_clf, meds_clf, cal_map)
+        models_dict, feat_clf, meds_clf, cal_map = alt_clf_arts
+    else:
+        # Pitcher: (xgb_clf, lgb_clf, feat_clf, meds_clf, cal_map)
+        xgb_clf, lgb_clf, feat_clf, meds_clf, cal_map = alt_clf_arts
+        models_dict = {"_pitcher_k": (xgb_clf, lgb_clf)}
+        stats = ["_pitcher_k"]  # internal key; caller maps to "pitcher_strikeouts"
+
+    result: Dict = {}
+    orig_stats = stats  # save for key mapping
+
+    for stat_idx, stat_key in enumerate(orig_stats):
+        internal_key = "_pitcher_k" if stat_key == "pitcher_strikeouts" else stat_key
+        if internal_key not in models_dict:
+            continue
+        xgb_m, lgb_m = models_dict[internal_key]
+        cal = cal_map.get(stat_key)
+
+        # Collect (row_idx, line_val, norm_name) triples
+        pairs: List[Tuple[int, float, str]] = []
+        for row_idx, norm in enumerate(norm_names):
+            for ld in all_alt_lines.get((norm, stat_key), []):
+                line_val = ld.get("line")
+                if line_val is not None:
+                    pairs.append((row_idx, float(line_val), norm))
+
+        if not pairs:
+            continue
+
+        indices   = [p[0] for p in pairs]
+        line_vals = np.array([p[1] for p in pairs], dtype=float)
+
+        # Build per-(player,line) matrix — X_base rows repeated for each alt line
+        X_sub = X_base.iloc[indices].reset_index(drop=True)
+        X_clf = _prep_features_clf(X_sub, line_vals, feat_clf, meds_clf)
+
+        raw_p = np.clip(_predict_ensemble(X_clf, xgb_m, lgb_m), 0.01, 0.99)
+        cal_p = _apply_platt_calibration(raw_p, cal)
+
+        for j, (row_idx, line_val, norm) in enumerate(pairs):
+            result[(norm, stat_key, line_val)] = float(cal_p[j])
+
+    return result
+
+
 def _apply_threshold_overrides(cfg: PredictConfig) -> None:
     """Load threshold overrides from models/player_props/prop_thresholds.json.
 
@@ -1732,6 +1862,7 @@ def _collect_lottery_parlay_links(
     prop_lines: Dict,
     cfg: PredictConfig,
     all_alt_lines: Optional[Dict] = None,
+    alt_clf_probs: Optional[Dict] = None,
 ) -> List[str]:
     """Collect matchup-based lottery legs using the highest alt line where model has edge.
 
@@ -1756,9 +1887,9 @@ def _collect_lottery_parlay_links(
         name = r.get("player_name", f"id={r.get('player_id')}")
         norm = _normalize_name(name)
         pred_k = r.get("pred_strikeouts")
-        sigma_k = r.get("sigma_strikeouts")
-        if pred_k is None or sigma_k is None:
+        if pred_k is None:
             continue
+        sigma_k = r.get("sigma_strikeouts")
         # Streak signal: K/9 last 5 starts vs last 10 starts
         smult = _streak_mult(r.get("k9_5"), r.get("k9_10"))
         # All available K lines for this pitcher (already sorted low→high)
@@ -1776,7 +1907,13 @@ def _collect_lottery_parlay_links(
             over_odds = ld.get("over_price")
             if not _in_range(over_odds):
                 continue
-            p_over = _prob_over_from_regression(pred_k, line_val, sigma_k)
+            # Prefer alt CLF probability; fall back to Poisson regression estimate
+            if alt_clf_probs:
+                p_over = alt_clf_probs.get((norm, "pitcher_strikeouts", float(line_val)))
+            else:
+                p_over = None
+            if p_over is None:
+                p_over = _prob_over_from_regression(pred_k, line_val, sigma_k)
             if p_over is None:
                 continue
             ev = _ev_per_unit(float(p_over), over_odds)
@@ -1809,9 +1946,9 @@ def _collect_lottery_parlay_links(
             ("batter_hits",        "pred_hits",        "hits_avg_5", "hits_avg_20"),
         ]:
             pred_v = r.get(pred_col)
-            sigma_v = sigma_map.get(stat_key)
-            if pred_v is None or sigma_v is None:
+            if pred_v is None:
                 continue
+            sigma_v = sigma_map.get(stat_key)
             # Streak signal: last-5 average vs last-20 baseline
             smult = _streak_mult(r.get(short_col), r.get(long_col))
             # All available alt lines for this player/stat (sorted low→high)
@@ -1828,7 +1965,13 @@ def _collect_lottery_parlay_links(
                 over_odds = ld.get("over_price")
                 if not _in_range(over_odds):
                     continue
-                p_over = _prob_over_from_regression(pred_v, line_val, sigma_v)
+                # Prefer alt CLF probability; fall back to Poisson regression estimate
+                if alt_clf_probs:
+                    p_over = alt_clf_probs.get((norm, stat_key, float(line_val)))
+                else:
+                    p_over = None
+                if p_over is None:
+                    p_over = _prob_over_from_regression(pred_v, line_val, sigma_v)
                 if p_over is None:
                     continue
                 ev = _ev_per_unit(float(p_over), over_odds)
@@ -2579,6 +2722,9 @@ def predict_props(cfg: PredictConfig) -> None:
     # Binary classifier models (optional — loaded if training has been run)
     pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map)
     batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf, cal_map)
+    # Alt-line binary CLF (FD all-lines) — used in lottery parlay scoring
+    pitcher_alt_clf_arts = None
+    batter_alt_clf_arts  = None
 
     if pitcher_artifacts_ok:
         try:
@@ -2592,6 +2738,12 @@ def predict_props(cfg: PredictConfig) -> None:
                 log.info("Loaded pitcher binary CLF model")
         except Exception:
             log.warning("Could not load pitcher CLF artifacts — using regression only")
+        try:
+            pitcher_alt_clf_arts = _load_pitcher_alt_clf_artifacts(model_dir)
+            if pitcher_alt_clf_arts:
+                log.info("Loaded pitcher alt-line CLF model")
+        except Exception:
+            log.warning("Could not load pitcher alt CLF artifacts")
 
     if batter_artifacts_ok:
         try:
@@ -2608,6 +2760,13 @@ def predict_props(cfg: PredictConfig) -> None:
                          list(batter_clf_arts[0].keys()))
         except Exception:
             log.warning("Could not load batter CLF artifacts — using regression only")
+        try:
+            batter_alt_clf_arts = _load_batter_alt_clf_artifacts(model_dir)
+            if batter_alt_clf_arts:
+                log.info("Loaded batter alt-line CLF models: %s",
+                         list(batter_alt_clf_arts[0].keys()))
+        except Exception:
+            log.warning("Could not load batter alt CLF artifacts")
 
     if not pitcher_artifacts_ok and not batter_artifacts_ok:
         log.warning("No prop models found. Run train_player_prop_models first.")
@@ -2630,6 +2789,9 @@ def predict_props(cfg: PredictConfig) -> None:
     # ── Pitcher predictions ────────────────────────────────────────────────
     all_pitcher_rows: List[Dict] = []
     db_rows: List[Dict] = []
+    # Alt-CLF probability dicts — populated inside pitcher/batter blocks, used by lottery
+    _pitcher_alt_clf_probs: Dict = {}
+    _batter_alt_clf_probs: Dict = {}
 
     if pitcher_artifacts_ok:
         df_p = pd.read_sql(SQL_PITCHER_SNAPSHOTS, conn, params={"game_date": et_date})
@@ -2654,6 +2816,21 @@ def predict_props(cfg: PredictConfig) -> None:
                 raw_p = np.clip(_predict_ensemble(X_p_clf, xgb_clf, lgb_clf), 0.01, 0.99)
                 clf_pover_k = _apply_platt_calibration(raw_p, cal_p_map.get("pitcher_strikeouts"))
                 clf_pover_k[np.isnan(lines_p)] = np.nan
+
+            # Alt-line CLF probs for lottery (all FD K lines per pitcher)
+            if cfg.lottery_mode and pitcher_alt_clf_arts is not None:
+                _norms_p_list = [
+                    _normalize_name(row.get("player_name", f"id={row['player_id']}"))
+                    for _, row in df_p.iterrows()
+                ]
+                try:
+                    _pitcher_alt_clf_probs = _compute_alt_clf_probs(
+                        X_p, _norms_p_list, all_alt_lines,
+                        ["pitcher_strikeouts"], _PITCHER_META, pitcher_alt_clf_arts,
+                    )
+                    log.info("Alt CLF: %d pitcher K probs computed", len(_pitcher_alt_clf_probs))
+                except Exception:
+                    log.warning("Could not compute pitcher alt CLF probs", exc_info=True)
 
             for i, (_, row) in enumerate(df_p.iterrows()):
                 pk = max(0.0, float(pred_k[i]))
@@ -2765,6 +2942,19 @@ def predict_props(cfg: PredictConfig) -> None:
             sigma_tb    = bt.get("ci_total_bases") if bt else None
             sigma_hr    = bt.get("ci_home_runs")   if bt else None
             sigma_walks = bt.get("ci_walks")       if bt else None
+
+            # Alt-line CLF probs for lottery (all FD hits/TB lines per batter)
+            if cfg.lottery_mode and batter_alt_clf_arts is not None:
+                pids_b = df_b["player_id"].astype(int).values
+                _norms_b_list = [_normalize_name(name_map.get(p, "")) for p in pids_b]
+                try:
+                    _batter_alt_clf_probs = _compute_alt_clf_probs(
+                        X_b, _norms_b_list, all_alt_lines,
+                        ["batter_hits", "batter_total_bases"], _BATTER_META, batter_alt_clf_arts,
+                    )
+                    log.info("Alt CLF: %d batter probs computed", len(_batter_alt_clf_probs))
+                except Exception:
+                    log.warning("Could not compute batter alt CLF probs", exc_info=True)
 
             # Binary classifier predictions (if models trained)
             # One P(over) array per stat — indexed same as df_b rows
@@ -2912,9 +3102,11 @@ def predict_props(cfg: PredictConfig) -> None:
     # ── Collect lottery legs once (no conn needed) then persist ───────────
     lottery_legs_collected: List[Dict] = []
     if cfg.lottery_mode:
+        _alt_clf_probs = {**_pitcher_alt_clf_probs, **_batter_alt_clf_probs}
         lottery_legs_collected = _collect_lottery_parlay_links(
             all_pitcher_rows, all_batter_rows, prop_lines, cfg,
             all_alt_lines=all_alt_lines,
+            alt_clf_probs=_alt_clf_probs if _alt_clf_probs else None,
         )
         _save_lottery_picks(conn, lottery_legs_collected, et_date)
     _grade_lottery_picks(conn)
