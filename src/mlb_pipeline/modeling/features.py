@@ -657,6 +657,36 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 + pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
             )
 
+    # ── SP Statcast discipline (season-level K/BB/whiff anchors) ─────────────
+    # Stable season totals complement rolling ERA/FIP: a SP with K%=30, BB%=5
+    # suppresses runs regardless of recent ERA variance.
+    # combined_* → total runs model (high K + low BB = low-scoring game)
+    # diff_*     → run-line model (home SP command edge over away)
+    _disc_pairs = [
+        ("home_sp_sc_k_pct",        "away_sp_sc_k_pct",        "sp_sc_k_pct",        22.0),
+        ("home_sp_sc_bb_pct",       "away_sp_sc_bb_pct",       "sp_sc_bb_pct",        8.0),
+        ("home_sp_sc_whiff_pct",    "away_sp_sc_whiff_pct",    "sp_sc_whiff_pct",    24.0),
+        ("home_sp_sc_oz_swing_pct", "away_sp_sc_oz_swing_pct", "sp_sc_oz_swing_pct", 30.0),
+    ]
+    for _h, _a, _stem, _fill in _disc_pairs:
+        if _h in X.columns and _a in X.columns:
+            _hv = pd.to_numeric(X[_h], errors="coerce").fillna(_fill)
+            _av = pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
+            X[f"combined_{_stem}"] = _hv + _av
+            X[f"diff_{_stem}"]     = _hv - _av
+
+    # K/BB ratio from discipline stats — command efficiency (K% / BB%)
+    if "home_sp_sc_k_pct" in X.columns and "home_sp_sc_bb_pct" in X.columns:
+        _hk = pd.to_numeric(X["home_sp_sc_k_pct"], errors="coerce").fillna(22.0)
+        _hb = pd.to_numeric(X["home_sp_sc_bb_pct"], errors="coerce").fillna(8.0).clip(lower=1.0)
+        X["home_sp_sc_k_bb_ratio"] = _hk / _hb
+    if "away_sp_sc_k_pct" in X.columns and "away_sp_sc_bb_pct" in X.columns:
+        _ak = pd.to_numeric(X["away_sp_sc_k_pct"], errors="coerce").fillna(22.0)
+        _ab = pd.to_numeric(X["away_sp_sc_bb_pct"], errors="coerce").fillna(8.0).clip(lower=1.0)
+        X["away_sp_sc_k_bb_ratio"] = _ak / _ab
+    if "home_sp_sc_k_bb_ratio" in X.columns and "away_sp_sc_k_bb_ratio" in X.columns:
+        X["diff_sp_sc_k_bb_ratio"] = X["home_sp_sc_k_bb_ratio"] - X["away_sp_sc_k_bb_ratio"]
+
     # ── Weather interactions for game totals ─────────────────────────────────
     # Cold temperatures suppress scoring — ball doesn't carry in cold air.
     if "temperature_f" in X.columns:

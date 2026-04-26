@@ -465,7 +465,18 @@ SELECT
     sc_away_sp.avg_exit_velocity    AS away_sp_sc_exit_velo,
     pa_away_sp.sl_whiff_pct         AS away_sp_sl_whiff_pct,
     pa_away_sp.ch_whiff_pct         AS away_sp_ch_whiff_pct,
-    pa_away_sp.fb_put_away          AS away_sp_fb_put_away
+    pa_away_sp.fb_put_away          AS away_sp_fb_put_away,
+
+    -- ---- Group I: SP Statcast discipline (season-level K/BB/whiff anchors) ----
+    -- Stable season-level profile — complements rolling ERA/FIP with command signal.
+    disc_home_sp.k_pct              AS home_sp_sc_k_pct,
+    disc_home_sp.bb_pct             AS home_sp_sc_bb_pct,
+    disc_home_sp.whiff_pct          AS home_sp_sc_whiff_pct,
+    disc_home_sp.oz_swing_pct       AS home_sp_sc_oz_swing_pct,
+    disc_away_sp.k_pct              AS away_sp_sc_k_pct,
+    disc_away_sp.bb_pct             AS away_sp_sc_bb_pct,
+    disc_away_sp.whiff_pct          AS away_sp_sc_whiff_pct,
+    disc_away_sp.oz_swing_pct       AS away_sp_sc_oz_swing_pct
 
 FROM raw.mlb_games g
 
@@ -593,6 +604,15 @@ LEFT JOIN raw.mlb_statcast_pitching sc_away_sp
 LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_away_sp
     ON pa_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
    AND pa_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+-- Group I: SP discipline
+LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_home_sp
+    ON disc_home_sp.player_id  = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND disc_home_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_away_sp
+    ON disc_away_sp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND disc_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
@@ -1058,7 +1078,17 @@ SELECT
     sc_away_sp.avg_exit_velocity    AS away_sp_sc_exit_velo,
     pa_away_sp.sl_whiff_pct         AS away_sp_sl_whiff_pct,
     pa_away_sp.ch_whiff_pct         AS away_sp_ch_whiff_pct,
-    pa_away_sp.fb_put_away          AS away_sp_fb_put_away
+    pa_away_sp.fb_put_away          AS away_sp_fb_put_away,
+
+    -- ---- Group I: SP Statcast discipline (season-level K/BB/whiff anchors) ----
+    disc_home_sp.k_pct              AS home_sp_sc_k_pct,
+    disc_home_sp.bb_pct             AS home_sp_sc_bb_pct,
+    disc_home_sp.whiff_pct          AS home_sp_sc_whiff_pct,
+    disc_home_sp.oz_swing_pct       AS home_sp_sc_oz_swing_pct,
+    disc_away_sp.k_pct              AS away_sp_sc_k_pct,
+    disc_away_sp.bb_pct             AS away_sp_sc_bb_pct,
+    disc_away_sp.whiff_pct          AS away_sp_sc_whiff_pct,
+    disc_away_sp.oz_swing_pct       AS away_sp_sc_oz_swing_pct
 
 FROM raw.mlb_games g
 
@@ -1158,6 +1188,15 @@ LEFT JOIN raw.mlb_statcast_pitching sc_away_sp
 LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_away_sp
     ON pa_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
    AND pa_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+-- Group I: SP discipline
+LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_home_sp
+    ON disc_home_sp.player_id  = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND disc_home_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_away_sp
+    ON disc_away_sp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND disc_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE
