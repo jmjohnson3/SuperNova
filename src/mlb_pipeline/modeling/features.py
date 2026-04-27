@@ -204,6 +204,15 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _total = (_raw_h + _raw_a).replace(0, np.nan)
         X["market_home_win_prob"] = _raw_h / _total
 
+    # ── Vig direction for totals ──────────────────────────────────────────────
+    # Positive = over is juiced (sharp money on over); negative = under juiced.
+    if "over_price" in X.columns and "under_price" in X.columns:
+        _raw_ov = _american_to_prob(X["over_price"])
+        _raw_un = _american_to_prob(X["under_price"])
+        _tot_vig = (_raw_ov + _raw_un).replace(0, np.nan)
+        X["total_vig_direction"] = _raw_ov - _raw_un   # positive = over juiced
+        X["over_implied_prob"]   = _raw_ov / _tot_vig  # de-vigored P(over)
+
     # ── Park × offense interaction ────────────────────────────────────────────
     # Amplifies offensive projections by park run-scoring environment.
     _park = X.get("park_run_factor") if "park_run_factor" in X.columns else X.get("run_factor")
@@ -779,6 +788,19 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # Combined platoon edge: home batting advantage vs away SP hand minus away's vs home SP
     if "home_hand_matchup_edge" in X.columns and "away_hand_matchup_edge" in X.columns:
         X["platoon_matchup_diff"] = X["home_hand_matchup_edge"] - X["away_hand_matchup_edge"]
+
+    # ── Lineup Statcast quality edge (home - away) ────────────────────────────
+    # Positive = home lineup has better Statcast contact quality vs away SP.
+    for _h, _a, _stem, _fill in [
+        ("home_lineup_xwoba_avg",    "away_lineup_xwoba_avg",    "lineup_xwoba",    0.315),
+        ("home_lineup_barrel_avg",   "away_lineup_barrel_avg",   "lineup_barrel",   6.5),
+        ("home_lineup_hard_hit_avg", "away_lineup_hard_hit_avg", "lineup_hard_hit", 37.0),
+    ]:
+        if _h in X.columns and _a in X.columns:
+            X[f"diff_{_stem}"] = (
+                pd.to_numeric(X[_h], errors="coerce").fillna(_fill)
+                - pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
+            )
 
     return X
 

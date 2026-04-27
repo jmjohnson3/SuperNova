@@ -476,7 +476,28 @@ SELECT
     disc_away_sp.k_pct              AS away_sp_sc_k_pct,
     disc_away_sp.bb_pct             AS away_sp_sc_bb_pct,
     disc_away_sp.whiff_pct          AS away_sp_sc_whiff_pct,
-    disc_away_sp.oz_swing_pct       AS away_sp_sc_oz_swing_pct
+    disc_away_sp.oz_swing_pct       AS away_sp_sc_oz_swing_pct,
+
+    -- ---- Group J: F5 targets (training only) ----
+    bg.home_f5_runs                                              AS home_f5_runs,
+    bg.away_f5_runs                                              AS away_f5_runs,
+    bg.home_f5_runs + bg.away_f5_runs                           AS total_f5,
+    bg.home_f5_runs - bg.away_f5_runs                           AS f5_run_diff,
+
+    -- ---- Group K: Career batter vs SP H2H ----
+    h2h_batting.home_h2h_ba, h2h_batting.home_h2h_obp, h2h_batting.home_h2h_slg, h2h_batting.home_h2h_n,
+    h2h_batting.away_h2h_ba, h2h_batting.away_h2h_obp, h2h_batting.away_h2h_slg, h2h_batting.away_h2h_n,
+    h2h_batting.h2h_slg_edge,
+
+    -- ---- Group L: Lineup Statcast quality ----
+    hlq.lineup_xwoba_avg       AS home_lineup_xwoba_avg,
+    hlq.lineup_xslg_avg        AS home_lineup_xslg_avg,
+    hlq.lineup_barrel_avg      AS home_lineup_barrel_avg,
+    hlq.lineup_hard_hit_avg    AS home_lineup_hard_hit_avg,
+    alq.lineup_xwoba_avg       AS away_lineup_xwoba_avg,
+    alq.lineup_xslg_avg        AS away_lineup_xslg_avg,
+    alq.lineup_barrel_avg      AS away_lineup_barrel_avg,
+    alq.lineup_hard_hit_avg    AS away_lineup_hard_hit_avg
 
 FROM raw.mlb_games g
 
@@ -613,6 +634,14 @@ LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_home_sp
 LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_away_sp
     ON disc_away_sp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
    AND disc_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+-- Group J: F5 targets (boxscore has first-5-innings scores)
+LEFT JOIN raw.mlb_boxscore_games bg
+    ON bg.game_slug = g.game_slug
+
+-- Group K: Career batter vs SP H2H aggregates
+LEFT JOIN features.mlb_game_h2h_batting_mat h2h_batting
+    ON h2h_batting.game_slug = g.game_slug
 
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
@@ -1088,7 +1117,17 @@ SELECT
     disc_away_sp.k_pct              AS away_sp_sc_k_pct,
     disc_away_sp.bb_pct             AS away_sp_sc_bb_pct,
     disc_away_sp.whiff_pct          AS away_sp_sc_whiff_pct,
-    disc_away_sp.oz_swing_pct       AS away_sp_sc_oz_swing_pct
+    disc_away_sp.oz_swing_pct       AS away_sp_sc_oz_swing_pct,
+
+    -- ---- Group L: Lineup Statcast quality (NULL for upcoming games — median-imputed) ----
+    hlq.lineup_xwoba_avg       AS home_lineup_xwoba_avg,
+    hlq.lineup_xslg_avg        AS home_lineup_xslg_avg,
+    hlq.lineup_barrel_avg      AS home_lineup_barrel_avg,
+    hlq.lineup_hard_hit_avg    AS home_lineup_hard_hit_avg,
+    alq.lineup_xwoba_avg       AS away_lineup_xwoba_avg,
+    alq.lineup_xslg_avg        AS away_lineup_xslg_avg,
+    alq.lineup_barrel_avg      AS away_lineup_barrel_avg,
+    alq.lineup_hard_hit_avg    AS away_lineup_hard_hit_avg
 
 FROM raw.mlb_games g
 

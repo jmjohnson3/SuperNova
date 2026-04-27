@@ -191,6 +191,7 @@ def _load_models(
         "total_direct": model_dir / "total_direct_xgb.json",
         "rl_resid":     model_dir / "run_line_resid_xgb.json",
         "total_resid":  model_dir / "total_resid_xgb.json",
+        "f5_direct":    model_dir / "total_f5_direct_xgb.json",
     }
 
     models: dict = {}
@@ -202,7 +203,8 @@ def _load_models(
 
     if _HAS_LGB:
         for lgb_key, lgb_name in [("rl_direct_lgb",    "run_line_direct_lgb.txt"),
-                                   ("total_direct_lgb", "total_direct_lgb.txt")]:
+                                   ("total_direct_lgb", "total_direct_lgb.txt"),
+                                   ("f5_direct_lgb",    "total_f5_direct_lgb.txt")]:
             lgb_path = model_dir / lgb_name
             if lgb_path.exists():
                 try:
@@ -711,10 +713,21 @@ def main() -> None:
     pred_run_diff_final = np.clip(pred_run_diff_final, -15.0, 15.0)
     pred_total_final    = np.clip(pred_total_final,     1.0,  30.0)
 
+    # F5 total prediction (optional — no market line comparison yet)
+    pred_f5_final = None
+    if "f5_direct" in models:
+        pred_f5 = models["f5_direct"].predict(X)
+        if "f5_direct_lgb" in models:
+            pred_f5 = 0.5 * pred_f5 + 0.5 * models["f5_direct_lgb"].predict(X.values)
+            log.info("Blended LGB+XGB for F5 prediction")
+        pred_f5_final = np.clip(pred_f5, 0.0, 20.0)
+
     # Build output frame
     out = id_df.copy()
     out["pred_run_diff"]    = np.round(pred_run_diff_final, 2)
     out["pred_total"]       = np.round(pred_total_final,    2)
+    if pred_f5_final is not None:
+        out["pred_f5_total"] = np.round(pred_f5_final, 2)
     out["used_market_recon"] = used_market
 
     # Attach SP names
@@ -905,7 +918,10 @@ def main() -> None:
 
         # Pred label
         run_line_label = _fmt_run_diff(pred_rd, home, away)
-        pred_label = f"Pred: {run_line_label} | Total: {pred_tot:.1f}"
+        _f5_str = ""
+        if "pred_f5_total" in r.index and pd.notna(r.get("pred_f5_total")):
+            _f5_str = f" | F5: {float(r['pred_f5_total']):.1f}"
+        pred_label = f"Pred: {run_line_label} | Total: {pred_tot:.1f}{_f5_str}"
         print(f"  {pred_label}")
 
         # Run line edge

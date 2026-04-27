@@ -207,7 +207,7 @@ def calibration_stats(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float
     }
 
 
-def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
+def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     """
     Build X with NaNs preserved (no median fill here).
     We'll fit medians on *train only* inside each walk-forward fold (prevents leakage).
@@ -215,9 +215,15 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     Targets:
       y_run_diff  — home_score - away_score, clipped to [-15, 15]
       y_total     — home_score + away_score, clipped to [1, 30]
+      y_f5        — total_f5 (first-5-innings total), clipped to [0, 25]; NaN where unavailable
     """
     y_run_diff = df["run_diff"].astype(float).clip(-15.0, 15.0)
     y_total = df["total_runs"].astype(float).clip(0.0, 40.0)
+    y_f5 = (
+        df["total_f5"].astype(float).clip(0.0, 25.0)
+        if "total_f5" in df.columns
+        else pd.Series(np.nan, index=df.index)
+    )
 
     drop_cols = {
         "game_slug",
@@ -231,6 +237,11 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         # residuals are postgame (actual - market) — must not be direct-model features
         "run_line_residual",
         "total_residual",
+        # F5 targets — postgame actuals
+        "home_f5_runs",
+        "away_f5_runs",
+        "total_f5",
+        "f5_run_diff",
         # raw name columns
         "home_sp_raw_name",
         "away_sp_raw_name",
@@ -306,7 +317,7 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     if still_bad:
         raise RuntimeError(f"Non-numeric columns remain after encoding: {still_bad[:20]}")
 
-    return X, y_run_diff, y_total
+    return X, y_run_diff, y_total, y_f5
 
 
 def fit_fill_stats(X_train: pd.DataFrame) -> Dict[str, float]:
@@ -631,8 +642,10 @@ def main() -> None:
         log.info("Loaded %d rows from mlb_game_training_features", len(df))
 
         # Build RAW X (NaNs preserved) once
-        X_raw, y_run_diff, y_total = make_xy_raw(df)
+        X_raw, y_run_diff, y_total, y_f5 = make_xy_raw(df)
         feature_cols = list(X_raw.columns)
+        f5_mask = y_f5.notna()
+        log.info("F5 target available for %d / %d rows", int(f5_mask.sum()), len(df))
 
         # Optuna hyperparameter tuning
         best_run_line_params: Dict = {}
@@ -685,6 +698,11 @@ def main() -> None:
         tot_best_iters: List[int] = []
         resid_rl_best_iters: List[int] = []
         resid_tot_best_iters: List[int] = []
+        f5_best_iters: List[int] = []
+
+        # F5 (first 5 innings) aggregate
+        f5_true_all: List[float] = []
+        f5_pred_all: List[float] = []
 
         fold_rows = 0
 
@@ -756,6 +774,29 @@ def main() -> None:
                 rl_best_iters.append(rl_model.best_iteration)
             if getattr(tot_model, "best_iteration", None) is not None:
                 tot_best_iters.append(tot_model.best_iteration)
+
+            # F5 MODEL (first 5 innings total; only on rows with F5 data)
+            f5_train_mask = train_mask & f5_mask
+            f5_test_mask  = test_mask  & f5_mask
+            if f5_train_mask.sum() >= 50 and f5_test_mask.sum() >= 3:
+                y_f5_train = y_f5.loc[f5_train_mask]
+                y_f5_test  = y_f5.loc[f5_test_mask]
+                X_f5_train = apply_fill(X_raw.loc[f5_train_mask], medians, feature_cols)
+                X_f5_test  = apply_fill(X_raw.loc[f5_test_mask],  medians, feature_cols)
+                f5_fit_rel, f5_eval_rel = temporal_eval_split(df.loc[f5_train_mask, "game_date_et"])
+                f5_model = build_model(cfg, params_override=best_total_params,
+                                       objective=TOTAL_DIRECT_OBJECTIVE)
+                if f5_fit_rel.sum() > 10 and f5_eval_rel.sum() > 5:
+                    f5_model.fit(
+                        X_f5_train.iloc[f5_fit_rel], y_f5_train.iloc[f5_fit_rel],
+                        eval_set=[(X_f5_train.iloc[f5_eval_rel], y_f5_train.iloc[f5_eval_rel])],
+                        verbose=False,
+                    )
+                    f5_pred = f5_model.predict(X_f5_test)
+                    if getattr(f5_model, "best_iteration", None) is not None:
+                        f5_best_iters.append(f5_model.best_iteration)
+                    f5_true_all.extend(y_f5_test.to_list())
+                    f5_pred_all.extend(f5_pred.tolist())
 
             # Direct metrics
             rl_mae,  rl_rmse  = evaluate_regression(y_rl_test.to_numpy(),  rl_pred)
@@ -960,6 +1001,14 @@ def main() -> None:
             "direct_total_p90":   tot_p90,
         }
 
+        # F5 walk-forward MAE
+        if f5_true_all:
+            f5_true_np = np.asarray(f5_true_all, dtype=float)
+            f5_pred_np = np.asarray(f5_pred_all, dtype=float)
+            f5_mae, _ = evaluate_regression(f5_true_np, f5_pred_np)
+            calib["direct_f5_mae"] = float(f5_mae)
+            log.info("WALK-FORWARD F5 TOTAL | rows=%d | MAE=%.3f", len(f5_true_np), f5_mae)
+
         if resid_rl_true_all:
             r_true  = np.asarray(resid_rl_true_all,    dtype=float)
             r_pred  = np.asarray(resid_rl_pred_all,    dtype=float)
@@ -1093,24 +1142,24 @@ def main() -> None:
         log.info("Saved direct models to %s", model_dir)
 
         # LightGBM direct ensemble (if available)
+        _lgb_params = dict(
+            objective="huber",
+            alpha=0.9,
+            metric="huber",
+            num_leaves=63,
+            learning_rate=0.05,
+            n_estimators=500,
+            min_child_samples=20,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            reg_alpha=0.1,
+            reg_lambda=1.0,
+            verbose=-1,
+            n_jobs=-1,
+            random_state=cfg.random_state,
+        )
         if _HAS_LGB:
             log.info("Training LightGBM direct game models on %d rows...", len(X_all))
-            _lgb_params = dict(
-                objective="huber",
-                alpha=0.9,
-                metric="huber",
-                num_leaves=63,
-                learning_rate=0.05,
-                n_estimators=500,
-                min_child_samples=20,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                reg_alpha=0.1,
-                reg_lambda=1.0,
-                verbose=-1,
-                n_jobs=-1,
-                random_state=cfg.random_state,
-            )
             for _lgb_target, _lgb_y, _lgb_name in [
                 ("run_line", y_run_diff, "run_line_direct_lgb.txt"),
                 ("total",    y_total,   "total_direct_lgb.txt"),
@@ -1124,6 +1173,31 @@ def main() -> None:
                     log.warning("LGB %s training failed: %s", _lgb_target, _exc)
         else:
             log.info("lightgbm not installed — skipping LGB ensemble (pip install lightgbm)")
+
+        # FINAL F5 MODEL (first 5 innings total)
+        _n_f5_all = int(f5_mask.sum())
+        if _n_f5_all >= 100:
+            X_f5_all = X_all.loc[f5_mask]
+            y_f5_all = y_f5.loc[f5_mask]
+            _f5_n_est = max(int(np.percentile(f5_best_iters, 75) * 1.2), 100) if f5_best_iters else cfg.n_estimators
+            f5_final = build_model(cfg, params_override=best_total_params,
+                                   objective=TOTAL_DIRECT_OBJECTIVE,
+                                   n_estimators=_f5_n_est,
+                                   use_early_stopping=False)
+            log.info("Fitting FINAL F5 model on %d rows (n_estimators=%d)...", _n_f5_all, _f5_n_est)
+            f5_final.fit(X_f5_all, y_f5_all, verbose=False)
+            f5_final.save_model(str(model_dir / "total_f5_direct_xgb.json"))
+            log.info("Saved F5 direct model → total_f5_direct_xgb.json")
+            if _HAS_LGB:
+                try:
+                    _f5_lgb = lgb.LGBMRegressor(**_lgb_params)
+                    _f5_lgb.fit(X_f5_all, y_f5_all)
+                    _f5_lgb.booster_.save_model(str(model_dir / "total_f5_direct_lgb.txt"))
+                    log.info("Saved F5 LGB model → total_f5_direct_lgb.txt")
+                except Exception as _exc:
+                    log.warning("F5 LGB training failed: %s", _exc)
+        else:
+            log.info("Skipping F5 model — only %d rows with F5 data (need 100)", _n_f5_all)
 
         # FINAL RESIDUAL MODELS
         if all(c in df.columns for c in ("run_line_home", "total_line", "run_line_residual", "total_residual")):

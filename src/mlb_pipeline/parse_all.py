@@ -46,6 +46,8 @@ _MLB_POST_MATVIEW_VIEWS = [
 _MLB_MATVIEW_REFRESH = [
     # MLB007: create + refresh rolling materialized views for fast prediction queries
     "MLB007_mlb_materialized_rolling.sql",
+    # MLB016: career batter vs SP H2H aggregates per game
+    "MLB016_mlb_game_h2h_batting.sql",
 ]
 
 _MLB_MATVIEW_REFRESH_SQL = """
@@ -62,6 +64,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_vs_sp_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_venue_stats_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_vs_hand_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_reliever_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_game_h2h_batting_mat;
 """
 
 
