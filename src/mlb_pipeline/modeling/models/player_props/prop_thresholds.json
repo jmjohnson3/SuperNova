@@ -1,11 +1,11 @@
 {
-  "generated_at_utc": "2026-04-25T19:24:01Z",
+  "generated_at_utc": "2026-04-27T19:39:19Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
   "min_holdout_bets": 20,
   "threshold_strikeouts": 2.0,
-  "threshold_hits": 0.75,
+  "threshold_hits": 0.1,
   "threshold_total_bases": 1.5,
   "threshold_home_runs_over": 0.05,
   "threshold_home_runs_under": 0.05,
@@ -14,13 +14,46 @@
   "min_ev": 0.02,
   "_diagnostics": {
     "pitcher_strikeouts": {
-      "reason": "no_candidates"
+      "reason": "holdout_roi_non_positive",
+      "chosen_train": {
+        "t": 0.45,
+        "n": 40,
+        "wr": 0.625,
+        "roi": 19.318181818181817
+      },
+      "holdout": {
+        "n": 279,
+        "wr": 0.45878136200716846,
+        "roi": -12.41446725317693
+      }
     },
     "batter_hits": {
-      "reason": "no_candidates"
+      "reason": "accepted",
+      "train": {
+        "t": 0.1,
+        "n": 893,
+        "wr": 0.5263157894736842,
+        "roi": 0.4784688995215254
+      },
+      "holdout": {
+        "n": 3438,
+        "wr": 0.5334496800465387,
+        "roi": 1.8403934634301191
+      }
     },
     "batter_total_bases": {
-      "reason": "no_candidates"
+      "reason": "holdout_roi_non_positive",
+      "chosen_train": {
+        "t": 1.088,
+        "n": 53,
+        "wr": 0.41509433962264153,
+        "roi": -20.754716981132074
+      },
+      "holdout": {
+        "n": 26,
+        "wr": 0.2692307692307692,
+        "roi": -48.60139860139861
+      }
     },
     "batter_home_runs": {
       "reason": "no_candidates"

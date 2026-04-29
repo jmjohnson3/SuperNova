@@ -8,16 +8,36 @@
 -- Grain: one row per (game_slug, team_abbr) — only final games appear as anchors.
 
 CREATE OR REPLACE VIEW features.mlb_reliever_rolling AS
-WITH reliever_apps AS (
+WITH reliever_season_era AS (
+    SELECT
+        player_id,
+        game_slug,
+        SUM(COALESCE(earned_runs, 0)) OVER w * 9.0
+            / NULLIF(SUM(COALESCE(innings_pitched, 0)) OVER w, 0) AS ytd_era
+    FROM raw.mlb_player_gamelogs
+    WHERE is_starter = FALSE
+      AND COALESCE(innings_pitched, 0) > 0
+    WINDOW w AS (
+        PARTITION BY player_id,
+            EXTRACT(YEAR FROM game_date_et)::INT
+        ORDER BY game_date_et
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    )
+),
+reliever_apps AS (
     SELECT
         g.season,
         g.game_slug,
         g.game_date_et,
         gl.team_abbr,
         gl.player_id,
-        COALESCE(gl.innings_pitched, 0) AS ip
+        COALESCE(gl.innings_pitched, 0) AS ip,
+        rse.ytd_era                      AS era
     FROM raw.mlb_games g
     JOIN raw.mlb_player_gamelogs gl ON gl.game_slug = g.game_slug
+    LEFT JOIN reliever_season_era rse
+           ON rse.player_id = gl.player_id
+          AND rse.game_slug = gl.game_slug
     WHERE g.status = 'final'
       AND gl.is_starter = FALSE
       AND COALESCE(gl.innings_pitched, 0) > 0
@@ -50,7 +70,12 @@ SELECT
     COALESCE(SUM(CASE
         WHEN prior.game_date_et >= a.game_date_et - INTERVAL '1 day'
          AND prior.game_date_et <  a.game_date_et
-        THEN prior.ip END), 0)                              AS bp_ip_last_1d
+        THEN prior.ip END), 0)                              AS bp_ip_last_1d,
+
+    AVG(CASE
+        WHEN prior.game_date_et >= a.game_date_et - INTERVAL '3 days'
+         AND prior.game_date_et <  a.game_date_et
+        THEN prior.era END)                                 AS bp_avg_era_last_3d
 
 FROM anchor a
 LEFT JOIN reliever_apps prior

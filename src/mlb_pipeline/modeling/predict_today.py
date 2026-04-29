@@ -211,6 +211,19 @@ def _load_models(
                     models[lgb_key] = lgb.Booster(model_file=str(lgb_path))
                 except Exception as _e:
                     log.debug("Could not load %s: %s", lgb_name, _e)
+        # Quantile models for game-specific sigma
+        _QUANTILE_INTS = [10, 25, 50, 75, 90]
+        for _qi in _QUANTILE_INTS:
+            for _qstem, _qkey_pfx in [("run_line", "rl"), ("total", "tot")]:
+                _qpath = model_dir / f"{_qstem}_q{_qi:02d}_lgb.txt"
+                if _qpath.exists():
+                    try:
+                        models[f"{_qkey_pfx}_q{_qi:02d}"] = lgb.Booster(model_file=str(_qpath))
+                    except Exception as _e:
+                        log.debug("Could not load %s: %s", _qpath.name, _e)
+        _q_loaded = [k for k in models if k.startswith(("rl_q", "tot_q"))]
+        if _q_loaded:
+            log.info("Loaded quantile LGB models: %d total", len(_q_loaded))
 
     if "rl_direct" not in models or "total_direct" not in models:
         raise FileNotFoundError(f"Missing direct models in {model_dir}. Run training first.")
@@ -384,6 +397,23 @@ def _kelly(
     return kelly, p
 
 
+def _p_over_from_quantiles(q_preds: dict, market_line: float) -> float:
+    """Interpolate P(value > market_line) from a 5-point quantile CDF."""
+    qs = sorted(q_preds)
+    vals = [q_preds[q] for q in qs]
+    probs = [q / 100.0 for q in qs]
+    cdf = float(np.interp(market_line, vals, probs, left=0.0, right=1.0))
+    return 1.0 - cdf
+
+
+def _sigma_from_quantiles(q_preds: dict, fallback: float = 3.5) -> float:
+    """Game-specific sigma from IQR (q75 - q25) / 1.349 (normal approximation)."""
+    if 25 in q_preds and 75 in q_preds:
+        iqr = q_preds[75] - q_preds[25]
+        return max(float(iqr) / 1.349, 1.0)
+    return fallback
+
+
 def _ensure_bets_schema(engine) -> None:
     """Create bets.mlb_game_predictions table if it doesn't exist."""
     ddl = """
@@ -418,6 +448,11 @@ def _ensure_bets_schema(engine) -> None:
         win_prob_total        NUMERIC,
         UNIQUE (game_date_et, game_slug)
     );
+    ALTER TABLE bets.mlb_game_predictions
+        ADD COLUMN IF NOT EXISTS sigma_q_rl      FLOAT,
+        ADD COLUMN IF NOT EXISTS sigma_q_total   FLOAT,
+        ADD COLUMN IF NOT EXISTS p_over_rl_q     FLOAT,
+        ADD COLUMN IF NOT EXISTS p_over_total_q  FLOAT;
     """
     with engine.begin() as conn:
         conn.execute(text(ddl))
@@ -444,7 +479,8 @@ def _save_predictions(
              run_line_bet_side, total_bet_side,
              kelly_fraction_rl, kelly_fraction_total,
              win_prob_rl, win_prob_total,
-             market_rl_price, market_total_price)
+             market_rl_price, market_total_price,
+             sigma_q_rl, sigma_q_total, p_over_rl_q, p_over_total_q)
         VALUES
             (:game_date_et, :game_slug, :season, :home_team_abbr, :away_team_abbr,
              :home_sp_name, :away_sp_name,
@@ -453,7 +489,8 @@ def _save_predictions(
              :run_line_bet_side, :total_bet_side,
              :kelly_fraction_rl, :kelly_fraction_total,
              :win_prob_rl, :win_prob_total,
-             :market_rl_price, :market_total_price)
+             :market_rl_price, :market_total_price,
+             :sigma_q_rl, :sigma_q_total, :p_over_rl_q, :p_over_total_q)
         ON CONFLICT (game_date_et, game_slug) DO UPDATE SET
             predicted_at_utc    = NOW(),
             home_sp_name        = EXCLUDED.home_sp_name,
@@ -472,7 +509,11 @@ def _save_predictions(
             win_prob_rl         = EXCLUDED.win_prob_rl,
             win_prob_total      = EXCLUDED.win_prob_total,
             market_rl_price     = EXCLUDED.market_rl_price,
-            market_total_price  = EXCLUDED.market_total_price
+            market_total_price  = EXCLUDED.market_total_price,
+            sigma_q_rl          = EXCLUDED.sigma_q_rl,
+            sigma_q_total       = EXCLUDED.sigma_q_total,
+            p_over_rl_q         = EXCLUDED.p_over_rl_q,
+            p_over_total_q      = EXCLUDED.p_over_total_q
     """)
 
     _calib = calib or {}
@@ -485,12 +526,12 @@ def _save_predictions(
         kf_rl = kf_t = wp_rl = wp_t = None
 
         used_blend = bool(r.get("used_market_recon", False))
-        sigma_rl = _calib.get(
-            "resid_spread_rmse" if (used_blend and w_rl > 0) else "direct_spread_rmse", 3.5
-        )
-        sigma_t = _calib.get(
-            "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 3.0
-        )
+        _sq_rl = r.get("sigma_q_rl")
+        _sq_t  = r.get("sigma_q_total")
+        sigma_rl = (float(_sq_rl) if (_sq_rl is not None and pd.notna(_sq_rl)) else
+                    _calib.get("resid_spread_rmse" if (used_blend and w_rl > 0) else "direct_spread_rmse", 3.5))
+        sigma_t  = (float(_sq_t) if (_sq_t is not None and pd.notna(_sq_t)) else
+                    _calib.get("resid_total_rmse"  if (used_blend and w_total > 0) else "direct_total_rmse",  3.0))
 
         both_sp = bool(r.get("both_sp_known", True))
 
@@ -543,6 +584,10 @@ def _save_predictions(
             "win_prob_total":     round(wp_t, 4)   if wp_t   is not None else None,
             "market_rl_price":    int(mkt_rl_price)  if mkt_rl_price  is not None else None,
             "market_total_price": int(mkt_tot_price) if mkt_tot_price is not None else None,
+            "sigma_q_rl":     round(float(r["sigma_q_rl"]),    3) if pd.notna(r.get("sigma_q_rl"))    else None,
+            "sigma_q_total":  round(float(r["sigma_q_total"]), 3) if pd.notna(r.get("sigma_q_total")) else None,
+            "p_over_rl_q":    round(float(r["p_over_rl_q"]),   4) if pd.notna(r.get("p_over_rl_q"))   else None,
+            "p_over_total_q": round(float(r["p_over_total_q"]), 4) if pd.notna(r.get("p_over_total_q")) else None,
         })
 
     if rows:
@@ -722,6 +767,16 @@ def main() -> None:
             log.info("Blended LGB+XGB for F5 prediction")
         pred_f5_final = np.clip(pred_f5, 0.0, 20.0)
 
+    # Quantile predictions for game-specific sigma and P(over/cover)
+    _QUANTILE_INTS = [10, 25, 50, 75, 90]
+    _q_rl_arrays  = {qi: models[f"rl_q{qi:02d}"].predict(X.values)
+                     for qi in _QUANTILE_INTS if f"rl_q{qi:02d}" in models}
+    _q_tot_arrays = {qi: models[f"tot_q{qi:02d}"].predict(X.values)
+                     for qi in _QUANTILE_INTS if f"tot_q{qi:02d}" in models}
+    if _q_rl_arrays or _q_tot_arrays:
+        log.info("Computed quantile predictions: %d rl quantiles, %d tot quantiles",
+                 len(_q_rl_arrays), len(_q_tot_arrays))
+
     # Build output frame
     out = id_df.copy()
     out["pred_run_diff"]    = np.round(pred_run_diff_final, 2)
@@ -729,6 +784,26 @@ def main() -> None:
     if pred_f5_final is not None:
         out["pred_f5_total"] = np.round(pred_f5_final, 2)
     out["used_market_recon"] = used_market
+
+    # Per-game sigma from quantile IQR
+    _n = len(out)
+    if _q_rl_arrays:
+        out["sigma_q_rl"] = [
+            _sigma_from_quantiles({qi: float(_q_rl_arrays[qi][i]) for qi in _q_rl_arrays},
+                                  fallback=calib.get("direct_spread_rmse", 3.5))
+            for i in range(_n)
+        ]
+    else:
+        out["sigma_q_rl"] = np.nan
+
+    if _q_tot_arrays:
+        out["sigma_q_total"] = [
+            _sigma_from_quantiles({qi: float(_q_tot_arrays[qi][i]) for qi in _q_tot_arrays},
+                                  fallback=calib.get("direct_total_rmse", 3.0))
+            for i in range(_n)
+        ]
+    else:
+        out["sigma_q_total"] = np.nan
 
     # Attach SP names
     out["home_sp_name"] = out["game_slug"].map(lambda s: sp_map.get(s, {}).get("home"))
@@ -758,6 +833,27 @@ def main() -> None:
         out["market_total"]    = np.nan
         out["edge_run_line"]   = np.nan
         out["edge_total"]      = np.nan
+
+    # P(over/cover) from quantile CDF
+    if _q_rl_arrays:
+        out["p_over_rl_q"] = [
+            (_p_over_from_quantiles({qi: float(_q_rl_arrays[qi][i]) for qi in _q_rl_arrays},
+                                    float(out.iloc[i]["market_run_line"]))
+             if pd.notna(out.iloc[i]["market_run_line"]) else np.nan)
+            for i in range(_n)
+        ]
+    else:
+        out["p_over_rl_q"] = np.nan
+
+    if _q_tot_arrays:
+        out["p_over_total_q"] = [
+            (_p_over_from_quantiles({qi: float(_q_tot_arrays[qi][i]) for qi in _q_tot_arrays},
+                                    float(out.iloc[i]["market_total"]))
+             if pd.notna(out.iloc[i]["market_total"]) else np.nan)
+            for i in range(_n)
+        ]
+    else:
+        out["p_over_total_q"] = np.nan
 
     # Count bet signals (only for games with confirmed SPs)
     sp_mask = out["both_sp_known"] if "both_sp_known" in out.columns else pd.Series(True, index=out.index)
@@ -798,8 +894,12 @@ def main() -> None:
             _away2   = _r["away_team_abbr"]
             _fd2     = fd_links.get((_home2, _away2))
             _ub      = bool(_r.get("used_market_recon", False))
-            _srl     = calib.get("resid_spread_rmse" if (_ub and w_rl > 0) else "direct_spread_rmse", 3.5)
-            _st      = calib.get("resid_total_rmse"  if (_ub and w_total > 0) else "direct_total_rmse", 3.0)
+            _sq_rl2  = _r.get("sigma_q_rl")
+            _sq_t2   = _r.get("sigma_q_total")
+            _srl     = (float(_sq_rl2) if (_sq_rl2 is not None and pd.notna(_sq_rl2)) else
+                        calib.get("resid_spread_rmse" if (_ub and w_rl > 0) else "direct_spread_rmse", 3.5))
+            _st      = (float(_sq_t2) if (_sq_t2 is not None and pd.notna(_sq_t2)) else
+                        calib.get("resid_total_rmse"  if (_ub and w_total > 0) else "direct_total_rmse",  3.0))
             _sr2     = _r.get("start_ts_utc")
             if pd.notna(_sr2):
                 _t2 = pd.to_datetime(_sr2, utc=True).tz_convert(_ET).strftime("%I:%M %p ET").lstrip("0")
@@ -907,14 +1007,14 @@ def main() -> None:
         pred_rd  = float(r["pred_run_diff"])
         pred_tot = float(r["pred_total"])
 
-        # Pick sigma based on which model was blended
+        # Pick sigma: prefer game-specific quantile sigma, fall back to calibration RMSE
         used_blend = bool(r.get("used_market_recon", False))
-        sigma_rl = calib.get(
-            "resid_spread_rmse" if (used_blend and w_rl > 0) else "direct_spread_rmse", 3.5
-        )
-        sigma_t = calib.get(
-            "resid_total_rmse" if (used_blend and w_total > 0) else "direct_total_rmse", 3.0
-        )
+        _sq_rl = r.get("sigma_q_rl")
+        _sq_t  = r.get("sigma_q_total")
+        sigma_rl = (float(_sq_rl) if (_sq_rl is not None and pd.notna(_sq_rl)) else
+                    calib.get("resid_spread_rmse" if (used_blend and w_rl > 0) else "direct_spread_rmse", 3.5))
+        sigma_t  = (float(_sq_t) if (_sq_t is not None and pd.notna(_sq_t)) else
+                    calib.get("resid_total_rmse"  if (used_blend and w_total > 0) else "direct_total_rmse",  3.0))
 
         # Pred label
         run_line_label = _fmt_run_diff(pred_rd, home, away)

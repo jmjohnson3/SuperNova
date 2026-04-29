@@ -135,6 +135,9 @@ SELECT
     hb.bb_pct_avg_10                        AS home_bb_pct_avg_10,
     hb.runs_avg_20                          AS home_runs_avg_20,
     hb.runs_sd_10                           AS home_runs_sd_10,
+    hb.sb_avg_5                             AS home_sb_avg_5,
+    hb.sb_avg_10                            AS home_sb_avg_10,
+    hb.sb_pct_10                            AS home_sb_pct_10,
 
     -- ---- Away team batting rolling ----
     ab.runs_avg_5                           AS away_runs_avg_5,
@@ -155,6 +158,9 @@ SELECT
     ab.bb_pct_avg_10                        AS away_bb_pct_avg_10,
     ab.runs_avg_20                          AS away_runs_avg_20,
     ab.runs_sd_10                           AS away_runs_sd_10,
+    ab.sb_avg_5                             AS away_sb_avg_5,
+    ab.sb_avg_10                            AS away_sb_avg_10,
+    ab.sb_pct_10                            AS away_sb_pct_10,
 
     -- ---- Home team pitching rolling ----
     hp.runs_allowed_avg_5                   AS home_runs_allowed_avg_5,
@@ -442,10 +448,12 @@ SELECT
     hrr.bp_relievers_last_2d                         AS home_bp_relievers_last_2d,
     hrr.bp_relievers_last_3d                         AS home_bp_relievers_last_3d,
     hrr.bp_ip_last_1d                                AS home_bp_ip_last_1d,
+    hrr.bp_avg_era_last_3d                           AS home_bp_avg_era_last_3d,
     arr.bp_relievers_last_1d                         AS away_bp_relievers_last_1d,
     arr.bp_relievers_last_2d                         AS away_bp_relievers_last_2d,
     arr.bp_relievers_last_3d                         AS away_bp_relievers_last_3d,
     arr.bp_ip_last_1d                                AS away_bp_ip_last_1d,
+    arr.bp_avg_era_last_3d                           AS away_bp_avg_era_last_3d,
 
     -- ---- SP workload: last-start innings pitched (Item #4) ----
     hsp.last_start_ip                               AS home_sp_last_ip,
@@ -497,7 +505,19 @@ SELECT
     alq.lineup_xwoba_avg       AS away_lineup_xwoba_avg,
     alq.lineup_xslg_avg        AS away_lineup_xslg_avg,
     alq.lineup_barrel_avg      AS away_lineup_barrel_avg,
-    alq.lineup_hard_hit_avg    AS away_lineup_hard_hit_avg
+    alq.lineup_hard_hit_avg    AS away_lineup_hard_hit_avg,
+
+    -- ---- Group M: Catcher framing (NULL for upcoming games — median-imputed) ----
+    hcf.catcher_framing_rv                           AS home_catcher_framing_rv,
+    hcf.catcher_framing_rate                         AS home_catcher_framing_rate,
+    acf.catcher_framing_rv                           AS away_catcher_framing_rv,
+    acf.catcher_framing_rate                         AS away_catcher_framing_rate,
+
+    -- ---- Group N: SP velocity trend (NULL when no velocity data — median-imputed) ----
+    velo_home_sp.fb_velo_trend_5                     AS home_fb_velo_trend_5,
+    velo_home_sp.fb_velo_avg_5                       AS home_fb_velo_avg_5,
+    velo_away_sp.fb_velo_trend_5                     AS away_fb_velo_trend_5,
+    velo_away_sp.fb_velo_avg_5                       AS away_fb_velo_avg_5
 
 FROM raw.mlb_games g
 
@@ -643,6 +663,24 @@ LEFT JOIN raw.mlb_boxscore_games bg
 LEFT JOIN features.mlb_game_h2h_batting_mat h2h_batting
     ON h2h_batting.game_slug = g.game_slug
 
+-- Group M: Catcher framing
+LEFT JOIN features.mlb_team_catcher_framing hcf
+    ON hcf.game_slug = g.game_slug
+   AND hcf.team_abbr = g.home_team_abbr
+
+LEFT JOIN features.mlb_team_catcher_framing acf
+    ON acf.game_slug = g.game_slug
+   AND acf.team_abbr = g.away_team_abbr
+
+-- Group N: SP velocity trend (join on player_id + game_date)
+LEFT JOIN features.mlb_sp_velocity_rolling velo_home_sp
+    ON velo_home_sp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+   AND velo_home_sp.game_date = g.game_date_et::DATE
+
+LEFT JOIN features.mlb_sp_velocity_rolling velo_away_sp
+    ON velo_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
+   AND velo_away_sp.game_date = g.game_date_et::DATE
+
 WHERE g.status = 'final'
   AND g.home_score IS NOT NULL
   AND g.away_score IS NOT NULL
@@ -727,6 +765,20 @@ latest_reliever AS (
     FROM features.mlb_reliever_rolling_mat
     ORDER BY team_abbr, game_date_et DESC, game_slug DESC
 ),
+-- Group N: Latest SP velocity (most recent start per pitcher)
+latest_velocity AS (
+    SELECT DISTINCT ON (player_id)
+        player_id,
+        game_date,
+        ff_avg_speed,
+        si_avg_speed,
+        fb_velo_avg_5,
+        fb_velo_trend_5,
+        si_velo_avg_5,
+        si_velo_trend_5
+    FROM features.mlb_sp_velocity_rolling
+    ORDER BY player_id, game_date DESC
+),
 -- Head-to-head season record for upcoming games
 h2h AS (
     SELECT
@@ -790,6 +842,9 @@ SELECT
     hb.bb_pct_avg_10                        AS home_bb_pct_avg_10,
     hb.runs_avg_20                          AS home_runs_avg_20,
     hb.runs_sd_10                           AS home_runs_sd_10,
+    hb.sb_avg_5                             AS home_sb_avg_5,
+    hb.sb_avg_10                            AS home_sb_avg_10,
+    hb.sb_pct_10                            AS home_sb_pct_10,
 
     -- ---- Away team batting rolling ----
     ab.runs_avg_5                           AS away_runs_avg_5,
@@ -810,6 +865,9 @@ SELECT
     ab.bb_pct_avg_10                        AS away_bb_pct_avg_10,
     ab.runs_avg_20                          AS away_runs_avg_20,
     ab.runs_sd_10                           AS away_runs_sd_10,
+    ab.sb_avg_5                             AS away_sb_avg_5,
+    ab.sb_avg_10                            AS away_sb_avg_10,
+    ab.sb_pct_10                            AS away_sb_pct_10,
 
     -- ---- Home team pitching rolling ----
     hp.runs_allowed_avg_5                   AS home_runs_allowed_avg_5,
@@ -1084,10 +1142,12 @@ SELECT
     hrr.bp_relievers_last_2d                         AS home_bp_relievers_last_2d,
     hrr.bp_relievers_last_3d                         AS home_bp_relievers_last_3d,
     hrr.bp_ip_last_1d                                AS home_bp_ip_last_1d,
+    hrr.bp_avg_era_last_3d                           AS home_bp_avg_era_last_3d,
     arr.bp_relievers_last_1d                         AS away_bp_relievers_last_1d,
     arr.bp_relievers_last_2d                         AS away_bp_relievers_last_2d,
     arr.bp_relievers_last_3d                         AS away_bp_relievers_last_3d,
     arr.bp_ip_last_1d                                AS away_bp_ip_last_1d,
+    arr.bp_avg_era_last_3d                           AS away_bp_avg_era_last_3d,
 
     -- ---- SP workload: last-start innings pitched (Item #4) ----
     hsp.last_start_ip                               AS home_sp_last_ip,
@@ -1127,7 +1187,19 @@ SELECT
     alq.lineup_xwoba_avg       AS away_lineup_xwoba_avg,
     alq.lineup_xslg_avg        AS away_lineup_xslg_avg,
     alq.lineup_barrel_avg      AS away_lineup_barrel_avg,
-    alq.lineup_hard_hit_avg    AS away_lineup_hard_hit_avg
+    alq.lineup_hard_hit_avg    AS away_lineup_hard_hit_avg,
+
+    -- ---- Group M: Catcher framing (NULL for upcoming games — median-imputed) ----
+    hcf.catcher_framing_rv                           AS home_catcher_framing_rv,
+    hcf.catcher_framing_rate                         AS home_catcher_framing_rate,
+    acf.catcher_framing_rv                           AS away_catcher_framing_rv,
+    acf.catcher_framing_rate                         AS away_catcher_framing_rate,
+
+    -- ---- Group N: SP velocity trend (NULL when no velocity data — median-imputed) ----
+    velo_home_sp.fb_velo_trend_5                     AS home_fb_velo_trend_5,
+    velo_home_sp.fb_velo_avg_5                       AS home_fb_velo_avg_5,
+    velo_away_sp.fb_velo_trend_5                     AS away_fb_velo_trend_5,
+    velo_away_sp.fb_velo_avg_5                       AS away_fb_velo_avg_5
 
 FROM raw.mlb_games g
 
@@ -1236,6 +1308,22 @@ LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_home_sp
 LEFT JOIN raw.mlb_statcast_pitcher_discipline disc_away_sp
     ON disc_away_sp.player_id  = COALESCE(asp_sched.player_id, g.away_sp_id)
    AND disc_away_sp.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+
+-- Group M: Catcher framing
+LEFT JOIN features.mlb_team_catcher_framing hcf
+    ON hcf.game_slug = g.game_slug
+   AND hcf.team_abbr = g.home_team_abbr
+
+LEFT JOIN features.mlb_team_catcher_framing acf
+    ON acf.game_slug = g.game_slug
+   AND acf.team_abbr = g.away_team_abbr
+
+-- Group N: SP velocity trend (prediction: latest start per pitcher)
+LEFT JOIN latest_velocity velo_home_sp
+    ON velo_home_sp.player_id = COALESCE(hsp_sched.player_id, g.home_sp_id)
+
+LEFT JOIN latest_velocity velo_away_sp
+    ON velo_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
 
 WHERE g.status IN ('scheduled', 'in_progress')
   AND g.game_date_et >= CURRENT_DATE

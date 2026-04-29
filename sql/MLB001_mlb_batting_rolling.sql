@@ -16,6 +16,7 @@ WITH team_batting AS (
         SUM(gl.total_bases)       AS team_tb,
         SUM(gl.doubles)           AS team_2b,
         SUM(gl.triples)           AS team_3b,
+        SUM(COALESCE(gl.stolen_bases, 0)) AS team_sb,
         CASE
             WHEN gl.team_abbr = g.home_team_abbr THEN g.home_score
             ELSE g.away_score
@@ -49,6 +50,7 @@ derived AS (
         team_bb,
         team_k,
         team_tb,
+        team_sb,
         -- Batting average: H / AB
         CASE WHEN team_ab > 0
              THEN team_hits::float / team_ab
@@ -91,6 +93,7 @@ SELECT
     AVG(k_pct)       OVER w5          AS k_pct_avg_5,
     AVG(bb_pct)      OVER w5          AS bb_pct_avg_5,
     SUM(runs_scored) OVER w5          AS runs_sum_5,
+    AVG(team_sb)     OVER w5          AS sb_avg_5,
 
     -- 10-game rolling windows
     AVG(runs_scored)          OVER w10 AS runs_avg_10,
@@ -102,6 +105,12 @@ SELECT
     AVG(k_pct)                OVER w10 AS k_pct_avg_10,
     AVG(bb_pct)               OVER w10 AS bb_pct_avg_10,
     STDDEV_SAMP(runs_scored)  OVER w10 AS runs_sd_10,
+    AVG(team_sb)              OVER w10 AS sb_avg_10,
+    -- SB% (stolen base success rate): SB / (SB + would-be CS proxy via attempts)
+    -- We only have SB not CS in gamelogs, so expose raw SB rate as proxy for aggressiveness
+    CASE WHEN SUM(team_ab) OVER w10 > 0
+         THEN SUM(team_sb) OVER w10::float / NULLIF(SUM(team_ab) OVER w10, 0)
+         ELSE NULL END       AS sb_pct_10,
 
     -- 20-game rolling windows
     AVG(runs_scored) OVER w20         AS runs_avg_20,

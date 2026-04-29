@@ -34,12 +34,14 @@ _MLB_SQL_VIEWS = [
     "MLB016_mlb_elo_features.sql",                    # Elo rating features (depends on raw.mlb_elo)
     "MLB017_mlb_sp_venue_stats.sql",                  # SP career stats per venue (Group F)
     "MLB018_mlb_team_batting_vs_hand.sql",            # team batting vs LHP/RHP (Group F)
+    "MLB021_mlb_sp_velocity_rolling.sql",             # SP per-start velocity rolling view (Group N)
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
-# MLB006 is re-applied here so lineup quality columns take effect.
+# MLB006 is re-applied here so lineup quality + catcher framing columns take effect.
 _MLB_POST_MATVIEW_VIEWS = [
     "MLB011_mlb_lineup_quality.sql",
+    "MLB020_mlb_team_catcher_framing.sql",  # catcher framing view (plain VIEW, cheap join)
     "MLB006_mlb_game_features.sql",
 ]
 
@@ -310,6 +312,19 @@ def main() -> None:
         _c.commit()
         if n:
             log.info("Post-boxscore score sync: updated %d games", n)
+
+    # Fetch SP per-start velocity from Baseball Savant (Group N features)
+    # Must run before _apply_sql_views so raw.mlb_sp_start_velocity exists when
+    # MLB021 (which references it) is applied.
+    try:
+        from mlb_pipeline.crawler_statcast_velocity import fetch_all_sp_velocity
+        with psycopg2.connect(_PG_DSN) as _c:
+            n_v = fetch_all_sp_velocity(_c)
+            _c.commit()
+            if n_v:
+                log.info("Fetched velocity data for %d pitcher-games", n_v)
+    except Exception:
+        log.exception("SP velocity crawl failed — continuing without velocity trend")
 
     _apply_sql_views(_PG_DSN)   # applies MLB001-010 (creates raw.mlb_weather table)
 

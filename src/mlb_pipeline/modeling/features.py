@@ -335,6 +335,28 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "home_pen_depletion" in X.columns and "away_pen_depletion" in X.columns:
         X["pen_depletion_edge"] = X["away_pen_depletion"] - X["home_pen_depletion"]
 
+    # ── 3a: Quality-Weighted Bullpen Depletion ────────────────────────────────
+    # ERA-weighted depletion: a depleted pen is worse if it also has high ERA.
+    # Falls back to 5-start ERA if the new 3-day ERA column is not present.
+    for _side in ("home", "away"):
+        _dep  = f"{_side}_pen_depletion"
+        _era3 = f"{_side}_bp_avg_era_last_3d"
+        _era5 = f"{_side}_bp_era_5"
+        if _dep in X.columns:
+            _d = pd.to_numeric(X[_dep], errors="coerce").fillna(0.0)
+            _e_col = _era3 if _era3 in X.columns else _era5
+            _e = pd.to_numeric(X[_e_col], errors="coerce").fillna(4.0) if _e_col in X.columns else pd.Series(4.0, index=X.index)
+            X[f"{_side}_pen_qual_depletion"] = _d * _e / 4.0
+    if "home_pen_qual_depletion" in X.columns and "away_pen_qual_depletion" in X.columns:
+        X["pen_qual_depletion_edge"] = X["away_pen_qual_depletion"] - X["home_pen_qual_depletion"]
+
+    # ── 3b: ERA-Quality Differential of Arms Used Last 3 Days ─────────────────
+    # Positive = home BP has higher average ERA among arms used recently (disadvantage)
+    if "home_bp_avg_era_last_3d" in X.columns and "away_bp_avg_era_last_3d" in X.columns:
+        _hera3 = pd.to_numeric(X["home_bp_avg_era_last_3d"], errors="coerce").fillna(4.0)
+        _aera3 = pd.to_numeric(X["away_bp_avg_era_last_3d"], errors="coerce").fillna(4.0)
+        X["bp_avg_era_last_3d_diff"] = _hera3 - _aera3
+
     # Quality × fatigue interaction: fatigued AND leaky pen = extra trouble
     # bp_era_7d (higher = worse pen); multiply by 7-day IP (more usage = more depleted)
     for _side in ("home", "away"):
@@ -462,6 +484,27 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "home_sp_ip_per_rest" in X.columns and "away_sp_ip_per_rest" in X.columns:
         X["sp_workload_edge"] = X["away_sp_ip_per_rest"] - X["home_sp_ip_per_rest"]
 
+    # ── Opener / bullpen-game detection ──────────────────────────────────────
+    # An "opener" SP throws ≤ 2 IP (or has no recent starts). In opener games the
+    # entire run-environment model changes: there is no traditional SP suppression,
+    # and the opposing lineup bats against relievers from inning 2 onward.
+    # Signal: sp_last_ip < 2.0 OR starts_in_window_5 == 0.
+    for _side in ("home", "away"):
+        _lip    = f"{_side}_sp_last_ip"
+        _starts = f"{_side}_sp_starts_in_window_5"
+        _is_opener = pd.Series(0, index=X.index)
+        if _lip in X.columns:
+            _lip_val = pd.to_numeric(X[_lip], errors="coerce")
+            _is_opener = _is_opener | (_lip_val < 2.0).fillna(False)
+        if _starts in X.columns:
+            _starts_val = pd.to_numeric(X[_starts], errors="coerce").fillna(1.0)
+            _is_opener = _is_opener | (_starts_val == 0)
+        if _lip in X.columns or _starts in X.columns:
+            X[f"{_side}_is_opener"] = _is_opener.astype(int)
+    if "home_is_opener" in X.columns and "away_is_opener" in X.columns:
+        # Positive = away team using opener (home team faces bullpen from early → easier scoring)
+        X["opener_asymmetry"] = X["away_is_opener"] - X["home_is_opener"]
+
     # ── SP 20-start regression anchor ─────────────────────────────────────────
     # 5-start ERA minus 20-start baseline: positive = recently worse than career norm
     # → expect regression toward mean (caution flag). Negative = on a hot streak.
@@ -485,6 +528,18 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["sp_era_regression_diff"] = (
             X["away_sp_era_5v20"] - X["home_sp_era_5v20"]
         )
+
+    # ── 3c: SP ERA Bayesian Shrinkage ─────────────────────────────────────────
+    # 5-start ERA shrunk 80% toward league average (4.20) to reduce noise from
+    # small sample sizes early in the season.
+    LEAGUE_ERA = 4.20
+    for _side in ("home", "away"):
+        _e5 = f"{_side}_sp_era_5"
+        if _e5 in X.columns:
+            _era = pd.to_numeric(X[_e5], errors="coerce").fillna(LEAGUE_ERA)
+            X[f"{_side}_sp_era_shrunk"] = (_era * 20.0 + LEAGUE_ERA * 80.0) / 100.0
+    if "home_sp_era_shrunk" in X.columns and "away_sp_era_shrunk" in X.columns:
+        X["sp_era_shrunk_diff"] = X["away_sp_era_shrunk"] - X["home_sp_era_shrunk"]
 
     # ── Last-start quality composite ──────────────────────────────────────────
     # FIP of last outing = best single-number quality proxy for that start.
@@ -604,6 +659,16 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 * pd.to_numeric(X["ump_sp_k_environment"], errors="coerce").fillna(1.5)
             )
 
+    # ── 3d: Park-Adjusted K Environment ─────────────────────────────────────
+    # In HR-friendly parks (pf > 1), batters are slightly less K-averse (swinging
+    # for the fences), so raw K-env overstates suppression in those parks.
+    if "total_k_env" in X.columns and "park_run_factor" in X.columns:
+        _pf = pd.to_numeric(X["park_run_factor"], errors="coerce").fillna(1.0)
+        X["total_k_env_park_adj"] = (
+            pd.to_numeric(X["total_k_env"], errors="coerce")
+            / (1.0 + 0.15 * (_pf - 1.0)).clip(lower=0.5)
+        )
+
     # ── Combined offensive environment (additive signals for total model) ──────
     # These are SUM (not difference) of home + away stats — the kind of signal
     # that predicts total run scoring rather than which team wins.
@@ -621,6 +686,27 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 + pd.to_numeric(X[_ac], errors="coerce").fillna(_fill)
             )
 
+    # ── Stolen base / team speed features ────────────────────────────────────
+    # SB rate reflects team aggressiveness on the basepaths. Faster/more aggressive
+    # teams manufacture runs beyond what batting stats alone capture.
+    for _side in ("home", "away"):
+        _sb5  = f"{_side}_sb_avg_5"
+        _sb10 = f"{_side}_sb_avg_10"
+        if _sb5 in X.columns and _sb10 in X.columns:
+            X[f"{_side}_sb_trend"] = (
+                pd.to_numeric(X[_sb5],  errors="coerce").fillna(0.5)
+                - pd.to_numeric(X[_sb10], errors="coerce").fillna(0.5)
+            )
+    if "home_sb_avg_10" in X.columns and "away_sb_avg_10" in X.columns:
+        X["sb_rate_diff"] = (
+            pd.to_numeric(X["home_sb_avg_10"], errors="coerce").fillna(0.5)
+            - pd.to_numeric(X["away_sb_avg_10"], errors="coerce").fillna(0.5)
+        )
+        X["combined_sb_avg_10"] = (
+            pd.to_numeric(X["home_sb_avg_10"], errors="coerce").fillna(0.5)
+            + pd.to_numeric(X["away_sb_avg_10"], errors="coerce").fillna(0.5)
+        )
+
     # Combined SP ERA (both pitchers struggling = more runs expected)
     for _suffix, _fill in [("5", 4.0), ("10", 4.0)]:
         _hsp = f"home_sp_era_{_suffix}"
@@ -637,6 +723,19 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             pd.to_numeric(X["combined_runs_avg_10"], errors="coerce").fillna(8.5)
             * pd.to_numeric(X["park_run_factor"], errors="coerce").fillna(1.0)
         )
+
+    # ── 3e: Top-4 Lineup × Opponent Bullpen Interaction ──────────────────────
+    # Top-4 sluggers facing a weak/tired opponent bullpen = elevated run scoring.
+    if "home_top4_slg_avg_10" in X.columns and "away_bp_era_5" in X.columns:
+        _hslg = pd.to_numeric(X["home_top4_slg_avg_10"], errors="coerce").fillna(0.4)
+        _abp  = pd.to_numeric(X["away_bp_era_5"], errors="coerce").fillna(4.0).clip(lower=1.0)
+        X["home_top4_x_opp_bp"] = _hslg * (4.0 / _abp)
+    if "away_top4_slg_avg_10" in X.columns and "home_bp_era_5" in X.columns:
+        _aslg = pd.to_numeric(X["away_top4_slg_avg_10"], errors="coerce").fillna(0.4)
+        _hbp  = pd.to_numeric(X["home_bp_era_5"], errors="coerce").fillna(4.0).clip(lower=1.0)
+        X["away_top4_x_opp_bp"] = _aslg * (4.0 / _hbp)
+    if "home_top4_x_opp_bp" in X.columns and "away_top4_x_opp_bp" in X.columns:
+        X["top4_bp_matchup_diff"] = X["home_top4_x_opp_bp"] - X["away_top4_x_opp_bp"]
 
     # ── SP Statcast quality features ─────────────────────────────────────────
     # combined_* = additive (both SPs' quality) → signal for total runs model
@@ -695,6 +794,38 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["away_sp_sc_k_bb_ratio"] = _ak / _ab
     if "home_sp_sc_k_bb_ratio" in X.columns and "away_sp_sc_k_bb_ratio" in X.columns:
         X["diff_sp_sc_k_bb_ratio"] = X["home_sp_sc_k_bb_ratio"] - X["away_sp_sc_k_bb_ratio"]
+
+    # ── Venue altitude → air density → run scoring boost ─────────────────────
+    # Thinner air at altitude reduces drag on batted balls; Coors Field effect.
+    # Air density relative to sea level: ρ/ρ₀ ≈ exp(-alt_ft / 25_000).
+    # Effect: each 1000 ft above sea level adds ~1.5% to ball carry distance.
+    # We express this as a multiplicative run-scoring factor on top of park_run_factor.
+    _PARK_ALTITUDE_FT = {
+        "COL": 5280,   # Coors Field, Denver
+        "ARI": 1082,   # Chase Field, Phoenix
+        "TEX": 551,    # Globe Life Field, Arlington
+        "ATL": 1050,   # Truist Park, Atlanta
+        "CIN": 869,    # Great American Ball Park, Cincinnati
+        "STL": 466,    # Busch Stadium, St. Louis
+        "KC":  909,    # Kauffman Stadium, Kansas City
+        "MIN": 841,    # Target Field, Minneapolis
+        "CHC": 595,    # Wrigley Field, Chicago
+        "CWS": 595,    # Guaranteed Rate Field, Chicago
+        "MIL": 635,    # American Family Field, Milwaukee
+        "PIT": 730,    # PNC Park, Pittsburgh
+        "DEN": 5280,   # alias if team abbr varies
+    }
+    # Default sea-level parks get 0 ft (SF, NYM, NYY, BOS, LAD, SD, SEA, etc.)
+    if "home_team_abbr" in X.columns:
+        _alt = X["home_team_abbr"].map(_PARK_ALTITUDE_FT).fillna(0.0).astype(float)
+        # Air density factor: 1.0 at sea level, lower at altitude → ball carries farther
+        # Simple linear approximation: −0.003% per foot (calibrated to Coors empirically)
+        X["venue_altitude_ft"] = _alt
+        X["altitude_run_boost"] = (_alt / 5280.0).clip(upper=1.0) * 0.18
+        # Interaction: altitude effect amplified in warm parks (hot + thin air)
+        if "temperature_f" in X.columns:
+            _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(72.0)
+            X["altitude_x_temp"] = X["altitude_run_boost"] * (_temp / 72.0).clip(lower=0.5)
 
     # ── Weather interactions for game totals ─────────────────────────────────
     # Cold temperatures suppress scoring — ball doesn't carry in cold air.
@@ -801,6 +932,34 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 pd.to_numeric(X[_h], errors="coerce").fillna(_fill)
                 - pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
             )
+
+    # ── 3f: H2H Sample-Size Confidence Weighting ─────────────────────────────
+    # Weight H2H slugging stats by number of matchup games (0→1 as n→15).
+    # Prevents single-game flukes from producing large H2H edges.
+    if "home_h2h_slg" in X.columns and "home_h2h_n" in X.columns:
+        _wh = (pd.to_numeric(X["home_h2h_n"], errors="coerce").fillna(0.0) / 15.0).clip(upper=1.0)
+        _wa = (pd.to_numeric(X["away_h2h_n"], errors="coerce").fillna(0.0) / 15.0).clip(upper=1.0)
+        X["home_h2h_slg_wtd"] = pd.to_numeric(X["home_h2h_slg"], errors="coerce").fillna(0.0) * _wh
+        X["away_h2h_slg_wtd"] = pd.to_numeric(X["away_h2h_slg"], errors="coerce").fillna(0.0) * _wa
+        X["h2h_slg_edge_wtd"] = X["home_h2h_slg_wtd"] - X["away_h2h_slg_wtd"]
+
+    # ── Catcher framing differential (game model) ─────────────────────────────
+    # framing_rv > 0 = catcher converts more borderline pitches to strikes.
+    # Differential favours the home team's pitcher when home catcher is better.
+    if "home_catcher_framing_rv" in X.columns and "away_catcher_framing_rv" in X.columns:
+        _hfr = pd.to_numeric(X["home_catcher_framing_rv"], errors="coerce").fillna(0.0)
+        _afr = pd.to_numeric(X["away_catcher_framing_rv"], errors="coerce").fillna(0.0)
+        X["catcher_framing_rv_diff"] = _hfr - _afr
+        X["combined_catcher_framing_rv"] = _hfr + _afr
+
+    # ── SP velocity trend differential ──────────────────────────────────────────
+    # Positive fb_velo_trend_diff = home SP throwing harder than their 5-start norm
+    if "home_fb_velo_trend_5" in X.columns and "away_fb_velo_trend_5" in X.columns:
+        _hvt = pd.to_numeric(X["home_fb_velo_trend_5"], errors="coerce").fillna(0.0)
+        _avt = pd.to_numeric(X["away_fb_velo_trend_5"], errors="coerce").fillna(0.0)
+        X["fb_velo_trend_diff"]     = _hvt - _avt
+        X["abs_fb_velo_trend_home"] = _hvt.abs()
+        X["abs_fb_velo_trend_away"] = _avt.abs()
 
     return X
 
@@ -1140,6 +1299,65 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # Back-to-back flag (rest_days ≤ 1)
     if "rest_days" in X.columns:
         X["is_b2b"] = (X["rest_days"].fillna(10.0) <= 1).astype(int)
+
+    # ── 4a: Batter Usage Regularity + Batting Order Signals ──────────────────
+    # Regular starters with ≥7 games played and ≥3 AB/game get full PA exposure.
+    if "ab_avg_10" in X.columns and "n_games_prev_10" in X.columns:
+        _ab = pd.to_numeric(X["ab_avg_10"], errors="coerce").fillna(0.0)
+        _g  = pd.to_numeric(X["n_games_prev_10"], errors="coerce").fillna(0.0)
+        X["is_regular_starter"] = ((_g >= 7.0) & (_ab >= 3.0)).astype(int)
+        X["ab_per_game_played"]  = _ab / _g.clip(lower=0.5)
+    if "batting_order_avg_10" in X.columns:
+        _slot = pd.to_numeric(X["batting_order_avg_10"], errors="coerce").fillna(5.0)
+        X["is_top_of_order"]    = (_slot <= 4.0).astype(int)
+        X["is_bottom_of_order"] = (_slot >= 7.0).astype(int)
+        X["pa_frequency_factor"] = (10.0 - _slot).clip(lower=1.0) / 9.0
+
+    # ── 4b: Lineup Slot × Weak Bullpen Interaction ────────────────────────────
+    # Top-of-order batters are more likely to bat in later innings against the bullpen.
+    if "opp_bp_era_5" in X.columns and "batting_order_avg_10" in X.columns:
+        _bp   = pd.to_numeric(X["opp_bp_era_5"], errors="coerce").fillna(4.0).clip(lower=1.0)
+        _slot = pd.to_numeric(X["batting_order_avg_10"], errors="coerce").fillna(5.0)
+        X["top_order_x_weak_bp"] = (_slot <= 3.5).astype(float) * (_bp / 4.0)
+
+    # ── 4c: K9 Bayesian Shrinkage (pitcher K model) ───────────────────────────
+    # Shrink pitcher K stats toward league averages for small sample sizes.
+    LEAGUE_K9   = 8.5
+    LEAGUE_KPCT = 0.22
+    if "k9_5" in X.columns and "ip_avg_5" in X.columns and "starts_in_window_5" in X.columns:
+        _ip5 = (pd.to_numeric(X["ip_avg_5"], errors="coerce").fillna(5.0)
+                * pd.to_numeric(X["starts_in_window_5"], errors="coerce").fillna(1.0))
+        _k9  = pd.to_numeric(X["k9_5"], errors="coerce").fillna(LEAGUE_K9)
+        X["k9_shrunk"] = (_k9 * _ip5 + LEAGUE_K9 * 20.0) / (_ip5 + 20.0)
+    if "k_pct_5" in X.columns and "ip_avg_5" in X.columns and "starts_in_window_5" in X.columns:
+        _ip5  = (pd.to_numeric(X["ip_avg_5"], errors="coerce").fillna(5.0)
+                 * pd.to_numeric(X["starts_in_window_5"], errors="coerce").fillna(1.0))
+        _kpct = pd.to_numeric(X["k_pct_5"], errors="coerce").fillna(LEAGUE_KPCT)
+        X["k_pct_shrunk"] = (_kpct * _ip5 + LEAGUE_KPCT * 20.0) / (_ip5 + 20.0)
+
+    # ── 4d: Catcher Framing × Pitcher Handedness ─────────────────────────────
+    # LHP benefit less from framing (their delivery angle differs); scale accordingly.
+    if "catcher_framing_rate" in X.columns:
+        _fr = pd.to_numeric(X["catcher_framing_rate"], errors="coerce").fillna(0.0)
+        if "pitcher_hand_l" in X.columns:
+            _lhp = pd.to_numeric(X["pitcher_hand_l"], errors="coerce").fillna(0.0)
+            X["framing_hand_benefit"] = _fr * (1.0 - 0.25 * _lhp)
+        else:
+            X["framing_hand_benefit"] = _fr
+
+    # ── Pitcher vs opponent lineup K-rate variance ────────────────────────────
+    # Lineup K-rate CV distinguishes "all contact" vs "mixed" lineups.
+    # A high-K pitcher facing a HIGH-CV lineup has more K opportunities than
+    # the raw avg K rate suggests (variance creates matchup-specific upside).
+    if "k_pct_5" in X.columns and "opp_lineup_k_pct_cv" in X.columns:
+        _sp_k = pd.to_numeric(X["k_pct_5"], errors="coerce").fillna(0.22)
+        _cv   = pd.to_numeric(X["opp_lineup_k_pct_cv"], errors="coerce").fillna(0.0)
+        X["sp_k_pct_x_opp_cv"] = _sp_k * (1.0 + _cv)
+    if "opp_lineup_k_pct_std" in X.columns:
+        # Keep raw std as standalone feature for the model to weight independently
+        X["opp_lineup_k_pct_std"] = pd.to_numeric(
+            X["opp_lineup_k_pct_std"], errors="coerce"
+        ).fillna(0.05)
 
     return X
 

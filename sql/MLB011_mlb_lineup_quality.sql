@@ -33,6 +33,7 @@ lineup_with_stats AS (
         br.tb_avg_10,
         br.ab_avg_10,
         br.hits_avg_10,
+        br.k_pct_avg_10,
         sb.xwoba,
         sb.xslg,
         sb.barrel_batted_rate,
@@ -65,7 +66,12 @@ SELECT
     AVG(xwoba)              AS lineup_xwoba_avg,
     AVG(xslg)               AS lineup_xslg_avg,
     AVG(barrel_batted_rate) AS lineup_barrel_avg,
-    AVG(hard_hit_percent)   AS lineup_hard_hit_avg
+    AVG(hard_hit_percent)   AS lineup_hard_hit_avg,
+    STDDEV_SAMP(k_pct_avg_10)                            AS lineup_k_pct_std,
+    CASE WHEN AVG(k_pct_avg_10) > 0
+         THEN STDDEV_SAMP(k_pct_avg_10)
+              / NULLIF(AVG(k_pct_avg_10), 0)
+         ELSE NULL END                                   AS lineup_k_pct_cv
 FROM lineup_with_stats
 GROUP BY game_slug, team_abbr, is_home
 ;

@@ -64,10 +64,13 @@ class TrainConfig:
     random_state: int = 42
 
     # Optuna hyperparameter tuning
-    # Reduced from 20/5 → 12/3: 36 fits/stat × 5 stats = 180 total (~3.5x faster, avoids 3600s timeout)
+    # 35 trials × 4 folds = 140 fits/stat × 5 stats = 700 total
+    # timeout_sec is the hard wall-clock cap per stat — Optuna uses best params found so far
+    # rather than crashing if the trial budget isn't exhausted within the window.
     run_optuna: bool = True
-    optuna_n_trials: int = 12
-    optuna_n_folds: int = 3   # last N walk-forward folds used for tuning
+    optuna_n_trials: int = 35    # was 12; hits TPE convergence zone for expanded max_depth space
+    optuna_n_folds: int = 4      # was 3; adds one extra validation fold
+    optuna_timeout_sec: int = 900  # 15 min/stat × 5 stats = 75 min max; stops early if slow
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +120,9 @@ SELECT
     ob.hr_avg_10       AS opp_hr_avg_10,
     ob.iso_avg_10      AS opp_iso_avg_10,
     ob.slg_avg_10      AS opp_slg_avg_10,
+    -- Opponent lineup K-rate variance (distribution of K-proneness across the lineup)
+    lq_opp.lineup_k_pct_std                  AS opp_lineup_k_pct_std,
+    lq_opp.lineup_k_pct_cv                   AS opp_lineup_k_pct_cv,
     -- Park factors
     bf.run_factor      AS park_run_factor,
     bf.hr_factor       AS park_hr_factor,
@@ -794,7 +800,7 @@ def _optuna_objective_props(
 ) -> float:
     """XGBoost objective for a single stat. Returns mean walk-forward MAE."""
     params = {
-        "max_depth":        trial.suggest_int("max_depth", 3, 7),
+        "max_depth":        trial.suggest_int("max_depth", 3, 12),
         "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
         "subsample":        trial.suggest_float("subsample", 0.6, 1.0),
         "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
@@ -874,9 +880,13 @@ def _run_optuna_for_stat(
             trial, df, X_raw, y, feature_cols, medians, tune_folds, objective
         ),
         n_trials=cfg.optuna_n_trials,
+        timeout=cfg.optuna_timeout_sec,
         show_progress_bar=False,
     )
-    log.info("%s best Optuna MAE=%.3f | params=%s", stat_name, study.best_value, study.best_params)
+    log.info(
+        "%s best Optuna MAE=%.3f after %d trials | params=%s",
+        stat_name, study.best_value, len(study.trials), study.best_params,
+    )
     return study.best_params
 
 

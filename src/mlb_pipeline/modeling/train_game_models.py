@@ -63,7 +63,7 @@ class TrainConfig:
     optuna_n_folds: int = 5      # walk-forward folds used for tuning
     # Recency weighting half-life (days): sample weight halves every N days of age.
     # Age is measured from the most recent training date in each fold.
-    recency_half_life_days: int = 90
+    recency_half_life_days: int = 45
 
 
 SQL_GAME_TRAINING_FEATURES = """
@@ -313,6 +313,28 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
     # Derived interaction features — single source of truth in features.add_game_derived_features.
     X = add_game_derived_features(X)
 
+    # Drop confirmed zero-importance features (per feature_importance.json after last retrain).
+    # Note: ump_runs_per_game is intentionally kept because ump_rpg_x_park references it.
+    _prune_zero_importance = [
+        "elo_win_prob_home",           # redundant with elo_diff (logistic transform)
+        "h2h_edge", "h2h_familiarity", # season H2H record too sparse; ELO captures it
+        "sp_short_rest_asymmetry",     # captured by individual sp_days_rest features
+        "home_sp_is_short_rest", "away_sp_is_short_rest",
+        "home_sp_last_short",   "away_sp_last_short",
+        "home_is_b2b", "away_is_b2b", "rest_diff",
+        "is_cold_outdoor",             # captured by temp_cold_penalty (continuous)
+        "precip_scoring_risk",         # overlaps with precip_prob_pct
+        "win_pct_diff",                # captured by win_pct_last_5_diff / _10_diff
+        "home_division_rank", "away_division_rank", "division_rank_edge",
+        "over_implied_prob",           # redundant; total_vig_direction is directional
+        "team_era_10_diff", "team_whip_10_diff",
+        "batting_runs_avg_10_diff",
+        "sp_fip_5_diff",               # captured by sp_composite_edge
+        "home_games_vs_lhp", "home_games_vs_rhp",
+        "away_games_vs_lhp", "away_games_vs_rhp",
+    ]
+    X = X.drop(columns=[c for c in _prune_zero_importance if c in X.columns])
+
     still_bad = [c for c in X.columns if not is_numeric_dtype(X[c])]
     if still_bad:
         raise RuntimeError(f"Non-numeric columns remain after encoding: {still_bad[:20]}")
@@ -417,7 +439,7 @@ def _optuna_objective(
     objective: str = "reg:pseudohubererror",
 ) -> float:
     params = {
-        "max_depth": trial.suggest_int("max_depth", 3, 7),
+        "max_depth": trial.suggest_int("max_depth", 3, 12),
         "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
         "subsample": trial.suggest_float("subsample", 0.6, 1.0),
         "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
@@ -563,7 +585,7 @@ def _select_top_features(
     y_total: pd.Series,
     feature_cols: list,
     model_dir: Path,
-    cum_thresh: float = 0.99,
+    cum_thresh: float = 0.95,
     min_keep: int = 60,
     max_keep: int = 120,
 ) -> tuple:
@@ -1146,7 +1168,7 @@ def main() -> None:
             objective="huber",
             alpha=0.9,
             metric="huber",
-            num_leaves=63,
+            num_leaves=127,   # was 63; 2^7−1 matches depth-7 XGB but grows asymmetrically
             learning_rate=0.05,
             n_estimators=500,
             min_child_samples=20,
@@ -1173,6 +1195,31 @@ def main() -> None:
                     log.warning("LGB %s training failed: %s", _lgb_target, _exc)
         else:
             log.info("lightgbm not installed — skipping LGB ensemble (pip install lightgbm)")
+
+        # ── Quantile LGB models (q10/25/50/75/90) ─────────────────────────────────
+        _QUANTILES = [10, 25, 50, 75, 90]
+        if _HAS_LGB:
+            log.info("Training LightGBM quantile models on %d rows...", len(X_all))
+            for _q_int in _QUANTILES:
+                _q = _q_int / 100.0
+                _q_params = {
+                    **_lgb_params,
+                    "objective": "quantile",
+                    "alpha": _q,
+                    "metric": "quantile",
+                }
+                for _lgb_target, _lgb_y, _lgb_stem in [
+                    ("run_line", y_run_diff, "run_line"),
+                    ("total",    y_total,   "total"),
+                ]:
+                    try:
+                        _qm = lgb.LGBMRegressor(**_q_params)
+                        _qm.fit(X_all, _lgb_y)
+                        _fname = f"{_lgb_stem}_q{_q_int:02d}_lgb.txt"
+                        _qm.booster_.save_model(str(model_dir / _fname))
+                        log.info("Saved LGB quantile q%02d %s → %s", _q_int, _lgb_target, _fname)
+                    except Exception as _exc:
+                        log.warning("LGB quantile q%02d %s failed: %s", _q_int, _lgb_target, _exc)
 
         # FINAL F5 MODEL (first 5 innings total)
         _n_f5_all = int(f5_mask.sum())

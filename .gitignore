@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 logs/
+
+# Large model artifacts — exceed GitHub's 100 MB file size limit
+src/mlb_pipeline/modeling/models/player_props/walks_xgb.json
