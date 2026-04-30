@@ -48,7 +48,7 @@ class TrainConfig:
     # Walk-forward (same cadence as MLB game model)
     min_train_days: int = 120
     test_window_days: int = 14
-    step_days: int = 14
+    step_days: int = 21          # 21-day step → ~33% fewer folds vs 14; still ample OOF coverage
 
     # XGBoost defaults (overridden by Optuna when enabled)
     n_estimators: int = 2000
@@ -64,13 +64,12 @@ class TrainConfig:
     random_state: int = 42
 
     # Optuna hyperparameter tuning
-    # 35 trials × 4 folds = 140 fits/stat × 5 stats = 700 total
-    # timeout_sec is the hard wall-clock cap per stat — Optuna uses best params found so far
-    # rather than crashing if the trial budget isn't exhausted within the window.
+    # TPE typically converges by trial 15-20; 20 trials × 3 folds = 60 fits/stat × 5 = 300 total
+    # timeout_sec is the hard wall-clock cap per stat — Optuna uses best params found so far.
     run_optuna: bool = True
-    optuna_n_trials: int = 35    # was 12; hits TPE convergence zone for expanded max_depth space
-    optuna_n_folds: int = 4      # was 3; adds one extra validation fold
-    optuna_timeout_sec: int = 900  # 15 min/stat × 5 stats = 75 min max; stops early if slow
+    optuna_n_trials: int = 20    # was 35; TPE converges well before trial 35
+    optuna_n_folds: int = 3      # was 4; 25% fewer fits per trial
+    optuna_timeout_sec: int = 600  # 10 min/stat × 5 stats = 50 min max (was 75 min)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

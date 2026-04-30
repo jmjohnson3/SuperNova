@@ -138,10 +138,10 @@ class ClfConfig:
     # Walk-forward — shorter window than regression (binary has less data initially)
     min_train_days: int = 60
     test_window_days: int = 14
-    step_days: int = 14
+    step_days: int = 21          # 21-day step → ~33% fewer folds (was 14)
 
     # XGBoost defaults
-    n_estimators: int = 1000
+    n_estimators: int = 800      # was 1000; early stopping still active, saves ~20% tree budget
     max_depth: int = 4
     learning_rate: float = 0.05
     subsample: float = 0.8
