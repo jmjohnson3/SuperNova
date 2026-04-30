@@ -93,7 +93,6 @@ SELECT
     AVG(k_pct)       OVER w5          AS k_pct_avg_5,
     AVG(bb_pct)      OVER w5          AS bb_pct_avg_5,
     SUM(runs_scored) OVER w5          AS runs_sum_5,
-    AVG(team_sb)     OVER w5          AS sb_avg_5,
 
     -- 10-game rolling windows
     AVG(runs_scored)          OVER w10 AS runs_avg_10,
@@ -105,12 +104,6 @@ SELECT
     AVG(k_pct)                OVER w10 AS k_pct_avg_10,
     AVG(bb_pct)               OVER w10 AS bb_pct_avg_10,
     STDDEV_SAMP(runs_scored)  OVER w10 AS runs_sd_10,
-    AVG(team_sb)              OVER w10 AS sb_avg_10,
-    -- SB% (stolen base success rate): SB / (SB + would-be CS proxy via attempts)
-    -- We only have SB not CS in gamelogs, so expose raw SB rate as proxy for aggressiveness
-    CASE WHEN SUM(team_ab) OVER w10 > 0
-         THEN SUM(team_sb) OVER w10::float / NULLIF(SUM(team_ab) OVER w10, 0)
-         ELSE NULL END       AS sb_pct_10,
 
     -- 20-game rolling windows
     AVG(runs_scored) OVER w20         AS runs_avg_20,
@@ -121,7 +114,15 @@ SELECT
     AVG(iso)         OVER w20         AS iso_avg_20,
     AVG(k_pct)       OVER w20         AS k_pct_avg_20,
     AVG(bb_pct)      OVER w20         AS bb_pct_avg_20,
-    STDDEV_SAMP(runs_scored) OVER w20 AS runs_sd_20
+    STDDEV_SAMP(runs_scored) OVER w20 AS runs_sd_20,
+
+    -- SB rolling (appended at end — CREATE OR REPLACE VIEW requires new columns last)
+    AVG(team_sb)     OVER w5          AS sb_avg_5,
+    AVG(team_sb)     OVER w10         AS sb_avg_10,
+    -- SB% proxy: SB / AB over last 10 games (aggressiveness signal)
+    CASE WHEN SUM(team_ab) OVER w10 > 0
+         THEN SUM(team_sb) OVER w10::float / NULLIF(SUM(team_ab) OVER w10, 0)
+         ELSE NULL END                AS sb_pct_10
 
 FROM derived
 WINDOW

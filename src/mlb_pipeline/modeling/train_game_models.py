@@ -332,6 +332,23 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         "sp_fip_5_diff",               # captured by sp_composite_edge
         "home_games_vs_lhp", "home_games_vs_rhp",
         "away_games_vs_lhp", "away_games_vs_rhp",
+        # Raw batting-vs-hand split columns (derived platoon features replace them)
+        "home_sp_pitch_hand_l", "away_sp_pitch_hand_l",
+        "home_team_avg_vs_lhp", "home_team_avg_vs_rhp",
+        "home_team_obp_vs_lhp", "home_team_obp_vs_rhp",
+        "home_team_slg_vs_lhp", "home_team_slg_vs_rhp",
+        "away_team_avg_vs_lhp", "away_team_avg_vs_rhp",
+        "away_team_obp_vs_lhp", "away_team_obp_vs_rhp",
+        "away_team_slg_vs_lhp", "away_team_slg_vs_rhp",
+        # Other confirmed 0.0-importance features
+        "rest_days_advantage",
+        "market_total",                # aliased by total_line (already in matrix)
+        "market_run_line",             # always -1.5, zero variance
+        "sp_short_asymmetry",
+        "home_is_opener", "away_is_opener", "opener_asymmetry",
+        "home_sp_era_shrunk", "away_sp_era_shrunk", "sp_era_shrunk_diff",
+        "is_dome",
+        "home_sp_short_last", "away_sp_short_last",
     ]
     X = X.drop(columns=[c for c in _prune_zero_importance if c in X.columns])
 

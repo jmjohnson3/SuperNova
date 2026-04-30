@@ -118,6 +118,11 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "run_line_home" in X.columns:
         X["market_run_line"] = X["run_line_home"]
 
+    # ── Market total deviation from league average ────────────────────────────
+    # More signal than raw total_line (centers on ~9.0 runs/game)
+    if "total_line" in X.columns:
+        X["market_total_vs_avg"] = pd.to_numeric(X["total_line"], errors="coerce") - 9.0
+
     # ── OPS (OBP + SLG) differential ─────────────────────────────────────────
     # OPS is the most common single-number offensive quality proxy.
     for _w in ("5", "10"):
@@ -148,6 +153,19 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "home_era_trend_5v10" in X.columns and "away_era_trend_5v10" in X.columns:
         X["era_trend_diff"] = X["away_era_trend_5v10"] - X["home_era_trend_5v10"]
 
+    # ── Opponent-quality adjusted SP ERA ─────────────────────────────────────
+    # SP facing above-avg offense gets credit: adj_era = raw_era - opp_quality * 0.25
+    _LEAGUE_AVG_R = 4.5
+    for _sp, _opp_r in [("home", "away"), ("away", "home")]:
+        _era = f"{_sp}_sp_era_5"
+        _opp = f"{_opp_r}_runs_avg_5"
+        if _era in X.columns and _opp in X.columns:
+            _era_v = pd.to_numeric(X[_era], errors="coerce")
+            _opp_v = pd.to_numeric(X[_opp], errors="coerce").fillna(_LEAGUE_AVG_R)
+            X[f"{_sp}_sp_era_opp_adj_5"] = _era_v - (_opp_v - _LEAGUE_AVG_R) * 0.25
+    if "home_sp_era_opp_adj_5" in X.columns and "away_sp_era_opp_adj_5" in X.columns:
+        X["sp_era_opp_adj_diff"] = X["home_sp_era_opp_adj_5"] - X["away_sp_era_opp_adj_5"]
+
     # ── SP K/BB ratio (dominance vs command) ─────────────────────────────────
     for _side in ("home", "away"):
         _k, _bb = f"{_side}_sp_k_pct_5", f"{_side}_sp_bb_pct_5"
@@ -170,6 +188,16 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _ip = f"{_side}_sp_ip_avg_5"
         if _ip in X.columns:
             X[f"{_side}_bullpen_exposure"] = (1.0 - X[_ip].clip(0, 9) / 9.0).clip(lower=0.0)
+
+    # ── SP last-start workload (IP-based fatigue proxy; ~16.5 pitches/inning) ─
+    for _side in ("home", "away"):
+        _lip = f"{_side}_sp_last_ip"
+        if _lip in X.columns:
+            _ip_v = pd.to_numeric(X[_lip], errors="coerce").fillna(0.0)
+            X[f"{_side}_sp_last_high_workload"] = (_ip_v > 6.0).astype(int)
+            X[f"{_side}_sp_pitches_est"] = _ip_v * 16.5
+    if "home_sp_pitches_est" in X.columns and "away_sp_pitches_est" in X.columns:
+        X["sp_pitches_est_diff"] = X["home_sp_pitches_est"] - X["away_sp_pitches_est"]
 
     # ── SP depth × BP ERA (short SP + bad bullpen = runs) ────────────────────
     for _side in ("home", "away"):
@@ -223,6 +251,19 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 X[f"{_side}_park_adj_runs_10"] = X[_r10] * _park
         if "home_park_adj_runs_10" in X.columns and "away_park_adj_runs_10" in X.columns:
             X["park_adj_runs_diff"] = X["home_park_adj_runs_10"] - X["away_park_adj_runs_10"]
+
+    # ── Park-adjusted SP ERA ──────────────────────────────────────────────────
+    # Normalize ERA by park run factor to remove ballpark bias.
+    _park_f = pd.to_numeric(
+        X["park_run_factor"] if "park_run_factor" in X.columns else pd.Series(1.0, index=X.index),
+        errors="coerce",
+    ).fillna(1.0).clip(lower=0.7, upper=1.4)
+    for _side in ("home", "away"):
+        _era = f"{_side}_sp_era_5"
+        if _era in X.columns:
+            X[f"{_side}_sp_era_park_adj_5"] = pd.to_numeric(X[_era], errors="coerce") / _park_f
+    if "home_sp_era_park_adj_5" in X.columns and "away_sp_era_park_adj_5" in X.columns:
+        X["sp_era_park_adj_diff"] = X["home_sp_era_park_adj_5"] - X["away_sp_era_park_adj_5"]
 
     # ── Pythagorean × opposing SP quality ────────────────────────────────────
     # Strong team facing weak SP → amplified win probability.
@@ -869,7 +910,7 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # We select the relevant hand-split batting stat based on today's opposing SP.
     # Reliability weighted by games_vs_lhp / games_vs_rhp (sample size).
     for _bat_side, _sp_side in [("home", "away"), ("away", "home")]:
-        _sp_hand_L  = f"{_sp_side}_sp_pitch_hand_L"   # 1 if today's SP is LHP
+        _sp_hand_L  = f"{_sp_side}_sp_pitch_hand_l"   # 1 if today's SP is LHP (lowercase — matches PostgreSQL)
         _avg_vs_lhp = f"{_bat_side}_team_avg_vs_lhp"
         _avg_vs_rhp = f"{_bat_side}_team_avg_vs_rhp"
         _obp_vs_lhp = f"{_bat_side}_team_obp_vs_lhp"

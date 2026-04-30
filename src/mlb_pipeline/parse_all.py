@@ -218,30 +218,29 @@ def _refresh_matviews(pg_dsn: str) -> None:
                 log.exception("Failed to refresh: %s", stmt)
                 failed_ops.append(f"refresh:{stmt}")
 
-        # ── If any matview was dropped (cascading to game feature views),
-        #    re-apply MLB011 (lineup quality) then MLB006 so those views are
-        #    recreated with updated schemas. MLB006 references mlb_lineup_quality
-        #    so MLB011 must come first.
-        #    Re-run MLB007 first to ensure any matviews whose base views were
-        #    cascade-dropped-and-since-restored are now created. ──
-        if dropped_any:
-            # Re-apply MLB007 to pick up any matviews that failed on the first pass
-            # (their base views may now exist after the refresh cycle above).
-            _apply_matview_sql("MLB007_mlb_materialized_rolling.sql")
+        # ── Always re-apply MLB007 + MLB011 + MLB006 after the refresh cycle. ──
+        # MLB007 picks up any matviews that failed on the first pass (their base
+        # views may now exist after the refresh).  MLB011 + MLB006 recreate
+        # mlb_lineup_quality and mlb_game_prediction/training_features, which
+        # depend directly on matviews and are silently dropped by any CASCADE
+        # drop — even one triggered by a concurrent pipeline run.  Running
+        # unconditionally (not just when dropped_any) ensures correctness even
+        # when two pipeline runs overlap.
+        _apply_matview_sql("MLB007_mlb_materialized_rolling.sql")
 
-            conn.autocommit = False
-            cur2 = conn.cursor()
-            try:
-                for fname in ("MLB011_mlb_lineup_quality.sql", "MLB006_mlb_game_features.sql"):
-                    cur2.execute((_SQL_DIR / fname).read_text(encoding="utf-8"))
-                conn.commit()
-                log.info("Re-applied MLB011 + MLB006 after matview schema change")
-            except Exception:
-                conn.rollback()
-                log.exception("Failed to re-apply MLB011/MLB006 after matview drop")
-                failed_ops.append("reapply:MLB011+MLB006")
-            finally:
-                conn.autocommit = True
+        conn.autocommit = False
+        cur2 = conn.cursor()
+        try:
+            for fname in ("MLB011_mlb_lineup_quality.sql", "MLB006_mlb_game_features.sql"):
+                cur2.execute((_SQL_DIR / fname).read_text(encoding="utf-8"))
+            conn.commit()
+            log.info("Re-applied MLB007 + MLB011 + MLB006 (unconditional, dropped_any=%s)", dropped_any)
+        except Exception:
+            conn.rollback()
+            log.exception("Failed to re-apply MLB007/MLB011/MLB006")
+            failed_ops.append("reapply:MLB007+MLB011+MLB006")
+        finally:
+            conn.autocommit = True
 
         if failed_ops:
             raise RuntimeError(
