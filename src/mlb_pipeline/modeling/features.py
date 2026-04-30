@@ -1145,6 +1145,19 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["ump_k9_x_sp_k_pct"] = X["ump_k9_avg_10"] * X["k_pct_5"]
     if "ump_k9_avg_10" in X.columns and "opp_k_pct_avg_10" in X.columns:
         X["ump_k9_x_opp_k_pct"] = X["ump_k9_avg_10"] * X["opp_k_pct_avg_10"]
+    # Statcast-based K interactions: ump tendencies × pitch-arsenal quality metrics
+    if "ump_k9_avg_10" in X.columns:
+        if "sc_sp_disc_whiff_pct" in X.columns:
+            X["ump_k9_x_sp_whiff_pct"] = X["ump_k9_avg_10"] * X["sc_sp_disc_whiff_pct"]
+        if "sc_sp_sl_whiff_pct" in X.columns:
+            X["ump_k9_x_sp_sl_whiff_pct"] = X["ump_k9_avg_10"] * X["sc_sp_sl_whiff_pct"]
+        if "k9_5" in X.columns:
+            X["ump_k9_x_sp_k9_5"] = X["ump_k9_avg_10"] * X["k9_5"]
+        # Triple interaction: wide-zone ump + high-K pitcher vs strikeout-prone lineup
+        if "k_pct_5" in X.columns and "opp_k_pct_avg_10" in X.columns:
+            X["ump_k9_x_sp_opp_k_triple"] = (
+                X["ump_k9_avg_10"] * X["k_pct_5"] * X["opp_k_pct_avg_10"]
+            )
 
     # ── Lineup slot ───────────────────────────────────────────────────────────
     if "batting_order_avg_10" in X.columns:

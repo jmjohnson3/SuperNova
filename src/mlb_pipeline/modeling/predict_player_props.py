@@ -202,6 +202,8 @@ SELECT
     lq_opp.lineup_avg_avg_10                                     AS opp_lineup_avg_avg_10,
     lq_opp.lineup_iso_avg_10                                     AS opp_lineup_iso_avg_10,
     lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10,
+    lq_opp.lineup_k_pct_std                                      AS opp_lineup_k_pct_std,
+    lq_opp.lineup_k_pct_cv                                       AS opp_lineup_k_pct_cv,
     -- Statcast: pitcher's own batted-ball-against profile
     sc_p.barrel_batted_rate  AS sc_barrel_rate,
     sc_p.hard_hit_percent    AS sc_hard_hit_pct,
@@ -1254,6 +1256,47 @@ def _prob_over_from_regression(pred: Optional[float], line: Optional[float], sig
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Regression / CLF agreement gate
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Approximate walk-forward MAE per stat (used to scale disagreement).
+# When regression disagrees with CLF direction by > 1 MAE we start blending CLF
+# toward 0.5; full blend (CLF → 0.5) occurs at 2 MAE disagreement.
+_PROP_MAE: dict[str, float] = {
+    "pitcher_strikeouts": 1.73,
+    "batter_hits":        0.68,
+    "batter_total_bases": 1.30,
+    "batter_home_runs":   0.20,
+    "batter_walks":       0.44,
+}
+
+
+def _apply_regression_gate(
+    clf_prob: float,
+    pred_regression: float,
+    book_line: float,
+    stat: str,
+    blend_mae_threshold: float = 1.0,
+) -> float:
+    """Blend CLF prob toward 0.5 when regression strongly disagrees on direction.
+
+    If CLF says OVER (>0.5) but regression predicts meaningfully under the line
+    (or vice versa), we dampen the CLF signal proportional to how strongly the
+    regression disagrees, measured in units of per-stat MAE.
+
+    No effect when CLF and regression agree on direction.
+    """
+    mae = _PROP_MAE.get(stat, 1.0)
+    regression_edge = pred_regression - book_line
+    clf_edge = clf_prob - 0.5
+    if clf_edge * regression_edge >= 0:
+        return clf_prob  # same direction — no modification
+    disagree_n_mae = abs(regression_edge) / max(mae, 0.01)
+    blend = min(max((disagree_n_mae - blend_mae_threshold) / blend_mae_threshold, 0.0), 1.0)
+    return clf_prob + blend * (0.5 - clf_prob)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Bias correction
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -2248,9 +2291,10 @@ def _print_discord(
                     ld = prop_lines.get((norm, "pitcher_strikeouts"))
                     line = ld["line"] if ld else None
                     clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
-                    p_over = clf_p if clf_p is not None else _prob_over_from_regression(
-                        pred_k, line, row.get("sigma_strikeouts")
-                    )
+                    p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
+                    if clf_p is not None and line is not None:
+                        clf_p = _apply_regression_gate(clf_p, pred_k, line, "pitcher_strikeouts")
+                    p_over = clf_p if clf_p is not None else p_over_reg
                     ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
                     if ev_pick is not None:
                         edge = ev_pick["ev"]
@@ -2310,6 +2354,7 @@ def _print_discord(
                     # Use binary CLF P(over) when available
                     clf_p = (row.get("clf_p_over") or {}).get(stat_key)
                     if clf_p is not None:
+                        clf_p = _apply_regression_gate(clf_p, pred_v, line, stat_key)
                         edge = clf_p - _BREAKEVEN_PROB
                         eff_thresh = cfg.threshold_clf
                         display_pred = clf_p
@@ -2354,6 +2399,8 @@ def _print_discord(
         line = ld["line"]
         p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
         clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
+        if clf_p is not None:
+            clf_p = _apply_regression_gate(clf_p, pred_k, line, "pitcher_strikeouts")
         p_over = clf_p if clf_p is not None else p_over_reg
         ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
         if ev_pick is not None:
@@ -2402,6 +2449,7 @@ def _print_discord(
             # Use binary CLF P(over) when available — edge is in probability space
             clf_p = _clf_pover.get(stat_key)
             if clf_p is not None:
+                clf_p = _apply_regression_gate(clf_p, pred_v, line, stat_key)
                 edge = clf_p - _BREAKEVEN_PROB
                 eff_thresh = cfg.threshold_clf
                 display_pred = clf_p  # show P(over) directly

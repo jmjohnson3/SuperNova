@@ -679,12 +679,12 @@ def _run_walk_forward(
     stat_name: str,
     objective: str = "reg:absoluteerror",
     params_override: Optional[Dict] = None,
-) -> Tuple[float, float]:
-    """Run walk-forward CV. Returns (mae, p68_ci)."""
+) -> Tuple[float, float, List[int]]:
+    """Run walk-forward CV. Returns (mae, p68_ci, best_iters)."""
     folds = _walk_forward_folds(df, cfg.min_train_days, cfg.test_window_days, cfg.step_days)
     if not folds:
         log.warning("No walk-forward folds for %s", stat_name)
-        return float("nan"), float("nan")
+        return float("nan"), float("nan"), []
 
     oof_preds, oof_actual = [], []
     best_iters = []
@@ -739,7 +739,7 @@ def _run_walk_forward(
         oof_actual.extend(y_te.values)
 
     if not oof_preds:
-        return float("nan"), float("nan")
+        return float("nan"), float("nan"), []
 
     oof_preds = np.array(oof_preds)
     oof_actual = np.array(oof_actual)
@@ -753,7 +753,7 @@ def _run_walk_forward(
         len(oof_actual), len(folds),
         int(np.median(best_iters)) if best_iters else cfg.n_estimators,
     )
-    return mae, p68
+    return mae, p68, best_iters
 
 
 def _fit_final_model(
@@ -931,15 +931,17 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
             log.warning("Optuna tuning failed for strikeouts: %s. Using defaults.", e)
 
     # Walk-forward evaluation
-    wf_mae, wf_p68 = _run_walk_forward(
+    wf_mae, wf_p68, wf_best_iters = _run_walk_forward(
         df, X_raw, y_k, feature_cols, medians, cfg, "strikeouts",
         objective="count:poisson",
         params_override=best_k_params,
     )
+    _n_est_k = int(np.percentile(wf_best_iters, 75) * 1.1) if wf_best_iters else cfg.n_estimators
 
     # Final model
     xgb, lgb_model = _fit_final_model(
         X_filled, y_k, cfg, "strikeouts",
+        n_estimators=_n_est_k,
         objective="count:poisson",
         params_override=best_k_params,
     )
@@ -1009,16 +1011,19 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
             log.warning("Optuna tuning failed for batters: %s. Using defaults.", e)
 
     # Walk-forward for all four stats (using tuned params)
-    hits_mae,  hits_p68  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",         objective="count:poisson", params_override=best["hits"])
-    tb_mae,    tb_p68    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
-    hr_mae,    hr_p68    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
-    walks_mae, walks_p68 = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter", objective="count:poisson", params_override=best["walks_batter"])
+    hits_mae,  hits_p68,  hits_iters  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",         objective="count:poisson", params_override=best["hits"])
+    tb_mae,    tb_p68,    tb_iters    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
+    hr_mae,    hr_p68,    hr_iters    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
+    walks_mae, walks_p68, walks_iters = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter", objective="count:poisson", params_override=best["walks_batter"])
 
-    # Final models (using tuned params)
-    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",         objective="count:poisson", params_override=best["hits"])
-    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
-    xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
-    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter", objective="count:poisson", params_override=best["walks_batter"])
+    def _cv_n_est(iters: List[int]) -> Optional[int]:
+        return int(np.percentile(iters, 75) * 1.1) if iters else None
+
+    # Final models (using CV best_iter to set n_estimators)
+    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",         n_estimators=_cv_n_est(hits_iters),  objective="count:poisson", params_override=best["hits"])
+    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases",  n_estimators=_cv_n_est(tb_iters),    objective="count:poisson", params_override=best["total_bases"])
+    xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    n_estimators=_cv_n_est(hr_iters),    objective="count:poisson", params_override=best["home_runs"])
+    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter", n_estimators=_cv_n_est(walks_iters), objective="count:poisson", params_override=best["walks_batter"])
 
     # Save
     model_dir = cfg.model_dir

@@ -374,19 +374,19 @@ def _run_walk_forward_clf(
     medians: Dict[str, float],
     cfg: ClfConfig,
     stat_name: str,
-) -> Tuple[float, float, np.ndarray, np.ndarray]:
+) -> Tuple[float, float, np.ndarray, np.ndarray, List[int]]:
     """Walk-forward CV for binary classifier.
 
     Returns:
-      (brier_score, auc, oof_preds, oof_actual)
+      (brier_score, auc, oof_preds, oof_actual, best_iters)
     """
     folds = _walk_forward_folds(df, cfg.min_train_days, cfg.test_window_days, cfg.step_days)
     if not folds:
         log.warning("No walk-forward folds for %s (need %d days of prop line data)",
                     stat_name, cfg.min_train_days)
-        return float("nan"), float("nan"), np.array([], dtype=float), np.array([], dtype=float)
+        return float("nan"), float("nan"), np.array([], dtype=float), np.array([], dtype=float), []
 
-    oof_preds, oof_actual = [], []
+    oof_preds, oof_actual, best_iters = [], [], []
 
     for train_end, test_end in folds:
         tr_mask = pd.to_datetime(df["game_date_et"]) < train_end
@@ -418,6 +418,10 @@ def _run_walk_forward_clf(
                     verbose=False)
         else:
             xgb.fit(X_tr, y_tr, verbose=False)
+        best_iters.append(
+            xgb.best_iteration if hasattr(xgb, "best_iteration") and xgb.best_iteration > 0
+            else cfg.n_estimators
+        )
 
         preds = np.clip(xgb.predict(X_te), 1e-6, 1 - 1e-6)
 
@@ -435,7 +439,7 @@ def _run_walk_forward_clf(
         oof_actual.extend(y_te.values)
 
     if len(oof_preds) < 20:
-        return float("nan"), float("nan"), np.array([], dtype=float), np.array([], dtype=float)
+        return float("nan"), float("nan"), np.array([], dtype=float), np.array([], dtype=float), []
 
     oof_preds = np.array(oof_preds)
     oof_actual = np.array(oof_actual)
@@ -451,7 +455,7 @@ def _run_walk_forward_clf(
         "Walk-forward CLF %s | Brier=%.4f AUC=%.4f | %d OOF rows, %d folds | OVER%%=%.1f%%",
         stat_name, brier, auc, len(oof_actual), len(folds), over_rate * 100,
     )
-    return brier, auc, oof_preds, oof_actual
+    return brier, auc, oof_preds, oof_actual, best_iters
 
 
 def _fit_platt_calibration(
@@ -672,7 +676,7 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
         X_filled = apply_medians(X_raw, medians, feature_cols)
 
         # Walk-forward evaluation
-        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+        brier, auc, oof_preds, oof_actual, wf_best_iters = _run_walk_forward_clf(
             df_stat, X_raw, y, feature_cols, medians, cfg, target_col
         )
         results[f"brier_{target_col}"] = brier
@@ -684,9 +688,10 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
                 "Saved %s calibration (%s) | OOF n=%d Brier raw=%.4f cal=%.4f",
                 odds_stat, cal["method"], cal["n_oof"], cal["brier_raw"], cal["brier_calibrated"],
             )
+        _n_est_clf = int(np.percentile(wf_best_iters, 75) * 1.1) if wf_best_iters else None
 
         # Final model
-        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, target_col)
+        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, target_col, n_estimators=_n_est_clf)
 
         # Save models
         xgb.save_model(str(model_dir / f"{target_col}_clf_xgb.json"))
@@ -760,7 +765,7 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
         medians = fit_medians(X_raw)
         X_filled = apply_medians(X_raw, medians, feature_cols)
 
-        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+        brier, auc, oof_preds, oof_actual, wf_best_iters = _run_walk_forward_clf(
             df_stat, X_raw, y, feature_cols, medians, cfg, target_col
         )
         results[f"brier_{target_col}"] = brier
@@ -772,8 +777,9 @@ def train_pitcher_clf(cfg: ClfConfig) -> Dict:
                 "Saved %s calibration (%s) | OOF n=%d Brier raw=%.4f cal=%.4f",
                 odds_stat, cal["method"], cal["n_oof"], cal["brier_raw"], cal["brier_calibrated"],
             )
+        _n_est_clf = int(np.percentile(wf_best_iters, 75) * 1.1) if wf_best_iters else None
 
-        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, target_col)
+        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, target_col, n_estimators=_n_est_clf)
 
         xgb.save_model(str(model_dir / f"{target_col}_clf_xgb.json"))
         if lgb_model is not None:
@@ -874,7 +880,7 @@ def train_alt_line_batter_clf(cfg: ClfConfig) -> Dict:
         medians = fit_medians(X_raw)
         X_filled = apply_medians(X_raw, medians, feature_cols)
 
-        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+        brier, auc, oof_preds, oof_actual, wf_best_iters = _run_walk_forward_clf(
             df_stat, X_raw, y, feature_cols, medians, cfg, f"{target_col}_alt"
         )
         results[f"brier_{target_col}_alt"] = brier
@@ -884,8 +890,9 @@ def train_alt_line_batter_clf(cfg: ClfConfig) -> Dict:
             calibration_map[odds_stat] = cal
             log.info("Alt CLF %s calibration (%s) | Brier raw=%.4f cal=%.4f",
                      odds_stat, cal["method"], cal["brier_raw"], cal["brier_calibrated"])
+        _n_est_clf = int(np.percentile(wf_best_iters, 75) * 1.1) if wf_best_iters else None
 
-        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, f"{target_col}_alt")
+        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, f"{target_col}_alt", n_estimators=_n_est_clf)
 
         xgb.save_model(str(model_dir / f"{target_col}_alt_clf_xgb.json"))
         if lgb_model is not None:
@@ -957,7 +964,7 @@ def train_alt_line_pitcher_clf(cfg: ClfConfig) -> Dict:
         medians = fit_medians(X_raw)
         X_filled = apply_medians(X_raw, medians, feature_cols)
 
-        brier, auc, oof_preds, oof_actual = _run_walk_forward_clf(
+        brier, auc, oof_preds, oof_actual, wf_best_iters = _run_walk_forward_clf(
             df_stat, X_raw, y, feature_cols, medians, cfg, f"{target_col}_alt"
         )
         results[f"brier_{target_col}_alt"] = brier
@@ -967,8 +974,9 @@ def train_alt_line_pitcher_clf(cfg: ClfConfig) -> Dict:
             calibration_map[odds_stat] = cal
             log.info("Alt CLF %s calibration (%s) | Brier raw=%.4f cal=%.4f",
                      odds_stat, cal["method"], cal["brier_raw"], cal["brier_calibrated"])
+        _n_est_clf = int(np.percentile(wf_best_iters, 75) * 1.1) if wf_best_iters else None
 
-        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, f"{target_col}_alt")
+        xgb, lgb_model = _fit_final_clf(X_filled, y, cfg, f"{target_col}_alt", n_estimators=_n_est_clf)
 
         xgb.save_model(str(model_dir / f"{target_col}_alt_clf_xgb.json"))
         if lgb_model is not None:
