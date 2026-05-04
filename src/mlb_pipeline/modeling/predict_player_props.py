@@ -2205,6 +2205,58 @@ def _print_discord(
                 printed_any = True
                 print(f"• Top 10 HR Parlay: [FD]({top_hr_url})")
 
+        # ── HR top-10 leaderboard with line, P(HR), and bet link ──────────────
+        hr_top_rows_d = sorted(
+            [r for r in all_batter_rows if r.get("pred_home_runs") is not None],
+            key=lambda r: r["pred_home_runs"], reverse=True,
+        )
+        _HR_PARLAY_LEGS = 4
+        hr_parlay_legs: List[Dict] = []
+        if hr_top_rows_d:
+            print("")
+            print("**Top HR Hitters Today**")
+            for i, r in enumerate(hr_top_rows_d[:10], start=1):
+                name = r.get("player_name", f"id={r['player_id']}")
+                team = r.get("team_abbr", "?")
+                opp  = r.get("opponent_abbr", "?")
+                pred_hr = r["pred_home_runs"]
+                norm = _normalize_name(name)
+                ld = prop_lines.get((norm, "batter_home_runs"))
+                if ld and ld.get("line") is not None:
+                    line = ld["line"]
+                    clf_p = (r.get("clf_p_over") or {}).get("batter_home_runs")
+                    if clf_p is not None:
+                        clf_p = _apply_regression_gate(clf_p, pred_hr, line, "batter_home_runs")
+                        p_over = clf_p
+                    else:
+                        p_over = _prob_over_from_regression(pred_hr, line, None)
+                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
+                    lnk = ld.get("over_link")
+                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f} · O{line:.1f} · {p_str}{link_str}")
+                    if lnk and p_over and len(hr_parlay_legs) < _HR_PARLAY_LEGS:
+                        hr_parlay_legs.append({
+                            "name": name, "team": team, "opp": opp,
+                            "pred_hr": pred_hr, "line": line, "p_over": p_over, "lnk": lnk,
+                        })
+                else:
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f}")
+            printed_any = True
+
+        # ── HR lottery parlay (top 4 by pred HR who have a FD line) ───────────
+        if hr_parlay_legs:
+            combined_p = 1.0
+            for leg in hr_parlay_legs:
+                combined_p *= leg["p_over"]
+            fair_odds = int((1.0 / combined_p - 1.0) * 100) if combined_p > 0 else 0
+            print("")
+            print(f"**HR Lottery Parlay ({len(hr_parlay_legs)}-leg)**")
+            print(f"Combined P: {combined_p:.3%} · Fair value: +{fair_odds:,}")
+            for leg in hr_parlay_legs:
+                last = leg["name"].split()[-1]
+                print(f"• {last} ({leg['team']} vs {leg['opp']}) O{leg['line']:.1f} HR · P={leg['p_over']:.1%} · [Bet FD](<{leg['lnk']}>)")
+            printed_any = True
+
         if cfg.lottery_mode:
             _legs = lottery_legs if lottery_legs is not None else _collect_lottery_parlay_links(
                 all_pitcher_rows, all_batter_rows, prop_lines, cfg,
@@ -2532,99 +2584,7 @@ def _print_discord(
     else:
         print("**No prop edge bets today**\n")
 
-    # Discord leaderboard: prediction-only top 10 lists (no links/images)
-    if is_discord and all_batter_rows:
-        def _top10_pred(stat_col: str, label: str, fmt: str) -> None:
-            rows = [r for r in all_batter_rows if r.get(stat_col) is not None]
-            if not rows:
-                return
-            rows.sort(key=lambda r: r[stat_col], reverse=True)
-            print(f"**{label} (Top 10)**")
-            for i, r in enumerate(rows[:10], start=1):
-                name = r.get("player_name", f"id={r['player_id']}")
-                team = r.get("team_abbr", "?")
-                opp = r.get("opponent_abbr", "?")
-                pred = r.get(stat_col)
-                print(f"{i:>2}. {name} ({team} vs {opp}) — {fmt.format(pred)}")
-            print("")
-
-        _top10_pred("pred_hits", "Top Hits Predictions", "{:.2f}")
-        _top10_pred("pred_total_bases", "Top Total Bases Predictions", "{:.2f}")
-
-        # ── Enhanced HR Top 10: show line, P(HR), and FD bet link ─────────────
-        hr_top_rows = sorted(
-            [r for r in all_batter_rows if r.get("pred_home_runs") is not None],
-            key=lambda r: r["pred_home_runs"], reverse=True,
-        )
-        if hr_top_rows:
-            print("**Top Home Run Predictions (Top 10)**")
-            for i, r in enumerate(hr_top_rows[:10], start=1):
-                name = r.get("player_name", f"id={r['player_id']}")
-                team = r.get("team_abbr", "?")
-                opp  = r.get("opponent_abbr", "?")
-                pred_hr = r["pred_home_runs"]
-                norm = _normalize_name(name)
-                ld = prop_lines.get((norm, "batter_home_runs"))
-                if ld and ld.get("line") is not None:
-                    line = ld["line"]
-                    clf_p = (r.get("clf_p_over") or {}).get("batter_home_runs")
-                    if clf_p is not None:
-                        clf_p = _apply_regression_gate(clf_p, pred_hr, line, "batter_home_runs")
-                        p_over = clf_p
-                    else:
-                        p_over = _prob_over_from_regression(pred_hr, line, None)
-                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
-                    lnk = ld.get("over_link")
-                    link_txt = f" [Bet](<{lnk}>)" if lnk else ""
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f} · O{line:.1f} · {p_str}{link_txt}")
-                else:
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f}")
-            print("")
-
-        # ── HR Lottery Parlay: top 4 by pred HR who have a FD line ───────────
-        _PARLAY_LEGS = 4
-        parlay_cands: List[Dict] = []
-        for r in hr_top_rows:
-            norm = _normalize_name(r.get("player_name", ""))
-            ld = prop_lines.get((norm, "batter_home_runs"))
-            if not ld or ld.get("line") is None or not ld.get("over_link"):
-                continue
-            line = ld["line"]
-            pred_hr = r["pred_home_runs"]
-            clf_p = (r.get("clf_p_over") or {}).get("batter_home_runs")
-            if clf_p is not None:
-                clf_p = _apply_regression_gate(clf_p, pred_hr, line, "batter_home_runs")
-                p_over = clf_p
-            else:
-                p_over = _prob_over_from_regression(pred_hr, line, None)
-            if not p_over:
-                continue
-            parlay_cands.append({
-                "name": r.get("player_name", ""),
-                "team": r.get("team_abbr", "?"),
-                "opp":  r.get("opponent_abbr", "?"),
-                "pred_hr": pred_hr,
-                "line": line,
-                "p_over": p_over,
-                "lnk": ld["over_link"],
-            })
-        parlay_legs = parlay_cands[:_PARLAY_LEGS]
-        if parlay_legs:
-            combined_p = 1.0
-            for leg in parlay_legs:
-                combined_p *= leg["p_over"]
-            fair_odds = int((1.0 / combined_p - 1.0) * 100) if combined_p > 0 else 0
-            print(f"**HR Lottery Parlay ({len(parlay_legs)}-leg)**")
-            print(f"Combined P: {combined_p:.3%} · Fair value: +{fair_odds:,}")
-            for leg in parlay_legs:
-                print(
-                    f"• {_link_name(leg['name'])} ({leg['team']} vs {leg['opp']})"
-                    f" O{leg['line']:.1f} HR · P={leg['p_over']:.1%}"
-                    f" · [Bet FD](<{leg['lnk']}>)"
-                )
-            print("")
-
-    return []  # parlays already printed; outer parlay logic skipped
+    return []  # Discord path exited early above; this covers the non-Discord path
 
 
 def _print_best_bets(
