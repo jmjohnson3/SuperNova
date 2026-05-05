@@ -243,30 +243,37 @@ def main() -> None:
     else:
         # ── Normal full daily run ────────────────────────────────────────────
         if not args.skip_crawl:
+            # All four crawlers hit different external APIs and use disjoint
+            # (provider, endpoint, url) keys in raw.api_responses, so concurrent
+            # ON CONFLICT DO UPDATE writes are safe.
             steps.append(Step(
                 name="Crawl MLB Stats API (schedule/boxscores)",
                 module="mlb_pipeline.crawler_statsapi",
                 args=("--season", "2026-regular"),
                 timeout_s=3600,
                 critical=True,
+                parallel=True,
             ))
             steps.append(Step(
                 name="Crawl MSF (injuries/lineups)",
                 module="mlb_pipeline.crawler",
                 timeout_s=3600,
                 critical=False,  # MSF returns 403 for MLB game data; non-critical
+                parallel=True,
             ))
             steps.append(Step(
                 name="Crawl odds (Odds API)",
                 module="mlb_pipeline.crawler_oddsapi",
                 timeout_s=3600,
                 critical=True,
+                parallel=True,
             ))
             steps.append(Step(
                 name="Crawl Statcast (Baseball Savant)",
                 module="mlb_pipeline.crawler_statcast",
                 timeout_s=300,
                 critical=False,
+                parallel=True,
             ))
 
         if not args.skip_parse:
@@ -309,17 +316,21 @@ def main() -> None:
             ))
 
         if not args.skip_predict:
+            # predict_today writes to bets.mlb_game_predictions,
+            # predict_player_props writes to bets.mlb_prop_predictions — no overlap.
             steps.append(Step(
                 name="Predict today",
                 module="mlb_pipeline.modeling.predict_today",
                 timeout_s=600,
                 critical=False,
+                parallel=True,
             ))
             steps.append(Step(
                 name="Predict player props",
                 module="mlb_pipeline.modeling.predict_player_props",
                 timeout_s=300,
                 critical=False,
+                parallel=True,
             ))
 
         # Grade completed games + props (always runs regardless of skip flags)
