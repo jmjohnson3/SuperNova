@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import os
 import sys
 import time
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, date
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -82,6 +83,7 @@ class Step:
     args: tuple[str, ...] = ()
     timeout_s: int | None = None
     critical: bool = True
+    parallel: bool = False   # if True, run concurrently with adjacent parallel steps
 
 
 @dataclass
@@ -129,6 +131,56 @@ def _run_step(step: Step, extra_env: Optional[dict[str, str]] = None) -> StepRes
         stdout=(proc.stdout or "").strip(),
         stderr=(proc.stderr or "").strip(),
     )
+
+
+def _run_parallel_steps(
+    parallel_steps: list[Step],
+    extra_env: Optional[dict[str, str]] = None,
+) -> list[StepResult]:
+    """Launch all steps simultaneously with Popen, wait for all to finish."""
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+
+    # Launch all processes at once
+    launched: list[tuple[Step, subprocess.Popen, float]] = []
+    for step in parallel_steps:
+        cmd = [sys.executable, "-m", step.module, *step.args]
+        proc = subprocess.Popen(
+            cmd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+        launched.append((step, proc, time.perf_counter()))
+
+    # Collect results — communicate() blocks per-process but they all run in parallel
+    results: list[StepResult] = []
+    for step, proc, t_start in launched:
+        try:
+            stdout, stderr = proc.communicate(timeout=step.timeout_s)
+            secs = time.perf_counter() - t_start
+            results.append(StepResult(
+                name=step.name,
+                ok=(proc.returncode == 0),
+                rc=proc.returncode,
+                secs=secs,
+                stdout=(stdout or "").strip(),
+                stderr=(stderr or "").strip(),
+            ))
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+            results.append(StepResult(
+                name=step.name,
+                ok=False,
+                rc=124,
+                secs=float(step.timeout_s or 0),
+                stdout=(stdout or "").strip(),
+                stderr=f"Timeout after {step.timeout_s}s",
+            ))
+    return results
 
 
 def main() -> None:
@@ -239,18 +291,21 @@ def main() -> None:
                 module="mlb_pipeline.modeling.train_game_models",
                 timeout_s=3600,
                 critical=True,
+                parallel=True,
             ))
             steps.append(Step(
                 name="Train player prop models",
                 module="mlb_pipeline.modeling.train_player_prop_models",
-                timeout_s=7200,   # was 3600; tuned params target ~2h
+                timeout_s=7200,
                 critical=False,
+                parallel=True,
             ))
             steps.append(Step(
                 name="Train binary prop classifiers",
                 module="mlb_pipeline.modeling.train_binary_prop_models",
-                timeout_s=7200,   # was 3600; tuned params target ~2h
+                timeout_s=7200,
                 critical=False,
+                parallel=True,
             ))
 
         if not args.skip_predict:
@@ -289,34 +344,62 @@ def main() -> None:
     _p(console, f"[dim]Report:[/dim] {report_path}" if console else f"Report: {report_path}")
 
     results: list[StepResult] = []
+    pipeline_failed = False
 
-    for step in steps:
-        _rule(console, f"[bold]{step.name}[/bold]" if console else step.name)
-        _p(console, f"[dim]python -m {step.module} {' '.join(step.args)}[/dim]" if console else f"python -m {step.module}")
+    # Group consecutive parallel steps so they run simultaneously
+    for is_parallel, group_iter in itertools.groupby(steps, key=lambda s: s.parallel):
+        if pipeline_failed:
+            break
+        group = list(group_iter)
 
-        try:
-            r = _run_step(step, extra_env=extra_env)
-        except subprocess.TimeoutExpired:
-            r = StepResult(
-                name=step.name,
-                ok=False,
-                rc=124,
-                secs=float(step.timeout_s or 0),
-                stdout="",
-                stderr=f"Timeout after {step.timeout_s}s",
-            )
-
-        results.append(r)
-
-        if r.ok:
-            _panel(console, "OK", ok=True)
+        if is_parallel:
+            _rule(console, "[bold]Training (parallel)[/bold]" if console else "Training (parallel)")
+            names = ", ".join(s.name for s in group)
+            _p(console, (f"[dim]Launching simultaneously: {names}[/dim]" if console
+                         else f"Launching simultaneously: {names}"))
+            group_results = _run_parallel_steps(group, extra_env=extra_env)
+            results.extend(group_results)
+            for r, step in zip(group_results, group):
+                status_str = "OK" if r.ok else f"FAILED (rc={r.rc})"
+                _panel(console, f"{r.name}: {status_str} ({r.secs:.0f}s)", ok=r.ok)
+                if not r.ok and r.stderr:
+                    _p(console, _tail(r.stderr, 20))
+                if not r.ok and step.critical:
+                    _p(console, "[red]Stopping pipeline due to critical failure.[/red]" if console
+                       else "Stopping pipeline (critical failure).")
+                    pipeline_failed = True
         else:
-            _panel(console, f"FAILED (rc={r.rc})", ok=False)
-            if r.stderr:
-                _p(console, (_tail(r.stderr, 40)))
-            if step.critical:
-                _p(console, "[red]Stopping pipeline due to critical failure.[/red]" if console else "Stopping pipeline (critical failure).")
-                break
+            for step in group:
+                if pipeline_failed:
+                    break
+                _rule(console, f"[bold]{step.name}[/bold]" if console else step.name)
+                _p(console, (f"[dim]python -m {step.module} {' '.join(step.args)}[/dim]" if console
+                             else f"python -m {step.module}"))
+
+                try:
+                    r = _run_step(step, extra_env=extra_env)
+                except subprocess.TimeoutExpired:
+                    r = StepResult(
+                        name=step.name,
+                        ok=False,
+                        rc=124,
+                        secs=float(step.timeout_s or 0),
+                        stdout="",
+                        stderr=f"Timeout after {step.timeout_s}s",
+                    )
+
+                results.append(r)
+
+                if r.ok:
+                    _panel(console, "OK", ok=True)
+                else:
+                    _panel(console, f"FAILED (rc={r.rc})", ok=False)
+                    if r.stderr:
+                        _p(console, _tail(r.stderr, 40))
+                    if step.critical:
+                        _p(console, "[red]Stopping pipeline due to critical failure.[/red]" if console
+                           else "Stopping pipeline (critical failure).")
+                        pipeline_failed = True
 
     # Summary table
     _rule(console, "[bold]Summary[/bold]" if console else "Summary")
