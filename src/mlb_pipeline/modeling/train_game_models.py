@@ -349,6 +349,19 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         "home_sp_era_shrunk", "away_sp_era_shrunk", "sp_era_shrunk_diff",
         "is_dome",
         "home_sp_short_last", "away_sp_short_last",
+        # Near-zero importance (<0.001): replace raw columns with derived interactions
+        "run_line_home",           # always -1.5; zero variance (market_run_line already pruned)
+        "venue_id",                # park effects captured by park_run_factor / park_hr_factor
+        "park_hr_factor",          # raw value; interaction versions (team_hr_x_park) carry signal
+        "h2h_home_win_pct_ytd",    # season H2H too sparse; Elo captures team strength
+        "away_wins_last_5",        # captured by win_pct_last_5_diff / runs_trend_diff
+        "market_home_win_prob",    # redundant with total_vig_direction + Elo features
+        "n_ump_games_prev_5",      # ump experience; ump_rpg_avg_10 is the informative signal
+        "home_runs_avg_5",         # captured by runs_trend_diff (5v20) and runs_avg_10
+        "run_line_home_price",     # market_home_win_prob was derived from this; both ~0
+        "over_price",              # total_vig_direction is the informative derived version
+        "total_line_move",         # raw move; abs_total_line_move / direction replace it
+        "run_line_move",           # raw move; abs_run_line_move / direction replace it
     ]
     X = X.drop(columns=[c for c in _prune_zero_importance if c in X.columns])
 

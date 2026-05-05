@@ -123,6 +123,20 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "total_line" in X.columns:
         X["market_total_vs_avg"] = pd.to_numeric(X["total_line"], errors="coerce") - 9.0
 
+    # ── Line movement feature engineering ─────────────────────────────────────
+    # Raw move columns have ~0 importance; abs(), direction, and magnitude flags
+    # are far more informative (sharp vs stale signal).
+    if "total_line_move" in X.columns:
+        _tm = pd.to_numeric(X["total_line_move"], errors="coerce").fillna(0.0)
+        X["abs_total_line_move"]       = _tm.abs()
+        X["total_line_move_direction"] = np.sign(_tm).astype(int)
+        X["total_line_move_large"]     = (_tm.abs() >= 0.5).astype(int)
+    if "run_line_move" in X.columns:
+        _rm = pd.to_numeric(X["run_line_move"], errors="coerce").fillna(0.0)
+        X["abs_run_line_move"]         = _rm.abs()
+        X["run_line_move_direction"]   = np.sign(_rm).astype(int)
+        X["run_line_move_large"]       = (_rm.abs() >= 0.05).astype(int)
+
     # ── OPS (OBP + SLG) differential ─────────────────────────────────────────
     # OPS is the most common single-number offensive quality proxy.
     for _w in ("5", "10"):
@@ -165,6 +179,19 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X[f"{_sp}_sp_era_opp_adj_5"] = _era_v - (_opp_v - _LEAGUE_AVG_R) * 0.25
     if "home_sp_era_opp_adj_5" in X.columns and "away_sp_era_opp_adj_5" in X.columns:
         X["sp_era_opp_adj_diff"] = X["home_sp_era_opp_adj_5"] - X["away_sp_era_opp_adj_5"]
+
+    # ── SP K-rate trend (5 vs 10 starts) ─────────────────────────────────────
+    # Positive = SP on upswing in Ks; captures form/momentum vs raw K%.
+    for _side in ("home", "away"):
+        _k5  = f"{_side}_sp_k_pct_5"
+        _k10 = f"{_side}_sp_k_pct_10"
+        if _k5 in X.columns and _k10 in X.columns:
+            X[f"{_side}_sp_k_pct_trend"] = (
+                pd.to_numeric(X[_k5],  errors="coerce")
+                - pd.to_numeric(X[_k10], errors="coerce")
+            )
+    if "home_sp_k_pct_trend" in X.columns and "away_sp_k_pct_trend" in X.columns:
+        X["sp_k_pct_trend_diff"] = X["home_sp_k_pct_trend"] - X["away_sp_k_pct_trend"]
 
     # ── SP K/BB ratio (dominance vs command) ─────────────────────────────────
     for _side in ("home", "away"):
@@ -251,6 +278,18 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 X[f"{_side}_park_adj_runs_10"] = X[_r10] * _park
         if "home_park_adj_runs_10" in X.columns and "away_park_adj_runs_10" in X.columns:
             X["park_adj_runs_diff"] = X["home_park_adj_runs_10"] - X["away_park_adj_runs_10"]
+
+    # ── Park HR factor × team HR rate ─────────────────────────────────────────
+    # More targeted than park_run_factor × runs (captures HR-park amplification).
+    # Raw park_hr_factor has ~0 importance alone; this interaction has real signal.
+    if "park_hr_factor" in X.columns:
+        _phr = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+        for _side in ("home", "away"):
+            _hr10 = f"{_side}_hr_avg_10"
+            if _hr10 in X.columns:
+                X[f"{_side}_team_hr_x_park"] = X[_hr10] * _phr
+        if "home_team_hr_x_park" in X.columns and "away_team_hr_x_park" in X.columns:
+            X["team_hr_park_diff"] = X["home_team_hr_x_park"] - X["away_team_hr_x_park"]
 
     # ── Park-adjusted SP ERA ──────────────────────────────────────────────────
     # Normalize ERA by park run factor to remove ballpark bias.
@@ -1135,6 +1174,24 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         denom = X["bb_sd_10"].where(X["bb_sd_10"] > 1e-6, other=np.nan)
         X["bb_trend_sig"] = X["bb_trend_5v10"] / denom
 
+    # ── SP K-rate trend (5 vs 10 starts) ─────────────────────────────────────
+    # Positive = pitcher on upswing in Ks (improving form).
+    if "k_pct_5" in X.columns and "k_pct_10" in X.columns:
+        X["sp_k_pct_trend_5v10"] = (
+            pd.to_numeric(X["k_pct_5"],  errors="coerce")
+            - pd.to_numeric(X["k_pct_10"], errors="coerce")
+        )
+    if "k9_5" in X.columns and "k9_10" in X.columns:
+        X["sp_k9_trend_5v10"] = (
+            pd.to_numeric(X["k9_5"],  errors="coerce")
+            - pd.to_numeric(X["k9_10"], errors="coerce")
+        )
+    # Trending pitcher × wide-zone ump amplifies the K probability further
+    if "sp_k_pct_trend_5v10" in X.columns and "ump_k9_avg_10" in X.columns:
+        X["k_trend_x_ump_k9"] = (
+            X["sp_k_pct_trend_5v10"].fillna(0.0) * X["ump_k9_avg_10"].fillna(0.0)
+        )
+
     # ── Umpire zone-tendency interactions ────────────────────────────────────
     if "ump_bb9_avg_10" in X.columns and "bb_rate_avg_10" in X.columns:
         X["ump_bb9_x_batter_bb_rate"] = X["ump_bb9_avg_10"] * X["bb_rate_avg_10"]
@@ -1339,6 +1396,32 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # SP xwOBA-against: overall hittability (higher = easier to hit)
     if "opp_sp_sc_xwoba" in X.columns and "sc_xwoba" in X.columns:
         X["sc_hittability_combo"] = X["sc_xwoba"].fillna(0.0) + X["opp_sp_sc_xwoba"].fillna(0.0)
+
+    # ── Statcast batter × pitcher multiplicative cross-products ───────────────
+    # Additive matchup diffs above capture direction; these products capture the
+    # conditional magnitude (e.g., elite barrel rate means nothing vs extreme GB SP).
+    # Barrel rate × (1 - SP GB%): power batter vs fly-ball-inducing pitcher
+    if "sc_barrel_rate" in X.columns and "opp_sp_sc_gb_pct" in X.columns:
+        X["sc_barrel_x_opp_fb"] = (
+            X["sc_barrel_rate"].fillna(0.0)
+            * (1.0 - X["opp_sp_sc_gb_pct"].fillna(45.0) / 100.0)
+        )
+    # Hard-hit product: both batter contact quality AND pitcher-allowed contact matter
+    if "sc_hard_hit_pct" in X.columns and "opp_sp_sc_hard_hit_pct" in X.columns:
+        X["sc_hard_hit_x_opp"] = (
+            X["sc_hard_hit_pct"].fillna(0.0) / 100.0
+            * X["opp_sp_sc_hard_hit_pct"].fillna(0.0) / 100.0
+        )
+    # xSLG × SP xwOBA-against: expected slugging in context of pitcher hittability
+    if "sc_xslg" in X.columns and "opp_sp_sc_xwoba" in X.columns:
+        X["sc_xslg_x_opp_xwoba"] = (
+            X["sc_xslg"].fillna(0.0) * X["opp_sp_sc_xwoba"].fillna(0.0)
+        )
+    # Batter xwOBA × SP xwOBA-against: combined wOBA matchup quality
+    if "sc_xwoba" in X.columns and "opp_sp_sc_xwoba" in X.columns:
+        X["sc_xwoba_x_opp_xwoba"] = (
+            X["sc_xwoba"].fillna(0.0) * X["opp_sp_sc_xwoba"].fillna(0.0)
+        )
 
     # ── Statcast pitcher features (for strikeout model) ──────────────────────
     # Pitcher barrel-allowed rate: low = dominant stuff, correlates with K potential
