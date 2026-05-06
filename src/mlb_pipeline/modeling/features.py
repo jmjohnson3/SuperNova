@@ -1078,6 +1078,20 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "tb_avg_10" in X.columns and "park_run_factor" in X.columns:
         X["tb_park_adj_10"] = X["tb_avg_10"] * X["park_run_factor"]
 
+    # AB-weighted cumulative HR rate features (more reliable than per-game avg for rare events)
+    # hr_rate_cumul_10 uses SUM(hr)/SUM(ab) — down-weights 1-AB pinch-hit HRs vs AVG(game_hr_rate)
+    if "hr_rate_cumul_10" in X.columns:
+        _cumul_10 = pd.to_numeric(X["hr_rate_cumul_10"], errors="coerce")
+        # Trend: are cumulative HRs accelerating or cooling over short vs long window?
+        if "hr_rate_cumul_5" in X.columns and "hr_rate_cumul_20" in X.columns:
+            _cumul_5  = pd.to_numeric(X["hr_rate_cumul_5"],  errors="coerce").fillna(0.0)
+            _cumul_20 = pd.to_numeric(X["hr_rate_cumul_20"], errors="coerce").fillna(0.0)
+            X["hr_rate_cumul_trend_5v20"] = _cumul_5 - _cumul_20
+        # Park-amplified cumulative rate: best single HR signal
+        if "park_hr_factor" in X.columns:
+            _phr = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+            X["hr_rate_cumul_x_park"] = _cumul_10.fillna(0.0) * _phr
+
     # TB ceiling/volatility features — help predict OVER (big-game likelihood),
     # not just average TB. A player with high CV or high max has a fatter tail distribution.
     if "tb_sd_10" in X.columns and "tb_avg_10" in X.columns:
@@ -1445,6 +1459,19 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         # xISO × pitcher HR/9: expected isolated power in a HR-friendly matchup
         if "sc_xiso" in X.columns:
             X["xiso_x_opp_hr9"] = X["sc_xiso"].fillna(0.0) * _hr9
+
+        # Pitcher flyball rate allowed × batter flyball rate: both flying-ball types = max HR probability
+        # opp_sp_sc_fb_pct is the pitcher's BBE-weighted flyball% allowed (capped at 100 in SQL)
+        if "opp_sp_sc_fb_pct" in X.columns and "sc_fb_pct" in X.columns:
+            _opp_fb = pd.to_numeric(X["opp_sp_sc_fb_pct"], errors="coerce").clip(upper=100.0).fillna(35.0) / 100.0
+            _bat_fb = pd.to_numeric(X["sc_fb_pct"],        errors="coerce").clip(upper=100.0).fillna(30.0) / 100.0
+            X["fb_batter_x_pitcher_fb"] = _bat_fb * _opp_fb  # joint flyball probability
+
+        # AB-weighted HR rate × pitcher HR/9: volume-corrected power vs HR-prone pitcher
+        if "hr_rate_cumul_10" in X.columns:
+            X["hr_rate_cumul_x_opp_hr9"] = (
+                pd.to_numeric(X["hr_rate_cumul_10"], errors="coerce").fillna(0.0) * _hr9
+            )
 
     # ── Launch angle HR zone × exit velocity ─────────────────────────────────
     # HR sweet spot: ~25-35° launch angle + 90+ mph EV

@@ -167,7 +167,15 @@ SELECT
 
     -- HR volatility signals (appended; new columns must go at end for CREATE OR REPLACE VIEW)
     STDDEV_SAMP(hr)  OVER w5                         AS hr_sd_5,
-    MAX(hr)          OVER w10                        AS hr_max_10
+    MAX(hr)          OVER w10                        AS hr_max_10,
+
+    -- AB-weighted cumulative HR rate (fixes pinch-hit inflation)
+    -- AVG(game_hr_rate) treats a 1-AB pinch-hit HR as 100% rate; SUM/SUM correctly
+    -- weights by actual AB volume (e.g. Rosario 1 HR in 1 AB → cumul = 1/3, not 1.0).
+    -- ::float cast required to avoid integer division truncation (wrap full window expr).
+    (SUM(hr) OVER w5) ::float / NULLIF(SUM(ab) OVER w5,  0)  AS hr_rate_cumul_5,
+    (SUM(hr) OVER w10)::float / NULLIF(SUM(ab) OVER w10, 0)  AS hr_rate_cumul_10,
+    (SUM(hr) OVER w20)::float / NULLIF(SUM(ab) OVER w20, 0)  AS hr_rate_cumul_20
 
 FROM derived
 WINDOW
