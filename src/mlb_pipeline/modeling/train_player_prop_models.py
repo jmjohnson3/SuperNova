@@ -295,6 +295,9 @@ SELECT
     sp_r.bb_pct_5  AS opp_sp_bb_pct_5,
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
+    -- HR/9 — strongest direct signal for pitcher HR propensity
+    sp_r.hr9_5     AS opp_sp_hr9_5,
+    sp_r.hr9_10    AS opp_sp_hr9_10,
     -- Group B: opponent SP rest + home/away splits
     sp_r.days_since_last_start AS opp_sp_days_since_last_start,
     sp_r.is_short_rest         AS opp_sp_is_short_rest,
@@ -494,10 +497,32 @@ LEFT JOIN features.mlb_batter_vs_sp_mat h2h
 LEFT JOIN features.mlb_lineup_quality lq_own
     ON lq_own.game_slug  = b.game_slug
     AND lq_own.team_abbr = b.team_abbr
--- Statcast: batter's own batted-ball profile (season-level)
-LEFT JOIN raw.mlb_statcast_batting sc_b
-    ON sc_b.player_id = b.player_id
-    AND sc_b.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
+-- Statcast: batter's own batted-ball profile (BBE-weighted multi-year average)
+-- Weighting by batted_ball_events stabilises early-season small samples (e.g. a player
+-- with 50 BBE in 2026 and 400 in 2025 gets ~89% weight from 2025).
+-- flyballs_percent, gb_percent, ld_percent are capped at 100 to remove
+-- corrupted early-season values that exceed 100 in the raw Statcast table.
+LEFT JOIN LATERAL (
+    SELECT
+        SUM(barrel_batted_rate * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)               AS barrel_batted_rate,
+        SUM(hard_hit_percent   * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)               AS hard_hit_percent,
+        SUM(avg_exit_velocity  * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)               AS avg_exit_velocity,
+        SUM(avg_launch_angle   * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)               AS avg_launch_angle,
+        SUM(sweet_spot_percent * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)               AS sweet_spot_percent,
+        SUM(LEAST(flyballs_percent,   100.0) * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0) AS flyballs_percent,
+        SUM(LEAST(groundballs_percent,100.0) * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0) AS groundballs_percent,
+        SUM(LEAST(linedrives_percent, 100.0) * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0) AS linedrives_percent,
+        SUM(xba    * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                           AS xba,
+        SUM(xslg   * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                           AS xslg,
+        SUM(xwoba  * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                           AS xwoba,
+        SUM(xiso   * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                           AS xiso,
+        SUM(pull_percent     * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                 AS pull_percent,
+        SUM(opposite_percent * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                 AS opposite_percent,
+        SUM(popup_percent    * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                 AS popup_percent,
+        SUM(brl_pa           * batted_ball_events) / NULLIF(SUM(batted_ball_events), 0)                 AS brl_pa
+    FROM raw.mlb_statcast_batting
+    WHERE player_id = b.player_id
+) sc_b ON TRUE
 -- Statcast: opposing SP's batted-ball-against profile
 LEFT JOIN raw.mlb_statcast_pitching sc_opp_p
     ON sc_opp_p.player_id = sp.player_id

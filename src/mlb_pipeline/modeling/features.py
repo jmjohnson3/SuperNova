@@ -1350,7 +1350,8 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
 
     # Hard hit % × flyball %: hard + elevated = HR/TB potential
     if "sc_hard_hit_pct" in X.columns and "sc_fb_pct" in X.columns:
-        X["sc_hard_hit_x_fb"] = X["sc_hard_hit_pct"].fillna(0.0) * X["sc_fb_pct"].fillna(0.0) / 100.0
+        _fb_clipped = pd.to_numeric(X["sc_fb_pct"], errors="coerce").clip(upper=100.0).fillna(0.0)
+        X["sc_hard_hit_x_fb"] = X["sc_hard_hit_pct"].fillna(0.0) * _fb_clipped / 100.0
 
     # Exit velocity vs league average (~88 mph): how much above/below
     if "sc_avg_exit_velo" in X.columns:
@@ -1422,6 +1423,51 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["sc_xwoba_x_opp_xwoba"] = (
             X["sc_xwoba"].fillna(0.0) * X["opp_sp_sc_xwoba"].fillna(0.0)
         )
+
+    # ── HR environment: pitcher HR/9 × batter fly-ball tendencies ────────────
+    # opp_sp_hr9_5 is the single strongest predictor of pitcher HR propensity.
+    # ~1.0 HR/9 is league average; deviation from that is the signal.
+    _LEAGUE_HR9 = 1.0
+    if "opp_sp_hr9_5" in X.columns:
+        _hr9 = pd.to_numeric(X["opp_sp_hr9_5"], errors="coerce").fillna(_LEAGUE_HR9)
+        X["opp_sp_hr9_vs_avg"] = _hr9 - _LEAGUE_HR9   # positive = pitcher gives up more HRs than avg
+
+        # Flyball batter vs HR-prone pitcher: highest HR probability combination
+        # clip(upper=100) guards against corrupted raw values > 100 in Statcast table
+        if "sc_fb_pct" in X.columns:
+            _fb = pd.to_numeric(X["sc_fb_pct"], errors="coerce").clip(upper=100.0).fillna(30.0) / 100.0
+            X["fb_x_opp_hr9"] = _fb * _hr9
+
+        # Barrel rate × pitcher HR/9: elite contact quality meets HR-prone pitcher
+        if "sc_barrel_rate" in X.columns:
+            X["barrel_x_opp_hr9"] = X["sc_barrel_rate"].fillna(0.0) * _hr9
+
+        # xISO × pitcher HR/9: expected isolated power in a HR-friendly matchup
+        if "sc_xiso" in X.columns:
+            X["xiso_x_opp_hr9"] = X["sc_xiso"].fillna(0.0) * _hr9
+
+    # ── Launch angle HR zone × exit velocity ─────────────────────────────────
+    # HR sweet spot: ~25-35° launch angle + 90+ mph EV
+    if "sc_avg_launch_angle" in X.columns and "sc_avg_exit_velo" in X.columns:
+        _la = pd.to_numeric(X["sc_avg_launch_angle"], errors="coerce").fillna(20.0)
+        _ev = pd.to_numeric(X["sc_avg_exit_velo"], errors="coerce").fillna(86.0)
+        X["sc_in_hr_la_zone"] = ((_la >= 25.0) & (_la <= 35.0)).astype(int)
+        # Continuous: EV scaled by how close to ideal launch angle (peaks at 30°)
+        _la_penalty = 1.0 - ((_la - 30.0).abs().clip(upper=15.0) / 15.0)
+        X["sc_la_ev_composite"] = _ev * _la_penalty / 100.0
+
+    # ── HR volatility: coefficient of variation (hot ceiling signal) ──────────
+    # hr_sd_10 / hr_avg_10 = how erratic is this batter's HR output?
+    # High CV = feast-or-famine (good for OVER bets at high lines)
+    if "hr_sd_10" in X.columns and "hr_avg_10" in X.columns:
+        _avg = X["hr_avg_10"].replace(0, np.nan)
+        X["hr_cv_10"] = X["hr_sd_10"].fillna(0.0) / _avg
+    if "hr_sd_5" in X.columns and "hr_avg_5" in X.columns:
+        _avg5 = X["hr_avg_5"].replace(0, np.nan)
+        X["hr_cv_5"] = X["hr_sd_5"].fillna(0.0) / _avg5
+    # HR ceiling: max HR in last 10 games vs rolling avg (how often does batter go off?)
+    if "hr_max_10" in X.columns and "hr_avg_10" in X.columns:
+        X["hr_ceiling_ratio"] = X["hr_max_10"].fillna(0.0) / X["hr_avg_10"].clip(lower=0.01)
 
     # ── Statcast pitcher features (for strikeout model) ──────────────────────
     # Pitcher barrel-allowed rate: low = dominant stuff, correlates with K potential

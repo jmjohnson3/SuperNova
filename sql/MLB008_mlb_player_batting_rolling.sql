@@ -163,7 +163,11 @@ SELECT
     AVG(tb)             OVER w3   AS tb_avg_3,
     MAX(tb)             OVER w10  AS tb_max_10,
     AVG(is_big_tb_game) OVER w10  AS tb_over2_rate_10,
-    AVG(xbh_weight)     OVER w10  AS tb_xbh_weight_avg_10
+    AVG(xbh_weight)     OVER w10  AS tb_xbh_weight_avg_10,
+
+    -- HR volatility signals (appended; new columns must go at end for CREATE OR REPLACE VIEW)
+    STDDEV_SAMP(hr)  OVER w5                         AS hr_sd_5,
+    MAX(hr)          OVER w10                        AS hr_max_10
 
 FROM derived
 WINDOW
