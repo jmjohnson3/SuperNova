@@ -242,6 +242,19 @@ def _refresh_matviews(pg_dsn: str) -> None:
         finally:
             conn.autocommit = True
 
+        # ── Create + refresh mlb_lineup_quality_mat (depends on MLB011 VIEW) ──────
+        # Must run after MLB011 is re-applied above.  Converts the slow VIEW join
+        # in pitcher training/prediction SQL into a fast index lookup.
+        try:
+            _apply_matview_sql("MLB011b_mlb_lineup_quality_mat.sql")
+            cur.execute(
+                "REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_lineup_quality_mat"
+            )
+            log.info("Refreshed mlb_lineup_quality_mat")
+        except Exception:
+            log.exception("Failed to create/refresh mlb_lineup_quality_mat")
+            failed_ops.append("mlb_lineup_quality_mat")
+
         if failed_ops:
             raise RuntimeError(
                 "One or more matview operations failed: "

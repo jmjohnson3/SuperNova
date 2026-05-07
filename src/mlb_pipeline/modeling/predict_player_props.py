@@ -283,7 +283,7 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC LIMIT 1
 ) ur ON TRUE
 -- Opponent batting lineup quality (NULL for upcoming games)
-LEFT JOIN features.mlb_lineup_quality lq_opp
+LEFT JOIN features.mlb_lineup_quality_mat lq_opp
     ON lq_opp.game_slug  = ts.game_slug
     AND lq_opp.team_abbr = ts.opponent_abbr
 -- Statcast pitcher profile (BBE-weighted multi-year average)
@@ -614,7 +614,7 @@ LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
     SELECT venue_id FROM raw.mlb_games WHERE game_slug = tt.game_slug LIMIT 1
 )
 -- Own-team lineup quality (NULL for upcoming games)
-LEFT JOIN features.mlb_lineup_quality lq_own
+LEFT JOIN features.mlb_lineup_quality_mat lq_own
     ON lq_own.game_slug  = tt.game_slug
     AND lq_own.team_abbr = tt.team_abbr
 -- Statcast: batter's own batted-ball profile (BBE-weighted multi-year average)

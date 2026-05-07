@@ -214,7 +214,7 @@ LEFT JOIN raw.mlb_game_umpires gu
 LEFT JOIN features.mlb_umpire_rolling_mat ur
     ON ur.game_slug = g.game_slug AND ur.umpire_id = gu.umpire_id
 -- Opponent batting lineup quality (completed boxscores; NULL for today's upcoming games)
-LEFT JOIN features.mlb_lineup_quality lq_opp
+LEFT JOIN features.mlb_lineup_quality_mat lq_opp
     ON lq_opp.game_slug = p.game_slug
     AND lq_opp.team_abbr = CASE
         WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
