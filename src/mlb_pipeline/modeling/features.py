@@ -1335,6 +1335,21 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         # Binary flag: 5+ matchup games = meaningful H2H sample
         X["h2h_has_history"] = (_games >= 5.0).astype(int)
 
+        # H2H HR rate: career home runs vs this specific pitcher (gap A)
+        # More direct than h2h_iso for HR prediction — isolates the power outcome
+        if "h2h_hr" in X.columns and "h2h_ab" in X.columns:
+            _h2h_ab_v = pd.to_numeric(X["h2h_ab"], errors="coerce")
+            _h2h_hr_v = pd.to_numeric(X["h2h_hr"], errors="coerce").fillna(0.0)
+            X["h2h_hr_rate"] = _h2h_hr_v / _h2h_ab_v.replace(0.0, np.nan)
+            X["h2h_hr_rate_weighted"] = X["h2h_hr_rate"].fillna(0.0) * _rel
+            # Delta vs batter's general HR baseline: positive = batter historically
+            # exploits this specific pitcher for power above their normal HR rate
+            if "prev_hr_rate" in X.columns:
+                _base_hr = pd.to_numeric(X["prev_hr_rate"], errors="coerce").fillna(0.0)
+                X["h2h_hr_vs_baseline"] = (
+                    X["h2h_hr_rate"].fillna(0.0) - _base_hr
+                ) * _rel
+
     # ── Home/Away venue-matched splits ───────────────────────────────────────
     # For each stat, select the home or away rolling average based on today's location.
     # Falls back to overall avg_10 when the venue-specific split is NULL (few games).
@@ -1473,6 +1488,30 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 pd.to_numeric(X["hr_rate_cumul_10"], errors="coerce").fillna(0.0) * _hr9
             )
 
+    # ── SP velocity trend (MLB021) — declining fastball = more hittable (gap B) ──
+    # fb_velo_trend_5 = current start velocity - 5-start rolling avg.
+    # Negative = pitcher is throwing softer than recent form → elevated HR probability.
+    if "opp_sp_fb_velo_trend_5" in X.columns:
+        _vt = pd.to_numeric(X["opp_sp_fb_velo_trend_5"], errors="coerce").fillna(0.0)
+        # Binary flag: SP ≥1.5 mph below their own recent 5-start average
+        X["opp_sp_fb_velo_decline"] = (_vt < -1.5).astype(int)
+        # Clipped continuous trend (avoids outlier distortion from injury returns)
+        X["opp_sp_fb_velo_trend_clipped"] = _vt.clip(lower=-5.0, upper=3.0)
+        if "opp_sp_fb_velo_avg_5" in X.columns:
+            _va = pd.to_numeric(X["opp_sp_fb_velo_avg_5"], errors="coerce").fillna(93.5)
+            # How hard is this pitcher throwing vs MLB avg (~93.5 mph)?
+            # Hard throwers suppress HRs; soft throwers give up more
+            X["opp_sp_fb_velo_vs_league"] = _va - 93.5
+        # Interaction: velocity decline × barrel rate (power hitter faces fading pitcher)
+        if "sc_barrel_rate" in X.columns:
+            _barrel = pd.to_numeric(X["sc_barrel_rate"], errors="coerce").fillna(0.0)
+            X["opp_sp_velo_decline_x_barrel"] = X["opp_sp_fb_velo_decline"] * _barrel
+        # Interaction: velocity decline × pitcher HR/9 (compounds HR risk signal)
+        # Larger velocity decline + high HR/9 = elevated HR probability
+        if "opp_sp_hr9_5" in X.columns:
+            _hr9v = pd.to_numeric(X["opp_sp_hr9_5"], errors="coerce").fillna(1.0)
+            X["opp_sp_velo_decline_x_hr9"] = (-_vt).clip(lower=0.0) * _hr9v
+
     # ── Launch angle HR zone × exit velocity ─────────────────────────────────
     # HR sweet spot: ~25-35° launch angle + 90+ mph EV
     if "sc_avg_launch_angle" in X.columns and "sc_avg_exit_velo" in X.columns:
@@ -1495,6 +1534,19 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # HR ceiling: max HR in last 10 games vs rolling avg (how often does batter go off?)
     if "hr_max_10" in X.columns and "hr_avg_10" in X.columns:
         X["hr_ceiling_ratio"] = X["hr_max_10"].fillna(0.0) / X["hr_avg_10"].clip(lower=0.01)
+
+    # ── HR hot-streak composite (gap E) ──────────────────────────────────────
+    # Combines short-window recency signals into a single streak score.
+    # hr_any_last1=1 (HR last game) weighted 0.6 + hr_games_with_hr_last5/5 (streak rate) * 0.4
+    if "hr_any_last1" in X.columns and "hr_games_with_hr_last5" in X.columns:
+        _last1     = pd.to_numeric(X["hr_any_last1"],          errors="coerce").fillna(0.0)
+        _last5_pct = pd.to_numeric(X["hr_games_with_hr_last5"],errors="coerce").fillna(0.0) / 5.0
+        X["hr_streak_score"] = _last1 * 0.6 + _last5_pct * 0.4
+    # HR recency acceleration: last-3-game pace vs longer-run baseline
+    if "hr_count_last3" in X.columns and "hr_avg_10" in X.columns:
+        _last3_rate = pd.to_numeric(X["hr_count_last3"], errors="coerce").fillna(0.0) / 3.0
+        _avg10      = pd.to_numeric(X["hr_avg_10"],      errors="coerce").fillna(0.0)
+        X["hr_recency_vs_avg"] = _last3_rate - _avg10  # positive = heating up
 
     # ── Statcast pitcher features (for strikeout model) ──────────────────────
     # Pitcher barrel-allowed rate: low = dominant stuff, correlates with K potential

@@ -76,7 +76,13 @@ derived AS (
         -- Captures XBH production on a continuous scale without needing raw 2B/3B counts
         (tb - h)                                   AS xbh_weight,
         -- Big-game flag: 1 when player achieves 2+ TB (direct proxy for OVER 1.5 line)
-        CASE WHEN tb >= 2 THEN 1.0 ELSE 0.0 END    AS is_big_tb_game
+        CASE WHEN tb >= 2 THEN 1.0 ELSE 0.0 END    AS is_big_tb_game,
+        -- OBP: (H + BB) / (AB + BB) — unblocks H2H OPS delta features in features.py
+        CASE WHEN (ab + bb) > 0
+             THEN (h + bb)::float / (ab + bb)
+             ELSE NULL END                          AS game_obp,
+        -- HR game flag: 1 when player hit at least one HR (used for recency windows)
+        CASE WHEN hr > 0 THEN 1.0 ELSE 0.0 END     AS is_hr_game
     FROM batter_gamelogs
 )
 SELECT
@@ -175,10 +181,25 @@ SELECT
     -- ::float cast required to avoid integer division truncation (wrap full window expr).
     (SUM(hr) OVER w5) ::float / NULLIF(SUM(ab) OVER w5,  0)  AS hr_rate_cumul_5,
     (SUM(hr) OVER w10)::float / NULLIF(SUM(ab) OVER w10, 0)  AS hr_rate_cumul_10,
-    (SUM(hr) OVER w20)::float / NULLIF(SUM(ab) OVER w20, 0)  AS hr_rate_cumul_20
+    (SUM(hr) OVER w20)::float / NULLIF(SUM(ab) OVER w20, 0)  AS hr_rate_cumul_20,
+
+    -- Rolling OBP (10-game) — unblocks H2H OPS delta features in features.py.
+    -- Appended at end per PostgreSQL CREATE OR REPLACE VIEW column-order constraint.
+    AVG(game_obp)    OVER w10                        AS obp_avg_10,
+
+    -- HR recency / hot-streak features — appended at end (same constraint).
+    -- hr_any_last1: 1 if the player hit a HR in their immediately preceding game.
+    -- Uses LAG over wpart (no frame clause) so it looks back exactly one row.
+    COALESCE(LAG(is_hr_game) OVER wpart, 0.0)        AS hr_any_last1,
+    -- hr_count_last3: total HRs hit in prior 3 games (short-window pace signal)
+    SUM(hr)          OVER w3                         AS hr_count_last3,
+    -- hr_games_with_hr_last5: count of prior 5 games where ≥1 HR was hit (streak indicator)
+    SUM(is_hr_game)  OVER w5                         AS hr_games_with_hr_last5
 
 FROM derived
 WINDOW
+    wpart AS (PARTITION BY season, player_id
+              ORDER BY game_date_et, game_slug),
     w3  AS (PARTITION BY season, player_id
             ORDER BY game_date_et, game_slug
             ROWS BETWEEN 3  PRECEDING AND 1 PRECEDING),

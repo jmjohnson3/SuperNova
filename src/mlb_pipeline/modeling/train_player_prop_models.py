@@ -292,6 +292,9 @@ SELECT
     -- AB-weighted cumulative HR rate (more reliable than per-game avg for rare HR events)
     b.hr_rate_cumul_5, b.hr_rate_cumul_10, b.hr_rate_cumul_20,
     b.n_games_prev_10,
+    -- Rolling OBP + HR recency (MLB008 additions: gaps C + E)
+    b.obp_avg_10,
+    b.hr_any_last1, b.hr_count_last3, b.hr_games_with_hr_last5,
     -- Absolute walk/K count rolling (raw scale for walks prop model)
     b.bb_avg_5,    b.bb_avg_10,    b.bb_avg_20,    b.bb_sd_10,
     b.k_avg_5,     b.k_avg_10,
@@ -311,6 +314,9 @@ SELECT
     -- HR/9 — strongest direct signal for pitcher HR propensity
     sp_r.hr9_5     AS opp_sp_hr9_5,
     sp_r.hr9_10    AS opp_sp_hr9_10,
+    -- SP per-start velocity trend (MLB021) — declining fastball = more hittable (gap B)
+    sp_velo.fb_velo_avg_5    AS opp_sp_fb_velo_avg_5,
+    sp_velo.fb_velo_trend_5  AS opp_sp_fb_velo_trend_5,
     -- Group B: opponent SP rest + home/away splits
     sp_r.days_since_last_start AS opp_sp_days_since_last_start,
     sp_r.is_short_rest         AS opp_sp_is_short_rest,
@@ -378,6 +384,8 @@ SELECT
     h2h.h2h_slg,
     h2h.h2h_k_rate,
     h2h.h2h_iso,
+    h2h.h2h_hr,    -- career HRs vs this specific pitcher (gap A)
+    h2h.h2h_ab,    -- career ABs vs this specific pitcher (for h2h_hr_rate in features.py)
     -- Own-team lineup quality (protection in order; NULL for upcoming games, median-imputed)
     lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
     lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
@@ -582,6 +590,16 @@ LEFT JOIN features.mlb_team_pitching_rolling_mat opp_tp
         WHEN b.team_abbr = g.home_team_abbr THEN g.away_team_abbr
         ELSE g.home_team_abbr
     END
+-- SP per-start velocity rolling (MLB021) — most recent start before this game (gap B)
+-- NULL when no velocity data exists for this pitcher (pre-2024 or no Savant coverage)
+LEFT JOIN LATERAL (
+    SELECT fb_velo_avg_5, fb_velo_trend_5
+    FROM features.mlb_sp_velocity_rolling
+    WHERE player_id = sp.player_id
+      AND game_date < g.game_date_et
+    ORDER BY game_date DESC
+    LIMIT 1
+) sp_velo ON TRUE
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3

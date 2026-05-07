@@ -380,6 +380,9 @@ SELECT
     br.hr_rate_cumul_5, br.hr_rate_cumul_10, br.hr_rate_cumul_20,
     br.n_games_prev_10,
     br.rest_days,
+    -- Rolling OBP + HR recency (MLB008 additions: gaps C + E)
+    br.obp_avg_10,
+    br.hr_any_last1, br.hr_count_last3, br.hr_games_with_hr_last5,
     -- Absolute walk/K count rolling
     br.bb_avg_5,    br.bb_avg_10,    br.bb_avg_20,    br.bb_sd_10,
     br.k_avg_5,     br.k_avg_10,
@@ -396,6 +399,12 @@ SELECT
     sp_r.bb_pct_5  AS opp_sp_bb_pct_5,
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
+    -- HR/9 — strongest direct signal for pitcher HR propensity
+    sp_r.hr9_5     AS opp_sp_hr9_5,
+    sp_r.hr9_10    AS opp_sp_hr9_10,
+    -- SP per-start velocity trend (MLB021) — declining fastball = more hittable (gap B)
+    sp_velo.fb_velo_avg_5    AS opp_sp_fb_velo_avg_5,
+    sp_velo.fb_velo_trend_5  AS opp_sp_fb_velo_trend_5,
     -- Group B: opponent SP rest + home/away splits
     sp_r.days_since_last_start AS opp_sp_days_since_last_start,
     sp_r.is_short_rest         AS opp_sp_is_short_rest,
@@ -463,6 +472,8 @@ SELECT
     h2h.h2h_slg,
     h2h.h2h_k_rate,
     h2h.h2h_iso,
+    h2h.h2h_hr,    -- career HRs vs this specific pitcher (gap A)
+    h2h.h2h_ab,    -- career ABs vs this specific pitcher (for h2h_hr_rate in features.py)
     -- Own-team lineup quality (NULL for upcoming games, median-imputed by model)
     lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
     lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
@@ -688,6 +699,16 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC, game_slug DESC
     LIMIT 1
 ) opp_tp ON TRUE
+-- SP per-start velocity rolling (MLB021) — most recent start before today (gap B)
+-- NULL when no velocity data exists for this pitcher
+LEFT JOIN LATERAL (
+    SELECT fb_velo_avg_5, fb_velo_trend_5
+    FROM features.mlb_sp_velocity_rolling
+    WHERE player_id = sp.player_id
+      AND game_date < %(game_date)s
+    ORDER BY game_date DESC
+    LIMIT 1
+) sp_velo ON TRUE
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id
