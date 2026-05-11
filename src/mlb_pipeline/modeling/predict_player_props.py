@@ -447,9 +447,12 @@ SELECT
          WHEN opp_ph.pitch_hand = 'R' THEN bvh.k_rate_avg_40_vs_rhp END AS k_rate_avg_40_vs_hand,
     CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.iso_avg_40_vs_lhp
          WHEN opp_ph.pitch_hand = 'R' THEN bvh.iso_avg_40_vs_rhp END AS iso_avg_40_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.hr_avg_40_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.hr_avg_40_vs_rhp  END AS hr_avg_40_vs_hand,
     -- Split differential (positive = better vs LHP)
     COALESCE(bvh.hits_avg_40_vs_lhp, 0) - COALESCE(bvh.hits_avg_40_vs_rhp, 0) AS hits_hand_split_40,
     COALESCE(bvh.tb_avg_40_vs_lhp,   0) - COALESCE(bvh.tb_avg_40_vs_rhp,   0) AS tb_hand_split_40,
+    COALESCE(bvh.hr_avg_40_vs_lhp,   0) - COALESCE(bvh.hr_avg_40_vs_rhp,   0) AS hr_hand_split_40,
     -- Sample sizes
     bvh.n_games_vs_lhp_40,
     bvh.n_games_vs_rhp_40,

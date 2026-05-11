@@ -1280,6 +1280,7 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         for split_col, new_col in [
             ("hits_hand_split_40", "hits_hand_split_weighted"),
             ("tb_hand_split_40",   "tb_hand_split_weighted"),
+            ("hr_hand_split_40",   "hr_hand_split_weighted"),
         ]:
             if split_col in X.columns:
                 n_min = pd.concat(
@@ -1287,6 +1288,10 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                     axis=1,
                 ).min(axis=1)
                 X[new_col] = X[split_col].fillna(0.0) * (n_min / 15.0).clip(upper=1.0)
+
+        # HR matched-hand average: reliability-weighted HR rate vs today's SP hand
+        if "hr_avg_40_vs_hand" in X.columns:
+            X["hr_vs_hand_weighted"] = X["hr_avg_40_vs_hand"].fillna(0.0) * rel
 
     # ── Batter vs specific pitcher H2H career stats (MLB015) ─────────────────
     if "h2h_games" in X.columns:
@@ -1399,6 +1404,18 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "sc_xiso" in X.columns and "park_hr_factor" in X.columns:
         X["sc_xiso_park_adj"] = X["sc_xiso"].fillna(0.0) * X["park_hr_factor"].fillna(1.0)
 
+    # ── Spray angle × park factor ─────────────────────────────────────────────
+    # Pull hitters gain more from homer-friendly parks (short porches, thin air).
+    # Opposite-field hitters benefit less since those walls are typically deeper.
+    if "sc_pull_pct" in X.columns and "park_hr_factor" in X.columns:
+        _pull = pd.to_numeric(X["sc_pull_pct"], errors="coerce").fillna(40.0) / 100.0
+        _phf  = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+        X["sc_pull_x_park_hr"] = _pull * _phf
+    if "sc_opposite_pct" in X.columns and "park_hr_factor" in X.columns:
+        _oppo = pd.to_numeric(X["sc_opposite_pct"], errors="coerce").fillna(25.0) / 100.0
+        _phf  = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+        X["sc_oppo_x_park_hr"] = _oppo * _phf
+
     # Launch angle sweet spot × exit velocity: optimal HR conditions
     if "sc_sweet_spot_pct" in X.columns and "sc_avg_exit_velo" in X.columns:
         X["sc_sweet_spot_x_velo"] = (
@@ -1452,6 +1469,24 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["sc_xwoba_x_opp_xwoba"] = (
             X["sc_xwoba"].fillna(0.0) * X["opp_sp_sc_xwoba"].fillna(0.0)
         )
+
+    # ── Batter discipline × SP arsenal interactions ───────────────────────────
+    # Contact batter (high iz_contact) vs swing-and-miss pitcher (high whiff%) —
+    # the harder the SP is to hit, the more a disciplined bat matters.
+    if "sc_b_iz_contact_pct" in X.columns and "sc_sp_disc_whiff_pct" in X.columns:
+        _bct = pd.to_numeric(X["sc_b_iz_contact_pct"], errors="coerce").fillna(80.0) / 100.0
+        _swh = pd.to_numeric(X["sc_sp_disc_whiff_pct"], errors="coerce").fillna(22.0) / 100.0
+        # Product: both extremes on same scale; high = disciplined bat vs dominant SP
+        X["batter_contact_x_sp_whiff"] = _bct * _swh
+        # Delta: positive = batter's contact ability exceeds SP whiff rate (batter edge)
+        X["batter_contact_vs_sp_whiff"] = _bct - _swh
+
+    # Chase-prone batter (high oz_swing) facing a pitcher who works out-of-zone —
+    # both high = SP can exploit the batter's chase tendency.
+    if "sc_b_oz_swing_pct" in X.columns and "sc_sp_oz_swing_pct" in X.columns:
+        _bcz = pd.to_numeric(X["sc_b_oz_swing_pct"], errors="coerce").fillna(30.0) / 100.0
+        _spz = pd.to_numeric(X["sc_sp_oz_swing_pct"], errors="coerce").fillna(30.0) / 100.0
+        X["batter_chase_x_sp_oz"] = _bcz * _spz
 
     # ── HR environment: pitcher HR/9 × batter fly-ball tendencies ────────────
     # opp_sp_hr9_5 is the single strongest predictor of pitcher HR propensity.
