@@ -742,6 +742,73 @@ def fetch_probable_pitchers_for_date(conn, target_date: date) -> int:
     return len(rows_to_upsert)
 
 
+def fetch_pregame_umpires_for_date(conn, target_date: date) -> int:
+    """Fetch pre-game home plate umpire assignments for upcoming games.
+
+    MLB Stats API announces umpires typically the day before (~5–6 PM ET) via the
+    schedule endpoint with hydrate=officials.  Inserts into raw.mlb_game_umpires so
+    the prediction queries can look up the ump's rolling K9/BB9/RPG stats.
+
+    Safe to call repeatedly — ON CONFLICT DO UPDATE.
+    Returns number of umpire rows upserted (all positions, not just HP).
+    """
+    date_str = target_date.strftime("%Y-%m-%d")
+    try:
+        data = _get("/schedule", params={
+            "sportId": 1,
+            "date": date_str,
+            "hydrate": "officials,team",
+            "gameType": "R",
+        })
+    except Exception as exc:
+        log.warning("fetch_pregame_umpires_for_date: API error for %s: %s", date_str, exc)
+        return 0
+    time.sleep(REQUEST_SLEEP)
+
+    ump_rows: list[dict] = []
+    slug_date = target_date.strftime("%Y%m%d")
+
+    for date_rec in data.get("dates", []):
+        for game in date_rec.get("games", []):
+            home_info = game.get("teams", {}).get("home", {})
+            away_info = game.get("teams", {}).get("away", {})
+            home_abbr = _norm(home_info.get("team", {}).get("abbreviation", ""))
+            away_abbr = _norm(away_info.get("team", {}).get("abbreviation", ""))
+            if not home_abbr or not away_abbr:
+                continue
+
+            game_num = game.get("gameNumber", 1)
+            dh = game.get("doubleHeader", "N")
+            slug = (f"{slug_date}-{away_abbr}-{home_abbr}-G{game_num}"
+                    if dh != "N" and game_num > 1
+                    else f"{slug_date}-{away_abbr}-{home_abbr}")
+
+            for off in game.get("officials", []):
+                ump_id = off.get("official", {}).get("id")
+                ump_name = off.get("official", {}).get("fullName", "")
+                ump_pos = off.get("officialType", "")
+                if ump_id:
+                    ump_rows.append({
+                        "game_slug": slug,
+                        "ump_position": ump_pos,
+                        "umpire_id": int(ump_id),
+                        "umpire_name": ump_name,
+                    })
+
+    if not ump_rows:
+        log.info(
+            "fetch_pregame_umpires_for_date: no officials found for %s "
+            "(may not be announced yet — typically released by 5-6 PM ET the day before)",
+            date_str,
+        )
+        return 0
+
+    upsert_umpires(conn, ump_rows)
+    conn.commit()
+    log.info("Pre-game umpires: upserted %d rows for %s", len(ump_rows), date_str)
+    return len(ump_rows)
+
+
 def upsert_player_handedness(conn, rows: list[dict]) -> None:
     """Upsert bat_side / pitch_hand into raw.mlb_player_handedness.
 
@@ -803,7 +870,7 @@ def backfill_handedness(conn) -> None:
         ids_str = ",".join(str(p) for p in batch)
         params = urllib.parse.urlencode({
             "personIds": ids_str,
-            "fields": "people,id,batSide,pitchHand",
+            "fields": "people,id,batSide,code,pitchHand,code",
         })
         url = f"{BASE_URL}/people?{params}"
         try:
@@ -1238,11 +1305,14 @@ def main() -> None:
         elif args.backfill_f5:
             backfill_f5_scores(conn, seasons)
         else:
-            # Fetch probable pitchers for today so predict_player_props has SP data
+            # Fetch probable pitchers + pre-game umpires for today
             et_today = datetime.now(ET).date()
             n_probable = fetch_probable_pitchers_for_date(conn, et_today)
             if n_probable:
                 log.info("Fetched probable pitchers for %d teams today (%s)", n_probable, et_today)
+            n_umps = fetch_pregame_umpires_for_date(conn, et_today)
+            if n_umps:
+                log.info("Pre-game umpires: %d assignments for %s", n_umps, et_today)
 
             for season_slug in seasons:
                 # Derive date range from season if not overridden

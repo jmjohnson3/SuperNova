@@ -101,7 +101,10 @@ def _pick_threshold(
     wr_ho = float(ho["over_hit"].mean())
     roi_ho = _roi_pct(wr_ho)
     if roi_ho <= 0:
-        return fallback, {
+        # Return a sentinel threshold (999) that prevents any bets from firing.
+        # Using fallback here would deploy bets against a stat the holdout shows
+        # has negative ROI — effectively guaranteed money loss.
+        return 999.0, {
             "reason": "holdout_roi_non_positive",
             "chosen_train": best,
             "holdout": {"n": n_ho, "wr": wr_ho, "roi": roi_ho},

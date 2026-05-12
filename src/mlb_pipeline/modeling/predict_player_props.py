@@ -3105,8 +3105,9 @@ def predict_props(cfg: PredictConfig) -> None:
             sigma_hr    = bt.get("ci_home_runs")   if bt else None
             sigma_walks = bt.get("ci_walks")       if bt else None
 
-            # Alt-line CLF probs for lottery (all FD hits/TB lines per batter)
-            if cfg.lottery_mode and batter_alt_clf_arts is not None:
+            # Alt-line CLF probs — used for edge evaluation on alt hit/TB lines.
+            # Enabled in all modes (not just lottery) because hits alt CLF has AUC 0.782.
+            if batter_alt_clf_arts is not None:
                 pids_b = df_b["player_id"].astype(int).values
                 _norms_b_list = [_normalize_name(name_map.get(p, "")) for p in pids_b]
                 try:

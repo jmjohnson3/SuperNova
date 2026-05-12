@@ -1245,8 +1245,19 @@ LEFT JOIN h2h
     ON h2h.game_slug = g.game_slug
 
 -- Group C joins
-LEFT JOIN features.mlb_umpire_rolling_mat ump
-    ON ump.game_slug = g.game_slug
+-- Pre-game ump fix: look up announced ump from raw.mlb_game_umpires (populated by
+-- crawler_statsapi.fetch_pregame_umpires_for_date), then LATERAL-join their most
+-- recent rolling stats.  Falls back to NULL (median-imputed) when ump not yet announced.
+LEFT JOIN raw.mlb_game_umpires gu_pred
+    ON gu_pred.game_slug = g.game_slug AND gu_pred.ump_position = 'Home Plate'
+LEFT JOIN LATERAL (
+    SELECT *
+    FROM features.mlb_umpire_rolling_mat
+    WHERE umpire_id = gu_pred.umpire_id
+      AND game_date_et < g.game_date_et
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) ump ON TRUE
 
 LEFT JOIN raw.mlb_weather wx
     ON wx.game_slug = g.game_slug

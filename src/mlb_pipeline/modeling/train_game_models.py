@@ -375,6 +375,9 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         "season_2026-regular",         # only 2026 games; effectively constant
         "ump_runs_per_game",           # ump_rpg_x_park interaction is the informative version
         "market_total_vs_avg",         # removed from features.py; constant shift = no new info
+        # PROXY LEAKAGE: always 1.0 in training (completed games), median-imputed at inference.
+        # Top-2 features by importance but detect train-vs-predict time, not real signal.
+        "home_lineup_completeness", "away_lineup_completeness",
     ]
     X = X.drop(columns=[c for c in _prune_zero_importance if c in X.columns])
 
