@@ -2032,13 +2032,9 @@ def _collect_lottery_parlay_links(
             over_odds = ld.get("over_price")
             if not _in_range(over_odds):
                 continue
-            # Prefer alt CLF probability; fall back to Poisson regression estimate
-            if alt_clf_probs:
-                p_over = alt_clf_probs.get((norm, "pitcher_strikeouts", float(line_val)))
-            else:
-                p_over = None
-            if p_over is None:
-                p_over = _prob_over_from_regression(pred_k, line_val, sigma_k)
+            # Poisson probability from regression — well-calibrated for count data;
+            # monotonic across all alt-line thresholds (P(K≥k+1) < P(K≥k) guaranteed).
+            p_over = _prob_over_from_regression(pred_k, line_val)
             if p_over is None:
                 continue
             ev = _ev_per_unit(float(p_over), over_odds)
@@ -2090,13 +2086,9 @@ def _collect_lottery_parlay_links(
                 over_odds = ld.get("over_price")
                 if not _in_range(over_odds):
                     continue
-                # Prefer alt CLF probability; fall back to Poisson regression estimate
-                if alt_clf_probs:
-                    p_over = alt_clf_probs.get((norm, stat_key, float(line_val)))
-                else:
-                    p_over = None
-                if p_over is None:
-                    p_over = _prob_over_from_regression(pred_v, line_val, sigma_v)
+                # Poisson probability from regression — well-calibrated for count data;
+                # monotonic across all alt-line thresholds (P(stat≥k+1) < P(stat≥k) guaranteed).
+                p_over = _prob_over_from_regression(pred_v, line_val)
                 if p_over is None:
                     continue
                 ev = _ev_per_unit(float(p_over), over_odds)
@@ -2979,20 +2971,6 @@ def predict_props(cfg: PredictConfig) -> None:
                 clf_pover_k = _apply_platt_calibration(raw_p, cal_p_map.get("pitcher_strikeouts"))
                 clf_pover_k[np.isnan(lines_p)] = np.nan
 
-            # Alt-line CLF probs for lottery (all FD K lines per pitcher)
-            if cfg.lottery_mode and pitcher_alt_clf_arts is not None:
-                _norms_p_list = [
-                    _normalize_name(row.get("player_name", f"id={row['player_id']}"))
-                    for _, row in df_p.iterrows()
-                ]
-                try:
-                    _pitcher_alt_clf_probs = _compute_alt_clf_probs(
-                        X_p, _norms_p_list, all_alt_lines,
-                        ["pitcher_strikeouts"], _PITCHER_META, pitcher_alt_clf_arts,
-                    )
-                    log.info("Alt CLF: %d pitcher K probs computed", len(_pitcher_alt_clf_probs))
-                except Exception:
-                    log.warning("Could not compute pitcher alt CLF probs", exc_info=True)
 
             for i, (_, row) in enumerate(df_p.iterrows()):
                 pk = max(0.0, float(pred_k[i]))
@@ -3105,19 +3083,6 @@ def predict_props(cfg: PredictConfig) -> None:
             sigma_hr    = bt.get("ci_home_runs")   if bt else None
             sigma_walks = bt.get("ci_walks")       if bt else None
 
-            # Alt-line CLF probs — used for edge evaluation on alt hit/TB lines.
-            # Enabled in all modes (not just lottery) because hits alt CLF has AUC 0.782.
-            if batter_alt_clf_arts is not None:
-                pids_b = df_b["player_id"].astype(int).values
-                _norms_b_list = [_normalize_name(name_map.get(p, "")) for p in pids_b]
-                try:
-                    _batter_alt_clf_probs = _compute_alt_clf_probs(
-                        X_b, _norms_b_list, all_alt_lines,
-                        ["batter_hits", "batter_total_bases"], _BATTER_META, batter_alt_clf_arts,
-                    )
-                    log.info("Alt CLF: %d batter probs computed", len(_batter_alt_clf_probs))
-                except Exception:
-                    log.warning("Could not compute batter alt CLF probs", exc_info=True)
 
             # Binary classifier predictions (if models trained)
             # One P(over) array per stat — indexed same as df_b rows
