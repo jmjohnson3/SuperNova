@@ -362,6 +362,19 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         "over_price",              # total_vig_direction is the informative derived version
         "total_line_move",         # raw move; abs_total_line_move / direction replace it
         "run_line_move",           # raw move; abs_run_line_move / direction replace it
+        # Confirmed 0.0 importance — platoon source data (team_avg_vs_lhp etc.) is all NULL
+        # in the database, so derived platoon features compute to 0 and carry no signal.
+        "platoon_matchup_diff", "home_hand_matchup_edge", "away_hand_matchup_edge",
+        "home_obp_vs_sp_hand", "away_obp_vs_sp_hand",
+        # Confirmed 0.0 importance — binary flags redundant with continuous versions
+        "home_sp_last_high_workload", "away_sp_last_high_workload",
+        "home_sp_k_trend_5v10", "away_sp_k_trend_5v10",
+        "home_sp_last_quality", "away_sp_last_quality",
+        "home_win_pct_last_5",         # captured by win_pct_last_5_diff
+        "run_line_move_large", "total_line_move_large",   # binary; continuous versions used
+        "season_2026-regular",         # only 2026 games; effectively constant
+        "ump_runs_per_game",           # ump_rpg_x_park interaction is the informative version
+        "market_total_vs_avg",         # removed from features.py; constant shift = no new info
     ]
     X = X.drop(columns=[c for c in _prune_zero_importance if c in X.columns])
 

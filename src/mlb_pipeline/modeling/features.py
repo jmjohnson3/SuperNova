@@ -118,11 +118,6 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "run_line_home" in X.columns:
         X["market_run_line"] = X["run_line_home"]
 
-    # ── Market total deviation from league average ────────────────────────────
-    # More signal than raw total_line (centers on ~9.0 runs/game)
-    if "total_line" in X.columns:
-        X["market_total_vs_avg"] = pd.to_numeric(X["total_line"], errors="coerce") - 9.0
-
     # ── Line movement feature engineering ─────────────────────────────────────
     # Raw move columns have ~0 importance; abs(), direction, and magnitude flags
     # are far more informative (sharp vs stale signal).
@@ -766,6 +761,16 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 + pd.to_numeric(X[_ac], errors="coerce").fillna(_fill)
             )
 
+    # ── Combined runs trend (scoring pace momentum for total model) ──────────
+    # Positive = both teams scoring more than their 10-game baseline (high-scoring
+    # environment). More informative than raw combined_runs_avg because it captures
+    # recent pace drift vs the season norm.
+    if "combined_runs_avg_5" in X.columns and "combined_runs_avg_10" in X.columns:
+        X["combined_runs_trend_5v10"] = (
+            pd.to_numeric(X["combined_runs_avg_5"],  errors="coerce").fillna(8.5)
+            - pd.to_numeric(X["combined_runs_avg_10"], errors="coerce").fillna(8.5)
+        )
+
     # ── Stolen base / team speed features ────────────────────────────────────
     # SB rate reflects team aggressiveness on the basepaths. Faster/more aggressive
     # teams manufacture runs beyond what batting stats alone capture.
@@ -1012,6 +1017,23 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 pd.to_numeric(X[_h], errors="coerce").fillna(_fill)
                 - pd.to_numeric(X[_a], errors="coerce").fillna(_fill)
             )
+
+    # ── Lineup quality × opponent SP quality interaction ─────────────────────
+    # diff_lineup_xwoba captures which lineup has better contact quality.
+    # diff_sp_sc_xwoba captures which SP is harder to hit.
+    # Their interaction detects the best/worst matchup scenarios:
+    #   positive = home lineup quality exceeds opp SP quality (home run-scoring edge)
+    #   negative = home SP quality exceeds away lineup (home pitching edge)
+    if "home_lineup_xwoba_avg" in X.columns and "away_sp_sc_xwoba" in X.columns:
+        _hl  = pd.to_numeric(X["home_lineup_xwoba_avg"], errors="coerce").fillna(0.315)
+        _asp = pd.to_numeric(X["away_sp_sc_xwoba"],      errors="coerce").fillna(0.320)
+        X["home_lineup_vs_opp_sp"] = _hl - _asp
+    if "away_lineup_xwoba_avg" in X.columns and "home_sp_sc_xwoba" in X.columns:
+        _al  = pd.to_numeric(X["away_lineup_xwoba_avg"], errors="coerce").fillna(0.315)
+        _hsp = pd.to_numeric(X["home_sp_sc_xwoba"],      errors="coerce").fillna(0.320)
+        X["away_lineup_vs_opp_sp"] = _al - _hsp
+    if "home_lineup_vs_opp_sp" in X.columns and "away_lineup_vs_opp_sp" in X.columns:
+        X["lineup_vs_sp_edge"] = X["home_lineup_vs_opp_sp"] - X["away_lineup_vs_opp_sp"]
 
     # ── 3f: H2H Sample-Size Confidence Weighting ─────────────────────────────
     # Weight H2H slugging stats by number of matchup games (0→1 as n→15).
@@ -1448,6 +1470,23 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _oppo = pd.to_numeric(X["sc_opposite_pct"], errors="coerce").fillna(25.0) / 100.0
         _phf  = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
         X["sc_oppo_x_park_hr"] = _oppo * _phf
+
+    # ── Spray angle × SP arsenal specificity ─────────────────────────────────
+    # Pull hitters benefit most from fastball-heavy SPs (easier to pull fastballs).
+    # Oppo hitters suffer more vs breaking-ball-heavy SPs (outside corner attacks).
+    if "sc_pull_pct" in X.columns and "opp_sp_fastball_family_pct" in X.columns:
+        _pull = pd.to_numeric(X["sc_pull_pct"], errors="coerce").fillna(40.0) / 100.0
+        _fb   = pd.to_numeric(X["opp_sp_fastball_family_pct"], errors="coerce").fillna(0.55)
+        # Pull hitter × fastball-heavy SP → elevated contact quality for this batter
+        X["sc_pull_x_sp_fb_pct"] = _pull * _fb
+    if "sc_opposite_pct" in X.columns and "opp_sp_fastball_family_pct" in X.columns:
+        _oppo = pd.to_numeric(X["sc_opposite_pct"], errors="coerce").fillna(25.0) / 100.0
+        _fb   = pd.to_numeric(X["opp_sp_fastball_family_pct"], errors="coerce").fillna(0.55)
+        # Oppo hitter × breaking-ball-heavy SP → harder matchup (SP attacks outside zone)
+        X["sc_oppo_x_sp_breaking_pct"] = _oppo * (1.0 - _fb)
+    # Composite: pull-fastball advantage minus oppo-breaking disadvantage
+    if "sc_pull_x_sp_fb_pct" in X.columns and "sc_oppo_x_sp_breaking_pct" in X.columns:
+        X["sc_spray_arsenal_edge"] = X["sc_pull_x_sp_fb_pct"] - X["sc_oppo_x_sp_breaking_pct"]
 
     # Launch angle sweet spot × exit velocity: optimal HR conditions
     if "sc_sweet_spot_pct" in X.columns and "sc_avg_exit_velo" in X.columns:
