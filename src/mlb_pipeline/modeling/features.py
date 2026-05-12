@@ -1061,6 +1061,7 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     for stat in ("hits", "hr", "tb"):
         avg5  = f"{stat}_avg_5"
         avg10 = f"{stat}_avg_10"
+        avg20 = f"{stat}_avg_20"
         sd10  = f"{stat}_sd_10"
         if avg5 in X.columns and avg10 in X.columns:
             X[f"{stat}_trend_5v10"] = X[avg5] - X[avg10]
@@ -1071,6 +1072,23 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         if f"{stat}_trend_5v10" in X.columns and sd10 in X.columns:
             denom = X[sd10].where(X[sd10] > 1e-6, other=np.nan)
             X[f"{stat}_trend_sig"] = X[f"{stat}_trend_5v10"] / denom
+        # Trend acceleration: second derivative — is the hot/cold streak speeding up?
+        # positive = accelerating upward, negative = fading
+        if avg5 in X.columns and avg10 in X.columns and avg20 in X.columns:
+            X[f"{stat}_trend_accel"] = (
+                (X[avg5] - X[avg10]) - (X[avg10] - X[avg20])
+            )
+
+    # ── Early-season reliability weight (Tier 2E) ─────────────────────────────
+    # n_games_prev_10 < 10 → batter hasn't yet built up a reliable rolling window;
+    # scale trend/accel features down proportionally (shrinks toward 0 for new batters).
+    if "n_games_prev_10" in X.columns:
+        _n = pd.to_numeric(X["n_games_prev_10"], errors="coerce").fillna(0.0)
+        X["early_season_weight"] = (_n / 10.0).clip(upper=1.0)
+        for stat in ("hits", "hr", "tb"):
+            _accel_col = f"{stat}_trend_accel"
+            if _accel_col in X.columns:
+                X[_accel_col] = X[_accel_col] * X["early_season_weight"]
 
     # Park-adjusted hit rates
     if "hr_avg_10" in X.columns and "park_hr_factor" in X.columns:
@@ -1211,6 +1229,21 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["ump_bb9_x_batter_bb_rate"] = X["ump_bb9_avg_10"] * X["bb_rate_avg_10"]
     if "ump_bb9_avg_10" in X.columns and "bb_avg_10" in X.columns:
         X["ump_bb9_x_bb_avg_10"] = X["ump_bb9_avg_10"] * X["bb_avg_10"]
+    # ── Umpire zone × batter hits/TB (Tier 2D) ────────────────────────────────
+    # Tight-zone ump (high K9) reduces expected hits for all batters by calling
+    # borderline pitches as strikes; generous zone (high BB9) lowers contact quality.
+    if "ump_k9_avg_10" in X.columns and "hits_avg_10" in X.columns:
+        # Ratio relative to league avg K9=8.5; >1 = above-avg K environment
+        _ump_k = pd.to_numeric(X["ump_k9_avg_10"], errors="coerce").fillna(8.5)
+        X["hits_vs_ump_k9"] = (
+            X["hits_avg_10"].fillna(0.0) * (_ump_k / 8.5)
+        )
+    if "ump_bb9_avg_10" in X.columns and "sc_xslg" in X.columns:
+        # Generous zone boosts xSLG (more pitches to hit); tight zone suppresses it
+        _ump_bb = pd.to_numeric(X["ump_bb9_avg_10"], errors="coerce").fillna(3.0)
+        X["contact_vs_ump_zone"] = (
+            X["sc_xslg"].fillna(0.38) * (1.0 + (_ump_bb - 3.0) / 9.0)
+        )
     # Pitcher strikeout model: ump K9 × pitcher K rate (wide-zone ump amplifies K ability)
     if "ump_k9_avg_10" in X.columns and "k_pct_5" in X.columns:
         X["ump_k9_x_sp_k_pct"] = X["ump_k9_avg_10"] * X["k_pct_5"]
@@ -1591,6 +1624,38 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # SP hard-hit-against × opponent K-proneness
     if "sc_hard_hit_pct" in X.columns and "opp_k_pct_avg_10" in X.columns:
         X["sc_hard_hit_vs_opp_k"] = X["sc_hard_hit_pct"].fillna(0.0) * X["opp_k_pct_avg_10"].fillna(0.0)
+
+    # ── SP workload interaction (Tier 1A) ────────────────────────────────────
+    # opp_sp_pitches_est = ip_avg_5 * 16.5 estimates the SP's typical workload.
+    # High-workload SP (>100 pitches avg) + short rest = meaningful fatigue signal.
+    if "opp_sp_pitches_est" in X.columns:
+        _pit = pd.to_numeric(X["opp_sp_pitches_est"], errors="coerce").fillna(85.0)
+        X["opp_sp_high_workload"] = (_pit > 100.0).astype(int)
+        if "opp_sp_is_short_rest" in X.columns:
+            _sr = pd.to_numeric(X["opp_sp_is_short_rest"], errors="coerce").fillna(0.0)
+            X["opp_sp_fatigue_index"] = (_pit / 85.0).clip(upper=1.5) * (1.0 + _sr)
+        if "hits_avg_10" in X.columns:
+            X["hits_vs_tired_sp"] = (
+                X["hits_avg_10"].fillna(0.0) * (_pit / 85.0).clip(upper=1.3)
+            )
+
+    # ── Reliever depth depletion interaction (Tier 1B) ────────────────────────
+    # Bullpens that used many distinct arms in the past 2 days are more depleted.
+    # Top-of-order batters benefit most (face more innings + BP at-bats).
+    if "opp_bp_relievers_last_2d" in X.columns:
+        _rel2 = pd.to_numeric(X["opp_bp_relievers_last_2d"], errors="coerce").fillna(2.0)
+        X["opp_bp_depth_depletion"] = (_rel2 / 6.0).clip(upper=1.0)
+        if "tb_avg_10" in X.columns:
+            _slot = pd.to_numeric(
+                X["batting_order_avg_10"] if "batting_order_avg_10" in X.columns
+                else pd.Series(5.0, index=X.index),
+                errors="coerce",
+            ).fillna(5.0)
+            X["tb_vs_tired_bp"] = (
+                X["tb_avg_10"].fillna(0.0)
+                * X["opp_bp_depth_depletion"]
+                * (10.0 - _slot).clip(lower=1.0) / 9.0
+            )
 
     # ── Shared ───────────────────────────────────────────────────────────────
     # Back-to-back flag (rest_days ≤ 1)

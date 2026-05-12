@@ -399,6 +399,7 @@ SELECT
     sp_r.bb_pct_5  AS opp_sp_bb_pct_5,
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
+    sp_r.ip_avg_5 * 16.5  AS opp_sp_pitches_est,   -- estimated pitches/start (workload proxy)
     -- HR/9 — strongest direct signal for pitcher HR propensity
     sp_r.hr9_5     AS opp_sp_hr9_5,
     sp_r.hr9_10    AS opp_sp_hr9_10,
@@ -546,7 +547,10 @@ SELECT
     opp_tp.bp_era_10         AS opp_bp_era_10,
     opp_tp.bp_k9_5           AS opp_bp_k9_5,
     opp_tp.bullpen_ip_last_7 AS opp_bp_ip_last_7,
-    opp_tp.bp_era_7d         AS opp_bp_era_7d
+    opp_tp.bp_era_7d         AS opp_bp_era_7d,
+    -- Reliever depth depletion (distinct arms used in past 1–2 days)
+    opp_rl.bp_relievers_last_1d  AS opp_bp_relievers_last_1d,
+    opp_rl.bp_relievers_last_2d  AS opp_bp_relievers_last_2d
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -712,6 +716,15 @@ LEFT JOIN LATERAL (
     ORDER BY game_date DESC
     LIMIT 1
 ) sp_velo ON TRUE
+-- Opponent reliever depth: distinct arms used in prior 1–2 days (Tier 1B)
+LEFT JOIN LATERAL (
+    SELECT bp_relievers_last_1d, bp_relievers_last_2d
+    FROM features.mlb_reliever_rolling
+    WHERE team_abbr = tt.opponent_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_rl ON TRUE
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id

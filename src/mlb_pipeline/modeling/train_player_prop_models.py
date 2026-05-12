@@ -311,6 +311,7 @@ SELECT
     sp_r.bb_pct_5  AS opp_sp_bb_pct_5,
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
+    sp_r.ip_avg_5 * 16.5  AS opp_sp_pitches_est,   -- estimated pitches/start (workload proxy)
     -- HR/9 — strongest direct signal for pitcher HR propensity
     sp_r.hr9_5     AS opp_sp_hr9_5,
     sp_r.hr9_10    AS opp_sp_hr9_10,
@@ -459,6 +460,9 @@ SELECT
     opp_tp.bp_k9_5           AS opp_bp_k9_5,
     opp_tp.bullpen_ip_last_7 AS opp_bp_ip_last_7,
     opp_tp.bp_era_7d         AS opp_bp_era_7d,
+    -- Reliever depth depletion (distinct arms used in past 1–2 days)
+    opp_rl.bp_relievers_last_1d  AS opp_bp_relievers_last_1d,
+    opp_rl.bp_relievers_last_2d  AS opp_bp_relievers_last_2d,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -603,6 +607,12 @@ LEFT JOIN LATERAL (
     ORDER BY game_date DESC
     LIMIT 1
 ) sp_velo ON TRUE
+-- Opponent reliever depth: distinct arms used in prior 1–2 days (Tier 1B)
+LEFT JOIN features.mlb_reliever_rolling opp_rl
+    ON opp_rl.game_slug = b.game_slug
+   AND opp_rl.team_abbr = CASE
+       WHEN b.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+       ELSE g.home_team_abbr END
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3
