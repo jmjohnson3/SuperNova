@@ -122,7 +122,23 @@ SELECT
     COUNT(*)            FILTER (WHERE d.opp_sp_hand = 'R') OVER w40  AS n_games_vs_rhp_40,
 
     -- Batter's own handedness (same for every row of a player; passed through for OHE)
-    bh.bat_side
+    bh.bat_side,
+
+    -- Rolling 10-game vs LHP (recent form — faster response to in-season handedness shifts)
+    -- NOTE: appended after bat_side to satisfy CREATE OR REPLACE VIEW column-order rules
+    AVG(d.h)           FILTER (WHERE d.opp_sp_hand = 'L') OVER w10 AS hits_avg_10_vs_lhp,
+    AVG(d.tb)          FILTER (WHERE d.opp_sp_hand = 'L') OVER w10 AS tb_avg_10_vs_lhp,
+    AVG(d.hr)          FILTER (WHERE d.opp_sp_hand = 'L') OVER w10 AS hr_avg_10_vs_lhp,
+    AVG(d.game_k_rate) FILTER (WHERE d.opp_sp_hand = 'L') OVER w10 AS k_rate_avg_10_vs_lhp,
+    AVG(d.game_iso)    FILTER (WHERE d.opp_sp_hand = 'L') OVER w10 AS iso_avg_10_vs_lhp,
+    COUNT(*)           FILTER (WHERE d.opp_sp_hand = 'L') OVER w10 AS n_games_vs_lhp_10,
+    -- Rolling 10-game vs RHP
+    AVG(d.h)           FILTER (WHERE d.opp_sp_hand = 'R') OVER w10 AS hits_avg_10_vs_rhp,
+    AVG(d.tb)          FILTER (WHERE d.opp_sp_hand = 'R') OVER w10 AS tb_avg_10_vs_rhp,
+    AVG(d.hr)          FILTER (WHERE d.opp_sp_hand = 'R') OVER w10 AS hr_avg_10_vs_rhp,
+    AVG(d.game_k_rate) FILTER (WHERE d.opp_sp_hand = 'R') OVER w10 AS k_rate_avg_10_vs_rhp,
+    AVG(d.game_iso)    FILTER (WHERE d.opp_sp_hand = 'R') OVER w10 AS iso_avg_10_vs_rhp,
+    COUNT(*)           FILTER (WHERE d.opp_sp_hand = 'R') OVER w10 AS n_games_vs_rhp_10
 
 FROM derived d
 LEFT JOIN raw.mlb_player_handedness bh ON bh.player_id = d.player_id
@@ -132,5 +148,10 @@ WINDOW
         PARTITION BY d.season, d.player_id
         ORDER BY     d.game_date_et, d.game_slug
         ROWS BETWEEN 40 PRECEDING AND 1 PRECEDING
+    ),
+    w10 AS (
+        PARTITION BY d.season, d.player_id
+        ORDER BY     d.game_date_et, d.game_slug
+        ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING
     )
 ;

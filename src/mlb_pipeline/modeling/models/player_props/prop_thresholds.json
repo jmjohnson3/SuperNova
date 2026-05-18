@@ -1,87 +1,83 @@
 {
-  "generated_at_utc": "2026-05-12T19:01:00Z",
+  "generated_at_utc": "2026-05-16T17:44:01Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
   "min_holdout_bets": 20,
-  "threshold_strikeouts": 999.0,
+  "threshold_strikeouts": 0.6,
   "threshold_hits": 0.05,
   "threshold_total_bases": 999.0,
   "threshold_home_runs_over": 999.0,
   "threshold_home_runs_under": 999.0,
-  "threshold_walks": 999.0,
+  "threshold_walks": 0.05,
   "threshold_clf": 0.03,
   "min_ev": 0.02,
   "_diagnostics": {
     "pitcher_strikeouts": {
-      "reason": "holdout_roi_non_positive",
-      "chosen_train": {
-        "t": 0.75,
-        "n": 180,
-        "wr": 0.5111111111111111,
-        "roi": -2.424242424242435
+      "reason": "accepted",
+      "train": {
+        "t": 0.6,
+        "n": 259,
+        "wr": 0.49034749034749037,
+        "roi": -6.3882063882063855
       },
       "holdout": {
-        "n": 128,
-        "wr": 0.5,
-        "roi": -4.545454545454546
+        "n": 157,
+        "wr": 0.554140127388535,
+        "roi": 5.790387955993046
       }
     },
     "batter_hits": {
       "reason": "accepted",
       "train": {
         "t": 0.05,
-        "n": 3495,
-        "wr": 0.5244635193133047,
-        "roi": 0.1248536870854428
+        "n": 4213,
+        "wr": 0.5290766674578685,
+        "roi": 1.005545605593086
       },
       "holdout": {
-        "n": 4369,
-        "wr": 0.5577935454337377,
-        "roi": 6.487858673713563
+        "n": 4383,
+        "wr": 0.5537303216974675,
+        "roi": 5.7121523240619805
       }
     },
     "batter_total_bases": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
-        "t": 0.1,
-        "n": 2258,
-        "wr": 0.366696191319752,
-        "roi": -29.994363475320068
+        "t": 0.05,
+        "n": 3240,
+        "wr": 0.3626543209876543,
+        "roi": -30.76599326599327
       },
       "holdout": {
-        "n": 3082,
-        "wr": 0.345554834523037,
-        "roi": -34.030440681965665
+        "n": 3624,
+        "wr": 0.34271523178807944,
+        "roi": -34.57254665863937
       }
     },
     "batter_home_runs": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
         "t": 0.05,
-        "n": 1628,
-        "wr": 0.11240786240786241,
-        "roi": -78.54031717668083
+        "n": 2507,
+        "wr": 0.11208615875548464,
+        "roi": -78.60173332849838
       },
       "holdout": {
-        "n": 4546,
-        "wr": 0.11086669599648043,
-        "roi": -78.83453985521737
+        "n": 4394,
+        "wr": 0.10992262175694129,
+        "roi": -79.01477221003849
       }
     },
     "batter_walks": {
-      "reason": "holdout_roi_non_positive",
+      "reason": "holdout_too_small",
       "chosen_train": {
-        "t": 0.05,
-        "n": 307,
-        "wr": 0.2931596091205212,
-        "roi": -44.033165531536866
+        "t": 0.352,
+        "n": 65,
+        "wr": 0.3230769230769231,
+        "roi": -38.32167832167833
       },
-      "holdout": {
-        "n": 1145,
-        "wr": 0.30131004366812225,
-        "roi": -42.477173481540305
-      }
+      "holdout_n": 4
     }
   }
 }

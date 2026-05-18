@@ -35,13 +35,17 @@ rolling AS (
         COALESCE(SUM(bb)     OVER w, 0)         AS h2h_bb,
         COALESCE(SUM(k_bat)  OVER w, 0)         AS h2h_k,
         COALESCE(SUM(hr)     OVER w, 0)         AS h2h_hr,
-        COALESCE(SUM(tb)     OVER w, 0)         AS h2h_tb
+        COALESCE(SUM(tb)     OVER w, 0)         AS h2h_tb,
+        -- Last-3 matchup recency (captures hot/cold streaks vs this SP)
+        COALESCE(SUM(hits) OVER w3, 0)          AS h2h_h_last3,
+        COALESCE(SUM(ab)   OVER w3, 0)          AS h2h_ab_last3,
+        COALESCE(SUM(tb)   OVER w3, 0)          AS h2h_tb_last3,
+        COALESCE(SUM(hr)   OVER w3, 0)          AS h2h_hr_last3
     FROM matchups
-    WINDOW w AS (
-        PARTITION BY batter_id, pitcher_id
-        ORDER BY game_date_et, game_slug
-        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-    )
+    WINDOW w  AS (PARTITION BY batter_id, pitcher_id ORDER BY game_date_et, game_slug
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),
+           w3 AS (PARTITION BY batter_id, pitcher_id ORDER BY game_date_et, game_slug
+                  ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING)
 )
 SELECT
     batter_id, pitcher_id, game_slug, game_date_et,
@@ -52,5 +56,10 @@ SELECT
          ELSE NULL END                                                       AS h2h_obp,
     CASE WHEN h2h_ab > 0 THEN h2h_tb::float / h2h_ab ELSE NULL END          AS h2h_slg,
     CASE WHEN h2h_ab > 0 THEN h2h_k::float  / h2h_ab ELSE NULL END          AS h2h_k_rate,
-    CASE WHEN h2h_ab > 0 THEN (h2h_tb - h2h_h)::float / h2h_ab ELSE NULL END AS h2h_iso
+    CASE WHEN h2h_ab > 0 THEN (h2h_tb - h2h_h)::float / h2h_ab ELSE NULL END AS h2h_iso,
+    -- Last-3 matchup recency ratios
+    CASE WHEN h2h_ab_last3 > 0 THEN h2h_h_last3::float  / h2h_ab_last3 ELSE NULL END AS h2h_ba_last3,
+    CASE WHEN h2h_ab_last3 > 0 THEN h2h_tb_last3::float / h2h_ab_last3 ELSE NULL END AS h2h_slg_last3,
+    CASE WHEN h2h_ab_last3 > 0 THEN h2h_hr_last3::float / h2h_ab_last3 ELSE NULL END AS h2h_hr_rate_last3,
+    h2h_ab_last3
 FROM rolling;

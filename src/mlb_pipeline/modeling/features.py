@@ -1760,6 +1760,145 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X["opp_lineup_k_pct_std"], errors="coerce"
         ).fillna(0.05)
 
+    # ── SP venue stats (MLB017) — career at this specific park ───────────────
+    # Pitcher's career numbers at this venue are more informative than a generic
+    # home/away split because park dimensions, altitude, and surface vary widely.
+    # Ramp from 0→1 weight over 3 career starts to avoid noisy single-game samples.
+    if "venue_k9" in X.columns and "k9_10" in X.columns:
+        _vk9  = pd.to_numeric(X["venue_k9"],  errors="coerce")
+        _rk9  = pd.to_numeric(X["k9_10"],     errors="coerce").fillna(8.5)
+        _n    = (pd.to_numeric(X["venue_n_starts"], errors="coerce").fillna(0.0)
+                 if "venue_n_starts" in X.columns
+                 else pd.Series(0.0, index=X.index))
+        _w    = (_n / 3.0).clip(upper=1.0)
+        X["venue_k9_adj"]  = _w * _vk9.fillna(_rk9) + (1.0 - _w) * _rk9
+        # Delta: how much better/worse is this SP at this park vs rolling form?
+        X["venue_k9_delta"] = X["venue_k9_adj"] - _rk9
+    if "venue_era" in X.columns and "era_10" in X.columns:
+        _vera = pd.to_numeric(X["venue_era"], errors="coerce")
+        _rera = pd.to_numeric(X["era_10"],    errors="coerce").fillna(4.20)
+        _n    = (pd.to_numeric(X["venue_n_starts"], errors="coerce").fillna(0.0)
+                 if "venue_n_starts" in X.columns
+                 else pd.Series(0.0, index=X.index))
+        _w    = (_n / 3.0).clip(upper=1.0)
+        X["venue_era_adj"]  = _w * _vera.fillna(_rera) + (1.0 - _w) * _rera
+        X["venue_era_delta"] = X["venue_era_adj"] - _rera
+    if "venue_fip" in X.columns and "fip_10" in X.columns:
+        _vfip = pd.to_numeric(X["venue_fip"], errors="coerce")
+        _rfip = pd.to_numeric(X["fip_10"],    errors="coerce").fillna(4.20)
+        _n    = (pd.to_numeric(X["venue_n_starts"], errors="coerce").fillna(0.0)
+                 if "venue_n_starts" in X.columns
+                 else pd.Series(0.0, index=X.index))
+        _w    = (_n / 3.0).clip(upper=1.0)
+        X["venue_fip_adj"]  = _w * _vfip.fillna(_rfip) + (1.0 - _w) * _rfip
+
+    # ── SP last-start quality flags (#3) ─────────────────────────────────────
+    # Dominant last start (high K, deep IP) signals sharp stuff → K prop tailwind.
+    # Blowup last start (short outing) may signal fatigue or mechanical issue.
+    if "last_start_k" in X.columns and "last_start_ip" in X.columns:
+        _lsk = pd.to_numeric(X["last_start_k"],  errors="coerce").fillna(0.0)
+        _lsi = pd.to_numeric(X["last_start_ip"], errors="coerce").fillna(0.0)
+        X["last_start_dominated"] = ((_lsk >= 7.0) & (_lsi >= 5.0)).astype(int)
+        X["last_start_blowup"]    = (_lsi < 4.0).astype(int)
+        # K rate from last start (K/9 equivalent) — continuous form signal
+        X["last_start_k9"] = (_lsk / _lsi.clip(lower=0.1)) * 9.0
+        if "last_start_bb" in X.columns:
+            _lsb = pd.to_numeric(X["last_start_bb"], errors="coerce").fillna(0.0)
+            # K-BB ratio: >2.0 = elite command last outing
+            X["last_start_k_bb"] = _lsk / (_lsb + 1.0)
+
+    # ── Cold weather × power suppression (#4) ────────────────────────────────
+    # Dense cold air reduces ball carry → suppresses HR/ISO more than AVG.
+    # Effect is meaningful below ~60°F; negligible above 70°F.
+    # Dome games are treated as climate-controlled (~72°F) regardless of wx feed.
+    if "temperature_f" in X.columns:
+        _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(70.0)
+        if "is_dome" in X.columns:
+            _dome = pd.to_numeric(X["is_dome"], errors="coerce").fillna(0.0)
+            _temp = _temp.where(_dome == 0, 72.0)
+        # Degrees below 65°F (where carry suppression starts; clipped at 0 for warm games)
+        _cold_deg = (65.0 - _temp).clip(lower=0.0)
+        if "iso_avg_10" in X.columns:
+            _iso = pd.to_numeric(X["iso_avg_10"], errors="coerce").fillna(0.12)
+            X["cold_x_iso"] = _cold_deg * _iso
+        if "hr_rate_cumul_10" in X.columns:
+            _hr_rate = pd.to_numeric(X["hr_rate_cumul_10"], errors="coerce").fillna(0.03)
+            X["cold_x_hr_rate"] = _cold_deg * _hr_rate
+
+    # ── Catcher framing × SP edge-work (#5) ──────────────────────────────────
+    # Framing value is proportional to how often the SP works the edges of the zone.
+    # A pitch-to-contact SP in the middle of the zone benefits little from framing;
+    # a nibbler who lives at the corners multiplies framing value.
+    if "catcher_framing_rv" in X.columns and "sc_sp_oz_swing_pct" in X.columns:
+        _frv = pd.to_numeric(X["catcher_framing_rv"],  errors="coerce").fillna(0.0)
+        _oz  = pd.to_numeric(X["sc_sp_oz_swing_pct"], errors="coerce").fillna(0.30)
+        X["framing_x_sp_edge_work"] = _frv * _oz
+
+    # ── Day-after-night fatigue (#6) ─────────────────────────────────────────
+    # A day game (noon/1pm ET start) after playing the previous night gives
+    # ~14 hrs less recovery than a normal day off. Applies to position players.
+    # rest_days is in the batter SQL; this block is a no-op for pitcher rows.
+    if "is_day_game" in X.columns and "rest_days" in X.columns:
+        _day  = pd.to_numeric(X["is_day_game"], errors="coerce").fillna(0.0)
+        _rest = pd.to_numeric(X["rest_days"],   errors="coerce").fillna(3.0)
+        X["day_after_night"] = ((_day == 1) & (_rest <= 1)).astype(int)
+
+    # ── SP K% by batter handedness (MLB022, Retrain 2 #7) ────────────────────
+    # Pitcher-model: overall split advantage and trend
+    if "sp_k_pct_vs_lhb_25" in X.columns and "sp_k_pct_vs_rhb_25" in X.columns:
+        _klhb = pd.to_numeric(X["sp_k_pct_vs_lhb_25"], errors="coerce").fillna(0.22)
+        _krhb = pd.to_numeric(X["sp_k_pct_vs_rhb_25"], errors="coerce").fillna(0.22)
+        X["sp_k_split_advantage"] = _klhb - _krhb   # positive = better vs LHBs
+        if "sp_k_pct_vs_lhb_10" in X.columns:
+            _k10l = pd.to_numeric(X["sp_k_pct_vs_lhb_10"], errors="coerce").fillna(0.22)
+            _k10r = pd.to_numeric(X["sp_k_pct_vs_rhb_10"], errors="coerce").fillna(0.22)
+            X["sp_k_split_trend_lhb"] = _k10l - _klhb  # positive = recently improving vs LHBs
+            X["sp_k_split_trend_rhb"] = _k10r - _krhb
+
+    # Batter-model: matchup-specific K% for this batter's handedness
+    if "sp_k_pct_vs_lhb_25" in X.columns and "batter_hand" in X.columns:
+        _is_lhb = (X["batter_hand"].fillna("R") == "L")
+        _lhb_col = pd.to_numeric(X["sp_k_pct_vs_lhb_25"], errors="coerce").fillna(0.22)
+        _rhb_col = pd.to_numeric(X["sp_k_pct_vs_rhb_25"], errors="coerce").fillna(0.22)
+        X["opp_sp_k_pct_vs_batter_hand"] = _is_lhb * _lhb_col + (~_is_lhb) * _rhb_col
+
+    # ── Platoon trend 10 vs 40 game (MLB012 extended, Retrain 2 #2) ───────────
+    if "hits_avg_10_vs_hand" in X.columns and "hits_avg_40_vs_hand" in X.columns:
+        _h10 = pd.to_numeric(X["hits_avg_10_vs_hand"], errors="coerce")
+        _h40 = pd.to_numeric(X["hits_avg_40_vs_hand"], errors="coerce")
+        X["platoon_hits_trend_10v40"] = (_h10 - _h40).clip(-0.5, 0.5)
+    if "tb_avg_10_vs_hand" in X.columns and "tb_avg_40_vs_hand" in X.columns:
+        _tb10 = pd.to_numeric(X["tb_avg_10_vs_hand"], errors="coerce")
+        _tb40 = pd.to_numeric(X["tb_avg_40_vs_hand"], errors="coerce")
+        X["platoon_tb_trend_10v40"] = (_tb10 - _tb40).clip(-1.0, 1.0)
+
+    # ── H2H recency (MLB015 extended, Retrain 2 #8) ───────────────────────────
+    if "h2h_ba_last3" in X.columns and "h2h_ba" in X.columns:
+        _last3  = pd.to_numeric(X["h2h_ba_last3"], errors="coerce")
+        _career = pd.to_numeric(X["h2h_ba"],       errors="coerce")
+        X["h2h_recency_vs_career"] = (_last3 - _career).where(_last3.notna() & _career.notna())
+        X["h2h_hot_vs_sp"] = (_last3 >= 0.400).fillna(False).astype(int)
+
+    # ── Batter venue stats (MLB023, Retrain 2 #9) ─────────────────────────────
+    if "batter_venue_ba" in X.columns and "hits_avg_10" in X.columns:
+        _vba = pd.to_numeric(X["batter_venue_ba"], errors="coerce")
+        _rba = pd.to_numeric(X["hits_avg_10"],     errors="coerce").fillna(0.25)
+        _vn  = (pd.to_numeric(X["batter_n_games_at_venue"], errors="coerce").fillna(0.0)
+                if "batter_n_games_at_venue" in X.columns
+                else pd.Series(0.0, index=X.index))
+        _w   = (_vn / 5.0).clip(upper=1.0)   # ramp over 5 games (more frequent visits than pitchers)
+        X["batter_venue_ba_adj"]   = _w * _vba.fillna(_rba) + (1.0 - _w) * _rba
+        X["batter_venue_ba_delta"] = X["batter_venue_ba_adj"] - _rba
+    if "batter_venue_hr_rate" in X.columns and "hr_rate_cumul_10" in X.columns:
+        _vhr = pd.to_numeric(X["batter_venue_hr_rate"], errors="coerce")
+        _rhr = pd.to_numeric(X["hr_rate_cumul_10"],     errors="coerce").fillna(0.03)
+        _vn  = (pd.to_numeric(X["batter_n_games_at_venue"], errors="coerce").fillna(0.0)
+                if "batter_n_games_at_venue" in X.columns
+                else pd.Series(0.0, index=X.index))
+        _w   = (_vn / 5.0).clip(upper=1.0)
+        X["batter_venue_hr_adj"]   = _w * _vhr.fillna(_rhr) + (1.0 - _w) * _rhr
+        X["batter_venue_hr_delta"] = X["batter_venue_hr_adj"] - _rhr
+
     return X
 
 

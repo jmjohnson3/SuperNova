@@ -242,7 +242,21 @@ SELECT
     pd_p.whiff_pct                AS sc_sp_disc_whiff_pct,
     -- Catcher framing (run value per 100 borderline pitches; + = better framer)
     cf.framing_rv_per_100         AS catcher_framing_rv,
-    cf.framing_rate               AS catcher_framing_rate
+    cf.framing_rate               AS catcher_framing_rate,
+    -- SP per-start velocity rolling (MLB021) — pitcher's own fastball velocity trend
+    sp_velo.fb_velo_avg_5    AS sp_fb_velo_avg_5,
+    sp_velo.fb_velo_trend_5  AS sp_fb_velo_trend_5,
+    -- SP venue stats (MLB017) — career ERA/K9/FIP at today's specific park
+    -- NULL on venue debut; reliability-weighted in features.py
+    sp_venue.n_starts_at_venue  AS venue_n_starts,
+    sp_venue.venue_era          AS venue_era,
+    sp_venue.venue_k9           AS venue_k9,
+    sp_venue.venue_fip          AS venue_fip,
+    -- SP K%% by batter handedness (MLB022)
+    sp_hand_k.sp_k_pct_vs_lhb_25,
+    sp_hand_k.sp_k_pct_vs_rhb_25,
+    sp_hand_k.sp_k_pct_vs_lhb_10,
+    sp_hand_k.sp_k_pct_vs_rhb_10
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -334,6 +348,36 @@ LEFT JOIN LATERAL (
 LEFT JOIN raw.mlb_statcast_catcher_framing cf
     ON cf.player_id = cat_recent.catcher_id
     AND cf.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
+-- SP per-start velocity rolling (MLB021) — pitcher's own fastball velocity trend
+-- NULL when no Savant data exists (pre-2024 or limited coverage)
+LEFT JOIN LATERAL (
+    SELECT fb_velo_avg_5, fb_velo_trend_5
+    FROM features.mlb_sp_velocity_rolling
+    WHERE player_id = ts.player_id
+      AND game_date < %(game_date)s
+    ORDER BY game_date DESC
+    LIMIT 1
+) sp_velo ON TRUE
+-- SP venue stats (MLB017) — career ERA/K9/FIP at today's park (leakage-safe)
+LEFT JOIN LATERAL (
+    SELECT n_starts_at_venue, venue_era, venue_k9, venue_fip
+    FROM features.mlb_sp_venue_stats
+    WHERE player_id    = ts.player_id
+      AND venue_id     = (SELECT venue_id FROM raw.mlb_games WHERE game_slug = ts.game_slug LIMIT 1)
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) sp_venue ON TRUE
+-- SP's own K%% by batter handedness (MLB022)
+LEFT JOIN LATERAL (
+    SELECT sp_k_pct_vs_lhb_25, sp_k_pct_vs_rhb_25,
+           sp_k_pct_vs_lhb_10, sp_k_pct_vs_rhb_10
+    FROM features.mlb_sp_hand_k_pct
+    WHERE pitcher_id   = ts.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) sp_hand_k ON TRUE
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -457,6 +501,15 @@ SELECT
     -- Sample sizes
     bvh.n_games_vs_lhp_40,
     bvh.n_games_vs_rhp_40,
+    -- Platoon splits 10-game (MLB012 extended) — recent handedness form
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.hits_avg_10_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.hits_avg_10_vs_rhp END AS hits_avg_10_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.tb_avg_10_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.tb_avg_10_vs_rhp END AS tb_avg_10_vs_hand,
+    CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.hr_avg_10_vs_lhp
+         WHEN opp_ph.pitch_hand = 'R' THEN bvh.hr_avg_10_vs_rhp END AS hr_avg_10_vs_hand,
+    bvh.hits_avg_10_vs_lhp, bvh.hits_avg_10_vs_rhp,
+    bvh.n_games_vs_lhp_10,  bvh.n_games_vs_rhp_10,
     -- Cross-season rolling features (MLB013)
     bcs.n_games_prev_10_cs,
     bcs.hits_avg_10_cs,  bcs.hits_avg_20_cs,
@@ -478,6 +531,11 @@ SELECT
     h2h.h2h_iso,
     h2h.h2h_hr,    -- career HRs vs this specific pitcher (gap A)
     h2h.h2h_ab,    -- career ABs vs this specific pitcher (for h2h_hr_rate in features.py)
+    -- H2H last-3 recency (MLB015 extended)
+    h2h.h2h_ba_last3,
+    h2h.h2h_slg_last3,
+    h2h.h2h_hr_rate_last3,
+    h2h.h2h_ab_last3,
     -- Own-team lineup quality (NULL for upcoming games, median-imputed by model)
     lq_own.lineup_slg_avg_10                                     AS own_lineup_slg_avg_10,
     lq_own.lineup_iso_avg_10                                     AS own_lineup_iso_avg_10,
@@ -550,7 +608,17 @@ SELECT
     opp_tp.bp_era_7d         AS opp_bp_era_7d,
     -- Reliever depth depletion (distinct arms used in past 1–2 days)
     opp_rl.bp_relievers_last_1d  AS opp_bp_relievers_last_1d,
-    opp_rl.bp_relievers_last_2d  AS opp_bp_relievers_last_2d
+    opp_rl.bp_relievers_last_2d  AS opp_bp_relievers_last_2d,
+    -- Batter venue stats (MLB023)
+    b_venue.batter_n_games_at_venue,
+    b_venue.batter_venue_ba,
+    b_venue.batter_venue_hr_rate,
+    b_venue.batter_venue_slg,
+    -- Opposing SP K%% by batter handedness (MLB022)
+    opp_sp_hand_k.sp_k_pct_vs_lhb_25,
+    opp_sp_hand_k.sp_k_pct_vs_rhb_25,
+    opp_sp_hand_k.sp_k_pct_vs_lhb_10,
+    opp_sp_hand_k.sp_k_pct_vs_rhb_10
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -725,6 +793,28 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) opp_rl ON TRUE
+-- Batter career stats at this venue (MLB023)
+LEFT JOIN LATERAL (
+    SELECT batter_n_games_at_venue, batter_venue_ba, batter_venue_hr_rate,
+           batter_venue_slg, batter_venue_bb_rate
+    FROM features.mlb_batter_venue_stats
+    WHERE player_id    = rp.player_id
+      AND venue_id     = (SELECT venue_id FROM raw.mlb_games WHERE game_slug = tt.game_slug LIMIT 1)
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) b_venue ON TRUE
+-- Opposing SP K%% by batter handedness (MLB022)
+LEFT JOIN LATERAL (
+    SELECT sp_k_pct_vs_lhb_25, sp_k_pct_vs_rhb_25,
+           sp_k_pct_vs_lhb_10, sp_k_pct_vs_rhb_10,
+           sp_n_ab_vs_lhb_25,  sp_n_ab_vs_rhb_25
+    FROM features.mlb_sp_hand_k_pct
+    WHERE pitcher_id   = sp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_sp_hand_k ON TRUE
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id

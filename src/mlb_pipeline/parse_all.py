@@ -35,6 +35,8 @@ _MLB_SQL_VIEWS = [
     "MLB017_mlb_sp_venue_stats.sql",                  # SP career stats per venue (Group F)
     "MLB018_mlb_team_batting_vs_hand.sql",            # team batting vs LHP/RHP (Group F)
     "MLB021_mlb_sp_velocity_rolling.sql",             # SP per-start velocity rolling view (Group N)
+    "MLB022_mlb_sp_hand_k_pct.sql",                   # SP K% vs LHB/RHB (Retrain 2 #7)
+    "MLB023_mlb_batter_venue_stats.sql",              # Batter career stats at specific venue (Retrain 2 #9)
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -50,6 +52,9 @@ _MLB_MATVIEW_REFRESH = [
     "MLB007_mlb_materialized_rolling.sql",
     # MLB016: career batter vs SP H2H aggregates per game
     "MLB016_mlb_game_h2h_batting.sql",
+    # MLB022b/023b: matviews for SP K% by hand and batter venue stats (fast training joins)
+    "MLB022b_mlb_sp_hand_k_pct_mat.sql",
+    "MLB023b_mlb_batter_venue_stats_mat.sql",
 ]
 
 _MLB_MATVIEW_REFRESH_SQL = """
@@ -67,6 +72,8 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_venue_stats_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_vs_hand_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_reliever_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_game_h2h_batting_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_hand_k_pct_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_venue_stats_mat;
 """
 
 
@@ -125,6 +132,8 @@ _MATVIEW_TO_VIEW = {
     "mlb_sp_venue_stats_mat":             "mlb_sp_venue_stats",        # Group F
     "mlb_team_batting_vs_hand_mat":       "mlb_team_batting_vs_hand",  # Group F
     "mlb_reliever_rolling_mat":           "mlb_reliever_rolling",      # Group G
+    "mlb_sp_hand_k_pct_mat":             "mlb_sp_hand_k_pct",         # Retrain 2 #7
+    "mlb_batter_venue_stats_mat":        "mlb_batter_venue_stats",    # Retrain 2 #9
 }
 
 
