@@ -1,10 +1,10 @@
 {
-  "generated_at_utc": "2026-05-16T17:44:01Z",
+  "generated_at_utc": "2026-05-18T17:39:33Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
   "min_holdout_bets": 20,
-  "threshold_strikeouts": 0.6,
+  "threshold_strikeouts": 2.0,
   "threshold_hits": 0.05,
   "threshold_total_bases": 999.0,
   "threshold_home_runs_over": 999.0,
@@ -14,68 +14,64 @@
   "min_ev": 0.02,
   "_diagnostics": {
     "pitcher_strikeouts": {
-      "reason": "accepted",
-      "train": {
-        "t": 0.6,
-        "n": 259,
-        "wr": 0.49034749034749037,
-        "roi": -6.3882063882063855
+      "reason": "holdout_too_small",
+      "chosen_train": {
+        "t": 1.812,
+        "n": 53,
+        "wr": 0.49056603773584906,
+        "roi": -6.346483704974272
       },
-      "holdout": {
-        "n": 157,
-        "wr": 0.554140127388535,
-        "roi": 5.790387955993046
-      }
+      "holdout_n": 5
     },
     "batter_hits": {
       "reason": "accepted",
       "train": {
         "t": 0.05,
-        "n": 4213,
-        "wr": 0.5290766674578685,
-        "roi": 1.005545605593086
+        "n": 4553,
+        "wr": 0.5334943992971667,
+        "roi": 1.8489307749136363
       },
       "holdout": {
-        "n": 4383,
-        "wr": 0.5537303216974675,
-        "roi": 5.7121523240619805
+        "n": 4510,
+        "wr": 0.5503325942350332,
+        "roi": 5.063495263051799
       }
     },
     "batter_total_bases": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
         "t": 0.05,
-        "n": 3240,
-        "wr": 0.3626543209876543,
-        "roi": -30.76599326599327
+        "n": 3531,
+        "wr": 0.3659020107618238,
+        "roi": -30.14597976365182
       },
       "holdout": {
-        "n": 3624,
-        "wr": 0.34271523178807944,
-        "roi": -34.57254665863937
+        "n": 3717,
+        "wr": 0.33817594834543985,
+        "roi": -35.439137134052395
       }
     },
     "batter_home_runs": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
         "t": 0.05,
-        "n": 2507,
-        "wr": 0.11208615875548464,
-        "roi": -78.60173332849838
+        "n": 2843,
+        "wr": 0.11783327470981357,
+        "roi": -77.50455664630832
       },
       "holdout": {
-        "n": 4394,
-        "wr": 0.10992262175694129,
-        "roi": -79.01477221003849
+        "n": 4525,
+        "wr": 0.10651933701657458,
+        "roi": -79.66449020592667
       }
     },
     "batter_walks": {
       "reason": "holdout_too_small",
       "chosen_train": {
-        "t": 0.352,
-        "n": 65,
-        "wr": 0.3230769230769231,
-        "roi": -38.32167832167833
+        "t": 0.35,
+        "n": 69,
+        "wr": 0.3188405797101449,
+        "roi": -39.13043478260871
       },
       "holdout_n": 4
     }

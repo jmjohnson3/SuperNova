@@ -256,7 +256,16 @@ SELECT
     sp_hand_k.sp_k_pct_vs_lhb_25,
     sp_hand_k.sp_k_pct_vs_rhb_25,
     sp_hand_k.sp_k_pct_vs_lhb_10,
-    sp_hand_k.sp_k_pct_vs_rhb_10
+    sp_hand_k.sp_k_pct_vs_rhb_10,
+    -- SP career stats vs today's opponent (MLB024)
+    sp_vs_tm.svt_games,
+    sp_vs_tm.svt_era,
+    sp_vs_tm.svt_k9,
+    sp_vs_tm.svt_k_pct,
+    sp_vs_tm.svt_era_last3,
+    sp_vs_tm.svt_k9_last3,
+    -- Market strikeout prop line (FanDuel; today's game)
+    mkt_k.market_k_line
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -378,6 +387,33 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) sp_hand_k ON TRUE
+-- SP career stats vs today's specific opponent (MLB024)
+LEFT JOIN LATERAL (
+    SELECT svt_games, svt_era, svt_k9, svt_k_pct, svt_era_last3, svt_k9_last3
+    FROM features.mlb_sp_vs_team_mat
+    WHERE pitcher_id    = ts.player_id
+      AND opp_team_abbr = ts.opponent_abbr
+      AND game_date_et  < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) sp_vs_tm ON TRUE
+-- Market strikeout prop line (FanDuel; highest available line = market ceiling for this SP)
+LEFT JOIN LATERAL (
+    SELECT MAX(pl.line) AS market_k_line
+    FROM odds.mlb_player_prop_lines pl
+    CROSS JOIN LATERAL (
+        SELECT LOWER(REGEXP_REPLACE(
+            UNACCENT(bx.first_name || ' ' || bx.last_name), '[^a-z ]', '', 'gi'
+        )) AS name_norm
+        FROM raw.mlb_boxscore_player_stats bx
+        WHERE bx.player_id = ts.player_id
+        LIMIT 1
+    ) pn
+    WHERE pl.player_name_norm = pn.name_norm
+      AND pl.as_of_date       = %(game_date)s
+      AND pl.stat             = 'pitcher_strikeouts'
+      AND pl.bookmaker_key    = 'fanduel'
+) mkt_k ON TRUE
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -482,6 +518,7 @@ SELECT
     br.batting_order_avg_10,
     -- Batter + opponent SP handedness (OHE'd by _prep_features)
     bh.bat_side                AS batter_hand,
+    CASE WHEN bh.bat_side = 'L' THEN 1 ELSE 0 END AS is_lhb_batter,
     opp_ph.pitch_hand          AS opp_sp_hand,
     -- Matched-hand stats (the split that matches today's opponent's throwing hand)
     CASE WHEN opp_ph.pitch_hand = 'L' THEN bvh.hits_avg_40_vs_lhp
@@ -618,7 +655,20 @@ SELECT
     opp_sp_hand_k.sp_k_pct_vs_lhb_25,
     opp_sp_hand_k.sp_k_pct_vs_rhb_25,
     opp_sp_hand_k.sp_k_pct_vs_lhb_10,
-    opp_sp_hand_k.sp_k_pct_vs_rhb_10
+    opp_sp_hand_k.sp_k_pct_vs_rhb_10,
+    -- Confirmed batting order from pre-game lineup (raw.mlb_lineups)
+    conf_lu.batting_order  AS confirmed_batting_order,
+    conf_lu.lineup_source  AS confirmed_lineup_source,
+    -- Batter career stats with today's home plate umpire (MLB025)
+    btu.btu_games,
+    btu.btu_ba,
+    btu.btu_k_rate,
+    btu.btu_bb_rate,
+    -- Market over_price on canonical batter lines (FanDuel; today's game)
+    -- American odds: -200 = 67% implied prob; -130 = 57%; -170 = 63%; etc.
+    mkt_props.market_hits_over_price,
+    mkt_props.market_tb_over_price,
+    mkt_props.market_hr_over_price
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -694,6 +744,16 @@ LEFT JOIN LATERAL (
       AND game_date_et < %(game_date)s
     ORDER BY game_date_et DESC LIMIT 1
 ) ur ON TRUE
+-- Batter career stats with today's home plate umpire (MLB025)
+LEFT JOIN LATERAL (
+    SELECT btu_games, btu_ba, btu_k_rate, btu_bb_rate
+    FROM features.mlb_batter_umpire_mat
+    WHERE batter_id    = rp.player_id
+      AND umpire_id    = gu.umpire_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) btu ON TRUE
 -- Weather
 LEFT JOIN raw.mlb_weather wx ON wx.game_slug = tt.game_slug
 LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
@@ -815,6 +875,33 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) opp_sp_hand_k ON TRUE
+-- Confirmed batting order from pre-game lineup
+LEFT JOIN raw.mlb_lineups conf_lu
+    ON  conf_lu.game_slug  = tt.game_slug
+    AND conf_lu.team_abbr  = tt.team_abbr
+    AND conf_lu.player_id  = rp.player_id
+-- Market over_price on canonical batter lines (FanDuel; today's game)
+-- Hits O/U 0.5: over_price encodes implied P(≥1 hit) — varies widely by player/matchup
+-- TB   O/U 1.5: over_price encodes implied P(≥2 TB)
+-- HR   O/U 0.5: over_price encodes implied P(≥1 HR)
+LEFT JOIN LATERAL (
+    SELECT
+        MAX(CASE WHEN pl.stat = 'batter_hits'        AND pl.line = 0.5 THEN pl.over_price END) AS market_hits_over_price,
+        MAX(CASE WHEN pl.stat = 'batter_total_bases'  AND pl.line = 1.5 THEN pl.over_price END) AS market_tb_over_price,
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'    AND pl.line = 0.5 THEN pl.over_price END) AS market_hr_over_price
+    FROM odds.mlb_player_prop_lines pl
+    CROSS JOIN LATERAL (
+        SELECT LOWER(REGEXP_REPLACE(
+            UNACCENT(bx.first_name || ' ' || bx.last_name), '[^a-z ]', '', 'gi'
+        )) AS name_norm
+        FROM raw.mlb_boxscore_player_stats bx
+        WHERE bx.player_id = rp.player_id
+        LIMIT 1
+    ) pn
+    WHERE pl.player_name_norm = pn.name_norm
+      AND pl.as_of_date       = %(game_date)s
+      AND pl.bookmaker_key    = 'fanduel'
+) mkt_props ON TRUE
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id

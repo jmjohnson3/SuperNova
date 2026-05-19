@@ -1207,6 +1207,25 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "fip_5" in X.columns and "fip_10" in X.columns:
         X["fip_trend_5v10"] = X["fip_5"] - X["fip_10"]
 
+    # ── SP career stats vs this specific opposing team (MLB024) ───────────────────
+    if "svt_games" in X.columns:
+        _n   = pd.to_numeric(X["svt_games"], errors="coerce").fillna(0.0)
+        _rel = (_n / 5.0).clip(0, 1)          # 0→1 over 5 starts vs this team
+        X["sp_vs_team_reliability"] = _rel
+        X["sp_vs_team_has_history"] = (_n >= 3).astype(int)
+        if "svt_era" in X.columns and "era_5" in X.columns:
+            _svt_era  = pd.to_numeric(X["svt_era"], errors="coerce")
+            _roll_era = pd.to_numeric(X["era_5"],   errors="coerce").fillna(4.50)
+            X["sp_vs_team_era_adj"]   = _svt_era.fillna(_roll_era) * _rel
+            X["sp_vs_team_era_delta"] = (_svt_era.fillna(_roll_era) - _roll_era) * _rel
+            # Negative = pitcher dominates this team; positive = struggles vs them
+        if "svt_k9" in X.columns and "k9_5" in X.columns:
+            _svt_k9  = pd.to_numeric(X["svt_k9"], errors="coerce")
+            _roll_k9 = pd.to_numeric(X["k9_5"],   errors="coerce").fillna(8.5)
+            X["sp_vs_team_k9_adj"]   = _svt_k9.fillna(_roll_k9) * _rel
+            X["sp_vs_team_k9_delta"] = (_svt_k9.fillna(_roll_k9) - _roll_k9) * _rel
+            # Positive = pitcher K's this team at higher rate than rolling form
+
     # Pitcher × park: K% × park HR factor (pitcher in HR-friendly park faces fewer weak contacts)
     if "k_pct_5" in X.columns and "park_hr_factor" in X.columns:
         X["k_pct_x_park_hr"] = X["k_pct_5"] * X["park_hr_factor"]
@@ -1214,6 +1233,36 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # ── Weather features ──────────────────────────────────────────────────────
     if "wind_speed_mph" in X.columns and "park_hr_factor" in X.columns:
         X["wind_x_park_hr"] = X["wind_speed_mph"] * X["park_hr_factor"]
+
+    # ── Wind → pull trajectory (park-bearing-relative) ───────────────────────
+    # Captures: does today's wind blow toward this batter's pull field?
+    # _PARK_BEARING: compass bearing from home plate to CF wall (0=N, 90=E).
+    _PARK_BEARING = {
+        "ARI": 350, "ATL":   8, "BAL":  98, "BOS":  94, "CHC":  44,
+        "CWS":   4, "CIN":  28, "CLE": 342, "COL": 292, "DET":   6,
+        "HOU":  28, "KC":  334, "LAA": 136, "LAD":  50, "MIA": 356,
+        "MIL":  42, "MIN": 352, "NYM": 358, "NYY": 354, "OAK": 288,
+        "PHI":   3, "PIT": 340, "SD":  316, "SF":   36, "SEA":  20,
+        "STL":  43, "TB":   36, "TEX": 356, "TOR":  12, "WAS": 348,
+    }
+    if ("wind_speed_mph" in X.columns and "wind_sin" in X.columns
+            and "wind_cos" in X.columns and "home_team_abbr" in X.columns):
+        _bearing = X["home_team_abbr"].map(_PARK_BEARING).fillna(0.0)
+        _lf_rad  = np.radians(_bearing - 45.0)
+        _rf_rad  = np.radians(_bearing + 45.0)
+        _ws   = pd.to_numeric(X["wind_speed_mph"], errors="coerce").fillna(0.0)
+        _wsin = pd.to_numeric(X["wind_sin"],       errors="coerce").fillna(0.0)
+        _wcos = pd.to_numeric(X["wind_cos"],       errors="coerce").fillna(0.0)
+        # Positive = wind blowing toward that field (tailwind for batted balls)
+        # wind_sin/cos use met convention (FROM direction), so negate for toward
+        X["wind_toward_lf"] = -_ws * (np.cos(_lf_rad) * _wcos + np.sin(_lf_rad) * _wsin)
+        X["wind_toward_rf"] = -_ws * (np.cos(_rf_rad) * _wcos + np.sin(_rf_rad) * _wsin)
+        # Handedness-aware pull/oppo wind boost (pitchers have no is_lhb_batter)
+        _is_lhb = (pd.to_numeric(X["is_lhb_batter"], errors="coerce").fillna(0.0)
+                   if "is_lhb_batter" in X.columns else pd.Series(0.0, index=X.index))
+        X["pull_wind_boost"]       = _is_lhb * X["wind_toward_rf"] + (1.0 - _is_lhb) * X["wind_toward_lf"]
+        X["oppo_wind_boost"]       = _is_lhb * X["wind_toward_lf"] + (1.0 - _is_lhb) * X["wind_toward_rf"]
+        X["pull_vs_oppo_wind_net"] = X["pull_wind_boost"] - X["oppo_wind_boost"]
 
     if "temperature_f" in X.columns:
         X["is_cold_game"]  = (X["temperature_f"].fillna(72.0) < 50.0).astype(int)
@@ -1227,6 +1276,21 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "bb_trend_5v10" in X.columns and "bb_sd_10" in X.columns:
         denom = X["bb_sd_10"].where(X["bb_sd_10"] > 1e-6, other=np.nan)
         X["bb_trend_sig"] = X["bb_trend_5v10"] / denom
+
+    # ── Batter strikeout trend (5 vs 10 games) ────────────────────────────────────
+    if "k_avg_5" in X.columns and "k_avg_10" in X.columns:
+        _k5  = pd.to_numeric(X["k_avg_5"],  errors="coerce")
+        _k10 = pd.to_numeric(X["k_avg_10"], errors="coerce")
+        X["batter_k_trend_5v10"] = _k5 - _k10         # positive = more Ks lately
+        denom = _k10.where(_k10.abs() > 1e-6, other=np.nan)
+        X["batter_k_hot_ratio"]  = _k5 / denom         # >1 = elevated K rate recently
+
+    # Batter K rate × umpire K environment (compound strikeout risk)
+    if "k_rate_avg_10" in X.columns and "ump_k9_avg_10" in X.columns:
+        X["batter_k_rate_x_ump_k9"] = (
+            pd.to_numeric(X["k_rate_avg_10"], errors="coerce").fillna(0.22)
+            * pd.to_numeric(X["ump_k9_avg_10"],  errors="coerce").fillna(8.5)
+        )
 
     # ── SP K-rate trend (5 vs 10 starts) ─────────────────────────────────────
     # Positive = pitcher on upswing in Ks (improving form).
@@ -1284,6 +1348,61 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X["ump_k9_x_sp_opp_k_triple"] = (
                 X["ump_k9_avg_10"] * X["k_pct_5"] * X["opp_k_pct_avg_10"]
             )
+
+    # ── Batter career stats with today's specific umpire (MLB025) ─────────────────
+    if "btu_games" in X.columns:
+        _n  = pd.to_numeric(X["btu_games"], errors="coerce").fillna(0.0)
+        _rel = (_n / 10.0).clip(0, 1)         # 0→1 over 10 games with this ump
+        if "btu_k_rate" in X.columns and "k_rate_avg_10" in X.columns:
+            _btu_k    = pd.to_numeric(X["btu_k_rate"],    errors="coerce")
+            _career_k = pd.to_numeric(X["k_rate_avg_10"], errors="coerce").fillna(0.22)
+            X["btu_k_rate_adj"]   = _btu_k.fillna(_career_k) * _rel
+            X["btu_k_rate_delta"] = (_btu_k.fillna(_career_k) - _career_k) * _rel
+            # Positive = batter K's more with this ump (bad for hits/TB)
+        if "btu_bb_rate" in X.columns and "bb_rate_avg_10" in X.columns:
+            _btu_bb    = pd.to_numeric(X["btu_bb_rate"],    errors="coerce")
+            _career_bb = pd.to_numeric(X["bb_rate_avg_10"], errors="coerce").fillna(0.08)
+            X["btu_bb_rate_adj"]   = _btu_bb.fillna(_career_bb) * _rel
+            X["btu_bb_rate_delta"] = (_btu_bb.fillna(_career_bb) - _career_bb) * _rel
+            # Positive = batter walks more with this ump
+
+    # ── Market prop lines (FanDuel; NULL pre-2025 or no line posted → imputed) ─
+    # Pitcher: market_k_line is the highest strikeout line posted for this SP today.
+    # Acts as the market's tier label: 3.5=weak, 4.5=average, 5.5=good, 6.5+=ace.
+    if "market_k_line" in X.columns:
+        _kline = pd.to_numeric(X["market_k_line"], errors="coerce")
+        _MODAL_K = 4.5              # mode across all 2025-26 starters (FanDuel)
+        X["market_k_line_filled"] = _kline.fillna(_MODAL_K)
+        X["market_k_line_vs_avg"] = X["market_k_line_filled"] - _MODAL_K
+        X["market_k_line_known"]  = _kline.notna().astype(int)   # 1=real, 0=imputed
+
+    # Batter: over_price on canonical FanDuel line encodes implied probability.
+    # Hits O/U 0.5: -200 → 67% hit prob, -130 → 57%, -425 → 81% (star vs ace SP)
+    # TB   O/U 1.5: -170 → 63% implied P(2+ TB), etc.
+    # HR   O/U 0.5: -110 → 52% implied P(1+ HR), -140 → 58%, etc.
+    # Modal imputation: league-average implied probs when FanDuel line is NULL.
+    def _amer_to_impl_prob(s: pd.Series) -> pd.Series:
+        """Convert American odds series → implied probability (0–1)."""
+        neg_mask = s < 0
+        pos_mask = s > 0
+        prob = pd.Series(np.nan, index=s.index)
+        prob[neg_mask] = s[neg_mask].abs() / (s[neg_mask].abs() + 100.0)
+        prob[pos_mask] = 100.0 / (s[pos_mask] + 100.0)
+        return prob
+
+    # Modal implied probs (league-average when line is NULL / pre-2025)
+    _BATTER_OVER_PRICE_COLS = {
+        "market_hits_over_price": 0.65,   # ~P(1+ hit) league avg ≈ 65%
+        "market_tb_over_price":   0.55,   # ~P(2+ TB)  league avg ≈ 55%
+        "market_hr_over_price":   0.12,   # ~P(1+ HR)  league avg ≈ 12%
+    }
+    for _col, _modal_prob in _BATTER_OVER_PRICE_COLS.items():
+        if _col in X.columns:
+            _odds  = pd.to_numeric(X[_col], errors="coerce")
+            _prob  = _amer_to_impl_prob(_odds)
+            X[f"{_col}_prob"]       = _prob.fillna(_modal_prob)
+            X[f"{_col}_prob_delta"] = X[f"{_col}_prob"] - _modal_prob
+            X[f"{_col}_known"]      = _odds.notna().astype(int)   # 1=real, 0=imputed
 
     # ── Lineup slot ───────────────────────────────────────────────────────────
     if "batting_order_avg_10" in X.columns:
@@ -1678,6 +1797,23 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                 X["hits_avg_10"].fillna(0.0) * (_pit / 85.0).clip(upper=1.3)
             )
 
+    # ── SP rest curve (optimal = 4-5 days; short AND extended both hurt) ─────────
+    if "sp_days_since_last_start" in X.columns:
+        _rest = pd.to_numeric(X["sp_days_since_last_start"], errors="coerce").fillna(4.0)
+        X["sp_days_from_optimal_rest"] = (_rest - 4.0).abs().clip(0, 5)
+        X["sp_is_extended_rest"]       = (_rest >= 7).astype(int)
+
+    # ── Cold weather × SP arsenal (breaking pitches lose spin/movement in cold) ───
+    if "temp_below_60" in X.columns:
+        _cold = pd.to_numeric(X["temp_below_60"], errors="coerce").fillna(0.0)
+        if "sc_sp_sl_pct" in X.columns:
+            X["cold_x_sp_sl_pct"] = _cold * pd.to_numeric(
+                X["sc_sp_sl_pct"], errors="coerce").fillna(0.0)
+        if "sc_sp_sl_pct" in X.columns and "sc_sp_ch_pct" in X.columns:
+            _offspeed = (pd.to_numeric(X["sc_sp_sl_pct"], errors="coerce").fillna(0.0)
+                         + pd.to_numeric(X["sc_sp_ch_pct"], errors="coerce").fillna(0.0))
+            X["cold_x_sp_offspeed_pct"] = _cold * _offspeed
+
     # ── Reliever depth depletion interaction (Tier 1B) ────────────────────────
     # Bullpens that used many distinct arms in the past 2 days are more depleted.
     # Top-of-order batters benefit most (face more innings + BP at-bats).
@@ -1857,7 +1993,9 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
 
     # Batter-model: matchup-specific K% for this batter's handedness
     if "sp_k_pct_vs_lhb_25" in X.columns and "batter_hand" in X.columns:
-        _is_lhb = (X["batter_hand"].fillna("R") == "L")
+        _is_lhb = (pd.to_numeric(X["is_lhb_batter"], errors="coerce").fillna(0.0) > 0.5
+                   if "is_lhb_batter" in X.columns
+                   else X["batter_hand"].fillna("R") == "L")
         _lhb_col = pd.to_numeric(X["sp_k_pct_vs_lhb_25"], errors="coerce").fillna(0.22)
         _rhb_col = pd.to_numeric(X["sp_k_pct_vs_rhb_25"], errors="coerce").fillna(0.22)
         X["opp_sp_k_pct_vs_batter_hand"] = _is_lhb * _lhb_col + (~_is_lhb) * _rhb_col
@@ -1898,6 +2036,18 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _w   = (_vn / 5.0).clip(upper=1.0)
         X["batter_venue_hr_adj"]   = _w * _vhr.fillna(_rhr) + (1.0 - _w) * _rhr
         X["batter_venue_hr_delta"] = X["batter_venue_hr_adj"] - _rhr
+
+    # ── Confirmed batting order (raw.mlb_lineups) ────────────────────────────
+    if "confirmed_batting_order" in X.columns:
+        _conf = pd.to_numeric(X["confirmed_batting_order"], errors="coerce")
+        _avg5 = (pd.to_numeric(X["batting_order_avg_5"], errors="coerce")
+                 if "batting_order_avg_5" in X.columns
+                 else pd.Series(np.nan, index=X.index))
+        X["batting_order_effective"] = _conf.fillna(_avg5)
+        X["is_confirmed_in_lineup"]  = _conf.notna().astype(int)
+        _eff = X["batting_order_effective"]
+        X["batting_order_top4"]    = (_eff <= 4).where(_eff.notna()).fillna(0).astype(int)
+        X["batting_order_bottom3"] = (_eff >= 7).where(_eff.notna()).fillna(0).astype(int)
 
     return X
 

@@ -1,17 +1,17 @@
 -- MLB011: Lineup quality view
--- Uses actual batting orders from raw.mlb_boxscore_player_stats (completed games)
--- joined to mlb_player_batting_rolling_mat for pre-game rolling stats.
+-- Uses batting orders from two sources (UNION):
+--   1. raw.mlb_boxscore_player_stats — actual orders from completed games
+--   2. raw.mlb_lineups               — pre-game confirmed orders for upcoming games
+--      (only used when no boxscore data exists for the game)
 --
 -- Depends on: features.mlb_player_batting_rolling_mat (must exist before applying)
 -- Applied in _apply_post_matview_views() AFTER _refresh_matviews().
---
--- For prediction (today's upcoming games), lineup columns will be NULL
--- and will be median-imputed by the model.
 
 CREATE OR REPLACE VIEW features.mlb_lineup_quality AS
 WITH
--- Actual batting orders from completed boxscores (starters only: positions 1-9)
+-- Batting orders: actual (boxscore) for completed games UNION pre-game lineups for upcoming
 hist_orders AS (
+    -- Actual batting orders from completed boxscores
     SELECT
         bps.game_slug,
         bps.player_id,
@@ -20,6 +20,22 @@ hist_orders AS (
         bps.is_home
     FROM raw.mlb_boxscore_player_stats bps
     WHERE bps.batting_order BETWEEN 1 AND 9
+    UNION ALL
+    -- Pre-game lineups for upcoming games (no boxscore yet)
+    SELECT
+        l.game_slug,
+        l.player_id,
+        l.team_abbr,
+        l.batting_order,
+        (g.home_team_abbr = l.team_abbr) AS is_home
+    FROM raw.mlb_lineups l
+    JOIN raw.mlb_games g ON g.game_slug = l.game_slug
+    WHERE l.batting_order BETWEEN 1 AND 9
+      AND NOT EXISTS (
+          SELECT 1 FROM raw.mlb_boxscore_player_stats bps
+          WHERE bps.game_slug = l.game_slug
+            AND bps.batting_order BETWEEN 1 AND 9
+      )
 ),
 -- Join to rolling stats at game time (same game_slug = pre-game rolling window)
 lineup_with_stats AS (

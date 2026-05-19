@@ -1,8 +1,8 @@
 {
-  "brier_strikeouts_alt": 0.26048783953476323,
-  "auc_strikeouts_alt": 0.5438406687976396,
-  "brier_hits_alt": 0.1401831927586097,
-  "auc_hits_alt": 0.8411970789176395,
-  "brier_total_bases_alt": 0.15360462272075773,
-  "auc_total_bases_alt": 0.7030224248223094
+  "brier_strikeouts_alt": 0.25400368335904666,
+  "auc_strikeouts_alt": 0.5671174493893943,
+  "brier_hits_alt": 0.14004307458704757,
+  "auc_hits_alt": 0.8418080393166466,
+  "brier_total_bases_alt": 0.1537061239565313,
+  "auc_total_bases_alt": 0.7022260803017506
 }

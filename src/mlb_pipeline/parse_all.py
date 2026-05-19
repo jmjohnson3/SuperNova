@@ -8,6 +8,7 @@ from mlb_pipeline.parse_games import main as parse_games, sync_scores_from_boxsc
 from mlb_pipeline.parse_boxscore import main as parse_boxscore
 from mlb_pipeline.parse_player_gamelogs import main as parse_player_gamelogs
 from mlb_pipeline.parse_starting_pitchers import main as parse_starting_pitchers
+from mlb_pipeline.parse_lineup import main as parse_lineup
 from mlb_pipeline.parse_oddsapi import main as parse_game_odds
 
 log = logging.getLogger("mlb_pipeline.parse_all")
@@ -37,6 +38,8 @@ _MLB_SQL_VIEWS = [
     "MLB021_mlb_sp_velocity_rolling.sql",             # SP per-start velocity rolling view (Group N)
     "MLB022_mlb_sp_hand_k_pct.sql",                   # SP K% vs LHB/RHB (Retrain 2 #7)
     "MLB023_mlb_batter_venue_stats.sql",              # Batter career stats at specific venue (Retrain 2 #9)
+    "MLB024_mlb_sp_vs_team.sql",                       # SP career stats vs specific opposing team
+    "MLB025_mlb_batter_umpire.sql",                    # Batter career stats with specific home plate umpire
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -52,12 +55,17 @@ _MLB_MATVIEW_REFRESH = [
     "MLB007_mlb_materialized_rolling.sql",
     # MLB016: career batter vs SP H2H aggregates per game
     "MLB016_mlb_game_h2h_batting.sql",
+    # MLB021b: matview for SP velocity rolling (fast training/prediction joins)
+    "MLB021b_mlb_sp_velocity_rolling_mat.sql",
     # MLB022b/023b: matviews for SP K% by hand and batter venue stats (fast training joins)
     "MLB022b_mlb_sp_hand_k_pct_mat.sql",
     "MLB023b_mlb_batter_venue_stats_mat.sql",
+    "MLB024b_mlb_sp_vs_team_mat.sql",
+    "MLB025b_mlb_batter_umpire_mat.sql",
 ]
 
 _MLB_MATVIEW_REFRESH_SQL = """
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_velocity_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_batting_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_pitching_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_pitcher_rolling_mat;
@@ -74,6 +82,8 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_reliever_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_game_h2h_batting_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_hand_k_pct_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_venue_stats_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_vs_team_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_umpire_mat;
 """
 
 
@@ -119,6 +129,7 @@ def _apply_sql_views(pg_dsn: str) -> None:
 
 
 _MATVIEW_TO_VIEW = {
+    "mlb_sp_velocity_rolling_mat":        "mlb_sp_velocity_rolling",
     "mlb_team_batting_rolling_mat":       "mlb_team_batting_rolling",
     "mlb_team_pitching_rolling_mat":      "mlb_team_pitching_rolling",
     "mlb_pitcher_rolling_mat":            "mlb_pitcher_rolling",
@@ -134,6 +145,8 @@ _MATVIEW_TO_VIEW = {
     "mlb_reliever_rolling_mat":           "mlb_reliever_rolling",      # Group G
     "mlb_sp_hand_k_pct_mat":             "mlb_sp_hand_k_pct",         # Retrain 2 #7
     "mlb_batter_venue_stats_mat":        "mlb_batter_venue_stats",    # Retrain 2 #9
+    "mlb_sp_vs_team_mat":                "mlb_sp_vs_team",
+    "mlb_batter_umpire_mat":             "mlb_batter_umpire",
 }
 
 
@@ -324,6 +337,7 @@ def main() -> None:
     parse_player_gamelogs()   # player stat backbone
     parse_boxscore()          # game + player boxscores (also extracts umpires daily)
     parse_starting_pitchers() # confirmed/probable starting pitchers
+    parse_lineup()            # pre-game confirmed batting orders
     parse_game_odds()         # game lines from Odds API
 
     # Sync scores again: parse_boxscore may have added new rows that parse_games

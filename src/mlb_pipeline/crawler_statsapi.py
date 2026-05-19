@@ -380,6 +380,7 @@ def parse_boxscore(
     game_row = {
         "game_slug": game_slug,
         "season": season,
+        "game_date_et": date(int(game_slug[:4]), int(game_slug[4:6]), int(game_slug[6:8])),
         "home_team_abbr": home_team_abbr,
         "away_team_abbr": away_team_abbr,
         "home_runs": home_runs,
@@ -547,12 +548,12 @@ def parse_boxscore(
 def upsert_boxscore_game(conn, row: dict) -> None:
     sql = """
     INSERT INTO raw.mlb_boxscore_games (
-        game_slug, season, home_team_abbr, away_team_abbr,
+        game_slug, season, game_date_et, home_team_abbr, away_team_abbr,
         home_runs, away_runs, home_hits, away_hits, home_errors, away_errors,
         innings_played, played_status, source_fetched_at_utc, updated_at_utc,
         home_f5_runs, away_f5_runs
     ) VALUES (
-        %(game_slug)s, %(season)s, %(home_team_abbr)s, %(away_team_abbr)s,
+        %(game_slug)s, %(season)s, %(game_date_et)s, %(home_team_abbr)s, %(away_team_abbr)s,
         %(home_runs)s, %(away_runs)s, %(home_hits)s, %(away_hits)s,
         %(home_errors)s, %(away_errors)s,
         %(innings_played)s, %(played_status)s, %(source_fetched_at_utc)s, now(),
@@ -565,6 +566,7 @@ def upsert_boxscore_game(conn, row: dict) -> None:
         away_hits      = EXCLUDED.away_hits,
         innings_played = EXCLUDED.innings_played,
         played_status  = EXCLUDED.played_status,
+        game_date_et   = COALESCE(raw.mlb_boxscore_games.game_date_et, EXCLUDED.game_date_et),
         home_f5_runs   = COALESCE(EXCLUDED.home_f5_runs, raw.mlb_boxscore_games.home_f5_runs),
         away_f5_runs   = COALESCE(EXCLUDED.away_f5_runs, raw.mlb_boxscore_games.away_f5_runs),
         updated_at_utc = now()
@@ -1293,7 +1295,7 @@ def main() -> None:
                         help="One-time backfill: re-fetch linescores to populate home_f5_runs/away_f5_runs")
     args = parser.parse_args()
 
-    seasons = args.season or ["2024-regular", "2025-regular"]
+    seasons = args.season or ["2024-regular", "2025-regular", "2026-regular"]
 
     conn = psycopg2.connect(DSN)
     conn.autocommit = False

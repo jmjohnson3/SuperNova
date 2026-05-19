@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-16T17:44:05Z",
+  "generated_at_utc": "2026-05-18T17:39:37Z",
   "lookback_days": 120,
   "min_samples": 40,
   "max_abs_cal_error": 0.08,
@@ -23,19 +23,19 @@
     {
       "stat": "batter_hits",
       "bucket": "H 0.5",
-      "n": 6487,
-      "p_mean": 0.7531,
-      "win_rate": 0.5784,
-      "abs_cal_error": 0.1747,
+      "n": 6821,
+      "p_mean": 0.7569,
+      "win_rate": 0.5794,
+      "abs_cal_error": 0.1775,
       "disable": true
     },
     {
       "stat": "batter_hits",
       "bucket": "H 1.5",
-      "n": 677,
-      "p_mean": 0.7162,
-      "win_rate": 0.2674,
-      "abs_cal_error": 0.4488,
+      "n": 695,
+      "p_mean": 0.7213,
+      "win_rate": 0.2676,
+      "abs_cal_error": 0.4537,
       "disable": true
     },
     {
@@ -50,10 +50,10 @@
     {
       "stat": "batter_home_runs",
       "bucket": "HR 0.5",
-      "n": 6907,
-      "p_mean": 0.1112,
-      "win_rate": 0.111,
-      "abs_cal_error": 0.0002,
+      "n": 7374,
+      "p_mean": 0.1122,
+      "win_rate": 0.1112,
+      "abs_cal_error": 0.001,
       "disable": false
     },
     {
@@ -77,10 +77,10 @@
     {
       "stat": "batter_total_bases",
       "bucket": "TB 1.5",
-      "n": 1618,
-      "p_mean": 0.6316,
-      "win_rate": 0.3164,
-      "abs_cal_error": 0.3151,
+      "n": 1636,
+      "p_mean": 0.6347,
+      "win_rate": 0.3166,
+      "abs_cal_error": 0.318,
       "disable": true
     },
     {
@@ -95,10 +95,10 @@
     {
       "stat": "batter_walks",
       "bucket": "BB 0.5",
-      "n": 1524,
-      "p_mean": 0.331,
-      "win_rate": 0.3018,
-      "abs_cal_error": 0.0291,
+      "n": 1554,
+      "p_mean": 0.3307,
+      "win_rate": 0.2999,
+      "abs_cal_error": 0.0308,
       "disable": false
     },
     {
