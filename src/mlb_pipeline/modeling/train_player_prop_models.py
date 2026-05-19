@@ -114,6 +114,7 @@ SELECT
     p.fip_away_10,
     -- Opponent team batting context (how K-prone are the opposing batters?)
     ob.k_pct_avg_10    AS opp_k_pct_avg_10,
+    ob.k_pct_avg_5     AS opp_k_pct_avg_5,
     ob.bb_pct_avg_10   AS opp_bb_pct_avg_10,
     ob.avg_avg_10      AS opp_avg_avg_10,
     ob.hr_avg_10       AS opp_hr_avg_10,
@@ -122,6 +123,7 @@ SELECT
     -- Opponent lineup K-rate variance (distribution of K-proneness across the lineup)
     lq_opp.lineup_k_pct_std                  AS opp_lineup_k_pct_std,
     lq_opp.lineup_k_pct_cv                   AS opp_lineup_k_pct_cv,
+    lq_opp.pct_lhb                           AS opp_lineup_pct_lhb,
     -- Park factors
     bf.run_factor      AS park_run_factor,
     bf.hr_factor       AS park_hr_factor,
@@ -383,6 +385,7 @@ SELECT
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
     sp_r.ip_avg_5 * 16.5  AS opp_sp_pitches_est,   -- estimated pitches/start (workload proxy)
+    sp_r.last_start_ip    AS opp_sp_last_start_ip, -- actual IP last start (pitch budget signal)
     -- HR/9 — strongest direct signal for pitcher HR propensity
     sp_r.hr9_5     AS opp_sp_hr9_5,
     sp_r.hr9_10    AS opp_sp_hr9_10,

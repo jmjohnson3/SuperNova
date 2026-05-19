@@ -53,7 +53,8 @@ lineup_with_stats AS (
         sb.xwoba,
         sb.xslg,
         sb.barrel_batted_rate,
-        sb.hard_hit_percent
+        sb.hard_hit_percent,
+        ph.bat_side
     FROM hist_orders o
     LEFT JOIN features.mlb_player_batting_rolling_mat br
         ON br.player_id = o.player_id
@@ -61,6 +62,8 @@ lineup_with_stats AS (
     LEFT JOIN raw.mlb_statcast_batting sb
         ON sb.player_id   = o.player_id
        AND sb.season_year = CAST(LEFT(o.game_slug, 4) AS INT)
+    LEFT JOIN raw.mlb_player_handedness ph
+        ON ph.player_id = o.player_id
 )
 SELECT
     game_slug,
@@ -87,7 +90,10 @@ SELECT
     CASE WHEN AVG(k_rate_avg_10) > 0
          THEN STDDEV_SAMP(k_rate_avg_10)
               / NULLIF(AVG(k_rate_avg_10), 0)
-         ELSE NULL END                                   AS lineup_k_pct_cv
+         ELSE NULL END                                   AS lineup_k_pct_cv,
+    -- Fraction of lineup that bats left-handed (for SP platoon split interaction)
+    COUNT(CASE WHEN bat_side = 'L' THEN 1 END)::FLOAT
+        / NULLIF(COUNT(batting_order), 0)                AS pct_lhb
 FROM lineup_with_stats
 GROUP BY game_slug, team_abbr, is_home
 ;

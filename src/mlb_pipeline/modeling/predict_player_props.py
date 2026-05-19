@@ -169,6 +169,7 @@ SELECT
     pr.fip_away_10,
     -- Opponent batting context
     ob.k_pct_avg_10     AS opp_k_pct_avg_10,
+    ob.k_pct_avg_5      AS opp_k_pct_avg_5,
     ob.bb_pct_avg_10    AS opp_bb_pct_avg_10,
     ob.avg_avg_10       AS opp_avg_avg_10,
     ob.hr_avg_10        AS opp_hr_avg_10,
@@ -204,6 +205,7 @@ SELECT
     lq_opp.top4_slg_avg_10                                       AS opp_top4_slg_avg_10,
     lq_opp.lineup_k_pct_std                                      AS opp_lineup_k_pct_std,
     lq_opp.lineup_k_pct_cv                                       AS opp_lineup_k_pct_cv,
+    lq_opp.pct_lhb                                               AS opp_lineup_pct_lhb,
     -- Statcast: pitcher's own batted-ball-against profile
     sc_p.barrel_batted_rate  AS sc_barrel_rate,
     sc_p.hard_hit_percent    AS sc_hard_hit_pct,
@@ -480,6 +482,7 @@ SELECT
     sp_r.whip_5    AS opp_sp_whip_5,
     sp_r.ip_avg_5  AS opp_sp_ip_avg_5,
     sp_r.ip_avg_5 * 16.5  AS opp_sp_pitches_est,   -- estimated pitches/start (workload proxy)
+    sp_r.last_start_ip    AS opp_sp_last_start_ip, -- actual IP last start (pitch budget signal)
     -- HR/9 — strongest direct signal for pitcher HR propensity
     sp_r.hr9_5     AS opp_sp_hr9_5,
     sp_r.hr9_10    AS opp_sp_hr9_10,

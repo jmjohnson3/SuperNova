@@ -1193,6 +1193,12 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "k_pct_5" in X.columns and "opp_k_pct_avg_10" in X.columns:
         X["sp_k_pct_vs_opp_k_rate"] = X["k_pct_5"] * X["opp_k_pct_avg_10"]
 
+    # Opponent team K% trend (5-game vs 10-game rolling): rising = lineup getting weaker
+    if "opp_k_pct_avg_5" in X.columns and "opp_k_pct_avg_10" in X.columns:
+        _ok5  = pd.to_numeric(X["opp_k_pct_avg_5"],  errors="coerce")
+        _ok10 = pd.to_numeric(X["opp_k_pct_avg_10"], errors="coerce")
+        X["opp_team_k_trend_5v10"] = _ok5 - _ok10   # positive = team striking out more recently
+
     # Strikeout rate trend (recent vs 10-start)
     if "k9_5" in X.columns and "k9_10" in X.columns:
         X["k9_trend_5v10"] = X["k9_5"] - X["k9_10"]
@@ -1574,6 +1580,19 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "sc_xwoba" in X.columns and "avg_avg_10" in X.columns:
         X["sc_xwoba_vs_avg"] = X["sc_xwoba"].fillna(0.0) - X["avg_avg_10"].fillna(0.0)
 
+    # xBA vs actual BA: luck/regression signal (positive = hitting below potential → due up)
+    if "sc_xba" in X.columns and "avg_avg_10" in X.columns:
+        _xba = pd.to_numeric(X["sc_xba"],    errors="coerce")
+        _ba  = pd.to_numeric(X["avg_avg_10"], errors="coerce")
+        X["xba_vs_ba_delta"] = _xba - _ba    # positive = unlucky hitter, expect positive regression
+
+    # xSLG vs actual SLG proxy: power luck signal (xSLG = BA + ISO expected)
+    if "sc_xslg" in X.columns and "avg_avg_10" in X.columns and "iso_avg_10" in X.columns:
+        _xslg   = pd.to_numeric(X["sc_xslg"],    errors="coerce")
+        _slg_px = (pd.to_numeric(X["avg_avg_10"], errors="coerce").fillna(0.0)
+                   + pd.to_numeric(X["iso_avg_10"], errors="coerce").fillna(0.0))
+        X["xslg_vs_slg_delta"] = _xslg - _slg_px  # positive = power below expected
+
     # xISO as direct power proxy (stronger than ISO from box scores)
     if "sc_xiso" in X.columns and "park_hr_factor" in X.columns:
         X["sc_xiso_park_adj"] = X["sc_xiso"].fillna(0.0) * X["park_hr_factor"].fillna(1.0)
@@ -1814,6 +1833,21 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
                          + pd.to_numeric(X["sc_sp_ch_pct"], errors="coerce").fillna(0.0))
             X["cold_x_sp_offspeed_pct"] = _cold * _offspeed
 
+    # ── SP pitch budget / short outing risk ───────────────────────────────────
+    # Last-start IP * 16.5 estimates how many pitches the SP threw in their most recent
+    # outing. High last-start pitch count + short rest → elevated short-outing risk.
+    if "opp_sp_last_start_ip" in X.columns:
+        _ls_ip = pd.to_numeric(X["opp_sp_last_start_ip"], errors="coerce").fillna(5.5)
+        _ls_pit = (_ls_ip * 16.5).clip(lower=0.0)                 # estimated last-start pitches
+        X["opp_sp_last_start_pitches_est"] = _ls_pit
+        X["opp_sp_is_pitch_limited"] = (_ls_pit > 100.0).astype(int)  # threw a lot last time
+        if "opp_sp_days_since_last_start" in X.columns:
+            _rest = pd.to_numeric(X["opp_sp_days_since_last_start"], errors="coerce").fillna(5.0)
+            # Risk = high-pitch-count last start × short rest (days ≤ 5)
+            X["opp_sp_short_outing_risk"] = (
+                (_ls_pit / 90.0).clip(0.0, 1.5) * (1.0 / _rest.clip(lower=1.0))
+            )
+
     # ── Reliever depth depletion interaction (Tier 1B) ────────────────────────
     # Bullpens that used many distinct arms in the past 2 days are more depleted.
     # Top-of-order batters benefit most (face more innings + BP at-bats).
@@ -1849,6 +1883,13 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["is_top_of_order"]    = (_slot <= 4.0).astype(int)
         X["is_bottom_of_order"] = (_slot >= 7.0).astype(int)
         X["pa_frequency_factor"] = (10.0 - _slot).clip(lower=1.0) / 9.0
+
+    # PA opportunity × game total: top-of-order batter in a high-scoring game
+    # has the most expected PA and faces a high run-environment → more hits/TB opportunities
+    if "pa_frequency_factor" in X.columns and "market_total" in X.columns:
+        _pa  = pd.to_numeric(X["pa_frequency_factor"], errors="coerce").fillna(0.67)
+        _tot = pd.to_numeric(X["market_total"],         errors="coerce").fillna(8.5)
+        X["pa_opp_x_total"] = _pa * (_tot / 9.0)   # normalized: value ~0.67 for avg batter/total
 
     # ── 4b: Lineup Slot × Weak Bullpen Interaction ────────────────────────────
     # Top-of-order batters are more likely to bat in later innings against the bullpen.
@@ -1970,6 +2011,14 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _oz  = pd.to_numeric(X["sc_sp_oz_swing_pct"], errors="coerce").fillna(0.30)
         X["framing_x_sp_edge_work"] = _frv * _oz
 
+    # ── Catcher framing × umpire K9 (compound K environment) ─────────────────
+    # A framing-positive catcher (steals strikes) in combination with a tight-zone umpire
+    # multiplies the strikeout environment for batters facing this battery.
+    if "catcher_framing_rv" in X.columns and "ump_k9_avg_10" in X.columns:
+        _frv   = pd.to_numeric(X["catcher_framing_rv"],  errors="coerce").fillna(0.0)
+        _ump_k = pd.to_numeric(X["ump_k9_avg_10"],       errors="coerce").fillna(8.5)
+        X["framing_x_ump_k9"] = _frv * _ump_k   # positive = high-framing catcher + K-heavy ump
+
     # ── Day-after-night fatigue (#6) ─────────────────────────────────────────
     # A day game (noon/1pm ET start) after playing the previous night gives
     # ~14 hrs less recovery than a normal day off. Applies to position players.
@@ -1990,6 +2039,11 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             _k10r = pd.to_numeric(X["sp_k_pct_vs_rhb_10"], errors="coerce").fillna(0.22)
             X["sp_k_split_trend_lhb"] = _k10l - _klhb  # positive = recently improving vs LHBs
             X["sp_k_split_trend_rhb"] = _k10r - _krhb
+        # Lineup LHB% × SP LHB split advantage: compound pitcher-dominance signal
+        # Positive = SP is better vs lefties AND faces a lineup heavy with lefties
+        if "opp_lineup_pct_lhb" in X.columns:
+            _pct_lhb = pd.to_numeric(X["opp_lineup_pct_lhb"], errors="coerce").fillna(0.35)
+            X["lineup_lhb_pct_x_sp_lhb_adv"] = _pct_lhb * X["sp_k_split_advantage"]
 
     # Batter-model: matchup-specific K% for this batter's handedness
     if "sp_k_pct_vs_lhb_25" in X.columns and "batter_hand" in X.columns:
