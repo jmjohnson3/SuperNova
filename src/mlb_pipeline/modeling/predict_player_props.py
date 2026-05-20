@@ -2402,31 +2402,103 @@ def _print_discord(
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
 
-    # Discord mode: print concise Top-10 props + chunked all-props parlays.
+    # Discord mode: Top-10 leaderboards per stat + HR parlay + lottery parlay.
     if is_discord:
-        by_stat = _collect_prop_links_by_stat(all_pitcher_rows, all_batter_rows, prop_lines)
         printed_any = False
-        for stat_key, label in [
-            ("pitcher_strikeouts", "Strikeout"),
-            ("batter_hits", "Hits"),
-            ("batter_total_bases", "2 Total Bases"),
-            ("batter_home_runs", "Home Runs"),
-        ]:
-            links = by_stat.get(stat_key, [])
-            seen: set[str] = set()
-            dedup = [l for l in links if l and l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
-            if not dedup:
-                continue
-            printed_any = True
-            n_chunks = math.ceil(len(dedup) / 25)
-            for i in range(0, len(dedup), 25):
-                chunk = dedup[i:i + 25]
-                parlay_url = build_fd_parlay_url(chunk)
-                if not parlay_url:
-                    continue
-                idx = i // 25 + 1
-                print(f"• {label} Parlay {idx}/{n_chunks}: [FD]({parlay_url})")
 
+        # ── Top 10 Strikeouts ─────────────────────────────────────────────────
+        k_top = sorted(
+            [r for r in all_pitcher_rows if r.get("pred_strikeouts") is not None],
+            key=lambda r: r["pred_strikeouts"], reverse=True,
+        )
+        if k_top:
+            print("**Top 10 Strikeouts Today**")
+            for i, r in enumerate(k_top[:10], start=1):
+                name = r.get("player_name", f"id={r['player_id']}")
+                team = r.get("team_abbr", "?")
+                opp  = r.get("opponent_abbr", "?")
+                pred_k = r["pred_strikeouts"]
+                norm = _normalize_name(name)
+                ld = prop_lines.get((norm, "pitcher_strikeouts"))
+                if ld and ld.get("line") is not None:
+                    line = ld["line"]
+                    clf_p = (r.get("clf_p_over") or {}).get("pitcher_strikeouts")
+                    if clf_p is not None:
+                        clf_p = _apply_regression_gate(clf_p, pred_k, line, "pitcher_strikeouts")
+                        p_over = clf_p
+                    else:
+                        p_over = _prob_over_from_regression(pred_k, line, None)
+                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
+                    lnk = ld.get("over_link")
+                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_k:.1f} · O{line:.1f} · {p_str}{link_str}")
+                else:
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_k:.1f}")
+            printed_any = True
+
+        # ── Top 10 Hits ───────────────────────────────────────────────────────
+        h_top = sorted(
+            [r for r in all_batter_rows if r.get("pred_hits") is not None],
+            key=lambda r: r["pred_hits"], reverse=True,
+        )
+        if h_top:
+            print("")
+            print("**Top 10 Hits Today**")
+            for i, r in enumerate(h_top[:10], start=1):
+                name = r.get("player_name", f"id={r['player_id']}")
+                team = r.get("team_abbr", "?")
+                opp  = r.get("opponent_abbr", "?")
+                pred_h = r["pred_hits"]
+                norm = _normalize_name(name)
+                ld = prop_lines.get((norm, "batter_hits"))
+                if ld and ld.get("line") is not None:
+                    line = ld["line"]
+                    clf_p = (r.get("clf_p_over") or {}).get("batter_hits")
+                    if clf_p is not None:
+                        clf_p = _apply_regression_gate(clf_p, pred_h, line, "batter_hits")
+                        p_over = clf_p
+                    else:
+                        p_over = _prob_over_from_regression(pred_h, line, None)
+                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
+                    lnk = ld.get("over_link")
+                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_h:.3f} · O{line:.1f} · {p_str}{link_str}")
+                else:
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_h:.3f}")
+            printed_any = True
+
+        # ── Top 10 Total Bases ────────────────────────────────────────────────
+        tb_top = sorted(
+            [r for r in all_batter_rows if r.get("pred_total_bases") is not None],
+            key=lambda r: r["pred_total_bases"], reverse=True,
+        )
+        if tb_top:
+            print("")
+            print("**Top 10 Total Bases Today**")
+            for i, r in enumerate(tb_top[:10], start=1):
+                name = r.get("player_name", f"id={r['player_id']}")
+                team = r.get("team_abbr", "?")
+                opp  = r.get("opponent_abbr", "?")
+                pred_tb = r["pred_total_bases"]
+                norm = _normalize_name(name)
+                ld = prop_lines.get((norm, "batter_total_bases"))
+                if ld and ld.get("line") is not None:
+                    line = ld["line"]
+                    clf_p = (r.get("clf_p_over") or {}).get("batter_total_bases")
+                    if clf_p is not None:
+                        clf_p = _apply_regression_gate(clf_p, pred_tb, line, "batter_total_bases")
+                        p_over = clf_p
+                    else:
+                        p_over = _prob_over_from_regression(pred_tb, line, None)
+                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
+                    lnk = ld.get("over_link")
+                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_tb:.3f} · O{line:.1f} · {p_str}{link_str}")
+                else:
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_tb:.3f}")
+            printed_any = True
+
+        print("")
         # Dedicated Top-10 HR parlay (single slip unless links are missing).
         top_hr_links = _collect_top_hr_parlay_links(all_batter_rows, prop_lines, top_n=10)
         if top_hr_links:
