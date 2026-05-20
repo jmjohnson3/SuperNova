@@ -266,6 +266,15 @@ SELECT
     sp_vs_tm.svt_k_pct,
     sp_vs_tm.svt_era_last3,
     sp_vs_tm.svt_k9_last3,
+    -- SP strand rate (MLB027)
+    sp_lob.sp_lob_pct_career,
+    sp_lob.sp_lob_pct_10,
+    -- Park BABIP factor (MLB028)
+    pbf_babip.park_babip_avg,
+    -- Opposing team offensive momentum (MLB029)
+    opp_mom.team_runs_last3  AS opp_runs_last3,
+    opp_mom.team_runs_avg3   AS opp_runs_avg3,
+    opp_mom.team_runs_last5  AS opp_runs_last5,
     -- Market strikeout prop line (FanDuel; today's game)
     mkt_k.market_k_line
 FROM today_starters ts
@@ -399,6 +408,27 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) sp_vs_tm ON TRUE
+-- SP strand rate (MLB027)
+LEFT JOIN LATERAL (
+    SELECT sp_lob_pct_career, sp_lob_pct_10
+    FROM features.mlb_sp_lob_rate_mat
+    WHERE player_id    = ts.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) sp_lob ON TRUE
+-- Park BABIP factor (MLB028)
+LEFT JOIN features.mlb_park_babip_factor pbf_babip
+    ON pbf_babip.venue_id = (SELECT venue_id FROM raw.mlb_games WHERE game_slug = ts.game_slug LIMIT 1)
+-- Opposing team offensive momentum (MLB029)
+LEFT JOIN LATERAL (
+    SELECT team_runs_last3, team_runs_avg3, team_runs_last5
+    FROM features.mlb_team_offensive_momentum_mat
+    WHERE team_abbr    = ts.opponent_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_mom ON TRUE
 -- Market strikeout prop line (FanDuel; highest available line = market ceiling for this SP)
 LEFT JOIN LATERAL (
     SELECT MAX(pl.line) AS market_k_line
@@ -667,6 +697,22 @@ SELECT
     btu.btu_ba,
     btu.btu_k_rate,
     btu.btu_bb_rate,
+    -- Batter stats in bullpen games (MLB026)
+    bvr.bvr_games_30,
+    bvr.bvr_bp_games_30,
+    bvr.bvr_ab_30,
+    bvr.bvr_ba_30,
+    bvr.bvr_hr_rate_30,
+    bvr.bvr_slg_30,
+    bvr.bvr_k_rate_30,
+    -- Opposing SP strand rate (MLB027)
+    opp_sp_lob.sp_lob_pct_career  AS opp_sp_lob_pct_career,
+    opp_sp_lob.sp_lob_pct_10      AS opp_sp_lob_pct_10,
+    -- Park BABIP factor (MLB028)
+    pbf_babip.park_babip_avg,
+    -- Own team offensive momentum (MLB029)
+    own_mom.team_runs_last3  AS own_runs_last3,
+    own_mom.team_runs_avg3   AS own_runs_avg3,
     -- Market over_price on canonical batter lines (FanDuel; today's game)
     -- American odds: -200 = 67%% implied prob; -130 = 57%%; -170 = 63%%; etc.
     mkt_props.market_hits_over_price,
@@ -757,6 +803,37 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) btu ON TRUE
+-- Batter stats in bullpen games (MLB026)
+LEFT JOIN LATERAL (
+    SELECT bvr_games_30, bvr_bp_games_30, bvr_ab_30,
+           bvr_ba_30, bvr_hr_rate_30, bvr_slg_30, bvr_k_rate_30
+    FROM features.mlb_batter_vs_rp_mat
+    WHERE batter_id    = rp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) bvr ON TRUE
+-- Opposing SP strand rate (MLB027)
+LEFT JOIN LATERAL (
+    SELECT sp_lob_pct_career, sp_lob_pct_10
+    FROM features.mlb_sp_lob_rate_mat
+    WHERE player_id    = sp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_sp_lob ON TRUE
+-- Park BABIP factor (MLB028)
+LEFT JOIN features.mlb_park_babip_factor pbf_babip
+    ON pbf_babip.venue_id = (SELECT venue_id FROM raw.mlb_games WHERE game_slug = tt.game_slug LIMIT 1)
+-- Own team offensive momentum (MLB029)
+LEFT JOIN LATERAL (
+    SELECT team_runs_last3, team_runs_avg3
+    FROM features.mlb_team_offensive_momentum_mat
+    WHERE team_abbr    = tt.team_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) own_mom ON TRUE
 -- Weather
 LEFT JOIN raw.mlb_weather wx ON wx.game_slug = tt.game_slug
 LEFT JOIN raw.mlb_venues  v  ON v.venue_id = (
@@ -2451,6 +2528,10 @@ def _print_discord(
             for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(k_entries[:10], start=1):
                 link_str = f" [Bet](<{lnk}>)" if lnk else ""
                 print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.1f} · O{line:.1f} · P={p_over:.1%}{link_str}")
+            k_links = [lnk for _, _, _, _, _, _, lnk in k_entries[:10] if lnk]
+            k_parlay_url = build_fd_parlay_url(k_links[:25]) if k_links else None
+            if k_parlay_url:
+                print(f"• Top 10 K Parlay: [FD]({k_parlay_url})")
             printed_any = True
 
         # ── Top 10 Hits ───────────────────────────────────────────────────────
@@ -2461,6 +2542,10 @@ def _print_discord(
             for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(h_entries[:10], start=1):
                 link_str = f" [Bet](<{lnk}>)" if lnk else ""
                 print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
+            h_links = [lnk for _, _, _, _, _, _, lnk in h_entries[:10] if lnk]
+            h_parlay_url = build_fd_parlay_url(h_links[:25]) if h_links else None
+            if h_parlay_url:
+                print(f"• Top 10 H Parlay: [FD]({h_parlay_url})")
             printed_any = True
 
         # ── Top 10 Total Bases ────────────────────────────────────────────────
@@ -2471,6 +2556,10 @@ def _print_discord(
             for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(tb_entries[:10], start=1):
                 link_str = f" [Bet](<{lnk}>)" if lnk else ""
                 print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
+            tb_links = [lnk for _, _, _, _, _, _, lnk in tb_entries[:10] if lnk]
+            tb_parlay_url = build_fd_parlay_url(tb_links[:25]) if tb_links else None
+            if tb_parlay_url:
+                print(f"• Top 10 TB Parlay: [FD]({tb_parlay_url})")
             printed_any = True
 
         print("")

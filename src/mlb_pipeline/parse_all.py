@@ -40,6 +40,10 @@ _MLB_SQL_VIEWS = [
     "MLB023_mlb_batter_venue_stats.sql",              # Batter career stats at specific venue (Retrain 2 #9)
     "MLB024_mlb_sp_vs_team.sql",                       # SP career stats vs specific opposing team
     "MLB025_mlb_batter_umpire.sql",                    # Batter career stats with specific home plate umpire
+    "MLB026_mlb_batter_vs_rp.sql",                     # Batter rolling stats in bullpen games (opp SP < 5 IP)
+    "MLB027_mlb_sp_lob_rate.sql",                      # SP LOB% / strand rate (career + rolling 10 starts)
+    "MLB028_mlb_park_babip_factor.sql",                # Park-specific BABIP factor from actual gamelogs
+    "MLB029_mlb_team_offensive_momentum.sql",          # Team runs scored last 3/5 games (offensive momentum)
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -62,6 +66,9 @@ _MLB_MATVIEW_REFRESH = [
     "MLB023b_mlb_batter_venue_stats_mat.sql",
     "MLB024b_mlb_sp_vs_team_mat.sql",
     "MLB025b_mlb_batter_umpire_mat.sql",
+    "MLB026b_mlb_batter_vs_rp_mat.sql",
+    "MLB027b_mlb_sp_lob_rate_mat.sql",
+    "MLB029b_mlb_team_offensive_momentum_mat.sql",
 ]
 
 _MLB_MATVIEW_REFRESH_SQL = """
@@ -84,6 +91,9 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_hand_k_pct_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_venue_stats_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_vs_team_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_umpire_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_vs_rp_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_lob_rate_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_offensive_momentum_mat;
 """
 
 
@@ -147,6 +157,9 @@ _MATVIEW_TO_VIEW = {
     "mlb_batter_venue_stats_mat":        "mlb_batter_venue_stats",    # Retrain 2 #9
     "mlb_sp_vs_team_mat":                "mlb_sp_vs_team",
     "mlb_batter_umpire_mat":             "mlb_batter_umpire",
+    "mlb_batter_vs_rp_mat":             "mlb_batter_vs_rp",
+    "mlb_sp_lob_rate_mat":              "mlb_sp_lob_rate",
+    "mlb_team_offensive_momentum_mat":  "mlb_team_offensive_momentum",
 }
 
 

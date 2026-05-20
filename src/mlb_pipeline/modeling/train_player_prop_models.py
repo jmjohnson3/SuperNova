@@ -212,6 +212,15 @@ SELECT
     sp_vs_tm.svt_k_pct,
     sp_vs_tm.svt_era_last3,
     sp_vs_tm.svt_k9_last3,
+    -- SP strand rate (MLB027) — career/rolling LOB%
+    sp_lob.sp_lob_pct_career,
+    sp_lob.sp_lob_pct_10,
+    -- Park BABIP factor (MLB028)
+    pbf_babip.park_babip_avg,
+    -- Opposing team offensive momentum (MLB029) — opposing batters run scoring trend
+    opp_mom.team_runs_last3  AS opp_runs_last3,
+    opp_mom.team_runs_avg3   AS opp_runs_avg3,
+    opp_mom.team_runs_last5  AS opp_runs_last5,
     -- Market strikeout prop line (FanDuel; NULL pre-2025 → median-imputed in features.py)
     mkt_k.market_k_line,
     -- Target
@@ -322,6 +331,19 @@ LEFT JOIN features.mlb_sp_vs_team_mat sp_vs_tm
         WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
         ELSE g.home_team_abbr END
     AND sp_vs_tm.game_slug    = p.game_slug
+-- SP strand rate (MLB027)
+LEFT JOIN features.mlb_sp_lob_rate_mat sp_lob
+    ON sp_lob.player_id = p.player_id
+    AND sp_lob.game_slug = p.game_slug
+-- Park BABIP factor (MLB028)
+LEFT JOIN features.mlb_park_babip_factor pbf_babip
+    ON pbf_babip.venue_id = g.venue_id
+-- Opposing team offensive momentum (MLB029)
+LEFT JOIN features.mlb_team_offensive_momentum_mat opp_mom
+    ON opp_mom.team_abbr = CASE
+        WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+        ELSE g.home_team_abbr END
+    AND opp_mom.game_slug = p.game_slug
 -- Market strikeout prop line (FanDuel; highest available line = market ceiling for this SP)
 LEFT JOIN LATERAL (
     SELECT MAX(pl.line) AS market_k_line
@@ -570,6 +592,22 @@ SELECT
     btu.btu_ba,
     btu.btu_k_rate,
     btu.btu_bb_rate,
+    -- Batter stats in bullpen games (MLB026)
+    bvr.bvr_games_30,
+    bvr.bvr_bp_games_30,
+    bvr.bvr_ab_30,
+    bvr.bvr_ba_30,
+    bvr.bvr_hr_rate_30,
+    bvr.bvr_slg_30,
+    bvr.bvr_k_rate_30,
+    -- Opposing SP strand rate (MLB027)
+    opp_sp_lob.sp_lob_pct_career  AS opp_sp_lob_pct_career,
+    opp_sp_lob.sp_lob_pct_10      AS opp_sp_lob_pct_10,
+    -- Park BABIP factor (MLB028)
+    pbf_babip.park_babip_avg,
+    -- Own team offensive momentum (MLB029)
+    own_mom.team_runs_last3  AS own_runs_last3,
+    own_mom.team_runs_avg3   AS own_runs_avg3,
     -- Market over_price on canonical lines (FanDuel; NULL pre-2025 → imputed in features.py)
     -- over_price in American odds: -200 = 67% implied hit prob; -130 = 57%; etc.
     mkt_props.market_hits_over_price,
@@ -743,6 +781,21 @@ LEFT JOIN features.mlb_batter_umpire_mat btu
     ON btu.batter_id = b.player_id
     AND btu.umpire_id = gu.umpire_id
     AND btu.game_slug = b.game_slug
+-- Batter stats in bullpen games (MLB026)
+LEFT JOIN features.mlb_batter_vs_rp_mat bvr
+    ON bvr.batter_id = b.player_id
+    AND bvr.game_slug = b.game_slug
+-- Opposing SP strand rate (MLB027)
+LEFT JOIN features.mlb_sp_lob_rate_mat opp_sp_lob
+    ON opp_sp_lob.player_id = sp.player_id
+    AND opp_sp_lob.game_slug = b.game_slug
+-- Park BABIP factor (MLB028)
+LEFT JOIN features.mlb_park_babip_factor pbf_babip
+    ON pbf_babip.venue_id = g.venue_id
+-- Own team offensive momentum (MLB029)
+LEFT JOIN features.mlb_team_offensive_momentum_mat own_mom
+    ON own_mom.team_abbr = b.team_abbr
+    AND own_mom.game_slug = b.game_slug
 -- Market over_price on canonical batter lines (FanDuel; game-specific hit probability signal)
 -- over_price on 0.5 hits line: -130=57%, -180=64%, -260=72% implied hit probability
 -- over_price on 1.5 TB line:  similar encoding for 2+ total bases probability

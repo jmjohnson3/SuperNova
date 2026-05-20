@@ -1372,6 +1372,60 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X["btu_bb_rate_delta"] = (_btu_bb.fillna(_career_bb) - _career_bb) * _rel
             # Positive = batter walks more with this ump
 
+    # -- Batter stats in "bullpen games" (opp SP < 5 IP) (MLB026) ----------------
+    if "bvr_ba_30" in X.columns:
+        _n   = pd.to_numeric(X.get("bvr_bp_games_30", pd.Series(0, index=X.index)),
+                             errors="coerce").fillna(0.0)
+        _rel = (_n / 10.0).clip(0, 1)          # 0->1 over 10 bullpen-game appearances
+        X["bvr_reliability"] = _rel
+        if "avg_avg_10" in X.columns:
+            _bvr_ba    = pd.to_numeric(X["bvr_ba_30"],   errors="coerce")
+            _career_ba = pd.to_numeric(X["avg_avg_10"],  errors="coerce").fillna(0.255)
+            X["bvr_ba_delta"]      = (_bvr_ba.fillna(_career_ba) - _career_ba) * _rel
+        if "hr_rate_avg_10" in X.columns:
+            _bvr_hr    = pd.to_numeric(X["bvr_hr_rate_30"], errors="coerce")
+            _career_hr = pd.to_numeric(X["hr_rate_avg_10"], errors="coerce").fillna(0.035)
+            X["bvr_hr_rate_delta"] = (_bvr_hr.fillna(_career_hr) - _career_hr) * _rel
+        if "k_rate_avg_10" in X.columns:
+            _bvr_k    = pd.to_numeric(X["bvr_k_rate_30"],  errors="coerce")
+            _career_k = pd.to_numeric(X["k_rate_avg_10"],  errors="coerce").fillna(0.22)
+            X["bvr_k_rate_delta"]  = (_bvr_k.fillna(_career_k) - _career_k) * _rel
+
+    # -- SP strand rate / LOB% (MLB027) ------------------------------------------
+    _LOB_AVG = 71.0  # MLB average LOB% ~71%
+    if "sp_lob_pct_career" in X.columns:
+        _lob = pd.to_numeric(X["sp_lob_pct_career"], errors="coerce").fillna(_LOB_AVG)
+        X["sp_lob_pct_filled"] = _lob
+        X["sp_lob_vs_avg"]     = _lob - _LOB_AVG   # positive = strands more than average
+        if "sp_lob_pct_10" in X.columns:
+            _lob10 = pd.to_numeric(X["sp_lob_pct_10"], errors="coerce").fillna(_LOB_AVG)
+            X["sp_lob_trend"] = _lob10 - _lob      # positive = recently stranding more
+    if "opp_sp_lob_pct_career" in X.columns:
+        _opp_lob = pd.to_numeric(X["opp_sp_lob_pct_career"], errors="coerce").fillna(_LOB_AVG)
+        X["opp_sp_lob_pct_filled"] = _opp_lob
+        X["opp_sp_lob_vs_avg"]     = _opp_lob - _LOB_AVG
+
+    # -- Park BABIP factor (MLB028) -----------------------------------------------
+    _BABIP_AVG = 0.295  # MLB average BABIP
+    if "park_babip_avg" in X.columns:
+        _babip = pd.to_numeric(X["park_babip_avg"], errors="coerce").fillna(_BABIP_AVG)
+        X["park_babip_factor"] = _babip
+        X["park_babip_vs_avg"] = _babip - _BABIP_AVG   # positive = hit-friendly park
+
+    # -- Team offensive momentum (MLB029) ----------------------------------------
+    _RUNS_3_AVG = 12.0  # ~4 runs/game * 3 games
+    if "opp_runs_last3" in X.columns:
+        _r3 = pd.to_numeric(X["opp_runs_last3"], errors="coerce").fillna(_RUNS_3_AVG)
+        X["opp_runs_last3_filled"] = _r3
+        X["opp_hot_offense_flag"]  = (_r3 >= 15).astype(int)   # >= 5 runs/game avg
+        X["opp_cold_offense_flag"] = (_r3 <= 9).astype(int)    # <= 3 runs/game avg
+        X["opp_runs_last3_vs_avg"] = _r3 - _RUNS_3_AVG
+    if "own_runs_last3" in X.columns:
+        _r3_own = pd.to_numeric(X["own_runs_last3"], errors="coerce").fillna(_RUNS_3_AVG)
+        X["own_runs_last3_filled"] = _r3_own
+        X["own_hot_offense_flag"]  = (_r3_own >= 15).astype(int)
+        X["own_runs_last3_vs_avg"] = _r3_own - _RUNS_3_AVG
+
     # ── Market prop lines (FanDuel; NULL pre-2025 or no line posted → imputed) ─
     # Pitcher: market_k_line is the highest strikeout line posted for this SP today.
     # Acts as the market's tier label: 3.5=weak, 4.5=average, 5.5=good, 6.5+=ace.
