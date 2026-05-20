@@ -2406,96 +2406,59 @@ def _print_discord(
     if is_discord:
         printed_any = False
 
-        # ── Top 10 Strikeouts ─────────────────────────────────────────────────
-        k_top = sorted(
-            [r for r in all_pitcher_rows if r.get("pred_strikeouts") is not None],
-            key=lambda r: r["pred_strikeouts"], reverse=True,
-        )
-        if k_top:
-            print("**Top 10 Strikeouts Today**")
-            for i, r in enumerate(k_top[:10], start=1):
+        def _leaderboard_rows(rows, pred_key, stat_key):
+            """Return (p_over, pred, line, name, team, opp, link) for rows with a book line,
+            sorted by P(over) descending."""
+            entries = []
+            for r in rows:
+                pred_val = r.get(pred_key)
+                if pred_val is None:
+                    continue
                 name = r.get("player_name", f"id={r['player_id']}")
-                team = r.get("team_abbr", "?")
-                opp  = r.get("opponent_abbr", "?")
-                pred_k = r["pred_strikeouts"]
                 norm = _normalize_name(name)
-                ld = prop_lines.get((norm, "pitcher_strikeouts"))
-                if ld and ld.get("line") is not None:
-                    line = ld["line"]
-                    clf_p = (r.get("clf_p_over") or {}).get("pitcher_strikeouts")
-                    if clf_p is not None:
-                        clf_p = _apply_regression_gate(clf_p, pred_k, line, "pitcher_strikeouts")
-                        p_over = clf_p
-                    else:
-                        p_over = _prob_over_from_regression(pred_k, line, None)
-                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
-                    lnk = ld.get("over_link")
-                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_k:.1f} · O{line:.1f} · {p_str}{link_str}")
+                ld = prop_lines.get((norm, stat_key))
+                if not ld or ld.get("line") is None:
+                    continue
+                line = ld["line"]
+                clf_p = (r.get("clf_p_over") or {}).get(stat_key)
+                if clf_p is not None:
+                    p_over = _apply_regression_gate(clf_p, pred_val, line, stat_key)
                 else:
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_k:.1f}")
+                    p_over = _prob_over_from_regression(pred_val, line, None)
+                if p_over is None:
+                    continue
+                entries.append((p_over, pred_val, line, name,
+                                 r.get("team_abbr", "?"), r.get("opponent_abbr", "?"),
+                                 ld.get("over_link")))
+            return sorted(entries, key=lambda x: x[0], reverse=True)
+
+        # ── Top 10 Strikeouts ─────────────────────────────────────────────────
+        k_entries = _leaderboard_rows(all_pitcher_rows, "pred_strikeouts", "pitcher_strikeouts")
+        if k_entries:
+            print("**Top 10 Strikeouts Today**")
+            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(k_entries[:10], start=1):
+                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.1f} · O{line:.1f} · P={p_over:.1%}{link_str}")
             printed_any = True
 
         # ── Top 10 Hits ───────────────────────────────────────────────────────
-        h_top = sorted(
-            [r for r in all_batter_rows if r.get("pred_hits") is not None],
-            key=lambda r: r["pred_hits"], reverse=True,
-        )
-        if h_top:
+        h_entries = _leaderboard_rows(all_batter_rows, "pred_hits", "batter_hits")
+        if h_entries:
             print("")
             print("**Top 10 Hits Today**")
-            for i, r in enumerate(h_top[:10], start=1):
-                name = r.get("player_name", f"id={r['player_id']}")
-                team = r.get("team_abbr", "?")
-                opp  = r.get("opponent_abbr", "?")
-                pred_h = r["pred_hits"]
-                norm = _normalize_name(name)
-                ld = prop_lines.get((norm, "batter_hits"))
-                if ld and ld.get("line") is not None:
-                    line = ld["line"]
-                    clf_p = (r.get("clf_p_over") or {}).get("batter_hits")
-                    if clf_p is not None:
-                        clf_p = _apply_regression_gate(clf_p, pred_h, line, "batter_hits")
-                        p_over = clf_p
-                    else:
-                        p_over = _prob_over_from_regression(pred_h, line, None)
-                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
-                    lnk = ld.get("over_link")
-                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_h:.3f} · O{line:.1f} · {p_str}{link_str}")
-                else:
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_h:.3f}")
+            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(h_entries[:10], start=1):
+                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
             printed_any = True
 
         # ── Top 10 Total Bases ────────────────────────────────────────────────
-        tb_top = sorted(
-            [r for r in all_batter_rows if r.get("pred_total_bases") is not None],
-            key=lambda r: r["pred_total_bases"], reverse=True,
-        )
-        if tb_top:
+        tb_entries = _leaderboard_rows(all_batter_rows, "pred_total_bases", "batter_total_bases")
+        if tb_entries:
             print("")
             print("**Top 10 Total Bases Today**")
-            for i, r in enumerate(tb_top[:10], start=1):
-                name = r.get("player_name", f"id={r['player_id']}")
-                team = r.get("team_abbr", "?")
-                opp  = r.get("opponent_abbr", "?")
-                pred_tb = r["pred_total_bases"]
-                norm = _normalize_name(name)
-                ld = prop_lines.get((norm, "batter_total_bases"))
-                if ld and ld.get("line") is not None:
-                    line = ld["line"]
-                    clf_p = (r.get("clf_p_over") or {}).get("batter_total_bases")
-                    if clf_p is not None:
-                        clf_p = _apply_regression_gate(clf_p, pred_tb, line, "batter_total_bases")
-                        p_over = clf_p
-                    else:
-                        p_over = _prob_over_from_regression(pred_tb, line, None)
-                    p_str = f"P={p_over:.1%}" if p_over is not None else ""
-                    lnk = ld.get("over_link")
-                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_tb:.3f} · O{line:.1f} · {p_str}{link_str}")
-                else:
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_tb:.3f}")
+            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(tb_entries[:10], start=1):
+                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
             printed_any = True
 
         print("")
