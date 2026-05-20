@@ -1871,6 +1871,18 @@ def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
             entry["under_link_book"] = "fanduel"
             result[key] = entry
 
+    # Force batter_hits to always use line=0.5 (1+ hit) from FanDuel if available.
+    # DK's standard market is 1.5 (2+ hits); we always want the 1-hit line.
+    for key in list(result.keys()):
+        if key[1] == "batter_hits":
+            fd_lines = fd_by_line.get(key, {})
+            if 0.5 in fd_lines:
+                fd_entry = fd_lines[0.5]
+                result[key]["line"] = 0.5
+                result[key]["over_link"] = fd_entry.get("over_link") or result[key].get("over_link")
+                if fd_entry.get("over_price") is not None:
+                    result[key]["over_price"] = fd_entry["over_price"]
+
     return result
 
 
