@@ -368,7 +368,7 @@ SELECT
     -- Rolling OBP + HR recency (MLB008 additions: gaps C + E)
     b.obp_avg_10,
     b.hr_any_last1, b.hr_count_last3, b.hr_games_with_hr_last5,
-    -- Absolute walk/K count rolling (raw scale for walks prop model)
+    -- Absolute walk/K count rolling
     b.bb_avg_5,    b.bb_avg_10,    b.bb_avg_20,    b.bb_sd_10,
     b.k_avg_5,     b.k_avg_10,
     -- Home/away conditional rolling
@@ -578,8 +578,7 @@ SELECT
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
-    gl.home_runs   AS home_runs,
-    gl.walks_batter AS walks_batter
+    gl.home_runs   AS home_runs
 FROM features.mlb_player_batting_rolling_mat b
 JOIN raw.mlb_games g
     ON g.game_slug = b.game_slug
@@ -1206,7 +1205,7 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _BATTER_META = ["game_slug", "game_date_et", "player_id", "team_abbr"]
-_BATTER_TARGETS = ["hits", "total_bases", "home_runs", "walks_batter"]
+_BATTER_TARGETS = ["hits", "total_bases", "home_runs"]
 
 
 def train_batter_models(cfg: TrainConfig) -> Dict:
@@ -1224,7 +1223,6 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     y_hits  = df["hits"].astype(float)
     y_tb    = df["total_bases"].astype(float)
     y_hr    = df["home_runs"].fillna(0).astype(float)
-    y_walks = df["walks_batter"].fillna(0).astype(float)
     X_raw = _prep_X(df, _BATTER_TARGETS, _BATTER_META)
     feature_cols = list(X_raw.columns)
 
@@ -1232,32 +1230,29 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
     # Optuna hyperparameter tuning (separate study per stat)
-    best: Dict[str, Dict] = {"hits": {}, "total_bases": {}, "home_runs": {}, "walks_batter": {}}
+    best: Dict[str, Dict] = {"hits": {}, "total_bases": {}, "home_runs": {}}
     if cfg.run_optuna:
         try:
             best["hits"]        = _run_optuna_for_stat(cfg, df, X_raw, y_hits,  feature_cols, medians, "hits",        "count:poisson")
             best["total_bases"] = _run_optuna_for_stat(cfg, df, X_raw, y_tb,    feature_cols, medians, "total_bases", "count:poisson")
             best["home_runs"]   = _run_optuna_for_stat(cfg, df, X_raw, y_hr,    feature_cols, medians, "home_runs",   "count:poisson")
-            best["walks_batter"]= _run_optuna_for_stat(cfg, df, X_raw, y_walks, feature_cols, medians, "walks_batter", "count:poisson")
         except ImportError:
             log.warning("optuna not installed — skipping. pip install optuna")
         except Exception as e:
             log.warning("Optuna tuning failed for batters: %s. Using defaults.", e)
 
-    # Walk-forward for all four stats (using tuned params)
-    hits_mae,  hits_p68,  hits_iters  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",         objective="count:poisson", params_override=best["hits"])
-    tb_mae,    tb_p68,    tb_iters    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases",  objective="count:poisson", params_override=best["total_bases"])
-    hr_mae,    hr_p68,    hr_iters    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",    objective="count:poisson", params_override=best["home_runs"])
-    walks_mae, walks_p68, walks_iters = _run_walk_forward(df, X_raw, y_walks, feature_cols, medians, cfg, "walks_batter", objective="count:poisson", params_override=best["walks_batter"])
+    # Walk-forward for all three stats (using tuned params)
+    hits_mae,  hits_p68,  hits_iters  = _run_walk_forward(df, X_raw, y_hits,  feature_cols, medians, cfg, "hits",        objective="count:poisson", params_override=best["hits"])
+    tb_mae,    tb_p68,    tb_iters    = _run_walk_forward(df, X_raw, y_tb,    feature_cols, medians, cfg, "total_bases", objective="count:poisson", params_override=best["total_bases"])
+    hr_mae,    hr_p68,    hr_iters    = _run_walk_forward(df, X_raw, y_hr,    feature_cols, medians, cfg, "home_runs",   objective="count:poisson", params_override=best["home_runs"])
 
     def _cv_n_est(iters: List[int]) -> Optional[int]:
         return int(np.percentile(iters, 75) * 1.1) if iters else None
 
     # Final models (using CV best_iter to set n_estimators)
-    xgb_hits,  lgb_hits  = _fit_final_model(X_filled, y_hits,  cfg, "hits",         n_estimators=_cv_n_est(hits_iters),  objective="count:poisson", params_override=best["hits"])
-    xgb_tb,    lgb_tb    = _fit_final_model(X_filled, y_tb,    cfg, "total_bases",  n_estimators=_cv_n_est(tb_iters),    objective="count:poisson", params_override=best["total_bases"])
-    xgb_hr,    lgb_hr    = _fit_final_model(X_filled, y_hr,    cfg, "home_runs",    n_estimators=_cv_n_est(hr_iters),    objective="count:poisson", params_override=best["home_runs"])
-    xgb_walks, lgb_walks = _fit_final_model(X_filled, y_walks, cfg, "walks_batter", n_estimators=_cv_n_est(walks_iters), objective="count:poisson", params_override=best["walks_batter"])
+    xgb_hits, lgb_hits = _fit_final_model(X_filled, y_hits, cfg, "hits",        n_estimators=_cv_n_est(hits_iters), objective="count:poisson", params_override=best["hits"])
+    xgb_tb,   lgb_tb   = _fit_final_model(X_filled, y_tb,   cfg, "total_bases", n_estimators=_cv_n_est(tb_iters),   objective="count:poisson", params_override=best["total_bases"])
+    xgb_hr,   lgb_hr   = _fit_final_model(X_filled, y_hr,   cfg, "home_runs",   n_estimators=_cv_n_est(hr_iters),   objective="count:poisson", params_override=best["home_runs"])
 
     # Save
     model_dir = cfg.model_dir
@@ -1266,7 +1261,6 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     xgb_hits.save_model(str(model_dir / "hits_xgb.json"))
     xgb_tb.save_model(str(model_dir / "total_bases_xgb.json"))
     xgb_hr.save_model(str(model_dir / "home_runs_xgb.json"))
-    xgb_walks.save_model(str(model_dir / "walks_xgb.json"))
 
     if lgb_hits is not None:
         lgb_hits.booster_.save_model(str(model_dir / "lgb_hits.txt"))
@@ -1274,8 +1268,6 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
         lgb_tb.booster_.save_model(str(model_dir / "lgb_total_bases.txt"))
     if lgb_hr is not None:
         lgb_hr.booster_.save_model(str(model_dir / "lgb_home_runs.txt"))
-    if lgb_walks is not None:
-        lgb_walks.booster_.save_model(str(model_dir / "lgb_walks.txt"))
 
     (model_dir / "feature_columns_batters.json").write_text(
         json.dumps(feature_cols), encoding="utf-8"
@@ -1288,7 +1280,6 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
         "mae_hits": hits_mae,   "ci_hits": hits_p68,
         "mae_total_bases": tb_mae, "ci_total_bases": tb_p68,
         "mae_home_runs": hr_mae,   "ci_home_runs": hr_p68,
-        "mae_walks": walks_mae,    "ci_walks": walks_p68,
         "n_rows": len(df),
         "optuna_batter": best,
     }
@@ -1320,19 +1311,18 @@ def main() -> None:
         results["mae_strikeouts"] = None
         results["ci_strikeouts"] = None
 
-    log.info("=== Training batter prop models (hits + total_bases + home_runs + walks) ===")
+    log.info("=== Training batter prop models (hits + total_bases + home_runs) ===")
     try:
         r = train_batter_models(cfg)
         results.update(r)
         log.info(
-            "Hits: MAE=%.3f | TB: MAE=%.3f | HR: MAE=%.3f | Walks: MAE=%.3f | n=%d",
-            r["mae_hits"], r["mae_total_bases"], r["mae_home_runs"], r["mae_walks"],
-            r["n_rows"],
+            "Hits: MAE=%.3f | TB: MAE=%.3f | HR: MAE=%.3f | n=%d",
+            r["mae_hits"], r["mae_total_bases"], r["mae_home_runs"], r["n_rows"],
         )
     except Exception:
         log.exception("Batter model training failed")
         for k in ("mae_hits", "ci_hits", "mae_total_bases", "ci_total_bases",
-                  "mae_home_runs", "ci_home_runs", "mae_walks", "ci_walks"):
+                  "mae_home_runs", "ci_home_runs"):
             results[k] = None
 
     # Save backtest summary (exclude Optuna dicts from MAE file)

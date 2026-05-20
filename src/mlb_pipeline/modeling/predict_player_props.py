@@ -7,10 +7,9 @@ Loads pitcher/batter prop models and generates predictions for:
   - batter_hits          (batters with ab_avg_10 >= 2.5 playing today)
   - batter_total_bases
   - batter_home_runs
-  - batter_walks
 
 Edge formula:  edge = pred - book_line
-Bet signal:    |edge| >= threshold (K: 2.0, H: 0.75, TB: 0.6, HR: 0.45, BB: 0.3)
+Bet signal:    |edge| >= threshold (K: 2.0, H: 0.75, TB: 1.5, HR: 0.05/0.45)
 
 Discord output (DISCORD_FORMAT=1): compact grouped by game.
 DB: bets.mlb_prop_predictions — one row per (game_date_et, game_slug, player_id, stat).
@@ -82,8 +81,6 @@ class PredictConfig:
     # E[HR] for top hitters peaks around 0.45-0.55 after bias correction, so threshold must be low.
     threshold_home_runs_over: float = 0.05
     threshold_home_runs_under: float = 0.45
-    # Lowered from 0.30 → 0.05: 2026-04-16 scan shows optimal 0.05 (12-1, ROI +76.2%, n=13)
-    threshold_walks: float = 0.05
     # Binary CLF threshold: P(over) - 0.524 >= this value to flag a bet.
     # 0.03 = P(over) > 55.4% — modest edge above breakeven.
     threshold_clf: float = 0.03
@@ -91,7 +88,10 @@ class PredictConfig:
     # Example: 0.02 means +2% EV.
     min_ev: float = 0.02
     # FanDuel does not offer UNDER for these batter props — suppress UNDER bets in output
-    fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs", "batter_walks"})
+    fd_over_only: frozenset = frozenset({"batter_hits", "batter_home_runs"})
+    # Maximum number of prop bets to output (sorted by |edge| desc).
+    # Prevents flooding output with marginal picks — only the top N are shown.
+    top_n_bets: int = 10
     # Optional per-stat threshold overrides loaded from model artifact JSON.
     thresholds_file: str = "prop_thresholds.json"
     # Optional classifier bucket controls file; used to disable drifted CLF buckets.
@@ -962,8 +962,7 @@ def _load_pitcher_artifacts(model_dir: Path):
 
 
 def _load_batter_artifacts(model_dir: Path):
-    """Returns (xgb_hits, lgb_hits, xgb_tb, lgb_tb, xgb_hr, lgb_hr,
-                xgb_walks, lgb_walks, feature_cols, medians, backtest)."""
+    """Returns (xgb_hits, lgb_hits, xgb_tb, lgb_tb, xgb_hr, lgb_hr, feature_cols, medians, backtest)."""
     xgb_h = XGBRegressor()
     xgb_h.load_model(str(model_dir / "hits_xgb.json"))
 
@@ -973,23 +972,17 @@ def _load_batter_artifacts(model_dir: Path):
     xgb_hr = XGBRegressor()
     xgb_hr.load_model(str(model_dir / "home_runs_xgb.json"))
 
-    xgb_walks = XGBRegressor()
-    xgb_walks.load_model(str(model_dir / "walks_xgb.json"))
-
-    lgb_h = lgb_tb_m = lgb_hr = lgb_walks = None
+    lgb_h = lgb_tb_m = lgb_hr = None
     if _HAS_LGB:
-        h_path    = model_dir / "lgb_hits.txt"
-        tb_path   = model_dir / "lgb_total_bases.txt"
-        hr_path   = model_dir / "lgb_home_runs.txt"
-        walk_path = model_dir / "lgb_walks.txt"
+        h_path  = model_dir / "lgb_hits.txt"
+        tb_path = model_dir / "lgb_total_bases.txt"
+        hr_path = model_dir / "lgb_home_runs.txt"
         if h_path.exists():
             lgb_h = lgb.Booster(model_file=str(h_path))
         if tb_path.exists():
             lgb_tb_m = lgb.Booster(model_file=str(tb_path))
         if hr_path.exists():
             lgb_hr = lgb.Booster(model_file=str(hr_path))
-        if walk_path.exists():
-            lgb_walks = lgb.Booster(model_file=str(walk_path))
 
     feat = json.loads((model_dir / "feature_columns_batters.json").read_text())
     meds = json.loads((model_dir / "feature_medians_batters.json").read_text())
@@ -997,7 +990,7 @@ def _load_batter_artifacts(model_dir: Path):
     bt_path = model_dir / "backtest_mae.json"
     bt = json.loads(bt_path.read_text()) if bt_path.exists() else {}
 
-    return xgb_h, lgb_h, xgb_tb, lgb_tb_m, xgb_hr, lgb_hr, xgb_walks, lgb_walks, feat, meds, bt
+    return xgb_h, lgb_h, xgb_tb, lgb_tb_m, xgb_hr, lgb_hr, feat, meds, bt
 
 
 def _load_batter_clf_artifacts(model_dir: Path):
@@ -1022,7 +1015,6 @@ def _load_batter_clf_artifacts(model_dir: Path):
         "batter_hits":        ("hits_clf_xgb.json",        "lgb_hits_clf.txt"),
         "batter_total_bases": ("total_bases_clf_xgb.json", "lgb_total_bases_clf.txt"),
         "batter_home_runs":   ("home_runs_clf_xgb.json",   "lgb_home_runs_clf.txt"),
-        "batter_walks":       ("walks_batter_clf_xgb.json", "lgb_walks_batter_clf.txt"),
     }
     for stat_key, (xgb_file, lgb_file) in stat_files.items():
         xgb_path = model_dir / xgb_file
@@ -1178,9 +1170,9 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
       - direct config names:
           threshold_strikeouts, threshold_hits, threshold_total_bases,
           threshold_home_runs_over, threshold_home_runs_under,
-          threshold_walks, threshold_clf
+          threshold_clf
       - stat-group names:
-          pitcher_strikeouts, batter_hits, batter_total_bases, batter_walks,
+          pitcher_strikeouts, batter_hits, batter_total_bases,
           batter_home_runs (with over/under or abs_edge),
           clf_prob_edge
     """
@@ -1209,7 +1201,6 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
         "threshold_total_bases",
         "threshold_home_runs_over",
         "threshold_home_runs_under",
-        "threshold_walks",
         "threshold_clf",
         "min_ev",
     ):
@@ -1226,9 +1217,6 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
     if "batter_total_bases" in raw:
         v = raw["batter_total_bases"]
         _set("threshold_total_bases", v.get("abs_edge") if isinstance(v, dict) else v)
-    if "batter_walks" in raw:
-        v = raw["batter_walks"]
-        _set("threshold_walks", v.get("abs_edge") if isinstance(v, dict) else v)
     if "batter_home_runs" in raw:
         v = raw["batter_home_runs"]
         if isinstance(v, dict):
@@ -1247,14 +1235,13 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
         _set("threshold_clf", v.get("abs_edge") if isinstance(v, dict) else v)
 
     log.info(
-        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f BB=%.2f CLF=%.3f EV=%.3f",
+        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f CLF=%.3f EV=%.3f",
         path,
         cfg.threshold_strikeouts,
         cfg.threshold_hits,
         cfg.threshold_total_bases,
         cfg.threshold_home_runs_over,
         cfg.threshold_home_runs_under,
-        cfg.threshold_walks,
         cfg.threshold_clf,
         cfg.min_ev,
     )
@@ -1331,10 +1318,6 @@ def _clf_line_bucket(stat: str, line: Optional[float]) -> str:
         if l < 2.0:
             return "H 1.5"
         return "H 2.5+"
-    if stat == "batter_walks":
-        if l < 1.0:
-            return "BB 0.5"
-        return "BB 1.5+"
     if stat == "batter_home_runs":
         if l < 1.0:
             return "HR 0.5"
@@ -1501,7 +1484,7 @@ def _ev_per_unit(p_win: Optional[float], price: Optional[float]) -> Optional[flo
 def _prob_over_from_regression(pred: Optional[float], line: Optional[float], sigma: Optional[float] = None) -> Optional[float]:
     """Estimate P(stat > line) using a Poisson CDF with mu=pred.
 
-    All MLB prop stats (hits, TB, HR, strikeouts, walks) are non-negative integer
+    All MLB prop stats (hits, TB, HR, strikeouts) are non-negative integer
     counts.  P(X > line) = 1 - Poisson.cdf(floor(line), mu=pred) is far more
     accurate than the Gaussian sigmoid approximation, especially at high alt lines
     where the Gaussian overestimates P(over) by 10-13 percentage points.
@@ -1529,7 +1512,6 @@ _PROP_MAE: dict[str, float] = {
     "batter_hits":        0.68,
     "batter_total_bases": 1.30,
     "batter_home_runs":   0.20,
-    "batter_walks":       0.44,
 }
 
 
@@ -2024,7 +2006,6 @@ def _collect_all_prop_links(
             ("pred_hits",        "batter_hits"),
             ("pred_total_bases", "batter_total_bases"),
             ("pred_home_runs",   "batter_home_runs"),
-            ("pred_walks",       "batter_walks"),
         ]:
             pred_v = row.get(pred_col)
             if pred_v is None:
@@ -2051,7 +2032,6 @@ def _collect_prop_links_by_stat(
         "batter_hits": [],
         "batter_total_bases": [],
         "batter_home_runs": [],
-        "batter_walks": [],
     }
     seen_pitcher: set[tuple] = set()
     seen_batter: set[tuple] = set()
@@ -2079,7 +2059,6 @@ def _collect_prop_links_by_stat(
             ("pred_hits", "batter_hits"),
             ("pred_total_bases", "batter_total_bases"),
             ("pred_home_runs", "batter_home_runs"),
-            ("pred_walks", "batter_walks"),
         ]:
             bkey = (row.get("game_slug"), row.get("player_id"), stat_key)
             if bkey in seen_batter:
@@ -2343,14 +2322,12 @@ _LOTTERY_GRADE_SQL = """
             WHEN 'batter_hits'        THEN gl.hits::numeric
             WHEN 'batter_total_bases' THEN gl.total_bases::numeric
             WHEN 'batter_home_runs'   THEN gl.home_runs::numeric
-            WHEN 'batter_walks'       THEN gl.walks_batter::numeric
         END,
         over_hit = CASE lp.stat
             WHEN 'pitcher_strikeouts' THEN gl.strikeouts_pitcher > lp.book_line
             WHEN 'batter_hits'        THEN gl.hits > lp.book_line
             WHEN 'batter_total_bases' THEN gl.total_bases > lp.book_line
             WHEN 'batter_home_runs'   THEN gl.home_runs > lp.book_line
-            WHEN 'batter_walks'       THEN gl.walks_batter > lp.book_line
         END
     FROM raw.mlb_player_gamelogs gl
     WHERE gl.game_slug = lp.game_slug
@@ -2434,7 +2411,6 @@ def _print_discord(
             ("batter_hits", "Hits"),
             ("batter_total_bases", "2 Total Bases"),
             ("batter_home_runs", "Home Runs"),
-            ("batter_walks", "Walks"),
         ]:
             links = by_stat.get(stat_key, [])
             seen: set[str] = set()
@@ -2643,7 +2619,6 @@ def _print_discord(
             for stat_lbl, hdr_lbl, pred_col, stat_key, thresh, fmt in [
                 ("TB", "TOTAL BASES", "pred_total_bases", "batter_total_bases", cfg.threshold_total_bases, "{:.2f}"),
                 ("HR", "HOME RUNS",   "pred_home_runs",   "batter_home_runs",   None,                      "{:.3f}"),
-                ("BB", "WALKS",       "pred_walks",       "batter_walks",       cfg.threshold_walks,        "{:.2f}"),
             ]:
                 stat_edges: List[tuple] = []
                 for row in bat_rows:
@@ -2742,7 +2717,6 @@ def _print_discord(
             ("pred_hits",        "batter_hits",        cfg.threshold_hits,        "H"),
             ("pred_total_bases", "batter_total_bases",  cfg.threshold_total_bases, "TB"),
             ("pred_home_runs",   "batter_home_runs",    None,                      "HR"),
-            ("pred_walks",       "batter_walks",        cfg.threshold_walks,       "BB"),
         ]:
             pred_v = row.get(pred_col)
             if pred_v is None:
@@ -2802,6 +2776,7 @@ def _print_discord(
 
     all_prop_bets: List[Dict] = k_plays + batter_edge_plays
     all_prop_bets.sort(key=lambda x: abs(x["edge"]), reverse=True)
+    all_prop_bets = all_prop_bets[:cfg.top_n_bets]
 
     if all_prop_bets:
         print(f"**PROP BETS TODAY ({len(all_prop_bets)})**")
@@ -2903,7 +2878,6 @@ def _print_best_bets(
             ("H",  "pred_hits",        "batter_hits",        cfg.threshold_hits),
             ("TB", "pred_total_bases",  "batter_total_bases", cfg.threshold_total_bases),
             ("HR", "pred_home_runs",    "batter_home_runs",   None),
-            ("BB", "pred_walks",        "batter_walks",       cfg.threshold_walks),
         ]:
             pred_v = row.get(pred_col)
             if pred_v is None:
@@ -2957,7 +2931,7 @@ def _print_best_bets(
         print("─" * 40)
         print("**Best Props (ranked by |edge|)**")
 
-        for b in best[:10]:
+        for b in best[:cfg.top_n_bets]:
             parts = b["name"].split()
             if len(parts) >= 2 and parts[-1].rstrip(".").lower() in ("jr", "sr", "ii", "iii", "iv"):
                 short = f"{parts[-2]} {parts[-1]} ({b['team']})"
@@ -3046,13 +3020,12 @@ def predict_props(cfg: PredictConfig) -> None:
         (model_dir / "hits_xgb.json").exists() and
         (model_dir / "total_bases_xgb.json").exists() and
         (model_dir / "home_runs_xgb.json").exists() and
-        (model_dir / "walks_xgb.json").exists() and
         (model_dir / "feature_columns_batters.json").exists()
     )
 
     xgb_k = lgb_k = feat_p = meds_p = bt = None
     xgb_h = lgb_h = xgb_tb_m = lgb_tb_m = None
-    xgb_hr = lgb_hr = xgb_walks_m = lgb_walks_m = feat_b = meds_b = None
+    xgb_hr = lgb_hr = feat_b = meds_b = None
     # Binary classifier models (optional — loaded if training has been run)
     pitcher_clf_arts = None   # (xgb_clf, lgb_clf, feat_clf, meds_clf, bt_clf, cal_map)
     batter_clf_arts  = None   # (models_dict, feat_clf, meds_clf, bt_clf, cal_map)
@@ -3082,7 +3055,7 @@ def predict_props(cfg: PredictConfig) -> None:
     if batter_artifacts_ok:
         try:
             (xgb_h, lgb_h, xgb_tb_m, lgb_tb_m,
-             xgb_hr, lgb_hr, xgb_walks_m, lgb_walks_m,
+             xgb_hr, lgb_hr,
              feat_b, meds_b, bt) = _load_batter_artifacts(model_dir)
         except Exception:
             log.exception("Failed to load batter artifacts")
@@ -3254,21 +3227,19 @@ def predict_props(cfg: PredictConfig) -> None:
 
         if not df_b.empty:
             X_b = _prep_features(df_b, _BATTER_META, feat_b, meds_b)
-            pred_h     = _predict_ensemble(X_b, xgb_h,      lgb_h)
-            pred_tb    = _predict_ensemble(X_b, xgb_tb_m,   lgb_tb_m)
-            pred_hr    = _predict_ensemble(X_b, xgb_hr,     lgb_hr)
-            pred_walks = _predict_ensemble(X_b, xgb_walks_m, lgb_walks_m)
-            sigma_h     = bt.get("ci_hits")        if bt else None
-            sigma_tb    = bt.get("ci_total_bases") if bt else None
-            sigma_hr    = bt.get("ci_home_runs")   if bt else None
-            sigma_walks = bt.get("ci_walks")       if bt else None
+            pred_h     = _predict_ensemble(X_b, xgb_h,    lgb_h)
+            pred_tb    = _predict_ensemble(X_b, xgb_tb_m, lgb_tb_m)
+            pred_hr    = _predict_ensemble(X_b, xgb_hr,   lgb_hr)
+            sigma_h  = bt.get("ci_hits")        if bt else None
+            sigma_tb = bt.get("ci_total_bases") if bt else None
+            sigma_hr = bt.get("ci_home_runs")   if bt else None
 
 
             # Binary classifier predictions (if models trained)
             # One P(over) array per stat — indexed same as df_b rows
             clf_pover: Dict[str, Optional[np.ndarray]] = {
                 "batter_hits": None, "batter_total_bases": None,
-                "batter_home_runs": None, "batter_walks": None,
+                "batter_home_runs": None,
             }
             if batter_clf_arts is not None:
                 clf_models, feat_clf, meds_clf, _bt_clf, cal_map_b = batter_clf_arts
@@ -3306,10 +3277,9 @@ def predict_props(cfg: PredictConfig) -> None:
                 name = name_map.get(pid, f"id={pid}")
                 norm = _normalize_name(name)
                 # Regression predictions with additive bias correction
-                ph    = max(0.0, float(pred_h[i])     + bias.get("batter_hits",        0.0))
-                ptb   = max(0.0, float(pred_tb[i])    + bias.get("batter_total_bases", 0.0))
-                phr   = max(0.0, float(pred_hr[i])    + bias.get("batter_home_runs",   0.0))
-                pwalk = max(0.0, float(pred_walks[i]))
+                ph  = max(0.0, float(pred_h[i])  + bias.get("batter_hits",        0.0))
+                ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0))
+                phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs",   0.0))
 
                 # Collect binary CLF P(over) for each stat (None when clf unavailable or no line)
                 def _safe_clf(stat_key: str) -> Optional[float]:
@@ -3332,28 +3302,24 @@ def predict_props(cfg: PredictConfig) -> None:
                     "pred_hits": ph,
                     "pred_total_bases": ptb,
                     "pred_home_runs": phr,
-                    "pred_walks": pwalk,
                     # Binary CLF P(over) per stat — None when clf not trained or line unavailable
                     "clf_p_over": {
                         "batter_hits":        _safe_clf("batter_hits"),
                         "batter_total_bases": _safe_clf("batter_total_bases"),
                         "batter_home_runs":   _safe_clf("batter_home_runs"),
-                        "batter_walks":       _safe_clf("batter_walks"),
                     },
                     "sigma_map": {
                         "batter_hits": sigma_h,
                         "batter_total_bases": sigma_tb,
                         "batter_home_runs": sigma_hr,
-                        "batter_walks": sigma_walks,
                     },
                 }
                 all_batter_rows.append(r)
 
                 for stat_key, stat_label, reg_pred, sigma in [
-                    ("batter_hits",        "batter_hits",        ph,    sigma_h),
-                    ("batter_total_bases", "batter_total_bases", ptb,   sigma_tb),
-                    ("batter_home_runs",   "batter_home_runs",   phr,   sigma_hr),
-                    ("batter_walks",       "batter_walks",       pwalk, sigma_walks),
+                    ("batter_hits",        "batter_hits",        ph,  sigma_h),
+                    ("batter_total_bases", "batter_total_bases", ptb, sigma_tb),
+                    ("batter_home_runs",   "batter_home_runs",   phr, sigma_hr),
                 ]:
                     ld = prop_lines.get((norm, stat_key))
                     line = ld["line"] if ld else None
