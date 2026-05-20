@@ -668,7 +668,7 @@ SELECT
     btu.btu_k_rate,
     btu.btu_bb_rate,
     -- Market over_price on canonical batter lines (FanDuel; today's game)
-    -- American odds: -200 = 67% implied prob; -130 = 57%; -170 = 63%; etc.
+    -- American odds: -200 = 67%% implied prob; -130 = 57%%; -170 = 63%%; etc.
     mkt_props.market_hits_over_price,
     mkt_props.market_tb_over_price,
     mkt_props.market_hr_over_price

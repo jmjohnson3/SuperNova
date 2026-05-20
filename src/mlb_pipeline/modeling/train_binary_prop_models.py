@@ -19,7 +19,6 @@ Artifacts saved to models/player_props/:
   hits_clf_xgb.json,         lgb_hits_clf.txt
   total_bases_clf_xgb.json,  lgb_total_bases_clf.txt
   home_runs_clf_xgb.json,    lgb_home_runs_clf.txt
-  walks_clf_xgb.json,        lgb_walks_clf.txt
   strikeouts_clf_xgb.json,   lgb_strikeouts_clf.txt
   feature_columns_clf_batters.json,  feature_medians_clf_batters.json
   feature_columns_clf_pitchers.json, feature_medians_clf_pitchers.json
@@ -73,10 +72,9 @@ _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 # Map training-data column names → (Odds API stat name, preferred bookmaker)
 # HR uses FanDuel — DraftKings only offered it ~281 times vs FD's 22k rows.
 _BATTER_STAT_MAP = {
-    "hits":         ("batter_hits",        "draftkings"),
-    "total_bases":  ("batter_total_bases", "draftkings"),
-    "home_runs":    ("batter_home_runs",   "fanduel"),
-    "walks_batter": ("batter_walks",       "draftkings"),
+    "hits":        ("batter_hits",        "draftkings"),
+    "total_bases": ("batter_total_bases", "draftkings"),
+    "home_runs":   ("batter_home_runs",   "fanduel"),
 }
 _PITCHER_STAT_MAP = {
     "strikeouts": ("pitcher_strikeouts", "draftkings"),

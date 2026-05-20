@@ -50,8 +50,7 @@ def _load_rows(conn, cutoff: date) -> pd.DataFrame:
         'pitcher_strikeouts',
         'batter_hits',
         'batter_total_bases',
-        'batter_home_runs',
-        'batter_walks'
+        'batter_home_runs'
       )
     """
     return pd.read_sql(q, conn, params={"cutoff": cutoff})
@@ -135,7 +134,6 @@ def optimize(cfg: OptimizeConfig) -> dict:
         "threshold_total_bases": base.threshold_total_bases,
         "threshold_home_runs_over": base.threshold_home_runs_over,
         "threshold_home_runs_under": base.threshold_home_runs_under,
-        "threshold_walks": base.threshold_walks,
         "threshold_clf": base.threshold_clf,
         "min_ev": base.min_ev,
         "_diagnostics": {},
@@ -152,10 +150,9 @@ def optimize(cfg: OptimizeConfig) -> dict:
 
     mapping = {
         "pitcher_strikeouts": ("threshold_strikeouts", base.threshold_strikeouts),
-        "batter_hits": ("threshold_hits", base.threshold_hits),
-        "batter_total_bases": ("threshold_total_bases", base.threshold_total_bases),
-        "batter_home_runs": ("threshold_home_runs_over", base.threshold_home_runs_over),
-        "batter_walks": ("threshold_walks", base.threshold_walks),
+        "batter_hits":         ("threshold_hits",           base.threshold_hits),
+        "batter_total_bases":  ("threshold_total_bases",    base.threshold_total_bases),
+        "batter_home_runs":    ("threshold_home_runs_over", base.threshold_home_runs_over),
     }
 
     for stat, (attr, fallback) in mapping.items():
