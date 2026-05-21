@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 import psycopg2
+from concurrent.futures import ThreadPoolExecutor
 
 from mlb_pipeline.parse_meta import main as parse_meta
 from mlb_pipeline.parse_games import main as parse_games, sync_scores_from_boxscores
@@ -44,6 +45,9 @@ _MLB_SQL_VIEWS = [
     "MLB027_mlb_sp_lob_rate.sql",                      # SP LOB% / strand rate (career + rolling 10 starts)
     "MLB028_mlb_park_babip_factor.sql",                # Park-specific BABIP factor from actual gamelogs
     "MLB029_mlb_team_offensive_momentum.sql",          # Team runs scored last 3/5 games (offensive momentum)
+    "MLB030_mlb_batter_babip_rolling.sql",             # Batter rolling BABIP (luck/regression signal for hits)
+    "MLB031_mlb_sp_babip_rolling.sql",                 # SP rolling BABIP-against (luck/regression signal for Ks)
+    "MLB032_mlb_team_der_rolling.sql",                 # Team Defensive Efficiency Rating (DER) rolling 20 games
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -69,6 +73,9 @@ _MLB_MATVIEW_REFRESH = [
     "MLB026b_mlb_batter_vs_rp_mat.sql",
     "MLB027b_mlb_sp_lob_rate_mat.sql",
     "MLB029b_mlb_team_offensive_momentum_mat.sql",
+    "MLB030b_mlb_batter_babip_rolling_mat.sql",
+    "MLB031b_mlb_sp_babip_rolling_mat.sql",
+    "MLB032b_mlb_team_der_rolling_mat.sql",
 ]
 
 _MLB_MATVIEW_REFRESH_SQL = """
@@ -94,6 +101,9 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_umpire_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_vs_rp_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_lob_rate_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_offensive_momentum_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_babip_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_babip_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_der_rolling_mat;
 """
 
 
@@ -160,6 +170,9 @@ _MATVIEW_TO_VIEW = {
     "mlb_batter_vs_rp_mat":             "mlb_batter_vs_rp",
     "mlb_sp_lob_rate_mat":              "mlb_sp_lob_rate",
     "mlb_team_offensive_momentum_mat":  "mlb_team_offensive_momentum",
+    "mlb_batter_babip_rolling_mat":     "mlb_batter_babip_rolling",
+    "mlb_sp_babip_rolling_mat":         "mlb_sp_babip_rolling",
+    "mlb_team_der_rolling_mat":         "mlb_team_der_rolling",
 }
 
 
@@ -185,6 +198,24 @@ def _matview_needs_recreate(cur, matview: str, base_view: str) -> bool:
         return mat_cols == 0 or mat_cols != view_cols
     except Exception:
         return True  # err on the side of recreation
+
+
+def _refresh_one_matview(pg_dsn: str, matview_fqn: str) -> tuple:
+    """Refresh one materialized view in its own connection.
+
+    Returns ``(matview_fqn, None)`` on success or ``(matview_fqn, exc)`` on failure.
+    Runs in a thread pool — each matview gets an independent DB connection so all
+    25 refreshes execute concurrently instead of sequentially.
+    """
+    try:
+        conn = psycopg2.connect(pg_dsn)
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {matview_fqn}")
+        conn.close()
+        return matview_fqn, None
+    except Exception as exc:
+        return matview_fqn, exc
 
 
 def _refresh_matviews(pg_dsn: str) -> None:
@@ -241,17 +272,28 @@ def _refresh_matviews(pg_dsn: str) -> None:
         for filename in _MLB_MATVIEW_REFRESH:
             _apply_matview_sql(filename)
 
-        # ── Refresh all mat views ────────────────────────────────────────────────
-        for stmt in _MLB_MATVIEW_REFRESH_SQL.strip().split(";"):
-            stmt = stmt.strip()
-            if not stmt:
-                continue
-            try:
-                cur.execute(stmt)
-                log.info("Refreshed: %s", stmt.split()[-1])
-            except Exception:
-                log.exception("Failed to refresh: %s", stmt)
-                failed_ops.append(f"refresh:{stmt}")
+        # ── Refresh all matviews in parallel (each in its own DB connection) ────
+        # Sequential refresh of 25 matviews on one connection took ~3–5 min wall
+        # time (each CONCURRENTLY refresh holds a lock for its duration).  Parallel
+        # threads each open their own connection so all refreshes run simultaneously,
+        # cutting wall time to the slowest single refresh (~15–30 s).
+        _matview_fqns = [
+            stmt.strip().split()[-1]
+            for stmt in _MLB_MATVIEW_REFRESH_SQL.strip().split(";")
+            if stmt.strip()
+        ]
+        log.info("Refreshing %d matviews with up to 12 parallel workers", len(_matview_fqns))
+        with ThreadPoolExecutor(max_workers=min(len(_matview_fqns), 12)) as _tex:
+            for fqn, err in _tex.map(
+                _refresh_one_matview,
+                [pg_dsn] * len(_matview_fqns),
+                _matview_fqns,
+            ):
+                if err is not None:
+                    log.error("Failed to refresh %s: %s", fqn, err)
+                    failed_ops.append(f"refresh:{fqn}")
+                else:
+                    log.info("Refreshed: %s", fqn)
 
         # ── Always re-apply MLB007 + MLB011 + MLB006 after the refresh cycle. ──
         # MLB007 picks up any matviews that failed on the first pass (their base

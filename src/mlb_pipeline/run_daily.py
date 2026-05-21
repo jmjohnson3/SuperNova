@@ -198,6 +198,14 @@ def main() -> None:
             "Skips parse/train/predict. Schedule this at ~5 PM ET for true closing line CLV."
         ),
     )
+    parser.add_argument(
+        "--pre-game", action="store_true",
+        help=(
+            "Pre-game update run (~4:30 PM ET). Re-crawls injuries (force) + latest game odds, "
+            "re-parses, re-predicts player props (with line movement + updated injury list), "
+            "and auto-posts to Discord (DISCORD_FORMAT=1)."
+        ),
+    )
     args = parser.parse_args()
 
     console = _get_console()
@@ -214,7 +222,47 @@ def main() -> None:
 
     steps: list[Step] = []
 
-    if args.close_only:
+    if args.pre_game:
+        # ── Pre-game update run (~4:30 PM ET) ────────────────────────────────
+        # Re-fetches injuries (force) + latest game odds (no props needed),
+        # re-parses both into the DB, re-predicts player props with the freshest
+        # injury list + line movement signal, and auto-posts to Discord.
+        extra_env["DISCORD_FORMAT"] = "1"
+        steps = [
+            Step(
+                name="Re-crawl injuries (force-meta)",
+                module="mlb_pipeline.crawler",
+                args=("--force-meta",),
+                timeout_s=120,
+                critical=False,
+            ),
+            Step(
+                name="Re-crawl game odds (no props)",
+                module="mlb_pipeline.crawler_oddsapi",
+                args=("--skip-props",),
+                timeout_s=300,
+                critical=True,
+            ),
+            Step(
+                name="Re-parse meta (injuries)",
+                module="mlb_pipeline.parse_meta",
+                timeout_s=60,
+                critical=False,
+            ),
+            Step(
+                name="Re-parse game odds",
+                module="mlb_pipeline.parse_oddsapi",
+                timeout_s=120,
+                critical=True,
+            ),
+            Step(
+                name="Re-predict player props + post to Discord",
+                module="mlb_pipeline.modeling.predict_player_props",
+                timeout_s=300,
+                critical=True,
+            ),
+        ]
+    elif args.close_only:
         # ── Evening closing-line run ─────────────────────────────────────────
         # Re-crawl live odds so odds.mlb_game_lines gets a late-day snapshot
         # (the live endpoint has no dedup; ON CONFLICT DO UPDATE overwrites the
@@ -348,7 +396,7 @@ def main() -> None:
             critical=False,
         ))
 
-    _suffix = "_close" if args.close_only else ""
+    _suffix = "_close" if args.close_only else ("_pregame" if args.pre_game else "")
     report_path = Path("reports") / f"mlb_daily_{et_day.isoformat()}{_suffix}.md"
 
     _p(console, f"[bold]ET date:[/bold] {et_day.isoformat()}" if console else f"ET date: {et_day.isoformat()}")

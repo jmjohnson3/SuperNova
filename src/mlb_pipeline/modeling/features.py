@@ -77,6 +77,12 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "sp_era_5_diff" in X.columns and "sp_fip_5_diff" in X.columns:
         X["sp_composite_edge"] = (X["sp_era_5_diff"] + X["sp_fip_5_diff"]) / 2.0
 
+    # SP ERA-FIP gap (regression signal — positive = SP running lucky ERA vs peripherals)
+    if "home_sp_era_5" in X.columns and "home_sp_fip_5" in X.columns:
+        X["home_sp_era_fip_gap"] = X["home_sp_era_5"] - X["home_sp_fip_5"]
+        X["away_sp_era_fip_gap"] = X["away_sp_era_5"] - X["away_sp_fip_5"]
+        X["sp_era_fip_gap_diff"] = X["away_sp_era_fip_gap"] - X["home_sp_era_fip_gap"]
+
     # ── Team batting differentials ────────────────────────────────────────────
     for col in ("runs_avg_10", "hr_avg_10", "avg_avg_10", "iso_avg_10",
                 "runs_avg_5", "hr_avg_5", "avg_avg_5"):
@@ -1063,6 +1069,31 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["abs_fb_velo_trend_home"] = _hvt.abs()
         X["abs_fb_velo_trend_away"] = _avt.abs()
 
+    # ── Team batting vs opposing SP handedness (item 8) ───────────────────────
+    # home_sp_pitch_hand_L = 1 when home SP is left-handed (facing away batters)
+    # away_sp_pitch_hand_L = 1 when away SP is left-handed (facing home batters)
+    for sp_side, bat_side in [("home", "away"), ("away", "home")]:
+        _hand_flag = f"{sp_side}_sp_pitch_hand_L"
+        _avg_lhp   = f"{bat_side}_team_avg_vs_lhp"
+        _avg_rhp   = f"{bat_side}_team_avg_vs_rhp"
+        if _hand_flag in X.columns and _avg_lhp in X.columns and _avg_rhp in X.columns:
+            _lhp_flag = pd.to_numeric(X[_hand_flag], errors="coerce").fillna(0)
+            _lhp_avg  = pd.to_numeric(X[_avg_lhp], errors="coerce").fillna(0.250)
+            _rhp_avg  = pd.to_numeric(X[_avg_rhp], errors="coerce").fillna(0.250)
+            # Batting average vs today's SP hand
+            X[f"{bat_side}_team_avg_vs_sp_hand"] = (
+                _lhp_flag * _lhp_avg + (1 - _lhp_flag) * _rhp_avg
+            )
+            # How much better/worse this lineup is against today's SP hand vs the other
+            X[f"{bat_side}_hand_split_advantage"] = (
+                _lhp_flag * (_lhp_avg - _rhp_avg) + (1 - _lhp_flag) * (_rhp_avg - _lhp_avg)
+            )
+    # Differential: home batting advantage vs their own SP hand matchup
+    if "home_team_avg_vs_sp_hand" in X.columns and "away_team_avg_vs_sp_hand" in X.columns:
+        X["team_hand_matchup_diff"] = (
+            X["home_team_avg_vs_sp_hand"] - X["away_team_avg_vs_sp_hand"]
+        )
+
     return X
 
 
@@ -1212,6 +1243,18 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # FIP trend
     if "fip_5" in X.columns and "fip_10" in X.columns:
         X["fip_trend_5v10"] = X["fip_5"] - X["fip_10"]
+
+    # SP ERA-FIP gap (regression signal — positive = running lucky ERA, expect more runs/fewer Ks)
+    if "era_5" in X.columns and "fip_5" in X.columns:
+        _era = pd.to_numeric(X["era_5"], errors="coerce")
+        _fip = pd.to_numeric(X["fip_5"], errors="coerce")
+        X["sp_era_fip_gap"] = _era - _fip
+
+    # SP K/BB ratio (command quality — high ratio = dominant + in control)
+    if "k_pct_5" in X.columns and "bb_pct_5" in X.columns:
+        _k5  = pd.to_numeric(X["k_pct_5"],  errors="coerce").fillna(0.20)
+        _bb5 = pd.to_numeric(X["bb_pct_5"], errors="coerce").clip(lower=0.01)
+        X["sp_k_bb_ratio_5"] = _k5 / _bb5
 
     # ── SP career stats vs this specific opposing team (MLB024) ───────────────────
     if "svt_games" in X.columns:
@@ -1405,6 +1448,14 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["opp_sp_lob_pct_filled"] = _opp_lob
         X["opp_sp_lob_vs_avg"]     = _opp_lob - _LOB_AVG
 
+    # SP LOB%-ERA interaction: high LOB% + bad ERA = lucky stranding (won't continue)
+    if "sp_lob_vs_avg" in X.columns and "era_5" in X.columns:
+        _era_vs_avg = pd.to_numeric(X["era_5"], errors="coerce").fillna(4.20) - 4.20
+        X["sp_lob_era_quality"] = X["sp_lob_vs_avg"] * (-_era_vs_avg)  # high LOB + good ERA = positive
+        X["sp_lob_luck_flag"]   = (
+            (X["sp_lob_vs_avg"] > 5) & (_era_vs_avg > 0.5)
+        ).astype(int)
+
     # -- Park BABIP factor (MLB028) -----------------------------------------------
     _BABIP_AVG = 0.295  # MLB average BABIP
     if "park_babip_avg" in X.columns:
@@ -1425,6 +1476,103 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["own_runs_last3_filled"] = _r3_own
         X["own_hot_offense_flag"]  = (_r3_own >= 15).astype(int)
         X["own_runs_last3_vs_avg"] = _r3_own - _RUNS_3_AVG
+
+    # -- Batter BABIP rolling (MLB030) — luck/regression signal for hits -----------
+    # High BABIP → regression to mean → fewer future hits; low → positive regression
+    _BABIP_AVG_BATTER = 0.300  # MLB average batter BABIP
+    if "batter_babip_10" in X.columns:
+        _rel_babip = (pd.to_numeric(
+            X.get("babip_games_10", pd.Series(0, index=X.index)), errors="coerce"
+        ).fillna(0.0) / 10.0).clip(0, 1)
+        _b10  = pd.to_numeric(X["batter_babip_10"],     errors="coerce")
+        _bcr  = pd.to_numeric(X.get("batter_babip_career",
+                               pd.Series(np.nan, index=X.index)), errors="coerce")
+        X["batter_babip_10_filled"]    = _b10.fillna(_BABIP_AVG_BATTER)
+        X["batter_babip_vs_avg"]       = X["batter_babip_10_filled"] - _BABIP_AVG_BATTER
+        X["batter_babip_luck_flag"]    = (X["batter_babip_10_filled"] > 0.350).astype(int)
+        X["batter_babip_cold_flag"]    = (X["batter_babip_10_filled"] < 0.250).astype(int)
+        if "batter_babip_career" in X.columns:
+            _bcareer = _bcr.fillna(_BABIP_AVG_BATTER)
+            X["batter_babip_career_filled"] = _bcareer
+            # Trend: current 10-game BABIP vs career BABIP (positive = hot luck)
+            X["batter_babip_trend"] = (X["batter_babip_10_filled"] - _bcareer) * _rel_babip
+
+    # -- SP BABIP-against rolling (MLB031) — luck/regression signal for Ks --------
+    # High SP BABIP-against → SP getting unlucky; expect K rate regression upward
+    _BABIP_AVG_SP = 0.295  # MLB average BABIP-against for SPs
+    if "sp_babip_against_10" in X.columns:
+        _rel_sp_babip = (pd.to_numeric(
+            X.get("sp_babip_starts_10", pd.Series(0, index=X.index)), errors="coerce"
+        ).fillna(0.0) / 10.0).clip(0, 1)
+        _sp10 = pd.to_numeric(X["sp_babip_against_10"],     errors="coerce")
+        _spcr = pd.to_numeric(X.get("sp_babip_against_career",
+                               pd.Series(np.nan, index=X.index)), errors="coerce")
+        X["sp_babip_against_10_filled"]   = _sp10.fillna(_BABIP_AVG_SP)
+        X["sp_babip_vs_avg"]              = X["sp_babip_against_10_filled"] - _BABIP_AVG_SP
+        X["sp_babip_unlucky_flag"]        = (X["sp_babip_against_10_filled"] > 0.330).astype(int)
+        X["sp_babip_lucky_flag"]          = (X["sp_babip_against_10_filled"] < 0.260).astype(int)
+        if "sp_babip_against_career" in X.columns:
+            _spcareer = _spcr.fillna(_BABIP_AVG_SP)
+            X["sp_babip_against_career_filled"] = _spcareer
+            X["sp_babip_trend"] = (X["sp_babip_against_10_filled"] - _spcareer) * _rel_sp_babip
+
+    # -- SP K% last 2 starts vs rolling K% (item 9) — recency trend ---------------
+    if "sp_k_pct_last2" in X.columns and "k_pct_5" in X.columns:
+        _k2   = pd.to_numeric(X["sp_k_pct_last2"], errors="coerce")
+        _k5   = pd.to_numeric(X["k_pct_5"],        errors="coerce").fillna(0.20)
+        X["sp_k_pct_last2_filled"] = _k2.fillna(_k5)
+        X["sp_k_pct_last2_vs_5"]   = X["sp_k_pct_last2_filled"] - _k5  # positive = trending up
+        X["sp_k_trending_up"]      = (X["sp_k_pct_last2_vs_5"] >  0.03).astype(int)
+        X["sp_k_trending_down"]    = (X["sp_k_pct_last2_vs_5"] < -0.03).astype(int)
+
+    # -- Team batting vs SP hand (item 8) — matchup-specific split ----------------
+    # opp_sp_hand is already in the batter SQL; derive interaction with team-level splits
+    if "opp_sp_hand" in X.columns and "hits_avg_40_vs_hand" in X.columns:
+        _vs_hand = pd.to_numeric(X["hits_avg_40_vs_hand"], errors="coerce")
+        _overall = pd.to_numeric(X.get("hits_avg_10", pd.Series(np.nan, index=X.index)), errors="coerce")
+        if "hits_avg_10" in X.columns:
+            X["hand_matchup_edge"] = (_vs_hand.fillna(_overall.fillna(0.25))
+                                      - _overall.fillna(0.25))
+    # Game-level: home vs away team matchup split advantage
+    for hand_col, team_prefix in [("home_sp_pitch_hand_L", "away"), ("away_sp_pitch_hand_L", "home")]:
+        if hand_col not in X.columns:
+            continue
+        lhp_flag = pd.to_numeric(X[hand_col], errors="coerce").fillna(0)
+        avg_lhp = X.get(f"{team_prefix}_team_avg_vs_lhp", pd.Series(np.nan, index=X.index))
+        avg_rhp = X.get(f"{team_prefix}_team_avg_vs_rhp", pd.Series(np.nan, index=X.index))
+        if avg_lhp.notna().any() or avg_rhp.notna().any():
+            _avg_vs = (lhp_flag * pd.to_numeric(avg_lhp, errors="coerce").fillna(0.250)
+                       + (1 - lhp_flag) * pd.to_numeric(avg_rhp, errors="coerce").fillna(0.250))
+            X[f"{team_prefix}_team_avg_vs_sp_hand"] = _avg_vs
+
+    # -- Defensive Efficiency Rating (DER) rolling (MLB032) -----------------------
+    # High DER = good defense = batters get fewer hits on balls in play
+    _DER_AVG = 0.705  # MLB average DER (1 - BABIP_against ~= 1 - 0.295)
+    if "opp_team_def_der_20" in X.columns:
+        _der = pd.to_numeric(X["opp_team_def_der_20"], errors="coerce").fillna(_DER_AVG)
+        X["opp_der_20_filled"]   = _der
+        X["opp_der_vs_avg"]      = _der - _DER_AVG   # positive = better than avg defense
+        X["opp_good_defense"]    = (_der > _DER_AVG + 0.010).astype(int)
+        X["opp_poor_defense"]    = (_der < _DER_AVG - 0.010).astype(int)
+        if "opp_team_def_der_career" in X.columns:
+            _der_cr = pd.to_numeric(X["opp_team_def_der_career"], errors="coerce").fillna(_DER_AVG)
+            X["opp_der_career_filled"] = _der_cr
+            X["opp_der_trend"] = _der - _der_cr  # positive = defense recently better than career
+    # Pitcher's own team defense (same column names for pitcher SQL)
+    if "opp_team_der_20" in X.columns:
+        _der_p = pd.to_numeric(X["opp_team_der_20"], errors="coerce").fillna(_DER_AVG)
+        X["opp_der_20_filled"]   = _der_p
+        X["opp_der_vs_avg"]      = _der_p - _DER_AVG
+        X["opp_good_defense"]    = (_der_p > _DER_AVG + 0.010).astype(int)
+        X["opp_poor_defense"]    = (_der_p < _DER_AVG - 0.010).astype(int)
+
+    # -- Same-day game total line movement (Feature 11) --------------------------
+    if "line_move_total" in X.columns:
+        _move = pd.to_numeric(X["line_move_total"], errors="coerce").fillna(0.0)
+        X["line_move_total_filled"] = _move
+        X["line_moved_up"]   = (_move >= 0.5).astype(int)   # total up >= 0.5 run
+        X["line_moved_down"] = (_move <= -0.5).astype(int)  # total down >= 0.5 run
+        X["line_move_abs"]   = _move.abs()
 
     # ── Market prop lines (FanDuel; NULL pre-2025 or no line posted → imputed) ─
     # Pitcher: market_k_line is the highest strikeout line posted for this SP today.
@@ -1620,6 +1768,17 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     if "sc_hard_hit_pct" in X.columns and "sc_fb_pct" in X.columns:
         _fb_clipped = pd.to_numeric(X["sc_fb_pct"], errors="coerce").clip(upper=100.0).fillna(0.0)
         X["sc_hard_hit_x_fb"] = X["sc_hard_hit_pct"].fillna(0.0) * _fb_clipped / 100.0
+
+    # HR/FB rate: fraction of estimated flyballs per game that become HRs
+    # Separates "does this batter hit flyballs?" from "do his flyballs go 400 feet?"
+    if "hr_avg_10" in X.columns and "sc_fb_pct" in X.columns and "ab_avg_10" in X.columns:
+        _fb_rate = pd.to_numeric(X["sc_fb_pct"], errors="coerce").clip(lower=5.0) / 100.0
+        _ab      = pd.to_numeric(X["ab_avg_10"], errors="coerce").clip(lower=1.0)
+        _hr      = pd.to_numeric(X["hr_avg_10"], errors="coerce").fillna(0.0)
+        _est_fb  = _fb_rate * _ab
+        X["hr_fb_rate"] = _hr / _est_fb.clip(lower=0.01)
+        if "park_hr_factor" in X.columns:
+            X["hr_fb_x_park"] = X["hr_fb_rate"] * pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
 
     # Exit velocity vs league average (~88 mph): how much above/below
     if "sc_avg_exit_velo" in X.columns:

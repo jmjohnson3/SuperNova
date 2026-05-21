@@ -85,6 +85,20 @@ STEPS: list[Step] = [
          critical=False, post_output=True),
 ]
 
+# Steps run at ~4:30 PM ET to refresh injuries + odds before first pitch.
+PRE_GAME_STEPS: list[Step] = [
+    Step("Re-crawl Injuries (force)", "mlb_pipeline.crawler",
+         args=("--force-meta",), critical=False, post_output=False, timeout_s=120),
+    Step("Re-crawl Game Odds",        "mlb_pipeline.crawler_oddsapi",
+         args=("--skip-props",),   critical=True,  post_output=False, timeout_s=300),
+    Step("Re-parse Meta (injuries)",  "mlb_pipeline.parse_meta",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Re-parse Game Odds",        "mlb_pipeline.parse_oddsapi",
+         critical=True,  post_output=False, timeout_s=120),
+    Step("Player Props (pre-game)",   "mlb_pipeline.modeling.predict_player_props",
+         critical=True,  post_output=True,  timeout_s=300),
+]
+
 
 # ---------------------------------------------------------------------------
 # Subprocess runner
@@ -219,6 +233,10 @@ async def main() -> None:
     parser.add_argument("--skip-train",   action="store_true")
     parser.add_argument("--skip-predict", action="store_true")
     parser.add_argument("--date", default=None, help="Game date YYYY-MM-DD (ET)")
+    parser.add_argument(
+        "--pre-game", action="store_true",
+        help="~4:30 PM ET: re-crawl injuries+odds, re-predict props, post to Discord.",
+    )
     args = parser.parse_args()
 
     from datetime import date as _date, datetime as _datetime
@@ -248,14 +266,21 @@ async def main() -> None:
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
+    active_steps = PRE_GAME_STEPS if args.pre_game else STEPS
+
     wall_start = time.time()
-    await _post("⚾ **SuperNovaBets MLB** — daily pipeline starting…")
+    start_msg = (
+        "⚾ **SuperNovaBets MLB** — pre-game update starting…"
+        if args.pre_game
+        else "⚾ **SuperNovaBets MLB** — daily pipeline starting…"
+    )
+    await _post(start_msg)
 
     results: list[tuple[str, bool, float]] = []
     halted = False
 
-    for step in STEPS:
-        if _should_skip(step):
+    for step in active_steps:
+        if not args.pre_game and _should_skip(step):
             log.info("⏭ Skipping %s", step.label)
             continue
         if halted:

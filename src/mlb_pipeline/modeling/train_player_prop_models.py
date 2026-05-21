@@ -60,7 +60,7 @@ class TrainConfig:
     gamma: float = 0.1
     reg_alpha: float = 0.5
     reg_lambda: float = 5.0
-    early_stopping_rounds: int = 50
+    early_stopping_rounds: int = 30  # was 50; bad Optuna trials abort sooner
     random_state: int = 42
 
     # Optuna hyperparameter tuning
@@ -144,8 +144,9 @@ SELECT
     CASE WHEN v.roof_type = 'dome' THEN 0
          WHEN EXTRACT(HOUR FROM g.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
          ELSE 0 END                                               AS is_day_game,
-    -- Market total (game-level run environment; 7.5% NULL → median-imputed)
+    -- Market total + same-day line movement (game-level run environment; 7.5% NULL → median-imputed)
     mkt_odds.market_total                                        AS market_total,
+    mkt_odds.line_move_total                                     AS line_move_total,
     -- Pitcher handedness
     ph.pitch_hand                                                AS pitcher_hand,
     -- Opponent lineup quality (mlb_lineup_quality: NULL for upcoming games, median-imputed)
@@ -221,6 +222,15 @@ SELECT
     opp_mom.team_runs_last3  AS opp_runs_last3,
     opp_mom.team_runs_avg3   AS opp_runs_avg3,
     opp_mom.team_runs_last5  AS opp_runs_last5,
+    -- SP BABIP-against rolling (MLB031) — luck/regression signal for K predictions
+    sp_babip.sp_babip_against_10,
+    sp_babip.sp_babip_against_career,
+    sp_babip.sp_babip_starts_10,
+    -- SP K% last 2 starts (item 9)
+    sp_k_last2.sp_k_pct_last2,
+    -- Opposing team DER (MLB032)
+    opp_der.team_der_20  AS opp_team_der_20,
+    opp_der.team_der_career AS opp_team_der_career,
     -- Market strikeout prop line (FanDuel; NULL pre-2025 → median-imputed in features.py)
     mkt_k.market_k_line,
     -- Target
@@ -273,15 +283,15 @@ LEFT JOIN LATERAL (
 LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_self
     ON pa_self.player_id = p.player_id
     AND pa_self.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
--- Market total (game-level run environment signal)
+-- Market total + same-day line movement (Feature 11)
 LEFT JOIN LATERAL (
-    SELECT total_points AS market_total
+    SELECT
+        MAX(total_points)                        AS market_total,
+        MAX(total_points) - MIN(total_points)    AS line_move_total
     FROM odds.mlb_game_lines
     WHERE home_team = g.home_team_abbr
       AND as_of_date = g.game_date_et
       AND total_points IS NOT NULL
-    ORDER BY fetched_at_utc DESC
-    LIMIT 1
 ) mkt_odds ON TRUE
 -- Pitcher plate discipline (own season-level discipline profile)
 LEFT JOIN raw.mlb_statcast_pitcher_discipline pd_p
@@ -344,6 +354,40 @@ LEFT JOIN features.mlb_team_offensive_momentum_mat opp_mom
         WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
         ELSE g.home_team_abbr END
     AND opp_mom.game_slug = p.game_slug
+-- SP BABIP-against rolling (MLB031)
+LEFT JOIN features.mlb_sp_babip_rolling_mat sp_babip
+    ON sp_babip.player_id = p.player_id
+    AND sp_babip.game_slug = p.game_slug
+-- SP K% last 2 starts (item 9): recent K rate vs 5-start rolling (recency trend signal)
+-- BF estimated as ROUND(IP*3) + H + BB (outs_recorded + baserunners_allowed)
+LEFT JOIN LATERAL (
+    SELECT
+        CASE WHEN SUM(bf_est) > 0
+             THEN SUM(COALESCE(g2k.strikeouts_pitcher, 0))::float / SUM(bf_est)
+             ELSE NULL END AS sp_k_pct_last2
+    FROM (
+        SELECT
+            pgl2.strikeouts_pitcher,
+            GREATEST(ROUND(COALESCE(pgl2.innings_pitched, 0) * 3)
+                     + COALESCE(pgl2.hits_allowed, 0)
+                     + COALESCE(pgl2.walks_allowed, 0), 1) AS bf_est
+        FROM raw.mlb_player_gamelogs pgl2
+        JOIN raw.mlb_games g2 ON g2.game_slug = pgl2.game_slug
+        WHERE pgl2.player_id      = p.player_id
+          AND pgl2.is_starter     = TRUE
+          AND pgl2.innings_pitched >= 1.0
+          AND g2.status           = 'final'
+          AND g2.game_date_et     < g.game_date_et
+        ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+        LIMIT 2
+    ) g2k
+) sp_k_last2 ON TRUE
+-- Opposing team DER (MLB032)
+LEFT JOIN features.mlb_team_der_rolling_mat opp_der
+    ON opp_der.team_abbr = CASE
+        WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+        ELSE g.home_team_abbr END
+    AND opp_der.game_slug = p.game_slug
 -- Market strikeout prop line (FanDuel; highest available line = market ceiling for this SP)
 LEFT JOIN LATERAL (
     SELECT MAX(pl.line) AS market_k_line
@@ -439,8 +483,9 @@ SELECT
     CASE WHEN v.roof_type = 'dome' THEN 0
          WHEN EXTRACT(HOUR FROM g.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
          ELSE 0 END                                               AS is_day_game,
-    -- Market total (game-level run environment; ~7.5% NULL → median-imputed)
+    -- Market total + same-day line movement (game-level run environment; ~7.5% NULL → median-imputed)
     mkt_odds.market_total                                        AS market_total,
+    mkt_odds.line_move_total                                     AS line_move_total,
     -- Lineup slot
     b.batting_order_avg_5,
     b.batting_order_avg_10,
@@ -608,6 +653,13 @@ SELECT
     -- Own team offensive momentum (MLB029)
     own_mom.team_runs_last3  AS own_runs_last3,
     own_mom.team_runs_avg3   AS own_runs_avg3,
+    -- Batter BABIP rolling (MLB030) — luck/regression signal for hits
+    batter_babip.batter_babip_10,
+    batter_babip.batter_babip_career,
+    batter_babip.babip_games_10,
+    -- Opposing team DER (MLB032) — defensive quality of opponent's fielders
+    opp_def_der.team_der_20  AS opp_team_def_der_20,
+    opp_def_der.team_der_career AS opp_team_def_der_career,
     -- Market over_price on canonical lines (FanDuel; NULL pre-2025 → imputed in features.py)
     -- over_price in American odds: -200 = 67% implied hit prob; -130 = 57%; etc.
     mkt_props.market_hits_over_price,
@@ -725,15 +777,15 @@ LEFT JOIN raw.mlb_statcast_sprint_speed ss
 LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa
     ON pa.player_id = sp.player_id
     AND pa.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
--- Market total (game-level run environment signal)
+-- Market total + same-day line movement (Feature 11)
 LEFT JOIN LATERAL (
-    SELECT total_points AS market_total
+    SELECT
+        MAX(total_points)                        AS market_total,
+        MAX(total_points) - MIN(total_points)    AS line_move_total
     FROM odds.mlb_game_lines
     WHERE home_team = g.home_team_abbr
       AND as_of_date = g.game_date_et
       AND total_points IS NOT NULL
-    ORDER BY fetched_at_utc DESC
-    LIMIT 1
 ) mkt_odds ON TRUE
 -- Batter plate discipline (chase rate, contact rates, swing-and-miss)
 LEFT JOIN raw.mlb_statcast_batter_discipline pd_b
@@ -796,6 +848,16 @@ LEFT JOIN features.mlb_park_babip_factor pbf_babip
 LEFT JOIN features.mlb_team_offensive_momentum_mat own_mom
     ON own_mom.team_abbr = b.team_abbr
     AND own_mom.game_slug = b.game_slug
+-- Batter BABIP rolling (MLB030)
+LEFT JOIN features.mlb_batter_babip_rolling_mat batter_babip
+    ON batter_babip.player_id = b.player_id
+    AND batter_babip.game_slug = b.game_slug
+-- Opposing team DER (MLB032)
+LEFT JOIN features.mlb_team_der_rolling_mat opp_def_der
+    ON opp_def_der.team_abbr = CASE
+        WHEN b.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+        ELSE g.home_team_abbr END
+    AND opp_def_der.game_slug = b.game_slug
 -- Market over_price on canonical batter lines (FanDuel; game-specific hit probability signal)
 -- over_price on 0.5 hits line: -130=57%, -180=64%, -260=72% implied hit probability
 -- over_price on 1.5 TB line:  similar encoding for 2+ total bases probability
@@ -987,6 +1049,11 @@ def _run_walk_forward(
         y_tr = y[tr_mask]
         y_te = y[te_mask]
 
+        # Recency weights: halve weight every 45 days from the end of the training window
+        _tr_dates = pd.to_datetime(df.loc[tr_mask, "game_date_et"])
+        _age_days = (train_end - _tr_dates).dt.days.clip(lower=0).values
+        _recency_wts = np.exp(-np.log(2) * _age_days / 45.0)
+
         # XGBoost with early stopping on last 15% of train
         cutoff = X_tr.index[int(len(X_tr) * 0.85)]
         fit_mask = X_tr.index < cutoff
@@ -998,13 +1065,15 @@ def _run_walk_forward(
         lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
         xgb = _build_xgb(cfg, early_stop=True, objective=objective, params_override=params_override)
         if eval_mask is not None:
+            _wts_fit = _recency_wts[fit_mask.values]
             xgb.fit(
                 X_tr[fit_mask], y_tr[fit_mask],
+                sample_weight=_wts_fit,
                 eval_set=[(X_tr[eval_mask], y_tr[eval_mask])],
                 verbose=False,
             )
         else:
-            xgb.fit(X_tr, y_tr, verbose=False)
+            xgb.fit(X_tr, y_tr, sample_weight=_recency_wts, verbose=False)
         best_iters.append(xgb.best_iteration if hasattr(xgb, "best_iteration") and
                           xgb.best_iteration > 0 else cfg.n_estimators)
 
@@ -1015,10 +1084,11 @@ def _run_walk_forward(
             if eval_mask is not None:
                 lgb_model.fit(
                     X_tr[fit_mask], y_tr[fit_mask],
+                    sample_weight=_wts_fit,
                     eval_set=[(X_tr[eval_mask], y_tr[eval_mask])],
                 )
             else:
-                lgb_model.fit(X_tr, y_tr)
+                lgb_model.fit(X_tr, y_tr, sample_weight=_recency_wts)
             preds = (preds + lgb_model.predict(X_te)) / 2.0
 
         oof_preds.extend(preds)
@@ -1050,21 +1120,33 @@ def _fit_final_model(
     n_estimators: Optional[int] = None,
     objective: str = "reg:absoluteerror",
     params_override: Optional[Dict] = None,
+    dates: Optional[pd.Series] = None,
 ) -> Tuple[XGBRegressor, Optional[object]]:
-    """Fit final XGB (+LGB) on all data, no early stopping."""
+    """Fit final XGB (+LGB) on all data, no early stopping.
+
+    If `dates` (game_date_et Series aligned with X/y) is provided, applies
+    recency weighting (half-life 45 days) so recent games outweigh old data.
+    """
     n_est = n_estimators or cfg.n_estimators
     lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
     log.info("Fitting final %s XGB (n=%d rows, n_estimators=%d)", stat_name, len(X), n_est)
+
+    sample_weight = None
+    if dates is not None:
+        _max_date = pd.to_datetime(dates).max()
+        _age_days = (_max_date - pd.to_datetime(dates)).dt.days.clip(lower=0).values
+        sample_weight = np.exp(-np.log(2) * _age_days / 45.0)
+
     xgb = _build_xgb(cfg, n_est=n_est, early_stop=False, objective=objective,
                      params_override=params_override)
-    xgb.fit(X, y, verbose=False)
+    xgb.fit(X, y, sample_weight=sample_weight, verbose=False)
 
     lgb_model = None
     if _HAS_LGB:
         log.info("Fitting final %s LGB", stat_name)
         lgb_model = _build_lgb(n_est=n_est, early_stop=False, objective=lgb_obj,
                                params_override=params_override)
-        lgb_model.fit(X, y)
+        lgb_model.fit(X, y, sample_weight=sample_weight)
 
     return xgb, lgb_model
 
@@ -1230,6 +1312,7 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
         n_estimators=_n_est_k,
         objective="count:poisson",
         params_override=best_k_params,
+        dates=df["game_date_et"],
     )
 
     # Save
@@ -1303,9 +1386,10 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
         return int(np.percentile(iters, 75) * 1.1) if iters else None
 
     # Final models (using CV best_iter to set n_estimators)
-    xgb_hits, lgb_hits = _fit_final_model(X_filled, y_hits, cfg, "hits",        n_estimators=_cv_n_est(hits_iters), objective="count:poisson", params_override=best["hits"])
-    xgb_tb,   lgb_tb   = _fit_final_model(X_filled, y_tb,   cfg, "total_bases", n_estimators=_cv_n_est(tb_iters),   objective="count:poisson", params_override=best["total_bases"])
-    xgb_hr,   lgb_hr   = _fit_final_model(X_filled, y_hr,   cfg, "home_runs",   n_estimators=_cv_n_est(hr_iters),   objective="count:poisson", params_override=best["home_runs"])
+    _batter_dates = df["game_date_et"]
+    xgb_hits, lgb_hits = _fit_final_model(X_filled, y_hits, cfg, "hits",        n_estimators=_cv_n_est(hits_iters), objective="count:poisson", params_override=best["hits"],        dates=_batter_dates)
+    xgb_tb,   lgb_tb   = _fit_final_model(X_filled, y_tb,   cfg, "total_bases", n_estimators=_cv_n_est(tb_iters),   objective="count:poisson", params_override=best["total_bases"], dates=_batter_dates)
+    xgb_hr,   lgb_hr   = _fit_final_model(X_filled, y_hr,   cfg, "home_runs",   n_estimators=_cv_n_est(hr_iters),   objective="count:poisson", params_override=best["home_runs"],   dates=_batter_dates)
 
     # Save
     model_dir = cfg.model_dir

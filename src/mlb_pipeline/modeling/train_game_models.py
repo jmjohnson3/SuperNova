@@ -38,7 +38,7 @@ class TrainConfig:
     # MLB has a 162-game season; need more warmup data than NBA (82 games).
     min_train_days: int = 120
     test_window_days: int = 14
-    step_days: int = 14
+    step_days: int = 21          # was 14; 33% fewer walk-forward folds, still ample OOF coverage
 
     # XGBoost params (defaults — overridden by Optuna when enabled)
     n_estimators: int = 2000
@@ -53,14 +53,14 @@ class TrainConfig:
     reg_alpha: float = 0.1
     reg_lambda: float = 3.0
     # Early stopping
-    early_stopping_rounds: int = 50
+    early_stopping_rounds: int = 30  # was 50; bad Optuna trials abort sooner, no quality impact
     # Huber loss slope
     huber_slope: float = 3.0
 
     # Optuna tuning
     run_optuna: bool = True
-    optuna_n_trials: int = 60  # Improvement 4: increased from 40 to 60
-    optuna_n_folds: int = 5      # walk-forward folds used for tuning
+    optuna_n_trials: int = 30    # was 60; TPE converges by trial 20-25, halves Optuna cost
+    optuna_n_folds: int = 3      # was 5; 600 fits → 180 fits (70% reduction)
     # Recency weighting half-life (days): sample weight halves every N days of age.
     # Age is measured from the most recent training date in each fold.
     recency_half_life_days: int = 45

@@ -195,8 +195,9 @@ SELECT
     CASE WHEN v.roof_type = 'dome' THEN 0
          WHEN EXTRACT(HOUR FROM ts.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
          ELSE 0 END                                               AS is_day_game,
-    -- Market total (game-level run environment)
+    -- Market total + same-day line movement (game-level run environment)
     mkt_odds.market_total                                        AS market_total,
+    mkt_odds.line_move_total                                     AS line_move_total,
     -- Pitcher handedness
     ph.pitch_hand                                                AS pitcher_hand,
     -- Opponent lineup quality (NULL for upcoming games, median-imputed by model)
@@ -275,6 +276,15 @@ SELECT
     opp_mom.team_runs_last3  AS opp_runs_last3,
     opp_mom.team_runs_avg3   AS opp_runs_avg3,
     opp_mom.team_runs_last5  AS opp_runs_last5,
+    -- SP BABIP-against rolling (MLB031) — luck/regression signal for K predictions
+    sp_babip.sp_babip_against_10,
+    sp_babip.sp_babip_against_career,
+    sp_babip.sp_babip_starts_10,
+    -- SP K%% last 2 starts (item 9)
+    sp_k_last2.sp_k_pct_last2,
+    -- Opposing team DER (MLB032) — defensive quality
+    opp_der.team_der_20  AS opp_team_der_20,
+    opp_der.team_der_career AS opp_team_der_career,
     -- Market strikeout prop line (FanDuel; today's game)
     mkt_k.market_k_line
 FROM today_starters ts
@@ -339,16 +349,16 @@ LEFT JOIN LATERAL (
 LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa_self
     ON pa_self.player_id = ts.player_id
     AND pa_self.season_year = EXTRACT(YEAR FROM ts.game_date_et)::INT
--- Market total (game-level run environment signal)
+-- Market total + same-day line movement (Feature 11)
 LEFT JOIN LATERAL (
-    SELECT o.total_points AS market_total
+    SELECT
+        MAX(o.total_points)                        AS market_total,
+        MAX(o.total_points) - MIN(o.total_points)  AS line_move_total
     FROM odds.mlb_game_lines o
     JOIN raw.mlb_games mg ON mg.home_team_abbr = o.home_team
     WHERE mg.game_slug = ts.game_slug
       AND o.as_of_date = ts.game_date_et
       AND o.total_points IS NOT NULL
-    ORDER BY o.fetched_at_utc DESC
-    LIMIT 1
 ) mkt_odds ON TRUE
 -- Pitcher plate discipline (own season-level discipline profile)
 LEFT JOIN raw.mlb_statcast_pitcher_discipline pd_p
@@ -446,6 +456,52 @@ LEFT JOIN LATERAL (
       AND pl.stat             = 'pitcher_strikeouts'
       AND pl.bookmaker_key    = 'fanduel'
 ) mkt_k ON TRUE
+-- SP BABIP-against rolling (MLB031) — luck/regression for K predictions
+LEFT JOIN LATERAL (
+    SELECT sp_babip_against_10, sp_babip_against_career, sp_babip_starts_10
+    FROM features.mlb_sp_babip_rolling_mat
+    WHERE player_id    = ts.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) sp_babip ON TRUE
+-- SP K%% last 2 starts (item 9): recent K rate vs 5-start rolling (recency trend signal)
+-- BF estimated as ROUND(IP*3) + H + BB
+LEFT JOIN LATERAL (
+    SELECT
+        CASE WHEN SUM(bf_est) > 0
+             THEN SUM(COALESCE(g2k.strikeouts_pitcher, 0))::float / SUM(bf_est)
+             ELSE NULL END AS sp_k_pct_last2
+    FROM (
+        SELECT
+            pgl2.strikeouts_pitcher,
+            GREATEST(ROUND(COALESCE(pgl2.innings_pitched, 0) * 3)
+                     + COALESCE(pgl2.hits_allowed, 0)
+                     + COALESCE(pgl2.walks_allowed, 0), 1) AS bf_est
+        FROM raw.mlb_player_gamelogs pgl2
+        JOIN raw.mlb_games g2 ON g2.game_slug = pgl2.game_slug
+        WHERE pgl2.player_id      = ts.player_id
+          AND pgl2.is_starter     = TRUE
+          AND pgl2.innings_pitched >= 1.0
+          AND g2.status           = 'final'
+          AND g2.game_date_et     < %(game_date)s
+        ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+        LIMIT 2
+    ) g2k
+) sp_k_last2 ON TRUE
+-- Opposing team DER (MLB032) — defensive quality of opposing lineup's fielders
+LEFT JOIN LATERAL (
+    SELECT team_der_20, team_der_career
+    FROM features.mlb_team_der_rolling_mat
+    WHERE team_abbr    = ts.opponent_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_der ON TRUE
+-- Injury exclusion (Feature 12): skip OUT/DOUBTFUL pitchers
+LEFT JOIN raw.mlb_injuries inj_p ON inj_p.player_id = ts.player_id
+WHERE (inj_p.player_id IS NULL
+       OR inj_p.playing_probability NOT IN ('OUT', 'DOUBTFUL'))
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
 
@@ -544,8 +600,9 @@ SELECT
     CASE WHEN v.roof_type = 'dome' THEN 0
          WHEN EXTRACT(HOUR FROM tt.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1
          ELSE 0 END                                               AS is_day_game,
-    -- Market total (game-level run environment)
+    -- Market total + same-day line movement (game-level run environment)
     mkt_odds.market_total                                        AS market_total,
+    mkt_odds.line_move_total                                     AS line_move_total,
     -- Lineup slot
     br.batting_order_avg_5,
     br.batting_order_avg_10,
@@ -713,11 +770,20 @@ SELECT
     -- Own team offensive momentum (MLB029)
     own_mom.team_runs_last3  AS own_runs_last3,
     own_mom.team_runs_avg3   AS own_runs_avg3,
+    -- Batter BABIP rolling (MLB030) — luck/regression signal for hits
+    batter_babip.batter_babip_10,
+    batter_babip.batter_babip_career,
+    batter_babip.babip_games_10,
+    -- Opposing team DER (MLB032) — defensive quality of opponent's fielders
+    opp_def_der.team_der_20  AS opp_team_def_der_20,
+    opp_def_der.team_der_career AS opp_team_def_der_career,
     -- Market over_price on canonical batter lines (FanDuel; today's game)
     -- American odds: -200 = 67%% implied prob; -130 = 57%%; -170 = 63%%; etc.
     mkt_props.market_hits_over_price,
     mkt_props.market_tb_over_price,
-    mkt_props.market_hr_over_price
+    mkt_props.market_hr_over_price,
+    -- Opposing SP confirmation status (for leaderboard quality gate)
+    sp.source                             AS opp_sp_source
 FROM teams_today tt
 JOIN recent_players rp ON rp.team_abbr = tt.team_abbr
 -- Most recent rolling batter stats prior to today
@@ -890,16 +956,16 @@ LEFT JOIN raw.mlb_statcast_sprint_speed ss
 LEFT JOIN raw.mlb_statcast_pitcher_arsenal pa
     ON pa.player_id = sp.player_id
     AND pa.season_year = EXTRACT(YEAR FROM tt.game_date_et)::INT
--- Market total (game-level run environment signal)
+-- Market total + same-day line movement (Feature 11)
 LEFT JOIN LATERAL (
-    SELECT o.total_points AS market_total
+    SELECT
+        MAX(o.total_points)                        AS market_total,
+        MAX(o.total_points) - MIN(o.total_points)  AS line_move_total
     FROM odds.mlb_game_lines o
     JOIN games_today gt ON gt.home_team_abbr = o.home_team
     WHERE gt.game_slug = tt.game_slug
       AND o.as_of_date = tt.game_date_et
       AND o.total_points IS NOT NULL
-    ORDER BY o.fetched_at_utc DESC
-    LIMIT 1
 ) mkt_odds ON TRUE
 -- Batter plate discipline (chase rate, contact rates, swing-and-miss)
 LEFT JOIN raw.mlb_statcast_batter_discipline pd_b
@@ -982,8 +1048,30 @@ LEFT JOIN LATERAL (
       AND pl.as_of_date       = %(game_date)s
       AND pl.bookmaker_key    = 'fanduel'
 ) mkt_props ON TRUE
+-- Batter BABIP rolling (MLB030) — luck/regression signal for hits
+LEFT JOIN LATERAL (
+    SELECT batter_babip_10, batter_babip_career, babip_games_10
+    FROM features.mlb_batter_babip_rolling_mat
+    WHERE player_id    = rp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) batter_babip ON TRUE
+-- Opposing team DER (MLB032) — defensive quality of opponent's fielders
+LEFT JOIN LATERAL (
+    SELECT team_der_20, team_der_career
+    FROM features.mlb_team_der_rolling_mat
+    WHERE team_abbr    = tt.opponent_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_def_der ON TRUE
+-- Injury exclusion (Feature 12): skip OUT/DOUBTFUL batters
+LEFT JOIN raw.mlb_injuries inj_b ON inj_b.player_id = rp.player_id
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
+  AND (inj_b.player_id IS NULL
+       OR inj_b.playing_probability NOT IN ('OUT', 'DOUBTFUL'))
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id
 """
 
@@ -2495,20 +2583,77 @@ def _print_discord(
     if is_discord:
         printed_any = False
 
-        def _leaderboard_rows(rows, pred_key, stat_key):
-            """Return (p_over, pred, line, name, team, opp, link) for rows with a book line,
-            sorted by P(over) descending."""
+        def _market_implied_prob(over_price) -> Optional[float]:
+            """Convert American over_price → implied probability (no vig removal)."""
+            if over_price is None:
+                return None
+            try:
+                v = float(over_price)
+            except (TypeError, ValueError):
+                return None
+            if v < 0:
+                return abs(v) / (abs(v) + 100.0)
+            if v > 0:
+                return 100.0 / (v + 100.0)
+            return None
+
+        def _leaderboard_rows(
+            rows, pred_key, stat_key,
+            pred_gate=True, min_pred=None,
+            min_p_over=0.55,
+            min_edge_vs_market=0.03, over_price_key=None,
+            max_batting_order=None,
+            require_confirmed_sp=False,
+            sp_k_ceiling=None, sp_k_lookup=None,
+        ):
+            """Return (p_over, pred, line, name, team, opp, link) for rows that
+            pass all quality gates, sorted by P(over) descending.
+
+            Gates (all optional):
+            - pred_gate: pred_val >= min_pred (or line); skip rare-event stats like HR
+            - min_p_over: model P(over) floor (default 55%)
+            - min_edge_vs_market: model P(over) must exceed market implied P by this margin
+            - over_price_key: row key for the market over price (to compute implied P)
+            - max_batting_order: skip players batting above this slot (7th+ = excluded)
+            - require_confirmed_sp: skip rows where opposing SP is not 'confirmed'
+            - sp_k_ceiling: skip rows where opposing SP pred_k > this value
+            - sp_k_lookup: dict {(game_slug, opp_team_abbr): pred_k}
+            """
             entries = []
             for r in rows:
                 pred_val = r.get(pred_key)
                 if pred_val is None:
                     continue
+
+                # ── Batting order gate ───────────────────────────────────────
+                if max_batting_order is not None:
+                    eff_order = r.get("effective_batting_order")
+                    if eff_order is not None and eff_order > max_batting_order:
+                        continue
+
+                # ── SP confirmation gate ─────────────────────────────────────
+                if require_confirmed_sp and r.get("opp_sp_source") != "confirmed":
+                    continue
+
+                # ── SP quality ceiling ───────────────────────────────────────
+                if sp_k_ceiling is not None and sp_k_lookup is not None:
+                    opp_pred_k = sp_k_lookup.get(
+                        (r.get("game_slug"), r.get("opponent_abbr"))
+                    )
+                    if opp_pred_k is not None and opp_pred_k > sp_k_ceiling:
+                        continue
+
                 name = r.get("player_name", f"id={r['player_id']}")
                 norm = _normalize_name(name)
                 ld = prop_lines.get((norm, stat_key))
                 if not ld or ld.get("line") is None:
                     continue
                 line = ld["line"]
+
+                # ── Prediction gate ──────────────────────────────────────────
+                if pred_gate and pred_val < (min_pred if min_pred is not None else line):
+                    continue
+
                 clf_p = (r.get("clf_p_over") or {}).get(stat_key)
                 if clf_p is not None:
                     p_over = _apply_regression_gate(clf_p, pred_val, line, stat_key)
@@ -2516,13 +2661,35 @@ def _print_discord(
                     p_over = _prob_over_from_regression(pred_val, line, None)
                 if p_over is None:
                     continue
+
+                # ── Minimum P(over) floor ────────────────────────────────────
+                if p_over < min_p_over:
+                    continue
+
+                # ── Edge vs market implied probability ───────────────────────
+                if over_price_key is not None and min_edge_vs_market > 0:
+                    mkt_p = _market_implied_prob(r.get(over_price_key))
+                    if mkt_p is not None and (p_over - mkt_p) < min_edge_vs_market:
+                        continue
+
                 entries.append((p_over, pred_val, line, name,
                                  r.get("team_abbr", "?"), r.get("opponent_abbr", "?"),
                                  ld.get("over_link")))
             return sorted(entries, key=lambda x: x[0], reverse=True)
 
+        # ── SP K lookup: {(game_slug, pitching_team_abbr): pred_k} ──────────────
+        # Used to gate batters facing an elite SP (sp_k_ceiling)
+        _sp_k_lookup = {
+            (r["game_slug"], r["team_abbr"]): r["pred_strikeouts"]
+            for r in all_pitcher_rows
+            if r.get("pred_strikeouts") is not None and r.get("team_abbr")
+        }
+
         # ── Top 10 Strikeouts ─────────────────────────────────────────────────
-        k_entries = _leaderboard_rows(all_pitcher_rows, "pred_strikeouts", "pitcher_strikeouts")
+        k_entries = _leaderboard_rows(
+            all_pitcher_rows, "pred_strikeouts", "pitcher_strikeouts",
+            min_p_over=0.55,
+        )
         if k_entries:
             print("**Top 10 Strikeouts Today**")
             for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(k_entries[:10], start=1):
@@ -2535,7 +2702,15 @@ def _print_discord(
             printed_any = True
 
         # ── Top 10 Hits ───────────────────────────────────────────────────────
-        h_entries = _leaderboard_rows(all_batter_rows, "pred_hits", "batter_hits")
+        h_entries = _leaderboard_rows(
+            all_batter_rows, "pred_hits", "batter_hits",
+            min_pred=1.0,
+            min_p_over=0.55,
+            min_edge_vs_market=0.03, over_price_key="market_hits_over_price",
+            max_batting_order=6,
+            require_confirmed_sp=False,
+            sp_k_ceiling=7.5, sp_k_lookup=_sp_k_lookup,
+        )
         if h_entries:
             print("")
             print("**Top 10 Hits Today**")
@@ -2549,7 +2724,14 @@ def _print_discord(
             printed_any = True
 
         # ── Top 10 Total Bases ────────────────────────────────────────────────
-        tb_entries = _leaderboard_rows(all_batter_rows, "pred_total_bases", "batter_total_bases")
+        tb_entries = _leaderboard_rows(
+            all_batter_rows, "pred_total_bases", "batter_total_bases",
+            min_p_over=0.55,
+            min_edge_vs_market=0.03, over_price_key="market_tb_over_price",
+            max_batting_order=6,
+            require_confirmed_sp=False,
+            sp_k_ceiling=7.5, sp_k_lookup=_sp_k_lookup,
+        )
         if tb_entries:
             print("")
             print("**Top 10 Total Bases Today**")
@@ -3425,6 +3607,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     v = float(arr[i])
                     return None if np.isnan(v) else v
 
+                _conf_order = row.get("confirmed_batting_order")
+                _avg_order  = row.get("batting_order_avg_10")
                 r = {
                     "game_slug": slug,
                     "game_date_et": et_date,
@@ -3449,6 +3633,15 @@ def predict_props(cfg: PredictConfig) -> None:
                         "batter_total_bases": sigma_tb,
                         "batter_home_runs": sigma_hr,
                     },
+                    # Leaderboard quality filters
+                    "market_hits_over_price": row.get("market_hits_over_price"),
+                    "market_tb_over_price":   row.get("market_tb_over_price"),
+                    "opp_sp_source":          row.get("opp_sp_source"),
+                    # Effective batting order: confirmed if available, else rolling avg
+                    "effective_batting_order": (
+                        int(_conf_order) if _conf_order is not None
+                        else (float(_avg_order) if _avg_order is not None else None)
+                    ),
                 }
                 all_batter_rows.append(r)
 

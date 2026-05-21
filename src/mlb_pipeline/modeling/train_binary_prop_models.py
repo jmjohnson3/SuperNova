@@ -148,7 +148,7 @@ class ClfConfig:
     gamma: float = 0.1
     reg_alpha: float = 0.5
     reg_lambda: float = 5.0
-    early_stopping_rounds: int = 50
+    early_stopping_rounds: int = 30  # was 50; bad Optuna trials abort sooner
     random_state: int = 42
 
 

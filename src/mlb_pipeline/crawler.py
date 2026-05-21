@@ -1,8 +1,9 @@
 import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Iterable, Optional
-import time
 import psycopg2
 from zoneinfo import ZoneInfo
 
@@ -200,6 +201,73 @@ def last_games_by_date_asof(conn, *, provider: str, season: str) -> Optional[dat
     return row[0] if row and row[0] is not None else None
 
 
+# ---------- bulk pre-check helpers ----------
+
+def _load_url_set(
+    conn,
+    *,
+    provider: str,
+    endpoint: str,
+    season: Optional[str],
+    as_of_date: Optional[date],
+) -> set:
+    """Load all stored URLs for a specific endpoint/season/date combo into a set.
+
+    One DB round-trip replaces N individual ``already_fetched()`` calls.
+    """
+    q = """
+    SELECT url FROM raw.api_responses
+    WHERE provider = %s
+      AND endpoint = %s
+      AND (season IS NOT DISTINCT FROM %s)
+      AND (as_of_date IS NOT DISTINCT FROM %s)
+    """
+    with conn.cursor() as cur:
+        cur.execute(q, (provider, endpoint, season, as_of_date))
+        return {row[0] for row in cur.fetchall()}
+
+
+def _load_all_completed_boxscores(conn) -> set:
+    """Return set of all game_slugs that are COMPLETED in raw.mlb_boxscore_games."""
+    q = "SELECT game_slug FROM raw.mlb_boxscore_games WHERE played_status = 'COMPLETED'"
+    with conn.cursor() as cur:
+        cur.execute(q)
+        return {row[0] for row in cur.fetchall()}
+
+
+def _fetch_url_tagged(
+    client: "MySportsFeedsClient",
+    url: str,
+    context: str,
+    date_ctx: "date",
+    rate_hit: "threading.Event",
+) -> "Optional[tuple]":
+    """Fetch *url* in a worker thread.  Returns ``(url, payload)`` or ``None``.
+
+    ``context`` is a short string included in log messages (e.g. ``"gamelog
+    date=2026-05-21 team=nyy"``).  Sets *rate_hit* on HTTP 429 so sibling
+    threads short-circuit their own fetches.
+    """
+    if rate_hit.is_set():
+        return None
+    try:
+        payload = client.fetch_json(url)
+        return url, payload
+    except NoContentYetError:
+        log.info("Not ready yet (204) %s", context)
+        return None
+    except RateLimitedError:
+        log.warning("Rate limited (429). %s date=%s", context, date_ctx)
+        rate_hit.set()
+        return None
+    except BadPayloadError as e:
+        log.warning("Bad payload %s err=%s", context, e)
+        return None
+    except Exception:
+        log.warning("Failed fetch %s url=%s", context, url, exc_info=True)
+        return None
+
+
 # ---------- payload parsing helpers ----------
 
 def extract_game_slugs_from_games_payload(payload: dict) -> list[str]:
@@ -238,8 +306,9 @@ def crawl_season_incremental(
     start_date: date,
     end_date: date,
     commit_every: int = 50,
+    force_meta: bool = False,
 ) -> None:
-    log.info("Crawling season=%s start=%s end=%s", season.season_slug, start_date, end_date)
+    log.info("Crawling season=%s start=%s end=%s force_meta=%s", season.season_slug, start_date, end_date, force_meta)
 
     saved = 0
 
@@ -253,6 +322,18 @@ def crawl_season_incremental(
     provider = "mysportsfeeds"
     today_et = et_today()
 
+    # Pre-load per-season bulk caches — one DB query each instead of N individual
+    # already_fetched() calls spread across the date loop.
+    lineup_cached: set = _load_url_set(
+        conn, provider=provider, endpoint="lineup",
+        season=season.season_slug, as_of_date=None,
+    )
+    completed_slugs: set = _load_all_completed_boxscores(conn)
+    log.info(
+        "Pre-loaded caches season=%s: %d lineup URLs, %d completed boxscores",
+        season.season_slug, len(lineup_cached), len(completed_slugs),
+    )
+
     # 0) Meta endpoints (daily snapshots)
     meta = [
         ("injuries", build_url_injuries(season)),
@@ -260,7 +341,7 @@ def crawl_season_incremental(
         ("venues", build_url_venues(season)),
     ]
     for endpoint, url in meta:
-        if already_fetched(
+        if not force_meta and already_fetched(
             conn,
             provider=provider,
             endpoint=endpoint,
@@ -334,114 +415,100 @@ def crawl_season_incremental(
         # Note: MLB V1 has no playbyplay endpoint — only boxscore + lineup.
         is_future_date = d > today_et
 
-        for i, slug in enumerate(slugs, start=1):
-            for endpoint_name, url_builder in (
-                ("boxscore", build_url_boxscore),
-                ("lineup",   build_url_lineup),
-            ):
-                if is_future_date and endpoint_name == "boxscore":
-                    continue
+        # Build task list using pre-loaded caches (batch check, no per-slug DB queries).
+        _pg_tasks: list = []
+        for _slug in slugs:
+            if not is_future_date and _slug not in completed_slugs:
+                _pg_tasks.append(("boxscore", _slug, build_url_boxscore(season, _slug)))
+            _lu_url = build_url_lineup(season, _slug)
+            if _lu_url not in lineup_cached:
+                _pg_tasks.append(("lineup", _slug, _lu_url))
 
-                url = url_builder(season, slug)
-
-                # For boxscores, skip only when we already have a COMPLETED record in
-                # raw.mlb_boxscore_games.  This guarantees we re-fetch if the pipeline
-                # previously ran mid-game (partial scores) — a plain already_fetched()
-                # check would permanently cache those partial results.
-                # For all other per-game endpoints use the normal already_fetched guard.
-                if endpoint_name == "boxscore":
-                    if _mlb_boxscore_is_completed(conn, game_slug=slug):
-                        continue
-                elif already_fetched(
-                    conn,
-                    provider=provider,
-                    endpoint=endpoint_name,
-                    season=season.season_slug,
-                    game_slug=slug,
-                    as_of_date=None,
-                    url=url,
-                ):
-                    continue
-
-                try:
-                    payload = client.fetch_json(url)
-                except NoContentYetError:
-                    # not ready (common for future / not started)
-                    log.info("Not ready yet (204) endpoint=%s game_slug=%s", endpoint_name, slug)
-                    continue
-                except RateLimitedError:
-                    log.warning("Rate limited (429). Stopping early for date=%s to avoid hammering.", d)
-                    return
-                except BadPayloadError as e:
-                    log.warning("Bad payload endpoint=%s game_slug=%s err=%s", endpoint_name, slug, e)
-                    continue
-                except Exception:
-                    log.warning(
-                        "Skipping failed fetch endpoint=%s game_slug=%s url=%s",
-                        endpoint_name, slug, url, exc_info=True,
+        if _pg_tasks:
+            _rate_hit_pg = threading.Event()
+            _pg_fut_map: dict = {}
+            with ThreadPoolExecutor(max_workers=8) as _ex:
+                for _ep, _slug, _url in _pg_tasks:
+                    _fut = _ex.submit(
+                        _fetch_url_tagged,
+                        client, _url,
+                        f"endpoint={_ep} game_slug={_slug}",
+                        d, _rate_hit_pg,
                     )
-                    continue
+                    _pg_fut_map[_fut] = (_ep, _slug, _url)
+                for _fut in as_completed(_pg_fut_map):
+                    _ep, _slug, _url = _pg_fut_map[_fut]
+                    _res = _fut.result()
+                    if _res is not None:
+                        _, _payload = _res
+                        save_api_response(
+                            conn,
+                            provider=provider,
+                            endpoint=_ep,
+                            season=season.season_slug,
+                            game_slug=_slug,
+                            url=_url,
+                            payload=_payload,
+                        )
+                        if _ep == "lineup":
+                            lineup_cached.add(_url)
+                        record_save()
 
-                save_api_response(
-                    conn,
-                    provider=provider,
-                    endpoint=endpoint_name,
-                    season=season.season_slug,
-                    game_slug=slug,
-                    url=url,
-                    payload=payload,
-                )
-                record_save()
+            if _rate_hit_pg.is_set():
+                conn.commit()
+                return
 
-            if i % 25 == 0:
-                log.info("Progress date=%s games=%d/%d (saved=%d)", d, i, len(slugs), saved)
+            log.info(
+                "Per-game date=%s slugs=%d tasks=%d saved=%d",
+                d, len(slugs), len(_pg_tasks), saved,
+            )
 
         if d > today_et:
             continue
 
-        # 3) Player gamelogs per team for the date
-        for team in MLB_TEAMS:
-            url = build_url_player_gamelogs(season, d, team)
-            time.sleep(0.25)
-            if already_fetched(
-                conn,
-                provider=provider,
-                endpoint="player_gamelogs",
-                season=season.season_slug,
-                game_slug=None,
-                as_of_date=d,
-                url=url,
-            ):
-                continue
+        # 3) Player gamelogs per team for the date — batch check + parallel HTTP.
+        # One DB query replaces 30 individual already_fetched() calls; ThreadPoolExecutor
+        # removes the time.sleep(0.25) sequential delay (7.5 s/day → ~1 s wall time).
+        _gamelog_cached = _load_url_set(
+            conn, provider=provider, endpoint="player_gamelogs",
+            season=season.season_slug, as_of_date=d,
+        )
+        _gl_tasks = [
+            (_team, _url)
+            for _team in MLB_TEAMS
+            if (_url := build_url_player_gamelogs(season, d, _team)) not in _gamelog_cached
+        ]
+        if _gl_tasks:
+            _rate_hit_gl = threading.Event()
+            _gl_fut_map: dict = {}
+            with ThreadPoolExecutor(max_workers=8) as _ex:
+                for _team, _url in _gl_tasks:
+                    _fut = _ex.submit(
+                        _fetch_url_tagged,
+                        client, _url,
+                        f"gamelog date={d} team={_team}",
+                        d, _rate_hit_gl,
+                    )
+                    _gl_fut_map[_fut] = (_team, _url)
+                for _fut in as_completed(_gl_fut_map):
+                    _team, _url = _gl_fut_map[_fut]
+                    _res = _fut.result()
+                    if _res is not None:
+                        _, _payload = _res
+                        save_api_response(
+                            conn,
+                            provider=provider,
+                            endpoint="player_gamelogs",
+                            season=season.season_slug,
+                            as_of_date=d,
+                            url=_url,
+                            payload=_payload,
+                        )
+                        record_save()
 
-            try:
-                payload = client.fetch_json(url)
-            except NoContentYetError:
-                log.info("Not ready yet (204) endpoint=player_gamelogs date=%s team=%s", d, team)
-                continue
-            except RateLimitedError:
-                log.warning("Rate limited (429). Stopping early for date=%s to avoid hammering.", d)
+            if _rate_hit_gl.is_set():
+                conn.commit()
                 return
-            except BadPayloadError as e:
-                log.warning("Bad payload endpoint=player_gamelogs date=%s team=%s err=%s", d, team, e)
-                continue
-            except Exception:
-                log.warning(
-                    "Skipping failed fetch endpoint=player_gamelogs date=%s team=%s",
-                    d, team, exc_info=True,
-                )
-                continue
-
-            save_api_response(
-                conn,
-                provider=provider,
-                endpoint="player_gamelogs",
-                season=season.season_slug,
-                as_of_date=d,
-                url=url,
-                payload=payload,
-            )
-            record_save()
 
         conn.commit()
         log.info("Committed end-of-day date=%s (saved=%d)", d, saved)
@@ -493,6 +560,11 @@ def main() -> None:
         type=str,
         default=None,
         help="Force end date (YYYY-MM-DD). Defaults to today+1 (include_tomorrow). Use for backfill.",
+    )
+    parser.add_argument(
+        "--force-meta",
+        action="store_true",
+        help="Re-fetch meta endpoints (injuries/standings/venues) even if already fetched today.",
     )
     args = parser.parse_args()
 
@@ -549,6 +621,7 @@ def main() -> None:
                     start_date=start,
                     end_date=end,
                     commit_every=cfg.commit_every,
+                    force_meta=args.force_meta,
                 )
 
             conn.commit()
