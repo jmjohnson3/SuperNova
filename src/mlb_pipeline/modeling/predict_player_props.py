@@ -2688,7 +2688,7 @@ def _print_discord(
         # ── Top 10 Strikeouts ─────────────────────────────────────────────────
         k_entries = _leaderboard_rows(
             all_pitcher_rows, "pred_strikeouts", "pitcher_strikeouts",
-            min_p_over=0.55,
+            min_p_over=0.52,
         )
         if k_entries:
             print("**Top 10 Strikeouts Today**")
@@ -2704,12 +2704,12 @@ def _print_discord(
         # ── Top 10 Hits ───────────────────────────────────────────────────────
         h_entries = _leaderboard_rows(
             all_batter_rows, "pred_hits", "batter_hits",
-            min_pred=1.0,
-            min_p_over=0.55,
-            min_edge_vs_market=0.03, over_price_key="market_hits_over_price",
-            max_batting_order=6,
+            min_pred=0.75,
+            min_p_over=0.52,
+            min_edge_vs_market=0.01, over_price_key="market_hits_over_price",
+            max_batting_order=7,
             require_confirmed_sp=False,
-            sp_k_ceiling=7.5, sp_k_lookup=_sp_k_lookup,
+            sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
         )
         if h_entries:
             print("")
@@ -2726,11 +2726,11 @@ def _print_discord(
         # ── Top 10 Total Bases ────────────────────────────────────────────────
         tb_entries = _leaderboard_rows(
             all_batter_rows, "pred_total_bases", "batter_total_bases",
-            min_p_over=0.55,
-            min_edge_vs_market=0.03, over_price_key="market_tb_over_price",
-            max_batting_order=6,
+            min_p_over=0.52,
+            min_edge_vs_market=0.01, over_price_key="market_tb_over_price",
+            max_batting_order=7,
             require_confirmed_sp=False,
-            sp_k_ceiling=7.5, sp_k_lookup=_sp_k_lookup,
+            sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
         )
         if tb_entries:
             print("")
