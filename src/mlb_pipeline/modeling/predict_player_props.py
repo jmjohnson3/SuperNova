@@ -2702,10 +2702,13 @@ def _print_discord(
             printed_any = True
 
         # ── Top 10 Hits ───────────────────────────────────────────────────────
+        # min_p_over=0.65: fallback floor when market odds are missing.
+        # When market data IS present (typical 1-hit lines price ~-250 = 71.4%
+        # implied), min_edge_vs_market=0.01 already enforces model P >= 72.4%.
         h_entries = _leaderboard_rows(
             all_batter_rows, "pred_hits", "batter_hits",
             min_pred=0.75,
-            min_p_over=0.52,
+            min_p_over=0.65,
             min_edge_vs_market=0.01, over_price_key="market_hits_over_price",
             max_batting_order=7,
             require_confirmed_sp=False,
