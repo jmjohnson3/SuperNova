@@ -1065,7 +1065,7 @@ def _run_walk_forward(
         lgb_obj = "poisson" if objective == "count:poisson" else "regression_l1"
         xgb = _build_xgb(cfg, early_stop=True, objective=objective, params_override=params_override)
         if eval_mask is not None:
-            _wts_fit = _recency_wts[fit_mask.values]
+            _wts_fit = _recency_wts[np.asarray(fit_mask)]
             xgb.fit(
                 X_tr[fit_mask], y_tr[fit_mask],
                 sample_weight=_wts_fit,
@@ -1164,17 +1164,44 @@ def _optuna_objective_props(
     medians: Dict[str, float],
     folds: List[Tuple[pd.Timestamp, pd.Timestamp]],
     objective: str = "reg:absoluteerror",
+    stat_name: str = "",
 ) -> float:
-    """XGBoost objective for a single stat. Returns mean walk-forward MAE."""
+    """XGBoost objective for a single stat. Returns mean walk-forward MAE.
+
+    Per-stat depth/gamma floors prevent degenerate "predict the mean" solutions
+    for high-variance counts like total_bases where Optuna otherwise converges
+    to max_depth=3 / gamma=0.8, producing near-constant predictions.
+    """
+    # Per-stat search-space overrides: (min_depth, max_gamma, max_reg_alpha, max_reg_lambda)
+    #
+    # Problem params found by inspection of each degenerate model:
+    #   total_bases: depth=3, gamma=0.835, reg_alpha=0.907  → range 0.03 TB
+    #   home_runs:   depth=12, gamma=0.047, reg_alpha=1.515 → range 0.00 HR
+    #   hits:        depth=7,  gamma=0.21,  reg_lambda=9.42 → ignores hits_avg_10
+    #   strikeouts:  depth=6,  gamma=0.41,  reg_alpha=0.01  → partially OK
+    #
+    # reg_alpha is also inherited by LightGBM (as lambda_l1), so capping here
+    # prevents both XGB and LGB from producing near-constant predictions.
+    _STAT_BOUNDS = {
+        #                  min_depth  max_gamma  max_reg_alpha  max_reg_lambda
+        "total_bases":    (5,         0.35,      0.30,          3.0),
+        "home_runs":      (4,         0.50,      0.30,          3.0),
+        "hits":           (5,         0.50,      0.30,          3.0),
+        "strikeouts":     (4,         0.60,      0.50,          5.0),
+    }
+    min_depth, max_gamma, max_reg_alpha, max_reg_lambda = _STAT_BOUNDS.get(
+        stat_name, (3, 1.0, 2.0, 10.0)
+    )
+
     params = {
-        "max_depth":        trial.suggest_int("max_depth", 3, 12),
+        "max_depth":        trial.suggest_int("max_depth", min_depth, 12),
         "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
         "subsample":        trial.suggest_float("subsample", 0.6, 1.0),
         "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
         "min_child_weight": trial.suggest_int("min_child_weight", 3, 20),
-        "gamma":            trial.suggest_float("gamma", 0.0, 1.0),
-        "reg_alpha":        trial.suggest_float("reg_alpha", 0.01, 2.0, log=True),
-        "reg_lambda":       trial.suggest_float("reg_lambda", 0.5, 10.0, log=True),
+        "gamma":            trial.suggest_float("gamma", 0.0, max_gamma),
+        "reg_alpha":        trial.suggest_float("reg_alpha", 0.01, max_reg_alpha, log=True),
+        "reg_lambda":       trial.suggest_float("reg_lambda", 0.5, max_reg_lambda, log=True),
     }
     eval_metric = "poisson-nloglik" if objective == "count:poisson" else "mae"
     mae_scores = []
@@ -1244,7 +1271,8 @@ def _run_optuna_for_stat(
     study = optuna.create_study(direction="minimize", study_name=stat_name)
     study.optimize(
         lambda trial: _optuna_objective_props(
-            trial, df, X_raw, y, feature_cols, medians, tune_folds, objective
+            trial, df, X_raw, y, feature_cols, medians, tune_folds, objective,
+            stat_name=stat_name,
         ),
         n_trials=cfg.optuna_n_trials,
         timeout=cfg.optuna_timeout_sec,

@@ -2324,6 +2324,7 @@ def _collect_lottery_parlay_links(
     cfg: PredictConfig,
     all_alt_lines: Optional[Dict] = None,
     alt_clf_probs: Optional[Dict] = None,
+    min_p_over: float = 0.15,
 ) -> List[str]:
     """Collect matchup-based lottery legs using the highest alt line where model has edge.
 
@@ -2333,8 +2334,13 @@ def _collect_lottery_parlay_links(
     "Freeman TB OVER 3.5 at +500" when the model's regression prediction supports it.
     No HR — those have a dedicated parlay.
 
+    When alt_clf_probs is available, P(over) is blended 60/40 (regression Poisson /
+    alt CLF) for each (player, stat, line) triple.  This adds the alt-line CLF signal
+    which was specifically trained on high-threshold binary outcomes.
+
     Candidates are ranked by EV × streak_mult so hot-streak players rise to the top
     and cold-streak players fall even if their raw EV is marginally positive.
+    min_p_over: legs with blended P(over) below this floor are skipped regardless of EV.
     """
     lo = int(cfg.lottery_min_american)
     hi = int(cfg.lottery_max_american)
@@ -2372,6 +2378,13 @@ def _collect_lottery_parlay_links(
             # monotonic across all alt-line thresholds (P(K≥k+1) < P(K≥k) guaranteed).
             p_over = _prob_over_from_regression(pred_k, line_val)
             if p_over is None:
+                continue
+            # Blend with alt CLF when available (60% regression / 40% CLF).
+            # alt_clf_probs keys: (norm_name, stat, line_val_float).
+            clf_p = (alt_clf_probs or {}).get((norm, "pitcher_strikeouts", float(line_val)))
+            if clf_p is not None:
+                p_over = 0.6 * p_over + 0.4 * float(clf_p)
+            if p_over < min_p_over:
                 continue
             ev = _ev_per_unit(float(p_over), over_odds)
             if ev is not None and ev >= cfg.min_ev:
@@ -2426,6 +2439,12 @@ def _collect_lottery_parlay_links(
                 # monotonic across all alt-line thresholds (P(stat≥k+1) < P(stat≥k) guaranteed).
                 p_over = _prob_over_from_regression(pred_v, line_val)
                 if p_over is None:
+                    continue
+                # Blend with alt CLF when available (60% regression / 40% CLF).
+                clf_p = (alt_clf_probs or {}).get((norm, stat_key, float(line_val)))
+                if clf_p is not None:
+                    p_over = 0.6 * p_over + 0.4 * float(clf_p)
+                if p_over < min_p_over:
                     continue
                 ev = _ev_per_unit(float(p_over), over_odds)
                 if ev is not None and ev >= cfg.min_ev:
@@ -2605,6 +2624,7 @@ def _print_discord(
             max_batting_order=None,
             require_confirmed_sp=False,
             sp_k_ceiling=None, sp_k_lookup=None,
+            skip_clf=False,
         ):
             """Return (p_over, pred, line, name, team, opp, link) for rows that
             pass all quality gates, sorted by P(over) descending.
@@ -2618,6 +2638,7 @@ def _print_discord(
             - require_confirmed_sp: skip rows where opposing SP is not 'confirmed'
             - sp_k_ceiling: skip rows where opposing SP pred_k > this value
             - sp_k_lookup: dict {(game_slug, opp_team_abbr): pred_k}
+            - skip_clf: if True, bypass CLF and derive P(over) from regression alone
             """
             entries = []
             for r in rows:
@@ -2654,7 +2675,7 @@ def _print_discord(
                 if pred_gate and pred_val < (min_pred if min_pred is not None else line):
                     continue
 
-                clf_p = (r.get("clf_p_over") or {}).get(stat_key)
+                clf_p = None if skip_clf else (r.get("clf_p_over") or {}).get(stat_key)
                 if clf_p is not None:
                     p_over = _apply_regression_gate(clf_p, pred_val, line, stat_key)
                 else:
@@ -2702,17 +2723,21 @@ def _print_discord(
             printed_any = True
 
         # ── Top 10 Hits ───────────────────────────────────────────────────────
-        # min_p_over=0.65: fallback floor when market odds are missing.
-        # When market data IS present (typical 1-hit lines price ~-250 = 71.4%
-        # implied), min_edge_vs_market=0.01 already enforces model P >= 72.4%.
+        # skip_clf=True: batter_hits CLF has abs_cal_error=0.18-0.45 (disabled
+        # in clf_bucket_controls). Its ~60-70% predictions compress the range
+        # and block most batters. Use regression-only Poisson P(hits >= 1).
+        # min_p_over=0.60: Poisson P(hits>=1 | λ=0.92) ≈ 0.60, gives top ~25-30
+        # batters. min_pred=0.75 keeps only players with expected >0.75 hits.
+        # min_edge_vs_market=0: market edge gate disabled (book lines ~-250).
         h_entries = _leaderboard_rows(
             all_batter_rows, "pred_hits", "batter_hits",
             min_pred=0.75,
-            min_p_over=0.65,
-            min_edge_vs_market=0.01, over_price_key="market_hits_over_price",
+            min_p_over=0.60,
+            min_edge_vs_market=0, over_price_key="market_hits_over_price",
             max_batting_order=7,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
+            skip_clf=True,
         )
         if h_entries:
             print("")
@@ -2727,13 +2752,20 @@ def _print_discord(
             printed_any = True
 
         # ── Top 10 Total Bases ────────────────────────────────────────────────
+        # skip_clf=True: TB CLF is disabled (abs_cal_error=0.32) and its stored
+        # ~0 predictions sabotage _apply_regression_gate even when disagreement
+        # with regression is small. Use regression-only Poisson P(over).
+        # min_pred=1.2: allow batters with pred below line (1.5) through the
+        # pred gate — typical range 1.2–1.5, Poisson P(over 1.5) ≈ 0.26–0.45.
+        # min_p_over=0.40: regression-derived P(over 1.5) for top batters ~0.40–0.46.
         tb_entries = _leaderboard_rows(
             all_batter_rows, "pred_total_bases", "batter_total_bases",
-            min_p_over=0.52,
-            min_edge_vs_market=0.01, over_price_key="market_tb_over_price",
+            min_pred=1.2, min_p_over=0.40,
+            min_edge_vs_market=0, over_price_key="market_tb_over_price",
             max_batting_order=7,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
+            skip_clf=True,
         )
         if tb_entries:
             print("")
