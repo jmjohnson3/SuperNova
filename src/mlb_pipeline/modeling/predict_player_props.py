@@ -499,8 +499,9 @@ LEFT JOIN LATERAL (
     LIMIT 1
 ) opp_der ON TRUE
 -- Injury exclusion (Feature 12): skip OUT/DOUBTFUL pitchers
-LEFT JOIN raw.mlb_injuries inj_p ON inj_p.player_id = ts.player_id
-WHERE (inj_p.player_id IS NULL
+-- Join on mlb_player_id (extracted from MSF image URL) which matches gamelog player_id
+LEFT JOIN raw.mlb_injuries inj_p ON inj_p.mlb_player_id = ts.player_id
+WHERE (inj_p.mlb_player_id IS NULL
        OR inj_p.playing_probability NOT IN ('OUT', 'DOUBTFUL'))
 ORDER BY ts.start_ts_utc, ts.game_slug, ts.player_id
 """
@@ -1067,10 +1068,11 @@ LEFT JOIN LATERAL (
     LIMIT 1
 ) opp_def_der ON TRUE
 -- Injury exclusion (Feature 12): skip OUT/DOUBTFUL batters
-LEFT JOIN raw.mlb_injuries inj_b ON inj_b.player_id = rp.player_id
+-- Join on mlb_player_id (extracted from MSF image URL) which matches gamelog player_id
+LEFT JOIN raw.mlb_injuries inj_b ON inj_b.mlb_player_id = rp.player_id
 WHERE br.ab_avg_10 >= %(min_ab_avg_10)s
   AND br.n_games_prev_10 >= %(min_n_games)s
-  AND (inj_b.player_id IS NULL
+  AND (inj_b.mlb_player_id IS NULL
        OR inj_b.playing_probability NOT IN ('OUT', 'DOUBTFUL'))
 ORDER BY tt.start_ts_utc, tt.game_slug, rp.player_id
 """
@@ -1945,6 +1947,18 @@ def _save_predictions(conn, rows: List[Dict]) -> None:
     if not rows:
         return
     with conn.cursor() as cur:
+        # Remove stale predictions for players now marked OUT/DOUBTFUL who were
+        # predicted in earlier runs today (upsert alone won't delete them).
+        cur.execute("""
+            DELETE FROM bets.mlb_prop_predictions pp
+            USING raw.mlb_injuries inj
+            WHERE inj.mlb_player_id = pp.player_id
+              AND inj.playing_probability IN ('OUT', 'DOUBTFUL')
+              AND pp.game_date_et = CURRENT_DATE
+        """)
+        deleted = cur.rowcount
+        if deleted:
+            log.info("_save_predictions: removed %d stale rows for OUT/DOUBTFUL players", deleted)
         for row in rows:
             cur.execute(_UPSERT_SQL, row)
     conn.commit()

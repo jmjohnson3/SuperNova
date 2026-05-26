@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
@@ -381,9 +382,9 @@ def upsert_injuries(conn) -> int:
     """
     Loads the most-recent injuries payload and upserts raw.mlb_injuries
     (latest snapshot per player_id).
-    MSF payload: payload["injuries"] -> list with player.id, player.firstName,
-    player.lastName, player.currentTeam.abbreviation,
-    injury.description, injury.playingProbability.
+    MSF payload: payload["players"] -> list; fields are directly on each entry
+    (no nested "player" sub-object). Injury info under entry["currentInjury"].
+    Only players with a currentInjury are upserted.
     """
     q = """
     SELECT fetched_at_utc, payload
@@ -406,25 +407,36 @@ def upsert_injuries(conn) -> int:
     fetched_at = r["fetched_at_utc"]
 
     rows = []
-    for entry in payload.get("injuries", []) or []:
-        player = entry.get("player") or {}
-        pid = _as_int(player.get("id"))
+    # MSF payload key is "players" (not "injuries"); each entry has fields directly
+    # (no nested "player" sub-object). Only include players with a currentInjury entry.
+    for entry in payload.get("players", []) or []:
+        pid = _as_int(entry.get("id"))
         if pid is None:
             continue
 
-        team = player.get("currentTeam") or {}
-        inj = entry.get("injury") or {}
+        inj = entry.get("currentInjury") or {}
+        if not inj:
+            continue  # skip healthy players
+
+        team = entry.get("currentTeam") or {}
+
+        # Extract MLB player ID from officialImageSrc URL (e.g. .../people/514888/...)
+        # This is the ID used in mlb_player_gamelogs and all other raw tables.
+        img = entry.get("officialImageSrc") or ""
+        m = re.search(r"/people/(\d+)/", img)
+        mlb_pid = int(m.group(1)) if m else None
 
         # playingProbability maps to a status string (e.g. "OUT", "DOUBTFUL", etc.)
         rows.append(
             {
                 "player_id": pid,
-                "first_name": player.get("firstName"),
-                "last_name": player.get("lastName"),
-                "primary_position": player.get("primaryPosition"),
+                "mlb_player_id": mlb_pid,
+                "first_name": entry.get("firstName"),
+                "last_name": entry.get("lastName"),
+                "primary_position": entry.get("primaryPosition"),
                 "jersey_number": (
-                    str(player.get("jerseyNumber"))
-                    if player.get("jerseyNumber") is not None
+                    str(entry.get("jerseyNumber"))
+                    if entry.get("jerseyNumber") is not None
                     else None
                 ),
                 "team_abbr": (
@@ -432,7 +444,7 @@ def upsert_injuries(conn) -> int:
                     if isinstance(team, dict) and team.get("abbreviation")
                     else None
                 ),
-                "roster_status": player.get("currentRosterStatus"),
+                "roster_status": entry.get("currentRosterStatus"),
                 "injury_description": inj.get("description"),
                 "playing_probability": inj.get("playingProbability"),
                 "source_fetched_at_utc": fetched_at,
@@ -445,12 +457,13 @@ def upsert_injuries(conn) -> int:
 
     sql = """
     INSERT INTO raw.mlb_injuries (
-      player_id, first_name, last_name, primary_position, jersey_number,
+      player_id, mlb_player_id, first_name, last_name, primary_position, jersey_number,
       team_abbr, roster_status, injury_description, playing_probability,
       source_fetched_at_utc
     )
     VALUES %s
     ON CONFLICT (player_id) DO UPDATE SET
+      mlb_player_id       = EXCLUDED.mlb_player_id,
       first_name          = EXCLUDED.first_name,
       last_name           = EXCLUDED.last_name,
       primary_position    = EXCLUDED.primary_position,
@@ -471,7 +484,8 @@ def upsert_injuries(conn) -> int:
             rows,
             template="""
             (
-              %(player_id)s, %(first_name)s, %(last_name)s, %(primary_position)s, %(jersey_number)s,
+              %(player_id)s, %(mlb_player_id)s, %(first_name)s, %(last_name)s,
+              %(primary_position)s, %(jersey_number)s,
               %(team_abbr)s, %(roster_status)s, %(injury_description)s, %(playing_probability)s,
               %(source_fetched_at_utc)s
             )
