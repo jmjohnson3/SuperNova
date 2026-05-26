@@ -38,10 +38,11 @@ class PredictConfig:
     # Minimum |edge| in runs to flag a run-line bet
     min_edge_run_line: float = 1.5
     # Minimum |edge| in runs to flag a total bet (over OR under)
-    # 2026-04-19 retrain: model now includes market_total as a feature (was pruned before,
-    # causing edges to be pure noise). CV shows model MAE 3.534 < market baseline 3.648.
-    # Lowered to 1.5 for trial; monitor 2-3 weeks then re-run scan_thresholds.
-    min_edge_total: float = 1.5
+    # 2026-05-25: raised 1.5→2.0. Analysis showed 90d WR of only 38-47% for edges
+    # 1.0–2.0 (overs systematically losing; pred_vs_mkt=+1.07 structural over-bias).
+    # Edges 2.5+ show 58-75% WR. 2.0 is the conservative cut until the over-bias
+    # is diagnosed and fixed in the model.
+    min_edge_total: float = 2.0
 
 
 SQL_GAMES_FOR_DATE = """
