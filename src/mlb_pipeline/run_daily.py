@@ -351,14 +351,14 @@ def main() -> None:
             steps.append(Step(
                 name="Train player prop models",
                 module="mlb_pipeline.modeling.train_player_prop_models",
-                timeout_s=7200,
+                timeout_s=10800,
                 critical=False,
                 parallel=True,
             ))
             steps.append(Step(
                 name="Train binary prop classifiers",
                 module="mlb_pipeline.modeling.train_binary_prop_models",
-                timeout_s=7200,
+                timeout_s=10800,
                 critical=False,
                 parallel=True,
             ))

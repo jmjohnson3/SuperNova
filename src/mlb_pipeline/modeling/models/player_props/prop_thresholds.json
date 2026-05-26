@@ -1,12 +1,12 @@
 {
-  "generated_at_utc": "2026-05-25T17:20:21Z",
+  "generated_at_utc": "2026-05-26T17:14:12Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
   "min_holdout_bets": 20,
   "threshold_strikeouts": 1.0,
   "threshold_hits": 0.05,
-  "threshold_total_bases": 1.5,
+  "threshold_total_bases": 999.0,
   "threshold_home_runs_over": 999.0,
   "threshold_home_runs_under": 999.0,
   "threshold_clf": 0.03,
@@ -16,52 +16,56 @@
       "reason": "accepted",
       "train": {
         "t": 1.0,
-        "n": 200,
-        "wr": 0.495,
-        "roi": -5.499999999999997
+        "n": 209,
+        "wr": 0.49760765550239233,
+        "roi": -5.002174858634195
       },
       "holdout": {
-        "n": 58,
-        "wr": 0.6206896551724138,
-        "roi": 18.495297805642632
+        "n": 52,
+        "wr": 0.5961538461538461,
+        "roi": 13.811188811188806
       }
     },
     "batter_hits": {
       "reason": "accepted",
       "train": {
         "t": 0.05,
-        "n": 5975,
-        "wr": 0.541255230125523,
-        "roi": 3.3305439330543924
+        "n": 6430,
+        "wr": 0.5444790046656298,
+        "roi": 3.9459917998020573
       },
       "holdout": {
-        "n": 4019,
-        "wr": 0.5469022144812142,
-        "roi": 4.408604582777258
+        "n": 3798,
+        "wr": 0.5450236966824644,
+        "roi": 4.049978457561391
       }
     },
     "batter_total_bases": {
-      "reason": "holdout_too_small",
+      "reason": "holdout_roi_non_positive",
       "chosen_train": {
-        "t": 1.25,
-        "n": 47,
-        "wr": 0.3617021276595745,
-        "roi": -30.947775628626683
+        "t": 0.2,
+        "n": 3388,
+        "wr": 0.3630460448642267,
+        "roi": -30.691209616829447
       },
-      "holdout_n": 0
+      "holdout": {
+        "n": 1506,
+        "wr": 0.33067729083665337,
+        "roi": -36.870699022093454
+      }
     },
     "batter_home_runs": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
         "t": 0.05,
-        "n": 4291,
-        "wr": 0.11792123048240503,
-        "roi": -77.48776508972269
+        "n": 4752,
+        "wr": 0.11468855218855219,
+        "roi": -78.10491276400367
       },
       "holdout": {
-        "n": 3991,
-        "wr": 0.09922325231771485,
-        "roi": -81.05737910298171
+        "n": 3771,
+        "wr": 0.09997348183505701,
+        "roi": -80.91415346785273
       }
     }
   }
