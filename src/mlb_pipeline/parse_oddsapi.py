@@ -55,8 +55,9 @@ _ODDS_API_TEAM_NAMES: dict[str, str] = {
     "minnesota twins": "MIN",
     "new york mets": "NYM",
     "new york yankees": "NYY",
-    "oakland athletics": "OAK",
-    "athletics": "OAK",
+    "oakland athletics": "OAK",       # 2024 season and prior (Sacramento / Oakland)
+    "las vegas athletics": "ATH",      # 2025+ (relocated)
+    "athletics": "ATH",               # Odds API short name used from 2025 onwards
     "philadelphia phillies": "PHI",
     "pittsburgh pirates": "PIT",
     "san diego padres": "SD",
@@ -336,6 +337,10 @@ def _iter_game_rows(
         away_team_raw = ev.get("away_team") or ""
         home_team = _norm_team_name(home_team_raw) if home_team_raw else home_team_raw
         away_team = _norm_team_name(away_team_raw) if away_team_raw else away_team_raw
+        # Skip All-Star / exhibition entries (Odds API sometimes includes these)
+        if home_team in ("AMERICAN LEAGUE", "NATIONAL LEAGUE") or \
+           away_team in ("AMERICAN LEAGUE", "NATIONAL LEAGUE"):
+            continue
 
         for book in (ev.get("bookmakers") or []):
             bookmaker_key = book.get("key")
