@@ -1110,7 +1110,7 @@ WHERE player_name IS NOT NULL
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _load_pitcher_artifacts(model_dir: Path):
-    """Returns (xgb_k, lgb_k, feature_cols, medians, backtest)."""
+    """Returns (xgb_k, lgb_k, feature_cols, medians, backtest, k_meta)."""
     xgb_k = XGBRegressor()
     xgb_k.load_model(str(model_dir / "strikeouts_xgb.json"))
 
@@ -1125,7 +1125,10 @@ def _load_pitcher_artifacts(model_dir: Path):
     bt_path = model_dir / "backtest_mae.json"
     bt = json.loads(bt_path.read_text()) if bt_path.exists() else {}
 
-    return xgb_k, lgb_k, feat, meds, bt
+    k_meta_path = model_dir / "k_model_meta.json"
+    k_meta = json.loads(k_meta_path.read_text()) if k_meta_path.exists() else {}
+
+    return xgb_k, lgb_k, feat, meds, bt, k_meta
 
 
 def _load_batter_artifacts(model_dir: Path):
@@ -2781,17 +2784,8 @@ def _print_discord(
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
         )
-        if tb_entries:
-            print("")
-            print("**Top 10 Total Bases Today**")
-            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(tb_entries[:10], start=1):
-                link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
-            tb_links = [lnk for _, _, _, _, _, _, lnk in tb_entries[:10] if lnk]
-            tb_parlay_url = build_fd_parlay_url(tb_links[:25]) if tb_links else None
-            if tb_parlay_url:
-                print(f"• Top 10 TB Parlay: [FD]({tb_parlay_url})")
-            printed_any = True
+        # TB leaderboard disabled: 45.7% win rate on over flags — negative value.
+        # Predictions still stored in DB (bets.mlb_prop_predictions) for future analysis.
 
         print("")
         # Dedicated Top-10 HR parlay (single slip unless links are missing).
@@ -3402,7 +3396,7 @@ def predict_props(cfg: PredictConfig) -> None:
 
     if pitcher_artifacts_ok:
         try:
-            xgb_k, lgb_k, feat_p, meds_p, bt = _load_pitcher_artifacts(model_dir)
+            xgb_k, lgb_k, feat_p, meds_p, bt, k_meta = _load_pitcher_artifacts(model_dir)
         except Exception:
             log.exception("Failed to load pitcher artifacts")
             pitcher_artifacts_ok = False
@@ -3473,7 +3467,16 @@ def predict_props(cfg: PredictConfig) -> None:
 
         if not df_p.empty:
             X_p = _prep_features(df_p, _PITCHER_META, feat_p, meds_p)
-            pred_k = _predict_ensemble(X_p, xgb_k, lgb_k)
+            pred_k_raw = _predict_ensemble(X_p, xgb_k, lgb_k)
+            if k_meta.get("is_residual"):
+                # Residual model: output is delta vs market K line. Reconstruct.
+                _modal_k = float(k_meta.get("modal_k_line", 4.5))
+                _mkt_k_arr = pd.to_numeric(
+                    df_p["market_k_line"], errors="coerce"
+                ).fillna(_modal_k).to_numpy()
+                pred_k = _mkt_k_arr + pred_k_raw
+            else:
+                pred_k = pred_k_raw
             sigma_k = bt.get("ci_strikeouts") if bt else None
             clf_pover_k: Optional[np.ndarray] = None
             if pitcher_clf_arts is not None:

@@ -2126,6 +2126,14 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _kpct = pd.to_numeric(X["k_pct_5"], errors="coerce").fillna(LEAGUE_KPCT)
         X["k_pct_shrunk"] = (_kpct * _ip5 + LEAGUE_KPCT * 20.0) / (_ip5 + 20.0)
 
+    # Expected Ks from rate × innings: k9_5 * ip_avg_5 / 9
+    # Explicitly encodes "how many Ks this pitcher is expected to get in a typical start".
+    # Highly correlated with market K line but from pitcher data, not book consensus.
+    if "k9_5" in X.columns and "ip_avg_5" in X.columns:
+        _k9  = pd.to_numeric(X["k9_5"],    errors="coerce").fillna(LEAGUE_K9)
+        _ip  = pd.to_numeric(X["ip_avg_5"], errors="coerce").fillna(5.0)
+        X["expected_k_from_ip"] = _k9 * _ip / 9.0
+
     # ── 4d: Catcher Framing × Pitcher Handedness ─────────────────────────────
     # LHP benefit less from framing (their delivery angle differs); scale accordingly.
     if "catcher_framing_rate" in X.columns:

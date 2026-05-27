@@ -544,9 +544,8 @@ def _save_predictions(
             if edge_t >= cfg.min_edge_total:
                 tot_bet = "over"
                 kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
-            elif -edge_t >= cfg.min_edge_total:
-                tot_bet = "under"
-                kf_t, wp_t = _kelly(-edge_t, sigma=sigma_t)
+            # Note: under bets disabled — structural over-prediction bias gives only
+            # ~27% win rate on unders. Model is calibrated for overs only.
 
         # Entry prices for price-based CLV tracking
         _fdr = (fd_links or {}).get((r["home_team_abbr"], r["away_team_abbr"]))

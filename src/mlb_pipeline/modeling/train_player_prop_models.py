@@ -1305,7 +1305,12 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     log.info("Pitcher training data: %d rows, %s → %s",
              len(df), df["game_date_et"].min().date(), df["game_date_et"].max().date())
 
-    y_k = df["strikeouts"].astype(float)
+    # Residual target: predict delta vs market K line. At inference:
+    # pred_k = market_k_line + model_output. This anchors on the book line and
+    # predicts the deviation, giving a strong prior from sharp oddsmakers.
+    _MODAL_K_LINE = 4.5
+    _mkt_k = pd.to_numeric(df["market_k_line"], errors="coerce").fillna(_MODAL_K_LINE)
+    y_k = df["strikeouts"].astype(float) - _mkt_k
     X_raw = _prep_X(df, _PITCHER_TARGETS, _PITCHER_META)
     feature_cols = list(X_raw.columns)
 
@@ -1319,7 +1324,7 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
         try:
             best_k_params = _run_optuna_for_stat(
                 cfg, df, X_raw, y_k, feature_cols, medians, "strikeouts",
-                objective="count:poisson",
+                objective="reg:squarederror",
             )
         except ImportError:
             log.warning("optuna not installed — skipping. pip install optuna")
@@ -1329,7 +1334,7 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     # Walk-forward evaluation
     wf_mae, wf_p68, wf_best_iters = _run_walk_forward(
         df, X_raw, y_k, feature_cols, medians, cfg, "strikeouts",
-        objective="count:poisson",
+        objective="reg:squarederror",
         params_override=best_k_params,
     )
     _n_est_k = int(np.percentile(wf_best_iters, 75) * 1.1) if wf_best_iters else cfg.n_estimators
@@ -1338,7 +1343,7 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     xgb, lgb_model = _fit_final_model(
         X_filled, y_k, cfg, "strikeouts",
         n_estimators=_n_est_k,
-        objective="count:poisson",
+        objective="reg:squarederror",
         params_override=best_k_params,
         dates=df["game_date_et"],
     )
@@ -1350,6 +1355,11 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     xgb.save_model(str(model_dir / "strikeouts_xgb.json"))
     if lgb_model is not None:
         lgb_model.booster_.save_model(str(model_dir / "lgb_strikeouts.txt"))
+
+    # Metadata: residual flag so predict_player_props.py reconstructs correctly.
+    (model_dir / "k_model_meta.json").write_text(
+        json.dumps({"is_residual": True, "modal_k_line": _MODAL_K_LINE}), encoding="utf-8"
+    )
 
     (model_dir / "feature_columns_pitchers.json").write_text(
         json.dumps(feature_cols), encoding="utf-8"
