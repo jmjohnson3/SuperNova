@@ -882,6 +882,9 @@ LEFT JOIN LATERAL (
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3
+  AND gl.at_bats >= 2          -- exclude pinch-hit/bench appearances; 1-AB games
+                               -- (avg TB=0.33) drag mean down from ~1.56 to ~1.34
+                               -- and cause the model to systematically underpredict
   AND gl.hits IS NOT NULL
   AND gl.total_bases IS NOT NULL
 ORDER BY b.game_date_et, b.game_slug, b.player_id

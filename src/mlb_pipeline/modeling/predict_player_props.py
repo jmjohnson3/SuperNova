@@ -2743,13 +2743,15 @@ def _print_discord(
         # skip_clf=True: batter_hits CLF has abs_cal_error=0.18-0.45 (disabled
         # in clf_bucket_controls). Its ~60-70% predictions compress the range
         # and block most batters. Use regression-only Poisson P(hits >= 1).
-        # min_p_over=0.60: Poisson P(hits>=1 | λ=0.92) ≈ 0.60, gives top ~25-30
-        # batters. min_pred=0.75 keeps only players with expected >0.75 hits.
+        # min_pred=1.0: pred>=1.0 vs O0.5 line = edge>=0.5; historical 58.9% WR
+        #   (vs 54.6% at pred>=0.75). Higher pred shows stronger discrimination:
+        #   pred 1.0-1.1 → 59-62%, pred 1.2 → 68%, pred 1.3 → 78%.
+        # min_p_over=0.63: Poisson P(hits>=1 | λ=1.0) ≈ 0.63.
         # min_edge_vs_market=0: market edge gate disabled (book lines ~-250).
         h_entries = _leaderboard_rows(
             all_batter_rows, "pred_hits", "batter_hits",
-            min_pred=0.75,
-            min_p_over=0.60,
+            min_pred=1.0,
+            min_p_over=0.63,
             min_edge_vs_market=0, over_price_key="market_hits_over_price",
             max_batting_order=7,
             require_confirmed_sp=False,
@@ -2769,23 +2771,34 @@ def _print_discord(
             printed_any = True
 
         # ── Top 10 Total Bases ────────────────────────────────────────────────
-        # skip_clf=True: TB CLF is disabled (abs_cal_error=0.32) and its stored
-        # ~0 predictions sabotage _apply_regression_gate even when disagreement
-        # with regression is small. Use regression-only Poisson P(over).
-        # min_pred=1.2: allow batters with pred below line (1.5) through the
-        # pred gate — typical range 1.2–1.5, Poisson P(over 1.5) ≈ 0.26–0.45.
-        # min_p_over=0.40: regression-derived P(over 1.5) for top batters ~0.40–0.46.
+        # skip_clf=True: TB CLF disabled (abs_cal_error=0.32).
+        # min_pred=2.0: pred>=2.0 vs O1.5 line = edge>=0.5. Historical win rates:
+        #   edge>=0.5 → 54.2% WR on 59 bets (~5/day). Below this threshold
+        #   (edge 0-0.5) the model generates negative value (39-44% WR).
+        # Root cause of low mean pred: 7% of training rows were 1-AB pinch
+        #   appearances (avg TB=0.33) dragging predictions down. Fixed by adding
+        #   gl.at_bats >= 2 filter; after retraining the threshold may be lowered.
+        # min_p_over=0.45: regression Poisson P(TB>=2 | λ=2.0) ≈ 0.59.
         tb_entries = _leaderboard_rows(
             all_batter_rows, "pred_total_bases", "batter_total_bases",
-            min_pred=1.2, min_p_over=0.40,
-            min_edge_vs_market=0, over_price_key="market_tb_over_price",
+            min_pred=2.0, min_p_over=0.45,
+            min_edge_vs_market=0.5, over_price_key="market_tb_over_price",
             max_batting_order=7,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
         )
-        # TB leaderboard disabled: 45.7% win rate on over flags — negative value.
-        # Predictions still stored in DB (bets.mlb_prop_predictions) for future analysis.
+        if tb_entries:
+            print("")
+            print("**Top TB Today (high confidence only)**")
+            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(tb_entries[:10], start=1):
+                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
+            tb_links = [lnk for _, _, _, _, _, _, lnk in tb_entries[:10] if lnk]
+            tb_parlay_url = build_fd_parlay_url(tb_links[:25]) if tb_links else None
+            if tb_parlay_url:
+                print(f"• Top TB Parlay: [FD]({tb_parlay_url})")
+            printed_any = True
 
         print("")
         # Dedicated Top-10 HR parlay (single slip unless links are missing).
