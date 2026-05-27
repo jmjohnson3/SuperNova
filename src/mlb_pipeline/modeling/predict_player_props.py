@@ -2275,11 +2275,20 @@ def _collect_prop_links_by_stat(
 def _collect_top_hr_parlay_links(
     all_batter_rows: List[Dict],
     prop_lines: Dict,
-    top_n: int = 10,
+    top_n: int = 7,
     max_per_game: int = 2,
+    min_pred: float = 0.17,
 ) -> List[str]:
-    """Collect top-N HR prediction links (deduped) for a single HR-focused parlay."""
-    rows = [r for r in all_batter_rows if r.get("pred_home_runs") is not None]
+    """Collect top-N HR prediction links (deduped) for a single HR-focused parlay.
+
+    min_pred=0.17: below this, predicted HR rate ≈ base rate (~10-11%). Historical
+    data shows real signal only starts around pred>=0.17 (10% HR rate at 0.17, rising
+    to 14-20% at 0.19-0.23 and 25-33% at 0.26-0.31). Rank 8+ of daily top picks
+    drops to 9% HR rate — parlay quality degrades sharply after top 7.
+    """
+    rows = [r for r in all_batter_rows
+            if r.get("pred_home_runs") is not None
+            and float(r.get("pred_home_runs") or 0.0) >= min_pred]
     rows.sort(key=lambda r: float(r.get("pred_home_runs") or 0.0), reverse=True)
     links: List[str] = []
     seen_links: set[str] = set()
@@ -2802,16 +2811,23 @@ def _print_discord(
 
         print("")
         # Dedicated Top-10 HR parlay (single slip unless links are missing).
-        top_hr_links = _collect_top_hr_parlay_links(all_batter_rows, prop_lines, top_n=10)
+        top_hr_links = _collect_top_hr_parlay_links(
+            all_batter_rows, prop_lines, top_n=7, min_pred=0.17
+        )
         if top_hr_links:
             top_hr_url = build_fd_parlay_url(top_hr_links[:25])
             if top_hr_url:
                 printed_any = True
-                print(f"• Top 10 HR Parlay: [FD]({top_hr_url})")
+                print(f"• Top 7 HR Parlay (pred>=0.17): [FD]({top_hr_url})")
 
         # ── HR top-10 leaderboard with line, P(HR), and bet link ──────────────
+        # Only show players with pred >= 0.15 — below this is base rate territory.
+        # Historical: pred 0.00-0.13 → 8-12% HR rate (= base rate, no signal).
+        #             pred 0.15+ → 10.7%+ and rising; pred 0.19+ → 14-21%.
         hr_top_rows_d = sorted(
-            [r for r in all_batter_rows if r.get("pred_home_runs") is not None],
+            [r for r in all_batter_rows
+             if r.get("pred_home_runs") is not None
+             and float(r.get("pred_home_runs") or 0.0) >= 0.15],
             key=lambda r: r["pred_home_runs"], reverse=True,
         )
         _HR_PARLAY_LEGS = 4
