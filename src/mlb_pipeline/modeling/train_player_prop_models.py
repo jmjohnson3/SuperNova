@@ -1265,6 +1265,17 @@ def _optuna_objective_props(
     return float(np.mean(mae_scores)) if mae_scores else float("inf")
 
 
+def _load_saved_optuna_params(cfg: TrainConfig) -> Dict:
+    """Load previously-saved Optuna best params (used when --skip-optuna is passed)."""
+    p = cfg.model_dir / "optuna_best_params.json"
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
 def _run_optuna_for_stat(
     cfg: TrainConfig,
     df: pd.DataFrame,
@@ -1337,7 +1348,8 @@ def train_pitcher_models(cfg: TrainConfig) -> Dict:
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
     # Optuna hyperparameter tuning
-    best_k_params: Dict = {}
+    _saved_params = _load_saved_optuna_params(cfg)
+    best_k_params: Dict = _saved_params.get("strikeouts", {}) if not cfg.run_optuna else {}
     if cfg.run_optuna:
         try:
             best_k_params = _run_optuna_for_stat(
@@ -1422,7 +1434,12 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
     X_filled = apply_medians(X_raw, medians, feature_cols)
 
     # Optuna hyperparameter tuning (separate study per stat)
-    best: Dict[str, Dict] = {"hits": {}, "total_bases": {}, "home_runs": {}}
+    _saved_params = _load_saved_optuna_params(cfg)
+    best: Dict[str, Dict] = {
+        "hits":        _saved_params.get("hits", {})        if not cfg.run_optuna else {},
+        "total_bases": _saved_params.get("total_bases", {}) if not cfg.run_optuna else {},
+        "home_runs":   _saved_params.get("home_runs", {})   if not cfg.run_optuna else {},
+    }
     if cfg.run_optuna:
         try:
             best["hits"]        = _run_optuna_for_stat(cfg, df, X_raw, y_hits,  feature_cols, medians, "hits",        "count:poisson")
@@ -1483,12 +1500,26 @@ def train_batter_models(cfg: TrainConfig) -> Dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    import argparse
+    from dataclasses import replace as _dc_replace
+
+    ap = argparse.ArgumentParser(description="Train MLB player prop regression models")
+    ap.add_argument(
+        "--skip-optuna", action="store_true",
+        help="Skip Optuna hyperparameter search and reuse saved optuna_best_params.json. "
+             "Cuts runtime from ~2.5 h to ~1.5 h; used by run_daily_and_notify.",
+    )
+    args = ap.parse_args()
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
     cfg = TrainConfig()
+    if args.skip_optuna:
+        cfg = _dc_replace(cfg, run_optuna=False)
+        log.info("--skip-optuna: reusing saved Optuna params from optuna_best_params.json")
     cfg.model_dir.mkdir(parents=True, exist_ok=True)
 
     results = {}

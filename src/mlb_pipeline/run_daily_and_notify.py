@@ -72,7 +72,7 @@ STEPS: list[Step] = [
     Step("Train Game Models",      "mlb_pipeline.modeling.train_game_models",
          critical=True, post_output=False),
     Step("Train Player Prop Models", "mlb_pipeline.modeling.train_player_prop_models",
-         critical=False, post_output=False),
+         args=("--skip-optuna",), critical=False, post_output=False),
     Step("Train Binary Prop Classifiers", "mlb_pipeline.modeling.train_binary_prop_models",
          critical=False, post_output=False),
     Step("Optimize Prop Thresholds", "mlb_pipeline.modeling.optimize_prop_thresholds",
