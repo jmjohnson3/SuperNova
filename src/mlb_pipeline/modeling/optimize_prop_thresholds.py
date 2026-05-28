@@ -194,8 +194,23 @@ def main() -> None:
         min_holdout_bets=args.min_holdout_bets,
     )
     payload = optimize(cfg)
-    cfg.model_dir.mkdir(parents=True, exist_ok=True)
+
+    # Apply manual overrides — any key under "_manual_overrides" in the existing
+    # file wins over the optimizer's computed value.  This lets you pin a threshold
+    # (e.g. after a model retrain) without waiting for the holdout window to refill.
     out_path = cfg.model_dir / cfg.out_file
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text(encoding="utf-8"))
+            for k, v in existing.get("_manual_overrides", {}).items():
+                if k in payload:
+                    payload[k] = v
+            if existing.get("_manual_overrides"):
+                payload["_manual_overrides"] = existing["_manual_overrides"]
+        except Exception:
+            pass
+
+    cfg.model_dir.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"Wrote threshold overrides: {out_path}")
 

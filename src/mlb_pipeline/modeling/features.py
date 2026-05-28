@@ -2275,6 +2275,25 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _rhb_col = pd.to_numeric(X["sp_k_pct_vs_rhb_25"], errors="coerce").fillna(0.22)
         X["opp_sp_k_pct_vs_batter_hand"] = _is_lhb * _lhb_col + (~_is_lhb) * _rhb_col
 
+    # ── SP HR rate by batter handedness (MLB033) ─────────────────────────────
+    _LEAGUE_HR_RATE = 0.035   # ~3.5% HR/AB is MLB average
+    if "sp_hr_rate_vs_lhb_25" in X.columns and "sp_hr_rate_vs_rhb_25" in X.columns:
+        _hr_lhb = pd.to_numeric(X["sp_hr_rate_vs_lhb_25"], errors="coerce").fillna(_LEAGUE_HR_RATE)
+        _hr_rhb = pd.to_numeric(X["sp_hr_rate_vs_rhb_25"], errors="coerce").fillna(_LEAGUE_HR_RATE)
+        if "batter_hand" in X.columns:
+            _is_lhb = X["batter_hand"].isin(["L", "l"])
+            X["opp_sp_hr_rate_vs_hand"] = _hr_lhb.where(_is_lhb, _hr_rhb)
+            X["opp_sp_hr_rate_vs_hand_vs_avg"] = X["opp_sp_hr_rate_vs_hand"] - _LEAGUE_HR_RATE
+            if "hr_avg_10_vs_hand" in X.columns:
+                _bat_hr = pd.to_numeric(X["hr_avg_10_vs_hand"], errors="coerce").fillna(0.035)
+                X["hr_rate_hand_x_sp_hr_rate"] = _bat_hr * X["opp_sp_hr_rate_vs_hand"]
+        X["opp_sp_hr_rate_split"] = _hr_lhb - _hr_rhb  # SP platoon magnitude
+        if "sp_hr_rate_vs_lhb_10" in X.columns and "batter_hand" in X.columns:
+            _hr10l = pd.to_numeric(X["sp_hr_rate_vs_lhb_10"], errors="coerce").fillna(_LEAGUE_HR_RATE)
+            _hr10r = pd.to_numeric(X["sp_hr_rate_vs_rhb_10"], errors="coerce").fillna(_LEAGUE_HR_RATE)
+            _hr10  = _hr10l.where(_is_lhb, _hr10r)
+            X["opp_sp_hr_rate_vs_hand_trend"] = _hr10 - X["opp_sp_hr_rate_vs_hand"]  # positive = getting worse recently
+
     # ── Platoon trend 10 vs 40 game (MLB012 extended, Retrain 2 #2) ───────────
     if "hits_avg_10_vs_hand" in X.columns and "hits_avg_40_vs_hand" in X.columns:
         _h10 = pd.to_numeric(X["hits_avg_10_vs_hand"], errors="coerce")

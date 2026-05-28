@@ -206,6 +206,11 @@ SELECT
     sp_hand_k.sp_k_pct_vs_rhb_25,
     sp_hand_k.sp_k_pct_vs_lhb_10,
     sp_hand_k.sp_k_pct_vs_rhb_10,
+    -- SP HR rate by batter handedness (MLB033)
+    sp_hand_hr.sp_hr_rate_vs_lhb_25,
+    sp_hand_hr.sp_hr_rate_vs_rhb_25,
+    sp_hand_hr.sp_hr_rate_vs_lhb_10,
+    sp_hand_hr.sp_hr_rate_vs_rhb_10,
     -- SP career stats vs this specific opposing team (MLB024)
     sp_vs_tm.svt_games,
     sp_vs_tm.svt_era,
@@ -334,6 +339,10 @@ LEFT JOIN LATERAL (
 LEFT JOIN features.mlb_sp_hand_k_pct_mat sp_hand_k
     ON sp_hand_k.pitcher_id = p.player_id
     AND sp_hand_k.game_slug  = p.game_slug
+-- SP HR rate by batter handedness (MLB033)
+LEFT JOIN features.mlb_sp_hand_hr_rate_mat sp_hand_hr
+    ON sp_hand_hr.pitcher_id = p.player_id
+    AND sp_hand_hr.game_slug = p.game_slug
 -- SP career stats vs this specific opposing team (MLB024)
 LEFT JOIN features.mlb_sp_vs_team_mat sp_vs_tm
     ON sp_vs_tm.pitcher_id    = p.player_id
@@ -629,6 +638,11 @@ SELECT
     opp_sp_hand_k.sp_k_pct_vs_rhb_25,
     opp_sp_hand_k.sp_k_pct_vs_lhb_10,
     opp_sp_hand_k.sp_k_pct_vs_rhb_10,
+    -- Opposing SP HR rate by batter handedness (MLB033)
+    opp_sp_hand_hr.sp_hr_rate_vs_lhb_25,
+    opp_sp_hand_hr.sp_hr_rate_vs_rhb_25,
+    opp_sp_hand_hr.sp_hr_rate_vs_lhb_10,
+    opp_sp_hand_hr.sp_hr_rate_vs_rhb_10,
     -- Confirmed batting order from lineup (raw.mlb_lineups)
     conf_lu.batting_order  AS confirmed_batting_order,
     conf_lu.lineup_source  AS confirmed_lineup_source,
@@ -823,6 +837,10 @@ LEFT JOIN features.mlb_batter_venue_stats_mat b_venue
 LEFT JOIN features.mlb_sp_hand_k_pct_mat opp_sp_hand_k
     ON opp_sp_hand_k.pitcher_id = sp.player_id
     AND opp_sp_hand_k.game_slug  = g.game_slug
+-- Opposing SP HR rate by batter handedness (MLB033 matview — fast direct join)
+LEFT JOIN features.mlb_sp_hand_hr_rate_mat opp_sp_hand_hr
+    ON opp_sp_hand_hr.pitcher_id = sp.player_id
+    AND opp_sp_hand_hr.game_slug = b.game_slug
 -- Confirmed batting order from pre-game lineup (raw.mlb_lineups)
 LEFT JOIN raw.mlb_lineups conf_lu
     ON  conf_lu.game_slug  = b.game_slug
@@ -882,9 +900,6 @@ LEFT JOIN LATERAL (
 WHERE g.status = 'final'
   AND b.ab_avg_10 >= 2.5
   AND b.n_games_prev_10 >= 3
-  AND gl.at_bats >= 2          -- exclude pinch-hit/bench appearances; 1-AB games
-                               -- (avg TB=0.33) drag mean down from ~1.56 to ~1.34
-                               -- and cause the model to systematically underpredict
   AND gl.hits IS NOT NULL
   AND gl.total_bases IS NOT NULL
 ORDER BY b.game_date_et, b.game_slug, b.player_id

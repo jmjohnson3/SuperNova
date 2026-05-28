@@ -260,6 +260,11 @@ SELECT
     sp_hand_k.sp_k_pct_vs_rhb_25,
     sp_hand_k.sp_k_pct_vs_lhb_10,
     sp_hand_k.sp_k_pct_vs_rhb_10,
+    -- SP HR rate by batter handedness (MLB033)
+    sp_hand_hr.sp_hr_rate_vs_lhb_25,
+    sp_hand_hr.sp_hr_rate_vs_rhb_25,
+    sp_hand_hr.sp_hr_rate_vs_lhb_10,
+    sp_hand_hr.sp_hr_rate_vs_rhb_10,
     -- SP career stats vs today's opponent (MLB024)
     sp_vs_tm.svt_games,
     sp_vs_tm.svt_era,
@@ -408,6 +413,16 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) sp_hand_k ON TRUE
+-- SP HR rate by batter handedness (MLB033)
+LEFT JOIN LATERAL (
+    SELECT sp_hr_rate_vs_lhb_25, sp_hr_rate_vs_rhb_25,
+           sp_hr_rate_vs_lhb_10, sp_hr_rate_vs_rhb_10
+    FROM features.mlb_sp_hand_hr_rate
+    WHERE pitcher_id   = ts.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) sp_hand_hr ON TRUE
 -- SP career stats vs today's specific opponent (MLB024)
 LEFT JOIN LATERAL (
     SELECT svt_games, svt_era, svt_k9, svt_k_pct, svt_era_last3, svt_k9_last3
@@ -747,6 +762,11 @@ SELECT
     opp_sp_hand_k.sp_k_pct_vs_rhb_25,
     opp_sp_hand_k.sp_k_pct_vs_lhb_10,
     opp_sp_hand_k.sp_k_pct_vs_rhb_10,
+    -- Opposing SP HR rate by batter handedness (MLB033)
+    opp_sp_hand_hr.sp_hr_rate_vs_lhb_25,
+    opp_sp_hand_hr.sp_hr_rate_vs_rhb_25,
+    opp_sp_hand_hr.sp_hr_rate_vs_lhb_10,
+    opp_sp_hand_hr.sp_hr_rate_vs_rhb_10,
     -- Confirmed batting order from pre-game lineup (raw.mlb_lineups)
     conf_lu.batting_order  AS confirmed_batting_order,
     conf_lu.lineup_source  AS confirmed_lineup_source,
@@ -1022,6 +1042,16 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) opp_sp_hand_k ON TRUE
+-- Opposing SP HR rate by batter handedness (MLB033)
+LEFT JOIN LATERAL (
+    SELECT sp_hr_rate_vs_lhb_25, sp_hr_rate_vs_rhb_25,
+           sp_hr_rate_vs_lhb_10, sp_hr_rate_vs_rhb_10
+    FROM features.mlb_sp_hand_hr_rate
+    WHERE pitcher_id   = sp.player_id
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) opp_sp_hand_hr ON TRUE
 -- Confirmed batting order from pre-game lineup
 LEFT JOIN raw.mlb_lineups conf_lu
     ON  conf_lu.game_slug  = tt.game_slug

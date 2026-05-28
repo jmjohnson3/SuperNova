@@ -48,6 +48,7 @@ _MLB_SQL_VIEWS = [
     "MLB030_mlb_batter_babip_rolling.sql",             # Batter rolling BABIP (luck/regression signal for hits)
     "MLB031_mlb_sp_babip_rolling.sql",                 # SP rolling BABIP-against (luck/regression signal for Ks)
     "MLB032_mlb_team_der_rolling.sql",                 # Team Defensive Efficiency Rating (DER) rolling 20 games
+    "MLB033_mlb_sp_hand_hr_rate.sql",                  # SP HR rate vs LHB/RHB (Feature 13)
 ]
 
 # Applied AFTER _refresh_matviews() — MLB011 depends on mlb_player_batting_rolling_mat.
@@ -76,6 +77,7 @@ _MLB_MATVIEW_REFRESH = [
     "MLB030b_mlb_batter_babip_rolling_mat.sql",
     "MLB031b_mlb_sp_babip_rolling_mat.sql",
     "MLB032b_mlb_team_der_rolling_mat.sql",
+    "MLB033b_mlb_sp_hand_hr_rate_mat.sql",
 ]
 
 _MLB_MATVIEW_REFRESH_SQL = """
@@ -104,6 +106,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_offensive_momentum_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_batter_babip_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_babip_rolling_mat;
 REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_team_der_rolling_mat;
+REFRESH MATERIALIZED VIEW CONCURRENTLY features.mlb_sp_hand_hr_rate_mat;
 """
 
 
@@ -173,6 +176,7 @@ _MATVIEW_TO_VIEW = {
     "mlb_batter_babip_rolling_mat":     "mlb_batter_babip_rolling",
     "mlb_sp_babip_rolling_mat":         "mlb_sp_babip_rolling",
     "mlb_team_der_rolling_mat":         "mlb_team_der_rolling",
+    "mlb_sp_hand_hr_rate_mat":          "mlb_sp_hand_hr_rate",
 }
 
 

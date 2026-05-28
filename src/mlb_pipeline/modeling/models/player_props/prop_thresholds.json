@@ -1,12 +1,12 @@
 {
-  "generated_at_utc": "2026-05-27T19:13:58Z",
+  "generated_at_utc": "2026-05-28T20:44:31Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
   "min_holdout_bets": 20,
   "threshold_strikeouts": 1.0,
   "threshold_hits": 0.05,
-  "threshold_total_bases": 999.0,
+  "threshold_total_bases": 0.5,
   "threshold_home_runs_over": 999.0,
   "threshold_home_runs_under": 999.0,
   "threshold_clf": 0.03,
@@ -16,57 +16,60 @@
       "reason": "accepted",
       "train": {
         "t": 1.0,
-        "n": 209,
-        "wr": 0.49760765550239233,
-        "roi": -5.002174858634195
+        "n": 211,
+        "wr": 0.4976303317535545,
+        "roi": -4.997845756139609
       },
       "holdout": {
-        "n": 56,
-        "wr": 0.5892857142857143,
-        "roi": 12.500000000000005
+        "n": 57,
+        "wr": 0.5964912280701754,
+        "roi": 13.875598086124397
       }
     },
     "batter_hits": {
       "reason": "accepted",
       "train": {
         "t": 0.05,
-        "n": 6430,
-        "wr": 0.5444790046656298,
-        "roi": 3.9459917998020573
+        "n": 6611,
+        "wr": 0.5446982302223566,
+        "roi": 3.987843951540817
       },
       "holdout": {
-        "n": 3980,
-        "wr": 0.5467336683417086,
-        "roi": 4.376427592508001
+        "n": 4028,
+        "wr": 0.5531281032770605,
+        "roi": 5.597183352893376
       }
     },
     "batter_total_bases": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
         "t": 0.2,
-        "n": 3388,
-        "wr": 0.3630460448642267,
-        "roi": -30.691209616829447
+        "n": 3464,
+        "wr": 0.36200923787528866,
+        "roi": -30.889145496535804
       },
       "holdout": {
-        "n": 1598,
-        "wr": 0.327909887359199,
-        "roi": -37.39902150415292
+        "n": 1655,
+        "wr": 0.33353474320241694,
+        "roi": -36.325185388629485
       }
     },
     "batter_home_runs": {
       "reason": "holdout_roi_non_positive",
       "chosen_train": {
         "t": 0.05,
-        "n": 4752,
-        "wr": 0.11468855218855219,
-        "roi": -78.10491276400367
+        "n": 4934,
+        "wr": 0.11451155249290636,
+        "roi": -78.1387036149906
       },
       "holdout": {
-        "n": 3955,
-        "wr": 0.10164348925410872,
-        "roi": -80.59533386967016
+        "n": 4002,
+        "wr": 0.10519740129935032,
+        "roi": -79.91685975194221
       }
     }
+  },
+  "_manual_overrides": {
+    "threshold_total_bases": 0.5
   }
 }
