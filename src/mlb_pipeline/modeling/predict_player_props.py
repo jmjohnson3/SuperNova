@@ -2814,14 +2814,15 @@ def _print_discord(
         # min_pred=2.0: pred>=2.0 vs O1.5 line = edge>=0.5. Historical win rates:
         #   edge>=0.5 → 54.2% WR on 59 bets (~5/day). Below this threshold
         #   (edge 0-0.5) the model generates negative value (39-44% WR).
-        # Root cause of low mean pred: 7% of training rows were 1-AB pinch
-        #   appearances (avg TB=0.33) dragging predictions down. Fixed by adding
-        #   gl.at_bats >= 2 filter; after retraining the threshold may be lowered.
+        # min_edge_vs_market=0: disabled — market_tb_over_price prices are near
+        #   even money (-120 to +110), implying mkt_p ≈ 0.50-0.55.  With Poisson
+        #   p_over ≈ 0.65-0.70 for pred=2.0, the probability gap is only 0.10-0.22
+        #   and can never reach 0.5.  min_pred=2.0 already enforces edge >= 0.5.
         # min_p_over=0.45: regression Poisson P(TB>=2 | λ=2.0) ≈ 0.59.
         tb_entries = _leaderboard_rows(
             all_batter_rows, "pred_total_bases", "batter_total_bases",
             min_pred=2.0, min_p_over=0.45,
-            min_edge_vs_market=0.5, over_price_key="market_tb_over_price",
+            min_edge_vs_market=0, over_price_key="market_tb_over_price",
             max_batting_order=7,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
