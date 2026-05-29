@@ -2240,6 +2240,23 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         _ump_k = pd.to_numeric(X["ump_k9_avg_10"],       errors="coerce").fillna(8.5)
         X["framing_x_ump_k9"] = _frv * _ump_k   # positive = high-framing catcher + K-heavy ump
 
+    # ── Opposing catcher framing (MLB020) — batter model ────────────────────
+    # opp_catcher_framing_rv > 0 means the catcher stealing extra called strikes
+    # from borderline pitches → fewer walks, more Ks, lower hit/TB probability.
+    if "opp_catcher_framing_rv" in X.columns:
+        _opp_frv = pd.to_numeric(X["opp_catcher_framing_rv"], errors="coerce").fillna(0.0)
+        X["opp_catcher_framing_rv_filled"] = _opp_frv
+        X["opp_catcher_is_elite_framer"] = (_opp_frv > 1.0).astype(int)
+        X["opp_catcher_is_poor_framer"]  = (_opp_frv < -1.0).astype(int)
+        # Compound K environment: good framing × K-heavy umpire hurts batters most
+        if "ump_k9_avg_10" in X.columns:
+            _ump_k = pd.to_numeric(X["ump_k9_avg_10"], errors="coerce").fillna(8.5)
+            X["opp_framing_x_ump_k9"] = _opp_frv * _ump_k
+        # Good framing amplifies a high-K SP even more
+        if "opp_sp_k_pct_career" in X.columns:
+            _sp_k = pd.to_numeric(X["opp_sp_k_pct_career"], errors="coerce").fillna(0.22)
+            X["opp_framing_x_sp_k_pct"] = _opp_frv * _sp_k
+
     # ── Day-after-night fatigue (#6) ─────────────────────────────────────────
     # A day game (noon/1pm ET start) after playing the previous night gives
     # ~14 hrs less recovery than a normal day off. Applies to position players.
@@ -2293,6 +2310,107 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             _hr10r = pd.to_numeric(X["sp_hr_rate_vs_rhb_10"], errors="coerce").fillna(_LEAGUE_HR_RATE)
             _hr10  = _hr10l.where(_is_lhb, _hr10r)
             X["opp_sp_hr_rate_vs_hand_trend"] = _hr10 - X["opp_sp_hr_rate_vs_hand"]  # positive = getting worse recently
+
+    # ── HR power composite signals (deep HR prediction v2) ───────────────────
+    # Analysis-driven: SP fastball hard-hit rate, warm weather × power,
+    # hot-streak × power tier. All features conditional on column availability
+    # so they are no-ops for rows that don't have Statcast pitcher arsenal data.
+
+    # SP fastball hard-hit rate interactions
+    # opp_sp_fb_hard_hit_pct > ~37% = SP is unusually hittable on FB contact
+    _MLB_FB_HH_AVG = 34.0  # MLB average FB hard-hit % (~34%)
+    if "opp_sp_fb_hard_hit_pct" in X.columns:
+        _fb_hh = pd.to_numeric(X["opp_sp_fb_hard_hit_pct"], errors="coerce").fillna(_MLB_FB_HH_AVG) / 100.0
+        X["sp_fb_hard_hit_vs_avg"] = _fb_hh - (_MLB_FB_HH_AVG / 100.0)
+        if "sc_barrel_rate" in X.columns:
+            _barrel = pd.to_numeric(X["sc_barrel_rate"], errors="coerce").fillna(0.0)
+            X["sp_fb_hard_hit_x_barrel"] = _fb_hh * _barrel  # power batter vs hard-contact SP
+        if "sc_xiso" in X.columns:
+            _xiso = pd.to_numeric(X["sc_xiso"], errors="coerce").fillna(0.15)
+            X["sp_fb_hard_hit_x_xiso"] = _fb_hh * _xiso  # SP FB vulnerability × batter xISO
+        if "park_hr_factor" in X.columns:
+            _phf = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+            X["sp_fb_hard_hit_x_park"] = _fb_hh * _phf  # soft FB contact in HR park = amplified risk
+
+    # SP fastball xwOBA × batter power: high xwOBA-against FB = pitcher can't miss-bat on FB
+    if "opp_sp_fb_xwoba" in X.columns:
+        _fb_xw = pd.to_numeric(X["opp_sp_fb_xwoba"], errors="coerce").fillna(0.35)
+        if "sc_brl_pa" in X.columns:
+            _brl = pd.to_numeric(X["sc_brl_pa"], errors="coerce").fillna(0.035)
+            X["sp_fb_xwoba_x_brl_pa"] = _fb_xw * _brl
+        if "park_hr_factor" in X.columns:
+            _phf = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+            X["sp_fb_xwoba_x_park_hr"] = _fb_xw * _phf
+
+    # Warm weather (70°F+) × power metrics: heat boosts ball carry significantly
+    # Data shows +31.8% HR rate at 80°F+ vs <50°F
+    if "temperature_f" in X.columns:
+        _temp_hr = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(70.0)
+        if "is_dome" in X.columns:
+            _dome = pd.to_numeric(X["is_dome"], errors="coerce").fillna(0.0)
+            _temp_hr = _temp_hr.where(_dome == 0, 72.0)
+        _warm = (_temp_hr - 70.0).clip(lower=0.0) / 20.0  # ramps 0→1 from 70°F to 90°F
+        if "sc_barrel_rate" in X.columns:
+            X["warm_x_barrel"] = _warm * pd.to_numeric(X["sc_barrel_rate"], errors="coerce").fillna(0.0)
+        if "park_hr_factor" in X.columns:
+            _phf2 = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+            X["warm_x_park_hr"] = _warm * _phf2  # warm weather amplifies park HR advantage
+        if "sc_brl_pa" in X.columns:
+            X["warm_x_brl_pa"] = _warm * pd.to_numeric(X["sc_brl_pa"], errors="coerce").fillna(0.035)
+
+    # Hot streak × power tier: batter currently heating up AND has real power tool
+    # hr_streak_score combines HR last game (weight 0.6) + streak rate last 5 (weight 0.4)
+    if "hr_streak_score" in X.columns:
+        _streak = pd.to_numeric(X["hr_streak_score"], errors="coerce").fillna(0.0)
+        if "sc_brl_pa" in X.columns:
+            _brl2 = pd.to_numeric(X["sc_brl_pa"], errors="coerce").fillna(0.035)
+            X["hr_streak_x_brl_pa"] = _streak * _brl2  # hot streak for confirmed power bat
+        if "park_hr_factor" in X.columns:
+            _phf3 = pd.to_numeric(X["park_hr_factor"], errors="coerce").fillna(1.0)
+            X["hr_streak_x_park"] = _streak * _phf3   # hot streak in HR-friendly park
+        if "opp_sp_hr9_5" in X.columns:
+            _hr9s = pd.to_numeric(X["opp_sp_hr9_5"], errors="coerce").fillna(1.1)
+            X["hr_streak_x_opp_hr9"] = _streak * (_hr9s / 1.1)  # hot streak vs HR-prone SP
+
+    # HR count in last 3 games: tiered momentum (0→10.7%, 1→13.3%, 2→15.8%, 3→19.2% HR rate)
+    # Raw count has more information than the streak_score composite for the HR model
+    if "hr_count_last3" in X.columns:
+        _last3_ct = pd.to_numeric(X["hr_count_last3"], errors="coerce").fillna(0.0)
+        X["hr_count_last3_2plus"] = (_last3_ct >= 2).astype(int)  # 15.8%+ HR rate bucket
+        X["hr_count_last3_3"]     = (_last3_ct >= 3).astype(int)  # 19.2% HR rate bucket (hottest)
+        if "sc_brl_pa" in X.columns:
+            _brl3 = pd.to_numeric(X["sc_brl_pa"], errors="coerce").fillna(0.035)
+            X["hr_count_last3_x_brl_pa"] = _last3_ct * _brl3  # only power hitters' momentum counts
+
+    # Market game total × batter power: high-scoring-game environment amplifies HR probability
+    # Analysis: 9-10 total → 12.64% HR rate vs <7 total → 9.12% (+3.52 pp)
+    if "market_total" in X.columns:
+        _mtot = pd.to_numeric(X["market_total"], errors="coerce").fillna(8.5)
+        X["high_total_flag"] = (_mtot >= 9.0).astype(int)  # 9+ total = elevated HR environment
+        if "sc_brl_pa" in X.columns:
+            _brl4 = pd.to_numeric(X["sc_brl_pa"], errors="coerce").fillna(0.035)
+            X["market_total_x_brl_pa"] = _mtot * _brl4  # high-scoring game × confirmed power bat
+
+    # SP fastball velocity tier: slower fastballs give up more HRs
+    # <90 mph → 12.09%, 90-93 → 12.18%, 93-96 → 11.36%, 96+ → 10.87%
+    if "opp_sp_fb_velo_avg_5" in X.columns:
+        _velo = pd.to_numeric(X["opp_sp_fb_velo_avg_5"], errors="coerce").fillna(93.5)
+        X["opp_sp_very_slow_fb"] = (_velo < 90.0).astype(int)  # 12.09% HR rate bucket
+        X["opp_sp_elite_velo"]   = (_velo >= 96.0).astype(int)  # 10.87% HR rate bucket (suppresses HR)
+
+    # Month-of-season HR factor: July-August peak (+2.22 pp vs April-May)
+    # Driven primarily by temperature but partially by pitcher adaptation
+    # April/May: 10.4-10.9%, June: 11.7%, July-August: 12.4-12.6%, September: 11.3%
+    if "game_month" in X.columns:
+        _month = pd.to_numeric(X["game_month"], errors="coerce").fillna(6.0).round().astype(int)
+        X["is_summer_hr_peak"]   = (_month.isin([7, 8])).astype(int)  # peak HR months
+        X["is_spring_hr_trough"] = (_month.isin([4, 5])).astype(int)  # lowest HR months
+        # Continuous factor: 0.0 = April, ramps to 1.0 = July/August, back to 0.4 = September
+        _mf_map = {4: 0.0, 5: 0.1, 6: 0.5, 7: 1.0, 8: 1.0, 9: 0.4, 10: 0.3}
+        X["season_hr_month_factor"] = _month.map(_mf_map).fillna(0.0)
+        if "sc_brl_pa" in X.columns:
+            _brl5 = pd.to_numeric(X["sc_brl_pa"], errors="coerce").fillna(0.035)
+            X["summer_peak_x_brl_pa"] = X["is_summer_hr_peak"] * _brl5
 
     # ── Platoon trend 10 vs 40 game (MLB012 extended, Retrain 2 #2) ───────────
     if "hits_avg_10_vs_hand" in X.columns and "hits_avg_40_vs_hand" in X.columns:

@@ -272,11 +272,15 @@ def _prep_X_clf(
 
     X = _coerce_numeric(X)
 
+    # Derived features must run BEFORE get_dummies so that string columns like
+    # "batter_hand" are still available for matchup-specific features
+    # (e.g. MLB033 opp_sp_hr_rate_vs_hand picks L vs R rate based on batter side).
+    X = add_player_prop_derived_features(X)
+
     bad = [c for c in X.columns if not is_numeric_dtype(X[c])]
     if bad:
         X = pd.get_dummies(X, columns=bad, drop_first=False, dummy_na=True)
 
-    X = add_player_prop_derived_features(X)
     return X
 
 

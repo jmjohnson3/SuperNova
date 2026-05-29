@@ -1,10 +1,10 @@
 {
-  "brier_strikeouts": 0.2555856031616374,
-  "auc_strikeouts": 0.5591557518529799,
-  "brier_hits": 0.23779329527877313,
-  "auc_hits": 0.598349494930793,
-  "brier_total_bases": 0.24723557804667334,
-  "auc_total_bases": 0.5603593996141388,
-  "brier_home_runs": 0.061327439557530235,
-  "auc_home_runs": 0.7457412067139214
+  "brier_strikeouts": 0.25718528992089085,
+  "auc_strikeouts": 0.5613767895217789,
+  "brier_hits": 0.2385289001937999,
+  "auc_hits": 0.5945888716468278,
+  "brier_total_bases": 0.24655044541895127,
+  "auc_total_bases": 0.5642419066499107,
+  "brier_home_runs": 0.06123239446987043,
+  "auc_home_runs": 0.7507278718175233
 }

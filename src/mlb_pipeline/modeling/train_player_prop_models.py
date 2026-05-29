@@ -426,6 +426,7 @@ SELECT
     b.season,
     b.game_slug,
     b.game_date_et,
+    EXTRACT(MONTH FROM b.game_date_et)::INT AS game_month,
     b.player_id,
     b.team_abbr,
     b.is_home,
@@ -643,6 +644,9 @@ SELECT
     opp_sp_hand_hr.sp_hr_rate_vs_rhb_25,
     opp_sp_hand_hr.sp_hr_rate_vs_lhb_10,
     opp_sp_hand_hr.sp_hr_rate_vs_rhb_10,
+    -- Opposing catcher framing (MLB020) — good framing → more called strikes → fewer hits/TB for batter
+    opp_cf.framing_rv_per_100  AS opp_catcher_framing_rv,
+    opp_cf.framing_rate        AS opp_catcher_framing_rate,
     -- Confirmed batting order from lineup (raw.mlb_lineups)
     conf_lu.batting_order  AS confirmed_batting_order,
     conf_lu.lineup_source  AS confirmed_lineup_source,
@@ -841,6 +845,19 @@ LEFT JOIN features.mlb_sp_hand_k_pct_mat opp_sp_hand_k
 LEFT JOIN features.mlb_sp_hand_hr_rate_mat opp_sp_hand_hr
     ON opp_sp_hand_hr.pitcher_id = sp.player_id
     AND opp_sp_hand_hr.game_slug = b.game_slug
+-- Opposing catcher framing (MLB020): catcher on the SP's team for this game
+LEFT JOIN LATERAL (
+    SELECT player_id AS opp_catcher_id
+    FROM raw.mlb_boxscore_player_stats
+    WHERE game_slug        = g.game_slug
+      AND primary_position = 'C'
+      AND team_abbr        = sp.team_abbr
+    ORDER BY batting_order
+    LIMIT 1
+) opp_cat_game ON TRUE
+LEFT JOIN raw.mlb_statcast_catcher_framing opp_cf
+    ON opp_cf.player_id   = opp_cat_game.opp_catcher_id
+    AND opp_cf.season_year = EXTRACT(YEAR FROM g.game_date_et)::INT
 -- Confirmed batting order from pre-game lineup (raw.mlb_lineups)
 LEFT JOIN raw.mlb_lineups conf_lu
     ON  conf_lu.game_slug  = b.game_slug
