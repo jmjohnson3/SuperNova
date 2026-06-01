@@ -80,6 +80,12 @@ _PITCHER_STAT_MAP = {
     "strikeouts": ("pitcher_strikeouts", "draftkings"),
 }
 
+# For rare-event stats, we could use a LEFT join to expand training data.
+# However, testing showed this hurts HR CLF (AUC 0.75→0.67) because the FanDuel
+# prop offering itself is a quality filter — only power hitters get HR props.
+# Adding all batter-games introduces non-power-hitter noise. Keep empty (inner join).
+_STAT_FILL_LINES: dict = {}
+
 # Break-even probability at standard -110 juice
 _BREAKEVEN_PROB = 0.524
 
@@ -209,36 +215,66 @@ def _join_lines_for_stat(
     target_col: str,
     odds_stat: str,
     bookmaker: str,
+    fill_missing_line: Optional[float] = None,
 ) -> pd.DataFrame:
     """
     Vectorized join: add book_line + over_hit to training rows for one stat.
-    Only rows with a matching book_line are returned.
+
+    If fill_missing_line is None (default): inner join — only rows with a
+    matching book line are returned (original behaviour for hits/TB/Ks).
+
+    If fill_missing_line is set (e.g. 0.5 for HR): left join — ALL training
+    rows are kept. Rows without a matched prop line get book_line filled with
+    fill_missing_line, and has_book_line=0. This expands rare-event stats like
+    HR from ~26k matched rows to the full ~100k batter-game universe.
     """
     stat_lines = lines_df[
         (lines_df["stat"] == odds_stat) & (lines_df["bookmaker_key"] == bookmaker)
     ][["as_of_date", "player_name_norm", "line"]].copy()
-    if stat_lines.empty:
-        log.warning("No prop lines found for stat=%s bookmaker=%s", odds_stat, bookmaker)
-        return pd.DataFrame()
 
     # Add normalized name to training df
     df_work = df_train.copy()
     df_work["_norm_name"] = df_work["player_id"].map(
         lambda pid: name_map.get(int(pid), None)
     )
-    df_work = df_work.dropna(subset=["_norm_name"])
     df_work["_date"] = pd.to_datetime(df_work["game_date_et"]).dt.date
 
-    # Vectorized merge on (date, normalized name)
-    stat_lines = stat_lines.rename(columns={"as_of_date": "_date", "player_name_norm": "_norm_name"})
-    merged = df_work.merge(stat_lines, on=["_date", "_norm_name"], how="inner")
+    if fill_missing_line is None:
+        # Original inner-join behaviour
+        if stat_lines.empty:
+            log.warning("No prop lines found for stat=%s bookmaker=%s", odds_stat, bookmaker)
+            return pd.DataFrame()
+        df_work = df_work.dropna(subset=["_norm_name"])
+        stat_lines = stat_lines.rename(columns={"as_of_date": "_date", "player_name_norm": "_norm_name"})
+        merged = df_work.merge(stat_lines, on=["_date", "_norm_name"], how="inner")
+        if merged.empty:
+            return pd.DataFrame()
+        merged["book_line"] = merged["line"].astype(float)
+        merged["over_hit"] = (merged[target_col].astype(float) > merged["book_line"]).astype(int)
+        merged = merged.drop(columns=["_norm_name", "_date", "line"])
+    else:
+        # Left-join: keep all rows, fill missing lines with the default
+        # Rows where _norm_name is unknown cannot be matched; keep them anyway
+        # (they get fill_missing_line and has_book_line=0)
+        stat_lines = stat_lines.rename(columns={"as_of_date": "_date", "player_name_norm": "_norm_name"})
+        # Deduplicate: if a player has multiple lines on the same date, take the median
+        stat_lines = (
+            stat_lines.groupby(["_date", "_norm_name"], as_index=False)["line"]
+            .median()
+        )
+        merged = df_work.merge(stat_lines, on=["_date", "_norm_name"], how="left")
+        merged["has_book_line"] = merged["line"].notna().astype(int)
+        merged["book_line"] = merged["line"].fillna(fill_missing_line).astype(float)
+        merged["over_hit"] = (merged[target_col].astype(float) > merged["book_line"]).astype(int)
+        merged = merged.drop(columns=["_norm_name", "_date", "line"])
+        log.info(
+            "  %s: %d total rows (%d with prop line, %d filled at %.1f)",
+            target_col, len(merged),
+            merged["has_book_line"].sum(),
+            (merged["has_book_line"] == 0).sum(),
+            fill_missing_line,
+        )
 
-    if merged.empty:
-        return pd.DataFrame()
-
-    merged["book_line"] = merged["line"].astype(float)
-    merged["over_hit"] = (merged[target_col].astype(float) > merged["book_line"]).astype(int)
-    merged = merged.drop(columns=["_norm_name", "_date", "line"])
     return merged
 
 
@@ -654,7 +690,10 @@ def train_batter_clf(cfg: ClfConfig) -> Dict:
     for target_col, (odds_stat, bookmaker) in _BATTER_STAT_MAP.items():
         log.info("=== Binary CLF: %s → %s ===", target_col, odds_stat)
 
-        df_stat = _join_lines_for_stat(df_base, name_map, lines_df, target_col, odds_stat, bookmaker)
+        df_stat = _join_lines_for_stat(
+            df_base, name_map, lines_df, target_col, odds_stat, bookmaker,
+            fill_missing_line=_STAT_FILL_LINES.get(target_col),
+        )
         if df_stat.empty or len(df_stat) < 200:
             log.warning("Skipping %s — only %d rows after prop line join", target_col, len(df_stat))
             results[f"brier_{target_col}"] = float("nan")
