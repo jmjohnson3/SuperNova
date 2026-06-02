@@ -15,6 +15,8 @@ from pathlib import Path
 import pandas as pd
 import psycopg2
 
+from .predict_player_props import _ensure_schema
+
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 
@@ -35,14 +37,19 @@ def _load_rows(conn, cutoff_date: str) -> pd.DataFrame:
       game_date_et,
       stat,
       book_line::float AS book_line,
-      pred_value::float AS p_over,
+      COALESCE(pred_prob_over, pred_value)::float AS p_over,
+      line_bucket AS stored_bucket,
       CASE WHEN over_hit THEN 1.0 ELSE 0.0 END AS y
     FROM bets.mlb_prop_predictions
     WHERE game_date_et >= %(cutoff)s
       AND over_hit IS NOT NULL
       AND book_line IS NOT NULL
-      AND pred_value IS NOT NULL
-      AND pred_value BETWEEN 0.0 AND 1.0
+      AND COALESCE(pred_prob_over, pred_value) IS NOT NULL
+      AND COALESCE(pred_prob_over, pred_value) BETWEEN 0.0 AND 1.0
+      AND (
+        edge_type = 'probability'
+        OR (edge_type IS NULL AND pred_prob_over IS NULL AND pred_value BETWEEN 0.0 AND 1.0)
+      )
       AND stat IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs','batter_walks')
     """
     return pd.read_sql(q, conn, params={"cutoff": cutoff_date})
@@ -82,6 +89,7 @@ def _bucket(stat: str, line: float) -> str:
 
 def monitor(cfg: MonitorConfig) -> dict:
     conn = psycopg2.connect(cfg.pg_dsn)
+    _ensure_schema(conn)
     cutoff = (datetime.utcnow().date() - timedelta(days=cfg.lookback_days)).isoformat()
     df = _load_rows(conn, cutoff)
     conn.close()
@@ -93,12 +101,16 @@ def monitor(cfg: MonitorConfig) -> dict:
         "max_abs_cal_error": cfg.max_abs_cal_error,
         "disabled_buckets": {},
         "metrics": [],
+        "source": "pred_prob_over_probability_rows",
     }
     if df.empty:
         payload["status"] = "no_rows"
         return payload
 
-    df["bucket"] = [_bucket(s, float(l)) for s, l in zip(df["stat"], df["book_line"])]
+    df["bucket"] = [
+        b if isinstance(b, str) and b else _bucket(s, float(l))
+        for s, l, b in zip(df["stat"], df["book_line"], df.get("stored_bucket", pd.Series([None] * len(df))))
+    ]
     grp = (
         df.groupby(["stat", "bucket"], as_index=False)
         .agg(

@@ -1,71 +1,234 @@
 {
-  "generated_at_utc": "2026-05-31T17:02:51Z",
+  "generated_at_utc": "2026-06-02T16:44:56Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
   "min_holdout_bets": 20,
-  "threshold_strikeouts": 2.0,
-  "threshold_hits": 0.05,
-  "threshold_total_bases": 0.5,
+  "threshold_strikeouts": 999.0,
+  "threshold_strikeouts_over": 1.0,
+  "threshold_strikeouts_under": 999.0,
+  "threshold_hits": 0.75,
+  "threshold_total_bases": 999.0,
+  "threshold_total_bases_over": 999.0,
+  "threshold_total_bases_under": 0.542,
   "threshold_home_runs_over": 999.0,
-  "threshold_home_runs_under": 999.0,
-  "threshold_clf": 0.03,
+  "threshold_home_runs_under": 0.45,
+  "threshold_clf": 999.0,
   "min_ev": 0.02,
   "_diagnostics": {
     "pitcher_strikeouts": {
-      "reason": "holdout_too_small",
+      "reason": "holdout_too_small_disabled",
       "chosen_train": {
-        "t": 1.612,
-        "n": 85,
-        "wr": 0.5058823529411764,
-        "roi": -3.4224598930481354
+        "t": 1.684,
+        "n": 78,
+        "wr": 0.6666666666666666,
+        "roi": 27.27272727272726
       },
-      "holdout_n": 5
+      "holdout_n": 4,
+      "fallback": 2.0
     },
     "batter_hits": {
       "reason": "accepted",
       "train": {
-        "t": 0.05,
-        "n": 7174,
-        "wr": 0.5444661276833008,
-        "roi": 3.9435334668119797
+        "t": 0.75,
+        "n": 53,
+        "wr": 0.7169811320754716,
+        "roi": 36.878216123499136
       },
       "holdout": {
-        "n": 3994,
-        "wr": 0.5595893840761141,
-        "roi": 6.830700596349063
+        "n": 35,
+        "wr": 0.7142857142857143,
+        "roi": 36.36363636363637
       }
     },
     "batter_total_bases": {
-      "reason": "holdout_roi_non_positive",
+      "reason": "holdout_too_small_disabled",
       "chosen_train": {
-        "t": 0.2,
-        "n": 3662,
-        "wr": 0.3618241398143091,
-        "roi": -30.924482399086433
+        "t": 1.25,
+        "n": 47,
+        "wr": 0.6595744680851063,
+        "roi": 25.91876208897485
       },
-      "holdout": {
-        "n": 1720,
-        "wr": 0.32848837209302323,
-        "roi": -37.28858350951374
-      }
+      "holdout_n": 0,
+      "fallback": 1.5
     },
     "batter_home_runs": {
-      "reason": "holdout_roi_non_positive",
-      "chosen_train": {
-        "t": 0.05,
-        "n": 5486,
-        "wr": 0.11410864017499088,
-        "roi": -78.21562323931992
+      "reason": "no_train_candidate_passed_min_bets_disabled",
+      "fallback": 0.05
+    },
+    "pitcher_strikeouts_over": {
+      "reason": "accepted",
+      "train": {
+        "t": 1.0,
+        "n": 101,
+        "wr": 0.6336633663366337,
+        "roi": 20.972097209720967
       },
       "holdout": {
-        "n": 3982,
-        "wr": 0.1072325464590658,
-        "roi": -79.52833203963289
+        "n": 28,
+        "wr": 0.6428571428571429,
+        "roi": 22.72727272727274
       }
-    }
-  },
-  "_manual_overrides": {
-    "threshold_total_bases": 0.5
+    },
+    "pitcher_strikeouts_under": {
+      "reason": "holdout_too_small_disabled",
+      "chosen_train": {
+        "t": 1.77,
+        "n": 41,
+        "wr": 0.6097560975609756,
+        "roi": 16.407982261640797
+      },
+      "holdout_n": 1,
+      "fallback": 2.0
+    },
+    "batter_total_bases_over": {
+      "reason": "train_roi_non_positive_disabled",
+      "chosen_train": {
+        "t": 0.6,
+        "n": 314,
+        "wr": 0.46496815286624205,
+        "roi": -11.233352634626518
+      },
+      "fallback": 1.5
+    },
+    "batter_total_bases_under": {
+      "reason": "accepted",
+      "train": {
+        "t": 0.542,
+        "n": 855,
+        "wr": 0.7134502923976608,
+        "roi": 36.20414673046252
+      },
+      "holdout": {
+        "n": 171,
+        "wr": 0.7894736842105263,
+        "roi": 50.717703349282296
+      }
+    },
+    "classifier_probability": {
+      "reason": "holdout_too_small_disabled",
+      "chosen_train": {
+        "t": 0.2,
+        "n": 219,
+        "wr": 0.6301369863013698,
+        "roi": 20.29887920298879
+      },
+      "holdout_n": 0,
+      "fallback": 0.03
+    },
+    "min_ev": {
+      "reason": "no_ev_rows"
+    },
+    "side_bucket_metrics": [
+      {
+        "stat": "batter_hits",
+        "side": "over",
+        "line_bucket": "H 0.5",
+        "edge_type": "count",
+        "n": 136,
+        "wr": 0.6029411764705882,
+        "roi": 15.106951871657747
+      },
+      {
+        "stat": "batter_hits",
+        "side": "over",
+        "line_bucket": "unknown",
+        "edge_type": "count",
+        "n": 9799,
+        "wr": 0.5876109807123175,
+        "roi": 12.180278135987896
+      },
+      {
+        "stat": "batter_hits",
+        "side": "over",
+        "line_bucket": "unknown",
+        "edge_type": "probability",
+        "n": 327,
+        "wr": 0.6666666666666666,
+        "roi": 27.27272727272726
+      },
+      {
+        "stat": "batter_total_bases",
+        "side": "over",
+        "line_bucket": "unknown",
+        "edge_type": "count",
+        "n": 3346,
+        "wr": 0.399581589958159,
+        "roi": -23.716241917078744
+      },
+      {
+        "stat": "batter_total_bases",
+        "side": "over",
+        "line_bucket": "unknown",
+        "edge_type": "probability",
+        "n": 59,
+        "wr": 0.3389830508474576,
+        "roi": -35.28505392912174
+      },
+      {
+        "stat": "batter_total_bases",
+        "side": "under",
+        "line_bucket": "TB 1.5",
+        "edge_type": "count",
+        "n": 73,
+        "wr": 0.6164383561643836,
+        "roi": 17.68368617683687
+      },
+      {
+        "stat": "batter_total_bases",
+        "side": "under",
+        "line_bucket": "unknown",
+        "edge_type": "count",
+        "n": 6892,
+        "wr": 0.6700522344747534,
+        "roi": 27.919062945180183
+      },
+      {
+        "stat": "batter_total_bases",
+        "side": "under",
+        "line_bucket": "unknown",
+        "edge_type": "probability",
+        "n": 540,
+        "wr": 0.6481481481481481,
+        "roi": 23.737373737373733
+      },
+      {
+        "stat": "pitcher_strikeouts",
+        "side": "over",
+        "line_bucket": "unknown",
+        "edge_type": "count",
+        "n": 621,
+        "wr": 0.5265700483091788,
+        "roi": 0.5270092226613989
+      },
+      {
+        "stat": "pitcher_strikeouts",
+        "side": "over",
+        "line_bucket": "unknown",
+        "edge_type": "probability",
+        "n": 65,
+        "wr": 0.4153846153846154,
+        "roi": -20.699300699300686
+      },
+      {
+        "stat": "pitcher_strikeouts",
+        "side": "under",
+        "line_bucket": "unknown",
+        "edge_type": "count",
+        "n": 597,
+        "wr": 0.5510887772194305,
+        "roi": 5.207857469164006
+      },
+      {
+        "stat": "pitcher_strikeouts",
+        "side": "under",
+        "line_bucket": "unknown",
+        "edge_type": "probability",
+        "n": 72,
+        "wr": 0.4722222222222222,
+        "roi": -9.848484848484851
+      }
+    ],
+    "excluded_unbettable_rows": 11998
   }
 }

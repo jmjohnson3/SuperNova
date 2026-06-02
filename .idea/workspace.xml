@@ -5,19 +5,59 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a8b48474-6e90-4e60-b81d-144213686383" name="Changes" comment="improve prediction accuracy">
-      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi_backfill.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_oddsapi.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-05-28_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-05-29_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-05-30_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-05-31_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-01_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_real_money_audit_recent.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_layers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_readiness_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/diagnose_market_weakness.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/game_market_clf_backtest.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/game_market_clf_feature_columns.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/game_market_clf_feature_medians.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_cover_clf_xgb.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_over_clf_xgb.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/real_money_audit_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_game_market_classifiers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/crawler.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/fetcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/fetcher.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_columns.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_columns.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_medians.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/feature_medians.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/spread_xgb.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/models/total_xgb.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_today.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_today.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/train_game_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/train_game_models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/raw_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/raw_store.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/evaluation_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/evaluation_report.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/calibration.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/calibration.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_columns.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_columns.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_importance.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_importance.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_medians.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_medians.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/optuna_best_params.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/optuna_best_params.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_pitchers.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_pitchers.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_thresholds.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_thresholds.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q10_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q10_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q25_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q25_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q50_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q50_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q75_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q75_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q90_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q90_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_resid_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_resid_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q10_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q10_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q25_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q25_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q50_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q50_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q75_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q75_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q90_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q90_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_resid_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_resid_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/monitor_prop_calibration.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/monitor_prop_calibration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/optimize_prop_thresholds.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/optimize_prop_thresholds.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_player_props.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_player_props.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_today.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_today.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/scan_prop_thresholds.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/scan_prop_thresholds.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/scan_thresholds.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/scan_thresholds.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/update_outcomes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/update_outcomes.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,16 +74,28 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="master" />
+        <entry key="$PROJECT_DIR$" value="update_script" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;jmjohnson3&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/jmjohnson3/SuperNova.git&quot;,
+    &quot;accountId&quot;: &quot;36f3fd43-f631-4c02-915b-0f557d9ea20a&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
   <component name="ProjectId" id="38lJX1mKZSnuzBbPbBi9drqKYwj" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+  <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectViewState">
@@ -54,7 +106,14 @@
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;update__script&quot;
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/josh/Downloads/claude-code-jetbrains-plugin-0.1.14-beta.zip&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -66,7 +125,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-337b0a7a993a-31b6be0877a2-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.19416.19" />
+        <option value="bundled-python-sdk-b63d5a1f7c97-b61e75351b1f-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.22158.340" />
       </set>
     </attachedChunks>
   </component>
@@ -95,8 +154,27 @@
       <option name="project" value="LOCAL" />
       <updated>1769925641006</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="improve prediction accuracy">
+      <option name="closed" value="true" />
+      <created>1770246158246</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1770246158246</updated>
+    </task>
+    <task id="LOCAL-00004" summary="improve prediction accuracy">
+      <option name="closed" value="true" />
+      <created>1770246166245</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1770246166245</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />

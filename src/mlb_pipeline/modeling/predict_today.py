@@ -3,6 +3,7 @@ import json
 import logging
 import math
 import os
+import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -12,7 +13,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_dtype
-from xgboost import XGBRegressor
+from xgboost import XGBClassifier, XGBRegressor
 
 try:
     import lightgbm as lgb
@@ -22,11 +23,18 @@ except ImportError:
 
 from sqlalchemy import create_engine, text
 
+from .bankroll_layers import BankrollAssessment, assess_bankroll_layer, bankroll_tag
+from .bankroll_ledger import insert_game_bankroll_ledger
 from .features import add_game_derived_features, build_fd_parlay_url
+
+# Ensure stdout is UTF-8 on Windows.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 log = logging.getLogger("mlb_pipeline.modeling.predict_today")
 
 _ET = ZoneInfo("America/New_York")
+_BREAKEVEN_PROB = 0.524
 
 
 @dataclass(frozen=True)
@@ -37,12 +45,37 @@ class PredictConfig:
     et_date: date | None = None
     # Minimum |edge| in runs to flag a run-line bet
     min_edge_run_line: float = 1.5
+    # Away run lines are not blanket-bad, but price and role matter. Recent
+    # graded history is close to breakeven overall, with the weakness
+    # concentrated in away-favorite covers and heavy juice. Allow away sides
+    # only after those guards pass.
+    allow_away_run_line_bets: bool = True
+    allow_away_favorite_run_line_bets: bool = False
+    max_away_dog_run_line_lay_price: int = -130
+    max_run_line_lay_price: int = -180
     # Minimum |edge| in runs to flag a total bet (over OR under)
     # 2026-05-25: raised 1.5→2.0. Analysis showed 90d WR of only 38-47% for edges
     # 1.0–2.0 (overs systematically losing; pred_vs_mkt=+1.07 structural over-bias).
     # Edges 2.5+ show 58-75% WR. 2.0 is the conservative cut until the over-bias
     # is diagnosed and fixed in the model.
     min_edge_total: float = 2.0
+    # Unders are not blanket-bad, but the weak bucket is high totals (10.5+).
+    # Keep the side off by default until the non-high-total sample is larger;
+    # if enabled, the high-total guard below still applies.
+    allow_total_under_bets: bool = False
+    max_total_under_market_line: float = 10.0
+    max_total_lay_price: int = -180
+    # Optional direct market classifiers must clear this probability edge when
+    # artifacts are present. If no classifier artifacts exist, run-edge logic is
+    # used by itself.
+    min_prob_edge_game: float = 0.03
+    min_game_clf_auc: float = 0.55
+    max_game_clf_brier: float = 0.26
+    # Shadow-bankroll layer: never suppresses output; labels real-money readiness.
+    bankroll_shadow_mode: bool = True
+    bankroll_max_stake_pct: float = 0.005
+    bankroll_max_daily_exposure_pct: float = 0.02
+    top_n_game_bets: int = 10
 
 
 SQL_GAMES_FOR_DATE = """
@@ -174,7 +207,7 @@ def _prep_features(
 
 def _load_models(
     cfg: PredictConfig,
-) -> tuple[dict[str, XGBRegressor], list[str], dict[str, float]]:
+) -> tuple[dict[str, object], list[str], dict[str, float]]:
     model_dir = cfg.model_dir
     feature_cols_path = model_dir / "feature_columns.json"
     medians_path      = model_dir / "feature_medians.json"
@@ -201,6 +234,48 @@ def _load_models(
             m = XGBRegressor()
             m.load_model(str(p))
             models[k] = m
+
+    clf_cols_path = model_dir / "game_market_clf_feature_columns.json"
+    clf_meds_path = model_dir / "game_market_clf_feature_medians.json"
+    if clf_cols_path.exists() and clf_meds_path.exists():
+        try:
+            backtest_path = model_dir / "game_market_clf_backtest.json"
+            backtest = json.loads(backtest_path.read_text(encoding="utf-8")) if backtest_path.exists() else {}
+
+            def _clf_quality_ok(target_name: str) -> bool:
+                rec = ((backtest.get("targets") or {}).get(target_name) or {})
+                if rec.get("status") != "trained":
+                    return False
+                holdout = rec.get("holdout") or {}
+                auc = holdout.get("auc")
+                brier = holdout.get("brier")
+                return (
+                    isinstance(auc, (int, float))
+                    and isinstance(brier, (int, float))
+                    and float(auc) >= cfg.min_game_clf_auc
+                    and float(brier) <= cfg.max_game_clf_brier
+                )
+
+            models["_game_clf_feature_cols"] = json.loads(clf_cols_path.read_text(encoding="utf-8"))
+            models["_game_clf_feature_medians"] = json.loads(clf_meds_path.read_text(encoding="utf-8"))
+            for key, filename in [
+                ("run_line_cover_clf", "run_line_cover_clf_xgb.json"),
+                ("total_over_clf", "total_over_clf_xgb.json"),
+            ]:
+                target_name = "run_line_home_cover" if key == "run_line_cover_clf" else "total_over"
+                if not _clf_quality_ok(target_name):
+                    log.info("Skipping %s: classifier backtest did not pass quality gate", key)
+                    continue
+                path = model_dir / filename
+                if path.exists():
+                    clf = XGBClassifier()
+                    clf.load_model(str(path))
+                    models[key] = clf
+            loaded_clf = [k for k in ("run_line_cover_clf", "total_over_clf") if k in models]
+            if loaded_clf:
+                log.info("Loaded game market classifiers: %s", loaded_clf)
+        except Exception as exc:
+            log.warning("Could not load game market classifier artifacts: %s", exc)
 
     if _HAS_LGB:
         for lgb_key, lgb_name in [("rl_direct_lgb",    "run_line_direct_lgb.txt"),
@@ -398,6 +473,287 @@ def _kelly(
     return kelly, p
 
 
+def _kelly_from_prob(p_win: float | None, max_kelly: float = 0.05) -> tuple[float | None, float | None]:
+    p = _clean_prob(p_win)
+    if p is None:
+        return None, None
+    k = max(0.0, (p - _BREAKEVEN_PROB) / (1.0 - _BREAKEVEN_PROB))
+    return min(k, max_kelly), p
+
+
+def _clean_prob(value) -> float | None:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+        return max(0.0, min(1.0, float(value)))
+    except Exception:
+        return None
+
+
+def _prob_edge_for_side(p_over: float | None, side: str) -> float | None:
+    p = _clean_prob(p_over)
+    if p is None:
+        return None
+    if side in {"home", "over"}:
+        return p - _BREAKEVEN_PROB
+    if side in {"away", "under"}:
+        return (1.0 - p) - _BREAKEVEN_PROB
+    return None
+
+
+def _prob_gate_allowed(p_over: float | None, side: str, cfg: PredictConfig) -> bool:
+    edge = _prob_edge_for_side(p_over, side)
+    return True if edge is None else edge >= cfg.min_prob_edge_game
+
+
+def _price_lay_allowed(price: int | float | None, max_lay_price: int | float) -> bool:
+    if price is None:
+        return True
+    try:
+        return float(price) >= float(max_lay_price)
+    except Exception:
+        return True
+
+
+def _signal_run_line_price(fd_row, edge_run_line: float | None) -> int | None:
+    if fd_row is None or edge_run_line is None or pd.isna(edge_run_line):
+        return None
+    return (
+        getattr(fd_row, "spread_home_price", None)
+        if float(edge_run_line) > 0
+        else getattr(fd_row, "spread_away_price", None)
+    )
+
+
+def _signal_total_price(fd_row, edge_total: float | None) -> int | None:
+    if fd_row is None or edge_total is None or pd.isna(edge_total):
+        return None
+    return (
+        getattr(fd_row, "total_over_price", None)
+        if float(edge_total) > 0
+        else getattr(fd_row, "total_under_price", None)
+    )
+
+
+def _run_line_label_for_side(market_run_line: float | None, side: str) -> str:
+    """Format the displayed spread for the selected side.
+
+    market_run_line is stored as the home team's spread. Away-side labels must
+    use the inverse line.
+    """
+    if market_run_line is None or pd.isna(market_run_line):
+        return "n/a"
+    line = float(market_run_line)
+    if side == "away":
+        line = -line
+    return f"{line:+.1f}"
+
+
+def _run_line_signal_allowed(
+    edge_run_line: float | None,
+    cfg: PredictConfig,
+    p_home_cover: float | None = None,
+    market_price: int | float | None = None,
+    market_run_line: float | None = None,
+) -> bool:
+    if edge_run_line is None or pd.isna(edge_run_line):
+        return False
+    edge = float(edge_run_line)
+    if abs(edge) < cfg.min_edge_run_line:
+        return False
+    if not _price_lay_allowed(market_price, cfg.max_run_line_lay_price):
+        return False
+    side = "home" if edge > 0 else "away"
+    if side == "away" and not cfg.allow_away_run_line_bets:
+        return False
+    if (
+        side == "away"
+        and not cfg.allow_away_favorite_run_line_bets
+        and market_run_line is not None
+        and pd.notna(market_run_line)
+        and float(market_run_line) > 0
+    ):
+        return False
+    return _prob_gate_allowed(p_home_cover, side, cfg)
+
+
+def _total_signal_allowed(
+    edge_total: float | None,
+    cfg: PredictConfig,
+    p_total_over: float | None = None,
+    market_total: float | None = None,
+    market_price: int | float | None = None,
+) -> bool:
+    if edge_total is None or pd.isna(edge_total):
+        return False
+    edge = float(edge_total)
+    if edge >= cfg.min_edge_total:
+        return _prob_gate_allowed(p_total_over, "over", cfg)
+    if not cfg.allow_total_under_bets:
+        return False
+    if market_total is not None and pd.notna(market_total) and float(market_total) > cfg.max_total_under_market_line:
+        return False
+    if not _price_lay_allowed(market_price, cfg.max_total_lay_price):
+        return False
+    return (
+        -edge >= cfg.min_edge_total
+        and _prob_gate_allowed(p_total_over, "under", cfg)
+    )
+
+
+def _game_bankroll_assessment(
+    *,
+    market: str,
+    side: str | None,
+    cfg: PredictConfig,
+    kelly_fraction: float | None,
+    win_prob: float | None,
+    market_price: int | float | None,
+    both_sp_known: bool,
+    market_line: float | None = None,
+) -> BankrollAssessment:
+    """Label a game signal for shadow-bankroll readiness."""
+    hard: list[str] = []
+    soft: list[str] = []
+
+    if not both_sp_known:
+        hard.append("sp_tbd")
+
+    clean_price = None
+    if market_price is not None:
+        try:
+            clean_price = None if pd.isna(market_price) else float(market_price)
+        except Exception:
+            clean_price = None
+
+    if clean_price is None:
+        hard.append("missing_price")
+    elif market == "run_line" and not _price_lay_allowed(clean_price, cfg.max_run_line_lay_price):
+        hard.append("heavy_juice")
+    elif market == "total" and not _price_lay_allowed(clean_price, cfg.max_total_lay_price):
+        hard.append("heavy_juice")
+
+    if market == "run_line":
+        try:
+            if (
+                market_line is not None
+                and pd.notna(market_line)
+                and abs(abs(float(market_line)) - 1.5) > 1e-9
+            ):
+                hard.append("non_standard_run_line")
+        except Exception:
+            pass
+
+    if market == "run_line" and side == "away":
+        try:
+            if market_line is not None and pd.notna(market_line) and float(market_line) > 0:
+                hard.append("away_favorite_run_line")
+            if (
+                market_line is not None
+                and pd.notna(market_line)
+                and float(market_line) < 0
+                and clean_price is not None
+                and clean_price < cfg.max_away_dog_run_line_lay_price
+            ):
+                hard.append("away_dog_lay_price")
+        except Exception:
+            pass
+
+    if market == "total" and side == "under":
+        if not cfg.allow_total_under_bets:
+            hard.append("total_under_disabled")
+        try:
+            if (
+                market_line is not None
+                and pd.notna(market_line)
+                and float(market_line) > cfg.max_total_under_market_line
+            ):
+                hard.append("high_total_under")
+        except Exception:
+            pass
+
+    if win_prob is None:
+        soft.append("missing_win_probability")
+    if kelly_fraction is None or kelly_fraction <= 0:
+        soft.append("zero_kelly")
+
+    return assess_bankroll_layer(
+        has_signal=side is not None,
+        hard_blocks=hard,
+        soft_warnings=soft,
+        kelly_fraction=kelly_fraction,
+        max_stake_pct=cfg.bankroll_max_stake_pct,
+    )
+
+
+def _append_bankroll_reason(existing: str, reason: str) -> str:
+    parts = [p.strip() for p in (existing or "").split(";") if p.strip()]
+    if reason not in parts:
+        parts.append(reason)
+    return "; ".join(parts)
+
+
+def _cap_game_bankroll_rows(rows: list[dict], cfg: PredictConfig) -> list[dict]:
+    candidates: list[tuple[float, int, str]] = []
+    for idx, row in enumerate(rows):
+        if row.get("bankroll_candidate_rl"):
+            candidates.append((abs(float(row.get("edge_run_line") or 0.0)), idx, "rl"))
+        if row.get("bankroll_candidate_total"):
+            candidates.append((abs(float(row.get("edge_total") or 0.0)), idx, "total"))
+
+    used = 0.0
+    for _score, idx, market in sorted(candidates, reverse=True):
+        row = rows[idx]
+        if market == "rl":
+            stake_key = "stake_pct_rl"
+            candidate_key = "bankroll_candidate_rl"
+            tier_key = "bankroll_tier_rl"
+            reasons_key = "bankroll_reasons_rl"
+        else:
+            stake_key = "stake_pct_total"
+            candidate_key = "bankroll_candidate_total"
+            tier_key = "bankroll_tier_total"
+            reasons_key = "bankroll_reasons_total"
+
+        stake = float(row.get(stake_key) or 0.0)
+        if used + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12:
+            used += stake
+            continue
+        row[candidate_key] = False
+        row[tier_key] = "paper"
+        row[reasons_key] = _append_bankroll_reason(
+            row.get(reasons_key) or "",
+            "daily_exposure_cap",
+        )
+        row[stake_key] = 0.0
+    return rows
+
+
+def _existing_prop_bankroll_exposure(engine, et_day: date) -> float:
+    try:
+        with engine.begin() as conn:
+            val = conn.execute(
+                text(
+                    """
+                    SELECT COALESCE(SUM(
+                        CASE WHEN bankroll_candidate
+                             THEN COALESCE(stake_pct, 0)
+                             ELSE 0 END
+                    ), 0)
+                    FROM bets.mlb_prop_predictions
+                    WHERE game_date_et = :game_date
+                    """
+                ),
+                {"game_date": et_day},
+            ).scalar()
+            return float(val or 0.0)
+    except Exception:
+        log.debug("Could not load existing prop bankroll exposure", exc_info=True)
+        return 0.0
+
+
 def _p_over_from_quantiles(q_preds: dict, market_line: float) -> float:
     """Interpolate P(value > market_line) from a 5-point quantile CDF."""
     qs = sorted(q_preds)
@@ -453,7 +809,21 @@ def _ensure_bets_schema(engine) -> None:
         ADD COLUMN IF NOT EXISTS sigma_q_rl      FLOAT,
         ADD COLUMN IF NOT EXISTS sigma_q_total   FLOAT,
         ADD COLUMN IF NOT EXISTS p_over_rl_q     FLOAT,
-        ADD COLUMN IF NOT EXISTS p_over_total_q  FLOAT;
+        ADD COLUMN IF NOT EXISTS p_over_total_q  FLOAT,
+        ADD COLUMN IF NOT EXISTS market_rl_price INTEGER,
+        ADD COLUMN IF NOT EXISTS market_total_price INTEGER,
+        ADD COLUMN IF NOT EXISTS p_home_cover_clf FLOAT,
+        ADD COLUMN IF NOT EXISTS p_total_over_clf FLOAT,
+        ADD COLUMN IF NOT EXISTS edge_run_line_prob FLOAT,
+        ADD COLUMN IF NOT EXISTS edge_total_prob FLOAT,
+        ADD COLUMN IF NOT EXISTS bankroll_tier_rl TEXT,
+        ADD COLUMN IF NOT EXISTS bankroll_tier_total TEXT,
+        ADD COLUMN IF NOT EXISTS bankroll_candidate_rl BOOLEAN,
+        ADD COLUMN IF NOT EXISTS bankroll_candidate_total BOOLEAN,
+        ADD COLUMN IF NOT EXISTS bankroll_reasons_rl TEXT,
+        ADD COLUMN IF NOT EXISTS bankroll_reasons_total TEXT,
+        ADD COLUMN IF NOT EXISTS stake_pct_rl NUMERIC,
+        ADD COLUMN IF NOT EXISTS stake_pct_total NUMERIC;
     """
     with engine.begin() as conn:
         conn.execute(text(ddl))
@@ -481,7 +851,12 @@ def _save_predictions(
              kelly_fraction_rl, kelly_fraction_total,
              win_prob_rl, win_prob_total,
              market_rl_price, market_total_price,
-             sigma_q_rl, sigma_q_total, p_over_rl_q, p_over_total_q)
+             sigma_q_rl, sigma_q_total, p_over_rl_q, p_over_total_q,
+             p_home_cover_clf, p_total_over_clf, edge_run_line_prob, edge_total_prob,
+             bankroll_tier_rl, bankroll_tier_total,
+             bankroll_candidate_rl, bankroll_candidate_total,
+             bankroll_reasons_rl, bankroll_reasons_total,
+             stake_pct_rl, stake_pct_total)
         VALUES
             (:game_date_et, :game_slug, :season, :home_team_abbr, :away_team_abbr,
              :home_sp_name, :away_sp_name,
@@ -491,7 +866,12 @@ def _save_predictions(
              :kelly_fraction_rl, :kelly_fraction_total,
              :win_prob_rl, :win_prob_total,
              :market_rl_price, :market_total_price,
-             :sigma_q_rl, :sigma_q_total, :p_over_rl_q, :p_over_total_q)
+             :sigma_q_rl, :sigma_q_total, :p_over_rl_q, :p_over_total_q,
+             :p_home_cover_clf, :p_total_over_clf, :edge_run_line_prob, :edge_total_prob,
+             :bankroll_tier_rl, :bankroll_tier_total,
+             :bankroll_candidate_rl, :bankroll_candidate_total,
+             :bankroll_reasons_rl, :bankroll_reasons_total,
+             :stake_pct_rl, :stake_pct_total)
         ON CONFLICT (game_date_et, game_slug) DO UPDATE SET
             predicted_at_utc    = NOW(),
             home_sp_name        = EXCLUDED.home_sp_name,
@@ -514,7 +894,19 @@ def _save_predictions(
             sigma_q_rl          = EXCLUDED.sigma_q_rl,
             sigma_q_total       = EXCLUDED.sigma_q_total,
             p_over_rl_q         = EXCLUDED.p_over_rl_q,
-            p_over_total_q      = EXCLUDED.p_over_total_q
+            p_over_total_q      = EXCLUDED.p_over_total_q,
+            p_home_cover_clf    = EXCLUDED.p_home_cover_clf,
+            p_total_over_clf    = EXCLUDED.p_total_over_clf,
+            edge_run_line_prob  = EXCLUDED.edge_run_line_prob,
+            edge_total_prob     = EXCLUDED.edge_total_prob,
+            bankroll_tier_rl    = EXCLUDED.bankroll_tier_rl,
+            bankroll_tier_total = EXCLUDED.bankroll_tier_total,
+            bankroll_candidate_rl = EXCLUDED.bankroll_candidate_rl,
+            bankroll_candidate_total = EXCLUDED.bankroll_candidate_total,
+            bankroll_reasons_rl = EXCLUDED.bankroll_reasons_rl,
+            bankroll_reasons_total = EXCLUDED.bankroll_reasons_total,
+            stake_pct_rl        = EXCLUDED.stake_pct_rl,
+            stake_pct_total     = EXCLUDED.stake_pct_total
     """)
 
     _calib = calib or {}
@@ -522,6 +914,8 @@ def _save_predictions(
     for _, r in out.iterrows():
         edge_rl = float(r["edge_run_line"]) if pd.notna(r.get("edge_run_line")) else None
         edge_t  = float(r["edge_total"])    if pd.notna(r.get("edge_total"))    else None
+        p_home_cover = _clean_prob(r.get("p_home_cover_clf"))
+        p_total_over = _clean_prob(r.get("p_total_over_clf"))
         rl_bet = None
         tot_bet = None
         kf_rl = kf_t = wp_rl = wp_t = None
@@ -535,20 +929,50 @@ def _save_predictions(
                     _calib.get("resid_total_rmse"  if (used_blend and w_total > 0) else "direct_total_rmse",  3.0))
 
         both_sp = bool(r.get("both_sp_known", True))
+        _fdr = (fd_links or {}).get((r["home_team_abbr"], r["away_team_abbr"]))
+        rl_signal_price = _signal_run_line_price(_fdr, edge_rl)
+        total_signal_price = _signal_total_price(_fdr, edge_t)
 
-        if edge_rl is not None and abs(edge_rl) >= cfg.min_edge_run_line and both_sp:
+        if edge_rl is not None and both_sp and _run_line_signal_allowed(
+            edge_rl,
+            cfg,
+            p_home_cover,
+            rl_signal_price,
+            r.get("market_run_line"),
+        ):
             rl_bet = "home" if edge_rl > 0 else "away"
-            kf_rl, wp_rl = _kelly(abs(edge_rl), sigma=sigma_rl)
+            p_side = p_home_cover if rl_bet == "home" else (1.0 - p_home_cover if p_home_cover is not None else None)
+            kf_rl, wp_rl = _kelly_from_prob(p_side)
+            if kf_rl is None or wp_rl is None:
+                kf_rl, wp_rl = _kelly(abs(edge_rl), sigma=sigma_rl)
 
         if edge_t is not None and both_sp:
-            if edge_t >= cfg.min_edge_total:
+            if edge_t >= cfg.min_edge_total and _total_signal_allowed(
+                edge_t,
+                cfg,
+                p_total_over,
+                r.get("market_total"),
+                total_signal_price,
+            ):
                 tot_bet = "over"
-                kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
-            # Note: under bets disabled — structural over-prediction bias gives only
-            # ~27% win rate on unders. Model is calibrated for overs only.
+                kf_t, wp_t = _kelly_from_prob(p_total_over)
+                if kf_t is None or wp_t is None:
+                    kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
+            elif _total_signal_allowed(
+                edge_t,
+                cfg,
+                p_total_over,
+                r.get("market_total"),
+                total_signal_price,
+            ):
+                tot_bet = "under"
+                p_side = 1.0 - p_total_over if p_total_over is not None else None
+                kf_t, wp_t = _kelly_from_prob(p_side)
+                if kf_t is None or wp_t is None:
+                    kf_t, wp_t = _kelly(-edge_t, sigma=sigma_t)
+            # Note: under bets are disabled by default. Model is calibrated for overs only.
 
         # Entry prices for price-based CLV tracking
-        _fdr = (fd_links or {}).get((r["home_team_abbr"], r["away_team_abbr"]))
         mkt_rl_price = None
         mkt_tot_price = None
         if _fdr is not None:
@@ -560,6 +984,27 @@ def _save_predictions(
                 mkt_tot_price = getattr(_fdr, "total_over_price", None)
             elif tot_bet == "under":
                 mkt_tot_price = getattr(_fdr, "total_under_price", None)
+
+        rl_bankroll = _game_bankroll_assessment(
+            market="run_line",
+            side=rl_bet,
+            cfg=cfg,
+            kelly_fraction=kf_rl,
+            win_prob=wp_rl,
+            market_price=mkt_rl_price,
+            both_sp_known=both_sp,
+            market_line=r.get("market_run_line"),
+        )
+        total_bankroll = _game_bankroll_assessment(
+            market="total",
+            side=tot_bet,
+            cfg=cfg,
+            kelly_fraction=kf_t,
+            win_prob=wp_t,
+            market_price=mkt_tot_price,
+            both_sp_known=both_sp,
+            market_line=r.get("market_total"),
+        )
 
         rows.append({
             "game_date_et":       et_day,
@@ -588,12 +1033,31 @@ def _save_predictions(
             "sigma_q_total":  round(float(r["sigma_q_total"]), 3) if pd.notna(r.get("sigma_q_total")) else None,
             "p_over_rl_q":    round(float(r["p_over_rl_q"]),   4) if pd.notna(r.get("p_over_rl_q"))   else None,
             "p_over_total_q": round(float(r["p_over_total_q"]), 4) if pd.notna(r.get("p_over_total_q")) else None,
+            "p_home_cover_clf": round(float(p_home_cover), 4) if p_home_cover is not None else None,
+            "p_total_over_clf": round(float(p_total_over), 4) if p_total_over is not None else None,
+            "edge_run_line_prob": round(float(r["edge_run_line_prob"]), 4) if pd.notna(r.get("edge_run_line_prob")) else None,
+            "edge_total_prob": round(float(r["edge_total_prob"]), 4) if pd.notna(r.get("edge_total_prob")) else None,
+            "bankroll_tier_rl": rl_bankroll.tier,
+            "bankroll_tier_total": total_bankroll.tier,
+            "bankroll_candidate_rl": rl_bankroll.candidate,
+            "bankroll_candidate_total": total_bankroll.candidate,
+            "bankroll_reasons_rl": rl_bankroll.reasons,
+            "bankroll_reasons_total": total_bankroll.reasons,
+            "stake_pct_rl": round(rl_bankroll.stake_pct, 4),
+            "stake_pct_total": round(total_bankroll.stake_pct, 4),
         })
 
     if rows:
+        rows = _cap_game_bankroll_rows(rows, cfg)
         with engine.begin() as conn:
             conn.execute(upsert_sql, rows)
         log.info("Saved %d MLB game predictions to bets.mlb_game_predictions", len(rows))
+        try:
+            with psycopg2.connect(cfg.pg_dsn) as ledger_conn:
+                locked = insert_game_bankroll_ledger(ledger_conn, rows, fd_links=fd_links, cfg=cfg)
+            log.info("Locked %d MLB game bankroll ledger rows", locked)
+        except Exception:
+            log.exception("Failed to lock MLB game bankroll ledger rows")
 
 
 def _fmt_run_diff(run_diff_home: float, home: str, away: str) -> str:
@@ -758,6 +1222,23 @@ def main() -> None:
     pred_run_diff_final = np.clip(pred_run_diff_final, -15.0, 15.0)
     pred_total_final    = np.clip(pred_total_final,     1.0,  30.0)
 
+    p_home_cover_clf = None
+    p_total_over_clf = None
+    clf_feature_cols = models.get("_game_clf_feature_cols")
+    clf_feature_medians = models.get("_game_clf_feature_medians")
+    if clf_feature_cols and clf_feature_medians and (
+        "run_line_cover_clf" in models or "total_over_clf" in models
+    ):
+        _, X_game_clf = _prep_features(
+            df,
+            feature_cols=list(clf_feature_cols),
+            feature_medians=dict(clf_feature_medians),
+        )
+        if "run_line_cover_clf" in models:
+            p_home_cover_clf = models["run_line_cover_clf"].predict_proba(X_game_clf)[:, 1]
+        if "total_over_clf" in models:
+            p_total_over_clf = models["total_over_clf"].predict_proba(X_game_clf)[:, 1]
+
     # F5 total prediction (optional — no market line comparison yet)
     pred_f5_final = None
     if "f5_direct" in models:
@@ -784,6 +1265,8 @@ def main() -> None:
     if pred_f5_final is not None:
         out["pred_f5_total"] = np.round(pred_f5_final, 2)
     out["used_market_recon"] = used_market
+    out["p_home_cover_clf"] = np.round(p_home_cover_clf, 4) if p_home_cover_clf is not None else np.nan
+    out["p_total_over_clf"] = np.round(p_total_over_clf, 4) if p_total_over_clf is not None else np.nan
 
     # Per-game sigma from quantile IQR
     _n = len(out)
@@ -834,6 +1317,37 @@ def main() -> None:
         out["edge_run_line"]   = np.nan
         out["edge_total"]      = np.nan
 
+    out["edge_run_line_prob"] = [
+        _prob_edge_for_side(
+            out.iloc[i].get("p_home_cover_clf"),
+            "home" if pd.notna(out.iloc[i].get("edge_run_line")) and float(out.iloc[i]["edge_run_line"]) > 0 else "away",
+        )
+        if pd.notna(out.iloc[i].get("edge_run_line")) else np.nan
+        for i in range(len(out))
+    ]
+    out["edge_total_prob"] = [
+        _prob_edge_for_side(
+            out.iloc[i].get("p_total_over_clf"),
+            "over" if pd.notna(out.iloc[i].get("edge_total")) and float(out.iloc[i]["edge_total"]) > 0 else "under",
+        )
+        if pd.notna(out.iloc[i].get("edge_total")) else np.nan
+        for i in range(len(out))
+    ]
+    out["signal_rl_price"] = [
+        _signal_run_line_price(
+            fd_links.get((out.iloc[i]["home_team_abbr"], out.iloc[i]["away_team_abbr"])),
+            out.iloc[i].get("edge_run_line"),
+        )
+        for i in range(len(out))
+    ]
+    out["signal_total_price"] = [
+        _signal_total_price(
+            fd_links.get((out.iloc[i]["home_team_abbr"], out.iloc[i]["away_team_abbr"])),
+            out.iloc[i].get("edge_total"),
+        )
+        for i in range(len(out))
+    ]
+
     # P(over/cover) from quantile CDF
     if _q_rl_arrays:
         out["p_over_rl_q"] = [
@@ -857,8 +1371,28 @@ def main() -> None:
 
     # Count bet signals (only for games with confirmed SPs)
     sp_mask = out["both_sp_known"] if "both_sp_known" in out.columns else pd.Series(True, index=out.index)
-    n_rl_bets    = int((out["edge_run_line"].abs().ge(cfg.min_edge_run_line) & sp_mask).sum()) if "edge_run_line" in out else 0
-    n_total_bets = int((out["edge_total"].abs().ge(cfg.min_edge_total) & sp_mask).sum())        if "edge_total"   in out else 0
+    n_rl_bets = (
+        int(sum(_run_line_signal_allowed(
+                    v,
+                    cfg,
+                    out["p_home_cover_clf"].iloc[i],
+                    out["signal_rl_price"].iloc[i],
+                    out["market_run_line"].iloc[i],
+                ) and bool(sp_mask.iloc[i])
+                for i, v in enumerate(out["edge_run_line"])))
+        if "edge_run_line" in out else 0
+    )
+    n_total_bets = (
+        int(sum(_total_signal_allowed(
+                    v,
+                    cfg,
+                    out["p_total_over_clf"].iloc[i],
+                    out["market_total"].iloc[i],
+                    out["signal_total_price"].iloc[i],
+                ) and bool(sp_mask.iloc[i])
+                for i, v in enumerate(out["edge_total"])))
+        if "edge_total" in out else 0
+    )
     n_high_edge  = n_rl_bets + n_total_bets
 
     if out["used_market_recon"].any():
@@ -889,6 +1423,8 @@ def main() -> None:
         for _, _r in out.iterrows():
             _edge_rl = _r.get("edge_run_line")
             _edge_t  = _r.get("edge_total")
+            _p_home_clf = _clean_prob(_r.get("p_home_cover_clf"))
+            _p_total_clf = _clean_prob(_r.get("p_total_over_clf"))
             _both_sp = bool(_r.get("both_sp_known", True))
             _home2   = _r["home_team_abbr"]
             _away2   = _r["away_team_abbr"]
@@ -908,48 +1444,192 @@ def main() -> None:
             _mrl2 = _r.get("market_run_line")
             _mt2  = _r.get("market_total")
 
-            if pd.notna(_edge_rl) and abs(float(_edge_rl)) >= cfg.min_edge_run_line and _both_sp:
+            _rl_price2 = _signal_run_line_price(_fd2, _edge_rl)
+            _tot_price2 = _signal_total_price(_fd2, _edge_t)
+            _rl_bankroll_gate = _run_line_signal_allowed(_edge_rl, cfg, _p_home_clf, _rl_price2, _mrl2)
+            _total_bankroll_gate = _total_signal_allowed(_edge_t, cfg, _p_total_clf, _mt2, _tot_price2)
+
+            if _both_sp and pd.notna(_edge_rl) and abs(float(_edge_rl)) > 1e-9:
                 _e  = float(_edge_rl)
                 _bt = _home2 if _e > 0 else _away2
                 _vs = _away2 if _e > 0 else _home2
-                _ml = f"{float(_mrl2):+.1f}" if pd.notna(_mrl2) else "-1.5"
-                _k, _p = _kelly(abs(_e), sigma=_srl)
+                _ml = _run_line_label_for_side(_mrl2, "home" if _e > 0 else "away")
+                _p_side = _p_home_clf if _e > 0 else (1.0 - _p_home_clf if _p_home_clf is not None else None)
+                _k, _p = _kelly_from_prob(_p_side)
+                if _k is None or _p is None:
+                    _k, _p = _kelly(abs(_e), sigma=_srl)
+                _bankroll = _game_bankroll_assessment(
+                    market="run_line",
+                    side="home" if _e > 0 else "away",
+                    cfg=cfg,
+                    kelly_fraction=_k,
+                    win_prob=_p,
+                    market_price=_rl_price2,
+                    both_sp_known=_both_sp,
+                    market_line=_mrl2,
+                )
+                if not _rl_bankroll_gate:
+                    _bankroll = BankrollAssessment(
+                        tier="paper",
+                        candidate=False,
+                        reasons=_append_bankroll_reason(_bankroll.reasons, "outside_bankroll_gate"),
+                        stake_pct=0.0,
+                    )
                 _lnk = (_fd2.spread_home_link if _e > 0 else _fd2.spread_away_link) if _fd2 else None
                 if _lnk:
                     _rl_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**{_bt} {_ml}** (vs {_vs} · {_t2})",
                     "edge": abs(_e), "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
+                    "assessment": _bankroll,
+                    "bankroll": bankroll_tag(_bankroll),
+                    "stake": _bankroll.stake_pct * 1000,
                 })
-            if pd.notna(_edge_t) and float(_edge_t) >= cfg.min_edge_total and _both_sp:
+            if (
+                _both_sp
+                and pd.notna(_edge_t)
+                and float(_edge_t) >= 0
+            ):
                 _e   = float(_edge_t)
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
-                _k, _p = _kelly(_e, sigma=_st)
+                _k, _p = _kelly_from_prob(_p_total_clf)
+                if _k is None or _p is None:
+                    _k, _p = _kelly(_e, sigma=_st)
+                _bankroll = _game_bankroll_assessment(
+                    market="total",
+                    side="over",
+                    cfg=cfg,
+                    kelly_fraction=_k,
+                    win_prob=_p,
+                    market_price=_tot_price2,
+                    both_sp_known=_both_sp,
+                    market_line=_mt2,
+                )
+                if not _total_bankroll_gate:
+                    _bankroll = BankrollAssessment(
+                        tier="paper",
+                        candidate=False,
+                        reasons=_append_bankroll_reason(_bankroll.reasons, "outside_bankroll_gate"),
+                        stake_pct=0.0,
+                    )
                 _lnk = _fd2.total_over_link if _fd2 else None
                 if _lnk:
                     _total_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**OVER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
+                    "assessment": _bankroll,
+                    "bankroll": bankroll_tag(_bankroll),
+                    "stake": _bankroll.stake_pct * 1000,
                 })
-            elif pd.notna(_edge_t) and -float(_edge_t) >= cfg.min_edge_total and _both_sp:
+            elif (
+                _both_sp
+                and pd.notna(_edge_t)
+                and float(_edge_t) < 0
+            ):
                 _e   = -float(_edge_t)
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
-                _k, _p = _kelly(_e, sigma=_st)
+                _p_side = 1.0 - _p_total_clf if _p_total_clf is not None else None
+                _k, _p = _kelly_from_prob(_p_side)
+                if _k is None or _p is None:
+                    _k, _p = _kelly(_e, sigma=_st)
+                _bankroll = _game_bankroll_assessment(
+                    market="total",
+                    side="under",
+                    cfg=cfg,
+                    kelly_fraction=_k,
+                    win_prob=_p,
+                    market_price=_tot_price2,
+                    both_sp_known=_both_sp,
+                    market_line=_mt2,
+                )
+                if not _total_bankroll_gate:
+                    _bankroll = BankrollAssessment(
+                        tier="paper",
+                        candidate=False,
+                        reasons=_append_bankroll_reason(_bankroll.reasons, "outside_bankroll_gate"),
+                        stake_pct=0.0,
+                    )
                 _lnk = _fd2.total_under_link if _fd2 else None
                 if _lnk:
                     _total_bet_links.append(_lnk)
                 _bets_today.append({
                     "desc": f"**UNDER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
+                    "assessment": _bankroll,
+                    "bankroll": bankroll_tag(_bankroll),
+                    "stake": _bankroll.stake_pct * 1000,
                 })
 
         _bets_today.sort(key=lambda x: x["edge"], reverse=True)
         if _bets_today:
+            _bankroll_bets = [b for b in _bets_today if b["assessment"].candidate]
+            _model_bets = _bets_today[:cfg.top_n_game_bets]
+            _paper_bets = [b for b in _model_bets if not b["assessment"].candidate]
+
+            def _print_game_bet(_b: dict, *, include_link: bool) -> None:
+                _ls = f"  [Bet FD](<{_b['link']}>)" if include_link and _b["link"] else ""
+                _p = f"p={_b['p']:.0%}" if _b.get("p") is not None else "p=?"
+                print(
+                    f"- {_b['desc']}  +{_b['edge']:.2f}  {_p}  "
+                    f"[{bankroll_tag(_b['assessment'])}] stake=${_b['assessment'].stake_pct * 1000:.0f}/$1k{_ls}"
+                )
+
+            def _print_chunked_parlays(title: str, links: list[str]) -> None:
+                dedup = list(dict.fromkeys([l for l in links if l]))
+                if len(dedup) < 2:
+                    return
+                n_chunks = math.ceil(len(dedup) / 25)
+                for i in range(0, len(dedup), 25):
+                    url = build_fd_parlay_url(dedup[i:i + 25])
+                    if not url:
+                        continue
+                    sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                    print(f"\n**{title}{sfx}** [FD]({url})")
+
+            print(f"\n**MODEL PICKS ({len(_model_bets)} of {len(_bets_today)})**")
+            for _b in _model_bets:
+                _print_game_bet(_b, include_link=True)
+
+            _print_chunked_parlays(
+                "Model Game Bets Parlay",
+                [b["link"] for b in _model_bets if b.get("link")],
+            )
+
+            if _bankroll_bets:
+                print(f"\n**BANKROLL BETS ({len(_bankroll_bets)})**")
+                for _b in _bankroll_bets:
+                    _print_game_bet(_b, include_link=True)
+            else:
+                print("\n**BANKROLL BETS**")
+                print("- No bankroll-qualified game bets today")
+
+            _print_chunked_parlays(
+                "Bankroll Game Bets Parlay",
+                [b["link"] for b in _bankroll_bets if b.get("link")],
+            )
+
+            _game_exposure = sum(float(b["assessment"].stake_pct or 0.0) for b in _bankroll_bets)
+            _prop_exposure = _existing_prop_bankroll_exposure(engine, et_day)
+            _combined_exposure = _game_exposure + _prop_exposure
+            _cap = cfg.bankroll_max_daily_exposure_pct
+            if _combined_exposure > _cap + 1e-12:
+                print(
+                    f"- GLOBAL CAP WARNING: games + props total {_combined_exposure:.2%} "
+                    f"vs daily cap {_cap:.2%} (over by {_combined_exposure - _cap:.2%})"
+                )
+
+            if _paper_bets:
+                print(f"\n**PAPER / RESEARCH ({len(_paper_bets)})**")
+                for _b in _paper_bets:
+                    _print_game_bet(_b, include_link=False)
+        else:
+            print("\n**No edge bets today**")
+        if False and _bets_today:
             print(f"\n**BETS TODAY ({len(_bets_today)})**")
             for _b in _bets_today:
                 _ls = f"  [Bet FD](<{_b['link']}>)" if _b["link"] else ""
-                print(f"• {_b['desc']}  +{_b['edge']:.2f}  p={_b['p']:.0%}{_ls}")
+                print(f"• {_b['desc']}  +{_b['edge']:.2f}  p={_b['p']:.0%}  [{_b['bankroll']}] stake=${_b['stake']:.0f}/$1k{_ls}")
 
             def _print_chunked_parlays(title: str, links: list[str]) -> None:
                 dedup = list(dict.fromkeys([l for l in links if l]))
@@ -965,7 +1645,7 @@ def main() -> None:
 
             # Compact mobile mode: one combined parlay of all high-edge run line + total bets.
             _print_chunked_parlays("All Run Line + Total Bets Parlay", _rl_bet_links + _total_bet_links)
-        else:
+        elif False:
             print("\n**No edge bets today**")
         print("")
 
@@ -1028,32 +1708,52 @@ def main() -> None:
         edge_rl   = r.get("edge_run_line")
         mkt_rl    = r.get("market_run_line")
         both_sp   = bool(r.get("both_sp_known", True))
+        p_home_clf = _clean_prob(r.get("p_home_cover_clf"))
 
-        if pd.notna(edge_rl) and abs(float(edge_rl)) >= cfg.min_edge_run_line and both_sp:
+        _rl_price = _signal_run_line_price(_ld, edge_rl)
+
+        if both_sp and _run_line_signal_allowed(edge_rl, cfg, p_home_clf, _rl_price, mkt_rl):
             e_rl = float(edge_rl)
             bet_side = "HOME" if e_rl > 0 else "AWAY"
             bet_team = home if e_rl > 0 else away
-            kelly, p_win = _kelly(abs(e_rl), sigma=sigma_rl)
+            p_side = p_home_clf if e_rl > 0 else (1.0 - p_home_clf if p_home_clf is not None else None)
+            kelly, p_win = _kelly_from_prob(p_side)
+            if kelly is None or p_win is None:
+                kelly, p_win = _kelly(abs(e_rl), sigma=sigma_rl)
             qk_bet = (kelly / 4) * 1000
-            mkt_label = f"{float(mkt_rl):+.1f}" if pd.notna(mkt_rl) else "n/a"
+            side_key = "home" if e_rl > 0 else "away"
+            bankroll = _game_bankroll_assessment(
+                market="run_line",
+                side=side_key,
+                cfg=cfg,
+                kelly_fraction=kelly,
+                win_prob=p_win,
+                market_price=_rl_price,
+                both_sp_known=both_sp,
+                market_line=mkt_rl,
+            )
+            bankroll_label = bankroll_tag(bankroll)
+            mkt_label = _run_line_label_for_side(mkt_rl, "home" if e_rl > 0 else "away")
             # FD link: home covers → spread_home_link; away covers → spread_away_link
             _sl = (_ld.spread_home_link if e_rl > 0 else _ld.spread_away_link) if _ld else None
             best_links.append(_sl)
             _link_str = f"  [Bet FD](<{_sl}>)" if (_sl and discord) else ""
             if discord:
-                print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}]**{_link_str}")
+                print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}] [{bankroll_label}]**{_link_str}")
             else:
-                print(f"  Run line: {bet_team} {mkt_label}  * EDGE +{abs(e_rl):.2f}  [bet {bet_side}]")
-                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
+                print(f"  Run line: {bet_team} {mkt_label}  * EDGE +{abs(e_rl):.2f}  [bet {bet_side}] [{bankroll_label}]")
+                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  raw 1/4 Kelly = ${qk_bet:.0f}; bankroll stake = ${bankroll.stake_pct * 1000:.0f} per $1,000")
         elif pd.notna(edge_rl) and abs(float(edge_rl)) >= cfg.min_edge_run_line and not both_sp:
-            mkt_label = f"{float(mkt_rl):+.1f}" if pd.notna(mkt_rl) else "n/a"
-            pred_side_label = home if float(edge_rl) > 0 else away
+            side = "home" if float(edge_rl) > 0 else "away"
+            mkt_label = _run_line_label_for_side(mkt_rl, side)
+            pred_side_label = home if side == "home" else away
             _sl_no_sp = ((_ld.spread_home_link if float(edge_rl) > 0 else _ld.spread_away_link) if _ld else None)
             print(f"  Run line: {pred_side_label} {mkt_label}  (edge +{abs(float(edge_rl)):.2f} — SP TBD, bet suppressed)")
         elif pd.notna(mkt_rl):
-            mkt_label = f"{float(mkt_rl):+.1f}"
-            pred_side_label = home if pred_rd >= 0 else away
-            _sl_no_edge = (_ld.spread_home_link if pred_rd >= 0 else _ld.spread_away_link) if _ld else None
+            side = "home" if pred_rd >= 0 else "away"
+            mkt_label = _run_line_label_for_side(mkt_rl, side)
+            pred_side_label = home if side == "home" else away
+            _sl_no_edge = (_ld.spread_home_link if side == "home" else _ld.spread_away_link) if _ld else None
             _link_str = f"  [FD](<{_sl_no_edge}>)" if (_sl_no_edge and discord) else ""
             print(f"  Run line: {pred_side_label} {mkt_label}{_link_str}")
         else:
@@ -1062,33 +1762,73 @@ def main() -> None:
         # Total edge
         edge_t  = r.get("edge_total")
         mkt_tot = r.get("market_total")
+        p_total_clf = _clean_prob(r.get("p_total_over_clf"))
 
-        if pd.notna(edge_t) and float(edge_t) >= cfg.min_edge_total and both_sp:
+        _tot_price = _signal_total_price(_ld, edge_t)
+
+        if (
+            both_sp
+            and _total_signal_allowed(edge_t, cfg, p_total_clf, mkt_tot, _tot_price)
+            and pd.notna(edge_t)
+            and float(edge_t) >= 0
+        ):
             e_t = float(edge_t)
-            kelly, p_win = _kelly(e_t, sigma=sigma_t)
+            kelly, p_win = _kelly_from_prob(p_total_clf)
+            if kelly is None or p_win is None:
+                kelly, p_win = _kelly(e_t, sigma=sigma_t)
             qk_bet = (kelly / 4) * 1000
+            bankroll = _game_bankroll_assessment(
+                market="total",
+                side="over",
+                cfg=cfg,
+                kelly_fraction=kelly,
+                win_prob=p_win,
+                market_price=_tot_price,
+                both_sp_known=both_sp,
+                market_line=mkt_tot,
+            )
+            bankroll_label = bankroll_tag(bankroll)
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_over_link if _ld else None
             best_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
-                print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER]**{_link_str}")
+                print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER] [{bankroll_label}]**{_link_str}")
             else:
-                print(f"  Total: OVER {mkt_t_label}  * EDGE +{e_t:.2f}  [bet OVER]")
-                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
-        elif pd.notna(edge_t) and -float(edge_t) >= cfg.min_edge_total and both_sp:
+                print(f"  Total: OVER {mkt_t_label}  * EDGE +{e_t:.2f}  [bet OVER] [{bankroll_label}]")
+                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  raw 1/4 Kelly = ${qk_bet:.0f}; bankroll stake = ${bankroll.stake_pct * 1000:.0f} per $1,000")
+        elif (
+            both_sp
+            and _total_signal_allowed(edge_t, cfg, p_total_clf, mkt_tot, _tot_price)
+            and pd.notna(edge_t)
+            and float(edge_t) < 0
+        ):
             e_t = float(edge_t)
-            kelly, p_win = _kelly(-e_t, sigma=sigma_t)
+            p_side = 1.0 - p_total_clf if p_total_clf is not None else None
+            kelly, p_win = _kelly_from_prob(p_side)
+            if kelly is None or p_win is None:
+                kelly, p_win = _kelly(-e_t, sigma=sigma_t)
             qk_bet = (kelly / 4) * 1000
+            bankroll = _game_bankroll_assessment(
+                market="total",
+                side="under",
+                cfg=cfg,
+                kelly_fraction=kelly,
+                win_prob=p_win,
+                market_price=_tot_price,
+                both_sp_known=both_sp,
+                market_line=mkt_tot,
+            )
+            bankroll_label = bankroll_tag(bankroll)
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_under_link if _ld else None
             best_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
-                print(f"  Total: UNDER {mkt_t_label}  * **EDGE +{-e_t:.2f}  [bet UNDER]**{_link_str}")
+                print(f"  Total: UNDER {mkt_t_label}  * **EDGE +{-e_t:.2f}  [bet UNDER] [{bankroll_label}]**{_link_str}")
             else:
-                print(f"  Total: UNDER {mkt_t_label}  * EDGE +{-e_t:.2f}  [bet UNDER]")
-                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  1/4 Kelly = ${qk_bet:.0f} per $1,000 bankroll")
+                print(f"  Total: UNDER {mkt_t_label}  * EDGE +{-e_t:.2f}  [bet UNDER] [{bankroll_label}]")
+                print(f"    Kelly: p={p_win:.1%}  full={kelly:.1%}  raw 1/4 Kelly = ${qk_bet:.0f}; bankroll stake = ${bankroll.stake_pct * 1000:.0f} per $1,000")
         elif pd.notna(edge_t) and abs(float(edge_t)) >= cfg.min_edge_total and not both_sp:
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             direction = "OVER" if float(edge_t) > 0 else "UNDER"

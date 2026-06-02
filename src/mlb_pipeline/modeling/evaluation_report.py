@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from .predict_player_props import _ensure_schema
+
 _ET = ZoneInfo("America/New_York")
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 # Markets where UNDER side is not realistically bettable for this workflow.
@@ -40,6 +42,7 @@ def _seg_label(d, split_date):
 
 
 def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
+    _ensure_schema(conn)
     cutoff = (datetime.now(_ET).date() - timedelta(days=days))
     print(f"\nMLB EVALUATION REPORT | cutoff={cutoff} | split_date={split_date} | min_bets={min_bets}")
     print("=" * 92)
@@ -141,11 +144,59 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
-            SELECT game_date_et, stat, edge, over_hit
-            FROM bets.mlb_prop_predictions
-            WHERE game_date_et >= %(cutoff)s
-              AND over_hit IS NOT NULL
-              AND edge IS NOT NULL
+            WITH typed AS (
+                SELECT
+                    game_date_et,
+                    stat,
+                    edge::float AS raw_edge,
+                    over_hit,
+                    bet_side,
+                    COALESCE(pred_prob_over, pred_value)::float AS p_over,
+                    CASE
+                        WHEN edge_type IS NOT NULL THEN edge_type
+                        WHEN book_line IS NOT NULL
+                         AND pred_value IS NOT NULL
+                         AND ABS((pred_value::float - book_line::float) - edge::float) <= 0.02
+                            THEN 'count'
+                        WHEN pred_value IS NOT NULL AND pred_value BETWEEN 0.0 AND 1.0
+                            THEN 'probability'
+                        ELSE 'unknown'
+                    END AS derived_edge_type
+                FROM bets.mlb_prop_predictions
+                WHERE game_date_et >= %(cutoff)s
+                  AND over_hit IS NOT NULL
+                  AND edge IS NOT NULL
+            ),
+            scored AS (
+                SELECT
+                    *,
+                    CASE
+                        WHEN derived_edge_type = 'probability' AND p_over IS NOT NULL THEN
+                            CASE
+                                WHEN p_over - 0.524 > 0
+                                 AND p_over - 0.524 >= (1.0 - p_over) - 0.524
+                                    THEN p_over - 0.524
+                                WHEN (1.0 - p_over) - 0.524 > 0
+                                    THEN -((1.0 - p_over) - 0.524)
+                                ELSE 0.0
+                            END
+                        ELSE raw_edge
+                    END AS effective_edge
+                FROM typed
+            )
+            SELECT
+                game_date_et,
+                stat,
+                effective_edge AS edge,
+                over_hit,
+                COALESCE(
+                    bet_side,
+                    CASE WHEN effective_edge > 0 THEN 'over'
+                         WHEN effective_edge < 0 THEN 'under'
+                         ELSE NULL END
+                ) AS bet_side
+            FROM scored
+            WHERE effective_edge <> 0
             """,
             {"cutoff": cutoff},
         )
@@ -170,13 +221,12 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
     for r in prop_rows:
         seg = _seg_label(r["game_date_et"], split_date)
         stat = r["stat"]
-        edge = float(r["edge"])
-        if stat in _UNDER_UNBETTABLE_STATS and edge < 0:
+        side = str(r.get("bet_side") or ("over" if float(r["edge"]) > 0 else "under")).lower()
+        if stat in _UNDER_UNBETTABLE_STATS and side == "under":
             # Exclude unbettable UNDER rows from headline performance stats.
             continue
         over_hit = bool(r["over_hit"])
-        won = over_hit if edge > 0 else (not over_hit)
-        side = "over" if edge > 0 else "under"
+        won = over_hit if side == "over" else (not over_hit)
 
         k1 = (seg, stat)
         if k1 not in prop_agg:
@@ -217,20 +267,77 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
+            WITH typed AS (
+                SELECT
+                    game_date_et,
+                    stat,
+                    pred_count,
+                    pred_value,
+                    book_line,
+                    edge::float AS raw_edge,
+                    over_hit,
+                    actual_value,
+                    bet_side,
+                    line_bucket,
+                    COALESCE(pred_prob_over, pred_value)::float AS p_over,
+                    CASE
+                        WHEN edge_type IS NOT NULL THEN edge_type
+                        WHEN book_line IS NOT NULL
+                         AND pred_value IS NOT NULL
+                         AND ABS((pred_value::float - book_line::float) - edge::float) <= 0.02
+                            THEN 'count'
+                        WHEN pred_value IS NOT NULL AND pred_value BETWEEN 0.0 AND 1.0
+                            THEN 'probability'
+                        ELSE 'unknown'
+                    END AS derived_edge_type
+                FROM bets.mlb_prop_predictions
+                WHERE game_date_et >= %(cutoff)s
+                  AND stat IN ('pitcher_strikeouts', 'batter_total_bases', 'batter_home_runs', 'batter_walks')
+                  AND over_hit IS NOT NULL
+                  AND edge IS NOT NULL
+                  AND book_line IS NOT NULL
+            ),
+            scored AS (
+                SELECT
+                    *,
+                    CASE
+                        WHEN derived_edge_type = 'probability' AND p_over IS NOT NULL THEN
+                            CASE
+                                WHEN p_over - 0.524 > 0
+                                 AND p_over - 0.524 >= (1.0 - p_over) - 0.524
+                                    THEN p_over - 0.524
+                                WHEN (1.0 - p_over) - 0.524 > 0
+                                    THEN -((1.0 - p_over) - 0.524)
+                                ELSE 0.0
+                            END
+                        ELSE raw_edge
+                    END AS effective_edge
+                FROM typed
+            )
             SELECT
                 game_date_et,
                 stat,
-                pred_value,
+                CASE
+                    WHEN pred_count IS NOT NULL THEN pred_count
+                    WHEN book_line IS NOT NULL
+                     AND pred_value IS NOT NULL
+                     AND ABS((pred_value::float - book_line::float) - raw_edge) <= 0.02
+                        THEN pred_value
+                    ELSE NULL
+                END AS pred_count_value,
                 book_line,
-                edge,
+                effective_edge AS edge,
                 over_hit,
-                actual_value
-            FROM bets.mlb_prop_predictions
-            WHERE game_date_et >= %(cutoff)s
-              AND stat IN ('pitcher_strikeouts', 'batter_total_bases', 'batter_home_runs', 'batter_walks')
-              AND over_hit IS NOT NULL
-              AND edge IS NOT NULL
-              AND book_line IS NOT NULL
+                actual_value,
+                COALESCE(
+                    bet_side,
+                    CASE WHEN effective_edge > 0 THEN 'over'
+                         WHEN effective_edge < 0 THEN 'under'
+                         ELSE NULL END
+                ) AS bet_side,
+                line_bucket
+            FROM scored
+            WHERE effective_edge <> 0
             """,
             {"cutoff": cutoff},
         )
@@ -239,7 +346,7 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
     # OVER-only summary
     over_stats = {}
     for r in over_diag:
-        if float(r["edge"]) <= 0:
+        if str(r.get("bet_side") or "").lower() != "over":
             continue
         seg = _seg_label(r["game_date_et"], split_date)
         stat = r["stat"]
@@ -254,11 +361,12 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
         a["n"] += 1
         a["w"] += int(bool(r["over_hit"]))
         a["edge_sum"] += float(r["edge"])
-        a["pred_sum"] += float(r["pred_value"] or 0.0)
-        a["line_sum"] += float(r["book_line"] or 0.0)
-        if r["actual_value"] is not None:
+        if r["pred_count_value"] is not None:
+            a["pred_sum"] += float(r["pred_count_value"] or 0.0)
             a["cal_n"] += 1
-            a["pred_minus_actual_sum"] += float(r["pred_value"]) - float(r["actual_value"])
+            if r["actual_value"] is not None:
+                a["pred_minus_actual_sum"] += float(r["pred_count_value"]) - float(r["actual_value"])
+        a["line_sum"] += float(r["book_line"] or 0.0)
 
     print("\n[OVER-side Diagnostics | Why OVER may be weak]")
     print(
@@ -274,13 +382,14 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
             if n < min_bets:
                 continue
             avg_edge = a["edge_sum"] / n
-            avg_pred = a["pred_sum"] / n
+            avg_pred = (a["pred_sum"] / a["cal_n"]) if a["cal_n"] else float("nan")
             avg_line = a["line_sum"] / n
             pred_act = (a["pred_minus_actual_sum"] / a["cal_n"]) if a["cal_n"] else float("nan")
             pred_act_s = f"{pred_act:+.2f}" if a["cal_n"] else "   n/a"
+            avg_pred_s = f"{avg_pred:>8.2f}" if a["cal_n"] else "     n/a"
             print(
                 f"{seg:<8} {stat:<20} {n:>6} {w}-{n-w:>7} {_pct(w,n):>7.1f}% {_roi(w,n):>7.1f}% "
-                f"{avg_edge:>8.2f} {avg_pred:>8.2f} {avg_line:>8.2f} {pred_act_s:>9}"
+                f"{avg_edge:>8.2f} {avg_pred_s} {avg_line:>8.2f} {pred_act_s:>9}"
             )
 
     # OVER-only by line bucket (helps detect systematic miss by offered line tier)
@@ -309,11 +418,12 @@ def run_report(conn, *, split_date, days: int, min_bets: int) -> None:
 
     bucket_agg = {}
     for r in over_diag:
-        if float(r["edge"]) <= 0:
+        if str(r.get("bet_side") or "").lower() != "over":
             continue
         seg = _seg_label(r["game_date_et"], split_date)
         stat = r["stat"]
-        b = _line_bucket(stat, float(r["book_line"]))
+        stored_bucket = r.get("line_bucket")
+        b = str(stored_bucket) if stored_bucket and stored_bucket != "unknown" else _line_bucket(stat, float(r["book_line"]))
         key = (seg, stat, b)
         if key not in bucket_agg:
             bucket_agg[key] = {"n": 0, "w": 0}

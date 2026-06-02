@@ -46,6 +46,8 @@ try:
 except ImportError:
     _HAS_LGB = False
 
+from .bankroll_layers import BankrollAssessment, assess_bankroll_layer, bankroll_tag
+from .bankroll_ledger import insert_prop_bankroll_ledger
 from .features import add_player_prop_derived_features, build_fd_parlay_url
 
 log = logging.getLogger("mlb_pipeline.modeling.predict_player_props")
@@ -70,11 +72,15 @@ class PredictConfig:
     # Bet thresholds (|edge| >=)
     # Raised from 1.0 → 2.0: scan_prop_thresholds shows edge only above 1.0; optimal 2.0 (ROI +18%)
     threshold_strikeouts: float = 2.0
+    threshold_strikeouts_over: float | None = None
+    threshold_strikeouts_under: float | None = None
     # Raised from 0.5 → 0.75: optimal threshold per scan (75-25, ROI +43%); UNDER side dominant
     threshold_hits: float = 0.75
     # Raised from 0.6 → 1.5: 2026-04-16 scan shows optimal 1.50 (15-5, ROI +43.2%, n=20);
     # OVER bets lose at all thresholds — UNDER side dominant
     threshold_total_bases: float = 1.5
+    threshold_total_bases_over: float | None = None
+    threshold_total_bases_under: float | None = None
     # Split OVER/UNDER thresholds for HR:
     # UNDER threshold kept at 0.45 (scan optimal, ROI +78%) but UNDER bets aren't bookable at -500+.
     # OVER threshold set to 0.05 — any positive edge above the 0.5 line qualifies.
@@ -92,6 +98,9 @@ class PredictConfig:
     # Maximum number of prop bets to output (sorted by |edge| desc).
     # Prevents flooding output with marginal picks — only the top N are shown.
     top_n_bets: int = 10
+    # "All props" parlays include every model side regardless of edge. Keep this
+    # opt-in so default output only contains filtered edge bets.
+    include_all_props_parlay: bool = False
     # Optional per-stat threshold overrides loaded from model artifact JSON.
     thresholds_file: str = "prop_thresholds.json"
     # Optional classifier bucket controls file; used to disable drifted CLF buckets.
@@ -102,6 +111,11 @@ class PredictConfig:
     lottery_min_american: int = 300   # floor: at least +300 per leg
     lottery_max_american: int = 900   # ceiling: cap at +900 to avoid true longshots
     lottery_max_per_game: int = 2
+    # Shadow-bankroll layer: labels real-money readiness without hiding signals.
+    bankroll_shadow_mode: bool = True
+    bankroll_max_stake_pct: float = 0.005
+    bankroll_max_daily_exposure_pct: float = 0.02
+    bankroll_max_lay_price: int = -180
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1415,8 +1429,12 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
     # Direct names
     for key in (
         "threshold_strikeouts",
+        "threshold_strikeouts_over",
+        "threshold_strikeouts_under",
         "threshold_hits",
         "threshold_total_bases",
+        "threshold_total_bases_over",
+        "threshold_total_bases_under",
         "threshold_home_runs_over",
         "threshold_home_runs_under",
         "threshold_clf",
@@ -1428,13 +1446,23 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
     # Stat-group names
     if "pitcher_strikeouts" in raw:
         v = raw["pitcher_strikeouts"]
-        _set("threshold_strikeouts", v.get("abs_edge") if isinstance(v, dict) else v)
+        if isinstance(v, dict):
+            _set("threshold_strikeouts", v.get("abs_edge"))
+            _set("threshold_strikeouts_over", v.get("over"))
+            _set("threshold_strikeouts_under", v.get("under"))
+        else:
+            _set("threshold_strikeouts", v)
     if "batter_hits" in raw:
         v = raw["batter_hits"]
         _set("threshold_hits", v.get("abs_edge") if isinstance(v, dict) else v)
     if "batter_total_bases" in raw:
         v = raw["batter_total_bases"]
-        _set("threshold_total_bases", v.get("abs_edge") if isinstance(v, dict) else v)
+        if isinstance(v, dict):
+            _set("threshold_total_bases", v.get("abs_edge"))
+            _set("threshold_total_bases_over", v.get("over"))
+            _set("threshold_total_bases_under", v.get("under"))
+        else:
+            _set("threshold_total_bases", v)
     if "batter_home_runs" in raw:
         v = raw["batter_home_runs"]
         if isinstance(v, dict):
@@ -1453,11 +1481,15 @@ def _apply_threshold_overrides(cfg: PredictConfig) -> None:
         _set("threshold_clf", v.get("abs_edge") if isinstance(v, dict) else v)
 
     log.info(
-        "Loaded threshold overrides from %s | K=%.2f H=%.2f TB=%.2f HR(o/u)=%.2f/%.2f CLF=%.3f EV=%.3f",
+        "Loaded threshold overrides from %s | K=%.2f(o=%s/u=%s) H=%.2f TB=%.2f(o=%s/u=%s) HR(o/u)=%.2f/%.2f CLF=%.3f EV=%.3f",
         path,
         cfg.threshold_strikeouts,
+        "-" if cfg.threshold_strikeouts_over is None else f"{cfg.threshold_strikeouts_over:.2f}",
+        "-" if cfg.threshold_strikeouts_under is None else f"{cfg.threshold_strikeouts_under:.2f}",
         cfg.threshold_hits,
         cfg.threshold_total_bases,
+        "-" if cfg.threshold_total_bases_over is None else f"{cfg.threshold_total_bases_over:.2f}",
+        "-" if cfg.threshold_total_bases_under is None else f"{cfg.threshold_total_bases_under:.2f}",
         cfg.threshold_home_runs_over,
         cfg.threshold_home_runs_under,
         cfg.threshold_clf,
@@ -1688,6 +1720,21 @@ def _american_to_profit_mult(price: Optional[float]) -> Optional[float]:
     return 100.0 / abs(p)
 
 
+def _american_to_implied_prob(price: Optional[float]) -> Optional[float]:
+    """American odds -> break-even probability before vig removal."""
+    if price is None:
+        return None
+    try:
+        p = float(price)
+    except Exception:
+        return None
+    if p == 0:
+        return None
+    if p > 0:
+        return 100.0 / (p + 100.0)
+    return abs(p) / (abs(p) + 100.0)
+
+
 def _ev_per_unit(p_win: Optional[float], price: Optional[float]) -> Optional[float]:
     """Expected net return for 1.0 unit stake."""
     if p_win is None:
@@ -1716,6 +1763,28 @@ def _prob_over_from_regression(pred: Optional[float], line: Optional[float], sig
         return 0.0
     k = int(math.floor(float(line)))
     return float(1.0 - _scipy_poisson.cdf(k, mu=mu))
+
+
+def _signed_probability_edge(p_over: Optional[float], breakeven: float = _BREAKEVEN_PROB) -> Optional[float]:
+    """Return signed side edge in probability space.
+
+    Positive means the over clears break-even; negative means the under clears
+    break-even. Probabilities in the no-edge band return 0.0 instead of being
+    misread as an under signal.
+    """
+    if p_over is None:
+        return None
+    try:
+        p = max(0.0, min(1.0, float(p_over)))
+    except Exception:
+        return None
+    over_edge = p - breakeven
+    under_edge = (1.0 - p) - breakeven
+    if over_edge > 0 and over_edge >= under_edge:
+        return over_edge
+    if under_edge > 0:
+        return -under_edge
+    return 0.0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1771,6 +1840,8 @@ def _load_bias_corrections(conn, lookback_days: int = 90) -> dict[str, float]:
     """Return per-stat additive correction = mean(actual - pred) over recent history.
 
     Queries graded predictions (actual_value filled) for *_BIAS_CORRECT_STATS only.
+    Uses regression-mode rows only: classifier rows store P(over) in pred_value,
+    which is not comparable to actual count outcomes.
     Falls back to 0.0 for any stat with fewer than 50 graded rows (too noisy).
     Corrections are capped at ±0.5 to guard against data anomalies.
     """
@@ -1783,11 +1854,20 @@ def _load_bias_corrections(conn, lookback_days: int = 90) -> dict[str, float]:
                 """
                 SELECT stat,
                        COUNT(*)                          AS n,
-                       AVG(actual_value - pred_value)   AS mean_bias
+                       AVG(actual_value::float - COALESCE(pred_count, pred_value)::float) AS mean_bias
                 FROM bets.mlb_prop_predictions
                 WHERE over_hit IS NOT NULL
-                  AND pred_value IS NOT NULL
+                  AND COALESCE(pred_count, pred_value) IS NOT NULL
                   AND actual_value IS NOT NULL
+                  AND book_line IS NOT NULL
+                  AND edge IS NOT NULL
+                  AND (
+                      edge_type = 'count'
+                      OR (
+                          edge_type IS NULL
+                          AND ABS((pred_value::float - book_line::float) - edge::float) <= 0.02
+                      )
+                  )
                   AND game_date_et >= %s
                   AND stat = ANY(%s)
                 GROUP BY stat
@@ -1849,16 +1929,24 @@ def _load_side_penalties(
                         book_line::float AS line,
                         CASE WHEN edge >= 0 THEN 'over' ELSE 'under' END AS side,
                         over_hit,
-                        pred_value::float AS pred_value,
+                        COALESCE(pred_count, pred_value)::float AS pred_value,
                         actual_value::float AS actual_value,
-                        (pred_value::float - actual_value::float) AS pred_minus_actual
+                        (COALESCE(pred_count, pred_value)::float - actual_value::float) AS pred_minus_actual
                     FROM bets.mlb_prop_predictions
                     WHERE game_date_et >= %s
                       AND over_hit IS NOT NULL
                       AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
                       AND book_line IS NOT NULL
-                      AND pred_value IS NOT NULL
+                      AND edge IS NOT NULL
+                      AND COALESCE(pred_count, pred_value) IS NOT NULL
                       AND actual_value IS NOT NULL
+                      AND (
+                          edge_type = 'count'
+                          OR (
+                              edge_type IS NULL
+                              AND ABS((pred_value::float - book_line::float) - edge::float) <= 0.02
+                          )
+                      )
                 )
                 SELECT
                     stat,
@@ -1890,13 +1978,22 @@ def _load_side_penalties(
                     CASE WHEN edge >= 0 THEN 'over' ELSE 'under' END AS side,
                     COUNT(*) AS n,
                     AVG(CASE WHEN (edge >= 0 AND over_hit) OR (edge < 0 AND NOT over_hit) THEN 1.0 ELSE 0.0 END) AS side_win_rate,
-                    AVG(pred_value::float - actual_value::float) AS mean_pred_minus_actual
+                    AVG(COALESCE(pred_count, pred_value)::float - actual_value::float) AS mean_pred_minus_actual
                 FROM bets.mlb_prop_predictions
                 WHERE game_date_et >= %s
                   AND over_hit IS NOT NULL
                   AND stat IN ('pitcher_strikeouts', 'batter_total_bases')
-                  AND pred_value IS NOT NULL
+                  AND COALESCE(pred_count, pred_value) IS NOT NULL
                   AND actual_value IS NOT NULL
+                  AND book_line IS NOT NULL
+                  AND edge IS NOT NULL
+                  AND (
+                      edge_type = 'count'
+                      OR (
+                          edge_type IS NULL
+                          AND ABS((pred_value::float - book_line::float) - edge::float) <= 0.02
+                      )
+                  )
                 GROUP BY 1, 2
                 """,
                 (cutoff,),
@@ -1948,9 +2045,459 @@ def _side_penalty_for_line(
     )
 
 
+def _apply_count_side_penalty(
+    stat: str,
+    pred: float,
+    line: float | None,
+    penalties: dict[tuple[str, str, str], float],
+) -> tuple[float, float]:
+    """Move weak side predictions toward the line without flipping sides."""
+    if line is None:
+        return float(pred), 0.0
+    edge = float(pred) - float(line)
+    side = "over" if edge >= 0 else "under"
+    penalty = _side_penalty_for_line(stat, line, side, penalties)
+    if penalty <= 0:
+        return float(pred), 0.0
+    if side == "over":
+        return max(float(line), float(pred) - penalty), penalty
+    return min(float(line), float(pred) + penalty), penalty
+
+
+def _weak_sides_for_line(
+    stat: str,
+    line: float | None,
+    penalties: dict[tuple[str, str, str], float],
+) -> dict[str, bool]:
+    return {
+        "over": _side_penalty_for_line(stat, line, "over", penalties) > 0,
+        "under": _side_penalty_for_line(stat, line, "under", penalties) > 0,
+    }
+
+
+def _blocked_sides_for_row(row: Dict, stat: str) -> set[str]:
+    sides = ((row.get("weak_prop_sides") or {}).get(stat) or {})
+    return {side for side, blocked in sides.items() if blocked}
+
+
+def _kelly_from_price(
+    p_win: Optional[float],
+    price: Optional[float],
+    *,
+    max_kelly: float = 0.05,
+) -> float:
+    if p_win is None or price is None:
+        return 0.0
+    try:
+        p = float(p_win)
+        odds = float(price)
+    except (TypeError, ValueError):
+        return 0.0
+    if not 0 < p < 1:
+        return 0.0
+    b = odds / 100.0 if odds > 0 else 100.0 / abs(odds)
+    if b <= 0:
+        return 0.0
+    q = 1.0 - p
+    return max(0.0, min(float(max_kelly), ((b * p) - q) / b))
+
+
+def _prop_count_threshold(cfg: PredictConfig, stat: str, side: str | None) -> float:
+    """Return side-specific count threshold when configured."""
+    side = (side or "").lower()
+    if stat == "pitcher_strikeouts":
+        if side == "over" and cfg.threshold_strikeouts_over is not None:
+            return float(cfg.threshold_strikeouts_over)
+        if side == "under" and cfg.threshold_strikeouts_under is not None:
+            return float(cfg.threshold_strikeouts_under)
+        return float(cfg.threshold_strikeouts)
+    if stat == "batter_total_bases":
+        if side == "over" and cfg.threshold_total_bases_over is not None:
+            return float(cfg.threshold_total_bases_over)
+        if side == "under" and cfg.threshold_total_bases_under is not None:
+            return float(cfg.threshold_total_bases_under)
+        return float(cfg.threshold_total_bases)
+    if stat == "batter_hits":
+        return float(cfg.threshold_hits)
+    if stat == "batter_home_runs":
+        return (
+            float(cfg.threshold_home_runs_over)
+            if side == "over"
+            else float(cfg.threshold_home_runs_under)
+        )
+    return float("inf")
+
+
+def _prop_signal_block_reason(
+    *,
+    stat: str,
+    side: str | None,
+    edge: Optional[float],
+    edge_type: Optional[str],
+    ev: Optional[float] = None,
+    cfg: PredictConfig,
+) -> str:
+    if side is None:
+        return "missing_side"
+    if edge is None:
+        return "missing_edge"
+    try:
+        if ev is not None and not pd.isna(ev) and float(ev) >= float(cfg.min_ev):
+            return ""
+    except Exception:
+        pass
+    try:
+        e = float(edge)
+    except (TypeError, ValueError):
+        return "missing_edge"
+    if edge_type == "probability":
+        threshold = float(cfg.threshold_clf)
+        name = "threshold_clf"
+        passes = abs(e) >= threshold
+    else:
+        threshold = _prop_count_threshold(cfg, stat, side)
+        if stat == "pitcher_strikeouts":
+            name = f"threshold_strikeouts_{side}"
+        elif stat == "batter_total_bases":
+            name = f"threshold_total_bases_{side}"
+        elif stat == "batter_hits":
+            name = "threshold_hits"
+        elif stat == "batter_home_runs":
+            name = f"threshold_home_runs_{side}"
+        else:
+            name = "threshold_unknown"
+        passes = e >= threshold if stat == "batter_home_runs" and side == "over" else abs(e) >= threshold
+    if threshold >= 900.0:
+        return f"threshold_disabled:{name}"
+    if not passes:
+        return f"below_edge_threshold:{name}"
+    return ""
+
+
+def _prop_db_signal_allowed(
+    *,
+    stat: str,
+    side: str | None,
+    edge: Optional[float],
+    edge_type: Optional[str],
+    ev: Optional[float],
+    cfg: PredictConfig,
+) -> bool:
+    if side is None:
+        return False
+    if edge is None:
+        return False
+    try:
+        e = float(edge)
+    except (TypeError, ValueError):
+        return False
+    try:
+        if ev is not None and not pd.isna(ev) and float(ev) >= float(cfg.min_ev):
+            return True
+    except Exception:
+        pass
+    if edge_type == "probability":
+        return abs(e) >= cfg.threshold_clf
+    threshold = _prop_count_threshold(cfg, stat, side)
+    if stat == "batter_home_runs" and side == "over":
+        return e >= threshold
+    return abs(e) >= threshold
+
+
+def _prop_bankroll_assessment(
+    *,
+    stat: str,
+    side: str | None,
+    cfg: PredictConfig,
+    bet_price: Optional[float],
+    ev: Optional[float],
+    kelly_fraction: Optional[float],
+    blocked_sides: Optional[set[str]] = None,
+    has_signal: Optional[bool] = None,
+    no_signal_reason: str = "no_model_edge",
+) -> BankrollAssessment:
+    """Label a prop signal for shadow-bankroll readiness."""
+    hard: list[str] = []
+    soft: list[str] = []
+
+    if side and side in (blocked_sides or set()):
+        soft.append(f"weak_{side}_bucket")
+    if side == "under" and stat in cfg.fd_over_only:
+        soft.append("unbookable_under")
+    if stat == "batter_home_runs":
+        soft.append("hr_longshot_variance")
+
+    clean_price = None
+    if bet_price is not None:
+        try:
+            clean_price = None if pd.isna(bet_price) else float(bet_price)
+        except Exception:
+            clean_price = None
+
+    if clean_price is None:
+        hard.append("missing_price")
+    elif clean_price < cfg.bankroll_max_lay_price:
+        hard.append("heavy_juice")
+
+    if ev is None:
+        soft.append("missing_ev")
+    elif ev < cfg.min_ev:
+        soft.append("ev_below_min")
+
+    if kelly_fraction is None or kelly_fraction <= 0:
+        soft.append("zero_kelly")
+
+    return assess_bankroll_layer(
+        has_signal=(side is not None if has_signal is None else has_signal),
+        hard_blocks=hard,
+        soft_warnings=soft,
+        kelly_fraction=kelly_fraction,
+        max_stake_pct=cfg.bankroll_max_stake_pct,
+        no_signal_reason=no_signal_reason,
+    )
+
+
+def _prop_bankroll_from_pick(
+    *,
+    stat: str,
+    side_label: str,
+    cfg: PredictConfig,
+    ld: Dict,
+    p_over: Optional[float],
+    edge: Optional[float],
+    sigma: Optional[float],
+    blocked_sides: Optional[set[str]] = None,
+) -> BankrollAssessment:
+    side = "over" if side_label == "O" else "under"
+    price = ld.get("over_price") if side == "over" else ld.get("under_price")
+    p_side = None
+    if p_over is not None:
+        p_side = float(p_over) if side == "over" else 1.0 - float(p_over)
+    ev = _ev_per_unit(p_side, price)
+    kelly = _kelly_from_price(p_side, price)
+    if kelly <= 0 and edge is not None:
+        kelly = _kelly_prop(abs(float(edge)), sigma or 0.5)
+    no_signal_reason = _prop_signal_block_reason(
+        stat=stat,
+        side=side,
+        edge=edge,
+        edge_type="count",
+        ev=ev,
+        cfg=cfg,
+    )
+    has_signal = not no_signal_reason
+    return _prop_bankroll_assessment(
+        stat=stat,
+        side=side,
+        cfg=cfg,
+        bet_price=price,
+        ev=ev,
+        kelly_fraction=kelly,
+        blocked_sides=blocked_sides,
+        has_signal=has_signal,
+        no_signal_reason=no_signal_reason,
+    )
+
+
+def _append_bankroll_reason(existing: str, reason: str) -> str:
+    parts = [p.strip() for p in (existing or "").split(";") if p.strip()]
+    if reason not in parts:
+        parts.append(reason)
+    return "; ".join(parts)
+
+
+def _downgrade_for_daily_cap(assessment: BankrollAssessment) -> BankrollAssessment:
+    return BankrollAssessment(
+        tier="paper",
+        candidate=False,
+        reasons=_append_bankroll_reason(assessment.reasons, "daily_exposure_cap"),
+        stake_pct=0.0,
+    )
+
+
+def _apply_assessment_daily_cap(
+    assessment: BankrollAssessment,
+    *,
+    used_exposure_pct: float,
+    cfg: PredictConfig,
+) -> tuple[BankrollAssessment, float]:
+    if not assessment.candidate:
+        return assessment, used_exposure_pct
+    stake = float(assessment.stake_pct or 0.0)
+    if used_exposure_pct + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12:
+        return assessment, used_exposure_pct + stake
+    return _downgrade_for_daily_cap(assessment), used_exposure_pct
+
+
+def _cap_bankroll_output(items: List[Dict], cfg: PredictConfig) -> None:
+    used = 0.0
+    for item in items:
+        assessment = item.get("bankroll")
+        if not isinstance(assessment, BankrollAssessment):
+            continue
+        capped, used = _apply_assessment_daily_cap(
+            assessment,
+            used_exposure_pct=used,
+            cfg=cfg,
+        )
+        item["bankroll"] = capped
+
+
+def _cap_prop_db_rows(rows: List[Dict], cfg: PredictConfig) -> List[Dict]:
+    """Apply daily bankroll exposure cap to persisted prop candidates."""
+    candidate_indexes = [
+        i for i, row in enumerate(rows)
+        if bool(row.get("bankroll_candidate"))
+    ]
+
+    def _score(idx: int) -> tuple[float, float]:
+        row = rows[idx]
+        ev = row.get("ev")
+        edge = row.get("edge")
+        try:
+            ev_score = float(ev) if ev is not None else -999.0
+        except (TypeError, ValueError):
+            ev_score = -999.0
+        try:
+            edge_score = abs(float(edge)) if edge is not None else 0.0
+        except (TypeError, ValueError):
+            edge_score = 0.0
+        return ev_score, edge_score
+
+    used = 0.0
+    for idx in sorted(candidate_indexes, key=_score, reverse=True):
+        row = rows[idx]
+        stake = float(row.get("stake_pct") or 0.0)
+        if used + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12:
+            used += stake
+            continue
+        row["bankroll_candidate"] = False
+        row["bankroll_tier"] = "paper"
+        row["bankroll_reasons"] = _append_bankroll_reason(
+            row.get("bankroll_reasons") or "",
+            "daily_exposure_cap",
+        )
+        row["stake_pct"] = 0.0
+    return rows
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DB table
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _round_or_none(value: Optional[float], ndigits: int) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+    return round(float(value), ndigits)
+
+
+def _prop_db_row(
+    *,
+    game_date_et: date,
+    game_slug: str,
+    player_id: int,
+    player_name: str,
+    team_abbr,
+    stat: str,
+    pred_value: Optional[float],
+    pred_count: Optional[float],
+    pred_prob_over: Optional[float],
+    book_line: Optional[float],
+    edge: Optional[float],
+    edge_type: Optional[str],
+    model_family: Optional[str],
+    kelly_fraction: Optional[float],
+    ld: Optional[Dict],
+    cfg: Optional[PredictConfig] = None,
+    blocked_sides: Optional[set[str]] = None,
+) -> Dict:
+    """Build the persisted prop row with explicit count/probability/price fields."""
+    line = float(book_line) if book_line is not None else None
+    side = None
+    if edge is not None and abs(float(edge)) > 1e-12:
+        side = "over" if float(edge) > 0 else "under"
+
+    p_over = pred_prob_over
+    if p_over is None and pred_count is not None and line is not None:
+        p_over = _prob_over_from_regression(pred_count, line)
+    p_side = None
+    if side == "over" and p_over is not None:
+        p_side = float(p_over)
+    elif side == "under" and p_over is not None:
+        p_side = 1.0 - float(p_over)
+
+    line_data = ld or {}
+    over_price = line_data.get("over_price")
+    under_price = line_data.get("under_price")
+    bet_price = over_price if side == "over" else (under_price if side == "under" else None)
+    breakeven = _american_to_implied_prob(bet_price)
+    ev = _ev_per_unit(p_side, bet_price)
+    kelly_for_bankroll = kelly_fraction
+    if (kelly_for_bankroll is None or kelly_for_bankroll <= 0) and p_side is not None:
+        kelly_for_bankroll = _kelly_from_price(p_side, bet_price)
+    no_signal_reason = (
+        _prop_signal_block_reason(
+            stat=stat,
+            side=side,
+            edge=edge,
+            edge_type=edge_type,
+            ev=ev,
+            cfg=cfg,
+        )
+        if cfg is not None
+        else ("" if side is not None else "missing_side")
+    )
+    bankroll = (
+        _prop_bankroll_assessment(
+            stat=stat,
+            side=side,
+            cfg=cfg,
+            bet_price=bet_price,
+            ev=ev,
+            kelly_fraction=kelly_for_bankroll,
+            blocked_sides=blocked_sides,
+            has_signal=not no_signal_reason,
+            no_signal_reason=no_signal_reason,
+        )
+        if cfg is not None
+        else assess_bankroll_layer(has_signal=side is not None, kelly_fraction=kelly_for_bankroll)
+    )
+
+    return {
+        "game_date_et": game_date_et,
+        "game_slug": game_slug,
+        "player_id": int(player_id),
+        "player_name": player_name,
+        "team_abbr": team_abbr,
+        "stat": stat,
+        # Backward compatibility: pred_value remains what older reports expect.
+        "pred_value": _round_or_none(pred_value, 3),
+        "pred_count": _round_or_none(pred_count, 3),
+        "pred_prob_over": _round_or_none(p_over, 4),
+        "book_line": line,
+        "edge": _round_or_none(edge, 4),
+        "edge_type": edge_type,
+        "model_family": model_family,
+        "bet_side": side,
+        "line_bucket": _clf_line_bucket(stat, line),
+        "over_price": _round_or_none(over_price, 0),
+        "under_price": _round_or_none(under_price, 0),
+        "bet_price": _round_or_none(bet_price, 0),
+        "breakeven_prob": _round_or_none(breakeven, 4),
+        "ev": _round_or_none(ev, 4),
+        "bookmaker_key": line_data.get("bookmaker_key"),
+        "kelly_fraction": _round_or_none(kelly_for_bankroll, 4),
+        "bankroll_tier": bankroll.tier,
+        "bankroll_candidate": bankroll.candidate,
+        "bankroll_reasons": bankroll.reasons,
+        "stake_pct": _round_or_none(bankroll.stake_pct, 4),
+    }
+
 
 _ENSURE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS bets.mlb_prop_predictions (
@@ -1970,21 +2517,63 @@ CREATE TABLE IF NOT EXISTS bets.mlb_prop_predictions (
     created_at       TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (game_date_et, game_slug, player_id, stat)
 );
+
+ALTER TABLE bets.mlb_prop_predictions
+    ADD COLUMN IF NOT EXISTS pred_count      NUMERIC,
+    ADD COLUMN IF NOT EXISTS pred_prob_over  NUMERIC,
+    ADD COLUMN IF NOT EXISTS edge_type       TEXT,
+    ADD COLUMN IF NOT EXISTS model_family    TEXT,
+    ADD COLUMN IF NOT EXISTS bet_side        TEXT,
+    ADD COLUMN IF NOT EXISTS line_bucket     TEXT,
+    ADD COLUMN IF NOT EXISTS over_price      NUMERIC,
+    ADD COLUMN IF NOT EXISTS under_price     NUMERIC,
+    ADD COLUMN IF NOT EXISTS bet_price       NUMERIC,
+    ADD COLUMN IF NOT EXISTS breakeven_prob  NUMERIC,
+    ADD COLUMN IF NOT EXISTS ev              NUMERIC,
+    ADD COLUMN IF NOT EXISTS bookmaker_key   TEXT,
+    ADD COLUMN IF NOT EXISTS bankroll_tier   TEXT,
+    ADD COLUMN IF NOT EXISTS bankroll_candidate BOOLEAN,
+    ADD COLUMN IF NOT EXISTS bankroll_reasons TEXT,
+    ADD COLUMN IF NOT EXISTS stake_pct       NUMERIC;
 """
 
 _UPSERT_SQL = """
 INSERT INTO bets.mlb_prop_predictions
     (game_date_et, game_slug, player_id, player_name, team_abbr, stat,
-     pred_value, book_line, edge, kelly_fraction)
+     pred_value, pred_count, pred_prob_over, book_line, edge, edge_type,
+     model_family, bet_side, line_bucket, over_price, under_price, bet_price,
+     breakeven_prob, ev, bookmaker_key, kelly_fraction,
+     bankroll_tier, bankroll_candidate, bankroll_reasons, stake_pct)
 VALUES
     (%(game_date_et)s, %(game_slug)s, %(player_id)s, %(player_name)s, %(team_abbr)s,
-     %(stat)s, %(pred_value)s, %(book_line)s, %(edge)s, %(kelly_fraction)s)
+     %(stat)s, %(pred_value)s, %(pred_count)s, %(pred_prob_over)s, %(book_line)s,
+     %(edge)s, %(edge_type)s, %(model_family)s, %(bet_side)s, %(line_bucket)s,
+     %(over_price)s, %(under_price)s, %(bet_price)s, %(breakeven_prob)s,
+     %(ev)s, %(bookmaker_key)s, %(kelly_fraction)s,
+     %(bankroll_tier)s, %(bankroll_candidate)s, %(bankroll_reasons)s, %(stake_pct)s)
 ON CONFLICT (game_date_et, game_slug, player_id, stat) DO UPDATE SET
-    player_name    = EXCLUDED.player_name,
-    pred_value     = EXCLUDED.pred_value,
-    book_line      = EXCLUDED.book_line,
-    edge           = EXCLUDED.edge,
-    kelly_fraction = EXCLUDED.kelly_fraction
+    player_name     = EXCLUDED.player_name,
+    team_abbr       = EXCLUDED.team_abbr,
+    pred_value      = EXCLUDED.pred_value,
+    pred_count      = EXCLUDED.pred_count,
+    pred_prob_over  = EXCLUDED.pred_prob_over,
+    book_line       = EXCLUDED.book_line,
+    edge            = EXCLUDED.edge,
+    edge_type       = EXCLUDED.edge_type,
+    model_family    = EXCLUDED.model_family,
+    bet_side        = EXCLUDED.bet_side,
+    line_bucket     = EXCLUDED.line_bucket,
+    over_price      = EXCLUDED.over_price,
+    under_price     = EXCLUDED.under_price,
+    bet_price       = EXCLUDED.bet_price,
+    breakeven_prob  = EXCLUDED.breakeven_prob,
+    ev              = EXCLUDED.ev,
+    bookmaker_key   = EXCLUDED.bookmaker_key,
+    kelly_fraction  = EXCLUDED.kelly_fraction,
+    bankroll_tier   = EXCLUDED.bankroll_tier,
+    bankroll_candidate = EXCLUDED.bankroll_candidate,
+    bankroll_reasons = EXCLUDED.bankroll_reasons,
+    stake_pct       = EXCLUDED.stake_pct
 """
 
 
@@ -2011,6 +2600,13 @@ def _save_predictions(conn, rows: List[Dict]) -> None:
         if deleted:
             log.info("_save_predictions: removed %d stale rows for OUT/DOUBTFUL players", deleted)
         for row in rows:
+            for key in (
+                "pred_count", "pred_prob_over", "edge_type", "model_family",
+                "bet_side", "line_bucket", "over_price", "under_price",
+                "bet_price", "breakeven_prob", "ev", "bookmaker_key",
+                "bankroll_tier", "bankroll_candidate", "bankroll_reasons", "stake_pct",
+            ):
+                row.setdefault(key, None)
             cur.execute(_UPSERT_SQL, row)
     conn.commit()
     log.info("Saved %d prop prediction rows", len(rows))
@@ -2199,13 +2795,19 @@ def _fmt_edge(edge: Optional[float], threshold: float, direction: str = "OVER") 
     return f"[{direction} +{abs_e:.2f}]" if abs_e > 0 else "[no edge]"
 
 
-def _best_side_from_ev(ld: Dict, p_over: Optional[float], min_ev: float) -> Optional[Dict]:
+def _best_side_from_ev(
+    ld: Dict,
+    p_over: Optional[float],
+    min_ev: float,
+    blocked_sides: set[str] | None = None,
+) -> Optional[Dict]:
     """Return best EV side dict when EV is computable and above threshold."""
     if p_over is None:
         return None
     ev_over = _ev_per_unit(p_over, ld.get("over_price"))
     ev_under = _ev_per_unit(1.0 - p_over, ld.get("under_price"))
     cands = []
+    # blocked_sides are now warnings only. The model still picks the best priced side.
     if ev_over is not None and ld.get("over_link"):
         cands.append(("over", ev_over, ld.get("over_price"), ld.get("over_link")))
     if ev_under is not None and ld.get("under_link"):
@@ -2662,6 +3264,7 @@ def _print_discord(
     cfg: PredictConfig,
     all_alt_lines: Optional[Dict] = None,
     lottery_legs: Optional[List[Dict]] = None,
+    db_rows: Optional[List[Dict]] = None,
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
@@ -2675,6 +3278,20 @@ def _print_discord(
     # Discord mode: Top-10 leaderboards per stat + HR parlay + lottery parlay.
     if is_discord:
         printed_any = False
+        used_bankroll_exposure = 0.0
+
+        def _budget_assessment(assessment: BankrollAssessment) -> BankrollAssessment:
+            nonlocal used_bankroll_exposure
+            capped, used_bankroll_exposure = _apply_assessment_daily_cap(
+                assessment,
+                used_exposure_pct=used_bankroll_exposure,
+                cfg=cfg,
+            )
+            return capped
+
+        def _bankroll_label(assessment: BankrollAssessment) -> str:
+            capped = _budget_assessment(assessment)
+            return bankroll_tag(capped)
 
         def _market_implied_prob(over_price) -> Optional[float]:
             """Convert American over_price → implied probability (no vig removal)."""
@@ -2700,7 +3317,7 @@ def _print_discord(
             sp_k_ceiling=None, sp_k_lookup=None,
             skip_clf=False,
         ):
-            """Return (p_over, pred, line, name, team, opp, link) for rows that
+            """Return (p_over, pred, line, name, team, opp, link, bankroll) for rows that
             pass all quality gates, sorted by P(over) descending.
 
             Gates (all optional):
@@ -2767,9 +3384,23 @@ def _print_discord(
                     if mkt_p is not None and (p_over - mkt_p) < min_edge_vs_market:
                         continue
 
+                bankroll = _prop_bankroll_from_pick(
+                    stat=stat_key,
+                    side_label="O",
+                    cfg=cfg,
+                    ld=ld,
+                    p_over=p_over,
+                    edge=float(pred_val) - float(line),
+                    sigma=(
+                        r.get("sigma_strikeouts")
+                        if stat_key == "pitcher_strikeouts"
+                        else (r.get("sigma_map") or {}).get(stat_key)
+                    ),
+                    blocked_sides=_blocked_sides_for_row(r, stat_key),
+                )
                 entries.append((p_over, pred_val, line, name,
                                  r.get("team_abbr", "?"), r.get("opponent_abbr", "?"),
-                                 ld.get("over_link")))
+                                 ld.get("over_link"), bankroll))
             return sorted(entries, key=lambda x: x[0], reverse=True)
 
         # ── SP K lookup: {(game_slug, pitching_team_abbr): pred_k} ──────────────
@@ -2780,6 +3411,387 @@ def _print_discord(
             if r.get("pred_strikeouts") is not None and r.get("team_abbr")
         }
 
+        bankroll_rows: List[Dict] = []
+        paper_rows: List[Dict] = []
+        model_pick_rows: List[Dict] = []
+        bankroll_links: List[str] = []
+
+        def _message_game_date() -> Optional[date]:
+            for row in all_pitcher_rows + all_batter_rows:
+                val = row.get("game_date_et")
+                if val is not None:
+                    try:
+                        return pd.Timestamp(val).date()
+                    except Exception:
+                        return val
+            return cfg.et_date
+
+        def _existing_game_bankroll_exposure() -> float:
+            game_date = _message_game_date()
+            if not game_date:
+                return 0.0
+            try:
+                with psycopg2.connect(cfg.pg_dsn) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT
+                                COALESCE(SUM(
+                                    CASE WHEN bankroll_candidate_rl
+                                         THEN COALESCE(stake_pct_rl, 0)
+                                         ELSE 0 END
+                                ), 0)
+                                +
+                                COALESCE(SUM(
+                                    CASE WHEN bankroll_candidate_total
+                                         THEN COALESCE(stake_pct_total, 0)
+                                         ELSE 0 END
+                                ), 0)
+                            FROM bets.mlb_game_predictions
+                            WHERE game_date_et = %s
+                            """,
+                            (game_date,),
+                        )
+                        return float(cur.fetchone()[0] or 0.0)
+            except Exception:
+                log.debug("Could not load existing game bankroll exposure", exc_info=True)
+                return 0.0
+
+        def _record_prop_item(
+            *,
+            market: str,
+            side: str = "O",
+            name: str,
+            team: str,
+            opp: str,
+            pred_val: float,
+            pred_fmt: str,
+            line: float,
+            p_over: Optional[float],
+            link: Optional[str],
+            bankroll: BankrollAssessment,
+        ) -> None:
+            capped = bankroll if db_rows is not None else _budget_assessment(bankroll)
+            item = {
+                "market": market,
+                "side": side,
+                "name": name,
+                "team": team,
+                "opp": opp,
+                "pred_val": pred_val,
+                "pred_fmt": pred_fmt,
+                "line": line,
+                "p_over": p_over,
+                "link": link,
+                "bankroll": capped,
+            }
+            if capped.candidate:
+                if db_rows is None:
+                    bankroll_rows.append(item)
+                    if link:
+                        bankroll_links.append(link)
+            else:
+                paper_rows.append(item)
+
+        def _print_prop_item(item: Dict, *, include_link: bool) -> None:
+            pred_s = item["pred_fmt"].format(item["pred_val"])
+            p_s = f" P={item['p_over']:.1%}" if item["p_over"] is not None else ""
+            ev_s = f" EV={item['ev']:+.1%}" if item.get("ev") is not None else ""
+            link_s = f" [Bet](<{item['link']}>)" if include_link and item.get("link") else ""
+            print(
+                f"- {item['name']} ({item['team']} vs {item['opp']}) "
+                f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}{p_s}{ev_s} "
+                f"[{bankroll_tag(item['bankroll'])}]{link_s}"
+            )
+
+        def _as_float(value) -> Optional[float]:
+            if value is None:
+                return None
+            try:
+                if pd.isna(value):
+                    return None
+            except Exception:
+                pass
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        stat_labels = {
+            "pitcher_strikeouts": ("K", "{:.1f}"),
+            "batter_hits": ("H", "{:.3f}"),
+            "batter_total_bases": ("TB", "{:.3f}"),
+            "batter_home_runs": ("HR", "{:.3f}"),
+        }
+
+        def _opponent_for_row(row: Dict) -> str:
+            gm = game_map.get(row.get("game_slug"), {})
+            team = row.get("team_abbr")
+            home = gm.get("home")
+            away = gm.get("away")
+            if team == home:
+                return away or "?"
+            if team == away:
+                return home or "?"
+            return row.get("opponent_abbr") or "?"
+
+        def _db_row_to_prop_item(row: Dict) -> Optional[Dict]:
+            stat = row.get("stat")
+            if stat not in stat_labels:
+                return None
+            side_raw = (row.get("bet_side") or "").lower()
+            if side_raw not in {"over", "under"}:
+                return None
+            market, pred_fmt = stat_labels[stat]
+            name = row.get("player_name", f"id={row.get('player_id')}")
+            ld = prop_lines.get((_normalize_name(name), stat))
+            link = None
+            if ld:
+                link = ld.get("over_link") if side_raw == "over" else ld.get("under_link")
+            p_over = _as_float(row.get("pred_prob_over"))
+            p_side = (1.0 - p_over) if side_raw == "under" and p_over is not None else p_over
+            assessment = BankrollAssessment(
+                tier=row.get("bankroll_tier") or "paper",
+                candidate=bool(row.get("bankroll_candidate")),
+                reasons=row.get("bankroll_reasons") or "",
+                stake_pct=float(row.get("stake_pct") or 0.0),
+            )
+            return {
+                "market": market,
+                "side": "O" if side_raw == "over" else "U",
+                "name": name,
+                "team": row.get("team_abbr", "?"),
+                "opp": _opponent_for_row(row),
+                "pred_val": _as_float(row.get("pred_count")) or _as_float(row.get("pred_value")) or 0.0,
+                "pred_fmt": pred_fmt,
+                "line": _as_float(row.get("book_line")) or 0.0,
+                "p_over": p_side,
+                "ev": _as_float(row.get("ev")),
+                "edge": _as_float(row.get("edge")),
+                "link": link,
+                "bankroll": assessment,
+            }
+
+        def _pick_score(item: Dict) -> tuple[float, float]:
+            ev = item.get("ev")
+            edge = item.get("edge")
+            return (
+                float(ev) if ev is not None else -999.0,
+                abs(float(edge)) if edge is not None else 0.0,
+            )
+
+        def _print_prop_parlay(title: str, links: List[str]) -> None:
+            dedup = [
+                link for link in list(dict.fromkeys([l for l in links if l]))
+                if "fanduel.com" in link and "marketId=" in link and "selectionId=" in link
+            ]
+            if len(dedup) < 2:
+                return
+            parlay_url = build_fd_parlay_url(dedup[:25])
+            if parlay_url:
+                print(f"- {title}: [FD]({parlay_url})")
+
+        if db_rows is not None:
+            for row in db_rows:
+                item = _db_row_to_prop_item(row)
+                if item is None:
+                    continue
+                ev = item.get("ev")
+                if ev is not None and ev >= cfg.min_ev:
+                    model_pick_rows.append(item)
+                if item["bankroll"].candidate:
+                    bankroll_rows.append(item)
+                    used_bankroll_exposure += item["bankroll"].stake_pct
+                    if item.get("link"):
+                        bankroll_links.append(item["link"])
+
+            model_pick_rows.sort(key=_pick_score, reverse=True)
+            bankroll_rows.sort(
+                key=lambda item: (item["bankroll"].stake_pct, item.get("p_over") or 0.0),
+                reverse=True,
+            )
+
+            if model_pick_rows:
+                print(f"**MODEL PICKS ({min(len(model_pick_rows), cfg.top_n_bets)} of {len(model_pick_rows)})**")
+                for item in model_pick_rows[:cfg.top_n_bets]:
+                    _print_prop_item(item, include_link=True)
+                _print_prop_parlay(
+                    "Model Props Parlay",
+                    [item["link"] for item in model_pick_rows[:25] if item.get("link")],
+                )
+            else:
+                print("**MODEL PICKS**")
+                print("- No positive-EV player props with a priced over/under today")
+
+            if bankroll_rows:
+                print("")
+                print(f"**BANKROLL BETS ({len(bankroll_rows)})**")
+                for item in bankroll_rows:
+                    _print_prop_item(item, include_link=True)
+                _print_prop_parlay("Bankroll Props Parlay", bankroll_links)
+            else:
+                print("")
+                print("**BANKROLL BETS**")
+                print("- No bankroll-qualified player props today")
+
+            game_exposure = _existing_game_bankroll_exposure()
+            combined_exposure = game_exposure + used_bankroll_exposure
+            cap = cfg.bankroll_max_daily_exposure_pct
+            if combined_exposure > cap + 1e-12:
+                print(
+                    f"- GLOBAL CAP WARNING: games + props total {combined_exposure:.2%} "
+                    f"vs daily cap {cap:.2%} (over by {combined_exposure - cap:.2%})"
+                )
+
+            print("")
+            return []
+
+        k_entries = _leaderboard_rows(
+            all_pitcher_rows, "pred_strikeouts", "pitcher_strikeouts",
+            min_p_over=0.52,
+        )
+        for p_over, pred_val, line, name, team, opp, lnk, bankroll in k_entries[:10]:
+            _record_prop_item(
+                market="K",
+                name=name,
+                team=team,
+                opp=opp,
+                pred_val=pred_val,
+                pred_fmt="{:.1f}",
+                line=line,
+                p_over=p_over,
+                link=lnk,
+                bankroll=bankroll,
+            )
+
+        h_entries = _leaderboard_rows(
+            all_batter_rows, "pred_hits", "batter_hits",
+            min_pred=1.0,
+            min_p_over=0.63,
+            min_edge_vs_market=0, over_price_key="market_hits_over_price",
+            max_batting_order=7,
+            require_confirmed_sp=False,
+            sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
+            skip_clf=True,
+        )
+        for p_over, pred_val, line, name, team, opp, lnk, bankroll in h_entries[:10]:
+            _record_prop_item(
+                market="H",
+                name=name,
+                team=team,
+                opp=opp,
+                pred_val=pred_val,
+                pred_fmt="{:.3f}",
+                line=line,
+                p_over=p_over,
+                link=lnk,
+                bankroll=bankroll,
+            )
+
+        tb_entries = _leaderboard_rows(
+            all_batter_rows, "pred_total_bases", "batter_total_bases",
+            min_pred=2.0, min_p_over=0.45,
+            min_edge_vs_market=0, over_price_key="market_tb_over_price",
+            max_batting_order=7,
+            require_confirmed_sp=False,
+            sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
+            skip_clf=True,
+        )
+        for p_over, pred_val, line, name, team, opp, lnk, bankroll in tb_entries[:10]:
+            _record_prop_item(
+                market="TB",
+                name=name,
+                team=team,
+                opp=opp,
+                pred_val=pred_val,
+                pred_fmt="{:.3f}",
+                line=line,
+                p_over=p_over,
+                link=lnk,
+                bankroll=bankroll,
+            )
+
+        hr_top_rows_d = sorted(
+            [r for r in all_batter_rows
+             if r.get("pred_home_runs") is not None
+             and float(r.get("pred_home_runs") or 0.0) >= 0.15],
+            key=lambda r: r["pred_home_runs"], reverse=True,
+        )
+        for r in hr_top_rows_d[:10]:
+            name = r.get("player_name", f"id={r['player_id']}")
+            norm = _normalize_name(name)
+            ld = prop_lines.get((norm, "batter_home_runs"))
+            if not ld or ld.get("line") is None:
+                continue
+            line = ld["line"]
+            pred_hr = float(r["pred_home_runs"])
+            clf_p = (r.get("clf_p_over") or {}).get("batter_home_runs")
+            if clf_p is not None:
+                p_over = _apply_regression_gate(clf_p, pred_hr, line, "batter_home_runs")
+            else:
+                p_over = _prob_over_from_regression(pred_hr, line, None)
+            bankroll = _prop_bankroll_from_pick(
+                stat="batter_home_runs",
+                side_label="O",
+                cfg=cfg,
+                ld=ld,
+                p_over=p_over,
+                edge=pred_hr - float(line),
+                sigma=(r.get("sigma_map") or {}).get("batter_home_runs"),
+                blocked_sides=_blocked_sides_for_row(r, "batter_home_runs"),
+            )
+            _record_prop_item(
+                market="HR",
+                name=name,
+                team=r.get("team_abbr", "?"),
+                opp=r.get("opponent_abbr", "?"),
+                pred_val=pred_hr,
+                pred_fmt="{:.3f}",
+                line=line,
+                p_over=p_over,
+                link=ld.get("over_link"),
+                bankroll=bankroll,
+            )
+
+        bankroll_rows.sort(
+            key=lambda item: (item["bankroll"].stake_pct, item.get("p_over") or 0.0),
+            reverse=True,
+        )
+
+        if bankroll_rows:
+            print(f"**BANKROLL BETS ({len(bankroll_rows)})**")
+            for item in bankroll_rows:
+                _print_prop_item(item, include_link=True)
+        else:
+            print("**BANKROLL BETS**")
+            print("- No bankroll-qualified player props today")
+
+        fd_bankroll_links = [
+            link for link in list(dict.fromkeys(bankroll_links))
+            if "fanduel.com" in link and "marketId=" in link and "selectionId=" in link
+        ]
+        parlay_url = build_fd_parlay_url(fd_bankroll_links[:25]) if len(fd_bankroll_links) >= 2 else None
+        if parlay_url:
+            print(f"- Bankroll Props Parlay: [FD]({parlay_url})")
+
+        game_exposure = _existing_game_bankroll_exposure()
+        combined_exposure = game_exposure + used_bankroll_exposure
+        cap = cfg.bankroll_max_daily_exposure_pct
+        if combined_exposure > cap + 1e-12:
+            print(
+                f"- GLOBAL CAP WARNING: games + props total {combined_exposure:.2%} "
+                f"vs daily cap {cap:.2%} (over by {combined_exposure - cap:.2%})"
+            )
+
+        if paper_rows:
+            print("")
+            print(f"**PAPER / RESEARCH ({len(paper_rows)})**")
+            for item in paper_rows:
+                _print_prop_item(item, include_link=False)
+
+        print("")
+        return []
+
         # ── Top 10 Strikeouts ─────────────────────────────────────────────────
         k_entries = _leaderboard_rows(
             all_pitcher_rows, "pred_strikeouts", "pitcher_strikeouts",
@@ -2787,10 +3799,10 @@ def _print_discord(
         )
         if k_entries:
             print("**Top 10 Strikeouts Today**")
-            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(k_entries[:10], start=1):
+            for i, (p_over, pred_val, line, name, team, opp, lnk, bankroll) in enumerate(k_entries[:10], start=1):
                 link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.1f} · O{line:.1f} · P={p_over:.1%}{link_str}")
-            k_links = [lnk for _, _, _, _, _, _, lnk in k_entries[:10] if lnk]
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.1f} · O{line:.1f} · P={p_over:.1%} [{_bankroll_label(bankroll)}]{link_str}")
+            k_links = [lnk for _, _, _, _, _, _, lnk, _bankroll in k_entries[:10] if lnk]
             k_parlay_url = build_fd_parlay_url(k_links[:25]) if k_links else None
             if k_parlay_url:
                 print(f"• Top 10 K Parlay: [FD]({k_parlay_url})")
@@ -2818,10 +3830,10 @@ def _print_discord(
         if h_entries:
             print("")
             print("**Top 10 Hits Today**")
-            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(h_entries[:10], start=1):
+            for i, (p_over, pred_val, line, name, team, opp, lnk, bankroll) in enumerate(h_entries[:10], start=1):
                 link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
-            h_links = [lnk for _, _, _, _, _, _, lnk in h_entries[:10] if lnk]
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%} [{_bankroll_label(bankroll)}]{link_str}")
+            h_links = [lnk for _, _, _, _, _, _, lnk, _bankroll in h_entries[:10] if lnk]
             h_parlay_url = build_fd_parlay_url(h_links[:25]) if h_links else None
             if h_parlay_url:
                 print(f"• Top 10 H Parlay: [FD]({h_parlay_url})")
@@ -2849,10 +3861,10 @@ def _print_discord(
         if tb_entries:
             print("")
             print("**Top TB Today (high confidence only)**")
-            for i, (p_over, pred_val, line, name, team, opp, lnk) in enumerate(tb_entries[:10], start=1):
+            for i, (p_over, pred_val, line, name, team, opp, lnk, bankroll) in enumerate(tb_entries[:10], start=1):
                 link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%}{link_str}")
-            tb_links = [lnk for _, _, _, _, _, _, lnk in tb_entries[:10] if lnk]
+                print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%} [{_bankroll_label(bankroll)}]{link_str}")
+            tb_links = [lnk for _, _, _, _, _, _, lnk, _bankroll in tb_entries[:10] if lnk]
             tb_parlay_url = build_fd_parlay_url(tb_links[:25]) if tb_links else None
             if tb_parlay_url:
                 print(f"• Top TB Parlay: [FD]({tb_parlay_url})")
@@ -2902,7 +3914,17 @@ def _print_discord(
                     p_str = f"P={p_over:.1%}" if p_over is not None else ""
                     lnk = ld.get("over_link")
                     link_str = f" [Bet](<{lnk}>)" if lnk else ""
-                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f} · O{line:.1f} · {p_str}{link_str}")
+                    bankroll = _prop_bankroll_from_pick(
+                        stat="batter_home_runs",
+                        side_label="O",
+                        cfg=cfg,
+                        ld=ld,
+                        p_over=p_over,
+                        edge=float(pred_hr) - float(line),
+                        sigma=(r.get("sigma_map") or {}).get("batter_home_runs"),
+                        blocked_sides=_blocked_sides_for_row(r, "batter_home_runs"),
+                    )
+                    print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f} · O{line:.1f} · {p_str} [{_bankroll_label(bankroll)}]{link_str}")
                     if lnk and p_over and len(hr_parlay_legs) < _HR_PARLAY_LEGS:
                         hr_parlay_legs.append({
                             "name": name, "team": team, "opp": opp,
@@ -3016,7 +4038,12 @@ def _print_discord(
                     if clf_p is not None and line is not None:
                         clf_p = _apply_regression_gate(clf_p, pred_k, line, "pitcher_strikeouts")
                     p_over = clf_p if clf_p is not None else p_over_reg
-                    ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
+                    ev_pick = _best_side_from_ev(
+                        ld or {},
+                        p_over,
+                        cfg.min_ev,
+                        _blocked_sides_for_row(row, "pitcher_strikeouts"),
+                    ) if ld and line is not None else None
                     if ev_pick is not None:
                         edge = ev_pick["ev"]
                         has_edge = True
@@ -3024,7 +4051,12 @@ def _print_discord(
                         lnk = ev_pick["link"]
                     else:
                         edge = (pred_k - line) if line is not None else None
-                        has_edge = edge is not None and abs(edge) >= cfg.threshold_strikeouts
+                        side_key = "over" if (edge or 0.0) > 0 else "under"
+                        has_edge = edge is not None and abs(edge) >= _prop_count_threshold(
+                            cfg,
+                            "pitcher_strikeouts",
+                            side_key,
+                        )
                         display_pred, fmt = pred_k, "{:.1f}"
                         lnk = ld.get("over_link") if (ld and edge is not None and edge > 0) else (ld.get("under_link") if ld else None)
                     tbl.append(_row(name, display_pred, fmt, line, edge, has_edge))
@@ -3047,8 +4079,17 @@ def _print_discord(
                     line = ld["line"] if ld else None
                     edge = (pred_h - line) if line is not None else None
                     p_over = _prob_over_from_regression(pred_h, line, (row.get("sigma_map") or {}).get("batter_hits"))
-                    ev_pick = _best_side_from_ev(ld or {}, p_over, cfg.min_ev) if ld and line is not None else None
+                    ev_pick = _best_side_from_ev(
+                        ld or {},
+                        p_over,
+                        cfg.min_ev,
+                        _blocked_sides_for_row(row, "batter_hits"),
+                    ) if ld and line is not None else None
+                    if ev_pick is not None and ev_pick["side"] == "under" and "batter_hits" in cfg.fd_over_only:
+                        ev_pick = None
                     has_edge = (ev_pick is not None) or (edge is not None and abs(edge) >= cfg.threshold_hits * _ci)
+                    if edge is not None and edge < 0 and "batter_hits" in cfg.fd_over_only:
+                        has_edge = False
                     tbl.append(_row(name, pred_h, "{:.2f}", line, edge, has_edge))
                     if has_edge and ld:
                         lnk = ev_pick["link"] if ev_pick is not None else (ld.get("over_link") if edge > 0 else ld.get("under_link"))
@@ -3075,7 +4116,7 @@ def _print_discord(
                     clf_p = (row.get("clf_p_over") or {}).get(stat_key)
                     if clf_p is not None:
                         clf_p = _apply_regression_gate(clf_p, pred_v, line, stat_key)
-                        edge = clf_p - _BREAKEVEN_PROB
+                        edge = _signed_probability_edge(clf_p)
                         eff_thresh = cfg.threshold_clf
                         display_pred = clf_p
                         p_over = clf_p
@@ -3083,11 +4124,24 @@ def _print_discord(
                         edge = pred_v - line
                         eff_thresh = (
                             (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
-                            if thresh is None else thresh
+                            if thresh is None else _prop_count_threshold(
+                                cfg,
+                                stat_key,
+                                "over" if edge >= 0 else "under",
+                            )
                         )
                         display_pred = pred_v
                         p_over = _prob_over_from_regression(pred_v, line, (row.get("sigma_map") or {}).get(stat_key))
-                    ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+                    ev_pick = _best_side_from_ev(
+                        ld,
+                        p_over,
+                        cfg.min_ev,
+                        _blocked_sides_for_row(row, stat_key),
+                    )
+                    if ev_pick is not None and ev_pick["side"] == "under" and stat_key in cfg.fd_over_only:
+                        ev_pick = None
+                    if ev_pick is None and edge < 0 and stat_key in cfg.fd_over_only:
+                        continue
                     if ev_pick is not None or abs(edge) >= eff_thresh * _ci:
                         stat_edges.append((name, display_pred, line, edge, ld))
                 if stat_edges:
@@ -3122,26 +4176,47 @@ def _print_discord(
         if clf_p is not None:
             clf_p = _apply_regression_gate(clf_p, pred_k, line, "pitcher_strikeouts")
         p_over = clf_p if clf_p is not None else p_over_reg
-        ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+        ev_pick = _best_side_from_ev(
+            ld,
+            p_over,
+            cfg.min_ev,
+            _blocked_sides_for_row(row, "pitcher_strikeouts"),
+        )
         if ev_pick is not None:
             edge = ev_pick["ev"]
             display_pred = p_over if clf_p is not None else pred_k
             lnk = ev_pick["link"]
             side = "O" if ev_pick["side"] == "over" else "U"
         else:
-            edge = (clf_p - _BREAKEVEN_PROB) if clf_p is not None else (pred_k - line)
-            min_thr = cfg.threshold_clf if clf_p is not None else cfg.threshold_strikeouts
+            edge = _signed_probability_edge(clf_p) if clf_p is not None else (pred_k - line)
+            side_key = "over" if edge > 0 else "under"
+            min_thr = cfg.threshold_clf if clf_p is not None else _prop_count_threshold(
+                cfg,
+                "pitcher_strikeouts",
+                side_key,
+            )
             if abs(edge) < min_thr:
                 continue
             display_pred = p_over if clf_p is not None else pred_k
             lnk = ld.get("over_link") if edge > 0 else ld.get("under_link")
             side = "O" if edge > 0 else "U"
+        bankroll = _prop_bankroll_from_pick(
+            stat="pitcher_strikeouts",
+            side_label=side,
+            cfg=cfg,
+            ld=ld,
+            p_over=p_over,
+            edge=edge,
+            sigma=row.get("sigma_strikeouts"),
+            blocked_sides=_blocked_sides_for_row(row, "pitcher_strikeouts"),
+        )
         k_plays.append({
             "name": name, "team": row.get("team_abbr", ""), "stat": "K",
             "pred": display_pred, "line": line, "edge": edge, "lnk": lnk, "book": "FD",
             "is_ev": ev_pick is not None,
             "side": side,
             "game_slug": row.get("game_slug"),
+            "bankroll": bankroll,
         })
 
     batter_edge_plays: List[Dict] = []
@@ -3169,7 +4244,7 @@ def _print_discord(
             clf_p = _clf_pover.get(stat_key)
             if clf_p is not None:
                 clf_p = _apply_regression_gate(clf_p, pred_v, line, stat_key)
-                edge = clf_p - _BREAKEVEN_PROB
+                edge = _signed_probability_edge(clf_p)
                 eff_thresh = cfg.threshold_clf
                 display_pred = clf_p  # show P(over) directly
                 p_over = clf_p
@@ -3177,12 +4252,21 @@ def _print_discord(
                 edge = pred_v - line
                 eff_thresh = (
                     (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
-                    if thresh is None else thresh
+                    if thresh is None else _prop_count_threshold(
+                        cfg,
+                        stat_key,
+                        "over" if edge >= 0 else "under",
+                    )
                 )
                 display_pred = pred_v
                 p_over = _prob_over_from_regression(pred_v, line, (row.get("sigma_map") or {}).get(stat_key))
 
-            ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+            ev_pick = _best_side_from_ev(
+                ld,
+                p_over,
+                cfg.min_ev,
+                _blocked_sides_for_row(row, stat_key),
+            )
             if ev_pick is not None:
                 side_over = ev_pick["side"] == "over"
                 if (not side_over) and stat_key in cfg.fd_over_only:
@@ -3204,6 +4288,16 @@ def _print_discord(
                 is_pick = True
 
             if is_pick:
+                bankroll = _prop_bankroll_from_pick(
+                    stat=stat_key,
+                    side_label=side,
+                    cfg=cfg,
+                    ld=ld,
+                    p_over=p_over,
+                    edge=edge_for_rank,
+                    sigma=(row.get("sigma_map") or {}).get(stat_key),
+                    blocked_sides=_blocked_sides_for_row(row, stat_key),
+                )
                 batter_edge_plays.append({
                     "name": name, "team": team, "stat": stat_lbl,
                     "pred": display_pred, "line": line, "edge": edge_for_rank, "lnk": lnk, "book": book,
@@ -3211,11 +4305,13 @@ def _print_discord(
                     "is_ev": ev_pick is not None,
                     "side": side,
                     "game_slug": row.get("game_slug"),
+                    "bankroll": bankroll,
                 })
 
     all_prop_bets: List[Dict] = k_plays + batter_edge_plays
     all_prop_bets.sort(key=lambda x: abs(x["edge"]), reverse=True)
     all_prop_bets = all_prop_bets[:cfg.top_n_bets]
+    _cap_bankroll_output(all_prop_bets, cfg)
 
     if all_prop_bets:
         print(f"**PROP BETS TODAY ({len(all_prop_bets)})**")
@@ -3247,7 +4343,9 @@ def _print_discord(
                 ls = f"{d}{b['line']:.1f}"
                 ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
                 link_txt = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b.get("lnk") else ""
-                print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{link_txt}")
+                bankroll = b.get("bankroll")
+                bankroll_str = f" [{bankroll_tag(bankroll)}]" if bankroll else ""
+                print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{bankroll_str}{link_txt}")
         print("")
     else:
         print("**No prop edge bets today**\n")
@@ -3279,7 +4377,12 @@ def _print_best_bets(
         p_over_reg = _prob_over_from_regression(pred_k, line, row.get("sigma_strikeouts"))
         clf_p = (row.get("clf_p_over") or {}).get("pitcher_strikeouts")
         p_over = clf_p if clf_p is not None else p_over_reg
-        ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+        ev_pick = _best_side_from_ev(
+            ld,
+            p_over,
+            cfg.min_ev,
+            _blocked_sides_for_row(row, "pitcher_strikeouts"),
+        )
         if ev_pick is not None:
             edge = ev_pick["ev"]
             is_edge = True
@@ -3288,16 +4391,31 @@ def _print_best_bets(
             side = "O" if ev_pick["side"] == "over" else "U"
         else:
             if clf_p is not None:
-                edge = clf_p - _BREAKEVEN_PROB
+                edge = _signed_probability_edge(clf_p)
                 is_edge = abs(edge) >= cfg.threshold_clf
                 display_pred = clf_p
             else:
                 edge = pred_k - line
-                is_edge = abs(edge) >= cfg.threshold_strikeouts
+                side_key = "over" if edge > 0 else "under"
+                is_edge = abs(edge) >= _prop_count_threshold(
+                    cfg,
+                    "pitcher_strikeouts",
+                    side_key,
+                )
                 display_pred = pred_k
             bet_link = ld.get("over_link") if edge > 0 else ld.get("under_link")
             side = "O" if edge > 0 else "U"
         if is_edge:
+            bankroll = _prop_bankroll_from_pick(
+                stat="pitcher_strikeouts",
+                side_label=side,
+                cfg=cfg,
+                ld=ld,
+                p_over=p_over,
+                edge=edge,
+                sigma=row.get("sigma_strikeouts"),
+                blocked_sides=_blocked_sides_for_row(row, "pitcher_strikeouts"),
+            )
             best.append({
                 "name": name, "stat": "K", "pred": display_pred,
                 "line": line, "edge": edge,
@@ -3306,6 +4424,7 @@ def _print_best_bets(
                 "game_slug": row.get("game_slug", ""),
                 "is_ev": ev_pick is not None,
                 "side": side,
+                "bankroll": bankroll,
             })
 
     for row in all_batter_rows:
@@ -3328,13 +4447,22 @@ def _print_best_bets(
             edge = pred_v - line
             eff_thr = (
                 (cfg.threshold_home_runs_over if edge >= 0 else cfg.threshold_home_runs_under)
-                if threshold is None else threshold
+                if threshold is None else _prop_count_threshold(
+                    cfg,
+                    stat_key,
+                    "over" if edge >= 0 else "under",
+                )
             )
             clf_p = (row.get("clf_p_over") or {}).get(stat_key)
             p_over = clf_p if clf_p is not None else _prob_over_from_regression(
                 pred_v, line, (row.get("sigma_map") or {}).get(stat_key)
             )
-            ev_pick = _best_side_from_ev(ld, p_over, cfg.min_ev)
+            ev_pick = _best_side_from_ev(
+                ld,
+                p_over,
+                cfg.min_ev,
+                _blocked_sides_for_row(row, stat_key),
+            )
 
             if ev_pick is not None:
                 side_over = ev_pick["side"] == "over"
@@ -3353,6 +4481,16 @@ def _print_best_bets(
                 side = "O" if edge > 0 else "U"
 
             if ev_pick is not None or abs(edge) >= eff_thr * _ci_scale:
+                bankroll = _prop_bankroll_from_pick(
+                    stat=stat_key,
+                    side_label=side,
+                    cfg=cfg,
+                    ld=ld,
+                    p_over=p_over,
+                    edge=edge_pick,
+                    sigma=(row.get("sigma_map") or {}).get(stat_key),
+                    blocked_sides=_blocked_sides_for_row(row, stat_key),
+                )
                 best.append({
                     "name": name, "stat": stat, "pred": pred_v,
                     "line": line, "edge": edge_pick,
@@ -3362,9 +4500,11 @@ def _print_best_bets(
                     "game_slug": row.get("game_slug", ""),
                     "is_ev": ev_pick is not None,
                     "side": side,
+                    "bankroll": bankroll,
                 })
 
     best.sort(key=lambda r: abs(r["edge"]), reverse=True)
+    _cap_bankroll_output(best, cfg)
 
     if best:
         print("─" * 40)
@@ -3382,7 +4522,9 @@ def _print_best_bets(
             es = f"{b['edge']:+.2f}"
             lnk = b.get("bet_link")
             link_str = f" [Bet FD](<{lnk}>)" if lnk else " [FD]"
-            print(f"★ {short} {b['stat']} {ls} → {ps}{link_str}")
+            bankroll = b.get("bankroll")
+            bankroll_str = f" [{bankroll_tag(bankroll)}]" if bankroll else ""
+            print(f"★ {short} {b['stat']} {ls} → {ps}{bankroll_str}{link_str}")
 
     # Build parlay links with correlation filtering applied to the full ranked list:
     # max 1 prop per player (HR + H + TB from the same player are correlated),
@@ -3581,31 +4723,42 @@ def predict_props(cfg: PredictConfig) -> None:
                 line = ld["line"] if ld else None
                 # Dynamic side-penalty (with shrinkage) for weak directional buckets.
                 if line is not None:
-                    raw_edge_k = pk - line
-                    side_k = "over" if raw_edge_k >= 0 else "under"
-                    pen_k = _side_penalty_for_line("pitcher_strikeouts", line, side_k, side_penalties)
-                    if side_k == "over":
-                        pk = max(0.0, pk - pen_k)
-                    else:
-                        pk = max(0.0, pk + pen_k)
+                    pk, _pen_k = _apply_count_side_penalty(
+                        "pitcher_strikeouts",
+                        pk,
+                        line,
+                        side_penalties,
+                    )
                 p_over_k = None
                 if clf_pover_k is not None:
                     v = float(clf_pover_k[i])
                     p_over_k = None if np.isnan(v) else v
+                clf_k_disabled = (
+                    p_over_k is not None
+                    and line is not None
+                    and _clf_bucket_is_disabled(clf_controls, "pitcher_strikeouts", line)
+                )
 
                 if (
                     p_over_k is not None
                     and line is not None
-                    and not _clf_bucket_is_disabled(clf_controls, "pitcher_strikeouts", line)
+                    and not clf_k_disabled
                 ):
-                    edge = p_over_k - _BREAKEVEN_PROB
-                    kel = min(max(0.0, edge / (1.0 - _BREAKEVEN_PROB)), 0.05)
+                    p_over_k = _apply_regression_gate(p_over_k, pk, line, "pitcher_strikeouts")
+                    edge = _signed_probability_edge(p_over_k)
+                    kel = min(max(0.0, abs(edge or 0.0) / (1.0 - _BREAKEVEN_PROB)), 0.05)
                     pred_for_db = p_over_k
+                    pred_prob_for_db = p_over_k
+                    edge_type = "probability"
+                    model_family = "clf"
                 else:
                     edge = (pk - line) if line is not None else None
                     kel = _kelly_prop(abs(edge), sigma_k or cfg.threshold_strikeouts * 2) \
                           if edge is not None else 0.0
                     pred_for_db = pk
+                    pred_prob_for_db = _prob_over_from_regression(pk, line, sigma_k) if line is not None else None
+                    edge_type = "count"
+                    model_family = "regression"
 
                 r = {
                     "game_slug": row["game_slug"],
@@ -3617,22 +4770,36 @@ def predict_props(cfg: PredictConfig) -> None:
                     "opponent_abbr": row.get("opponent_abbr"),
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_strikeouts": pk,
-                    "clf_p_over": {"pitcher_strikeouts": p_over_k},
+                    "clf_p_over": {"pitcher_strikeouts": None if clf_k_disabled else p_over_k},
                     "sigma_strikeouts": sigma_k,
+                    "weak_prop_sides": {
+                        "pitcher_strikeouts": _weak_sides_for_line(
+                            "pitcher_strikeouts",
+                            line,
+                            side_penalties,
+                        ),
+                    },
                 }
                 all_pitcher_rows.append(r)
-                db_rows.append({
-                    "game_date_et": et_date,
-                    "game_slug": row["game_slug"],
-                    "player_id": int(row["player_id"]),
-                    "player_name": name,
-                    "team_abbr": row.get("team_abbr"),
-                    "stat": "pitcher_strikeouts",
-                    "pred_value": round(pred_for_db, 3),
-                    "book_line": line,
-                    "edge": round(edge, 3) if edge is not None else None,
-                    "kelly_fraction": round(kel, 4),
-                })
+                db_rows.append(_prop_db_row(
+                    game_date_et=et_date,
+                    game_slug=row["game_slug"],
+                    player_id=int(row["player_id"]),
+                    player_name=name,
+                    team_abbr=row.get("team_abbr"),
+                    stat="pitcher_strikeouts",
+                    pred_value=pred_for_db,
+                    pred_count=pk,
+                    pred_prob_over=pred_prob_for_db,
+                    book_line=line,
+                    edge=edge,
+                    edge_type=edge_type,
+                    model_family=model_family,
+                    kelly_fraction=kel,
+                    ld=ld,
+                    cfg=cfg,
+                    blocked_sides=_blocked_sides_for_row(r, "pitcher_strikeouts"),
+                ))
 
     # ── Batter predictions ─────────────────────────────────────────────────
     all_batter_rows: List[Dict] = []
@@ -3725,14 +4892,25 @@ def predict_props(cfg: PredictConfig) -> None:
                 name = name_map.get(pid, f"id={pid}")
                 norm = _normalize_name(name)
                 # Regression predictions with additive bias correction
-                ph  = max(0.0, float(pred_h[i])  + bias.get("batter_hits",        0.0))
-                ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0))
-                phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs",   0.0))
+                raw_ph  = max(0.0, float(pred_h[i])  + bias.get("batter_hits",        0.0))
+                raw_ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0))
+                raw_phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs",   0.0))
+
+                line_h = (prop_lines.get((norm, "batter_hits")) or {}).get("line")
+                line_tb = (prop_lines.get((norm, "batter_total_bases")) or {}).get("line")
+                line_hr = (prop_lines.get((norm, "batter_home_runs")) or {}).get("line")
+                ph, _pen_h = _apply_count_side_penalty("batter_hits", raw_ph, line_h, side_penalties)
+                ptb, _pen_tb = _apply_count_side_penalty("batter_total_bases", raw_ptb, line_tb, side_penalties)
+                phr, _pen_hr = _apply_count_side_penalty("batter_home_runs", raw_phr, line_hr, side_penalties)
 
                 # Collect binary CLF P(over) for each stat (None when clf unavailable or no line)
                 def _safe_clf(stat_key: str) -> Optional[float]:
                     arr = clf_pover.get(stat_key)
                     if arr is None:
+                        return None
+                    ld_for_stat = prop_lines.get((norm, stat_key))
+                    line_for_stat = ld_for_stat["line"] if ld_for_stat else None
+                    if _clf_bucket_is_disabled(clf_controls, stat_key, line_for_stat):
                         return None
                     v = float(arr[i])
                     return None if np.isnan(v) else v
@@ -3752,6 +4930,14 @@ def predict_props(cfg: PredictConfig) -> None:
                     "pred_hits": ph,
                     "pred_total_bases": ptb,
                     "pred_home_runs": phr,
+                    "raw_pred_hits": raw_ph,
+                    "raw_pred_total_bases": raw_ptb,
+                    "raw_pred_home_runs": raw_phr,
+                    "weak_prop_sides": {
+                        "batter_hits": _weak_sides_for_line("batter_hits", line_h, side_penalties),
+                        "batter_total_bases": _weak_sides_for_line("batter_total_bases", line_tb, side_penalties),
+                        "batter_home_runs": _weak_sides_for_line("batter_home_runs", line_hr, side_penalties),
+                    },
                     # Binary CLF P(over) per stat — None when clf not trained or line unavailable
                     "clf_p_over": {
                         "batter_hits":        _safe_clf("batter_hits"),
@@ -3794,43 +4980,60 @@ def predict_props(cfg: PredictConfig) -> None:
                     )
 
                     if use_clf:
-                        # CLF: pred_value = P(over), edge = P(over) - breakeven
+                        # CLF: pred_value = P(over), edge is signed side probability edge.
+                        p_over_i = _apply_regression_gate(p_over_i, reg_pred, line, stat_key)
                         pred_v = p_over_i
-                        edge   = p_over_i - _BREAKEVEN_PROB
+                        edge   = _signed_probability_edge(p_over_i)
                         # Kelly: full Kelly capped at 5%
-                        kel = min(max(0.0, edge / (1.0 - _BREAKEVEN_PROB)), 0.05)
+                        kel = min(max(0.0, abs(edge or 0.0) / (1.0 - _BREAKEVEN_PROB)), 0.05)
+                        pred_prob_for_db = p_over_i
+                        edge_type = "probability"
+                        model_family = "clf"
                     elif line is not None:
                         # Regression fallback
                         pred_v = reg_pred
-                        edge_raw = reg_pred - line
-                        side = "over" if edge_raw >= 0 else "under"
-                        pen = _side_penalty_for_line(stat_key, line, side, side_penalties)
-                        if side == "over":
-                            pred_v = max(0.0, reg_pred - pen)
-                        else:
-                            pred_v = max(0.0, reg_pred + pen)
                         edge   = pred_v - line
                         kel    = _kelly_prop(abs(edge), sigma or 0.5)
+                        pred_prob_for_db = _prob_over_from_regression(pred_v, line, sigma)
+                        edge_type = "count"
+                        model_family = "regression"
                     else:
                         pred_v = reg_pred
                         edge   = None
                         kel    = 0.0
+                        pred_prob_for_db = None
+                        edge_type = "count"
+                        model_family = "regression"
 
-                    db_rows.append({
-                        "game_date_et": et_date,
-                        "game_slug": slug,
-                        "player_id": pid,
-                        "player_name": name,
-                        "team_abbr": row.get("team_abbr"),
-                        "stat": stat_label,
-                        "pred_value": round(pred_v, 3),
-                        "book_line": line,
-                        "edge": round(edge, 3) if edge is not None else None,
-                        "kelly_fraction": round(kel, 4),
-                    })
+                    db_rows.append(_prop_db_row(
+                        game_date_et=et_date,
+                        game_slug=slug,
+                        player_id=pid,
+                        player_name=name,
+                        team_abbr=row.get("team_abbr"),
+                        stat=stat_label,
+                        pred_value=pred_v,
+                        pred_count=pred_v if model_family == "regression" else reg_pred,
+                        pred_prob_over=pred_prob_for_db,
+                        book_line=line,
+                        edge=edge,
+                        edge_type=edge_type,
+                        model_family=model_family,
+                        kelly_fraction=kel,
+                        ld=ld,
+                        cfg=cfg,
+                        blocked_sides=_blocked_sides_for_row(r, stat_label),
+                    ))
 
     # ── Save to DB ────────────────────────────────────────────────────────
+    db_rows = _cap_prop_db_rows(db_rows, cfg)
     _save_predictions(conn, db_rows)
+    try:
+        locked = insert_prop_bankroll_ledger(conn, db_rows, prop_lines=prop_lines, cfg=cfg)
+        log.info("Locked %d MLB prop bankroll ledger rows", locked)
+    except Exception:
+        conn.rollback()
+        log.exception("Failed to lock MLB prop bankroll ledger rows")
 
     # ── Collect lottery legs once (no conn needed) then persist ───────────
     lottery_legs_collected: List[Dict] = []
@@ -3872,7 +5075,8 @@ def predict_props(cfg: PredictConfig) -> None:
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
 
     _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg,
-                   all_alt_lines=all_alt_lines, lottery_legs=lottery_legs_collected)
+                   all_alt_lines=all_alt_lines, lottery_legs=lottery_legs_collected,
+                   db_rows=db_rows)
 
     if not is_discord:
         fd_links = _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
@@ -3893,17 +5097,18 @@ def predict_props(cfg: PredictConfig) -> None:
                 print(f"\n**Best Props Parlay{suffix}** [FD]({parlay_url})")
 
         # All props parlay — every player, model's predicted direction, chunked at 25 legs
-        all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
-        seen: set[str] = set()
-        all_links_dedup = [l for l in all_links if l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
-        n_all = len(all_links_dedup)
-        n_chunks = math.ceil(n_all / 25) if n_all else 0
-        for i in range(0, n_all, 25):
-            chunk = all_links_dedup[i:i + 25]
-            ap = build_fd_parlay_url(chunk)
-            if ap:
-                suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
-                print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
+        if cfg.include_all_props_parlay:
+            all_links = _collect_all_prop_links(all_pitcher_rows, all_batter_rows, prop_lines)
+            seen: set[str] = set()
+            all_links_dedup = [l for l in all_links if l not in seen and not seen.add(l)]  # type: ignore[func-returns-value]
+            n_all = len(all_links_dedup)
+            n_chunks = math.ceil(n_all / 25) if n_all else 0
+            for i in range(0, n_all, 25):
+                chunk = all_links_dedup[i:i + 25]
+                ap = build_fd_parlay_url(chunk)
+                if ap:
+                    suffix = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
+                    print(f"\n**All Props Parlay{suffix}** [FD]({ap})")
 
         # Lottery parlay — use pre-collected legs (already saved to DB above)
         if cfg.lottery_mode:

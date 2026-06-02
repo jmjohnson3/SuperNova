@@ -21,6 +21,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from .predict_player_props import _ensure_schema
+
 log = logging.getLogger("mlb_pipeline.modeling.scan_prop_thresholds")
 
 _ET    = ZoneInfo("America/New_York")
@@ -78,6 +80,18 @@ def _thresholds(cfg: dict) -> list[float]:
     return out
 
 
+def _side(r: dict) -> str:
+    side = r.get("bet_side")
+    if side:
+        return str(side).lower()
+    return "over" if float(r["edge"]) > 0 else "under"
+
+
+def _won(r: dict) -> bool:
+    oh = bool(r["over_hit"])
+    return oh if _side(r) == "over" else not oh
+
+
 # ---------------------------------------------------------------------------
 # Core scan
 # ---------------------------------------------------------------------------
@@ -96,22 +110,17 @@ def _scan_stat(rows: list[dict], cfg: dict, min_bets: int) -> list[dict]:
         n = len(subset)
 
         # Win condition: if edge > 0 we bet OVER → win when over_hit; else bet UNDER
-        def _won(r) -> bool:
-            e = float(r["edge"])
-            oh = bool(r["over_hit"])
-            return oh if e > 0 else not oh
-
         wins     = sum(1 for r in subset if _won(r))
         roi      = _roi(wins, n)
         win_pct  = _pct(wins, n)
 
         # OVER-only slice
-        over_sub = [r for r in subset if float(r["edge"]) > 0]
+        over_sub = [r for r in subset if _side(r) == "over"]
         over_w   = sum(1 for r in over_sub if r["over_hit"])
         over_roi = _roi(over_w, len(over_sub))
 
         # UNDER-only slice
-        under_sub = [r for r in subset if float(r["edge"]) < 0]
+        under_sub = [r for r in subset if _side(r) == "under"]
         under_w   = sum(1 for r in under_sub if not r["over_hit"])
         under_roi = _roi(under_w, len(under_sub))
 
@@ -184,14 +193,67 @@ def _print_stat_table(stat: str, cfg: dict, results: list[dict], min_bets: int) 
 def run_scan(conn, days: int = 180, min_bets: int = 10,
              stat_filter: str | None = None) -> None:
     cutoff = (datetime.now(_ET).date() - timedelta(days=days)).isoformat()
+    _ensure_schema(conn)
 
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
-            SELECT stat, edge, over_hit
-            FROM bets.mlb_prop_predictions
-            WHERE game_date_et >= %s
-              AND over_hit IS NOT NULL
-              AND edge IS NOT NULL
+            WITH typed AS (
+                SELECT
+                    stat,
+                    edge::float AS raw_edge,
+                    over_hit,
+                    bet_side,
+                    line_bucket,
+                    edge_type,
+                    ev,
+                    COALESCE(pred_prob_over, pred_value)::float AS p_over,
+                    CASE
+                        WHEN edge_type IS NOT NULL THEN edge_type
+                        WHEN book_line IS NOT NULL
+                         AND pred_value IS NOT NULL
+                         AND ABS((pred_value::float - book_line::float) - edge::float) <= 0.02
+                            THEN 'count'
+                        WHEN pred_value IS NOT NULL AND pred_value BETWEEN 0.0 AND 1.0
+                            THEN 'probability'
+                        ELSE 'unknown'
+                    END AS derived_edge_type
+                FROM bets.mlb_prop_predictions
+                WHERE game_date_et >= %s
+                  AND over_hit IS NOT NULL
+                  AND edge IS NOT NULL
+            ),
+            scored AS (
+                SELECT
+                    *,
+                    CASE
+                        WHEN derived_edge_type = 'probability' AND p_over IS NOT NULL THEN
+                            CASE
+                                WHEN p_over - 0.524 > 0
+                                 AND p_over - 0.524 >= (1.0 - p_over) - 0.524
+                                    THEN p_over - 0.524
+                                WHEN (1.0 - p_over) - 0.524 > 0
+                                    THEN -((1.0 - p_over) - 0.524)
+                                ELSE 0.0
+                            END
+                        ELSE raw_edge
+                    END AS effective_edge
+                FROM typed
+            )
+            SELECT
+                stat,
+                effective_edge AS edge,
+                over_hit,
+                COALESCE(
+                    bet_side,
+                    CASE WHEN effective_edge > 0 THEN 'over'
+                         WHEN effective_edge < 0 THEN 'under'
+                         ELSE NULL END
+                ) AS bet_side,
+                COALESCE(line_bucket, 'unknown') AS line_bucket,
+                COALESCE(derived_edge_type, 'unknown') AS edge_type,
+                ev
+            FROM scored
+            WHERE effective_edge <> 0
         """, (cutoff,))
         all_rows = cur.fetchall()
 
@@ -220,16 +282,11 @@ def run_scan(conn, days: int = 180, min_bets: int = 10,
             print(f"  {cfg['label']:<25}  {'—':>7}  {'—':>6}  {'—':>8}  no graded data")
             continue
 
-        def _won(r) -> bool:
-            e = float(r["edge"])
-            oh = bool(r["over_hit"])
-            return oh if e > 0 else not oh
-
         wins = sum(1 for r in rows if _won(r))
         roi  = _roi(wins, n)
 
-        all_over  = all(float(r["edge"]) > 0 for r in rows)
-        all_under = all(float(r["edge"]) < 0 for r in rows)
+        all_over  = all(_side(r) == "over" for r in rows)
+        all_under = all(_side(r) == "under" for r in rows)
         note = ""
         if all_under:
             note = "[!] model always bets UNDER"
@@ -247,6 +304,30 @@ def run_scan(conn, days: int = 180, min_bets: int = 10,
             continue
         results = _scan_stat(rows, cfg, min_bets)
         _print_stat_table(stat, cfg, results, min_bets)
+
+    print("\n  SIDE / LINE-BUCKET SUMMARY")
+    print(f"  {'Stat':<22}  {'Side':<6}  {'Bucket':<12}  {'Type':<11}  {'Bets':>5}  {'W-L':<9}  {'Win%':>6}  {'ROI':>8}")
+    print(f"  {'-'*22}  {'-'*6}  {'-'*12}  {'-'*11}  {'-'*5}  {'-'*9}  {'-'*6}  {'-'*8}")
+    grouped: dict[tuple[str, str, str, str], list[dict]] = {}
+    for r in all_rows:
+        if stat_filter and r["stat"] != stat_filter:
+            continue
+        key = (
+            str(r["stat"]),
+            _side(r),
+            str(r.get("line_bucket") or "unknown"),
+            str(r.get("edge_type") or "unknown"),
+        )
+        grouped.setdefault(key, []).append(r)
+    for (stat, side, bucket, edge_type), rows in sorted(grouped.items()):
+        n = len(rows)
+        if n < min_bets:
+            continue
+        wins = sum(1 for r in rows if _won(r))
+        print(
+            f"  {stat:<22}  {side:<6}  {bucket:<12}  {edge_type:<11}  {n:>5}  "
+            f"{wins}-{n-wins:<7}  {_fmt_pct(_pct(wins, n)):>6}  {_fmt_roi(_roi(wins, n)):>8}"
+        )
 
     # Recommendation block
     print(f"""

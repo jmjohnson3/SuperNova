@@ -1,0 +1,35 @@
+{
+  "feature_schema": "models/feature_columns.json",
+  "holdout_days": 28,
+  "recency_half_life_days": 45,
+  "targets": {
+    "run_line_home_cover": {
+      "status": "trained",
+      "target": "run_line_home_cover",
+      "train_rows": 4837,
+      "holdout_rows": 382,
+      "holdout": {
+        "n": 382,
+        "positive_rate": 0.5104712041884817,
+        "accuracy_50": 0.5340314136125655,
+        "brier": 0.276256799697876,
+        "log_loss": 0.7598239730469157,
+        "auc": 0.5396133278486219
+      }
+    },
+    "total_over": {
+      "status": "trained",
+      "target": "total_over",
+      "train_rows": 4845,
+      "holdout_rows": 382,
+      "holdout": {
+        "n": 382,
+        "positive_rate": 0.4581151832460733,
+        "accuracy_50": 0.5157068062827225,
+        "brier": 0.28785446286201477,
+        "log_loss": 0.7955580725776399,
+        "auc": 0.5161352657004832
+      }
+    }
+  }
+}

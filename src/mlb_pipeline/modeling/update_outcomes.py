@@ -13,6 +13,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from .bankroll_ledger import grade_bankroll_ledger
+
 log = logging.getLogger("mlb_pipeline.modeling.update_outcomes")
 
 _ET = ZoneInfo("America/New_York")
@@ -527,6 +529,9 @@ def main() -> None:
 
         n_props = update_prop_outcomes(conn)
         log.info("Updated %d MLB prop outcome rows", n_props)
+
+        n_ledger = grade_bankroll_ledger(conn)
+        log.info("Graded %d MLB bankroll ledger rows", n_ledger)
 
         print_running_record(conn)
 
