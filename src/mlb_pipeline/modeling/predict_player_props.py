@@ -137,11 +137,11 @@ class PredictConfig:
     bankroll_max_daily_exposure_pct: float = 0.02
     bankroll_max_lay_price: int = -180
     # Discord research output: keep bankroll links/parlays first, then show
-    # linked paper props separately so research plays do not get mistaken for
-    # bankroll bets. Set paper limit to 0 to show every priced research row.
+    # linked paper props by stat so research plays do not get mistaken for
+    # bankroll bets. Set paper limit to 0 to show every priced row per section.
     discord_show_paper_links: bool = True
     discord_include_all_priced_props: bool = True
-    discord_paper_limit: int = 40
+    discord_paper_limit: int = 10
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3864,6 +3864,12 @@ def _print_discord(
             "batter_total_bases": ("TB", "{:.3f}"),
             "batter_home_runs": ("HR", "{:.3f}"),
         }
+        stat_sections = [
+            ("pitcher_strikeouts", "Strikeouts"),
+            ("batter_hits", "Hits"),
+            ("batter_total_bases", "Total Bases"),
+            ("batter_home_runs", "Home Runs"),
+        ]
 
         def _opponent_for_row(row: Dict) -> str:
             gm = game_map.get(row.get("game_slug"), {})
@@ -3909,6 +3915,7 @@ def _print_discord(
             )
             return {
                 "market": market,
+                "stat_key": stat,
                 "side": "O" if side_raw == "over" else "U",
                 "name": name,
                 "team": row.get("team_abbr", "?"),
@@ -3942,6 +3949,38 @@ def _print_discord(
             parlay_url = build_fd_parlay_url(dedup[:25])
             if parlay_url:
                 print(f"- {title}: [FD]({parlay_url})")
+
+        def _print_paper_sections(rows: List[Dict], *, source_label: str) -> None:
+            per_section_limit = int(cfg.discord_paper_limit or 0)
+            printed_section = False
+            total_shown = 0
+            print("")
+            print(
+                f"**PAPER / RESEARCH ({len(rows)} {source_label}; "
+                f"{len(model_pick_rows)} positive-EV)**"
+            )
+            for stat_key, label in stat_sections:
+                stat_rows = [item for item in rows if item.get("stat_key") == stat_key]
+                stat_rows.sort(key=_pick_score, reverse=True)
+                shown = stat_rows if per_section_limit <= 0 else stat_rows[:per_section_limit]
+                if not shown:
+                    continue
+                printed_section = True
+                total_shown += len(shown)
+                heading = (
+                    f"All {label}"
+                    if per_section_limit <= 0
+                    else f"Top {per_section_limit} {label}"
+                )
+                print("")
+                print(f"**{heading}**")
+                for item in shown:
+                    _print_prop_item(item, include_link=cfg.discord_show_paper_links)
+            if not printed_section:
+                print("- No paper/research player props to show")
+            elif per_section_limit > 0 and total_shown < len(rows):
+                print("")
+                print(f"- Showing {total_shown} of {len(rows)} paper/research rows")
 
         if db_rows is not None:
             for row in db_rows:
@@ -3987,16 +4026,8 @@ def _print_discord(
                 )
 
             if paper_rows:
-                limit = int(cfg.discord_paper_limit or 0)
-                shown = paper_rows if limit <= 0 else paper_rows[:limit]
                 source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
-                print("")
-                print(
-                    f"**PAPER / RESEARCH ({len(shown)} of {len(paper_rows)} {source_label}; "
-                    f"{len(model_pick_rows)} positive-EV)**"
-                )
-                for item in shown:
-                    _print_prop_item(item, include_link=cfg.discord_show_paper_links)
+                _print_paper_sections(paper_rows, source_label=source_label)
             elif not research_rows:
                 print("")
                 print("**PAPER / RESEARCH**")
@@ -4146,10 +4177,7 @@ def _print_discord(
             )
 
         if paper_rows:
-            print("")
-            print(f"**PAPER / RESEARCH ({len(paper_rows)})**")
-            for item in paper_rows:
-                _print_prop_item(item, include_link=cfg.discord_show_paper_links)
+            _print_paper_sections(paper_rows, source_label="model picks")
 
         print("")
         return []
@@ -5683,7 +5711,7 @@ def main() -> None:
     discord_paper_limit = (
         args.discord_paper_limit
         if args.discord_paper_limit is not None
-        else int(os.getenv("MLB_DISCORD_PAPER_LIMIT", "40"))
+        else int(os.getenv("MLB_DISCORD_PAPER_LIMIT", "10"))
     )
 
     cfg = PredictConfig(
