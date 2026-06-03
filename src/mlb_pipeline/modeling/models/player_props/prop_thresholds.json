@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-02T16:44:56Z",
+  "generated_at_utc": "2026-06-03T18:34:05Z",
   "lookback_days": 180,
   "holdout_days": 21,
   "min_train_bets": 40,
@@ -13,7 +13,7 @@
   "threshold_total_bases_under": 0.542,
   "threshold_home_runs_over": 999.0,
   "threshold_home_runs_under": 0.45,
-  "threshold_clf": 999.0,
+  "threshold_clf": 0.212,
   "min_ev": 0.02,
   "_diagnostics": {
     "pitcher_strikeouts": {
@@ -31,14 +31,14 @@
       "reason": "accepted",
       "train": {
         "t": 0.75,
-        "n": 53,
-        "wr": 0.7169811320754716,
-        "roi": 36.878216123499136
+        "n": 184,
+        "wr": 0.7336956521739131,
+        "roi": 40.06916996047431
       },
       "holdout": {
-        "n": 35,
-        "wr": 0.7142857142857143,
-        "roi": 36.36363636363637
+        "n": 34,
+        "wr": 0.7352941176470589,
+        "roi": 40.37433155080215
       }
     },
     "batter_total_bases": {
@@ -65,9 +65,9 @@
         "roi": 20.972097209720967
       },
       "holdout": {
-        "n": 28,
-        "wr": 0.6428571428571429,
-        "roi": 22.72727272727274
+        "n": 27,
+        "wr": 0.6296296296296297,
+        "roi": 20.2020202020202
       }
     },
     "pitcher_strikeouts_under": {
@@ -100,21 +100,24 @@
         "roi": 36.20414673046252
       },
       "holdout": {
-        "n": 171,
-        "wr": 0.7894736842105263,
-        "roi": 50.717703349282296
+        "n": 164,
+        "wr": 0.7987804878048781,
+        "roi": 52.49445676274945
       }
     },
     "classifier_probability": {
-      "reason": "holdout_too_small_disabled",
-      "chosen_train": {
-        "t": 0.2,
-        "n": 219,
-        "wr": 0.6301369863013698,
-        "roi": 20.29887920298879
+      "reason": "accepted",
+      "train": {
+        "t": 0.212,
+        "n": 258,
+        "wr": 0.6589147286821705,
+        "roi": 25.79281183932346
       },
-      "holdout_n": 0,
-      "fallback": 0.03
+      "holdout": {
+        "n": 38,
+        "wr": 0.5263157894736842,
+        "roi": 0.4784688995215254
+      }
     },
     "min_ev": {
       "reason": "no_ev_rows"
@@ -132,11 +135,20 @@
       {
         "stat": "batter_hits",
         "side": "over",
+        "line_bucket": "H 0.5",
+        "edge_type": "probability",
+        "n": 117,
+        "wr": 0.7008547008547008,
+        "roi": 33.79953379953379
+      },
+      {
+        "stat": "batter_hits",
+        "side": "over",
         "line_bucket": "unknown",
         "edge_type": "count",
-        "n": 9799,
-        "wr": 0.5876109807123175,
-        "roi": 12.180278135987896
+        "n": 9578,
+        "wr": 0.5867613280434328,
+        "roi": 12.018071717382629
       },
       {
         "stat": "batter_hits",
@@ -148,13 +160,40 @@
         "roi": 27.27272727272726
       },
       {
+        "stat": "batter_hits",
+        "side": "under",
+        "line_bucket": "H 0.5",
+        "edge_type": "probability",
+        "n": 97,
+        "wr": 0.4742268041237113,
+        "roi": -9.465791940018748
+      },
+      {
+        "stat": "batter_hits",
+        "side": "under",
+        "line_bucket": "unknown",
+        "edge_type": "count",
+        "n": 1703,
+        "wr": 0.6535525543159131,
+        "roi": 24.76912400576522
+      },
+      {
+        "stat": "batter_hits",
+        "side": "under",
+        "line_bucket": "unknown",
+        "edge_type": "probability",
+        "n": 240,
+        "wr": 0.5791666666666667,
+        "roi": 10.568181818181825
+      },
+      {
         "stat": "batter_total_bases",
         "side": "over",
         "line_bucket": "unknown",
         "edge_type": "count",
-        "n": 3346,
-        "wr": 0.399581589958159,
-        "roi": -23.716241917078744
+        "n": 3276,
+        "wr": 0.398046398046398,
+        "roi": -24.009324009324022
       },
       {
         "stat": "batter_total_bases",
@@ -177,11 +216,20 @@
       {
         "stat": "batter_total_bases",
         "side": "under",
+        "line_bucket": "TB 1.5",
+        "edge_type": "probability",
+        "n": 215,
+        "wr": 0.6232558139534884,
+        "roi": 18.985200845665968
+      },
+      {
+        "stat": "batter_total_bases",
+        "side": "under",
         "line_bucket": "unknown",
         "edge_type": "count",
-        "n": 6892,
-        "wr": 0.6700522344747534,
-        "roi": 27.919062945180183
+        "n": 6741,
+        "wr": 0.6705236611778668,
+        "roi": 28.00906258850183
       },
       {
         "stat": "batter_total_bases",
@@ -197,27 +245,27 @@
         "side": "over",
         "line_bucket": "unknown",
         "edge_type": "count",
-        "n": 621,
-        "wr": 0.5265700483091788,
-        "roi": 0.5270092226613989
+        "n": 606,
+        "wr": 0.5297029702970297,
+        "roi": 1.1251125112511318
       },
       {
         "stat": "pitcher_strikeouts",
         "side": "over",
         "line_bucket": "unknown",
         "edge_type": "probability",
-        "n": 65,
-        "wr": 0.4153846153846154,
-        "roi": -20.699300699300686
+        "n": 64,
+        "wr": 0.421875,
+        "roi": -19.460227272727273
       },
       {
         "stat": "pitcher_strikeouts",
         "side": "under",
         "line_bucket": "unknown",
         "edge_type": "count",
-        "n": 597,
-        "wr": 0.5510887772194305,
-        "roi": 5.207857469164006
+        "n": 584,
+        "wr": 0.553082191780822,
+        "roi": 5.588418430884193
       },
       {
         "stat": "pitcher_strikeouts",
@@ -229,6 +277,6 @@
         "roi": -9.848484848484851
       }
     ],
-    "excluded_unbettable_rows": 11998
+    "excluded_unbettable_rows": 10033
   }
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-31T17:02:58Z",
+  "generated_at_utc": "2026-06-03T18:34:11Z",
   "lookback_days": 120,
   "min_samples": 40,
   "max_abs_cal_error": 0.08,
@@ -23,10 +23,10 @@
     {
       "stat": "batter_hits",
       "bucket": "H 0.5",
-      "n": 8513,
-      "p_mean": 0.7676,
-      "win_rate": 0.5784,
-      "abs_cal_error": 0.1892,
+      "n": 8915,
+      "p_mean": 0.7634,
+      "win_rate": 0.5801,
+      "abs_cal_error": 0.1833,
       "disable": true
     },
     {
@@ -50,10 +50,10 @@
     {
       "stat": "batter_home_runs",
       "bucket": "HR 0.5",
-      "n": 9474,
-      "p_mean": 0.1131,
-      "win_rate": 0.1115,
-      "abs_cal_error": 0.0016,
+      "n": 10059,
+      "p_mean": 0.1127,
+      "win_rate": 0.1129,
+      "abs_cal_error": 0.0002,
       "disable": false
     },
     {
@@ -77,10 +77,10 @@
     {
       "stat": "batter_total_bases",
       "bucket": "TB 1.5",
-      "n": 1797,
-      "p_mean": 0.6586,
-      "win_rate": 0.3094,
-      "abs_cal_error": 0.3492,
+      "n": 2033,
+      "p_mean": 0.6256,
+      "win_rate": 0.3178,
+      "abs_cal_error": 0.3079,
       "disable": true
     },
     {
@@ -113,38 +113,39 @@
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K 4.5-6.0",
-      "n": 62,
-      "p_mean": 0.5134,
-      "win_rate": 0.3226,
-      "abs_cal_error": 0.1908,
+      "n": 79,
+      "p_mean": 0.5124,
+      "win_rate": 0.3797,
+      "abs_cal_error": 0.1326,
       "disable": true
     },
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K 6.5-8.0",
-      "n": 45,
-      "p_mean": 0.5202,
-      "win_rate": 0.6444,
-      "abs_cal_error": 0.1243,
+      "n": 48,
+      "p_mean": 0.519,
+      "win_rate": 0.625,
+      "abs_cal_error": 0.106,
       "disable": true
     },
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K 8.5+",
-      "n": 2,
-      "p_mean": 0.51,
-      "win_rate": 0.5,
-      "abs_cal_error": 0.01,
+      "n": 3,
+      "p_mean": 0.5189,
+      "win_rate": 0.3333,
+      "abs_cal_error": 0.1856,
       "disable": false
     },
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K <4.5",
-      "n": 42,
-      "p_mean": 0.4097,
-      "win_rate": 0.5714,
-      "abs_cal_error": 0.1617,
+      "n": 50,
+      "p_mean": 0.4297,
+      "win_rate": 0.52,
+      "abs_cal_error": 0.0903,
       "disable": true
     }
-  ]
+  ],
+  "source": "pred_prob_over_probability_rows"
 }

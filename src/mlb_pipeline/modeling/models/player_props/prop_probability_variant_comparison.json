@@ -1,0 +1,5433 @@
+{
+  "generated_at_utc": "2026-06-03T17:25:26Z",
+  "source": "features.mlb_prop_market_training_examples",
+  "lookback_days": 365,
+  "min_ev": 0.02,
+  "rows": 2234,
+  "date_min": "2026-05-31",
+  "date_max": "2026-06-01",
+  "unique_dates": 2,
+  "prior_models": 92,
+  "direct_side_models": 24,
+  "overall": {
+    "model_only": {
+      "forecast": {
+        "rows": 2234,
+        "actual_rate": 0.5,
+        "avg_prob": 0.5,
+        "calibration_error": 0.0,
+        "brier": 0.19258519548791406,
+        "log_loss": 0.5664052039531251
+      },
+      "selection": {
+        "selected_rows": 313,
+        "win_rate": 0.4696485623003195,
+        "units": 28.494699999999998,
+        "roi": 0.09103738019169329,
+        "avg_ev": 0.11271084292465956,
+        "avg_clv_price": -2.1224600638977638,
+        "clv_price_beat_rate": 0.051118210862619806,
+        "avg_clv_line": 0.18210862619808307,
+        "clv_line_beat_rate": 0.1182108626198083
+      }
+    },
+    "model_plus_prior": {
+      "forecast": {
+        "rows": 2234,
+        "actual_rate": 0.5,
+        "avg_prob": 0.4999468897690194,
+        "calibration_error": 5.311023098059087e-05,
+        "brier": 0.1928182786174291,
+        "log_loss": 0.5669471092523329
+      },
+      "selection": {
+        "selected_rows": 256,
+        "win_rate": 0.4921875,
+        "units": 43.36300000000001,
+        "roi": 0.16938671875000003,
+        "avg_ev": 0.09918179501139647,
+        "avg_clv_price": -1.9204687500000002,
+        "clv_price_beat_rate": 0.0546875,
+        "avg_clv_line": 0.16796875,
+        "clv_line_beat_rate": 0.109375
+      }
+    },
+    "market_no_vig": {
+      "forecast": {
+        "rows": 1683,
+        "actual_rate": 0.40641711229946526,
+        "avg_prob": 0.410253066736195,
+        "calibration_error": -0.0038359544367297382,
+        "brier": 0.21127527338139943,
+        "log_loss": 0.6080397100423149
+      },
+      "selection": {
+        "selected_rows": 2,
+        "win_rate": 0.5,
+        "units": 0.08000000000000007,
+        "roi": 0.040000000000000036,
+        "avg_ev": 0.08670792615573253,
+        "avg_clv_price": 6.58,
+        "clv_price_beat_rate": 0.5,
+        "avg_clv_line": 0.0,
+        "clv_line_beat_rate": 0.0
+      }
+    },
+    "direct_side_model": {
+      "forecast": {
+        "rows": 2234,
+        "actual_rate": 0.5,
+        "avg_prob": 0.4999787020239994,
+        "calibration_error": 2.1297976000589358e-05,
+        "brier": 0.1855430602875867,
+        "log_loss": 0.5494138916941997
+      },
+      "selection": {
+        "selected_rows": 328,
+        "win_rate": 0.5823170731707317,
+        "units": 118.00699999999998,
+        "roi": 0.3597774390243902,
+        "avg_ev": 0.12133918496167738,
+        "avg_clv_price": -2.3108841463414636,
+        "clv_price_beat_rate": 0.057926829268292686,
+        "avg_clv_line": 0.19207317073170732,
+        "clv_line_beat_rate": 0.125
+      }
+    }
+  },
+  "shadow_winner": {
+    "selected": "model_only",
+    "reason": "No shadow variant improved Brier, ROI, and CLV versus model_only.",
+    "candidates": {
+      "model_plus_prior": {
+        "eligible": false,
+        "reasons": [
+          "brier_not_improved"
+        ]
+      },
+      "market_no_vig": {
+        "eligible": false,
+        "reasons": [
+          "brier_not_improved",
+          "candidate_selected_rows_too_small"
+        ]
+      },
+      "direct_side_model": {
+        "eligible": false,
+        "reasons": [
+          "avg_clv_price_not_improved"
+        ]
+      }
+    }
+  },
+  "market_side": [
+    {
+      "key": "batter_hits|over",
+      "market": "batter_hits",
+      "side": "over",
+      "rows": 363,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.6115702479338843,
+            "avg_prob": 0.5732044077134986,
+            "calibration_error": 0.038365840220385694,
+            "brier": 0.23169578936639115,
+            "log_loss": 0.6556639999851364
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.5,
+            "units": -0.5238,
+            "roi": -0.2619,
+            "avg_ev": 0.033532298136645905,
+            "avg_clv_price": 0.415,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.6115702479338843,
+            "avg_prob": 0.5765605215628231,
+            "calibration_error": 0.035009726371061145,
+            "brier": 0.23196741949608504,
+            "log_loss": 0.6562188470934731
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.02521828589680747,
+            "avg_clv_price": 0.22,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.6115702479338843,
+            "avg_prob": 0.5957468259195535,
+            "calibration_error": 0.015823422014330735,
+            "brier": 0.23663445447545317,
+            "log_loss": 0.6659377010228825
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.6115702479338843,
+            "avg_prob": 0.580118917910517,
+            "calibration_error": 0.03145133002336731,
+            "brier": 0.22058036943376333,
+            "log_loss": 0.6320158611007085
+          },
+          "selection": {
+            "selected_rows": 13,
+            "win_rate": 1.0,
+            "units": 6.650000000000001,
+            "roi": 0.5115384615384616,
+            "avg_ev": 0.05876716295061938,
+            "avg_clv_price": 0.736153846153846,
+            "clv_price_beat_rate": 0.6153846153846154,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|under",
+      "market": "batter_hits",
+      "side": "under",
+      "rows": 363,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.3884297520661157,
+            "avg_prob": 0.42679559228650144,
+            "calibration_error": -0.03836584022038575,
+            "brier": 0.23169578936639115,
+            "log_loss": 0.6556639999851364
+          },
+          "selection": {
+            "selected_rows": 149,
+            "win_rate": 0.46308724832214765,
+            "units": 19.0649,
+            "roi": 0.1279523489932886,
+            "avg_ev": 0.10562382008679765,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.3884297520661157,
+            "avg_prob": 0.4250922817745007,
+            "calibration_error": -0.03666252970838502,
+            "brier": 0.23197748146847527,
+            "log_loss": 0.6562804982876439
+          },
+          "selection": {
+            "selected_rows": 133,
+            "win_rate": 0.46616541353383456,
+            "units": 18.104900000000008,
+            "roi": 0.13612706766917299,
+            "avg_ev": 0.09186739123723871,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 357,
+            "actual_rate": 0.3865546218487395,
+            "avg_prob": 0.40450200604898967,
+            "calibration_error": -0.01794738420025016,
+            "brier": 0.2366418220420366,
+            "log_loss": 0.6659847813842784
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 363,
+            "actual_rate": 0.3884297520661157,
+            "avg_prob": 0.4196856852424195,
+            "calibration_error": -0.03125593317630382,
+            "brier": 0.22010277860629449,
+            "log_loss": 0.6310414714251802
+          },
+          "selection": {
+            "selected_rows": 144,
+            "win_rate": 0.5416666666666666,
+            "units": 44.444900000000004,
+            "roi": 0.3086451388888889,
+            "avg_ev": 0.11079596483243623,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_home_runs|over",
+      "market": "batter_home_runs",
+      "side": "over",
+      "rows": 355,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.10374366197183099,
+            "calibration_error": 0.025833802816901397,
+            "brier": 0.11203777763380282,
+            "log_loss": 0.3826657781718663
+          },
+          "selection": {
+            "selected_rows": 28,
+            "win_rate": 0.14285714285714285,
+            "units": -0.40000000000000036,
+            "roi": -0.0142857142857143,
+            "avg_ev": 0.13178749999999997,
+            "avg_clv_price": -7.841785714285714,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.6428571428571429,
+            "clv_line_beat_rate": 0.6428571428571429
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.10479345167555298,
+            "calibration_error": 0.024784013113179404,
+            "brier": 0.1119947732907879,
+            "log_loss": 0.38235811977827494
+          },
+          "selection": {
+            "selected_rows": 21,
+            "win_rate": 0.19047619047619047,
+            "units": 6.6,
+            "roi": 0.3142857142857143,
+            "avg_ev": 0.11016393669188423,
+            "avg_clv_price": -8.693809523809524,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.7142857142857143,
+            "clv_line_beat_rate": 0.7142857142857143
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.1394692760053766,
+            "calibration_error": -0.009891811216644203,
+            "brier": 0.11225139226940678,
+            "log_loss": 0.38252704466334814
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.10337387248612812,
+            "calibration_error": 0.026203592302604273,
+            "brier": 0.10906182244692599,
+            "log_loss": 0.36995512001532344
+          },
+          "selection": {
+            "selected_rows": 28,
+            "win_rate": 0.32142857142857145,
+            "units": 32.699999999999996,
+            "roi": 1.1678571428571427,
+            "avg_ev": 0.13668718152556145,
+            "avg_clv_price": -9.219642857142857,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.7142857142857143,
+            "clv_line_beat_rate": 0.7142857142857143
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_home_runs|under",
+      "market": "batter_home_runs",
+      "side": "under",
+      "rows": 355,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.8704225352112676,
+            "avg_prob": 0.896256338028169,
+            "calibration_error": -0.025833802816901397,
+            "brier": 0.11203777763380282,
+            "log_loss": 0.3826657781718663
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.8704225352112676,
+            "avg_prob": 0.896256338028169,
+            "calibration_error": -0.025833802816901397,
+            "brier": 0.11203777763380282,
+            "log_loss": 0.3826657781718663
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 0,
+            "actual_rate": null,
+            "avg_prob": null,
+            "calibration_error": null,
+            "brier": null,
+            "log_loss": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.8704225352112676,
+            "avg_prob": 0.89651061695797,
+            "calibration_error": -0.026088081746702407,
+            "brier": 0.10935668380575157,
+            "log_loss": 0.3711570576291522
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|over",
+      "market": "batter_total_bases",
+      "side": "over",
+      "rows": 356,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.3848314606741573,
+            "avg_prob": 0.36347949438202243,
+            "calibration_error": 0.021351966292134872,
+            "brier": 0.23152433047752813,
+            "log_loss": 0.6544394661529177
+          },
+          "selection": {
+            "selected_rows": 45,
+            "win_rate": 0.37777777777777777,
+            "units": -3.460399999999999,
+            "roi": -0.07689777777777776,
+            "avg_ev": 0.13541426247987115,
+            "avg_clv_price": -10.793777777777777,
+            "clv_price_beat_rate": 0.044444444444444446,
+            "avg_clv_line": 0.8666666666666667,
+            "clv_line_beat_rate": 0.4222222222222222
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.3848314606741573,
+            "avg_prob": 0.36231930609017277,
+            "calibration_error": 0.022512154583984534,
+            "brier": 0.23274647821509387,
+            "log_loss": 0.6574678569637615
+          },
+          "selection": {
+            "selected_rows": 33,
+            "win_rate": 0.45454545454545453,
+            "units": 2.839600000000001,
+            "roi": 0.08604848484848487,
+            "avg_ev": 0.0960033068462956,
+            "avg_clv_price": -10.58848484848485,
+            "clv_price_beat_rate": 0.030303030303030304,
+            "avg_clv_line": 0.8484848484848485,
+            "clv_line_beat_rate": 0.3939393939393939
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.3848314606741573,
+            "avg_prob": 0.40352430650813953,
+            "calibration_error": -0.01869284583398223,
+            "brier": 0.236224282540196,
+            "log_loss": 0.665429518900517
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.3848314606741573,
+            "avg_prob": 0.365142852056756,
+            "calibration_error": 0.019688608617401293,
+            "brier": 0.22725176546559156,
+            "log_loss": 0.6453980533706278
+          },
+          "selection": {
+            "selected_rows": 51,
+            "win_rate": 0.47058823529411764,
+            "units": 7.1419999999999995,
+            "roi": 0.1400392156862745,
+            "avg_ev": 0.13358831003982968,
+            "avg_clv_price": -10.522745098039218,
+            "clv_price_beat_rate": 0.0392156862745098,
+            "avg_clv_line": 0.8431372549019608,
+            "clv_line_beat_rate": 0.4117647058823529
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under",
+      "market": "batter_total_bases",
+      "side": "under",
+      "rows": 356,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.6151685393258427,
+            "avg_prob": 0.6365205056179776,
+            "calibration_error": -0.021351966292134872,
+            "brier": 0.23152433047752813,
+            "log_loss": 0.6544394661529176
+          },
+          "selection": {
+            "selected_rows": 55,
+            "win_rate": 0.5818181818181818,
+            "units": -0.8610999999999995,
+            "roi": -0.015656363636363628,
+            "avg_ev": 0.07654723913237466,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.6151685393258427,
+            "avg_prob": 0.6348401735777021,
+            "calibration_error": -0.01967163425185936,
+            "brier": 0.23099505410310303,
+            "log_loss": 0.6533622096994192
+          },
+          "selection": {
+            "selected_rows": 36,
+            "win_rate": 0.6111111111111112,
+            "units": 2.193400000000001,
+            "roi": 0.0609277777777778,
+            "avg_ev": 0.07486701171121886,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 166,
+            "actual_rate": 0.5903614457831325,
+            "avg_prob": 0.5640141641561608,
+            "calibration_error": 0.026347281626971752,
+            "brier": 0.24055926849867632,
+            "log_loss": 0.6740904241028037
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 356,
+            "actual_rate": 0.6151685393258427,
+            "avg_prob": 0.634926161869105,
+            "calibration_error": -0.0197576225432623,
+            "brier": 0.2279146818501609,
+            "log_loss": 0.6469666718168016
+          },
+          "selection": {
+            "selected_rows": 59,
+            "win_rate": 0.6779661016949152,
+            "units": 7.5817,
+            "roi": 0.12850338983050846,
+            "avg_ev": 0.06876145481475031,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "rows": 43,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.5116279069767442,
+            "avg_prob": 0.5089139534883721,
+            "calibration_error": 0.0027139534883721117,
+            "brier": 0.20502370023255811,
+            "log_loss": 0.6009716190601178
+          },
+          "selection": {
+            "selected_rows": 18,
+            "win_rate": 0.7222222222222222,
+            "units": 8.796,
+            "roi": 0.48866666666666664,
+            "avg_ev": 0.183159138979058,
+            "avg_clv_price": 2.2294444444444443,
+            "clv_price_beat_rate": 0.6666666666666666,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.5116279069767442,
+            "avg_prob": 0.5064636376879269,
+            "calibration_error": 0.0051642692888173025,
+            "brier": 0.2062352362462938,
+            "log_loss": 0.6037081333977042
+          },
+          "selection": {
+            "selected_rows": 18,
+            "win_rate": 0.7222222222222222,
+            "units": 8.796,
+            "roi": 0.48866666666666664,
+            "avg_ev": 0.1633071509385762,
+            "avg_clv_price": 2.2294444444444443,
+            "clv_price_beat_rate": 0.6666666666666666,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.5116279069767442,
+            "avg_prob": 0.5008525776334459,
+            "calibration_error": 0.010775329343298279,
+            "brier": 0.24789442147173507,
+            "log_loss": 0.6889518557044678
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 2.24,
+            "roi": 1.12,
+            "avg_ev": 0.08670792615573247,
+            "avg_clv_price": 13.975,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.5116279069767442,
+            "avg_prob": 0.519062823838005,
+            "calibration_error": -0.007434916861260743,
+            "brier": 0.17342434762491515,
+            "log_loss": 0.5304420734082868
+          },
+          "selection": {
+            "selected_rows": 16,
+            "win_rate": 0.8125,
+            "units": 10.0501,
+            "roi": 0.62813125,
+            "avg_ev": 0.3344445352965871,
+            "avg_clv_price": 1.704375,
+            "clv_price_beat_rate": 0.5625,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "rows": 43,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.4883720930232558,
+            "avg_prob": 0.49108604651162785,
+            "calibration_error": -0.002713953488372056,
+            "brier": 0.20502370023255811,
+            "log_loss": 0.6009716190601178
+          },
+          "selection": {
+            "selected_rows": 16,
+            "win_rate": 0.6875,
+            "units": 5.879099999999999,
+            "roi": 0.36744374999999996,
+            "avg_ev": 0.13642659879465313,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.4883720930232558,
+            "avg_prob": 0.49167436291570377,
+            "calibration_error": -0.003302269892447973,
+            "brier": 0.20586928230471366,
+            "log_loss": 0.6028870338575021
+          },
+          "selection": {
+            "selected_rows": 14,
+            "win_rate": 0.7142857142857143,
+            "units": 5.8290999999999995,
+            "roi": 0.4163642857142857,
+            "avg_ev": 0.14504751910802605,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.4883720930232558,
+            "avg_prob": 0.4991474223665541,
+            "calibration_error": -0.010775329343298334,
+            "brier": 0.24789442147173507,
+            "log_loss": 0.6889518557044678
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.0,
+            "units": -2.0,
+            "roi": -1.0,
+            "avg_ev": 0.08670792615573247,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 43,
+            "actual_rate": 0.4883720930232558,
+            "avg_prob": 0.48186244748379264,
+            "calibration_error": 0.006509645539463149,
+            "brier": 0.17442190771971963,
+            "log_loss": 0.5329104174621986
+          },
+          "selection": {
+            "selected_rows": 17,
+            "win_rate": 0.8235294117647058,
+            "units": 9.4383,
+            "roi": 0.5551941176470588,
+            "avg_ev": 0.17837513644933042,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "bucket": [
+    {
+      "key": "batter_hits|over|H 0.5|fair_lay",
+      "market": "batter_hits",
+      "side": "over",
+      "line_bucket": "H 0.5",
+      "price_bucket": "fair_lay",
+      "rows": 14,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 14,
+            "actual_rate": 0.5714285714285714,
+            "avg_prob": 0.4557785714285713,
+            "calibration_error": 0.11565000000000009,
+            "brier": 0.2541708707142857,
+            "log_loss": 0.7013445027270103
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.03742173913043467,
+            "avg_clv_price": 0.22,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 14,
+            "actual_rate": 0.5714285714285714,
+            "avg_prob": 0.45960815996402143,
+            "calibration_error": 0.11182041146454996,
+            "brier": 0.25335206032308527,
+            "log_loss": 0.6997230700768385
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.02521828589680747,
+            "avg_clv_price": 0.22,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 14,
+            "actual_rate": 0.5714285714285714,
+            "avg_prob": 0.5074932553489839,
+            "calibration_error": 0.06393531607958747,
+            "brier": 0.2513893472617267,
+            "log_loss": 0.6959338647902689
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 14,
+            "actual_rate": 0.5714285714285714,
+            "avg_prob": 0.4630449828528751,
+            "calibration_error": 0.1083835885756963,
+            "brier": 0.2467206717931294,
+            "log_loss": 0.6864321119770594
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|over|H 0.5|heavy_lay",
+      "market": "batter_hits",
+      "side": "over",
+      "line_bucket": "H 0.5",
+      "price_bucket": "heavy_lay",
+      "rows": 214,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 214,
+            "actual_rate": 0.6682242990654206,
+            "avg_prob": 0.6036546728971962,
+            "calibration_error": 0.06456962616822437,
+            "brier": 0.22065953911214953,
+            "log_loss": 0.6330507768682188
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.4762,
+            "roi": 0.4762,
+            "avg_ev": 0.029642857142857137,
+            "avg_clv_price": 0.61,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 214,
+            "actual_rate": 0.6682242990654206,
+            "avg_prob": 0.6079312200801332,
+            "calibration_error": 0.06029307898528735,
+            "brier": 0.22052167042096849,
+            "log_loss": 0.6327797755511163
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 214,
+            "actual_rate": 0.6682242990654206,
+            "avg_prob": 0.6179622216108428,
+            "calibration_error": 0.05026207745457778,
+            "brier": 0.22550781572662784,
+            "log_loss": 0.6432152537430267
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 214,
+            "actual_rate": 0.6682242990654206,
+            "avg_prob": 0.6148176291106716,
+            "calibration_error": 0.053406669954748964,
+            "brier": 0.20823559935654676,
+            "log_loss": 0.6061674437321428
+          },
+          "selection": {
+            "selected_rows": 10,
+            "win_rate": 1.0,
+            "units": 4.6712,
+            "roi": 0.46712,
+            "avg_ev": 0.0545813117063708,
+            "avg_clv_price": 0.7689999999999999,
+            "clv_price_beat_rate": 0.6,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|over|H 0.5|lay_130_149",
+      "market": "batter_hits",
+      "side": "over",
+      "line_bucket": "H 0.5",
+      "price_bucket": "lay_130_149",
+      "rows": 39,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 39,
+            "actual_rate": 0.5128205128205128,
+            "avg_prob": 0.5082871794871795,
+            "calibration_error": 0.004533333333333278,
+            "brier": 0.23956279025641025,
+            "log_loss": 0.6722790790612759
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 39,
+            "actual_rate": 0.5128205128205128,
+            "avg_prob": 0.5096761027685203,
+            "calibration_error": 0.0031444100519925078,
+            "brier": 0.24081873999160222,
+            "log_loss": 0.6747813588777202
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 39,
+            "actual_rate": 0.5128205128205128,
+            "avg_prob": 0.5464096592552654,
+            "calibration_error": -0.03358914643475264,
+            "brier": 0.25324250650265856,
+            "log_loss": 0.6997300316536786
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 39,
+            "actual_rate": 0.5128205128205128,
+            "avg_prob": 0.5089985610823097,
+            "calibration_error": 0.0038219517382031,
+            "brier": 0.22896634236694374,
+            "log_loss": 0.6507396984278511
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.7407,
+            "roi": 0.7407,
+            "avg_ev": 0.08434325590569752,
+            "avg_clv_price": 2.87,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|over|H 0.5|lay_150_180",
+      "market": "batter_hits",
+      "side": "over",
+      "line_bucket": "H 0.5",
+      "price_bucket": "lay_150_180",
+      "rows": 95,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 95,
+            "actual_rate": 0.5368421052631579,
+            "avg_prob": 0.5514284210526317,
+            "calibration_error": -0.01458631578947378,
+            "brier": 0.25149797336842106,
+            "log_loss": 0.6961781558927796
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 95,
+            "actual_rate": 0.5368421052631579,
+            "avg_prob": 0.5533636351269542,
+            "calibration_error": -0.01652152986379629,
+            "brier": 0.2523774408562409,
+            "log_loss": 0.6979463253415474
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 95,
+            "actual_rate": 0.5368421052631579,
+            "avg_prob": 0.5807043790573151,
+            "calibration_error": -0.04386227379415719,
+            "brier": 0.25324731927157024,
+            "log_loss": 0.6999156088971177
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 95,
+            "actual_rate": 0.5368421052631579,
+            "avg_prob": 0.5518684519634566,
+            "calibration_error": -0.015026346700298676,
+            "brier": 0.2427517772447808,
+            "log_loss": 0.6781458207619605
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 1.2381,
+            "roi": 0.61905,
+            "avg_ev": 0.06690837269432315,
+            "avg_clv_price": -0.495,
+            "clv_price_beat_rate": 0.5,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|over|H 0.5|plus_money",
+      "market": "batter_hits",
+      "side": "over",
+      "line_bucket": "H 0.5",
+      "price_bucket": "plus_money",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.3013,
+            "calibration_error": -0.3013,
+            "brier": 0.09078169000000001,
+            "log_loss": 0.3585338134237321
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.3127606456270489,
+            "calibration_error": -0.3127606456270489,
+            "brier": 0.09781922145304846,
+            "log_loss": 0.3750726422379839
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.43038408779149523,
+            "calibration_error": -0.43038408779149523,
+            "brier": 0.1852304630241175,
+            "log_loss": 0.5627929835152541
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.2511179931552003,
+            "calibration_error": -0.2511179931552003,
+            "brier": 0.06306024648629523,
+            "log_loss": 0.2891738421273452
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|under|H 0.5|fair_lay",
+      "market": "batter_hits",
+      "side": "under",
+      "line_bucket": "H 0.5",
+      "price_bucket": "fair_lay",
+      "rows": 28,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 28,
+            "actual_rate": 0.39285714285714285,
+            "avg_prob": 0.5223821428571428,
+            "calibration_error": -0.12952499999999995,
+            "brier": 0.24064161749999996,
+            "log_loss": 0.6741767372705411
+          },
+          "selection": {
+            "selected_rows": 12,
+            "win_rate": 0.5833333333333334,
+            "units": 1.3026,
+            "roi": 0.10855,
+            "avg_ev": 0.10489366342873103,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 28,
+            "actual_rate": 0.39285714285714285,
+            "avg_prob": 0.5204518749725406,
+            "calibration_error": -0.1275947321153978,
+            "brier": 0.24137746992804562,
+            "log_loss": 0.6757093587140808
+          },
+          "selection": {
+            "selected_rows": 12,
+            "win_rate": 0.5833333333333334,
+            "units": 1.3026,
+            "roi": 0.10855,
+            "avg_ev": 0.09005098902711552,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 28,
+            "actual_rate": 0.39285714285714285,
+            "avg_prob": 0.4799225395823999,
+            "calibration_error": -0.08706539672525704,
+            "brier": 0.24462342872733808,
+            "log_loss": 0.6823631588234375
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 28,
+            "actual_rate": 0.39285714285714285,
+            "avg_prob": 0.5130941158667317,
+            "calibration_error": -0.12023697300958885,
+            "brier": 0.23229967099293272,
+            "log_loss": 0.6573434214711948
+          },
+          "selection": {
+            "selected_rows": 12,
+            "win_rate": 0.5833333333333334,
+            "units": 1.3026,
+            "roi": 0.10855,
+            "avg_ev": 0.08180908769508505,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|under|H 0.5|heavy_lay",
+      "market": "batter_hits",
+      "side": "under",
+      "line_bucket": "H 0.5",
+      "price_bucket": "heavy_lay",
+      "rows": 34,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 34,
+            "actual_rate": 0.35294117647058826,
+            "avg_prob": 0.37840882352941174,
+            "calibration_error": -0.025467647058823484,
+            "brier": 0.22455913911764708,
+            "log_loss": 0.6410935442332333
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 34,
+            "actual_rate": 0.35294117647058826,
+            "avg_prob": 0.39424366984440296,
+            "calibration_error": -0.0413024933738147,
+            "brier": 0.22612170844078353,
+            "log_loss": 0.6445239126054302
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 34,
+            "actual_rate": 0.35294117647058826,
+            "avg_prob": 0.48660377879376615,
+            "calibration_error": -0.1336626023231779,
+            "brier": 0.24636814225373643,
+            "log_loss": 0.6858784192330324
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 34,
+            "actual_rate": 0.35294117647058826,
+            "avg_prob": 0.3681602850096781,
+            "calibration_error": -0.015219108539089865,
+            "brier": 0.21340111794069963,
+            "log_loss": 0.61626040868933
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|under|H 0.5|lay_150_180",
+      "market": "batter_hits",
+      "side": "under",
+      "line_bucket": "H 0.5",
+      "price_bucket": "lay_150_180",
+      "rows": 3,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.4237,
+            "calibration_error": -0.0903666666666667,
+            "brier": 0.08486752333333332,
+            "log_loss": 0.3442795830919621
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6623,
+            "roi": 0.6623,
+            "avg_ev": 0.16141523178807948,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.4497662839368246,
+            "calibration_error": -0.11643295060349129,
+            "brier": 0.09967360886228234,
+            "log_loss": 0.3791957726430594
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6623,
+            "roi": 0.6623,
+            "avg_ev": 0.1659401804921356,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.47701117575018775,
+            "calibration_error": -0.14367784241685444,
+            "brier": 0.18543859924770523,
+            "log_loss": 0.5632066585521599
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.37673169967416237,
+            "calibration_error": -0.04339836634082905,
+            "brier": 0.06079395885915392,
+            "log_loss": 0.2789954841127493
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6623,
+            "roi": 0.6623,
+            "avg_ev": 0.16709799946496245,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|under|H 0.5|missing_price",
+      "market": "batter_hits",
+      "side": "under",
+      "line_bucket": "H 0.5",
+      "price_bucket": "missing_price",
+      "rows": 6,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.48901666666666666,
+            "calibration_error": 0.010983333333333345,
+            "brier": 0.21372671166666668,
+            "log_loss": 0.6200689002724762
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.48901666666666666,
+            "calibration_error": 0.010983333333333345,
+            "brier": 0.21372671166666668,
+            "log_loss": 0.6200689002724762
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 0,
+            "actual_rate": null,
+            "avg_prob": null,
+            "calibration_error": null,
+            "brier": null,
+            "log_loss": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.48771903218699914,
+            "calibration_error": 0.012280967813000865,
+            "brier": 0.20554088330799114,
+            "log_loss": 0.6026244069028758
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_hits|under|H 0.5|plus_money",
+      "market": "batter_hits",
+      "side": "under",
+      "line_bucket": "H 0.5",
+      "price_bucket": "plus_money",
+      "rows": 292,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 292,
+            "actual_rate": 0.3904109589041096,
+            "avg_prob": 0.4220171232876712,
+            "calibration_error": -0.03160616438356162,
+            "brier": 0.23354668726027394,
+            "log_loss": 0.659515927041742
+          },
+          "selection": {
+            "selected_rows": 136,
+            "win_rate": 0.4485294117647059,
+            "units": 17.1,
+            "roi": 0.12573529411764706,
+            "avg_ev": 0.10527801470588234,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 292,
+            "actual_rate": 0.3904109589041096,
+            "avg_prob": 0.41797315807668645,
+            "calibration_error": -0.02756219917257685,
+            "brier": 0.2334922514777321,
+            "log_loss": 0.6593772091995609
+          },
+          "selection": {
+            "selected_rows": 120,
+            "win_rate": 0.45,
+            "units": 16.14,
+            "roi": 0.1345,
+            "avg_ev": 0.09143175821446023,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 292,
+            "actual_rate": 0.3904109589041096,
+            "avg_prob": 0.38696514741419014,
+            "calibration_error": 0.003445811489919459,
+            "brier": 0.23527000626805292,
+            "log_loss": 0.6631538091696972
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 292,
+            "actual_rate": 0.3904109589041096,
+            "avg_prob": 0.4157716079323845,
+            "calibration_error": -0.025360649028274895,
+            "brier": 0.22164949541052598,
+            "log_loss": 0.6344412723868295
+          },
+          "selection": {
+            "selected_rows": 131,
+            "win_rate": 0.5343511450381679,
+            "units": 42.48,
+            "roi": 0.3242748091603053,
+            "avg_ev": 0.11302146476385366,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_home_runs|over|HR 0.5|plus_money",
+      "market": "batter_home_runs",
+      "side": "over",
+      "line_bucket": "HR 0.5",
+      "price_bucket": "plus_money",
+      "rows": 355,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.10374366197183099,
+            "calibration_error": 0.025833802816901397,
+            "brier": 0.11203777763380282,
+            "log_loss": 0.3826657781718663
+          },
+          "selection": {
+            "selected_rows": 28,
+            "win_rate": 0.14285714285714285,
+            "units": -0.40000000000000036,
+            "roi": -0.0142857142857143,
+            "avg_ev": 0.13178749999999997,
+            "avg_clv_price": -7.841785714285714,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.6428571428571429,
+            "clv_line_beat_rate": 0.6428571428571429
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.10479345167555298,
+            "calibration_error": 0.024784013113179404,
+            "brier": 0.1119947732907879,
+            "log_loss": 0.38235811977827494
+          },
+          "selection": {
+            "selected_rows": 21,
+            "win_rate": 0.19047619047619047,
+            "units": 6.6,
+            "roi": 0.3142857142857143,
+            "avg_ev": 0.11016393669188423,
+            "avg_clv_price": -8.693809523809524,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.7142857142857143,
+            "clv_line_beat_rate": 0.7142857142857143
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.1394692760053766,
+            "calibration_error": -0.009891811216644203,
+            "brier": 0.11225139226940678,
+            "log_loss": 0.38252704466334814
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.1295774647887324,
+            "avg_prob": 0.10337387248612812,
+            "calibration_error": 0.026203592302604273,
+            "brier": 0.10906182244692599,
+            "log_loss": 0.36995512001532344
+          },
+          "selection": {
+            "selected_rows": 28,
+            "win_rate": 0.32142857142857145,
+            "units": 32.699999999999996,
+            "roi": 1.1678571428571427,
+            "avg_ev": 0.13668718152556145,
+            "avg_clv_price": -9.219642857142857,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.7142857142857143,
+            "clv_line_beat_rate": 0.7142857142857143
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_home_runs|under|HR 0.5|missing_price",
+      "market": "batter_home_runs",
+      "side": "under",
+      "line_bucket": "HR 0.5",
+      "price_bucket": "missing_price",
+      "rows": 355,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.8704225352112676,
+            "avg_prob": 0.896256338028169,
+            "calibration_error": -0.025833802816901397,
+            "brier": 0.11203777763380282,
+            "log_loss": 0.3826657781718663
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.8704225352112676,
+            "avg_prob": 0.896256338028169,
+            "calibration_error": -0.025833802816901397,
+            "brier": 0.11203777763380282,
+            "log_loss": 0.3826657781718663
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 0,
+            "actual_rate": null,
+            "avg_prob": null,
+            "calibration_error": null,
+            "brier": null,
+            "log_loss": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 355,
+            "actual_rate": 0.8704225352112676,
+            "avg_prob": 0.89651061695797,
+            "calibration_error": -0.026088081746702407,
+            "brier": 0.10935668380575157,
+            "log_loss": 0.3711570576291522
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|over|TB 1.5|fair_lay",
+      "market": "batter_total_bases",
+      "side": "over",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "fair_lay",
+      "rows": 25,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 25,
+            "actual_rate": 0.44,
+            "avg_prob": 0.43039199999999994,
+            "calibration_error": 0.009608000000000061,
+            "brier": 0.2508273952,
+            "log_loss": 0.694520284498743
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.3333333333333333,
+            "units": -1.1303999999999998,
+            "roi": -0.37679999999999997,
+            "avg_ev": 0.11632560386473427,
+            "avg_clv_price": -4.406666666666667,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 25,
+            "actual_rate": 0.44,
+            "avg_prob": 0.44322351414938027,
+            "calibration_error": -0.003223514149380269,
+            "brier": 0.24915985349384598,
+            "log_loss": 0.6911603345083611
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.3333333333333333,
+            "units": -1.1303999999999998,
+            "roi": -0.37679999999999997,
+            "avg_ev": 0.11738337543367094,
+            "avg_clv_price": -4.406666666666667,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 25,
+            "actual_rate": 0.44,
+            "avg_prob": 0.47601895886511064,
+            "calibration_error": -0.03601895886511064,
+            "brier": 0.25051570155980946,
+            "log_loss": 0.6941768436268609
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 25,
+            "actual_rate": 0.44,
+            "avg_prob": 0.43338733405059365,
+            "calibration_error": 0.006612665949406349,
+            "brier": 0.24277521289056087,
+            "log_loss": 0.6780113149991633
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 0.8220000000000001,
+            "roi": 0.274,
+            "avg_ev": 0.1482954563620776,
+            "avg_clv_price": -4.1033333333333335,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|over|TB 1.5|lay_130_149",
+      "market": "batter_total_bases",
+      "side": "over",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "lay_130_149",
+      "rows": 6,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.4130333333333333,
+            "calibration_error": 0.2536333333333333,
+            "brier": 0.26744695333333335,
+            "log_loss": 0.7280021486149303
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.4200462977789499,
+            "calibration_error": 0.2466203688877167,
+            "brier": 0.2668236022568593,
+            "log_loss": 0.7268222619291986
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.5138732140689762,
+            "calibration_error": 0.1527934525976904,
+            "brier": 0.24913842359368774,
+            "log_loss": 0.6914216191979056
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.43096319038553466,
+            "calibration_error": 0.23570347628113197,
+            "brier": 0.25486102548844053,
+            "log_loss": 0.7026155075964441
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|over|TB 1.5|lay_150_180",
+      "market": "batter_total_bases",
+      "side": "over",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "lay_150_180",
+      "rows": 4,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.42174999999999996,
+            "calibration_error": 0.07825000000000004,
+            "brier": 0.22589317500000003,
+            "log_loss": 0.643803614841984
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.43205332373368033,
+            "calibration_error": 0.06794667626631967,
+            "brier": 0.2272348540199035,
+            "log_loss": 0.6468348849504574
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5516076382887058,
+            "calibration_error": -0.05160763828870585,
+            "brier": 0.2485178683384479,
+            "log_loss": 0.6900969538391839
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.435002793281129,
+            "calibration_error": 0.06499720671887099,
+            "brier": 0.209170410899765,
+            "log_loss": 0.6099581934959595
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|over|TB 1.5|plus_money",
+      "market": "batter_total_bases",
+      "side": "over",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "plus_money",
+      "rows": 321,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 321,
+            "actual_rate": 0.37383177570093457,
+            "avg_prob": 0.35661588785046733,
+            "calibration_error": 0.017215887850467237,
+            "brier": 0.2294196957943925,
+            "log_loss": 0.6500754376539334
+          },
+          "selection": {
+            "selected_rows": 42,
+            "win_rate": 0.38095238095238093,
+            "units": -2.3299999999999996,
+            "roi": -0.05547619047619047,
+            "avg_ev": 0.13677773809523805,
+            "avg_clv_price": -11.25,
+            "clv_price_beat_rate": 0.047619047619047616,
+            "avg_clv_line": 0.9285714285714286,
+            "clv_line_beat_rate": 0.4523809523809524
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 321,
+            "actual_rate": 0.37383177570093457,
+            "avg_prob": 0.3540703863948865,
+            "calibration_error": 0.01976138930604804,
+            "brier": 0.23089990304550312,
+            "log_loss": 0.6536799863084518
+          },
+          "selection": {
+            "selected_rows": 30,
+            "win_rate": 0.4666666666666667,
+            "units": 3.9700000000000006,
+            "roi": 0.13233333333333336,
+            "avg_ev": 0.09386529998755805,
+            "avg_clv_price": -11.206666666666669,
+            "clv_price_beat_rate": 0.03333333333333333,
+            "avg_clv_line": 0.9333333333333333,
+            "clv_line_beat_rate": 0.43333333333333335
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 321,
+            "actual_rate": 0.37383177570093457,
+            "avg_prob": 0.39397043398037757,
+            "calibration_error": -0.020138658279443,
+            "brier": 0.2347166667613664,
+            "log_loss": 0.6623974146646991
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 321,
+            "actual_rate": 0.37383177570093457,
+            "avg_prob": 0.357727045686924,
+            "calibration_error": 0.016104730014010582,
+            "brier": 0.22575202612759152,
+            "log_loss": 0.6422302127894142
+          },
+          "selection": {
+            "selected_rows": 48,
+            "win_rate": 0.4583333333333333,
+            "units": 6.32,
+            "roi": 0.13166666666666668,
+            "avg_ev": 0.13266911339468918,
+            "avg_clv_price": -10.923958333333333,
+            "clv_price_beat_rate": 0.041666666666666664,
+            "avg_clv_line": 0.8958333333333334,
+            "clv_line_beat_rate": 0.4375
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|fair_lay",
+      "market": "batter_total_bases",
+      "side": "under",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "fair_lay",
+      "rows": 13,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 13,
+            "actual_rate": 0.5384615384615384,
+            "avg_prob": 0.5813461538461537,
+            "calibration_error": -0.0428846153846153,
+            "brier": 0.25261935,
+            "log_loss": 0.6980887304506671
+          },
+          "selection": {
+            "selected_rows": 11,
+            "win_rate": 0.5454545454545454,
+            "units": 0.17310000000000003,
+            "roi": 0.01573636363636364,
+            "avg_ev": 0.11871606297741844,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 13,
+            "actual_rate": 0.5384615384615384,
+            "avg_prob": 0.5719094231552841,
+            "calibration_error": -0.03344788469374571,
+            "brier": 0.25032129882555476,
+            "log_loss": 0.6935743960553644
+          },
+          "selection": {
+            "selected_rows": 10,
+            "win_rate": 0.6,
+            "units": 1.1731000000000003,
+            "roi": 0.11731000000000003,
+            "avg_ev": 0.10681875451584051,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 13,
+            "actual_rate": 0.5384615384615384,
+            "avg_prob": 0.4918179607367486,
+            "calibration_error": 0.04664357772478983,
+            "brier": 0.2502134721355489,
+            "log_loss": 0.6935756179267707
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 13,
+            "actual_rate": 0.5384615384615384,
+            "avg_prob": 0.5754664595632468,
+            "calibration_error": -0.03700492110170839,
+            "brier": 0.23980680867841267,
+            "log_loss": 0.6715566014661971
+          },
+          "selection": {
+            "selected_rows": 9,
+            "win_rate": 0.6666666666666666,
+            "units": 2.1731000000000003,
+            "roi": 0.2414555555555556,
+            "avg_ev": 0.12601008494058202,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|heavy_lay",
+      "market": "batter_total_bases",
+      "side": "under",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "heavy_lay",
+      "rows": 38,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 38,
+            "actual_rate": 0.6052631578947368,
+            "avg_prob": 0.6166184210526316,
+            "calibration_error": -0.011355263157894813,
+            "brier": 0.23380119026315788,
+            "log_loss": 0.6589082546443027
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 1.0,
+            "units": 1.5631,
+            "roi": 0.5210333333333333,
+            "avg_ev": 0.03187994749477754,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 38,
+            "actual_rate": 0.6052631578947368,
+            "avg_prob": 0.6180685788623057,
+            "calibration_error": -0.01280542096756887,
+            "brier": 0.23412375840213245,
+            "log_loss": 0.6598020389517821
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 1.0529000000000002,
+            "roi": 0.5264500000000001,
+            "avg_ev": 0.025954893356111453,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 38,
+            "actual_rate": 0.6052631578947368,
+            "avg_prob": 0.6018219434001595,
+            "calibration_error": 0.0034412144945773493,
+            "brier": 0.2385491175057517,
+            "log_loss": 0.6699807814011557
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 38,
+            "actual_rate": 0.6052631578947368,
+            "avg_prob": 0.6157232555486861,
+            "calibration_error": -0.010460097653949285,
+            "brier": 0.22874695372410936,
+            "log_loss": 0.6482611500934067
+          },
+          "selection": {
+            "selected_rows": 7,
+            "win_rate": 1.0,
+            "units": 3.6528,
+            "roi": 0.5218285714285714,
+            "avg_ev": 0.025707347272555785,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|lay_130_149",
+      "market": "batter_total_bases",
+      "side": "under",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "lay_130_149",
+      "rows": 29,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 29,
+            "actual_rate": 0.5172413793103449,
+            "avg_prob": 0.5557310344827586,
+            "calibration_error": -0.03848965517241376,
+            "brier": 0.2588536137931034,
+            "log_loss": 0.7116645849430083
+          },
+          "selection": {
+            "selected_rows": 13,
+            "win_rate": 0.5384615384615384,
+            "units": -0.8893999999999997,
+            "roi": -0.0684153846153846,
+            "avg_ev": 0.08930046014514599,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 29,
+            "actual_rate": 0.5172413793103449,
+            "avg_prob": 0.5490149960150434,
+            "calibration_error": -0.03177361670469858,
+            "brier": 0.25569135081194916,
+            "log_loss": 0.7048018111183985
+          },
+          "selection": {
+            "selected_rows": 8,
+            "win_rate": 0.75,
+            "units": 2.3912,
+            "roi": 0.2989,
+            "avg_ev": 0.07636945683411273,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 29,
+            "actual_rate": 0.5172413793103449,
+            "avg_prob": 0.5323676974752658,
+            "calibration_error": -0.015126318164920938,
+            "brier": 0.2515243832664542,
+            "log_loss": 0.6962399766990319
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 29,
+            "actual_rate": 0.5172413793103449,
+            "avg_prob": 0.5540221010846187,
+            "calibration_error": -0.03678072177427383,
+            "brier": 0.2559303402803686,
+            "log_loss": 0.7056591603413515
+          },
+          "selection": {
+            "selected_rows": 13,
+            "win_rate": 0.5384615384615384,
+            "units": -0.8893999999999997,
+            "roi": -0.0684153846153846,
+            "avg_ev": 0.07671249593158715,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|lay_150_180",
+      "market": "batter_total_bases",
+      "side": "under",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "lay_150_180",
+      "rows": 84,
+      "recommendation": "keep_model_only_roi",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 84,
+            "actual_rate": 0.6190476190476191,
+            "avg_prob": 0.6000000000000001,
+            "calibration_error": 0.01904761904761898,
+            "brier": 0.2391151885714286,
+            "log_loss": 0.6711923758262474
+          },
+          "selection": {
+            "selected_rows": 26,
+            "win_rate": 0.5769230769230769,
+            "units": -1.7879000000000005,
+            "roi": -0.06876538461538463,
+            "avg_ev": 0.05044821673683741,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 84,
+            "actual_rate": 0.6190476190476191,
+            "avg_prob": 0.5963707668388272,
+            "calibration_error": 0.022676852208791898,
+            "brier": 0.2380966363058458,
+            "log_loss": 0.6691179316651882
+          },
+          "selection": {
+            "selected_rows": 14,
+            "win_rate": 0.5,
+            "units": -2.5037999999999996,
+            "roi": -0.1788428571428571,
+            "avg_ev": 0.04945931882010833,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 84,
+            "actual_rate": 0.6190476190476191,
+            "avg_prob": 0.5720207276396005,
+            "calibration_error": 0.04702689140801852,
+            "brier": 0.2360438198295206,
+            "log_loss": 0.6649966413906776
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 84,
+            "actual_rate": 0.6190476190476191,
+            "avg_prob": 0.5999909873701699,
+            "calibration_error": 0.0190566316774492,
+            "brier": 0.23135540696773982,
+            "log_loss": 0.65523704416475
+          },
+          "selection": {
+            "selected_rows": 29,
+            "win_rate": 0.6551724137931034,
+            "units": 1.5652,
+            "roi": 0.05397241379310345,
+            "avg_ev": 0.04982658787138644,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|missing_price",
+      "market": "batter_total_bases",
+      "side": "under",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "missing_price",
+      "rows": 190,
+      "recommendation": "keep_model_only",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 190,
+            "actual_rate": 0.6368421052631579,
+            "avg_prob": 0.6735163157894736,
+            "calibration_error": -0.0366742105263157,
+            "brier": 0.22239001584210527,
+            "log_loss": 0.6350023038960659
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 190,
+            "actual_rate": 0.6368421052631579,
+            "avg_prob": 0.6735163157894736,
+            "calibration_error": -0.0366742105263157,
+            "brier": 0.22239001584210527,
+            "log_loss": 0.6350023038960659
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 0,
+            "actual_rate": null,
+            "avg_prob": null,
+            "calibration_error": null,
+            "brier": null,
+            "log_loss": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 190,
+            "actual_rate": 0.6368421052631579,
+            "avg_prob": 0.6714293069443875,
+            "calibration_error": -0.03458720168122964,
+            "brier": 0.22152142282362117,
+            "log_loss": 0.633180951420829
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|plus_money",
+      "market": "batter_total_bases",
+      "side": "under",
+      "line_bucket": "TB 1.5",
+      "price_bucket": "plus_money",
+      "rows": 2,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5640000000000001,
+            "calibration_error": -0.06400000000000006,
+            "brier": 0.20381561000000004,
+            "log_loss": 0.5989562525459707
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.5,
+            "units": 0.08000000000000007,
+            "roi": 0.040000000000000036,
+            "avg_ev": 0.16801100000000008,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5484969984889201,
+            "calibration_error": -0.048496998488920084,
+            "brier": 0.20704496172693493,
+            "log_loss": 0.6062027507719336
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.5,
+            "units": 0.08000000000000007,
+            "roi": 0.040000000000000036,
+            "avg_ev": 0.1358644857894165,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.43753978131486676,
+            "calibration_error": 0.06246021868513324,
+            "brier": 0.2466544936963328,
+            "log_loss": 0.6862902368423136
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5588568751236282,
+            "calibration_error": -0.05885687512362825,
+            "brier": 0.1914247972064526,
+            "log_loss": 0.5737837572378379
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 1.08,
+            "roi": 1.08,
+            "avg_ev": 0.3006501433163008,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 4.5-6.0|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "fair_lay",
+      "rows": 3,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.4839,
+            "calibration_error": -0.15056666666666668,
+            "brier": 0.20336135,
+            "log_loss": 0.5995585874326352
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.9434,
+            "roi": 0.9434,
+            "avg_ev": 0.0678962264150943,
+            "avg_clv_price": 2.46,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.48231904809389764,
+            "calibration_error": -0.14898571476056433,
+            "brier": 0.20402680501511258,
+            "log_loss": 0.600905372429659
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.9434,
+            "roi": 0.9434,
+            "avg_ev": 0.06110910623086285,
+            "avg_clv_price": 2.46,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.49107390121535516,
+            "calibration_error": -0.15774056788202184,
+            "brier": 0.24279965624186925,
+            "log_loss": 0.6787321239860017
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.3333333333333333,
+            "avg_prob": 0.4848564689193928,
+            "calibration_error": -0.1515231355860595,
+            "brier": 0.2250395727655241,
+            "log_loss": 0.6424296684391521
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.02391862825363772,
+            "avg_clv_price": 1.54,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 4.5-6.0|heavy_lay",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "heavy_lay",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.6081,
+            "calibration_error": 0.3919,
+            "brier": 0.15358561,
+            "log_loss": 0.49741593685607305
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5960397681060732,
+            "calibration_error": 0.4039602318939268,
+            "brier": 0.16318386895179512,
+            "log_loss": 0.5174478891326119
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5108395743003546,
+            "calibration_error": 0.48916042569964535,
+            "brier": 0.23927792207065826,
+            "log_loss": 0.671699682687062
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5624522172558146,
+            "calibration_error": 0.4375477827441854,
+            "brier": 0.19144806218435284,
+            "log_loss": 0.5754490956125452
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 4.5-6.0|lay_130_149",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "lay_130_149",
+      "rows": 5,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.4,
+            "avg_prob": 0.46656,
+            "calibration_error": -0.06655999999999995,
+            "brier": 0.209049608,
+            "log_loss": 0.6102365763449529
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.4,
+            "avg_prob": 0.4673057541509963,
+            "calibration_error": -0.06730575415099627,
+            "brier": 0.20951103147382893,
+            "log_loss": 0.6112241748137507
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.4,
+            "avg_prob": 0.5290215596332929,
+            "calibration_error": -0.12902155963329287,
+            "brier": 0.23556927633726638,
+            "log_loss": 0.6640893892622636
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.4,
+            "avg_prob": 0.46651459372302223,
+            "calibration_error": -0.06651459372302221,
+            "brier": 0.17337996251193472,
+            "log_loss": 0.5364866248419223
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.7246,
+            "roi": 0.7246,
+            "avg_ev": 0.07398029089998126,
+            "avg_clv_price": -1.27,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 4.5-6.0|lay_150_180",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "lay_150_180",
+      "rows": 5,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.53702,
+            "calibration_error": 0.06297999999999992,
+            "brier": 0.13849031000000003,
+            "log_loss": 0.46185750700571193
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6329,
+            "roi": 0.6329,
+            "avg_ev": 0.2197848101265823,
+            "avg_clv_price": -1.08,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.5383441159977344,
+            "calibration_error": 0.061655884002265626,
+            "brier": 0.1412150731006904,
+            "log_loss": 0.4678706387789422
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6329,
+            "roi": 0.6329,
+            "avg_ev": 0.2118834585314895,
+            "avg_clv_price": -1.08,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.5759801957126416,
+            "calibration_error": 0.024019804287358393,
+            "brier": 0.24343694038390024,
+            "log_loss": 0.6800680980186798
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.5750904525328396,
+            "calibration_error": 0.024909547467160342,
+            "brier": 0.0913729194452475,
+            "log_loss": 0.34664896341645013
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 1.2658,
+            "roi": 0.6329,
+            "avg_ev": 0.3185873958262563,
+            "avg_clv_price": -0.54,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 4.5-6.0|plus_money",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "plus_money",
+      "rows": 11,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 11,
+            "actual_rate": 0.7272727272727273,
+            "avg_prob": 0.5280090909090909,
+            "calibration_error": 0.19926363636363642,
+            "brier": 0.17270066999999997,
+            "log_loss": 0.5347402253064925
+          },
+          "selection": {
+            "selected_rows": 8,
+            "win_rate": 1.0,
+            "units": 9.18,
+            "roi": 1.1475,
+            "avg_ev": 0.24361125000000006,
+            "avg_clv_price": 4.20625,
+            "clv_price_beat_rate": 0.75,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 11,
+            "actual_rate": 0.7272727272727273,
+            "avg_prob": 0.5198331681765318,
+            "calibration_error": 0.2074395590961955,
+            "brier": 0.1805397345250569,
+            "log_loss": 0.5513078193761902
+          },
+          "selection": {
+            "selected_rows": 8,
+            "win_rate": 1.0,
+            "units": 9.18,
+            "roi": 1.1475,
+            "avg_ev": 0.21706462659776446,
+            "avg_clv_price": 4.20625,
+            "clv_price_beat_rate": 0.75,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 11,
+            "actual_rate": 0.7272727272727273,
+            "avg_prob": 0.45464442719911974,
+            "calibration_error": 0.27262830007360755,
+            "brier": 0.2664455133922858,
+            "log_loss": 0.7262758620070285
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 2.24,
+            "roi": 1.12,
+            "avg_ev": 0.08670792615573247,
+            "avg_clv_price": 13.975,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 11,
+            "actual_rate": 0.7272727272727273,
+            "avg_prob": 0.5875070158438896,
+            "calibration_error": 0.13976571142883765,
+            "brier": 0.11524627187096509,
+            "log_loss": 0.40264254716954073
+          },
+          "selection": {
+            "selected_rows": 7,
+            "win_rate": 1.0,
+            "units": 8.02,
+            "roi": 1.1457142857142857,
+            "avg_ev": 0.5306553205657966,
+            "avg_clv_price": 4.985714285714286,
+            "clv_price_beat_rate": 0.8571428571428571,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 6.5-8.0|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 6.5-8.0",
+      "price_bucket": "fair_lay",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.497,
+            "calibration_error": 0.503,
+            "brier": 0.253009,
+            "log_loss": 0.6991652528855083
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5048166878471898,
+            "calibration_error": 0.4951833121528102,
+            "brier": 0.24520651263462745,
+            "log_loss": 0.6835599099671786
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5285423037716617,
+            "calibration_error": 0.47145769622833833,
+            "brier": 0.22227235933293213,
+            "log_loss": 0.6376324318957809
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5068794330811042,
+            "calibration_error": 0.49312056691889583,
+            "brier": 0.24316789351841323,
+            "log_loss": 0.6794821082447041
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 6.5-8.0|lay_150_180",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 6.5-8.0",
+      "price_bucket": "lay_150_180",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.4913,
+            "calibration_error": 0.5086999999999999,
+            "brier": 0.25877568999999995,
+            "log_loss": 0.7107003398075344
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5061941516874131,
+            "calibration_error": 0.4938058483125869,
+            "brier": 0.24384421582771357,
+            "log_loss": 0.6808349843013208
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.570673712021136,
+            "calibration_error": 0.42932628797886396,
+            "brier": 0.18432106154971042,
+            "log_loss": 0.5609376651933385
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5345343782200632,
+            "calibration_error": 0.4654656217799368,
+            "brier": 0.21665824505898315,
+            "log_loss": 0.6263592321194068
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 6.5-8.0|plus_money",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 6.5-8.0",
+      "price_bucket": "plus_money",
+      "rows": 2,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5024,
+            "calibration_error": -0.5024,
+            "brier": 0.25293937,
+            "log_loss": 0.699037439872719
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.0,
+            "units": -2.0,
+            "roi": -1.0,
+            "avg_ev": 0.11532799999999999,
+            "avg_clv_price": 3.3049999999999997,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.48603007735675463,
+            "calibration_error": -0.48603007735675463,
+            "brier": 0.2366686601065357,
+            "log_loss": 0.6664305300858464
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.0,
+            "units": -2.0,
+            "roi": -1.0,
+            "avg_ev": 0.07898677173199531,
+            "avg_clv_price": 3.3049999999999997,
+            "clv_price_beat_rate": 1.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.43860102530851547,
+            "calibration_error": -0.43860102530851547,
+            "brier": 0.19240370733887646,
+            "log_loss": 0.5773755557702102
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.39723149044369954,
+            "calibration_error": -0.39723149044369954,
+            "brier": 0.16039890514279145,
+            "log_loss": 0.5098213164497569
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K 8.5+|lay_130_149",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K 8.5+",
+      "price_bucket": "lay_130_149",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5368,
+            "calibration_error": -0.5368,
+            "brier": 0.28815424000000006,
+            "log_loss": 0.7695963527233517
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5249677060388228,
+            "calibration_error": -0.5249677060388228,
+            "brier": 0.27559109238366386,
+            "log_loss": 0.7443724899718378
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5079561527581329,
+            "calibration_error": -0.5079561527581329,
+            "brier": 0.25801945312484365,
+            "log_loss": 0.7091874460505178
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5849997091212463,
+            "calibration_error": -0.5849997091212463,
+            "brier": 0.3422246596719428,
+            "log_loss": 0.8794760578390249
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.034999485368358896,
+            "avg_clv_price": -5.07,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K <4.5|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K <4.5",
+      "price_bucket": "fair_lay",
+      "rows": 4,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.51855,
+            "calibration_error": -0.26854999999999996,
+            "brier": 0.21202928499999996,
+            "log_loss": 0.6146420185274992
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.3333333333333333,
+            "units": -1.1803,
+            "roi": -0.3934333333333333,
+            "avg_ev": 0.08567848836045551,
+            "avg_clv_price": -0.3366666666666666,
+            "clv_price_beat_rate": 0.3333333333333333,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.517323133109213,
+            "calibration_error": -0.26732313310921296,
+            "brier": 0.21322468052592003,
+            "log_loss": 0.6173888876376461
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.3333333333333333,
+            "units": -1.1803,
+            "roi": -0.3934333333333333,
+            "avg_ev": 0.07821843548408387,
+            "avg_clv_price": -0.3366666666666666,
+            "clv_price_beat_rate": 0.3333333333333333,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.4924441414560673,
+            "calibration_error": -0.2424441414560673,
+            "brier": 0.23673869859043867,
+            "log_loss": 0.6666047935069318
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.49975820748074207,
+            "calibration_error": -0.24975820748074207,
+            "brier": 0.19343649190521575,
+            "log_loss": 0.5761174151832517
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.8197,
+            "roi": 0.8197,
+            "avg_ev": 0.15764301328711228,
+            "avg_clv_price": -1.25,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K <4.5|heavy_lay",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K <4.5",
+      "price_bucket": "heavy_lay",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.3568,
+            "calibration_error": 0.6432,
+            "brier": 0.41370624,
+            "log_loss": 1.0305798782762827
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.3660421838624311,
+            "calibration_error": 0.633957816137569,
+            "brier": 0.4019025126419157,
+            "log_loss": 1.0050066957675559
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5128644939965694,
+            "calibration_error": 0.4871355060034306,
+            "brier": 0.23730100120921835,
+            "log_loss": 0.6677436129598061
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.3288857586930249,
+            "calibration_error": 0.6711142413069751,
+            "brier": 0.4503943248850367,
+            "log_loss": 1.1120448265329663
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K <4.5|lay_130_149",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K <4.5",
+      "price_bucket": "lay_130_149",
+      "rows": 2,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.48865,
+            "calibration_error": -0.48865,
+            "brier": 0.23894394499999996,
+            "log_loss": 0.6710168388365374
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.4930625601825741,
+            "calibration_error": -0.4930625601825741,
+            "brier": 0.24325378462356162,
+            "log_loss": 0.6796461666533826
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5492565894948231,
+            "calibration_error": -0.5492565894948231,
+            "brier": 0.30174189180929023,
+            "log_loss": 0.7970024792131674
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.39661764303127245,
+            "calibration_error": -0.39661764303127245,
+            "brier": 0.15730566295859885,
+            "log_loss": 0.505204340637784
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K <4.5|lay_150_180",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K <4.5",
+      "price_bucket": "lay_150_180",
+      "rows": 2,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.47835,
+            "calibration_error": 0.021650000000000003,
+            "brier": 0.23739428499999998,
+            "log_loss": 0.667882683367595
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.48502027058208796,
+            "calibration_error": 0.014979729417912035,
+            "brier": 0.23765025003525903,
+            "log_loss": 0.668420437933502
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5830047063479884,
+            "calibration_error": -0.0830047063479884,
+            "brier": 0.25055568673061274,
+            "log_loss": 0.6940969066103763
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.5,
+            "avg_prob": 0.47891208968219223,
+            "calibration_error": 0.021087910317807768,
+            "brier": 0.233085689049043,
+            "log_loss": 0.6592452268420257
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|over|K <4.5|plus_money",
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "line_bucket": "K <4.5",
+      "price_bucket": "plus_money",
+      "rows": 4,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5256500000000001,
+            "calibration_error": -0.02565000000000006,
+            "brier": 0.22365624499999998,
+            "log_loss": 0.6396478008374908
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.22,
+            "roi": 0.4066666666666667,
+            "avg_ev": 0.1908673333333334,
+            "avg_clv_price": -0.1666666666666666,
+            "clv_price_beat_rate": 0.6666666666666666,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5222465573480108,
+            "calibration_error": -0.022246557348010843,
+            "brier": 0.224673706705741,
+            "log_loss": 0.641775437168549
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.22,
+            "roi": 0.4066666666666667,
+            "avg_ev": 0.179130096477887,
+            "avg_clv_price": -0.1666666666666666,
+            "clv_price_beat_rate": 0.6666666666666666,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.44874105342433424,
+            "calibration_error": 0.051258946575665765,
+            "brier": 0.2568950650578369,
+            "log_loss": 0.7070854022125854
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5330557100263469,
+            "calibration_error": -0.033055710026346885,
+            "brier": 0.21785879049194862,
+            "log_loss": 0.6277878605353202
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.22,
+            "roi": 0.4066666666666667,
+            "avg_ev": 0.2362697037744046,
+            "avg_clv_price": -0.1666666666666666,
+            "clv_price_beat_rate": 0.6666666666666666,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 4.5-6.0|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "fair_lay",
+      "rows": 6,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.5107166666666667,
+            "calibration_error": 0.15594999999999992,
+            "brier": 0.186710385,
+            "log_loss": 0.5648935679098444
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 1.0,
+            "units": 2.7674000000000003,
+            "roi": 0.9224666666666668,
+            "avg_ev": 0.08855684840616211,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.5114564694337638,
+            "calibration_error": 0.15521019723290286,
+            "brier": 0.18862863112346775,
+            "log_loss": 0.5689084691725032
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 1.0,
+            "units": 2.7674000000000003,
+            "roi": 0.9224666666666668,
+            "avg_ev": 0.08491660749910908,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.5032347295182579,
+            "calibration_error": 0.16343193714840876,
+            "brier": 0.26067238675826604,
+            "log_loss": 0.7145259305635653
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.493253247550652,
+            "calibration_error": 0.17341341911601466,
+            "brier": 0.1845272234690826,
+            "log_loss": 0.5563610535284864
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 1.657,
+            "roi": 0.8285,
+            "avg_ev": 0.13640242011511075,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 4.5-6.0|lay_130_149",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "lay_130_149",
+      "rows": 6,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.51885,
+            "calibration_error": -0.018850000000000033,
+            "brier": 0.1673172783333333,
+            "log_loss": 0.5250787533369566
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 1.3841999999999999,
+            "roi": 0.6920999999999999,
+            "avg_ev": 0.07126308554459235,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5201856235159998,
+            "calibration_error": -0.02018562351599984,
+            "brier": 0.1699598195917019,
+            "log_loss": 0.5305649041435542
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 1.0,
+            "units": 1.3841999999999999,
+            "roi": 0.6920999999999999,
+            "avg_ev": 0.06706434273937514,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.5597216192793592,
+            "calibration_error": -0.05972161927935915,
+            "brier": 0.25504634624529604,
+            "log_loss": 0.7033900999218975
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 6,
+            "actual_rate": 0.5,
+            "avg_prob": 0.498123554719462,
+            "calibration_error": 0.001876445280537986,
+            "brier": 0.10873800459724897,
+            "log_loss": 0.3988775322192552
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 1.0,
+            "units": 2.0739,
+            "roi": 0.6913,
+            "avg_ev": 0.13289292485989573,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 4.5-6.0|lay_150_180",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "lay_150_180",
+      "rows": 4,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.482325,
+            "calibration_error": -0.232325,
+            "brier": 0.20962043749999998,
+            "log_loss": 0.6115713623733459
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.4823362574291147,
+            "calibration_error": -0.23233625742911468,
+            "brier": 0.21130663275856076,
+            "log_loss": 0.6149824394677175
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.5325256274878004,
+            "calibration_error": -0.2825256274878004,
+            "brier": 0.2782493300695834,
+            "log_loss": 0.7500373267489582
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.25,
+            "avg_prob": 0.523614339653183,
+            "calibration_error": -0.27361433965318305,
+            "brier": 0.20767186762604925,
+            "log_loss": 0.6066973365558177
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6098,
+            "roi": 0.6098,
+            "avg_ev": 0.03966487548105457,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 4.5-6.0|plus_money",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 4.5-6.0",
+      "price_bucket": "plus_money",
+      "rows": 9,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 9,
+            "actual_rate": 0.2222222222222222,
+            "avg_prob": 0.44527777777777783,
+            "calibration_error": -0.22305555555555562,
+            "brier": 0.15982543222222223,
+            "log_loss": 0.5058428019227257
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.43,
+            "roi": 0.4766666666666666,
+            "avg_ev": 0.30343033333333325,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 9,
+            "actual_rate": 0.2222222222222222,
+            "avg_prob": 0.44651477986779553,
+            "calibration_error": -0.22429255764557332,
+            "brier": 0.1635881786898307,
+            "log_loss": 0.5141628008879456
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.43,
+            "roi": 0.4766666666666666,
+            "avg_ev": 0.28741834532866106,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 9,
+            "actual_rate": 0.2222222222222222,
+            "avg_prob": 0.44244451593296497,
+            "calibration_error": -0.22022229371074276,
+            "brier": 0.23181098926861513,
+            "log_loss": 0.6566747203576097
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.0,
+            "units": -2.0,
+            "roi": -1.0,
+            "avg_ev": 0.08670792615573247,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 9,
+            "actual_rate": 0.2222222222222222,
+            "avg_prob": 0.368413464897435,
+            "calibration_error": -0.14619124267521277,
+            "brier": 0.10074382248913114,
+            "log_loss": 0.3651461632612616
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.43,
+            "roi": 0.4766666666666666,
+            "avg_ev": 0.3355017232386794,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 6.5-8.0|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 6.5-8.0",
+      "price_bucket": "fair_lay",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.47450000000000003,
+            "calibration_error": 0.5255,
+            "brier": 0.27615025,
+            "log_loss": 0.7454936609321544
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.48214801679765207,
+            "calibration_error": 0.5178519832023479,
+            "brier": 0.26817067650660487,
+            "log_loss": 0.7295041232818396
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5556676626954868,
+            "calibration_error": 0.44433233730451316,
+            "brier": 0.19743122597449164,
+            "log_loss": 0.5875848924076816
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5572056326932426,
+            "calibration_error": 0.44279436730675736,
+            "brier": 0.19606685171859156,
+            "log_loss": 0.5848209282021638
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 6.5-8.0|lay_130_149",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 6.5-8.0",
+      "price_bucket": "lay_130_149",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5206999999999999,
+            "calibration_error": 0.47930000000000006,
+            "brier": 0.22972849000000006,
+            "log_loss": 0.6525812188132838
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5246659143356796,
+            "calibration_error": 0.47533408566432045,
+            "brier": 0.22594249299433553,
+            "log_loss": 0.6449935725957568
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.5671302866874822,
+            "calibration_error": 0.4328697133125178,
+            "brier": 0.18737618870326134,
+            "log_loss": 0.5671662191327389
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.6582333485044367,
+            "calibration_error": 0.3417666514955633,
+            "brier": 0.11680444407448981,
+            "log_loss": 0.41819577753876813
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6944,
+            "roi": 0.6944,
+            "avg_ev": 0.11533984052140661,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 6.5-8.0|plus_money",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 6.5-8.0",
+      "price_bucket": "plus_money",
+      "rows": 2,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.5058499999999999,
+            "calibration_error": -0.5058499999999999,
+            "brier": 0.25589234499999997,
+            "log_loss": 0.7049327963465213
+          },
+          "selection": {
+            "selected_rows": 2,
+            "win_rate": 0.0,
+            "units": -2.0,
+            "roi": -1.0,
+            "avg_ev": 0.0624559999999999,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.4991860011030622,
+            "calibration_error": -0.4991860011030622,
+            "brier": 0.24919594300655,
+            "log_loss": 0.691539005199189
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.08482154546364196,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.45039199210360115,
+            "calibration_error": -0.45039199210360115,
+            "brier": 0.2032967104413213,
+            "log_loss": 0.5992850485445598
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 2,
+            "actual_rate": 0.0,
+            "avg_prob": 0.4760671601597739,
+            "calibration_error": -0.4760671601597739,
+            "brier": 0.22677763351383765,
+            "log_loss": 0.6466426349737815
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K 8.5+|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K 8.5+",
+      "price_bucket": "fair_lay",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.46319999999999995,
+            "calibration_error": 0.5368,
+            "brier": 0.28815424000000006,
+            "log_loss": 0.7695963527233517
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.47218605612783104,
+            "calibration_error": 0.527813943872169,
+            "brier": 0.27858755934589313,
+            "log_loss": 0.7503821843562464
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.49204384724186706,
+            "calibration_error": 0.5079561527581329,
+            "brier": 0.25801945312484365,
+            "log_loss": 0.7091874460505179
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 1.0,
+            "avg_prob": 0.42213831357452464,
+            "calibration_error": 0.5778616864254753,
+            "brier": 0.33392412863849436,
+            "log_loss": 0.8624222613612075
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K <4.5|fair_lay",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K <4.5",
+      "price_bucket": "fair_lay",
+      "rows": 3,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.4874666666666667,
+            "calibration_error": 0.17919999999999991,
+            "brier": 0.18672586,
+            "log_loss": 0.5631344690420452
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.8475,
+            "roi": 0.8475,
+            "avg_ev": 0.1722118644067797,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.48753781656623757,
+            "calibration_error": 0.17912885010042906,
+            "brier": 0.18763173864182972,
+            "log_loss": 0.5651169872711853
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.8475,
+            "roi": 0.8475,
+            "avg_ev": 0.16742089074386846,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.49987455965792416,
+            "calibration_error": 0.16679210700874247,
+            "brier": 0.24220606818176438,
+            "log_loss": 0.6775572917961069
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 3,
+            "actual_rate": 0.6666666666666666,
+            "avg_prob": 0.5043870628947841,
+            "calibration_error": 0.16227960377188255,
+            "brier": 0.1685052902516052,
+            "log_loss": 0.5249121104762232
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.8475,
+            "roi": 0.8475,
+            "avg_ev": 0.230258201339824,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K <4.5|lay_130_149",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K <4.5",
+      "price_bucket": "lay_130_149",
+      "rows": 5,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.47215999999999997,
+            "calibration_error": 0.12784,
+            "brier": 0.236512908,
+            "log_loss": 0.6655511740667649
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.4729130518858026,
+            "calibration_error": 0.12708694811419735,
+            "brier": 0.23659356121049516,
+            "log_loss": 0.6657393414209769
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.5471271083009245,
+            "calibration_error": 0.0528728916990755,
+            "brier": 0.2495833700095617,
+            "log_loss": 0.6924177814979495
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 5,
+            "actual_rate": 0.6,
+            "avg_prob": 0.47547539727160926,
+            "calibration_error": 0.12452460272839072,
+            "brier": 0.2287703087152034,
+            "log_loss": 0.6497513097681937
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 1.0,
+            "units": 0.6757,
+            "roi": 0.6757,
+            "avg_ev": 0.061528834171061975,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K <4.5|lay_150_180",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K <4.5",
+      "price_bucket": "lay_150_180",
+      "rows": 1,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.6432,
+            "calibration_error": -0.6432,
+            "brier": 0.41370624,
+            "log_loss": 1.0305798782762827
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.04520000000000002,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.6410530605075505,
+            "calibration_error": -0.6410530605075505,
+            "brier": 0.4109490263860972,
+            "log_loss": 1.0245807022741678
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.041711223324769564,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.48713550600343053,
+            "calibration_error": -0.48713550600343053,
+            "brier": 0.23730100120921832,
+            "log_loss": 0.6677436129598061
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 1,
+            "actual_rate": 0.0,
+            "avg_prob": 0.6746307328776449,
+            "calibration_error": -0.6746307328776449,
+            "brier": 0.4551266257430282,
+            "log_loss": 1.1227945351161976
+          },
+          "selection": {
+            "selected_rows": 1,
+            "win_rate": 0.0,
+            "units": -1.0,
+            "roi": -1.0,
+            "avg_ev": 0.09627494092617289,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    },
+    {
+      "key": "pitcher_strikeouts|under|K <4.5|plus_money",
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "line_bucket": "K <4.5",
+      "price_bucket": "plus_money",
+      "rows": 4,
+      "recommendation": "insufficient_rows",
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.75,
+            "avg_prob": 0.5165,
+            "calibration_error": 0.23350000000000004,
+            "brier": 0.238169115,
+            "log_loss": 0.6694497611020662
+          },
+          "selection": {
+            "selected_rows": 4,
+            "win_rate": 0.75,
+            "units": 2.45,
+            "roi": 0.6125,
+            "avg_ev": 0.13050349999999994,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "model_plus_prior": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.75,
+            "avg_prob": 0.5146408100118743,
+            "calibration_error": 0.23535918998812566,
+            "brier": 0.2388559080862387,
+            "log_loss": 0.670830247072258
+          },
+          "selection": {
+            "selected_rows": 3,
+            "win_rate": 0.6666666666666666,
+            "units": 1.4,
+            "roi": 0.4666666666666666,
+            "avg_ev": 0.16185935467267476,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.75,
+            "avg_prob": 0.43386935207859423,
+            "calibration_error": 0.31613064792140577,
+            "brier": 0.2761487892699514,
+            "log_loss": 0.7455496929117715
+          },
+          "selection": {
+            "selected_rows": 0,
+            "win_rate": null,
+            "units": null,
+            "roi": null,
+            "avg_ev": null,
+            "avg_clv_price": null,
+            "clv_price_beat_rate": null,
+            "avg_clv_line": null,
+            "clv_line_beat_rate": null
+          }
+        },
+        "direct_side_model": {
+          "forecast": {
+            "rows": 4,
+            "actual_rate": 0.75,
+            "avg_prob": 0.5516913406202394,
+            "calibration_error": 0.1983086593797606,
+            "brier": 0.19958101477761658,
+            "log_loss": 0.5913999920944818
+          },
+          "selection": {
+            "selected_rows": 4,
+            "win_rate": 0.75,
+            "units": 2.45,
+            "roi": 0.6125,
+            "avg_ev": 0.20283046066828755,
+            "avg_clv_price": 0.0,
+            "clv_price_beat_rate": 0.0,
+            "avg_clv_line": 0.0,
+            "clv_line_beat_rate": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "status": "ready",
+  "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_probability_shadow_2026-06-03.md"
+}

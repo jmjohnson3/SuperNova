@@ -1,0 +1,2627 @@
+{
+  "generated_at_utc": "2026-06-03T17:24:29Z",
+  "source": "features.mlb_prop_market_training_examples",
+  "lookback_days": 365,
+  "holdout_days": 28,
+  "rows": 2234,
+  "bankroll_ready": false,
+  "usage": "shadow_only",
+  "promotion_rule": "Direct side models must improve probability shadow Brier, ROI, and CLV, then pass bucket reopen thresholds before affecting bankroll picks.",
+  "models": {
+    "batter_home_runs|over|HR 0.5|plus_money|fanduel|clf": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -2.256735420371744,
+      "coef": {
+        "model_prob_side": -0.424005194031486,
+        "market_prob_side": -0.49120707928374546,
+        "prob_edge_vs_market": 0.17887213427440407,
+        "abs_price": -0.1974107252749208,
+        "count_edge_side": 0.8939031705137933,
+        "pred_count": 0.8939031705138097,
+        "pred_value": -0.4018175086483693,
+        "market=batter_home_runs": -0.00017440129816866947,
+        "side=over": -0.00017440129816866947,
+        "line_bucket=HR 0.5": -0.00017440129816866947,
+        "price_bucket=plus_money": -0.00017440129816866947,
+        "bookmaker_key=fanduel": -0.00017440129816866947,
+        "model_family=clf": -0.00017440129816866947,
+        "edge_type=probability": -0.00017440129816866947
+      },
+      "numeric_means": {
+        "model_prob_side": 0.10374366197183099,
+        "market_prob_side": 0.1394692760053766,
+        "prob_edge_vs_market": -0.03572561403354562,
+        "market_line": 0.5,
+        "abs_price": 709.3802816901408,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.35881126760563375,
+        "pred_count": 0.14118873239436622,
+        "pred_value": 0.1037380281690141
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725022,
+        "market_prob_side": 0.049011003294905646,
+        "prob_edge_vs_market": 0.029659497345813565,
+        "market_line": 1.0,
+        "abs_price": 284.0480204490913,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "log_loss_raw_holdout": 0.44835767416225075,
+      "log_loss_model_holdout": 0.5947189239179177,
+      "auc_raw_holdout": 0.5520050125313284,
+      "auc_model_holdout": 0.5355054302422723,
+      "key": "batter_home_runs|over|HR 0.5|plus_money|fanduel|clf",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket",
+        "bookmaker_key",
+        "model_family"
+      ]
+    },
+    "batter_home_runs|under|HR 0.5|missing_price|fanduel|clf": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 2.2647899287240776,
+      "coef": {
+        "model_prob_side": -0.44189170996471805,
+        "count_edge_side": 0.8061433713373555,
+        "pred_count": -0.8061433713374014,
+        "pred_value": 0.45710682561739086,
+        "market=batter_home_runs": -0.003828542678658956,
+        "side=under": -0.003828542678658956,
+        "line_bucket=HR 0.5": -0.003828542678658956,
+        "price_bucket=missing_price": -0.003828542678658956,
+        "bookmaker_key=fanduel": -0.003828542678658956,
+        "model_family=clf": -0.003828542678658956,
+        "edge_type=probability": -0.003828542678658956
+      },
+      "numeric_means": {
+        "model_prob_side": 0.8962563380281688,
+        "market_prob_side": 0.0,
+        "prob_edge_vs_market": 0.0,
+        "market_line": 0.5,
+        "abs_price": 0.0,
+        "is_plus_price": 0.0,
+        "count_edge_side": 0.3588112676056338,
+        "pred_count": 0.1411887323943662,
+        "pred_value": 0.10373802816901408
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725023,
+        "market_prob_side": 1.0,
+        "prob_edge_vs_market": 1.0,
+        "market_line": 1.0,
+        "abs_price": 1.0,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "missing_price"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "log_loss_raw_holdout": 0.4483576741622508,
+      "log_loss_model_holdout": 0.6050107899144257,
+      "auc_raw_holdout": 0.5520050125313283,
+      "auc_model_holdout": 0.5413533834586466,
+      "key": "batter_home_runs|under|HR 0.5|missing_price|fanduel|clf",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket",
+        "bookmaker_key",
+        "model_family"
+      ]
+    },
+    "batter_hits|under|H 0.5|plus_money|draftkings|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -1.006703106027831,
+      "coef": {
+        "model_prob_side": -0.6579798373131583,
+        "market_prob_side": -0.25615413533773246,
+        "prob_edge_vs_market": -0.579188152158539,
+        "abs_price": 0.4594101788398799,
+        "count_edge_side": 1.4219349044959548,
+        "pred_count": -1.421934904495955,
+        "pred_value": 0.24363878194576857,
+        "market=batter_hits": -0.0004740913830845047,
+        "side=under": -0.0004740913830845047,
+        "line_bucket=H 0.5": -0.0004740913830845047,
+        "price_bucket=plus_money": -0.0004740913830845047,
+        "bookmaker_key=draftkings": -0.0004740913830845047,
+        "model_family=alt_clf": 0.3352026110244448,
+        "model_family=clf": -0.5699426243453491,
+        "model_family=regression": 0.23426592193783052,
+        "edge_type=count": 0.23426592193783052,
+        "edge_type=probability": -0.23474001332090555
+      },
+      "numeric_means": {
+        "model_prob_side": 0.4220171232876712,
+        "market_prob_side": 0.38696514741419014,
+        "prob_edge_vs_market": 0.03505197587348111,
+        "market_line": 0.5,
+        "abs_price": 143.7705479452055,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.36060273972602735,
+        "pred_count": 0.8606027397260274,
+        "pred_value": 0.68825
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04959716471623061,
+        "market_prob_side": 0.03903091792220875,
+        "prob_edge_vs_market": 0.039082296927201166,
+        "market_line": 1.0,
+        "abs_price": 26.471723522942334,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.1800152382991261,
+        "pred_count": 0.1800152382991261,
+        "pred_value": 0.16816312968344607
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "H 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.0611111111111111,
+      "train_rows": 182,
+      "holdout_rows": 110,
+      "actual_rate_holdout": 0.39090909090909093,
+      "avg_raw_holdout": 0.4231363636363636,
+      "avg_model_holdout": 0.5917525105956969,
+      "holdout_roi": -0.072,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23709249563636364,
+      "brier_model_holdout": 0.3063120685426673,
+      "log_loss_raw_holdout": 0.6666056142816751,
+      "log_loss_model_holdout": 0.8201173526873933,
+      "auc_raw_holdout": 0.5815688996876085,
+      "auc_model_holdout": 0.4255466851787574,
+      "key": "batter_hits|under|H 0.5|plus_money|draftkings|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket",
+        "bookmaker_key"
+      ]
+    },
+    "batter_home_runs|over|HR 0.5|plus_money|fanduel|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -2.256735420371744,
+      "coef": {
+        "model_prob_side": -0.424005194031486,
+        "market_prob_side": -0.49120707928374546,
+        "prob_edge_vs_market": 0.17887213427440407,
+        "abs_price": -0.1974107252749208,
+        "count_edge_side": 0.8939031705137933,
+        "pred_count": 0.8939031705138097,
+        "pred_value": -0.4018175086483693,
+        "market=batter_home_runs": -0.00017440129816866947,
+        "side=over": -0.00017440129816866947,
+        "line_bucket=HR 0.5": -0.00017440129816866947,
+        "price_bucket=plus_money": -0.00017440129816866947,
+        "bookmaker_key=fanduel": -0.00017440129816866947,
+        "model_family=clf": -0.00017440129816866947,
+        "edge_type=probability": -0.00017440129816866947
+      },
+      "numeric_means": {
+        "model_prob_side": 0.10374366197183099,
+        "market_prob_side": 0.1394692760053766,
+        "prob_edge_vs_market": -0.03572561403354562,
+        "market_line": 0.5,
+        "abs_price": 709.3802816901408,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.35881126760563375,
+        "pred_count": 0.14118873239436622,
+        "pred_value": 0.1037380281690141
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725022,
+        "market_prob_side": 0.049011003294905646,
+        "prob_edge_vs_market": 0.029659497345813565,
+        "market_line": 1.0,
+        "abs_price": 284.0480204490913,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "log_loss_raw_holdout": 0.44835767416225075,
+      "log_loss_model_holdout": 0.5947189239179177,
+      "auc_raw_holdout": 0.5520050125313284,
+      "auc_model_holdout": 0.5355054302422723,
+      "key": "batter_home_runs|over|HR 0.5|plus_money|fanduel|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket",
+        "bookmaker_key"
+      ]
+    },
+    "batter_home_runs|under|HR 0.5|missing_price|fanduel|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 2.2647899287240776,
+      "coef": {
+        "model_prob_side": -0.44189170996471805,
+        "count_edge_side": 0.8061433713373555,
+        "pred_count": -0.8061433713374014,
+        "pred_value": 0.45710682561739086,
+        "market=batter_home_runs": -0.003828542678658956,
+        "side=under": -0.003828542678658956,
+        "line_bucket=HR 0.5": -0.003828542678658956,
+        "price_bucket=missing_price": -0.003828542678658956,
+        "bookmaker_key=fanduel": -0.003828542678658956,
+        "model_family=clf": -0.003828542678658956,
+        "edge_type=probability": -0.003828542678658956
+      },
+      "numeric_means": {
+        "model_prob_side": 0.8962563380281688,
+        "market_prob_side": 0.0,
+        "prob_edge_vs_market": 0.0,
+        "market_line": 0.5,
+        "abs_price": 0.0,
+        "is_plus_price": 0.0,
+        "count_edge_side": 0.3588112676056338,
+        "pred_count": 0.1411887323943662,
+        "pred_value": 0.10373802816901408
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725023,
+        "market_prob_side": 1.0,
+        "prob_edge_vs_market": 1.0,
+        "market_line": 1.0,
+        "abs_price": 1.0,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "missing_price"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "log_loss_raw_holdout": 0.4483576741622508,
+      "log_loss_model_holdout": 0.6050107899144257,
+      "auc_raw_holdout": 0.5520050125313283,
+      "auc_model_holdout": 0.5413533834586466,
+      "key": "batter_home_runs|under|HR 0.5|missing_price|fanduel|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket",
+        "bookmaker_key"
+      ]
+    },
+    "batter_hits|under|H 0.5|plus_money|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -1.006703106027831,
+      "coef": {
+        "model_prob_side": -0.6579798373131583,
+        "market_prob_side": -0.25615413533773246,
+        "prob_edge_vs_market": -0.579188152158539,
+        "abs_price": 0.4594101788398799,
+        "count_edge_side": 1.4219349044959548,
+        "pred_count": -1.421934904495955,
+        "pred_value": 0.24363878194576857,
+        "market=batter_hits": -0.0004740913830845047,
+        "side=under": -0.0004740913830845047,
+        "line_bucket=H 0.5": -0.0004740913830845047,
+        "price_bucket=plus_money": -0.0004740913830845047,
+        "bookmaker_key=draftkings": -0.0004740913830845047,
+        "model_family=alt_clf": 0.3352026110244448,
+        "model_family=clf": -0.5699426243453491,
+        "model_family=regression": 0.23426592193783052,
+        "edge_type=count": 0.23426592193783052,
+        "edge_type=probability": -0.23474001332090555
+      },
+      "numeric_means": {
+        "model_prob_side": 0.4220171232876712,
+        "market_prob_side": 0.38696514741419014,
+        "prob_edge_vs_market": 0.03505197587348111,
+        "market_line": 0.5,
+        "abs_price": 143.7705479452055,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.36060273972602735,
+        "pred_count": 0.8606027397260274,
+        "pred_value": 0.68825
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04959716471623061,
+        "market_prob_side": 0.03903091792220875,
+        "prob_edge_vs_market": 0.039082296927201166,
+        "market_line": 1.0,
+        "abs_price": 26.471723522942334,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.1800152382991261,
+        "pred_count": 0.1800152382991261,
+        "pred_value": 0.16816312968344607
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "H 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.0611111111111111,
+      "train_rows": 182,
+      "holdout_rows": 110,
+      "actual_rate_holdout": 0.39090909090909093,
+      "avg_raw_holdout": 0.4231363636363636,
+      "avg_model_holdout": 0.5917525105956969,
+      "holdout_roi": -0.072,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23709249563636364,
+      "brier_model_holdout": 0.3063120685426673,
+      "log_loss_raw_holdout": 0.6666056142816751,
+      "log_loss_model_holdout": 0.8201173526873933,
+      "auc_raw_holdout": 0.5815688996876085,
+      "auc_model_holdout": 0.4255466851787574,
+      "key": "batter_hits|under|H 0.5|plus_money|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket"
+      ]
+    },
+    "batter_home_runs|over|HR 0.5|plus_money|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -2.256735420371744,
+      "coef": {
+        "model_prob_side": -0.424005194031486,
+        "market_prob_side": -0.49120707928374546,
+        "prob_edge_vs_market": 0.17887213427440407,
+        "abs_price": -0.1974107252749208,
+        "count_edge_side": 0.8939031705137933,
+        "pred_count": 0.8939031705138097,
+        "pred_value": -0.4018175086483693,
+        "market=batter_home_runs": -0.00017440129816866947,
+        "side=over": -0.00017440129816866947,
+        "line_bucket=HR 0.5": -0.00017440129816866947,
+        "price_bucket=plus_money": -0.00017440129816866947,
+        "bookmaker_key=fanduel": -0.00017440129816866947,
+        "model_family=clf": -0.00017440129816866947,
+        "edge_type=probability": -0.00017440129816866947
+      },
+      "numeric_means": {
+        "model_prob_side": 0.10374366197183099,
+        "market_prob_side": 0.1394692760053766,
+        "prob_edge_vs_market": -0.03572561403354562,
+        "market_line": 0.5,
+        "abs_price": 709.3802816901408,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.35881126760563375,
+        "pred_count": 0.14118873239436622,
+        "pred_value": 0.1037380281690141
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725022,
+        "market_prob_side": 0.049011003294905646,
+        "prob_edge_vs_market": 0.029659497345813565,
+        "market_line": 1.0,
+        "abs_price": 284.0480204490913,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "log_loss_raw_holdout": 0.44835767416225075,
+      "log_loss_model_holdout": 0.5947189239179177,
+      "auc_raw_holdout": 0.5520050125313284,
+      "auc_model_holdout": 0.5355054302422723,
+      "key": "batter_home_runs|over|HR 0.5|plus_money|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket"
+      ]
+    },
+    "batter_home_runs|under|HR 0.5|missing_price|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 2.2647899287240776,
+      "coef": {
+        "model_prob_side": -0.44189170996471805,
+        "count_edge_side": 0.8061433713373555,
+        "pred_count": -0.8061433713374014,
+        "pred_value": 0.45710682561739086,
+        "market=batter_home_runs": -0.003828542678658956,
+        "side=under": -0.003828542678658956,
+        "line_bucket=HR 0.5": -0.003828542678658956,
+        "price_bucket=missing_price": -0.003828542678658956,
+        "bookmaker_key=fanduel": -0.003828542678658956,
+        "model_family=clf": -0.003828542678658956,
+        "edge_type=probability": -0.003828542678658956
+      },
+      "numeric_means": {
+        "model_prob_side": 0.8962563380281688,
+        "market_prob_side": 0.0,
+        "prob_edge_vs_market": 0.0,
+        "market_line": 0.5,
+        "abs_price": 0.0,
+        "is_plus_price": 0.0,
+        "count_edge_side": 0.3588112676056338,
+        "pred_count": 0.1411887323943662,
+        "pred_value": 0.10373802816901408
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725023,
+        "market_prob_side": 1.0,
+        "prob_edge_vs_market": 1.0,
+        "market_line": 1.0,
+        "abs_price": 1.0,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "missing_price"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "log_loss_raw_holdout": 0.4483576741622508,
+      "log_loss_model_holdout": 0.6050107899144257,
+      "auc_raw_holdout": 0.5520050125313283,
+      "auc_model_holdout": 0.5413533834586466,
+      "key": "batter_home_runs|under|HR 0.5|missing_price|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket"
+      ]
+    },
+    "batter_total_bases|over|TB 1.5|plus_money|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -0.10922961704482631,
+      "coef": {
+        "model_prob_side": -0.05313192186904751,
+        "market_prob_side": -0.15906488469661292,
+        "prob_edge_vs_market": 0.04473990382223517,
+        "abs_price": 0.4382225198276016,
+        "count_edge_side": 0.7164676639371867,
+        "pred_count": 0.7164676639371872,
+        "pred_value": -0.9695108056307195,
+        "market=batter_total_bases": -0.02493605814992194,
+        "side=over": -0.02493605814992194,
+        "line_bucket=TB 1.5": -0.02493605814992194,
+        "price_bucket=plus_money": -0.02493605814992194,
+        "bookmaker_key=draftkings": -0.16376266026077757,
+        "bookmaker_key=fanduel": 0.13882660211085532,
+        "model_family=alt_clf": -0.6315005832157292,
+        "model_family=clf": 0.24693849709048507,
+        "model_family=regression": 0.3596260279753229,
+        "edge_type=count": 0.3596260279753229,
+        "edge_type=probability": -0.3845620861252447
+      },
+      "numeric_means": {
+        "model_prob_side": 0.35661588785046733,
+        "market_prob_side": 0.39397043398037757,
+        "prob_edge_vs_market": -0.03735454612991033,
+        "market_line": 1.5,
+        "abs_price": 149.44548286604362,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.12951090342679128,
+        "pred_count": 1.3704890965732088,
+        "pred_value": 0.7336012461059189
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.0783748916532406,
+        "market_prob_side": 0.04311044833253085,
+        "prob_edge_vs_market": 0.06019570100371215,
+        "market_line": 1.0,
+        "abs_price": 36.72730595837363,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.30085168933826595,
+        "pred_count": 0.30085168933826595,
+        "pred_value": 0.5348976347158543
+      },
+      "categorical_values": {
+        "market": [
+          "batter_total_bases"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06549295774647887,
+      "train_rows": 197,
+      "holdout_rows": 124,
+      "actual_rate_holdout": 0.3709677419354839,
+      "avg_raw_holdout": 0.39445967741935484,
+      "avg_model_holdout": 0.4672434181474466,
+      "holdout_roi": -0.05362903225806452,
+      "holdout_clv_beat_rate": 0.056451612903225805,
+      "brier_raw_holdout": 0.23895278612903226,
+      "brier_model_holdout": 0.284895247034605,
+      "log_loss_raw_holdout": 0.6715215085487508,
+      "log_loss_model_holdout": 0.798797048078498,
+      "auc_raw_holdout": 0.5117056856187292,
+      "auc_model_holdout": 0.5289855072463768,
+      "key": "batter_total_bases|over|TB 1.5|plus_money|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket",
+        "price_bucket"
+      ]
+    },
+    "batter_hits|over|H 0.5|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 0.8892035751597404,
+      "coef": {
+        "model_prob_side": -0.7638918368051927,
+        "market_prob_side": -0.34920412775577875,
+        "prob_edge_vs_market": -0.46932483677616355,
+        "abs_price": -0.3035174524474587,
+        "is_plus_price": -0.2298722015218497,
+        "count_edge_side": 1.3685201481400968,
+        "pred_count": 1.3685201481400944,
+        "pred_value": -0.2771880242607286,
+        "market=batter_hits": 0.002600711633126253,
+        "side=over": 0.002600711633126253,
+        "line_bucket=H 0.5": 0.002600711633126253,
+        "price_bucket=fair_lay": 0.1244860577534136,
+        "price_bucket=heavy_lay": -0.07242017169877536,
+        "price_bucket=lay_130_149": 0.09407023818383013,
+        "price_bucket=lay_150_180": -0.13149404565687908,
+        "price_bucket=plus_money": -0.012041366948460785,
+        "bookmaker_key=draftkings": 0.1485169842108881,
+        "bookmaker_key=fanduel": -0.1459162725777636,
+        "model_family=alt_clf": -0.3497180568107726,
+        "model_family=clf": 0.500472640418996,
+        "model_family=regression": -0.1481538719750986,
+        "edge_type=count": -0.1481538719750986,
+        "edge_type=probability": 0.15075458360822505
+      },
+      "numeric_means": {
+        "model_prob_side": 0.5732044077134986,
+        "market_prob_side": 0.5957468259195535,
+        "prob_edge_vs_market": -0.022542418206054862,
+        "market_line": 0.5,
+        "abs_price": 200.17906336088154,
+        "is_plus_price": 0.0027548209366391185,
+        "count_edge_side": 0.3566749311294766,
+        "pred_count": 0.8566749311294765,
+        "pred_value": 0.6800909090909092
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.06060521604595615,
+        "market_prob_side": 0.05184747799662838,
+        "prob_edge_vs_market": 0.06006602307436914,
+        "market_line": 1.0,
+        "abs_price": 51.50761159299923,
+        "is_plus_price": 0.05241404294887176,
+        "count_edge_side": 0.2004863346048485,
+        "pred_count": 0.20048633460484847,
+        "pred_value": 0.16782105450773496
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "H 0.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06973244147157191,
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.60431654676259,
+      "avg_raw_holdout": 0.5640345323741007,
+      "avg_model_holdout": 0.3496145931894724,
+      "holdout_roi": -0.07801438848920862,
+      "holdout_clv_beat_rate": 0.2805755395683453,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3319611955131174,
+      "log_loss_raw_holdout": 0.667828249436074,
+      "log_loss_model_holdout": 0.8807015600257128,
+      "auc_raw_holdout": 0.5858225108225108,
+      "auc_model_holdout": 0.42597402597402595,
+      "key": "batter_hits|over|H 0.5|*|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket"
+      ]
+    },
+    "batter_hits|under|H 0.5|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -1.401732116085484,
+      "coef": {
+        "model_prob_side": -0.4194831726019996,
+        "market_prob_side": -0.5081175886436023,
+        "prob_edge_vs_market": -0.7267318030522503,
+        "abs_price": 0.4917992046231629,
+        "is_plus_price": 0.11040092774192936,
+        "count_edge_side": 1.407639604037479,
+        "pred_count": -1.4076396040374768,
+        "pred_value": 0.31526811528168264,
+        "market=batter_hits": -0.00259496825518645,
+        "side=under": -0.00259496825518645,
+        "line_bucket=H 0.5": -0.00259496825518645,
+        "price_bucket=fair_lay": -0.2079089336280968,
+        "price_bucket=heavy_lay": -0.01581023523353749,
+        "price_bucket=lay_150_180": 0.22435739637795266,
+        "price_bucket=missing_price": -0.23815388642413957,
+        "price_bucket=plus_money": 0.2349206906526377,
+        "bookmaker_key=draftkings": 0.23555891816895533,
+        "bookmaker_key=fanduel": -0.23815388642413957,
+        "model_family=alt_clf": 0.3556280682320835,
+        "model_family=clf": -0.5021923469363,
+        "model_family=regression": 0.1439693104490306,
+        "edge_type=count": 0.1439693104490306,
+        "edge_type=probability": -0.14656427870421757
+      },
+      "numeric_means": {
+        "model_prob_side": 0.4267955922865013,
+        "market_prob_side": 0.4045020060489897,
+        "prob_edge_vs_market": 0.021247853894987883,
+        "market_line": 0.5,
+        "abs_price": 150.30532212885154,
+        "is_plus_price": 0.8179271708683473,
+        "count_edge_side": -0.3566749311294766,
+        "pred_count": 0.8566749311294765,
+        "pred_value": 0.6800909090909092
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.06060521604595615,
+        "market_prob_side": 0.05160193708722894,
+        "prob_edge_vs_market": 0.058933772452706666,
+        "market_line": 1.0,
+        "abs_price": 39.09399987386322,
+        "is_plus_price": 0.38270195736632723,
+        "count_edge_side": 0.2004863346048485,
+        "pred_count": 0.20048633460484847,
+        "pred_value": 0.16782105450773496
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "H 0.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_150_180",
+          "missing_price",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06973244147157191,
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.39568345323741005,
+      "avg_raw_holdout": 0.4359654676258993,
+      "avg_model_holdout": 0.6261692229706899,
+      "holdout_roi": -0.12768740740740742,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3273971692219509,
+      "log_loss_raw_holdout": 0.667828249436074,
+      "log_loss_model_holdout": 0.8777471439960578,
+      "auc_raw_holdout": 0.5858225108225108,
+      "auc_model_holdout": 0.4274891774891775,
+      "key": "batter_hits|under|H 0.5|*|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket"
+      ]
+    },
+    "batter_home_runs|over|HR 0.5|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -2.256735420371744,
+      "coef": {
+        "model_prob_side": -0.424005194031486,
+        "market_prob_side": -0.49120707928374546,
+        "prob_edge_vs_market": 0.17887213427440407,
+        "abs_price": -0.1974107252749208,
+        "count_edge_side": 0.8939031705137933,
+        "pred_count": 0.8939031705138097,
+        "pred_value": -0.4018175086483693,
+        "market=batter_home_runs": -0.00017440129816866947,
+        "side=over": -0.00017440129816866947,
+        "line_bucket=HR 0.5": -0.00017440129816866947,
+        "price_bucket=plus_money": -0.00017440129816866947,
+        "bookmaker_key=fanduel": -0.00017440129816866947,
+        "model_family=clf": -0.00017440129816866947,
+        "edge_type=probability": -0.00017440129816866947
+      },
+      "numeric_means": {
+        "model_prob_side": 0.10374366197183099,
+        "market_prob_side": 0.1394692760053766,
+        "prob_edge_vs_market": -0.03572561403354562,
+        "market_line": 0.5,
+        "abs_price": 709.3802816901408,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.35881126760563375,
+        "pred_count": 0.14118873239436622,
+        "pred_value": 0.1037380281690141
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725022,
+        "market_prob_side": 0.049011003294905646,
+        "prob_edge_vs_market": 0.029659497345813565,
+        "market_line": 1.0,
+        "abs_price": 284.0480204490913,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "log_loss_raw_holdout": 0.44835767416225075,
+      "log_loss_model_holdout": 0.5947189239179177,
+      "auc_raw_holdout": 0.5520050125313284,
+      "auc_model_holdout": 0.5355054302422723,
+      "key": "batter_home_runs|over|HR 0.5|*|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket"
+      ]
+    },
+    "batter_home_runs|under|HR 0.5|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 2.2647899287240776,
+      "coef": {
+        "model_prob_side": -0.44189170996471805,
+        "count_edge_side": 0.8061433713373555,
+        "pred_count": -0.8061433713374014,
+        "pred_value": 0.45710682561739086,
+        "market=batter_home_runs": -0.003828542678658956,
+        "side=under": -0.003828542678658956,
+        "line_bucket=HR 0.5": -0.003828542678658956,
+        "price_bucket=missing_price": -0.003828542678658956,
+        "bookmaker_key=fanduel": -0.003828542678658956,
+        "model_family=clf": -0.003828542678658956,
+        "edge_type=probability": -0.003828542678658956
+      },
+      "numeric_means": {
+        "model_prob_side": 0.8962563380281688,
+        "market_prob_side": 0.0,
+        "prob_edge_vs_market": 0.0,
+        "market_line": 0.5,
+        "abs_price": 0.0,
+        "is_plus_price": 0.0,
+        "count_edge_side": 0.3588112676056338,
+        "pred_count": 0.1411887323943662,
+        "pred_value": 0.10373802816901408
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725023,
+        "market_prob_side": 1.0,
+        "prob_edge_vs_market": 1.0,
+        "market_line": 1.0,
+        "abs_price": 1.0,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "missing_price"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "log_loss_raw_holdout": 0.4483576741622508,
+      "log_loss_model_holdout": 0.6050107899144257,
+      "auc_raw_holdout": 0.5520050125313283,
+      "auc_model_holdout": 0.5413533834586466,
+      "key": "batter_home_runs|under|HR 0.5|*|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket"
+      ]
+    },
+    "batter_total_bases|over|TB 1.5|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -0.052421881631090864,
+      "coef": {
+        "model_prob_side": -0.16304144906539625,
+        "market_prob_side": -0.4452383772482965,
+        "prob_edge_vs_market": 0.15221775296682113,
+        "abs_price": 0.08695732861839334,
+        "is_plus_price": -0.17518690592495506,
+        "count_edge_side": 0.7532296158026252,
+        "pred_count": 0.7532296158026255,
+        "pred_value": -1.092543591901618,
+        "market=batter_total_bases": -0.005301172965598485,
+        "side=over": -0.005301172965598485,
+        "line_bucket=TB 1.5": -0.005301172965598485,
+        "price_bucket=fair_lay": -0.1847829693802331,
+        "price_bucket=lay_130_149": 0.5394492157617924,
+        "price_bucket=lay_150_180": -0.3030273570486037,
+        "price_bucket=plus_money": -0.05694006229855428,
+        "bookmaker_key=draftkings": -0.22366116799617505,
+        "bookmaker_key=fanduel": 0.21835999503057585,
+        "model_family=alt_clf": -0.6717627562862504,
+        "model_family=clf": 0.24249065131078001,
+        "model_family=regression": 0.4239709320098708,
+        "edge_type=count": 0.4239709320098708,
+        "edge_type=probability": -0.4292721049754699
+      },
+      "numeric_means": {
+        "model_prob_side": 0.36347949438202243,
+        "market_prob_side": 0.40352430650813953,
+        "prob_edge_vs_market": -0.040044812126117026,
+        "market_line": 1.5,
+        "abs_price": 146.76123595505618,
+        "is_plus_price": 0.901685393258427,
+        "count_edge_side": -0.09311797752808988,
+        "pred_count": 1.40688202247191,
+        "pred_value": 0.7405280898876404
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.08074595339478004,
+        "market_prob_side": 0.05097633666648598,
+        "prob_edge_vs_market": 0.06261874178286464,
+        "market_line": 1.0,
+        "abs_price": 36.27046903908346,
+        "is_plus_price": 0.2977395587469406,
+        "count_edge_side": 0.32258781160121724,
+        "pred_count": 0.3225878116012172,
+        "pred_value": 0.5449600663627192
+      },
+      "categorical_values": {
+        "market": [
+          "batter_total_bases"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.37777777777777777,
+      "avg_raw_holdout": 0.40345777777777775,
+      "avg_model_holdout": 0.33847295094497704,
+      "holdout_roi": -0.06260962962962961,
+      "holdout_clv_beat_rate": 0.05185185185185185,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.28213179514534825,
+      "log_loss_raw_holdout": 0.676419747436654,
+      "log_loss_model_holdout": 0.8122625590000802,
+      "auc_raw_holdout": 0.5164565826330532,
+      "auc_model_holdout": 0.5091036414565826,
+      "key": "batter_total_bases|over|TB 1.5|*|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket"
+      ]
+    },
+    "batter_total_bases|under|TB 1.5|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 0.09288921806095511,
+      "coef": {
+        "model_prob_side": -0.33238837689701817,
+        "market_prob_side": 0.10866026239835815,
+        "prob_edge_vs_market": -0.09909797285575263,
+        "abs_price": -0.28602484066336087,
+        "is_plus_price": 0.09139594525887498,
+        "count_edge_side": 0.7067642979821094,
+        "pred_count": -0.7067642979821108,
+        "pred_value": 0.7123292582490253,
+        "market=batter_total_bases": 0.02090101459039092,
+        "side=under": 0.02090101459039092,
+        "line_bucket=TB 1.5": 0.02090101459039092,
+        "price_bucket=fair_lay": 0.19629788952788824,
+        "price_bucket=heavy_lay": 0.11696112697268707,
+        "price_bucket=lay_130_149": -0.3471352544021243,
+        "price_bucket=lay_150_180": 0.25574028678926763,
+        "price_bucket=missing_price": -0.2105607533999741,
+        "price_bucket=plus_money": 0.00959771910264661,
+        "bookmaker_key=draftkings": 0.2314617679903654,
+        "bookmaker_key=fanduel": -0.2105607533999741,
+        "model_family=alt_clf": 0.692125960044186,
+        "model_family=clf": -0.35470079164192203,
+        "model_family=regression": -0.3165241538118735,
+        "edge_type=count": -0.3165241538118735,
+        "edge_type=probability": 0.3374251684022641
+      },
+      "numeric_means": {
+        "model_prob_side": 0.6365205056179776,
+        "market_prob_side": 0.5640141641561606,
+        "prob_edge_vs_market": 0.03016173945829713,
+        "market_line": 1.5,
+        "abs_price": 162.83734939759037,
+        "is_plus_price": 0.012048192771084338,
+        "count_edge_side": 0.09311797752808988,
+        "pred_count": 1.40688202247191,
+        "pred_value": 0.7405280898876404
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.08074595339478004,
+        "market_prob_side": 0.025915693288489472,
+        "prob_edge_vs_market": 0.04665767462961445,
+        "market_line": 1.0,
+        "abs_price": 16.02917007686886,
+        "is_plus_price": 0.07450027551524786,
+        "count_edge_side": 0.32258781160121724,
+        "pred_count": 0.3225878116012172,
+        "pred_value": 0.5449600663627192
+      },
+      "categorical_values": {
+        "market": [
+          "batter_total_bases"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "missing_price",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.6222222222222222,
+      "avg_raw_holdout": 0.5965422222222222,
+      "avg_model_holdout": 0.7305362087404839,
+      "holdout_roi": 0.07658947368421054,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.30974923439879665,
+      "log_loss_raw_holdout": 0.676419747436654,
+      "log_loss_model_holdout": 0.8981851482659341,
+      "auc_raw_holdout": 0.5164565826330532,
+      "auc_model_holdout": 0.4805088702147525,
+      "key": "batter_total_bases|under|TB 1.5|*|*|*",
+      "group_columns": [
+        "market",
+        "side",
+        "line_bucket"
+      ]
+    },
+    "batter_hits|over|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 0.8892035751597404,
+      "coef": {
+        "model_prob_side": -0.7638918368051927,
+        "market_prob_side": -0.34920412775577875,
+        "prob_edge_vs_market": -0.46932483677616355,
+        "abs_price": -0.3035174524474587,
+        "is_plus_price": -0.2298722015218497,
+        "count_edge_side": 1.3685201481400968,
+        "pred_count": 1.3685201481400944,
+        "pred_value": -0.2771880242607286,
+        "market=batter_hits": 0.002600711633126253,
+        "side=over": 0.002600711633126253,
+        "line_bucket=H 0.5": 0.002600711633126253,
+        "price_bucket=fair_lay": 0.1244860577534136,
+        "price_bucket=heavy_lay": -0.07242017169877536,
+        "price_bucket=lay_130_149": 0.09407023818383013,
+        "price_bucket=lay_150_180": -0.13149404565687908,
+        "price_bucket=plus_money": -0.012041366948460785,
+        "bookmaker_key=draftkings": 0.1485169842108881,
+        "bookmaker_key=fanduel": -0.1459162725777636,
+        "model_family=alt_clf": -0.3497180568107726,
+        "model_family=clf": 0.500472640418996,
+        "model_family=regression": -0.1481538719750986,
+        "edge_type=count": -0.1481538719750986,
+        "edge_type=probability": 0.15075458360822505
+      },
+      "numeric_means": {
+        "model_prob_side": 0.5732044077134986,
+        "market_prob_side": 0.5957468259195535,
+        "prob_edge_vs_market": -0.022542418206054862,
+        "market_line": 0.5,
+        "abs_price": 200.17906336088154,
+        "is_plus_price": 0.0027548209366391185,
+        "count_edge_side": 0.3566749311294766,
+        "pred_count": 0.8566749311294765,
+        "pred_value": 0.6800909090909092
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.06060521604595615,
+        "market_prob_side": 0.05184747799662838,
+        "prob_edge_vs_market": 0.06006602307436914,
+        "market_line": 1.0,
+        "abs_price": 51.50761159299923,
+        "is_plus_price": 0.05241404294887176,
+        "count_edge_side": 0.2004863346048485,
+        "pred_count": 0.20048633460484847,
+        "pred_value": 0.16782105450773496
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "H 0.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06973244147157191,
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.60431654676259,
+      "avg_raw_holdout": 0.5640345323741007,
+      "avg_model_holdout": 0.3496145931894724,
+      "holdout_roi": -0.07801438848920862,
+      "holdout_clv_beat_rate": 0.2805755395683453,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3319611955131174,
+      "log_loss_raw_holdout": 0.667828249436074,
+      "log_loss_model_holdout": 0.8807015600257128,
+      "auc_raw_holdout": 0.5858225108225108,
+      "auc_model_holdout": 0.42597402597402595,
+      "key": "batter_hits|over|*|*|*|*",
+      "group_columns": [
+        "market",
+        "side"
+      ]
+    },
+    "batter_hits|under|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -1.401732116085484,
+      "coef": {
+        "model_prob_side": -0.4194831726019996,
+        "market_prob_side": -0.5081175886436023,
+        "prob_edge_vs_market": -0.7267318030522503,
+        "abs_price": 0.4917992046231629,
+        "is_plus_price": 0.11040092774192936,
+        "count_edge_side": 1.407639604037479,
+        "pred_count": -1.4076396040374768,
+        "pred_value": 0.31526811528168264,
+        "market=batter_hits": -0.00259496825518645,
+        "side=under": -0.00259496825518645,
+        "line_bucket=H 0.5": -0.00259496825518645,
+        "price_bucket=fair_lay": -0.2079089336280968,
+        "price_bucket=heavy_lay": -0.01581023523353749,
+        "price_bucket=lay_150_180": 0.22435739637795266,
+        "price_bucket=missing_price": -0.23815388642413957,
+        "price_bucket=plus_money": 0.2349206906526377,
+        "bookmaker_key=draftkings": 0.23555891816895533,
+        "bookmaker_key=fanduel": -0.23815388642413957,
+        "model_family=alt_clf": 0.3556280682320835,
+        "model_family=clf": -0.5021923469363,
+        "model_family=regression": 0.1439693104490306,
+        "edge_type=count": 0.1439693104490306,
+        "edge_type=probability": -0.14656427870421757
+      },
+      "numeric_means": {
+        "model_prob_side": 0.4267955922865013,
+        "market_prob_side": 0.4045020060489897,
+        "prob_edge_vs_market": 0.021247853894987883,
+        "market_line": 0.5,
+        "abs_price": 150.30532212885154,
+        "is_plus_price": 0.8179271708683473,
+        "count_edge_side": -0.3566749311294766,
+        "pred_count": 0.8566749311294765,
+        "pred_value": 0.6800909090909092
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.06060521604595615,
+        "market_prob_side": 0.05160193708722894,
+        "prob_edge_vs_market": 0.058933772452706666,
+        "market_line": 1.0,
+        "abs_price": 39.09399987386322,
+        "is_plus_price": 0.38270195736632723,
+        "count_edge_side": 0.2004863346048485,
+        "pred_count": 0.20048633460484847,
+        "pred_value": 0.16782105450773496
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "H 0.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_150_180",
+          "missing_price",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06973244147157191,
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.39568345323741005,
+      "avg_raw_holdout": 0.4359654676258993,
+      "avg_model_holdout": 0.6261692229706899,
+      "holdout_roi": -0.12768740740740742,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3273971692219509,
+      "log_loss_raw_holdout": 0.667828249436074,
+      "log_loss_model_holdout": 0.8777471439960578,
+      "auc_raw_holdout": 0.5858225108225108,
+      "auc_model_holdout": 0.4274891774891775,
+      "key": "batter_hits|under|*|*|*|*",
+      "group_columns": [
+        "market",
+        "side"
+      ]
+    },
+    "batter_home_runs|over|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -2.256735420371744,
+      "coef": {
+        "model_prob_side": -0.424005194031486,
+        "market_prob_side": -0.49120707928374546,
+        "prob_edge_vs_market": 0.17887213427440407,
+        "abs_price": -0.1974107252749208,
+        "count_edge_side": 0.8939031705137933,
+        "pred_count": 0.8939031705138097,
+        "pred_value": -0.4018175086483693,
+        "market=batter_home_runs": -0.00017440129816866947,
+        "side=over": -0.00017440129816866947,
+        "line_bucket=HR 0.5": -0.00017440129816866947,
+        "price_bucket=plus_money": -0.00017440129816866947,
+        "bookmaker_key=fanduel": -0.00017440129816866947,
+        "model_family=clf": -0.00017440129816866947,
+        "edge_type=probability": -0.00017440129816866947
+      },
+      "numeric_means": {
+        "model_prob_side": 0.10374366197183099,
+        "market_prob_side": 0.1394692760053766,
+        "prob_edge_vs_market": -0.03572561403354562,
+        "market_line": 0.5,
+        "abs_price": 709.3802816901408,
+        "is_plus_price": 1.0,
+        "count_edge_side": -0.35881126760563375,
+        "pred_count": 0.14118873239436622,
+        "pred_value": 0.1037380281690141
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725022,
+        "market_prob_side": 0.049011003294905646,
+        "prob_edge_vs_market": 0.029659497345813565,
+        "market_line": 1.0,
+        "abs_price": 284.0480204490913,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "log_loss_raw_holdout": 0.44835767416225075,
+      "log_loss_model_holdout": 0.5947189239179177,
+      "auc_raw_holdout": 0.5520050125313284,
+      "auc_model_holdout": 0.5355054302422723,
+      "key": "batter_home_runs|over|*|*|*|*",
+      "group_columns": [
+        "market",
+        "side"
+      ]
+    },
+    "batter_home_runs|under|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 2.2647899287240776,
+      "coef": {
+        "model_prob_side": -0.44189170996471805,
+        "count_edge_side": 0.8061433713373555,
+        "pred_count": -0.8061433713374014,
+        "pred_value": 0.45710682561739086,
+        "market=batter_home_runs": -0.003828542678658956,
+        "side=under": -0.003828542678658956,
+        "line_bucket=HR 0.5": -0.003828542678658956,
+        "price_bucket=missing_price": -0.003828542678658956,
+        "bookmaker_key=fanduel": -0.003828542678658956,
+        "model_family=clf": -0.003828542678658956,
+        "edge_type=probability": -0.003828542678658956
+      },
+      "numeric_means": {
+        "model_prob_side": 0.8962563380281688,
+        "market_prob_side": 0.0,
+        "prob_edge_vs_market": 0.0,
+        "market_line": 0.5,
+        "abs_price": 0.0,
+        "is_plus_price": 0.0,
+        "count_edge_side": 0.3588112676056338,
+        "pred_count": 0.1411887323943662,
+        "pred_value": 0.10373802816901408
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.04426666100725023,
+        "market_prob_side": 1.0,
+        "prob_edge_vs_market": 1.0,
+        "market_line": 1.0,
+        "abs_price": 1.0,
+        "is_plus_price": 1.0,
+        "count_edge_side": 0.06836324593060092,
+        "pred_count": 0.06836324593060092,
+        "pred_value": 0.04425790727853344
+      },
+      "categorical_values": {
+        "market": [
+          "batter_home_runs"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "HR 0.5"
+        ],
+        "price_bucket": [
+          "missing_price"
+        ],
+        "bookmaker_key": [
+          "fanduel"
+        ],
+        "model_family": [
+          "clf"
+        ],
+        "edge_type": [
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "log_loss_raw_holdout": 0.4483576741622508,
+      "log_loss_model_holdout": 0.6050107899144257,
+      "auc_raw_holdout": 0.5520050125313283,
+      "auc_model_holdout": 0.5413533834586466,
+      "key": "batter_home_runs|under|*|*|*|*",
+      "group_columns": [
+        "market",
+        "side"
+      ]
+    },
+    "batter_total_bases|over|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -0.052421881631090864,
+      "coef": {
+        "model_prob_side": -0.16304144906539625,
+        "market_prob_side": -0.4452383772482965,
+        "prob_edge_vs_market": 0.15221775296682113,
+        "abs_price": 0.08695732861839334,
+        "is_plus_price": -0.17518690592495506,
+        "count_edge_side": 0.7532296158026252,
+        "pred_count": 0.7532296158026255,
+        "pred_value": -1.092543591901618,
+        "market=batter_total_bases": -0.005301172965598485,
+        "side=over": -0.005301172965598485,
+        "line_bucket=TB 1.5": -0.005301172965598485,
+        "price_bucket=fair_lay": -0.1847829693802331,
+        "price_bucket=lay_130_149": 0.5394492157617924,
+        "price_bucket=lay_150_180": -0.3030273570486037,
+        "price_bucket=plus_money": -0.05694006229855428,
+        "bookmaker_key=draftkings": -0.22366116799617505,
+        "bookmaker_key=fanduel": 0.21835999503057585,
+        "model_family=alt_clf": -0.6717627562862504,
+        "model_family=clf": 0.24249065131078001,
+        "model_family=regression": 0.4239709320098708,
+        "edge_type=count": 0.4239709320098708,
+        "edge_type=probability": -0.4292721049754699
+      },
+      "numeric_means": {
+        "model_prob_side": 0.36347949438202243,
+        "market_prob_side": 0.40352430650813953,
+        "prob_edge_vs_market": -0.040044812126117026,
+        "market_line": 1.5,
+        "abs_price": 146.76123595505618,
+        "is_plus_price": 0.901685393258427,
+        "count_edge_side": -0.09311797752808988,
+        "pred_count": 1.40688202247191,
+        "pred_value": 0.7405280898876404
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.08074595339478004,
+        "market_prob_side": 0.05097633666648598,
+        "prob_edge_vs_market": 0.06261874178286464,
+        "market_line": 1.0,
+        "abs_price": 36.27046903908346,
+        "is_plus_price": 0.2977395587469406,
+        "count_edge_side": 0.32258781160121724,
+        "pred_count": 0.3225878116012172,
+        "pred_value": 0.5449600663627192
+      },
+      "categorical_values": {
+        "market": [
+          "batter_total_bases"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.37777777777777777,
+      "avg_raw_holdout": 0.40345777777777775,
+      "avg_model_holdout": 0.33847295094497704,
+      "holdout_roi": -0.06260962962962961,
+      "holdout_clv_beat_rate": 0.05185185185185185,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.28213179514534825,
+      "log_loss_raw_holdout": 0.676419747436654,
+      "log_loss_model_holdout": 0.8122625590000802,
+      "auc_raw_holdout": 0.5164565826330532,
+      "auc_model_holdout": 0.5091036414565826,
+      "key": "batter_total_bases|over|*|*|*|*",
+      "group_columns": [
+        "market",
+        "side"
+      ]
+    },
+    "batter_total_bases|under|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 0.09288921806095511,
+      "coef": {
+        "model_prob_side": -0.33238837689701817,
+        "market_prob_side": 0.10866026239835815,
+        "prob_edge_vs_market": -0.09909797285575263,
+        "abs_price": -0.28602484066336087,
+        "is_plus_price": 0.09139594525887498,
+        "count_edge_side": 0.7067642979821094,
+        "pred_count": -0.7067642979821108,
+        "pred_value": 0.7123292582490253,
+        "market=batter_total_bases": 0.02090101459039092,
+        "side=under": 0.02090101459039092,
+        "line_bucket=TB 1.5": 0.02090101459039092,
+        "price_bucket=fair_lay": 0.19629788952788824,
+        "price_bucket=heavy_lay": 0.11696112697268707,
+        "price_bucket=lay_130_149": -0.3471352544021243,
+        "price_bucket=lay_150_180": 0.25574028678926763,
+        "price_bucket=missing_price": -0.2105607533999741,
+        "price_bucket=plus_money": 0.00959771910264661,
+        "bookmaker_key=draftkings": 0.2314617679903654,
+        "bookmaker_key=fanduel": -0.2105607533999741,
+        "model_family=alt_clf": 0.692125960044186,
+        "model_family=clf": -0.35470079164192203,
+        "model_family=regression": -0.3165241538118735,
+        "edge_type=count": -0.3165241538118735,
+        "edge_type=probability": 0.3374251684022641
+      },
+      "numeric_means": {
+        "model_prob_side": 0.6365205056179776,
+        "market_prob_side": 0.5640141641561606,
+        "prob_edge_vs_market": 0.03016173945829713,
+        "market_line": 1.5,
+        "abs_price": 162.83734939759037,
+        "is_plus_price": 0.012048192771084338,
+        "count_edge_side": 0.09311797752808988,
+        "pred_count": 1.40688202247191,
+        "pred_value": 0.7405280898876404
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.08074595339478004,
+        "market_prob_side": 0.025915693288489472,
+        "prob_edge_vs_market": 0.04665767462961445,
+        "market_line": 1.0,
+        "abs_price": 16.02917007686886,
+        "is_plus_price": 0.07450027551524786,
+        "count_edge_side": 0.32258781160121724,
+        "pred_count": 0.3225878116012172,
+        "pred_value": 0.5449600663627192
+      },
+      "categorical_values": {
+        "market": [
+          "batter_total_bases"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "missing_price",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.06864406779661017,
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.6222222222222222,
+      "avg_raw_holdout": 0.5965422222222222,
+      "avg_model_holdout": 0.7305362087404839,
+      "holdout_roi": 0.07658947368421054,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.30974923439879665,
+      "log_loss_raw_holdout": 0.676419747436654,
+      "log_loss_model_holdout": 0.8981851482659341,
+      "auc_raw_holdout": 0.5164565826330532,
+      "auc_model_holdout": 0.4805088702147525,
+      "key": "batter_total_bases|under|*|*|*|*",
+      "group_columns": [
+        "market",
+        "side"
+      ]
+    },
+    "*|over|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -0.19051273340889005,
+      "coef": {
+        "model_prob_side": -0.9911619343183976,
+        "market_prob_side": -1.0259280961821944,
+        "prob_edge_vs_market": -0.0556898925077034,
+        "market_line": -0.2651972737454583,
+        "abs_price": -0.4887201178219644,
+        "is_plus_price": -0.11682086346434888,
+        "count_edge_side": 1.8848269086525593,
+        "pred_count": 0.4948431446188705,
+        "pred_value": 0.06355929807683283,
+        "market=batter_hits": 0.5154809278000086,
+        "market=batter_home_runs": -1.1369536509423255,
+        "market=batter_total_bases": 0.034536801022550245,
+        "market=pitcher_strikeouts": 0.5583992264591602,
+        "side=over": -0.02853669566060178,
+        "line_bucket=H 0.5": 0.5154809278000086,
+        "line_bucket=HR 0.5": -1.1369536509423255,
+        "line_bucket=K 4.5-6.0": 0.9485257509178581,
+        "line_bucket=K 6.5-8.0": 0.49275589688652865,
+        "line_bucket=K 8.5+": -0.8786680260120645,
+        "line_bucket=K <4.5": -0.004214395333160918,
+        "line_bucket=TB 1.5": 0.034536801022550245,
+        "price_bucket=fair_lay": -0.20223149375808366,
+        "price_bucket=heavy_lay": 0.3253386355829568,
+        "price_bucket=lay_130_149": -0.0625611202364562,
+        "price_bucket=lay_150_180": -0.01468737092755015,
+        "price_bucket=plus_money": -0.07439534632147046,
+        "bookmaker_key=draftkings": -0.44269980550806065,
+        "bookmaker_key=fanduel": 0.41416310984745736,
+        "model_family=alt_clf": -0.19949765803306424,
+        "model_family=clf": 0.2333257726523412,
+        "model_family=regression": -0.06236481027987979,
+        "edge_type=count": -0.06236481027987979,
+        "edge_type=probability": 0.0338281146192746
+      },
+      "numeric_means": {
+        "model_prob_side": 0.3546859444941809,
+        "market_prob_side": 0.3858182674537533,
+        "prob_edge_vs_market": -0.03113232295957246,
+        "market_line": 0.9852282900626679,
+        "abs_price": 342.27842435094004,
+        "is_plus_price": 0.621307072515667,
+        "count_edge_side": -0.025846016114592665,
+        "pred_count": 0.9593822739480751,
+        "pred_value": 0.5642318710832587
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.2017184370177437,
+        "market_prob_side": 0.1917984001628215,
+        "prob_edge_vs_market": 0.05681944334724024,
+        "market_line": 0.9236794715413199,
+        "abs_price": 300.430366345357,
+        "is_plus_price": 0.48506143338517305,
+        "count_edge_side": 0.39177474608433666,
+        "pred_count": 0.9972257092961111,
+        "pred_value": 0.66582742524004
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits",
+          "batter_home_runs",
+          "batter_total_bases",
+          "pitcher_strikeouts"
+        ],
+        "side": [
+          "over"
+        ],
+        "line_bucket": [
+          "H 0.5",
+          "HR 0.5",
+          "K 4.5-6.0",
+          "K 6.5-8.0",
+          "K 8.5+",
+          "K <4.5",
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.1088336192109777,
+      "train_rows": 694,
+      "holdout_rows": 423,
+      "actual_rate_holdout": 0.3900709219858156,
+      "avg_raw_holdout": 0.3628763593380614,
+      "avg_model_holdout": 0.26348729416325406,
+      "holdout_roi": 0.036519621749408974,
+      "holdout_clv_beat_rate": 0.12293144208037825,
+      "brier_raw_holdout": 0.20437298437352244,
+      "brier_model_holdout": 0.24229893048511342,
+      "log_loss_raw_holdout": 0.5973972680923658,
+      "log_loss_model_holdout": 0.8240722808065181,
+      "auc_raw_holdout": 0.726133427296218,
+      "auc_model_holdout": 0.6459008691566832,
+      "key": "*|over|*|*|*|*",
+      "group_columns": [
+        "side"
+      ]
+    },
+    "*|under|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": 0.2591871770227339,
+      "coef": {
+        "model_prob_side": -0.8927388106987514,
+        "market_prob_side": -0.0008054464186896709,
+        "prob_edge_vs_market": -0.07320513880551502,
+        "market_line": 0.2714056685435118,
+        "abs_price": 0.12041214881683726,
+        "is_plus_price": 0.008700423131548427,
+        "count_edge_side": 1.8153147281318793,
+        "pred_count": -0.4617837445330925,
+        "pred_value": -0.04255464391545319,
+        "market=batter_hits": -0.30321761866605307,
+        "market=batter_home_runs": 0.9246009226556899,
+        "market=batter_total_bases": -0.06097624193276821,
+        "market=pitcher_strikeouts": -0.5120724437995201,
+        "side=under": 0.04833461825735219,
+        "line_bucket=H 0.5": -0.30321761866605307,
+        "line_bucket=HR 0.5": 0.9246009226556899,
+        "line_bucket=K 4.5-6.0": -0.90675565118286,
+        "line_bucket=K 6.5-8.0": -0.45078300630393986,
+        "line_bucket=K 8.5+": 0.8506052929470456,
+        "line_bucket=K <4.5": -0.005139079259765357,
+        "line_bucket=TB 1.5": -0.06097624193276821,
+        "price_bucket=fair_lay": 0.24816222085424777,
+        "price_bucket=heavy_lay": -0.26465192090490636,
+        "price_bucket=lay_130_149": 0.19747480944734097,
+        "price_bucket=lay_150_180": -0.017496261232980502,
+        "price_bucket=missing_price": -0.318513548600062,
+        "price_bucket=plus_money": 0.2033593186937175,
+        "bookmaker_key=draftkings": 0.36684816685741534,
+        "bookmaker_key=fanduel": -0.318513548600062,
+        "model_family=alt_clf": 0.24088766846521242,
+        "model_family=clf": -0.2759486018799918,
+        "model_family=regression": 0.08339555167213004,
+        "edge_type=count": 0.08339555167213061,
+        "edge_type=probability": -0.03506093341477595
+      },
+      "numeric_means": {
+        "model_prob_side": 0.6453140555058192,
+        "market_prob_side": 0.4584750999490704,
+        "prob_edge_vs_market": 0.02163550075764341,
+        "market_line": 0.9852282900626679,
+        "abs_price": 152.37102473498234,
+        "is_plus_price": 0.5459363957597173,
+        "count_edge_side": 0.025846016114592658,
+        "pred_count": 0.9593822739480753,
+        "pred_value": 0.5642318710832588
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.2017184370177437,
+        "market_prob_side": 0.06190493960267365,
+        "prob_edge_vs_market": 0.047737458837172626,
+        "market_line": 0.92367947154132,
+        "abs_price": 25.075822080326024,
+        "is_plus_price": 0.35441410629080733,
+        "count_edge_side": 0.39177474608433666,
+        "pred_count": 0.9972257092961111,
+        "pred_value": 0.66582742524004
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits",
+          "batter_home_runs",
+          "batter_total_bases",
+          "pitcher_strikeouts"
+        ],
+        "side": [
+          "under"
+        ],
+        "line_bucket": [
+          "H 0.5",
+          "HR 0.5",
+          "K 4.5-6.0",
+          "K 6.5-8.0",
+          "K 8.5+",
+          "K <4.5",
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "missing_price",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.1088336192109777,
+      "train_rows": 694,
+      "holdout_rows": 423,
+      "actual_rate_holdout": 0.6099290780141844,
+      "avg_raw_holdout": 0.6371236406619386,
+      "avg_model_holdout": 0.6537038451505692,
+      "holdout_roi": -0.0825038834951456,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.20437298437352247,
+      "brier_model_holdout": 0.232398823393799,
+      "log_loss_raw_holdout": 0.5973972680923658,
+      "log_loss_model_holdout": 0.7077022601821259,
+      "auc_raw_holdout": 0.726133427296218,
+      "auc_model_holdout": 0.6853300446323702,
+      "key": "*|under|*|*|*|*",
+      "group_columns": [
+        "side"
+      ]
+    },
+    "*|*|*|*|*|*": {
+      "method": "locked_direct_side_logistic",
+      "intercept": -0.018948906191520204,
+      "coef": {
+        "model_prob_side": 0.6218164414929606,
+        "market_prob_side": -0.7375974591461419,
+        "prob_edge_vs_market": -0.24316177095206598,
+        "market_line": -0.07670124136926683,
+        "abs_price": -0.4005694191271764,
+        "is_plus_price": -0.3065264671870142,
+        "count_edge_side": 1.5265185505532153,
+        "pred_count": 0.09568591157973909,
+        "pred_value": 0.011029857851723111,
+        "market=batter_hits": 0.0232857729978575,
+        "market=batter_home_runs": -0.02125786381161355,
+        "market=batter_total_bases": 0.012159553722000381,
+        "market=pitcher_strikeouts": -0.025792159149353015,
+        "side=over": -0.7249314200138386,
+        "side=under": 0.7133267237727325,
+        "line_bucket=H 0.5": 0.0232857729978575,
+        "line_bucket=HR 0.5": -0.02125786381161355,
+        "line_bucket=K 4.5-6.0": -0.021068902345109712,
+        "line_bucket=K 6.5-8.0": 0.001245989897193791,
+        "line_bucket=K 8.5+": 0.004766874717486874,
+        "line_bucket=K <4.5": -0.010736121418924025,
+        "line_bucket=TB 1.5": 0.012159553722000381,
+        "price_bucket=fair_lay": -0.008629289335977303,
+        "price_bucket=heavy_lay": 0.30140636692664957,
+        "price_bucket=lay_130_149": 0.2195943907867364,
+        "price_bucket=lay_150_180": 0.20234660379102754,
+        "price_bucket=missing_price": -1.4574114610042916,
+        "price_bucket=plus_money": 0.7310886925947465,
+        "bookmaker_key=draftkings": -0.3014107150578961,
+        "bookmaker_key=fanduel": 0.28980601881678697,
+        "model_family=alt_clf": 0.020891730389092103,
+        "model_family=clf": -0.040825432072123975,
+        "model_family=regression": 0.008329005441922999,
+        "edge_type=count": 0.008329005441922999,
+        "edge_type=probability": -0.019933701683031463
+      },
+      "numeric_means": {
+        "model_prob_side": 0.5,
+        "market_prob_side": 0.410253066736195,
+        "prob_edge_vs_market": -0.013386281234115432,
+        "market_line": 0.9852282900626679,
+        "abs_price": 278.4117647058824,
+        "is_plus_price": 0.5959595959595959,
+        "count_edge_side": 7.454496584322895e-19,
+        "pred_count": 0.9593822739480751,
+        "pred_value": 0.5642318710832588
+      },
+      "numeric_scales": {
+        "model_prob_side": 0.24860913611617277,
+        "market_prob_side": 0.14559224390528078,
+        "prob_edge_vs_market": 0.05676149275683413,
+        "market_line": 0.92367947154132,
+        "abs_price": 226.95368815108503,
+        "is_plus_price": 0.4259133769663011,
+        "count_edge_side": 0.39262637229106534,
+        "pred_count": 0.997225709296111,
+        "pred_value": 0.66582742524004
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits",
+          "batter_home_runs",
+          "batter_total_bases",
+          "pitcher_strikeouts"
+        ],
+        "side": [
+          "over",
+          "under"
+        ],
+        "line_bucket": [
+          "H 0.5",
+          "HR 0.5",
+          "K 4.5-6.0",
+          "K 6.5-8.0",
+          "K 8.5+",
+          "K <4.5",
+          "TB 1.5"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "missing_price",
+          "plus_money"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ]
+      },
+      "blend_weight": 0.1261431411530815,
+      "train_rows": 1388,
+      "holdout_rows": 846,
+      "actual_rate_holdout": 0.5,
+      "avg_raw_holdout": 0.5,
+      "avg_model_holdout": 0.45637410945764273,
+      "holdout_roi": -0.002461049284578692,
+      "holdout_clv_beat_rate": 0.08267090620031796,
+      "brier_raw_holdout": 0.20437298437352244,
+      "brier_model_holdout": 0.22899018020864942,
+      "log_loss_raw_holdout": 0.5973972680923659,
+      "log_loss_model_holdout": 0.677060324050919,
+      "auc_raw_holdout": 0.7472349367626265,
+      "auc_model_holdout": 0.7185727299655171,
+      "key": "*|*|*|*|*|*",
+      "group_columns": []
+    }
+  },
+  "backtest": [
+    {
+      "key": "*|*|*|*|*|*",
+      "train_rows": 1388,
+      "holdout_rows": 846,
+      "actual_rate_holdout": 0.5,
+      "avg_raw_holdout": 0.5,
+      "avg_model_holdout": 0.45637410945764273,
+      "holdout_roi": -0.002461049284578692,
+      "holdout_clv_beat_rate": 0.08267090620031796,
+      "brier_raw_holdout": 0.20437298437352244,
+      "brier_model_holdout": 0.22899018020864942,
+      "blend_weight": 0.1261431411530815
+    },
+    {
+      "key": "*|over|*|*|*|*",
+      "train_rows": 694,
+      "holdout_rows": 423,
+      "actual_rate_holdout": 0.3900709219858156,
+      "avg_raw_holdout": 0.3628763593380614,
+      "avg_model_holdout": 0.26348729416325406,
+      "holdout_roi": 0.036519621749408974,
+      "holdout_clv_beat_rate": 0.12293144208037825,
+      "brier_raw_holdout": 0.20437298437352244,
+      "brier_model_holdout": 0.24229893048511342,
+      "blend_weight": 0.1088336192109777
+    },
+    {
+      "key": "*|under|*|*|*|*",
+      "train_rows": 694,
+      "holdout_rows": 423,
+      "actual_rate_holdout": 0.6099290780141844,
+      "avg_raw_holdout": 0.6371236406619386,
+      "avg_model_holdout": 0.6537038451505692,
+      "holdout_roi": -0.0825038834951456,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.20437298437352247,
+      "brier_model_holdout": 0.232398823393799,
+      "blend_weight": 0.1088336192109777
+    },
+    {
+      "key": "batter_hits|over|*|*|*|*",
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.60431654676259,
+      "avg_raw_holdout": 0.5640345323741007,
+      "avg_model_holdout": 0.3496145931894724,
+      "holdout_roi": -0.07801438848920862,
+      "holdout_clv_beat_rate": 0.2805755395683453,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3319611955131174,
+      "blend_weight": 0.06973244147157191
+    },
+    {
+      "key": "batter_hits|over|H 0.5|*|*|*",
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.60431654676259,
+      "avg_raw_holdout": 0.5640345323741007,
+      "avg_model_holdout": 0.3496145931894724,
+      "holdout_roi": -0.07801438848920862,
+      "holdout_clv_beat_rate": 0.2805755395683453,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3319611955131174,
+      "blend_weight": 0.06973244147157191
+    },
+    {
+      "key": "batter_hits|under|*|*|*|*",
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.39568345323741005,
+      "avg_raw_holdout": 0.4359654676258993,
+      "avg_model_holdout": 0.6261692229706899,
+      "holdout_roi": -0.12768740740740742,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3273971692219509,
+      "blend_weight": 0.06973244147157191
+    },
+    {
+      "key": "batter_hits|under|H 0.5|*|*|*",
+      "train_rows": 224,
+      "holdout_rows": 139,
+      "actual_rate_holdout": 0.39568345323741005,
+      "avg_raw_holdout": 0.4359654676258993,
+      "avg_model_holdout": 0.6261692229706899,
+      "holdout_roi": -0.12768740740740742,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23765391165467623,
+      "brier_model_holdout": 0.3273971692219509,
+      "blend_weight": 0.06973244147157191
+    },
+    {
+      "key": "batter_hits|under|H 0.5|plus_money|*|*",
+      "train_rows": 182,
+      "holdout_rows": 110,
+      "actual_rate_holdout": 0.39090909090909093,
+      "avg_raw_holdout": 0.4231363636363636,
+      "avg_model_holdout": 0.5917525105956969,
+      "holdout_roi": -0.072,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23709249563636364,
+      "brier_model_holdout": 0.3063120685426673,
+      "blend_weight": 0.0611111111111111
+    },
+    {
+      "key": "batter_hits|under|H 0.5|plus_money|draftkings|*",
+      "train_rows": 182,
+      "holdout_rows": 110,
+      "actual_rate_holdout": 0.39090909090909093,
+      "avg_raw_holdout": 0.4231363636363636,
+      "avg_model_holdout": 0.5917525105956969,
+      "holdout_roi": -0.072,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.23709249563636364,
+      "brier_model_holdout": 0.3063120685426673,
+      "blend_weight": 0.0611111111111111
+    },
+    {
+      "key": "batter_home_runs|over|*|*|*|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|over|HR 0.5|*|*|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|over|HR 0.5|plus_money|*|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|over|HR 0.5|plus_money|fanduel|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|over|HR 0.5|plus_money|fanduel|clf",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.15555555555555556,
+      "avg_raw_holdout": 0.10154666666666667,
+      "avg_model_holdout": 0.07298767554094819,
+      "holdout_roi": 0.2414814814814815,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.1506818004988153,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|under|*|*|*|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|under|HR 0.5|*|*|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|under|HR 0.5|missing_price|*|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|under|HR 0.5|missing_price|fanduel|*",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_home_runs|under|HR 0.5|missing_price|fanduel|clf",
+      "train_rows": 220,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.8444444444444444,
+      "avg_raw_holdout": 0.8984533333333333,
+      "avg_model_holdout": 0.926257533331883,
+      "holdout_roi": null,
+      "holdout_clv_beat_rate": null,
+      "brier_raw_holdout": 0.1343177277037037,
+      "brier_model_holdout": 0.15234269775915138,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_total_bases|over|*|*|*|*",
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.37777777777777777,
+      "avg_raw_holdout": 0.40345777777777775,
+      "avg_model_holdout": 0.33847295094497704,
+      "holdout_roi": -0.06260962962962961,
+      "holdout_clv_beat_rate": 0.05185185185185185,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.28213179514534825,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_total_bases|over|TB 1.5|*|*|*",
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.37777777777777777,
+      "avg_raw_holdout": 0.40345777777777775,
+      "avg_model_holdout": 0.33847295094497704,
+      "holdout_roi": -0.06260962962962961,
+      "holdout_clv_beat_rate": 0.05185185185185185,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.28213179514534825,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_total_bases|over|TB 1.5|plus_money|*|*",
+      "train_rows": 197,
+      "holdout_rows": 124,
+      "actual_rate_holdout": 0.3709677419354839,
+      "avg_raw_holdout": 0.39445967741935484,
+      "avg_model_holdout": 0.4672434181474466,
+      "holdout_roi": -0.05362903225806452,
+      "holdout_clv_beat_rate": 0.056451612903225805,
+      "brier_raw_holdout": 0.23895278612903226,
+      "brier_model_holdout": 0.284895247034605,
+      "blend_weight": 0.06549295774647887
+    },
+    {
+      "key": "batter_total_bases|under|*|*|*|*",
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.6222222222222222,
+      "avg_raw_holdout": 0.5965422222222222,
+      "avg_model_holdout": 0.7305362087404839,
+      "holdout_roi": 0.07658947368421054,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.30974923439879665,
+      "blend_weight": 0.06864406779661017
+    },
+    {
+      "key": "batter_total_bases|under|TB 1.5|*|*|*",
+      "train_rows": 221,
+      "holdout_rows": 135,
+      "actual_rate_holdout": 0.6222222222222222,
+      "avg_raw_holdout": 0.5965422222222222,
+      "avg_model_holdout": 0.7305362087404839,
+      "holdout_roi": 0.07658947368421054,
+      "holdout_clv_beat_rate": 0.0,
+      "brier_raw_holdout": 0.241406332,
+      "brier_model_holdout": 0.30974923439879665,
+      "blend_weight": 0.06864406779661017
+    }
+  ],
+  "split_strategy": "last_available_date",
+  "train_rows": 1388,
+  "holdout_rows": 846,
+  "status": "trained"
+}

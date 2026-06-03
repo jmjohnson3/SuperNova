@@ -1,0 +1,17 @@
+{
+  "generated_at_utc": "2026-06-03T16:44:47Z",
+  "source": "market_training_table",
+  "run_id": null,
+  "lookback_days": 365,
+  "holdout_days": 28,
+  "base_rows": 1117,
+  "side_rows": 2234,
+  "models": {},
+  "backtest": [],
+  "clv_models": {},
+  "clv_backtest": [],
+  "win_rows": 2234,
+  "clv_rows": 1683,
+  "status": "no_models",
+  "clv_status": "no_clv_models"
+}

@@ -79,6 +79,18 @@ STEPS: list[Step] = [
          critical=False, post_output=False),
     Step("Monitor Prop Calibration", "mlb_pipeline.modeling.monitor_prop_calibration",
          critical=False, post_output=False),
+    Step("Build Prop Market Training Table", "mlb_pipeline.modeling.build_prop_market_training_table",
+         critical=False, post_output=False),
+    Step("Train Prop Side Recalibrators", "mlb_pipeline.modeling.train_prop_side_recalibrators",
+         critical=False, post_output=False),
+    Step("Train Prop Betting Layer", "mlb_pipeline.modeling.train_prop_betting_layer",
+         critical=False, post_output=False),
+    Step("Train Prop Direct Side Models", "mlb_pipeline.modeling.train_prop_direct_side_models",
+         critical=False, post_output=False),
+    Step("Compare Prop Probability Variants", "mlb_pipeline.modeling.compare_prop_probability_variants",
+         critical=False, post_output=False),
+    Step("Train Prop Bucket Reopen Policy", "mlb_pipeline.modeling.train_prop_bucket_reopen_policy",
+         critical=False, post_output=False),
     Step("Game Predictions",       "mlb_pipeline.modeling.predict_today",
          critical=False, post_output=True),
     Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
@@ -237,7 +249,13 @@ async def main() -> None:
         "--pre-game", action="store_true",
         help="~4:30 PM ET: re-crawl injuries+odds, re-predict props, post to Discord.",
     )
+    parser.add_argument(
+        "--fun-reopen-props", action="store_true",
+        help="Use the research-only all-prop reopen policy for player props.",
+    )
     args = parser.parse_args()
+    if args.fun_reopen_props:
+        os.environ["MLB_PROP_FUN_REOPEN"] = "1"
 
     from datetime import date as _date, datetime as _datetime
     from zoneinfo import ZoneInfo as _ZI
@@ -250,7 +268,13 @@ async def main() -> None:
                        "mlb_pipeline.modeling.train_player_prop_models",
                        "mlb_pipeline.modeling.train_binary_prop_models",
                        "mlb_pipeline.modeling.optimize_prop_thresholds",
-                       "mlb_pipeline.modeling.monitor_prop_calibration"}
+                       "mlb_pipeline.modeling.monitor_prop_calibration",
+                       "mlb_pipeline.modeling.build_prop_market_training_table",
+                       "mlb_pipeline.modeling.train_prop_side_recalibrators",
+                       "mlb_pipeline.modeling.train_prop_betting_layer",
+                       "mlb_pipeline.modeling.train_prop_direct_side_models",
+                       "mlb_pipeline.modeling.compare_prop_probability_variants",
+                       "mlb_pipeline.modeling.train_prop_bucket_reopen_policy"}
     _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
                         "mlb_pipeline.modeling.predict_player_props"}
 

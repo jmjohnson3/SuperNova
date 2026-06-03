@@ -14,6 +14,7 @@ import psycopg2
 import psycopg2.extras
 
 from .bankroll_ledger import grade_bankroll_ledger
+from .model_pick_ledger import grade_model_pick_ledger
 
 log = logging.getLogger("mlb_pipeline.modeling.update_outcomes")
 
@@ -532,6 +533,9 @@ def main() -> None:
 
         n_ledger = grade_bankroll_ledger(conn)
         log.info("Graded %d MLB bankroll ledger rows", n_ledger)
+
+        n_model_ledger = grade_model_pick_ledger(conn)
+        log.info("Graded %d MLB model-pick ledger rows", n_model_ledger)
 
         print_running_record(conn)
 

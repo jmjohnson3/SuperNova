@@ -10,7 +10,7 @@ import hashlib
 import json
 import logging
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
 
@@ -84,6 +84,14 @@ def _profit_units(won: bool | None, push: bool, price) -> float | None:
     return mult if won else -1.0
 
 
+def _ev_per_unit(p_win, price) -> float | None:
+    p = _clean_float(p_win)
+    mult = _american_profit_mult(price)
+    if p is None or mult is None:
+        return None
+    return round(p * mult - (1.0 - p), 4)
+
+
 def _american_to_prob(price: float) -> float:
     return 100.0 / (price + 100.0) if price >= 100 else abs(price) / (abs(price) + 100.0)
 
@@ -114,8 +122,12 @@ def _cfg_thresholds(cfg) -> dict[str, Any]:
         "max_away_dog_run_line_lay_price",
         "max_total_lay_price",
         "threshold_strikeouts",
+        "threshold_strikeouts_over",
+        "threshold_strikeouts_under",
         "threshold_hits",
         "threshold_total_bases",
+        "threshold_total_bases_over",
+        "threshold_total_bases_under",
         "threshold_home_runs_over",
         "threshold_home_runs_under",
         "threshold_clf",
@@ -246,6 +258,105 @@ def insert_ledger_rows(conn, rows: Iterable[dict[str, Any]]) -> int:
     return inserted
 
 
+def void_negative_ev_game_bankroll_candidates(conn, cfg=None) -> int:
+    """Void pending game bankroll rows that do not clear price-adjusted EV."""
+    ensure_bankroll_ledger_schema(conn)
+    min_ev = _clean_float(getattr(cfg, "min_game_ev", None)) if cfg is not None else 0.02
+    min_ev = 0.02 if min_ev is None else min_ev
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT id, model_prob, market_price, bankroll_reasons
+            FROM bets.mlb_bankroll_ledger
+            WHERE source = 'game'
+              AND result_status = 'pending'
+              AND model_prob IS NOT NULL
+              AND market_price IS NOT NULL
+            """
+        )
+        fills = []
+        voids = []
+        for row in cur.fetchall():
+            ev = _ev_per_unit(row.get("model_prob"), row.get("market_price"))
+            if ev is None:
+                continue
+            fills.append((ev, row["id"]))
+            if ev >= min_ev:
+                continue
+            reason = "negative_price_ev" if ev < 0 else "below_min_price_ev"
+            existing = row.get("bankroll_reasons") or ""
+            parts = [p.strip() for p in existing.split(";") if p.strip()]
+            if reason not in parts:
+                parts.append(reason)
+            voids.append((ev, "; ".join(parts), row["id"]))
+        for ev, row_id in fills:
+            cur.execute(
+                """
+                UPDATE bets.mlb_bankroll_ledger
+                SET ev = COALESCE(ev, %s)
+                WHERE id = %s
+                """,
+                (ev, row_id),
+            )
+        for ev, reasons, row_id in voids:
+            cur.execute(
+                """
+                UPDATE bets.mlb_bankroll_ledger
+                SET result_status = 'voided',
+                    ev = %s,
+                    bankroll_reasons = %s,
+                    profit_units = 0,
+                    graded_at_utc = NOW(),
+                    grade_source = 'price_ev_reconciliation'
+                WHERE id = %s
+                  AND result_status = 'pending'
+                """,
+                (ev, reasons, row_id),
+            )
+    conn.commit()
+    return len(voids)
+
+
+def sync_pending_game_bankroll_metadata(conn, rows: Iterable[dict[str, Any]]) -> int:
+    payload = list(rows)
+    if not payload:
+        return 0
+    ensure_bankroll_ledger_schema(conn)
+    updated = 0
+    with conn.cursor() as cur:
+        for row in payload:
+            cur.execute(
+                """
+                UPDATE bets.mlb_bankroll_ledger
+                SET model_prob = %s,
+                    ev = %s,
+                    kelly_fraction = %s,
+                    bankroll_tier = %s,
+                    bankroll_reasons = %s,
+                    stake_pct = %s,
+                    model_meta = model_meta || %s::jsonb
+                WHERE pick_key = %s
+                  AND source = 'game'
+                  AND result_status = 'pending'
+                """,
+                (
+                    row.get("model_prob"),
+                    row.get("ev"),
+                    row.get("kelly_fraction"),
+                    row.get("bankroll_tier"),
+                    row.get("bankroll_reasons"),
+                    row.get("stake_pct"),
+                    json.dumps({
+                        "bankroll_label_synced_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+                    }),
+                    row.get("pick_key"),
+                ),
+            )
+            updated += cur.rowcount
+    conn.commit()
+    return updated
+
+
 def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=None, cfg=None) -> int:
     thresholds = _cfg_thresholds(cfg)
     out: list[dict[str, Any]] = []
@@ -266,6 +377,8 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
             line_label = _run_line_side_label(row.get("market_run_line"), side)
             home_line = _clean_float(row.get("market_run_line"))
             bet_line = home_line if side == "home" else (-home_line if home_line is not None else None)
+            model_prob = _clean_float(row.get("win_prob_rl"))
+            market_price = _clean_float(row.get("market_rl_price"))
             out.append({
                 "pick_key": _pick_key("mlb", "game", game_date, slug, "run_line", side),
                 "source": "game",
@@ -285,14 +398,14 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
                 "bookmaker_key": "fanduel" if link else None,
                 "market_line": home_line,
                 "bet_line": bet_line,
-                "market_price": _clean_float(row.get("market_rl_price")),
+                "market_price": market_price,
                 "link": link,
                 "pred_value": _clean_float(row.get("pred_run_diff")),
                 "pred_count": None,
-                "model_prob": _clean_float(row.get("win_prob_rl")),
+                "model_prob": model_prob,
                 "edge": _clean_float(row.get("edge_run_line")),
                 "edge_type": "run_line",
-                "ev": None,
+                "ev": _ev_per_unit(model_prob, market_price),
                 "kelly_fraction": _clean_float(row.get("kelly_fraction_rl")),
                 "bankroll_tier": row.get("bankroll_tier_rl"),
                 "bankroll_reasons": row.get("bankroll_reasons_rl"),
@@ -311,6 +424,8 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
             link = None
             if fd is not None:
                 link = getattr(fd, "total_over_link", None) if side == "over" else getattr(fd, "total_under_link", None)
+            model_prob = _clean_float(row.get("win_prob_total"))
+            market_price = _clean_float(row.get("market_total_price"))
             out.append({
                 "pick_key": _pick_key("mlb", "game", game_date, slug, "total", side),
                 "source": "game",
@@ -330,14 +445,14 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
                 "bookmaker_key": "fanduel" if link else None,
                 "market_line": _clean_float(row.get("market_total")),
                 "bet_line": _clean_float(row.get("market_total")),
-                "market_price": _clean_float(row.get("market_total_price")),
+                "market_price": market_price,
                 "link": link,
                 "pred_value": _clean_float(row.get("pred_total")),
                 "pred_count": None,
-                "model_prob": _clean_float(row.get("win_prob_total")),
+                "model_prob": model_prob,
                 "edge": _clean_float(row.get("edge_total")),
                 "edge_type": "total",
-                "ev": None,
+                "ev": _ev_per_unit(model_prob, market_price),
                 "kelly_fraction": _clean_float(row.get("kelly_fraction_total")),
                 "bankroll_tier": row.get("bankroll_tier_total"),
                 "bankroll_reasons": row.get("bankroll_reasons_total"),
@@ -350,7 +465,14 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
                 },
                 "thresholds": thresholds,
             })
-    return insert_ledger_rows(conn, out)
+    inserted = insert_ledger_rows(conn, out)
+    synced = sync_pending_game_bankroll_metadata(conn, out)
+    if synced:
+        log.info("Synced %d pending MLB game bankroll rows", synced)
+    voided = void_negative_ev_game_bankroll_candidates(conn, cfg=cfg)
+    if voided:
+        log.info("Voided %d pending MLB game bankroll rows below price-adjusted EV minimum", voided)
+    return inserted
 
 
 def insert_prop_bankroll_ledger(conn, rows: list[dict[str, Any]], *, prop_lines=None, cfg=None) -> int:

@@ -25,7 +25,13 @@ from sqlalchemy import create_engine, text
 
 from .bankroll_layers import BankrollAssessment, assess_bankroll_layer, bankroll_tag
 from .bankroll_ledger import insert_game_bankroll_ledger
+from .model_pick_ledger import insert_game_model_pick_ledger
 from .features import add_game_derived_features, build_fd_parlay_url
+from .side_recalibration import (
+    apply_side_calibrator,
+    game_total_line_bucket as _cal_game_total_line_bucket,
+    price_bucket as _cal_price_bucket,
+)
 
 # Ensure stdout is UTF-8 on Windows.
 if hasattr(sys.stdout, "reconfigure"):
@@ -62,9 +68,10 @@ class PredictConfig:
     # Unders are not blanket-bad, but the weak bucket is high totals (10.5+).
     # Keep the side off by default until the non-high-total sample is larger;
     # if enabled, the high-total guard below still applies.
-    allow_total_under_bets: bool = False
-    max_total_under_market_line: float = 10.0
+    allow_total_under_bets: bool = True
+    max_total_under_market_line: float = 99.0
     max_total_lay_price: int = -180
+    total_side_recalibrators_file: str = "game_total_side_recalibrators.json"
     # Optional direct market classifiers must clear this probability edge when
     # artifacts are present. If no classifier artifacts exist, run-edge logic is
     # used by itself.
@@ -75,6 +82,7 @@ class PredictConfig:
     bankroll_shadow_mode: bool = True
     bankroll_max_stake_pct: float = 0.005
     bankroll_max_daily_exposure_pct: float = 0.02
+    min_game_ev: float = 0.02
     top_n_game_bets: int = 10
 
 
@@ -473,11 +481,39 @@ def _kelly(
     return kelly, p
 
 
-def _kelly_from_prob(p_win: float | None, max_kelly: float = 0.05) -> tuple[float | None, float | None]:
+def _american_profit_mult(price: int | float | None) -> float | None:
+    if price is None:
+        return None
+    try:
+        p = float(price)
+        if pd.isna(p) or p == 0:
+            return None
+        return p / 100.0 if p > 0 else 100.0 / abs(p)
+    except Exception:
+        return None
+
+
+def _price_adjusted_ev(p_win: float | None, price: int | float | None) -> float | None:
+    p = _clean_prob(p_win)
+    mult = _american_profit_mult(price)
+    if p is None or mult is None:
+        return None
+    return p * mult - (1.0 - p)
+
+
+def _kelly_from_prob(
+    p_win: float | None,
+    market_price: int | float | None = None,
+    max_kelly: float = 0.05,
+) -> tuple[float | None, float | None]:
     p = _clean_prob(p_win)
     if p is None:
         return None, None
-    k = max(0.0, (p - _BREAKEVEN_PROB) / (1.0 - _BREAKEVEN_PROB))
+    mult = _american_profit_mult(market_price)
+    if mult is not None:
+        k = max(0.0, (mult * p - (1.0 - p)) / mult)
+    else:
+        k = max(0.0, (p - _BREAKEVEN_PROB) / (1.0 - _BREAKEVEN_PROB))
     return min(k, max_kelly), p
 
 
@@ -490,6 +526,71 @@ def _clean_prob(value) -> float | None:
         return max(0.0, min(1.0, float(value)))
     except Exception:
         return None
+
+
+def _load_game_total_side_recalibrators(model_dir: Path, file_name: str) -> dict:
+    path = model_dir / file_name
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse game total side recalibrators at %s: %s", path, exc)
+        return {}
+    n = len(raw.get("calibrators") or {})
+    if n:
+        log.info("Loaded game total side recalibrators from %s (%d buckets)", path, n)
+    return raw
+
+
+def _apply_total_side_recalibration(
+    *,
+    side: str,
+    raw_p_side: float | None,
+    market_total,
+    market_price,
+    model_family: str,
+    recalibrators: dict,
+) -> tuple[float | None, str | None]:
+    if raw_p_side is None:
+        return None, None
+    return apply_side_calibrator(
+        raw_p_side,
+        recalibrators,
+        market="game_total",
+        side=side,
+        line_bucket=_cal_game_total_line_bucket(market_total),
+        price_bucket_value=_cal_price_bucket(market_price),
+        model_family=model_family or "unknown",
+    )
+
+
+def _calibrated_total_prob_kelly(
+    *,
+    side: str,
+    raw_p_side: float | None,
+    edge_abs: float,
+    sigma: float,
+    market_total,
+    market_price,
+    recalibrators: dict,
+) -> tuple[float | None, float | None, str | None]:
+    family = "total_over_clf" if _clean_prob(raw_p_side) is not None else "edge_sigma"
+    kelly, p_win = _kelly_from_prob(raw_p_side, market_price)
+    if kelly is None or p_win is None:
+        _, p_win = _kelly(edge_abs, sigma=sigma)
+        family = "edge_sigma"
+    p_win, cal_key = _apply_total_side_recalibration(
+        side=side,
+        raw_p_side=p_win,
+        market_total=market_total,
+        market_price=market_price,
+        model_family=family,
+        recalibrators=recalibrators,
+    )
+    if p_win is not None:
+        kelly, p_win = _kelly_from_prob(p_win, market_price)
+    return kelly, p_win, cal_key
 
 
 def _prob_edge_for_side(p_over: float | None, side: str) -> float | None:
@@ -676,6 +777,14 @@ def _game_bankroll_assessment(
 
     if win_prob is None:
         soft.append("missing_win_probability")
+    elif clean_price is not None:
+        price_ev = _price_adjusted_ev(win_prob, clean_price)
+        if price_ev is None:
+            soft.append("missing_price_ev")
+        elif price_ev < 0:
+            soft.append("negative_price_ev")
+        elif price_ev < cfg.min_game_ev:
+            soft.append("below_min_price_ev")
     if kelly_fraction is None or kelly_fraction <= 0:
         soft.append("zero_kelly")
 
@@ -838,6 +947,7 @@ def _save_predictions(
     w_rl: float = 0.0,
     w_total: float = 0.0,
     fd_links: dict | None = None,
+    total_side_recalibrators: dict | None = None,
 ) -> None:
     """Upsert game predictions into bets.mlb_game_predictions."""
     _ensure_bets_schema(engine)
@@ -942,9 +1052,10 @@ def _save_predictions(
         ):
             rl_bet = "home" if edge_rl > 0 else "away"
             p_side = p_home_cover if rl_bet == "home" else (1.0 - p_home_cover if p_home_cover is not None else None)
-            kf_rl, wp_rl = _kelly_from_prob(p_side)
+            kf_rl, wp_rl = _kelly_from_prob(p_side, rl_signal_price)
             if kf_rl is None or wp_rl is None:
-                kf_rl, wp_rl = _kelly(abs(edge_rl), sigma=sigma_rl)
+                _, wp_rl = _kelly(abs(edge_rl), sigma=sigma_rl)
+                kf_rl, wp_rl = _kelly_from_prob(wp_rl, rl_signal_price)
 
         if edge_t is not None and both_sp:
             if edge_t >= cfg.min_edge_total and _total_signal_allowed(
@@ -955,9 +1066,15 @@ def _save_predictions(
                 total_signal_price,
             ):
                 tot_bet = "over"
-                kf_t, wp_t = _kelly_from_prob(p_total_over)
-                if kf_t is None or wp_t is None:
-                    kf_t, wp_t = _kelly(edge_t, sigma=sigma_t)
+                kf_t, wp_t, _total_cal_key = _calibrated_total_prob_kelly(
+                    side="over",
+                    raw_p_side=p_total_over,
+                    edge_abs=edge_t,
+                    sigma=sigma_t,
+                    market_total=r.get("market_total"),
+                    market_price=total_signal_price,
+                    recalibrators=total_side_recalibrators or {},
+                )
             elif _total_signal_allowed(
                 edge_t,
                 cfg,
@@ -967,10 +1084,16 @@ def _save_predictions(
             ):
                 tot_bet = "under"
                 p_side = 1.0 - p_total_over if p_total_over is not None else None
-                kf_t, wp_t = _kelly_from_prob(p_side)
-                if kf_t is None or wp_t is None:
-                    kf_t, wp_t = _kelly(-edge_t, sigma=sigma_t)
-            # Note: under bets are disabled by default. Model is calibrated for overs only.
+                kf_t, wp_t, _total_cal_key = _calibrated_total_prob_kelly(
+                    side="under",
+                    raw_p_side=p_side,
+                    edge_abs=-edge_t,
+                    sigma=sigma_t,
+                    market_total=r.get("market_total"),
+                    market_price=total_signal_price,
+                    recalibrators=total_side_recalibrators or {},
+                )
+            # Totals are side-calibrated from locked historical model picks before bankroll sizing.
 
         # Entry prices for price-based CLV tracking
         mkt_rl_price = None
@@ -1035,6 +1158,7 @@ def _save_predictions(
             "p_over_total_q": round(float(r["p_over_total_q"]), 4) if pd.notna(r.get("p_over_total_q")) else None,
             "p_home_cover_clf": round(float(p_home_cover), 4) if p_home_cover is not None else None,
             "p_total_over_clf": round(float(p_total_over), 4) if p_total_over is not None else None,
+            "both_sp_known": both_sp,
             "edge_run_line_prob": round(float(r["edge_run_line_prob"]), 4) if pd.notna(r.get("edge_run_line_prob")) else None,
             "edge_total_prob": round(float(r["edge_total_prob"]), 4) if pd.notna(r.get("edge_total_prob")) else None,
             "bankroll_tier_rl": rl_bankroll.tier,
@@ -1058,6 +1182,12 @@ def _save_predictions(
             log.info("Locked %d MLB game bankroll ledger rows", locked)
         except Exception:
             log.exception("Failed to lock MLB game bankroll ledger rows")
+        try:
+            with psycopg2.connect(cfg.pg_dsn) as ledger_conn:
+                locked = insert_game_model_pick_ledger(ledger_conn, rows, fd_links=fd_links, cfg=cfg)
+            log.info("Locked %d MLB game model-pick ledger rows", locked)
+        except Exception:
+            log.exception("Failed to lock MLB game model-pick ledger rows")
 
 
 def _fmt_run_diff(run_diff_home: float, home: str, away: str) -> str:
@@ -1088,6 +1218,10 @@ def main() -> None:
 
     models, feature_cols, feature_medians = _load_models(cfg)
     calib = _load_calibration(cfg.model_dir)
+    total_side_recalibrators = _load_game_total_side_recalibrators(
+        cfg.model_dir,
+        cfg.total_side_recalibrators_file,
+    )
 
     engine = create_engine(cfg.pg_dsn)
 
@@ -1455,9 +1589,10 @@ def main() -> None:
                 _vs = _away2 if _e > 0 else _home2
                 _ml = _run_line_label_for_side(_mrl2, "home" if _e > 0 else "away")
                 _p_side = _p_home_clf if _e > 0 else (1.0 - _p_home_clf if _p_home_clf is not None else None)
-                _k, _p = _kelly_from_prob(_p_side)
+                _k, _p = _kelly_from_prob(_p_side, _rl_price2)
                 if _k is None or _p is None:
-                    _k, _p = _kelly(abs(_e), sigma=_srl)
+                    _, _p = _kelly(abs(_e), sigma=_srl)
+                    _k, _p = _kelly_from_prob(_p, _rl_price2)
                 _bankroll = _game_bankroll_assessment(
                     market="run_line",
                     side="home" if _e > 0 else "away",
@@ -1492,9 +1627,15 @@ def main() -> None:
             ):
                 _e   = float(_edge_t)
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
-                _k, _p = _kelly_from_prob(_p_total_clf)
-                if _k is None or _p is None:
-                    _k, _p = _kelly(_e, sigma=_st)
+                _k, _p, _cal_key = _calibrated_total_prob_kelly(
+                    side="over",
+                    raw_p_side=_p_total_clf,
+                    edge_abs=_e,
+                    sigma=_st,
+                    market_total=_mt2,
+                    market_price=_tot_price2,
+                    recalibrators=total_side_recalibrators,
+                )
                 _bankroll = _game_bankroll_assessment(
                     market="total",
                     side="over",
@@ -1530,9 +1671,15 @@ def main() -> None:
                 _e   = -float(_edge_t)
                 _mtl = f"{float(_mt2):.1f}" if pd.notna(_mt2) else "?"
                 _p_side = 1.0 - _p_total_clf if _p_total_clf is not None else None
-                _k, _p = _kelly_from_prob(_p_side)
-                if _k is None or _p is None:
-                    _k, _p = _kelly(_e, sigma=_st)
+                _k, _p, _cal_key = _calibrated_total_prob_kelly(
+                    side="under",
+                    raw_p_side=_p_side,
+                    edge_abs=_e,
+                    sigma=_st,
+                    market_total=_mt2,
+                    market_price=_tot_price2,
+                    recalibrators=total_side_recalibrators,
+                )
                 _bankroll = _game_bankroll_assessment(
                     market="total",
                     side="under",
@@ -1587,15 +1734,6 @@ def main() -> None:
                     sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
                     print(f"\n**{title}{sfx}** [FD]({url})")
 
-            print(f"\n**MODEL PICKS ({len(_model_bets)} of {len(_bets_today)})**")
-            for _b in _model_bets:
-                _print_game_bet(_b, include_link=True)
-
-            _print_chunked_parlays(
-                "Model Game Bets Parlay",
-                [b["link"] for b in _model_bets if b.get("link")],
-            )
-
             if _bankroll_bets:
                 print(f"\n**BANKROLL BETS ({len(_bankroll_bets)})**")
                 for _b in _bankroll_bets:
@@ -1620,7 +1758,7 @@ def main() -> None:
                 )
 
             if _paper_bets:
-                print(f"\n**PAPER / RESEARCH ({len(_paper_bets)})**")
+                print(f"\n**PAPER / RESEARCH ({len(_paper_bets)} of {len(_model_bets)} model picks)**")
                 for _b in _paper_bets:
                     _print_game_bet(_b, include_link=False)
         else:
@@ -1655,7 +1793,17 @@ def main() -> None:
         # In compact Discord mode, summary list above is the primary output.
         # Skip verbose per-game sections that are hard to read on mobile.
         try:
-            _save_predictions(out, engine, et_day, cfg, calib=calib, w_rl=w_rl, w_total=w_total, fd_links=fd_links)
+            _save_predictions(
+                out,
+                engine,
+                et_day,
+                cfg,
+                calib=calib,
+                w_rl=w_rl,
+                w_total=w_total,
+                fd_links=fd_links,
+                total_side_recalibrators=total_side_recalibrators,
+            )
         except Exception:
             log.exception("Failed to save predictions")
         return
@@ -1717,9 +1865,10 @@ def main() -> None:
             bet_side = "HOME" if e_rl > 0 else "AWAY"
             bet_team = home if e_rl > 0 else away
             p_side = p_home_clf if e_rl > 0 else (1.0 - p_home_clf if p_home_clf is not None else None)
-            kelly, p_win = _kelly_from_prob(p_side)
+            kelly, p_win = _kelly_from_prob(p_side, _rl_price)
             if kelly is None or p_win is None:
-                kelly, p_win = _kelly(abs(e_rl), sigma=sigma_rl)
+                _, p_win = _kelly(abs(e_rl), sigma=sigma_rl)
+                kelly, p_win = _kelly_from_prob(p_win, _rl_price)
             qk_bet = (kelly / 4) * 1000
             side_key = "home" if e_rl > 0 else "away"
             bankroll = _game_bankroll_assessment(
@@ -1773,9 +1922,15 @@ def main() -> None:
             and float(edge_t) >= 0
         ):
             e_t = float(edge_t)
-            kelly, p_win = _kelly_from_prob(p_total_clf)
-            if kelly is None or p_win is None:
-                kelly, p_win = _kelly(e_t, sigma=sigma_t)
+            kelly, p_win, _cal_key = _calibrated_total_prob_kelly(
+                side="over",
+                raw_p_side=p_total_clf,
+                edge_abs=e_t,
+                sigma=sigma_t,
+                market_total=mkt_tot,
+                market_price=_tot_price,
+                recalibrators=total_side_recalibrators,
+            )
             qk_bet = (kelly / 4) * 1000
             bankroll = _game_bankroll_assessment(
                 market="total",
@@ -1805,9 +1960,15 @@ def main() -> None:
         ):
             e_t = float(edge_t)
             p_side = 1.0 - p_total_clf if p_total_clf is not None else None
-            kelly, p_win = _kelly_from_prob(p_side)
-            if kelly is None or p_win is None:
-                kelly, p_win = _kelly(-e_t, sigma=sigma_t)
+            kelly, p_win, _cal_key = _calibrated_total_prob_kelly(
+                side="under",
+                raw_p_side=p_side,
+                edge_abs=-e_t,
+                sigma=sigma_t,
+                market_total=mkt_tot,
+                market_price=_tot_price,
+                recalibrators=total_side_recalibrators,
+            )
             qk_bet = (kelly / 4) * 1000
             bankroll = _game_bankroll_assessment(
                 market="total",
@@ -1859,7 +2020,17 @@ def main() -> None:
 
     # Save predictions to DB
     try:
-        _save_predictions(out, engine, et_day, cfg, calib=calib, w_rl=w_rl, w_total=w_total, fd_links=fd_links)
+        _save_predictions(
+            out,
+            engine,
+            et_day,
+            cfg,
+            calib=calib,
+            w_rl=w_rl,
+            w_total=w_total,
+            fd_links=fd_links,
+            total_side_recalibrators=total_side_recalibrators,
+        )
     except Exception as exc:
         log.warning("Could not save predictions to DB: %s", exc)
 
