@@ -136,6 +136,12 @@ class PredictConfig:
     bankroll_max_stake_pct: float = 0.005
     bankroll_max_daily_exposure_pct: float = 0.02
     bankroll_max_lay_price: int = -180
+    # Discord research output: keep bankroll links/parlays first, then show
+    # linked paper props separately so research plays do not get mistaken for
+    # bankroll bets. Set paper limit to 0 to show every priced research row.
+    discord_show_paper_links: bool = True
+    discord_include_all_priced_props: bool = True
+    discord_paper_limit: int = 40
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3733,6 +3739,7 @@ def _print_discord(
         bankroll_rows: List[Dict] = []
         paper_rows: List[Dict] = []
         model_pick_rows: List[Dict] = []
+        research_rows: List[Dict] = []
         bankroll_links: List[str] = []
 
         def _message_game_date() -> Optional[date]:
@@ -3812,11 +3819,26 @@ def _print_discord(
             else:
                 paper_rows.append(item)
 
+        def _book_label(link: Optional[str], fallback: Optional[str] = None) -> str:
+            if link:
+                low = link.lower()
+                if "fanduel.com" in low:
+                    return "FD"
+                if "draftkings.com" in low:
+                    return "DK"
+            fb = (fallback or "").lower()
+            if fb == "fanduel":
+                return "FD"
+            if fb == "draftkings":
+                return "DK"
+            return "Bet"
+
         def _print_prop_item(item: Dict, *, include_link: bool) -> None:
             pred_s = item["pred_fmt"].format(item["pred_val"])
             p_s = f" P={item['p_over']:.1%}" if item["p_over"] is not None else ""
             ev_s = f" EV={item['ev']:+.1%}" if item.get("ev") is not None else ""
-            link_s = f" [Bet](<{item['link']}>)" if include_link and item.get("link") else ""
+            book = item.get("book") or _book_label(item.get("link"))
+            link_s = f" [Bet {book}](<{item['link']}>)" if include_link and item.get("link") else ""
             print(
                 f"- {item['name']} ({item['team']} vs {item['opp']}) "
                 f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}{p_s}{ev_s} "
@@ -3865,8 +3887,18 @@ def _print_discord(
             name = row.get("player_name", f"id={row.get('player_id')}")
             ld = prop_lines.get((_normalize_name(name), stat))
             link = None
+            book = row.get("bookmaker_key")
             if ld:
                 link = ld.get("over_link") if side_raw == "over" else ld.get("under_link")
+                if side_raw == "over":
+                    book = ld.get("over_bookmaker_key") or ld.get("bookmaker_key") or book
+                else:
+                    book = (
+                        ld.get("under_bookmaker_key")
+                        or ld.get("under_link_book")
+                        or ld.get("bookmaker_key")
+                        or book
+                    )
             p_over = _as_float(row.get("pred_prob_over"))
             p_side = (1.0 - p_over) if side_raw == "under" and p_over is not None else p_over
             assessment = BankrollAssessment(
@@ -3888,6 +3920,7 @@ def _print_discord(
                 "ev": _as_float(row.get("ev")),
                 "edge": _as_float(row.get("edge")),
                 "link": link,
+                "book": _book_label(link, book),
                 "bankroll": assessment,
             }
 
@@ -3915,6 +3948,8 @@ def _print_discord(
                 item = _db_row_to_prop_item(row)
                 if item is None:
                     continue
+                if item.get("link") or item.get("ev") is not None:
+                    research_rows.append(item)
                 ev = item.get("ev")
                 if ev is not None and ev >= cfg.min_ev:
                     model_pick_rows.append(item)
@@ -3929,7 +3964,9 @@ def _print_discord(
                 key=lambda item: (item["bankroll"].stake_pct, item.get("p_over") or 0.0),
                 reverse=True,
             )
-            paper_rows = [item for item in model_pick_rows if not item["bankroll"].candidate]
+            paper_source = research_rows if cfg.discord_include_all_priced_props else model_pick_rows
+            paper_source.sort(key=_pick_score, reverse=True)
+            paper_rows = [item for item in paper_source if not item["bankroll"].candidate]
 
             if bankroll_rows:
                 print(f"**BANKROLL BETS ({len(bankroll_rows)})**")
@@ -3950,15 +3987,20 @@ def _print_discord(
                 )
 
             if paper_rows:
-                shown = paper_rows[:cfg.top_n_bets]
+                limit = int(cfg.discord_paper_limit or 0)
+                shown = paper_rows if limit <= 0 else paper_rows[:limit]
+                source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
                 print("")
-                print(f"**PAPER / RESEARCH ({len(shown)} of {len(model_pick_rows)} model picks)**")
+                print(
+                    f"**PAPER / RESEARCH ({len(shown)} of {len(paper_rows)} {source_label}; "
+                    f"{len(model_pick_rows)} positive-EV)**"
+                )
                 for item in shown:
-                    _print_prop_item(item, include_link=False)
-            elif not model_pick_rows:
+                    _print_prop_item(item, include_link=cfg.discord_show_paper_links)
+            elif not research_rows:
                 print("")
                 print("**PAPER / RESEARCH**")
-                print("- No positive-EV player props with a priced over/under today")
+                print("- No priced player prop rows with bet links today")
             else:
                 print("")
 
@@ -4107,7 +4149,7 @@ def _print_discord(
             print("")
             print(f"**PAPER / RESEARCH ({len(paper_rows)})**")
             for item in paper_rows:
-                _print_prop_item(item, include_link=False)
+                _print_prop_item(item, include_link=cfg.discord_show_paper_links)
 
         print("")
         return []
@@ -5579,6 +5621,13 @@ def main() -> None:
     parser.add_argument("--lottery-max-per-game", type=int, default=None)
     parser.add_argument("--bucket-reopen-policy-file", type=str, default=None)
     parser.add_argument("--fun-reopen-props", action="store_true")
+    parser.add_argument("--discord-paper-limit", type=int, default=None)
+    parser.add_argument("--hide-discord-paper-links", action="store_true")
+    parser.add_argument(
+        "--discord-model-picks-only",
+        action="store_true",
+        help="Only show positive-EV paper model picks instead of all priced props.",
+    )
     args = parser.parse_args()
 
     et_date = None
@@ -5623,6 +5672,19 @@ def main() -> None:
         or os.getenv("MLB_PROP_BUCKET_REOPEN_POLICY_FILE")
         or ("prop_bucket_reopen_policy_fun.json" if fun_reopen_props else "prop_bucket_reopen_policy.json")
     )
+    paper_links_env = os.getenv("MLB_DISCORD_PAPER_LINKS")
+    discord_show_paper_links = not args.hide_discord_paper_links
+    if paper_links_env is not None and not args.hide_discord_paper_links:
+        discord_show_paper_links = paper_links_env.strip().lower() in {"1", "true", "yes", "on"}
+    all_priced_env = os.getenv("MLB_DISCORD_ALL_PRICED_PROPS")
+    discord_include_all_priced_props = not args.discord_model_picks_only
+    if all_priced_env is not None and not args.discord_model_picks_only:
+        discord_include_all_priced_props = all_priced_env.strip().lower() in {"1", "true", "yes", "on"}
+    discord_paper_limit = (
+        args.discord_paper_limit
+        if args.discord_paper_limit is not None
+        else int(os.getenv("MLB_DISCORD_PAPER_LIMIT", "40"))
+    )
 
     cfg = PredictConfig(
         et_date=et_date,
@@ -5632,6 +5694,9 @@ def main() -> None:
         lottery_max_american=lottery_max_american,
         lottery_max_per_game=lottery_max_per_game,
         bucket_reopen_policy_file=bucket_reopen_policy_file,
+        discord_show_paper_links=discord_show_paper_links,
+        discord_include_all_priced_props=discord_include_all_priced_props,
+        discord_paper_limit=discord_paper_limit,
     )
     _apply_threshold_overrides(cfg)
     predict_props(cfg)
