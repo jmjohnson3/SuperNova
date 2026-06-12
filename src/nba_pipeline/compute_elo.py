@@ -1,9 +1,8 @@
 # src/nba_pipeline/compute_elo.py
 """Compute FiveThirtyEight-style margin-adjusted Elo ratings for all NBA teams.
 
-Reads completed games from raw.nba_games (chronological order) and upserts
-per-game pre/post Elo values into raw.nba_elo.  Safe to re-run: fully
-idempotent via ON CONFLICT DO UPDATE.
+Reads completed games from raw.nba_games (chronological order) and replaces
+the derived per-game pre/post Elo values in raw.nba_elo. Safe to re-run.
 
 Algorithm
 ---------
@@ -104,7 +103,8 @@ def compute_all_elo(conn) -> list[tuple]:
                home_team_abbr, away_team_abbr,
                home_score, away_score
         FROM   raw.nba_games
-        WHERE  home_score IS NOT NULL
+        WHERE  status = 'final'
+          AND  home_score IS NOT NULL
           AND  away_score IS NOT NULL
         ORDER  BY game_date_et, game_slug
         """,
@@ -179,10 +179,11 @@ def main() -> None:
             return
 
         with conn.cursor() as cur:
+            cur.execute("DELETE FROM raw.nba_elo")
             cur.executemany(_UPSERT, rows)
         conn.commit()
 
-    log.info("Done. Upserted %d rows into raw.nba_elo.", len(rows))
+    log.info("Done. Replaced raw.nba_elo with %d rows.", len(rows))
 
 
 if __name__ == "__main__":

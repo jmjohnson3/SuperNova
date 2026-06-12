@@ -146,6 +146,7 @@ def load_games_season_payloads(conn) -> Iterable[tuple[str, datetime, dict]]:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'games_season'
+      AND url LIKE '%/nba/%'
     ORDER BY fetched_at_utc DESC
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -232,6 +233,7 @@ def load_games_by_date_payloads(conn) -> Iterable[tuple[str, datetime, dict]]:
     FROM raw.api_responses
     WHERE provider = 'mysportsfeeds'
       AND endpoint = 'games_by_date'
+      AND url LIKE '%/nba/%'
     ORDER BY fetched_at_utc ASC
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:

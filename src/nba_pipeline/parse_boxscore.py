@@ -259,6 +259,7 @@ def build_raw_boxscores(conn, *, commit_every: int = 250) -> None:
     FROM raw.api_responses
     WHERE provider='mysportsfeeds'
       AND endpoint='boxscore'
+      AND url LIKE '%/nba/%'
       AND game_slug IS NOT NULL
     ORDER BY season, game_slug, fetched_at_utc DESC
     """

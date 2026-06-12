@@ -190,6 +190,7 @@ LEFT JOIN features.game_elo_features elo
   ON elo.season = gpf.season AND elo.game_slug = gpf.game_slug
 WHERE gpf.game_date_et = :game_date
   AND gpf.start_ts_utc IS NOT NULL
+  AND gpf.start_ts_utc > NOW()
   AND (:season IS NULL OR gpf.season = :season)
 ORDER BY gpf.start_ts_utc, gpf.game_slug
 """
@@ -206,6 +207,9 @@ JOIN odds.team_name_map tnm_h ON tnm_h.team_name = gl.home_team
 JOIN odds.team_name_map tnm_a ON tnm_a.team_name = gl.away_team
 WHERE gl.as_of_date = :d
   AND gl.bookmaker_key = 'fanduel'
+  AND gl.commence_time_utc IS NOT NULL
+  AND (gl.commence_time_utc AT TIME ZONE 'America/New_York')::date = gl.as_of_date
+  AND gl.fetched_at_utc <= gl.commence_time_utc
   AND (gl.spread_home_link IS NOT NULL OR gl.total_over_link IS NOT NULL)
 ORDER BY gl.fetched_at_utc DESC
 """
@@ -459,6 +463,9 @@ def _save_predictions(
              :win_prob_spread, :win_prob_total)
         ON CONFLICT (game_date_et, game_slug) DO UPDATE SET
             predicted_at_utc      = NOW(),
+            season                = EXCLUDED.season,
+            home_team_abbr        = EXCLUDED.home_team_abbr,
+            away_team_abbr        = EXCLUDED.away_team_abbr,
             pred_margin_home      = EXCLUDED.pred_margin_home,
             pred_total            = EXCLUDED.pred_total,
             used_residual_model   = EXCLUDED.used_residual_model,
@@ -471,7 +478,16 @@ def _save_predictions(
             kelly_fraction_spread = EXCLUDED.kelly_fraction_spread,
             kelly_fraction_total  = EXCLUDED.kelly_fraction_total,
             win_prob_spread       = EXCLUDED.win_prob_spread,
-            win_prob_total        = EXCLUDED.win_prob_total
+            win_prob_total        = EXCLUDED.win_prob_total,
+            actual_margin_home    = NULL,
+            actual_total          = NULL,
+            spread_covered        = NULL,
+            total_correct         = NULL,
+            direction_correct     = NULL,
+            closing_spread_home   = NULL,
+            closing_total         = NULL,
+            clv_spread            = NULL,
+            clv_total             = NULL
     """)
 
     rows = []

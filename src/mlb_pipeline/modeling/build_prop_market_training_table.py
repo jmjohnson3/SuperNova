@@ -22,6 +22,11 @@ def main() -> None:
     parser.add_argument("--date-to", default=None)
     parser.add_argument("--run-id", action="append", default=[], help="Limit to one replay run_id; repeatable.")
     parser.add_argument("--include-pending", action="store_true")
+    parser.add_argument(
+        "--allow-unlocked",
+        action="store_true",
+        help="Include replay rows without lock snapshots. Research only; real-money reports should omit this.",
+    )
     parser.add_argument("--no-replace", action="store_true", help="Upsert without deleting matching rows first.")
     args = parser.parse_args()
 
@@ -32,6 +37,7 @@ def main() -> None:
         date_to=_parse_date(args.date_to),
         run_ids=tuple(args.run_id or ()),
         include_pending=args.include_pending,
+        require_lock=not args.allow_unlocked,
         replace=not args.no_replace,
     ))
     print(json.dumps(result, indent=2))

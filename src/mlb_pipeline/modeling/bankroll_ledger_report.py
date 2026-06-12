@@ -732,7 +732,7 @@ def main() -> None:
     parser.add_argument("--dsn", default=_PG_DSN)
     parser.add_argument("--out", default=None, help="Optional markdown output path")
     parser.add_argument("--daily-only", action="store_true", help="Print only the daily locked bet summary")
-    parser.add_argument("--global-cap-pct", type=float, default=0.02, help="Daily cap as fraction, 0.02 = 2%")
+    parser.add_argument("--global-cap-pct", type=float, default=0.02, help="Daily cap as fraction, 0.02 = 2%%")
     parser.add_argument("--min-graded-bets", type=int, default=50)
     parser.add_argument("--min-roi-pct", type=float, default=2.0)
     parser.add_argument("--min-price-clv-rate-pct", type=float, default=50.0)

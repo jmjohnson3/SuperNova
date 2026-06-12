@@ -7,12 +7,17 @@ name = "supernovabets"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
+    "aiohttp",
+    "httpx",
     "joblib",
     "lightgbm",
     "numpy",
     "pandas",
+    "pillow",
     "psycopg2-binary",
+    "pytest",
     "requests",
+    "scipy",
     "scikit-learn",
     "sqlalchemy",
     "xgboost",

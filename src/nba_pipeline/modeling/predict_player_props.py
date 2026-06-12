@@ -50,6 +50,7 @@ SELECT *
 FROM features.game_prediction_features
 WHERE game_date_et = :game_date
   AND start_ts_utc IS NOT NULL
+  AND start_ts_utc > NOW()
 ORDER BY start_ts_utc, game_slug
 """
 
@@ -91,6 +92,7 @@ WITH games_today AS (
     FROM features.game_prediction_features
     WHERE game_date_et = :game_date
       AND start_ts_utc IS NOT NULL
+      AND start_ts_utc > NOW()
 ),
 teams_today AS (
     SELECT season, UPPER(home_team_abbr) AS team_abbr, UPPER(away_team_abbr) AS opponent_abbr, TRUE AS is_home, game_slug
@@ -832,7 +834,13 @@ def _save_prop_predictions(df_out: pd.DataFrame, engine, et_day) -> None:
             edge_ast         = EXCLUDED.edge_ast,
             kelly_pts        = EXCLUDED.kelly_pts,
             kelly_reb        = EXCLUDED.kelly_reb,
-            kelly_ast        = EXCLUDED.kelly_ast
+            kelly_ast        = EXCLUDED.kelly_ast,
+            actual_points    = NULL,
+            actual_rebounds  = NULL,
+            actual_assists   = NULL,
+            pts_over_hit     = NULL,
+            reb_over_hit     = NULL,
+            ast_over_hit     = NULL
     """)
 
     rows = []

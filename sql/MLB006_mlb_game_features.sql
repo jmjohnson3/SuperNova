@@ -25,12 +25,16 @@
 -- ============================================================
 CREATE OR REPLACE VIEW features.mlb_game_training_features AS
 WITH
--- Best (most recent) odds line per game
+-- Best (most recent) odds line per Odds API event. The later LATERAL join
+-- maps the event to the nearest Stats API game start, which keeps doubleheaders
+-- separate and prevents a consecutive-day series from sharing the wrong line.
 market_lines AS (
-    SELECT DISTINCT ON (home_team, away_team, as_of_date)
+    SELECT DISTINCT ON (home_team, away_team, as_of_date, event_id)
         home_team                   AS home_team_abbr,
         away_team                   AS away_team_abbr,
         as_of_date,
+        event_id,
+        NULLIF(commence_time_utc, '')::timestamptz AS commence_time_utc,
         spread_home_points          AS run_line_home,
         spread_home_price           AS run_line_home_price,
         spread_away_price           AS run_line_away_price,
@@ -39,27 +43,39 @@ market_lines AS (
         total_under_price           AS under_price
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
+      AND NULLIF(commence_time_utc, '') IS NOT NULL
+      AND (NULLIF(commence_time_utc, '')::timestamptz AT TIME ZONE 'America/New_York')::date = as_of_date
+      AND fetched_at_utc <= NULLIF(commence_time_utc, '')::timestamptz
     ORDER BY
         home_team,
         away_team,
         as_of_date,
-        CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
+        event_id,
+        CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END,
+        fetched_at_utc DESC
 ),
--- Opening line: earliest crawl per game
+-- Opening line: earliest crawl for the same event/book preference.
 market_lines_open AS (
-    SELECT DISTINCT ON (home_team, away_team, as_of_date)
+    SELECT DISTINCT ON (home_team, away_team, as_of_date, event_id)
         home_team                   AS home_team_abbr,
         away_team                   AS away_team_abbr,
         as_of_date,
+        event_id,
+        NULLIF(commence_time_utc, '')::timestamptz AS commence_time_utc,
         spread_home_points          AS open_run_line_home,
         total_points                AS open_total_line
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
+      AND NULLIF(commence_time_utc, '') IS NOT NULL
+      AND (NULLIF(commence_time_utc, '')::timestamptz AT TIME ZONE 'America/New_York')::date = as_of_date
+      AND fetched_at_utc <= NULLIF(commence_time_utc, '')::timestamptz
     ORDER BY
         home_team,
         away_team,
         as_of_date,
-        event_id ASC
+        event_id,
+        CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END,
+        fetched_at_utc ASC
 ),
 -- Head-to-head season record: for each game, how many prior games between
 -- these two teams this season, and how many did the home team win?
@@ -567,15 +583,25 @@ LEFT JOIN features.mlb_standings_rest_mat asr
     ON asr.game_slug = g.game_slug
    AND asr.team_abbr = g.away_team_abbr
 
-LEFT JOIN market_lines ml
-    ON ml.home_team_abbr = g.home_team_abbr
-   AND ml.away_team_abbr = g.away_team_abbr
-   AND ml.as_of_date     = g.game_date_et
+LEFT JOIN LATERAL (
+    SELECT candidate.*
+    FROM market_lines candidate
+    WHERE candidate.home_team_abbr = g.home_team_abbr
+      AND candidate.away_team_abbr = g.away_team_abbr
+      AND candidate.as_of_date = g.game_date_et
+    ORDER BY ABS(EXTRACT(EPOCH FROM (candidate.commence_time_utc - g.start_ts_utc)))
+    LIMIT 1
+) ml ON TRUE
 
-LEFT JOIN market_lines_open mlo
-    ON mlo.home_team_abbr = g.home_team_abbr
-   AND mlo.away_team_abbr = g.away_team_abbr
-   AND mlo.as_of_date     = g.game_date_et
+LEFT JOIN LATERAL (
+    SELECT candidate.*
+    FROM market_lines_open candidate
+    WHERE candidate.home_team_abbr = g.home_team_abbr
+      AND candidate.away_team_abbr = g.away_team_abbr
+      AND candidate.as_of_date = g.game_date_et
+    ORDER BY ABS(EXTRACT(EPOCH FROM (candidate.commence_time_utc - g.start_ts_utc)))
+    LIMIT 1
+) mlo ON TRUE
 
 LEFT JOIN h2h
     ON h2h.game_slug = g.game_slug
@@ -692,10 +718,12 @@ WHERE g.status = 'final'
 CREATE OR REPLACE VIEW features.mlb_game_prediction_features AS
 WITH
 market_lines AS (
-    SELECT DISTINCT ON (home_team, away_team, as_of_date)
+    SELECT DISTINCT ON (home_team, away_team, as_of_date, event_id)
         home_team                   AS home_team_abbr,
         away_team                   AS away_team_abbr,
         as_of_date,
+        event_id,
+        NULLIF(commence_time_utc, '')::timestamptz AS commence_time_utc,
         spread_home_points          AS run_line_home,
         spread_home_price           AS run_line_home_price,
         spread_away_price           AS run_line_away_price,
@@ -704,11 +732,16 @@ market_lines AS (
         total_under_price           AS under_price
     FROM odds.mlb_game_lines
     WHERE bookmaker_key IN ('draftkings', 'fanduel')
+      AND NULLIF(commence_time_utc, '') IS NOT NULL
+      AND (NULLIF(commence_time_utc, '')::timestamptz AT TIME ZONE 'America/New_York')::date = as_of_date
+      AND fetched_at_utc <= NULLIF(commence_time_utc, '')::timestamptz
     ORDER BY
         home_team,
         away_team,
         as_of_date,
-        CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END
+        event_id,
+        CASE bookmaker_key WHEN 'fanduel' THEN 0 ELSE 1 END,
+        fetched_at_utc DESC
 ),
 -- Latest rolling stats per team
 latest_batting AS (
@@ -1236,10 +1269,15 @@ LEFT JOIN features.mlb_standings_rest_mat asr
     ON asr.game_slug = g.game_slug
    AND asr.team_abbr = g.away_team_abbr
 
-LEFT JOIN market_lines ml
-    ON ml.home_team_abbr = g.home_team_abbr
-   AND ml.away_team_abbr = g.away_team_abbr
-   AND ml.as_of_date     = g.game_date_et
+LEFT JOIN LATERAL (
+    SELECT candidate.*
+    FROM market_lines candidate
+    WHERE candidate.home_team_abbr = g.home_team_abbr
+      AND candidate.away_team_abbr = g.away_team_abbr
+      AND candidate.as_of_date = g.game_date_et
+    ORDER BY ABS(EXTRACT(EPOCH FROM (candidate.commence_time_utc - g.start_ts_utc)))
+    LIMIT 1
+) ml ON TRUE
 
 LEFT JOIN h2h
     ON h2h.game_slug = g.game_slug
@@ -1336,7 +1374,8 @@ LEFT JOIN latest_velocity velo_home_sp
 LEFT JOIN latest_velocity velo_away_sp
     ON velo_away_sp.player_id = COALESCE(asp_sched.player_id, g.away_sp_id)
 
-WHERE g.status IN ('scheduled', 'in_progress')
+WHERE g.status = 'scheduled'
+  AND (g.start_ts_utc IS NULL OR g.start_ts_utc > NOW())
   AND g.game_date_et >= CURRENT_DATE
   AND g.game_date_et <= CURRENT_DATE + INTERVAL '1 day'
 ;

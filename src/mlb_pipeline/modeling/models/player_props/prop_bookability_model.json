@@ -1,0 +1,2900 @@
+{
+  "generated_at_utc": "2026-06-12T08:55:36Z",
+  "source": "features.mlb_prop_market_training_examples",
+  "usage": "shadow_only",
+  "rows": 44889,
+  "date_min": "2026-05-31",
+  "date_max": "2026-06-11",
+  "models": {
+    "global": {
+      "method": "locked_offer_bookability_logistic",
+      "intercept": 0.6014433967669105,
+      "coef": {
+        "market_line": -0.1789752871834392,
+        "abs_price": -0.17786771517274114,
+        "is_plus_price": -0.6171642761023427,
+        "model_prob_side": -0.4566306890012375,
+        "market_prob_side": -0.5536857805060601,
+        "prob_edge_vs_market": 0.3678638889565265,
+        "ev": -0.037611905587807214,
+        "minutes_lock_to_start": 1.4009931759437229,
+        "lock_hour_utc": 0.3838471940919417,
+        "confirmed_batting_order": 0.8127323164960627,
+        "projected_pa": 0.16889094374071723,
+        "projected_bf": 0.0078041305632070785,
+        "projected_pitch_count": 0.007804130563211274,
+        "is_home": -0.13922351563851648,
+        "opp_sp_k_pct_10": -0.05635485919428052,
+        "opp_bp_era_10": -0.10576509016475513,
+        "opp_bp_ip_last_3": 0.10483000351369069,
+        "opp_bp_ip_last_7": -0.24838156771614614,
+        "pinch_hit_risk": -1.3858752863855843,
+        "market=batter_hits": -0.09836162915743134,
+        "market=batter_home_runs": 0.6968463913524116,
+        "market=batter_total_bases": -0.08876348354928525,
+        "market=pitcher_strikeouts": 0.058501383101310485,
+        "side=over": 0.4203231321267384,
+        "side=under": 0.1478995296202882,
+        "line_surface=alt_tail": 0.37715340236943384,
+        "line_surface=common": 0.19106925937766647,
+        "line_bucket=H 0.5": -0.0638763297673635,
+        "line_bucket=H 1.5": 0.10385863530434329,
+        "line_bucket=H 2.5+": -0.13834393469439382,
+        "line_bucket=HR 0.5": 0.9754425877018996,
+        "line_bucket=HR 1.5+": -0.27859619634948496,
+        "line_bucket=K 4.5-6.0": -0.15903553234390305,
+        "line_bucket=K 6.5-8.0": 0.29462576133247886,
+        "line_bucket=K 8.5+": -0.17001957450153493,
+        "line_bucket=K <4.5": 0.0929307286142697,
+        "line_bucket=TB 1.5": -0.23844939514387223,
+        "line_bucket=TB 2.5+": 0.14968591159460365,
+        "price_bucket=fair_lay": 0.25527869402396314,
+        "price_bucket=heavy_lay": -0.07806726189949029,
+        "price_bucket=lay_130_149": 0.13873011336970995,
+        "price_bucket=lay_150_180": 0.07887768252208237,
+        "price_bucket=plus_100_149": 0.9985797834901152,
+        "price_bucket=plus_150_249": 0.21134712252218682,
+        "price_bucket=plus_250_499": -0.22608741023355106,
+        "price_bucket=plus_500_plus": -0.8104360620479729,
+        "bookmaker_key=draftkings": 0.08898442927923103,
+        "bookmaker_key=fanduel": 0.4792382324678501,
+        "model_family=alt_clf": 1.0480298056404262,
+        "model_family=clf": -0.844354076743543,
+        "model_family=regression": 0.3645469328501261,
+        "edge_type=count": 0.9722563804323033,
+        "edge_type=probability": -0.40403371868529653,
+        "opp_sp_hand=L": -0.08406058549251319,
+        "opp_sp_hand=R": -0.21740278958677264,
+        "opp_sp_hand=unknown": 0.8696860368263737
+      },
+      "numeric_means": {
+        "market_line": 1.9632323658256612,
+        "abs_price": 1973.2639211001008,
+        "is_plus_price": 0.7654086724295452,
+        "model_prob_side": 0.28151056996275214,
+        "market_prob_side": 0.27859665007905765,
+        "prob_edge_vs_market": 0.0029139198836944727,
+        "ev": -0.06940641456929951,
+        "minutes_lock_to_start": 252.6111431364276,
+        "lock_hour_utc": 15.96525874387987,
+        "confirmed_batting_order": 4.595220238988051,
+        "projected_pa": 3.8890404575982513,
+        "projected_bf": 23.370376569037656,
+        "projected_pitch_count": 89.97594979079497,
+        "is_home": 0.4881345608733338,
+        "opp_sp_k_pct_10": 0.21573929871296924,
+        "opp_bp_era_10": 4.506333983353077,
+        "opp_bp_ip_last_3": 9.892247364056391,
+        "opp_bp_ip_last_7": 23.508935434190263,
+        "pinch_hit_risk": 0.11408223271956042
+      },
+      "numeric_scales": {
+        "market_line": 1.3466205182977145,
+        "abs_price": 4602.439298033789,
+        "is_plus_price": 0.42374312572499195,
+        "model_prob_side": 0.21786425036565324,
+        "market_prob_side": 0.2086617105510888,
+        "prob_edge_vs_market": 0.04362896113703056,
+        "ev": 0.16005628376607667,
+        "minutes_lock_to_start": 330.6708227888738,
+        "lock_hour_utc": 3.668022413433396,
+        "confirmed_batting_order": 2.4668334602255872,
+        "projected_pa": 0.5051685105344791,
+        "projected_bf": 0.3270857100839739,
+        "projected_pitch_count": 1.2592799838232993,
+        "is_home": 0.4998591915273054,
+        "opp_sp_k_pct_10": 0.059553705788106794,
+        "opp_bp_era_10": 1.767253201056989,
+        "opp_bp_ip_last_3": 2.977793778288313,
+        "opp_bp_ip_last_7": 4.341140167261751,
+        "pinch_hit_risk": 0.08767377236424383
+      },
+      "categorical_values": {
+        "market": [
+          "batter_hits",
+          "batter_home_runs",
+          "batter_total_bases",
+          "pitcher_strikeouts"
+        ],
+        "side": [
+          "over",
+          "under"
+        ],
+        "line_surface": [
+          "alt_tail",
+          "common"
+        ],
+        "line_bucket": [
+          "H 0.5",
+          "H 1.5",
+          "H 2.5+",
+          "HR 0.5",
+          "HR 1.5+",
+          "K 4.5-6.0",
+          "K 6.5-8.0",
+          "K 8.5+",
+          "K <4.5",
+          "TB 1.5",
+          "TB 2.5+"
+        ],
+        "price_bucket": [
+          "fair_lay",
+          "heavy_lay",
+          "lay_130_149",
+          "lay_150_180",
+          "plus_100_149",
+          "plus_150_249",
+          "plus_250_499",
+          "plus_500_plus"
+        ],
+        "bookmaker_key": [
+          "draftkings",
+          "fanduel"
+        ],
+        "model_family": [
+          "alt_clf",
+          "clf",
+          "regression"
+        ],
+        "edge_type": [
+          "count",
+          "probability"
+        ],
+        "opp_sp_hand": [
+          "L",
+          "R",
+          "unknown"
+        ]
+      },
+      "numeric_features": [
+        "market_line",
+        "abs_price",
+        "is_plus_price",
+        "model_prob_side",
+        "market_prob_side",
+        "prob_edge_vs_market",
+        "ev",
+        "minutes_lock_to_start",
+        "lock_hour_utc",
+        "confirmed_batting_order",
+        "projected_pa",
+        "projected_bf",
+        "projected_pitch_count",
+        "is_home",
+        "opp_sp_k_pct_10",
+        "opp_bp_era_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "pinch_hit_risk"
+      ],
+      "categorical_features": [
+        "market",
+        "side",
+        "line_surface",
+        "line_bucket",
+        "price_bucket",
+        "bookmaker_key",
+        "model_family",
+        "edge_type",
+        "opp_sp_hand"
+      ]
+    }
+  },
+  "buckets": [
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|lay_150_180|draftkings",
+      "rows": 4,
+      "bookable_rate": 0.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|lay_150_180|fanduel",
+      "rows": 4,
+      "bookable_rate": 0.0,
+      "stale_rate": 0.75,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 8.5+|plus_100_149|draftkings",
+      "rows": 2,
+      "bookable_rate": 0.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 8.5+|lay_130_149|draftkings",
+      "rows": 2,
+      "bookable_rate": 0.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|heavy_lay|fanduel",
+      "rows": 1,
+      "bookable_rate": 0.0,
+      "stale_rate": 1.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|lay_130_149|fanduel",
+      "rows": 1,
+      "bookable_rate": 0.0,
+      "stale_rate": 1.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 2.5+|lay_150_180|draftkings",
+      "rows": 3,
+      "bookable_rate": 0.3333333333333333,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|plus_100_149|draftkings",
+      "rows": 16,
+      "bookable_rate": 0.4375,
+      "stale_rate": 0.125,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings",
+      "rows": 27,
+      "bookable_rate": 0.4444444444444444,
+      "stale_rate": 0.2222222222222222,
+      "no_valid_rate": 0.14814814814814814
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings",
+      "rows": 69,
+      "bookable_rate": 0.463768115942029,
+      "stale_rate": 0.15942028985507245,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 0.5|lay_130_149|draftkings",
+      "rows": 18,
+      "bookable_rate": 0.5,
+      "stale_rate": 0.16666666666666666,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|draftkings",
+      "rows": 10,
+      "bookable_rate": 0.5,
+      "stale_rate": 0.2,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|heavy_lay|fanduel",
+      "rows": 2,
+      "bookable_rate": 0.5,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|lay_130_149|draftkings",
+      "rows": 2,
+      "bookable_rate": 0.5,
+      "stale_rate": 0.5,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|fanduel",
+      "rows": 11,
+      "bookable_rate": 0.5454545454545454,
+      "stale_rate": 0.36363636363636365,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_250_499|fanduel",
+      "rows": 52,
+      "bookable_rate": 0.5576923076923077,
+      "stale_rate": 0.23076923076923078,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|fair_lay|fanduel",
+      "rows": 114,
+      "bookable_rate": 0.5877192982456141,
+      "stale_rate": 0.21052631578947367,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|plus_100_149|fanduel",
+      "rows": 5,
+      "bookable_rate": 0.6,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|plus_500_plus|fanduel",
+      "rows": 176,
+      "bookable_rate": 0.6022727272727273,
+      "stale_rate": 0.19886363636363635,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|draftkings",
+      "rows": 71,
+      "bookable_rate": 0.6056338028169014,
+      "stale_rate": 0.11267605633802817,
+      "no_valid_rate": 0.056338028169014086
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|lay_150_180|draftkings",
+      "rows": 18,
+      "bookable_rate": 0.6111111111111112,
+      "stale_rate": 0.2777777777777778,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings",
+      "rows": 458,
+      "bookable_rate": 0.6179039301310044,
+      "stale_rate": 0.1615720524017467,
+      "no_valid_rate": 0.017467248908296942
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|draftkings",
+      "rows": 54,
+      "bookable_rate": 0.6296296296296297,
+      "stale_rate": 0.12962962962962962,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_500_plus|fanduel",
+      "rows": 262,
+      "bookable_rate": 0.6335877862595419,
+      "stale_rate": 0.1946564885496183,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|fanduel",
+      "rows": 52,
+      "bookable_rate": 0.6346153846153846,
+      "stale_rate": 0.17307692307692307,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|plus_100_149|fanduel",
+      "rows": 9,
+      "bookable_rate": 0.6666666666666666,
+      "stale_rate": 0.1111111111111111,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|lay_130_149|draftkings",
+      "rows": 6,
+      "bookable_rate": 0.6666666666666666,
+      "stale_rate": 0.3333333333333333,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_150_180|draftkings",
+      "rows": 6,
+      "bookable_rate": 0.6666666666666666,
+      "stale_rate": 0.3333333333333333,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 0.5|lay_150_180|draftkings",
+      "rows": 3,
+      "bookable_rate": 0.6666666666666666,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 0.5|fair_lay|draftkings",
+      "rows": 277,
+      "bookable_rate": 0.6678700361010831,
+      "stale_rate": 0.17689530685920576,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|fair_lay|draftkings",
+      "rows": 232,
+      "bookable_rate": 0.6681034482758621,
+      "stale_rate": 0.1853448275862069,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|draftkings",
+      "rows": 37,
+      "bookable_rate": 0.6756756756756757,
+      "stale_rate": 0.05405405405405406,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings",
+      "rows": 28,
+      "bookable_rate": 0.6785714285714286,
+      "stale_rate": 0.21428571428571427,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|lay_130_149|fanduel",
+      "rows": 331,
+      "bookable_rate": 0.6918429003021148,
+      "stale_rate": 0.1661631419939577,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 1.5|plus_100_149|draftkings",
+      "rows": 43,
+      "bookable_rate": 0.6976744186046512,
+      "stale_rate": 0.046511627906976744,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|lay_150_180|draftkings",
+      "rows": 10,
+      "bookable_rate": 0.7,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|lay_150_180|draftkings",
+      "rows": 7,
+      "bookable_rate": 0.7142857142857143,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel",
+      "rows": 1229,
+      "bookable_rate": 0.725793327908869,
+      "stale_rate": 0.15134255492270138,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|lay_130_149|draftkings",
+      "rows": 430,
+      "bookable_rate": 0.7372093023255814,
+      "stale_rate": 0.1558139534883721,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|draftkings",
+      "rows": 121,
+      "bookable_rate": 0.743801652892562,
+      "stale_rate": 0.11570247933884298,
+      "no_valid_rate": 0.01652892561983471
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings",
+      "rows": 32,
+      "bookable_rate": 0.75,
+      "stale_rate": 0.1875,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|lay_150_180|fanduel",
+      "rows": 12,
+      "bookable_rate": 0.75,
+      "stale_rate": 0.25,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_150_180|fanduel",
+      "rows": 8,
+      "bookable_rate": 0.75,
+      "stale_rate": 0.25,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|lay_150_180|fanduel",
+      "rows": 4,
+      "bookable_rate": 0.75,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|fanduel",
+      "rows": 101,
+      "bookable_rate": 0.7524752475247525,
+      "stale_rate": 0.13861386138613863,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|plus_150_249|draftkings",
+      "rows": 439,
+      "bookable_rate": 0.7608200455580866,
+      "stale_rate": 0.06605922551252848,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 1.5|heavy_lay|draftkings",
+      "rows": 481,
+      "bookable_rate": 0.7671517671517671,
+      "stale_rate": 0.09563409563409564,
+      "no_valid_rate": 0.002079002079002079
+    },
+    {
+      "bucket": "batter_hits|under|common|H 0.5|plus_150_249|draftkings",
+      "rows": 1286,
+      "bookable_rate": 0.7674961119751167,
+      "stale_rate": 0.1150855365474339,
+      "no_valid_rate": 0.003110419906687403
+    },
+    {
+      "bucket": "batter_home_runs|over|common|HR 0.5|plus_500_plus|fanduel",
+      "rows": 2275,
+      "bookable_rate": 0.7687912087912088,
+      "stale_rate": 0.1279120879120879,
+      "no_valid_rate": 0.0013186813186813187
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|plus_100_149|draftkings",
+      "rows": 13,
+      "bookable_rate": 0.7692307692307693,
+      "stale_rate": 0.07692307692307693,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|lay_130_149|draftkings",
+      "rows": 48,
+      "bookable_rate": 0.7708333333333334,
+      "stale_rate": 0.020833333333333332,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_130_149|draftkings",
+      "rows": 22,
+      "bookable_rate": 0.7727272727272727,
+      "stale_rate": 0.18181818181818182,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel",
+      "rows": 4686,
+      "bookable_rate": 0.7733674775928298,
+      "stale_rate": 0.1267605633802817,
+      "no_valid_rate": 0.0008536064874093043
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|heavy_lay|draftkings",
+      "rows": 1635,
+      "bookable_rate": 0.7761467889908257,
+      "stale_rate": 0.10519877675840979,
+      "no_valid_rate": 0.0012232415902140672
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|lay_150_180|fanduel",
+      "rows": 860,
+      "bookable_rate": 0.7767441860465116,
+      "stale_rate": 0.12674418604651164,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel",
+      "rows": 2028,
+      "bookable_rate": 0.7776134122287969,
+      "stale_rate": 0.1267258382642998,
+      "no_valid_rate": 0.0009861932938856016
+    },
+    {
+      "bucket": "batter_hits|under|common|H 0.5|plus_100_149|draftkings",
+      "rows": 1539,
+      "bookable_rate": 0.7810266406757634,
+      "stale_rate": 0.12150747238466536,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|plus_250_499|fanduel",
+      "rows": 2032,
+      "bookable_rate": 0.781988188976378,
+      "stale_rate": 0.12844488188976377,
+      "no_valid_rate": 0.000984251968503937
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings",
+      "rows": 1386,
+      "bookable_rate": 0.7857142857142857,
+      "stale_rate": 0.09812409812409813,
+      "no_valid_rate": 0.001443001443001443
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|lay_150_180|draftkings",
+      "rows": 728,
+      "bookable_rate": 0.7857142857142857,
+      "stale_rate": 0.11263736263736264,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel",
+      "rows": 6034,
+      "bookable_rate": 0.7915147497514087,
+      "stale_rate": 0.11402055021544581,
+      "no_valid_rate": 0.003646005966191581
+    },
+    {
+      "bucket": "batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel",
+      "rows": 3336,
+      "bookable_rate": 0.7955635491606715,
+      "stale_rate": 0.11480815347721822,
+      "no_valid_rate": 0.0005995203836930455
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_100_149|draftkings",
+      "rows": 16,
+      "bookable_rate": 0.8125,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 1.5|lay_150_180|draftkings",
+      "rows": 34,
+      "bookable_rate": 0.8235294117647058,
+      "stale_rate": 0.029411764705882353,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings",
+      "rows": 807,
+      "bookable_rate": 0.8277571251548946,
+      "stale_rate": 0.09913258983890955,
+      "no_valid_rate": 0.004956629491945477
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|fanduel",
+      "rows": 53,
+      "bookable_rate": 0.8301886792452831,
+      "stale_rate": 0.1509433962264151,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|fanduel",
+      "rows": 49,
+      "bookable_rate": 0.8367346938775511,
+      "stale_rate": 0.16326530612244897,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel",
+      "rows": 1564,
+      "bookable_rate": 0.8388746803069054,
+      "stale_rate": 0.09910485933503836,
+      "no_valid_rate": 0.0012787723785166241
+    },
+    {
+      "bucket": "batter_hits|over|common|H 0.5|heavy_lay|fanduel",
+      "rows": 2017,
+      "bookable_rate": 0.8403569657907783,
+      "stale_rate": 0.09370352007932573,
+      "no_valid_rate": 0.0009915716410510659
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|plus_100_149|draftkings",
+      "rows": 89,
+      "bookable_rate": 0.8426966292134831,
+      "stale_rate": 0.02247191011235955,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|draftkings",
+      "rows": 13,
+      "bookable_rate": 0.8461538461538461,
+      "stale_rate": 0.07692307692307693,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|draftkings",
+      "rows": 13,
+      "bookable_rate": 0.8461538461538461,
+      "stale_rate": 0.07692307692307693,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel",
+      "rows": 100,
+      "bookable_rate": 0.85,
+      "stale_rate": 0.03,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|fanduel",
+      "rows": 21,
+      "bookable_rate": 0.8571428571428571,
+      "stale_rate": 0.047619047619047616,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel",
+      "rows": 1768,
+      "bookable_rate": 0.8602941176470589,
+      "stale_rate": 0.08088235294117647,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|plus_150_249|fanduel",
+      "rows": 1040,
+      "bookable_rate": 0.8605769230769231,
+      "stale_rate": 0.07115384615384615,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel",
+      "rows": 22,
+      "bookable_rate": 0.8636363636363636,
+      "stale_rate": 0.13636363636363635,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_home_runs|over|common|HR 0.5|plus_250_499|fanduel",
+      "rows": 1041,
+      "bookable_rate": 0.8683957732949087,
+      "stale_rate": 0.07588856868395773,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|draftkings",
+      "rows": 54,
+      "bookable_rate": 0.8703703703703703,
+      "stale_rate": 0.12962962962962962,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|draftkings",
+      "rows": 54,
+      "bookable_rate": 0.8703703703703703,
+      "stale_rate": 0.12962962962962962,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings",
+      "rows": 327,
+      "bookable_rate": 0.8715596330275229,
+      "stale_rate": 0.07339449541284404,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|lay_130_149|fanduel",
+      "rows": 8,
+      "bookable_rate": 0.875,
+      "stale_rate": 0.125,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|draftkings",
+      "rows": 57,
+      "bookable_rate": 0.8771929824561403,
+      "stale_rate": 0.07017543859649122,
+      "no_valid_rate": 0.03508771929824561
+    },
+    {
+      "bucket": "batter_home_runs|over|common|HR 0.5|plus_150_249|fanduel",
+      "rows": 42,
+      "bookable_rate": 0.8809523809523809,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel",
+      "rows": 26,
+      "bookable_rate": 0.8846153846153846,
+      "stale_rate": 0.11538461538461539,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel",
+      "rows": 931,
+      "bookable_rate": 0.8861439312567132,
+      "stale_rate": 0.06766917293233082,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_130_149|fanduel",
+      "rows": 9,
+      "bookable_rate": 0.8888888888888888,
+      "stale_rate": 0.1111111111111111,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_100_149|fanduel",
+      "rows": 94,
+      "bookable_rate": 0.8936170212765957,
+      "stale_rate": 0.010638297872340425,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|fanduel",
+      "rows": 47,
+      "bookable_rate": 0.8936170212765957,
+      "stale_rate": 0.0851063829787234,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|fair_lay|fanduel",
+      "rows": 331,
+      "bookable_rate": 0.8942598187311178,
+      "stale_rate": 0.06042296072507553,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|fanduel",
+      "rows": 10,
+      "bookable_rate": 0.9,
+      "stale_rate": 0.1,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|lay_130_149|draftkings",
+      "rows": 10,
+      "bookable_rate": 0.9,
+      "stale_rate": 0.1,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|fanduel",
+      "rows": 51,
+      "bookable_rate": 0.9019607843137255,
+      "stale_rate": 0.0392156862745098,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|fanduel",
+      "rows": 33,
+      "bookable_rate": 0.9090909090909091,
+      "stale_rate": 0.030303030303030304,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|alt_tail|TB 2.5+|plus_150_249|fanduel",
+      "rows": 179,
+      "bookable_rate": 0.9106145251396648,
+      "stale_rate": 0.0446927374301676,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|fair_lay|fanduel",
+      "rows": 12,
+      "bookable_rate": 0.9166666666666666,
+      "stale_rate": 0.08333333333333333,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 1.5|fair_lay|draftkings",
+      "rows": 241,
+      "bookable_rate": 0.91701244813278,
+      "stale_rate": 0.03319502074688797,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|fair_lay|draftkings",
+      "rows": 240,
+      "bookable_rate": 0.9208333333333333,
+      "stale_rate": 0.03333333333333333,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 1.5|lay_130_149|draftkings",
+      "rows": 13,
+      "bookable_rate": 0.9230769230769231,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|alt_tail|TB 2.5+|plus_100_149|fanduel",
+      "rows": 13,
+      "bookable_rate": 0.9230769230769231,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|fair_lay|fanduel",
+      "rows": 13,
+      "bookable_rate": 0.9230769230769231,
+      "stale_rate": 0.07692307692307693,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 2.5+|lay_130_149|draftkings",
+      "rows": 14,
+      "bookable_rate": 0.9285714285714286,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|plus_100_149|fanduel",
+      "rows": 73,
+      "bookable_rate": 0.9315068493150684,
+      "stale_rate": 0.0136986301369863,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|fanduel",
+      "rows": 16,
+      "bookable_rate": 0.9375,
+      "stale_rate": 0.0625,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K <4.5|fair_lay|draftkings",
+      "rows": 16,
+      "bookable_rate": 0.9375,
+      "stale_rate": 0.0625,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|fair_lay|draftkings",
+      "rows": 18,
+      "bookable_rate": 0.9444444444444444,
+      "stale_rate": 0.05555555555555555,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|lay_150_180|fanduel",
+      "rows": 48,
+      "bookable_rate": 0.9583333333333334,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|alt_tail|H 2.5+|plus_250_499|fanduel",
+      "rows": 19,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 1.5|heavy_lay|fanduel",
+      "rows": 15,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K <4.5|lay_130_149|fanduel",
+      "rows": 11,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|fair_lay|fanduel",
+      "rows": 7,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|fair_lay|draftkings",
+      "rows": 6,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|under|common|H 1.5|fair_lay|draftkings",
+      "rows": 6,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_hits|over|common|H 1.5|fair_lay|fanduel",
+      "rows": 2,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|fair_lay|draftkings",
+      "rows": 2,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|over|common|K 8.5+|plus_100_149|fanduel",
+      "rows": 2,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "pitcher_strikeouts|under|common|K 8.5+|lay_150_180|fanduel",
+      "rows": 2,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|over|common|TB 2.5+|lay_130_149|fanduel",
+      "rows": 1,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    },
+    {
+      "bucket": "batter_total_bases|under|common|TB 2.5+|fair_lay|draftkings",
+      "rows": 1,
+      "bookable_rate": 1.0,
+      "stale_rate": 0.0,
+      "no_valid_rate": 0.0
+    }
+  ],
+  "empirical_bookability_rates": {
+    "exact_bucket": {
+      "batter_hits|over|alt_tail|H 2.5+|plus_250_499|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|alt_tail|H 2.5+|plus_250_499|fanduel",
+        "rows": 19,
+        "bookable_rate": 1.0,
+        "stale_rate": null,
+        "no_valid_rate": null,
+        "close_window_miss_rate": null
+      },
+      "batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel",
+        "rows": 6034,
+        "bookable_rate": 0.7915147497514087,
+        "stale_rate": 0.5468998410174881,
+        "no_valid_rate": 0.017488076311605722,
+        "close_window_miss_rate": 0.4356120826709062
+      },
+      "batter_hits|over|common|H 0.5|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|fair_lay|draftkings",
+        "rows": 232,
+        "bookable_rate": 0.6681034482758621,
+        "stale_rate": 0.5584415584415584,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.44155844155844154
+      },
+      "batter_hits|over|common|H 0.5|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|fair_lay|fanduel",
+        "rows": 114,
+        "bookable_rate": 0.5877192982456141,
+        "stale_rate": 0.5106382978723404,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.48936170212765956
+      },
+      "batter_hits|over|common|H 0.5|heavy_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|heavy_lay|draftkings",
+        "rows": 1635,
+        "bookable_rate": 0.7761467889908257,
+        "stale_rate": 0.46994535519125685,
+        "no_valid_rate": 0.00546448087431694,
+        "close_window_miss_rate": 0.27595628415300544
+      },
+      "batter_hits|over|common|H 0.5|heavy_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|heavy_lay|fanduel",
+        "rows": 2017,
+        "bookable_rate": 0.8403569657907783,
+        "stale_rate": 0.5869565217391305,
+        "no_valid_rate": 0.006211180124223602,
+        "close_window_miss_rate": 0.40683229813664595
+      },
+      "batter_hits|over|common|H 0.5|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|lay_130_149|draftkings",
+        "rows": 430,
+        "bookable_rate": 0.7372093023255814,
+        "stale_rate": 0.5929203539823009,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.40707964601769914
+      },
+      "batter_hits|over|common|H 0.5|lay_130_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|lay_130_149|fanduel",
+        "rows": 331,
+        "bookable_rate": 0.6918429003021148,
+        "stale_rate": 0.5392156862745098,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.46078431372549017
+      },
+      "batter_hits|over|common|H 0.5|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|lay_150_180|draftkings",
+        "rows": 728,
+        "bookable_rate": 0.7857142857142857,
+        "stale_rate": 0.5256410256410257,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.47435897435897434
+      },
+      "batter_hits|over|common|H 0.5|lay_150_180|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|lay_150_180|fanduel",
+        "rows": 860,
+        "bookable_rate": 0.7767441860465116,
+        "stale_rate": 0.5677083333333334,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.4322916666666667
+      },
+      "batter_hits|over|common|H 0.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 0.5|plus_100_149|draftkings",
+        "rows": 16,
+        "bookable_rate": 0.4375,
+        "stale_rate": 0.2222222222222222,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.7777777777777778
+      },
+      "batter_hits|over|common|H 1.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 1.5|plus_100_149|draftkings",
+        "rows": 89,
+        "bookable_rate": 0.8426966292134831,
+        "stale_rate": 0.14285714285714285,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.8571428571428571
+      },
+      "batter_hits|over|common|H 1.5|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 1.5|plus_100_149|fanduel",
+        "rows": 73,
+        "bookable_rate": 0.9315068493150684,
+        "stale_rate": 0.2,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.8
+      },
+      "batter_hits|over|common|H 1.5|plus_150_249|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 1.5|plus_150_249|draftkings",
+        "rows": 439,
+        "bookable_rate": 0.7608200455580866,
+        "stale_rate": 0.2761904761904762,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.23809523809523808
+      },
+      "batter_hits|over|common|H 1.5|plus_150_249|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 1.5|plus_150_249|fanduel",
+        "rows": 1040,
+        "bookable_rate": 0.8605769230769231,
+        "stale_rate": 0.5103448275862069,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.4896551724137931
+      },
+      "batter_hits|over|common|H 1.5|plus_250_499|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 1.5|plus_250_499|fanduel",
+        "rows": 2032,
+        "bookable_rate": 0.781988188976378,
+        "stale_rate": 0.5891647855530474,
+        "no_valid_rate": 0.004514672686230248,
+        "close_window_miss_rate": 0.40632054176072235
+      },
+      "batter_hits|over|common|H 1.5|plus_500_plus|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_hits|over|common|H 1.5|plus_500_plus|fanduel",
+        "rows": 176,
+        "bookable_rate": 0.6022727272727273,
+        "stale_rate": 0.5,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.5
+      },
+      "batter_hits|under|common|H 0.5|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 0.5|fair_lay|draftkings",
+        "rows": 277,
+        "bookable_rate": 0.6678700361010831,
+        "stale_rate": 0.532608695652174,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.4673913043478261
+      },
+      "batter_hits|under|common|H 0.5|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 0.5|lay_130_149|draftkings",
+        "rows": 18,
+        "bookable_rate": 0.5,
+        "stale_rate": 0.3333333333333333,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.6666666666666666
+      },
+      "batter_hits|under|common|H 0.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 0.5|plus_100_149|draftkings",
+        "rows": 1539,
+        "bookable_rate": 0.7810266406757634,
+        "stale_rate": 0.5548961424332344,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.44510385756676557
+      },
+      "batter_hits|under|common|H 0.5|plus_150_249|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 0.5|plus_150_249|draftkings",
+        "rows": 1286,
+        "bookable_rate": 0.7674961119751167,
+        "stale_rate": 0.49498327759197325,
+        "no_valid_rate": 0.013377926421404682,
+        "close_window_miss_rate": 0.4916387959866221
+      },
+      "batter_hits|under|common|H 1.5|heavy_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 1.5|heavy_lay|draftkings",
+        "rows": 481,
+        "bookable_rate": 0.7671517671517671,
+        "stale_rate": 0.4107142857142857,
+        "no_valid_rate": 0.008928571428571428,
+        "close_window_miss_rate": 0.5803571428571429
+      },
+      "batter_hits|under|common|H 1.5|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 1.5|lay_130_149|draftkings",
+        "rows": 13,
+        "bookable_rate": 0.9230769230769231,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 1.0
+      },
+      "batter_hits|under|common|H 1.5|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_hits|under|common|H 1.5|lay_150_180|draftkings",
+        "rows": 34,
+        "bookable_rate": 0.8235294117647058,
+        "stale_rate": 0.16666666666666666,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.8333333333333334
+      },
+      "batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel",
+        "rows": 3336,
+        "bookable_rate": 0.7955635491606715,
+        "stale_rate": 0.5615835777126099,
+        "no_valid_rate": 0.002932551319648094,
+        "close_window_miss_rate": 0.43548387096774194
+      },
+      "batter_home_runs|over|common|HR 0.5|plus_150_249|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_home_runs|over|common|HR 0.5|plus_150_249|fanduel",
+        "rows": 42,
+        "bookable_rate": 0.8809523809523809,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 1.0
+      },
+      "batter_home_runs|over|common|HR 0.5|plus_250_499|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_home_runs|over|common|HR 0.5|plus_250_499|fanduel",
+        "rows": 1041,
+        "bookable_rate": 0.8683957732949087,
+        "stale_rate": 0.5766423357664233,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.4233576642335766
+      },
+      "batter_home_runs|over|common|HR 0.5|plus_500_plus|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_home_runs|over|common|HR 0.5|plus_500_plus|fanduel",
+        "rows": 2275,
+        "bookable_rate": 0.7687912087912088,
+        "stale_rate": 0.5532319391634981,
+        "no_valid_rate": 0.005703422053231939,
+        "close_window_miss_rate": 0.44106463878326996
+      },
+      "batter_total_bases|over|alt_tail|TB 2.5+|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_100_149|fanduel",
+        "rows": 13,
+        "bookable_rate": 0.9230769230769231,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 1.0
+      },
+      "batter_total_bases|over|alt_tail|TB 2.5+|plus_150_249|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_150_249|fanduel",
+        "rows": 179,
+        "bookable_rate": 0.9106145251396648,
+        "stale_rate": 0.5,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.5
+      },
+      "batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel",
+        "rows": 1768,
+        "bookable_rate": 0.8602941176470589,
+        "stale_rate": 0.5789473684210527,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.42105263157894735
+      },
+      "batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel",
+        "rows": 4686,
+        "bookable_rate": 0.7733674775928298,
+        "stale_rate": 0.559322033898305,
+        "no_valid_rate": 0.003766478342749529,
+        "close_window_miss_rate": 0.4369114877589454
+      },
+      "batter_total_bases|over|common|TB 1.5|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|fair_lay|draftkings",
+        "rows": 240,
+        "bookable_rate": 0.9208333333333333,
+        "stale_rate": 0.42105263157894735,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.47368421052631576
+      },
+      "batter_total_bases|over|common|TB 1.5|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|fair_lay|fanduel",
+        "rows": 331,
+        "bookable_rate": 0.8942598187311178,
+        "stale_rate": 0.5714285714285714,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.42857142857142855
+      },
+      "batter_total_bases|over|common|TB 1.5|heavy_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|heavy_lay|fanduel",
+        "rows": 15,
+        "bookable_rate": 1.0,
+        "stale_rate": null,
+        "no_valid_rate": null,
+        "close_window_miss_rate": null
+      },
+      "batter_total_bases|over|common|TB 1.5|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|lay_130_149|draftkings",
+        "rows": 48,
+        "bookable_rate": 0.7708333333333334,
+        "stale_rate": 0.09090909090909091,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.8181818181818182
+      },
+      "batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel",
+        "rows": 100,
+        "bookable_rate": 0.85,
+        "stale_rate": 0.2,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.8
+      },
+      "batter_total_bases|over|common|TB 1.5|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|lay_150_180|draftkings",
+        "rows": 10,
+        "bookable_rate": 0.7,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.3333333333333333
+      },
+      "batter_total_bases|over|common|TB 1.5|lay_150_180|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|lay_150_180|fanduel",
+        "rows": 48,
+        "bookable_rate": 0.9583333333333334,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 1.0
+      },
+      "batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings",
+        "rows": 1386,
+        "bookable_rate": 0.7857142857142857,
+        "stale_rate": 0.45791245791245794,
+        "no_valid_rate": 0.006734006734006734,
+        "close_window_miss_rate": 0.25252525252525254
+      },
+      "batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel",
+        "rows": 1564,
+        "bookable_rate": 0.8388746803069054,
+        "stale_rate": 0.6150793650793651,
+        "no_valid_rate": 0.007936507936507936,
+        "close_window_miss_rate": 0.376984126984127
+      },
+      "batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings",
+        "rows": 69,
+        "bookable_rate": 0.463768115942029,
+        "stale_rate": 0.2972972972972973,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.24324324324324326
+      },
+      "batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel",
+        "rows": 1229,
+        "bookable_rate": 0.725793327908869,
+        "stale_rate": 0.5519287833827893,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.44807121661721067
+      },
+      "batter_total_bases|over|common|TB 1.5|plus_250_499|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 1.5|plus_250_499|fanduel",
+        "rows": 52,
+        "bookable_rate": 0.5576923076923077,
+        "stale_rate": 0.5217391304347826,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.4782608695652174
+      },
+      "batter_total_bases|over|common|TB 2.5+|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 2.5+|plus_100_149|draftkings",
+        "rows": 16,
+        "bookable_rate": 0.8125,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "batter_total_bases|over|common|TB 2.5+|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 2.5+|plus_100_149|fanduel",
+        "rows": 94,
+        "bookable_rate": 0.8936170212765957,
+        "stale_rate": 0.1,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.9
+      },
+      "batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel",
+        "rows": 931,
+        "bookable_rate": 0.8861439312567132,
+        "stale_rate": 0.5943396226415094,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.4056603773584906
+      },
+      "batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel",
+        "rows": 2028,
+        "bookable_rate": 0.7776134122287969,
+        "stale_rate": 0.5698447893569845,
+        "no_valid_rate": 0.004434589800443459,
+        "close_window_miss_rate": 0.42572062084257206
+      },
+      "batter_total_bases|over|common|TB 2.5+|plus_500_plus|fanduel": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|over|common|TB 2.5+|plus_500_plus|fanduel",
+        "rows": 262,
+        "bookable_rate": 0.6335877862595419,
+        "stale_rate": 0.53125,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.46875
+      },
+      "batter_total_bases|under|common|TB 1.5|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|under|common|TB 1.5|fair_lay|draftkings",
+        "rows": 241,
+        "bookable_rate": 0.91701244813278,
+        "stale_rate": 0.4,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.6
+      },
+      "batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings",
+        "rows": 458,
+        "bookable_rate": 0.6179039301310044,
+        "stale_rate": 0.4228571428571429,
+        "no_valid_rate": 0.045714285714285714,
+        "close_window_miss_rate": 0.5314285714285715
+      },
+      "batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings",
+        "rows": 327,
+        "bookable_rate": 0.8715596330275229,
+        "stale_rate": 0.5714285714285714,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.42857142857142855
+      },
+      "batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings",
+        "rows": 807,
+        "bookable_rate": 0.8277571251548946,
+        "stale_rate": 0.5755395683453237,
+        "no_valid_rate": 0.02877697841726619,
+        "close_window_miss_rate": 0.39568345323741005
+      },
+      "batter_total_bases|under|common|TB 1.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|under|common|TB 1.5|plus_100_149|draftkings",
+        "rows": 43,
+        "bookable_rate": 0.6976744186046512,
+        "stale_rate": 0.15384615384615385,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.8461538461538461
+      },
+      "batter_total_bases|under|common|TB 2.5+|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "batter_total_bases|under|common|TB 2.5+|lay_130_149|draftkings",
+        "rows": 14,
+        "bookable_rate": 0.9285714285714286,
+        "stale_rate": 0.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 1.0
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|draftkings",
+        "rows": 54,
+        "bookable_rate": 0.8703703703703703,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|fanduel",
+        "rows": 49,
+        "bookable_rate": 0.8367346938775511,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|draftkings",
+        "rows": 37,
+        "bookable_rate": 0.6756756756756757,
+        "stale_rate": 0.16666666666666666,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.16666666666666666
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|fanduel",
+        "rows": 33,
+        "bookable_rate": 0.9090909090909091,
+        "stale_rate": 0.3333333333333333,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.6666666666666666
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings",
+        "rows": 27,
+        "bookable_rate": 0.4444444444444444,
+        "stale_rate": 0.4,
+        "no_valid_rate": 0.26666666666666666,
+        "close_window_miss_rate": 0.13333333333333333
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|fanduel",
+        "rows": 21,
+        "bookable_rate": 0.8571428571428571,
+        "stale_rate": 0.3333333333333333,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|draftkings",
+        "rows": 121,
+        "bookable_rate": 0.743801652892562,
+        "stale_rate": 0.45161290322580644,
+        "no_valid_rate": 0.06451612903225806,
+        "close_window_miss_rate": 0.3548387096774194
+      },
+      "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|fanduel",
+        "rows": 101,
+        "bookable_rate": 0.7524752475247525,
+        "stale_rate": 0.56,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.36
+      },
+      "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|draftkings",
+        "rows": 13,
+        "bookable_rate": 0.8461538461538461,
+        "stale_rate": 0.5,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|fanduel",
+        "rows": 10,
+        "bookable_rate": 0.9,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings",
+        "rows": 32,
+        "bookable_rate": 0.75,
+        "stale_rate": 0.75,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel",
+        "rows": 22,
+        "bookable_rate": 0.8636363636363636,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K <4.5|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|fair_lay|draftkings",
+        "rows": 18,
+        "bookable_rate": 0.9444444444444444,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K <4.5|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|fair_lay|fanduel",
+        "rows": 13,
+        "bookable_rate": 0.9230769230769231,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K <4.5|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|lay_130_149|draftkings",
+        "rows": 10,
+        "bookable_rate": 0.9,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K <4.5|lay_130_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|lay_130_149|fanduel",
+        "rows": 11,
+        "bookable_rate": 1.0,
+        "stale_rate": null,
+        "no_valid_rate": null,
+        "close_window_miss_rate": null
+      },
+      "pitcher_strikeouts|over|common|K <4.5|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|lay_150_180|draftkings",
+        "rows": 18,
+        "bookable_rate": 0.6111111111111112,
+        "stale_rate": 0.7142857142857143,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K <4.5|lay_150_180|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|lay_150_180|fanduel",
+        "rows": 12,
+        "bookable_rate": 0.75,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|over|common|K <4.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|over|common|K <4.5|plus_100_149|draftkings",
+        "rows": 13,
+        "bookable_rate": 0.7692307692307693,
+        "stale_rate": 0.3333333333333333,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.6666666666666666
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|draftkings",
+        "rows": 54,
+        "bookable_rate": 0.8703703703703703,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|fanduel",
+        "rows": 53,
+        "bookable_rate": 0.8301886792452831,
+        "stale_rate": 0.8888888888888888,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.1111111111111111
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|draftkings",
+        "rows": 57,
+        "bookable_rate": 0.8771929824561403,
+        "stale_rate": 0.5714285714285714,
+        "no_valid_rate": 0.2857142857142857,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|fanduel",
+        "rows": 47,
+        "bookable_rate": 0.8936170212765957,
+        "stale_rate": 0.8,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|draftkings",
+        "rows": 54,
+        "bookable_rate": 0.6296296296296297,
+        "stale_rate": 0.35,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.55
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|fanduel",
+        "rows": 52,
+        "bookable_rate": 0.6346153846153846,
+        "stale_rate": 0.47368421052631576,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.42105263157894735
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|draftkings",
+        "rows": 71,
+        "bookable_rate": 0.6056338028169014,
+        "stale_rate": 0.2857142857142857,
+        "no_valid_rate": 0.14285714285714285,
+        "close_window_miss_rate": 0.14285714285714285
+      },
+      "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|fanduel",
+        "rows": 51,
+        "bookable_rate": 0.9019607843137255,
+        "stale_rate": 0.4,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2
+      },
+      "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|draftkings",
+        "rows": 13,
+        "bookable_rate": 0.8461538461538461,
+        "stale_rate": 0.5,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|fanduel",
+        "rows": 16,
+        "bookable_rate": 0.9375,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K 6.5-8.0|lay_130_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_130_149|draftkings",
+        "rows": 22,
+        "bookable_rate": 0.7727272727272727,
+        "stale_rate": 0.8,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|draftkings",
+        "rows": 10,
+        "bookable_rate": 0.5,
+        "stale_rate": 0.4,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|fanduel",
+        "rows": 11,
+        "bookable_rate": 0.5454545454545454,
+        "stale_rate": 0.8,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2
+      },
+      "pitcher_strikeouts|under|common|K <4.5|fair_lay|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K <4.5|fair_lay|draftkings",
+        "rows": 16,
+        "bookable_rate": 0.9375,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K <4.5|fair_lay|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K <4.5|fair_lay|fanduel",
+        "rows": 12,
+        "bookable_rate": 0.9166666666666666,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings",
+        "rows": 28,
+        "bookable_rate": 0.6785714285714286,
+        "stale_rate": 0.6666666666666666,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      },
+      "pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel": {
+        "level": "exact_bucket",
+        "key": "pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel",
+        "rows": 26,
+        "bookable_rate": 0.8846153846153846,
+        "stale_rate": 1.0,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.0
+      }
+    },
+    "line_surface_book": {
+      "batter_hits|over|alt_tail|fanduel": {
+        "level": "line_surface_book",
+        "key": "batter_hits|over|alt_tail|fanduel",
+        "rows": 6053,
+        "bookable_rate": 0.7921691723112506,
+        "stale_rate": 0.5468998410174881,
+        "no_valid_rate": 0.017488076311605722,
+        "close_window_miss_rate": 0.4356120826709062
+      },
+      "batter_hits|over|common|draftkings": {
+        "level": "line_surface_book",
+        "key": "batter_hits|over|common|draftkings",
+        "rows": 3575,
+        "bookable_rate": 0.765034965034965,
+        "stale_rate": 0.4726190476190476,
+        "no_valid_rate": 0.002380952380952381,
+        "close_window_miss_rate": 0.35595238095238096
+      },
+      "batter_hits|over|common|fanduel": {
+        "level": "line_surface_book",
+        "key": "batter_hits|over|common|fanduel",
+        "rows": 6650,
+        "bookable_rate": 0.8003007518796993,
+        "stale_rate": 0.5632530120481928,
+        "no_valid_rate": 0.0030120481927710845,
+        "close_window_miss_rate": 0.43373493975903615
+      },
+      "batter_hits|under|common|draftkings": {
+        "level": "line_surface_book",
+        "key": "batter_hits|under|common|draftkings",
+        "rows": 3657,
+        "bookable_rate": 0.7656549083948592,
+        "stale_rate": 0.5064177362893816,
+        "no_valid_rate": 0.005834305717619603,
+        "close_window_miss_rate": 0.48774795799299886
+      },
+      "batter_home_runs|over|alt_tail|fanduel": {
+        "level": "line_surface_book",
+        "key": "batter_home_runs|over|alt_tail|fanduel",
+        "rows": 3336,
+        "bookable_rate": 0.7955635491606715,
+        "stale_rate": 0.5615835777126099,
+        "no_valid_rate": 0.002932551319648094,
+        "close_window_miss_rate": 0.43548387096774194
+      },
+      "batter_home_runs|over|common|fanduel": {
+        "level": "line_surface_book",
+        "key": "batter_home_runs|over|common|fanduel",
+        "rows": 3358,
+        "bookable_rate": 0.8010720667063729,
+        "stale_rate": 0.5538922155688623,
+        "no_valid_rate": 0.004491017964071856,
+        "close_window_miss_rate": 0.4416167664670659
+      },
+      "batter_total_bases|over|alt_tail|fanduel": {
+        "level": "line_surface_book",
+        "key": "batter_total_bases|over|alt_tail|fanduel",
+        "rows": 6646,
+        "bookable_rate": 0.8004814926271442,
+        "stale_rate": 0.5618401206636501,
+        "no_valid_rate": 0.0030165912518853697,
+        "close_window_miss_rate": 0.43514328808446456
+      },
+      "batter_total_bases|over|common|draftkings": {
+        "level": "line_surface_book",
+        "key": "batter_total_bases|over|common|draftkings",
+        "rows": 1771,
+        "bookable_rate": 0.7910784867306606,
+        "stale_rate": 0.42162162162162165,
+        "no_valid_rate": 0.005405405405405406,
+        "close_window_miss_rate": 0.27837837837837837
+      },
+      "batter_total_bases|over|common|fanduel": {
+        "level": "line_surface_book",
+        "key": "batter_total_bases|over|common|fanduel",
+        "rows": 6662,
+        "bookable_rate": 0.800810567397178,
+        "stale_rate": 0.5636774679728711,
+        "no_valid_rate": 0.003014318010550113,
+        "close_window_miss_rate": 0.43330821401657876
+      },
+      "batter_total_bases|under|common|draftkings": {
+        "level": "line_surface_book",
+        "key": "batter_total_bases|under|common|draftkings",
+        "rows": 1894,
+        "bookable_rate": 0.7930306230200633,
+        "stale_rate": 0.47959183673469385,
+        "no_valid_rate": 0.030612244897959183,
+        "close_window_miss_rate": 0.4897959183673469
+      },
+      "pitcher_strikeouts|over|common|draftkings": {
+        "level": "line_surface_book",
+        "key": "pitcher_strikeouts|over|common|draftkings",
+        "rows": 355,
+        "bookable_rate": 0.7323943661971831,
+        "stale_rate": 0.4842105263157895,
+        "no_valid_rate": 0.06315789473684211,
+        "close_window_miss_rate": 0.17894736842105263
+      },
+      "pitcher_strikeouts|over|common|fanduel": {
+        "level": "line_surface_book",
+        "key": "pitcher_strikeouts|over|common|fanduel",
+        "rows": 295,
+        "bookable_rate": 0.8135593220338984,
+        "stale_rate": 0.6727272727272727,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2545454545454545
+      },
+      "pitcher_strikeouts|under|common|draftkings": {
+        "level": "line_surface_book",
+        "key": "pitcher_strikeouts|under|common|draftkings",
+        "rows": 342,
+        "bookable_rate": 0.7339181286549707,
+        "stale_rate": 0.4725274725274725,
+        "no_valid_rate": 0.06593406593406594,
+        "close_window_miss_rate": 0.18681318681318682
+      },
+      "pitcher_strikeouts|under|common|fanduel": {
+        "level": "line_surface_book",
+        "key": "pitcher_strikeouts|under|common|fanduel",
+        "rows": 295,
+        "bookable_rate": 0.8135593220338984,
+        "stale_rate": 0.6727272727272727,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2545454545454545
+      }
+    },
+    "line_surface": {
+      "batter_hits|over|alt_tail": {
+        "level": "line_surface",
+        "key": "batter_hits|over|alt_tail",
+        "rows": 6053,
+        "bookable_rate": 0.7921691723112506,
+        "stale_rate": 0.5468998410174881,
+        "no_valid_rate": 0.017488076311605722,
+        "close_window_miss_rate": 0.4356120826709062
+      },
+      "batter_hits|over|common": {
+        "level": "line_surface",
+        "key": "batter_hits|over|common",
+        "rows": 10225,
+        "bookable_rate": 0.7879706601466993,
+        "stale_rate": 0.5281365313653137,
+        "no_valid_rate": 0.0027675276752767526,
+        "close_window_miss_rate": 0.4035977859778598
+      },
+      "batter_hits|under|common": {
+        "level": "line_surface",
+        "key": "batter_hits|under|common",
+        "rows": 3657,
+        "bookable_rate": 0.7656549083948592,
+        "stale_rate": 0.5064177362893816,
+        "no_valid_rate": 0.005834305717619603,
+        "close_window_miss_rate": 0.48774795799299886
+      },
+      "batter_home_runs|over|alt_tail": {
+        "level": "line_surface",
+        "key": "batter_home_runs|over|alt_tail",
+        "rows": 3336,
+        "bookable_rate": 0.7955635491606715,
+        "stale_rate": 0.5615835777126099,
+        "no_valid_rate": 0.002932551319648094,
+        "close_window_miss_rate": 0.43548387096774194
+      },
+      "batter_home_runs|over|common": {
+        "level": "line_surface",
+        "key": "batter_home_runs|over|common",
+        "rows": 3358,
+        "bookable_rate": 0.8010720667063729,
+        "stale_rate": 0.5538922155688623,
+        "no_valid_rate": 0.004491017964071856,
+        "close_window_miss_rate": 0.4416167664670659
+      },
+      "batter_total_bases|over|alt_tail": {
+        "level": "line_surface",
+        "key": "batter_total_bases|over|alt_tail",
+        "rows": 6646,
+        "bookable_rate": 0.8004814926271442,
+        "stale_rate": 0.5618401206636501,
+        "no_valid_rate": 0.0030165912518853697,
+        "close_window_miss_rate": 0.43514328808446456
+      },
+      "batter_total_bases|over|common": {
+        "level": "line_surface",
+        "key": "batter_total_bases|over|common",
+        "rows": 8433,
+        "bookable_rate": 0.7987667496739002,
+        "stale_rate": 0.5327047731290513,
+        "no_valid_rate": 0.0035356511490866236,
+        "close_window_miss_rate": 0.39952857984678847
+      },
+      "batter_total_bases|under|common": {
+        "level": "line_surface",
+        "key": "batter_total_bases|under|common",
+        "rows": 1894,
+        "bookable_rate": 0.7930306230200633,
+        "stale_rate": 0.47959183673469385,
+        "no_valid_rate": 0.030612244897959183,
+        "close_window_miss_rate": 0.4897959183673469
+      },
+      "pitcher_strikeouts|over|common": {
+        "level": "line_surface",
+        "key": "pitcher_strikeouts|over|common",
+        "rows": 650,
+        "bookable_rate": 0.7692307692307693,
+        "stale_rate": 0.5533333333333333,
+        "no_valid_rate": 0.04,
+        "close_window_miss_rate": 0.20666666666666667
+      },
+      "pitcher_strikeouts|under|common": {
+        "level": "line_surface",
+        "key": "pitcher_strikeouts|under|common",
+        "rows": 637,
+        "bookable_rate": 0.7708006279434851,
+        "stale_rate": 0.547945205479452,
+        "no_valid_rate": 0.0410958904109589,
+        "close_window_miss_rate": 0.21232876712328766
+      }
+    },
+    "market_side_book": {
+      "batter_hits|over|draftkings": {
+        "level": "market_side_book",
+        "key": "batter_hits|over|draftkings",
+        "rows": 3575,
+        "bookable_rate": 0.765034965034965,
+        "stale_rate": 0.4726190476190476,
+        "no_valid_rate": 0.002380952380952381,
+        "close_window_miss_rate": 0.35595238095238096
+      },
+      "batter_hits|over|fanduel": {
+        "level": "market_side_book",
+        "key": "batter_hits|over|fanduel",
+        "rows": 12703,
+        "bookable_rate": 0.7964260410926552,
+        "stale_rate": 0.5552977571539056,
+        "no_valid_rate": 0.010054137664346482,
+        "close_window_miss_rate": 0.43464810518174785
+      },
+      "batter_hits|under|draftkings": {
+        "level": "market_side_book",
+        "key": "batter_hits|under|draftkings",
+        "rows": 3657,
+        "bookable_rate": 0.7656549083948592,
+        "stale_rate": 0.5064177362893816,
+        "no_valid_rate": 0.005834305717619603,
+        "close_window_miss_rate": 0.48774795799299886
+      },
+      "batter_home_runs|over|fanduel": {
+        "level": "market_side_book",
+        "key": "batter_home_runs|over|fanduel",
+        "rows": 6694,
+        "bookable_rate": 0.7983268598745145,
+        "stale_rate": 0.5577777777777778,
+        "no_valid_rate": 0.003703703703703704,
+        "close_window_miss_rate": 0.43851851851851853
+      },
+      "batter_total_bases|over|draftkings": {
+        "level": "market_side_book",
+        "key": "batter_total_bases|over|draftkings",
+        "rows": 1771,
+        "bookable_rate": 0.7910784867306606,
+        "stale_rate": 0.42162162162162165,
+        "no_valid_rate": 0.005405405405405406,
+        "close_window_miss_rate": 0.27837837837837837
+      },
+      "batter_total_bases|over|fanduel": {
+        "level": "market_side_book",
+        "key": "batter_total_bases|over|fanduel",
+        "rows": 13308,
+        "bookable_rate": 0.8006462278328825,
+        "stale_rate": 0.5627591405955522,
+        "no_valid_rate": 0.003015454202789295,
+        "close_window_miss_rate": 0.4342254052016585
+      },
+      "batter_total_bases|under|draftkings": {
+        "level": "market_side_book",
+        "key": "batter_total_bases|under|draftkings",
+        "rows": 1894,
+        "bookable_rate": 0.7930306230200633,
+        "stale_rate": 0.47959183673469385,
+        "no_valid_rate": 0.030612244897959183,
+        "close_window_miss_rate": 0.4897959183673469
+      },
+      "pitcher_strikeouts|over|draftkings": {
+        "level": "market_side_book",
+        "key": "pitcher_strikeouts|over|draftkings",
+        "rows": 355,
+        "bookable_rate": 0.7323943661971831,
+        "stale_rate": 0.4842105263157895,
+        "no_valid_rate": 0.06315789473684211,
+        "close_window_miss_rate": 0.17894736842105263
+      },
+      "pitcher_strikeouts|over|fanduel": {
+        "level": "market_side_book",
+        "key": "pitcher_strikeouts|over|fanduel",
+        "rows": 295,
+        "bookable_rate": 0.8135593220338984,
+        "stale_rate": 0.6727272727272727,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2545454545454545
+      },
+      "pitcher_strikeouts|under|draftkings": {
+        "level": "market_side_book",
+        "key": "pitcher_strikeouts|under|draftkings",
+        "rows": 342,
+        "bookable_rate": 0.7339181286549707,
+        "stale_rate": 0.4725274725274725,
+        "no_valid_rate": 0.06593406593406594,
+        "close_window_miss_rate": 0.18681318681318682
+      },
+      "pitcher_strikeouts|under|fanduel": {
+        "level": "market_side_book",
+        "key": "pitcher_strikeouts|under|fanduel",
+        "rows": 295,
+        "bookable_rate": 0.8135593220338984,
+        "stale_rate": 0.6727272727272727,
+        "no_valid_rate": 0.0,
+        "close_window_miss_rate": 0.2545454545454545
+      }
+    },
+    "market_side": {
+      "batter_hits|over": {
+        "level": "market_side",
+        "key": "batter_hits|over",
+        "rows": 16278,
+        "bookable_rate": 0.7895318835237745,
+        "stale_rate": 0.5350262697022767,
+        "no_valid_rate": 0.008172796263864565,
+        "close_window_miss_rate": 0.4153531815528313
+      },
+      "batter_hits|under": {
+        "level": "market_side",
+        "key": "batter_hits|under",
+        "rows": 3657,
+        "bookable_rate": 0.7656549083948592,
+        "stale_rate": 0.5064177362893816,
+        "no_valid_rate": 0.005834305717619603,
+        "close_window_miss_rate": 0.48774795799299886
+      },
+      "batter_home_runs|over": {
+        "level": "market_side",
+        "key": "batter_home_runs|over",
+        "rows": 6694,
+        "bookable_rate": 0.7983268598745145,
+        "stale_rate": 0.5577777777777778,
+        "no_valid_rate": 0.003703703703703704,
+        "close_window_miss_rate": 0.43851851851851853
+      },
+      "batter_total_bases|over": {
+        "level": "market_side",
+        "key": "batter_total_bases|over",
+        "rows": 15079,
+        "bookable_rate": 0.7995225147556204,
+        "stale_rate": 0.5454846179292094,
+        "no_valid_rate": 0.0033079722130334105,
+        "close_window_miss_rate": 0.41515051273569303
+      },
+      "batter_total_bases|under": {
+        "level": "market_side",
+        "key": "batter_total_bases|under",
+        "rows": 1894,
+        "bookable_rate": 0.7930306230200633,
+        "stale_rate": 0.47959183673469385,
+        "no_valid_rate": 0.030612244897959183,
+        "close_window_miss_rate": 0.4897959183673469
+      },
+      "pitcher_strikeouts|over": {
+        "level": "market_side",
+        "key": "pitcher_strikeouts|over",
+        "rows": 650,
+        "bookable_rate": 0.7692307692307693,
+        "stale_rate": 0.5533333333333333,
+        "no_valid_rate": 0.04,
+        "close_window_miss_rate": 0.20666666666666667
+      },
+      "pitcher_strikeouts|under": {
+        "level": "market_side",
+        "key": "pitcher_strikeouts|under",
+        "rows": 637,
+        "bookable_rate": 0.7708006279434851,
+        "stale_rate": 0.547945205479452,
+        "no_valid_rate": 0.0410958904109589,
+        "close_window_miss_rate": 0.21232876712328766
+      }
+    }
+  },
+  "split_strategy": "last_available_date",
+  "train_rows": 42687,
+  "holdout_rows": 2202,
+  "holdout": {
+    "rows": 2202,
+    "actual_bookable_rate": 0.8533151680290645,
+    "avg_pred_bookable": 0.5790376743449849,
+    "brier_baseline": 0.12934725740235115,
+    "brier_model": 0.21748227749672047,
+    "log_loss_model": 0.6106257659112037,
+    "auc_model": 0.7871504670325598,
+    "model_usable": false
+  },
+  "selected_scoring_method": "empirical_bucket_rate",
+  "calibration_bins": [
+    {
+      "bucket": "00-10%",
+      "rows": 39,
+      "actual_bookable_rate": 0.4358974358974359,
+      "avg_pred_bookable": 0.07179571585203427,
+      "calibration_error": 0.36410172004540164
+    },
+    {
+      "bucket": "10-20%",
+      "rows": 208,
+      "actual_bookable_rate": 0.5336538461538461,
+      "avg_pred_bookable": 0.15830089637470623,
+      "calibration_error": 0.3753529497791399
+    },
+    {
+      "bucket": "20-30%",
+      "rows": 311,
+      "actual_bookable_rate": 0.7588424437299035,
+      "avg_pred_bookable": 0.24983737685724555,
+      "calibration_error": 0.509005066872658
+    },
+    {
+      "bucket": "30-40%",
+      "rows": 273,
+      "actual_bookable_rate": 0.8498168498168498,
+      "avg_pred_bookable": 0.347872266537006,
+      "calibration_error": 0.5019445832798438
+    },
+    {
+      "bucket": "40-50%",
+      "rows": 209,
+      "actual_bookable_rate": 0.8564593301435407,
+      "avg_pred_bookable": 0.4495209477139134,
+      "calibration_error": 0.4069383824296273
+    },
+    {
+      "bucket": "50-60%",
+      "rows": 175,
+      "actual_bookable_rate": 0.8571428571428571,
+      "avg_pred_bookable": 0.5484964631977567,
+      "calibration_error": 0.3086463939451004
+    },
+    {
+      "bucket": "60-70%",
+      "rows": 80,
+      "actual_bookable_rate": 0.9125,
+      "avg_pred_bookable": 0.6477048736016278,
+      "calibration_error": 0.2647951263983722
+    },
+    {
+      "bucket": "70-80%",
+      "rows": 77,
+      "actual_bookable_rate": 1.0,
+      "avg_pred_bookable": 0.7605568808674671,
+      "calibration_error": 0.2394431191325329
+    },
+    {
+      "bucket": "80-90%",
+      "rows": 231,
+      "actual_bookable_rate": 0.9696969696969697,
+      "avg_pred_bookable": 0.8608489583013545,
+      "calibration_error": 0.10884801139561517
+    },
+    {
+      "bucket": "90-100%",
+      "rows": 599,
+      "actual_bookable_rate": 0.9682804674457429,
+      "avg_pred_bookable": 0.9473683612052235,
+      "calibration_error": 0.020912106240519424
+    }
+  ],
+  "prediction_gap_audit": [
+    {
+      "level": "surface",
+      "bucket": "batter_hits|over|alt_tail",
+      "rows": 60,
+      "actual_bookable_rate": 0.9833333333333333,
+      "avg_pred_bookable": 0.5578273189421902,
+      "calibration_error": 0.4255060143911431,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_hits|over|alt_tail|fanduel",
+      "rows": 60,
+      "actual_bookable_rate": 0.9833333333333333,
+      "avg_pred_bookable": 0.5578273189421902,
+      "calibration_error": 0.4255060143911431,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel",
+      "rows": 60,
+      "actual_bookable_rate": 0.9833333333333333,
+      "avg_pred_bookable": 0.5578273189421902,
+      "calibration_error": 0.4255060143911431,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings",
+      "rows": 44,
+      "actual_bookable_rate": 0.9772727272727273,
+      "avg_pred_bookable": 0.5710370881777789,
+      "calibration_error": 0.4062356390949484,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|under|common|H 0.5|plus_100_149|draftkings",
+      "rows": 73,
+      "actual_bookable_rate": 0.7945205479452054,
+      "avg_pred_bookable": 0.39685430073463157,
+      "calibration_error": 0.39766624721057386,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 0.5|heavy_lay|draftkings",
+      "rows": 100,
+      "actual_bookable_rate": 0.87,
+      "avg_pred_bookable": 0.48171331649698806,
+      "calibration_error": 0.38828668350301193,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 0.5|lay_150_180|draftkings",
+      "rows": 30,
+      "actual_bookable_rate": 0.8333333333333334,
+      "avg_pred_bookable": 0.4615874451112941,
+      "calibration_error": 0.37174588822203924,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings",
+      "rows": 88,
+      "actual_bookable_rate": 0.9090909090909091,
+      "avg_pred_bookable": 0.5380598409696741,
+      "calibration_error": 0.371031068121235,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel",
+      "rows": 95,
+      "actual_bookable_rate": 0.9052631578947369,
+      "avg_pred_bookable": 0.5622371720272761,
+      "calibration_error": 0.3430259858674608,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "market_side",
+      "bucket": "batter_total_bases|under",
+      "rows": 108,
+      "actual_bookable_rate": 0.8888888888888888,
+      "avg_pred_bookable": 0.5530577442347684,
+      "calibration_error": 0.33583114465412045,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_total_bases|under|common",
+      "rows": 108,
+      "actual_bookable_rate": 0.8888888888888888,
+      "avg_pred_bookable": 0.5530577442347684,
+      "calibration_error": 0.33583114465412045,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_total_bases|under|common|draftkings",
+      "rows": 108,
+      "actual_bookable_rate": 0.8888888888888888,
+      "avg_pred_bookable": 0.5530577442347684,
+      "calibration_error": 0.33583114465412045,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel",
+      "rows": 67,
+      "actual_bookable_rate": 0.9701492537313433,
+      "avg_pred_bookable": 0.6368933374337941,
+      "calibration_error": 0.33325591629754925,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_total_bases|over|common|draftkings",
+      "rows": 108,
+      "actual_bookable_rate": 0.8888888888888888,
+      "avg_pred_bookable": 0.5634516087361151,
+      "calibration_error": 0.32543728015277373,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|under|common|H 0.5|plus_150_249|draftkings",
+      "rows": 75,
+      "actual_bookable_rate": 0.8933333333333333,
+      "avg_pred_bookable": 0.5695263008587816,
+      "calibration_error": 0.32380703247455167,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "market_side",
+      "bucket": "batter_hits|under",
+      "rows": 197,
+      "actual_bookable_rate": 0.7969543147208121,
+      "avg_pred_bookable": 0.4793850071683041,
+      "calibration_error": 0.317569307552508,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_hits|under|common",
+      "rows": 197,
+      "actual_bookable_rate": 0.7969543147208121,
+      "avg_pred_bookable": 0.4793850071683041,
+      "calibration_error": 0.317569307552508,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_hits|under|common|draftkings",
+      "rows": 197,
+      "actual_bookable_rate": 0.7969543147208121,
+      "avg_pred_bookable": 0.4793850071683041,
+      "calibration_error": 0.317569307552508,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 1.5|plus_150_249|fanduel",
+      "rows": 88,
+      "actual_bookable_rate": 0.9659090909090909,
+      "avg_pred_bookable": 0.648696920096984,
+      "calibration_error": 0.31721217081210695,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings",
+      "rows": 30,
+      "actual_bookable_rate": 0.9333333333333333,
+      "avg_pred_bookable": 0.6190867583893881,
+      "calibration_error": 0.31424657494394526,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_hits|over|common|draftkings",
+      "rows": 197,
+      "actual_bookable_rate": 0.7969543147208121,
+      "avg_pred_bookable": 0.4911874905608251,
+      "calibration_error": 0.305766824159987,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 0.5|heavy_lay|fanduel",
+      "rows": 132,
+      "actual_bookable_rate": 0.9166666666666666,
+      "avg_pred_bookable": 0.6170071507027445,
+      "calibration_error": 0.29965951596392215,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_total_bases|over|common",
+      "rows": 468,
+      "actual_bookable_rate": 0.8632478632478633,
+      "avg_pred_bookable": 0.5726580919190016,
+      "calibration_error": 0.29058977132886166,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "market_side",
+      "bucket": "batter_hits|over",
+      "rows": 617,
+      "actual_bookable_rate": 0.8492706645056726,
+      "avg_pred_bookable": 0.5651432014307354,
+      "calibration_error": 0.2841274630749372,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "market_side",
+      "bucket": "batter_total_bases|over",
+      "rows": 828,
+      "actual_bookable_rate": 0.8599033816425121,
+      "avg_pred_bookable": 0.5784513499025671,
+      "calibration_error": 0.28145203173994504,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_home_runs|over|common|HR 0.5|plus_250_499|fanduel",
+      "rows": 66,
+      "actual_bookable_rate": 0.9242424242424242,
+      "avg_pred_bookable": 0.6430661933945538,
+      "calibration_error": 0.28117623084787036,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_total_bases|over|common|fanduel",
+      "rows": 360,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5754200368738674,
+      "calibration_error": 0.28013551868168807,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_home_runs|over|common",
+      "rows": 180,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5782450441545331,
+      "calibration_error": 0.27731051140102236,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_home_runs|over|common|fanduel",
+      "rows": 180,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5782450441545331,
+      "calibration_error": 0.27731051140102236,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_home_runs|over|common|HR 0.5|plus_500_plus|fanduel",
+      "rows": 114,
+      "actual_bookable_rate": 0.8157894736842105,
+      "avg_pred_bookable": 0.5407170103839949,
+      "calibration_error": 0.2750724633002156,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "market_side",
+      "bucket": "batter_home_runs|over",
+      "rows": 360,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5845300626588662,
+      "calibration_error": 0.2710254928966893,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_total_bases|over|alt_tail",
+      "rows": 360,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5859825852812023,
+      "calibration_error": 0.26957297027435323,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_total_bases|over|alt_tail|fanduel",
+      "rows": 360,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5859825852812023,
+      "calibration_error": 0.26957297027435323,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel",
+      "rows": 231,
+      "actual_bookable_rate": 0.8225108225108225,
+      "avg_pred_bookable": 0.5529610517076939,
+      "calibration_error": 0.2695497708031286,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel",
+      "rows": 122,
+      "actual_bookable_rate": 0.9098360655737705,
+      "avg_pred_bookable": 0.6407665725544576,
+      "calibration_error": 0.26906949301931293,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_hits|over|common",
+      "rows": 557,
+      "actual_bookable_rate": 0.8348294434470377,
+      "avg_pred_bookable": 0.5659312677670238,
+      "calibration_error": 0.26889817568001384,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "surface",
+      "bucket": "batter_home_runs|over|alt_tail",
+      "rows": 180,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5908150811631993,
+      "calibration_error": 0.26474047439235626,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_home_runs|over|alt_tail|fanduel",
+      "rows": 180,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5908150811631993,
+      "calibration_error": 0.26474047439235626,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel",
+      "rows": 180,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.5908150811631993,
+      "calibration_error": 0.26474047439235626,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel",
+      "rows": 99,
+      "actual_bookable_rate": 0.8080808080808081,
+      "avg_pred_bookable": 0.5484115759349713,
+      "calibration_error": 0.2596692321458368,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings",
+      "rows": 22,
+      "actual_bookable_rate": 0.5909090909090909,
+      "avg_pred_bookable": 0.33336710717210627,
+      "calibration_error": 0.25754198373698467,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 0.5|lay_130_149|draftkings",
+      "rows": 19,
+      "actual_bookable_rate": 0.6842105263157895,
+      "avg_pred_bookable": 0.430955071587168,
+      "calibration_error": 0.2532554547286215,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "batter_hits|over|common|fanduel",
+      "rows": 360,
+      "actual_bookable_rate": 0.8555555555555555,
+      "avg_pred_bookable": 0.6068327236270826,
+      "calibration_error": 0.2487228319284729,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|under|common|H 1.5|heavy_lay|draftkings",
+      "rows": 38,
+      "actual_bookable_rate": 0.7105263157894737,
+      "avg_pred_bookable": 0.46248883259684154,
+      "calibration_error": 0.24803748319263214,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|under|common|TB 1.5|fair_lay|draftkings",
+      "rows": 11,
+      "actual_bookable_rate": 1.0,
+      "avg_pred_bookable": 0.7557239255246597,
+      "calibration_error": 0.24427607447534028,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 1.5|fair_lay|fanduel",
+      "rows": 35,
+      "actual_bookable_rate": 0.9428571428571428,
+      "avg_pred_bookable": 0.7127029132658602,
+      "calibration_error": 0.23015422959128262,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 1.5|plus_250_499|fanduel",
+      "rows": 86,
+      "actual_bookable_rate": 0.7558139534883721,
+      "avg_pred_bookable": 0.5310799249777448,
+      "calibration_error": 0.2247340285106273,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel",
+      "rows": 39,
+      "actual_bookable_rate": 0.6153846153846154,
+      "avg_pred_bookable": 0.4336512142634898,
+      "calibration_error": 0.18173340112112563,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 1.5|plus_150_249|draftkings",
+      "rows": 36,
+      "actual_bookable_rate": 0.6944444444444444,
+      "avg_pred_bookable": 0.5398057092544336,
+      "calibration_error": 0.1546387351900108,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_hits|over|common|H 0.5|lay_150_180|fanduel",
+      "rows": 38,
+      "actual_bookable_rate": 0.7894736842105263,
+      "avg_pred_bookable": 0.6564208001074651,
+      "calibration_error": 0.13305288410306126,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "exact_bucket",
+      "bucket": "batter_total_bases|over|common|TB 1.5|fair_lay|draftkings",
+      "rows": 12,
+      "actual_bookable_rate": 1.0,
+      "avg_pred_bookable": 0.8769602251462962,
+      "calibration_error": 0.12303977485370376,
+      "note": "model_too_pessimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "pitcher_strikeouts|over|common|fanduel",
+      "rows": 23,
+      "actual_bookable_rate": 0.8695652173913043,
+      "avg_pred_bookable": 0.9390061323149643,
+      "calibration_error": -0.06944091492366,
+      "note": "model_too_optimistic"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "pitcher_strikeouts|under|common|fanduel",
+      "rows": 23,
+      "actual_bookable_rate": 0.8695652173913043,
+      "avg_pred_bookable": 0.91588379756883,
+      "calibration_error": -0.04631858017752566,
+      "note": "calibrated"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "pitcher_strikeouts|under|common|draftkings",
+      "rows": 23,
+      "actual_bookable_rate": 0.9130434782608695,
+      "avg_pred_bookable": 0.867074571075186,
+      "calibration_error": 0.04596890718568347,
+      "note": "calibrated"
+    },
+    {
+      "level": "book_surface",
+      "bucket": "pitcher_strikeouts|over|common|draftkings",
+      "rows": 23,
+      "actual_bookable_rate": 0.9130434782608695,
+      "avg_pred_bookable": 0.8775998711655697,
+      "calibration_error": 0.03544360709529981,
+      "note": "calibrated"
+    },
+    {
+      "level": "market_side",
+      "bucket": "pitcher_strikeouts|over",
+      "rows": 46,
+      "actual_bookable_rate": 0.8913043478260869,
+      "avg_pred_bookable": 0.9083030017402668,
+      "calibration_error": -0.016998653914179873,
+      "note": "calibrated"
+    },
+    {
+      "level": "surface",
+      "bucket": "pitcher_strikeouts|over|common",
+      "rows": 46,
+      "actual_bookable_rate": 0.8913043478260869,
+      "avg_pred_bookable": 0.9083030017402668,
+      "calibration_error": -0.016998653914179873,
+      "note": "calibrated"
+    },
+    {
+      "level": "market_side",
+      "bucket": "pitcher_strikeouts|under",
+      "rows": 46,
+      "actual_bookable_rate": 0.8913043478260869,
+      "avg_pred_bookable": 0.891479184322008,
+      "calibration_error": -0.00017483649592109352,
+      "note": "calibrated"
+    },
+    {
+      "level": "surface",
+      "bucket": "pitcher_strikeouts|under|common",
+      "rows": 46,
+      "actual_bookable_rate": 0.8913043478260869,
+      "avg_pred_bookable": 0.891479184322008,
+      "calibration_error": -0.00017483649592109352,
+      "note": "calibrated"
+    }
+  ],
+  "close_reason_audit": [
+    {
+      "reason": "valid_close",
+      "rows": 1879,
+      "bookable_rate": 1.0,
+      "avg_pred_bookable": 0.6230135015670123
+    },
+    {
+      "reason": "stale_close_before_lock",
+      "rows": 148,
+      "bookable_rate": 0.0,
+      "avg_pred_bookable": 0.22323689749137005
+    },
+    {
+      "reason": "close_outside_two_hour_window",
+      "rows": 143,
+      "bookable_rate": 0.0,
+      "avg_pred_bookable": 0.35428912285002734
+    },
+    {
+      "reason": "fallback_other_book_only",
+      "rows": 26,
+      "bookable_rate": 0.0,
+      "avg_pred_bookable": 0.6354625201920546
+    },
+    {
+      "reason": "no_valid_close_snapshot",
+      "rows": 6,
+      "bookable_rate": 0.0,
+      "avg_pred_bookable": 0.6956930903284464
+    }
+  ],
+  "status": "ready",
+  "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_bookability_latest.md"
+}

@@ -516,10 +516,9 @@ def main() -> None:
     parse_prop_odds_alt()          # alt line markets (player_*_alternate)
 
     _apply_view_fixes(_PG_DSN)
-    _materialize_game_features(_PG_DSN)
     _audit_prop_name_coverage(_PG_DSN)
 
-    log.info("ALL PARSERS COMPLETE")
+    log.info("ALL PARSERS COMPLETE; run nba_pipeline.materialize_features after Elo refresh")
 
 if __name__ == "__main__":
     main()

@@ -16,6 +16,7 @@ class BankrollAssessment:
     candidate: bool
     reasons: str
     stake_pct: float
+    stake_usd: float = 0.0
 
 
 def _clean_reasons(reasons: Iterable[str] | None) -> list[str]:
@@ -95,6 +96,10 @@ def assess_bankroll_layer(
 
 def bankroll_tag(assessment: BankrollAssessment) -> str:
     if assessment.candidate:
+        if assessment.tier == "micro":
+            return f"MICRO ${assessment.stake_usd:.2f} FLAT"
+        if assessment.tier == "starter":
+            return f"STARTER {assessment.stake_pct * 100:.2f}%"
         return f"BANKROLL {assessment.stake_pct * 100:.2f}%"
     suffix = f": {assessment.reasons}" if assessment.reasons else ""
     return f"{assessment.tier.upper()}{suffix}"

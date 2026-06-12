@@ -93,6 +93,7 @@ def parse_all_lineups(conn, *, commit_every: int = 500) -> int:
     FROM raw.api_responses
     WHERE provider='mysportsfeeds'
       AND endpoint='lineup'
+      AND url LIKE '%/nba/%'
       AND season IS NOT NULL
       AND game_slug IS NOT NULL
     ORDER BY fetched_at_utc ASC

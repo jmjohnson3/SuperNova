@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, time as dtime
 from zoneinfo import ZoneInfo
-import hashlib, json, logging, time
+import hashlib, json, logging, os, time
 import psycopg2, requests
 
 log = logging.getLogger("mlb_pipeline.crawler_oddsapi")
@@ -25,7 +25,7 @@ _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{ev
 @dataclass(frozen=True)
 class OddsCrawlerConfig:
     pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
-    oddsapi_key: str = "5b6f0290e265c3329b3ed27897d79eaf"
+    oddsapi_key: str = os.getenv("ODDS_API_KEY", "")
     sport: str = "baseball_mlb"
     regions: str = "us"
     markets: str = "spreads,totals"
@@ -40,8 +40,9 @@ class OddsCrawlerConfig:
     # Stop fetching when fewer than this many credits remain
     min_credits_remaining: int = 200
 
-    # Live endpoint: shift commence window to capture late-night ET games
-    commence_from_utc_shift_hours: int = -10
+    # Live endpoint: the ET day window already includes late-night ET games.
+    # Starting earlier contaminates the target date with the prior day's slate.
+    commence_from_utc_shift_hours: int = 0
     commence_to_utc_shift_hours: int = 0
 
     # Historical snapshot time: 01:00:00 UTC per ET game day
@@ -68,7 +69,11 @@ def _et_day_window_utc(et_day: date) -> tuple[datetime, datetime]:
 
 
 def _build_full_url(url: str, params: dict) -> str:
-    qs = "&".join([f"{k}={params[k]}" for k in sorted(params.keys())])
+    qs = "&".join(
+        f"{k}={params[k]}"
+        for k in sorted(params.keys())
+        if k.lower() != "apikey"
+    )
     return f"{url}?{qs}"
 
 
@@ -93,7 +98,13 @@ def _fetch_with_backoff(cfg: OddsCrawlerConfig, url: str, params: dict) -> tuple
         except Exception as e:
             last_err = e
             wait = cfg.base_backoff_s * (2 ** (attempt - 1))
-            log.warning("Fetch failed. sleeping %.1fs (attempt %d/%d)", wait, attempt, cfg.max_retries, exc_info=True)
+            log.warning(
+                "Fetch failed (%s). sleeping %.1fs (attempt %d/%d)",
+                e.__class__.__name__,
+                wait,
+                attempt,
+                cfg.max_retries,
+            )
             time.sleep(wait)
     raise RuntimeError(f"Failed to fetch after retries: {url}") from last_err
 
@@ -164,6 +175,7 @@ def _fetch_historical_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | N
         tzinfo=_UTC,
     )
     snap_ts = snap_dt_utc.isoformat().replace("+00:00", "Z")
+    start_utc, end_utc = _et_day_window_utc(et_day)
 
     url = f"https://api.the-odds-api.com/v4/historical/sports/{cfg.sport}/odds"
     params = {
@@ -174,6 +186,8 @@ def _fetch_historical_day(cfg: OddsCrawlerConfig, conn, et_day: date) -> int | N
         "oddsFormat": cfg.odds_format,
         "dateFormat": cfg.date_format,
         "date": snap_ts,
+        "commenceTimeFrom": _to_z(start_utc),
+        "commenceTimeTo": _to_z(end_utc),
     }
     full_url = _build_full_url(url, params)
 
@@ -361,6 +375,11 @@ def main() -> None:
                         help="Skip today/tomorrow live odds fetch (backfill-only mode)")
     parser.add_argument("--skip-props", action="store_true",
                         help="Skip prop lines fetch")
+    parser.add_argument(
+        "--force-props",
+        action="store_true",
+        help="Refresh today's prop event URLs even when they were fetched earlier.",
+    )
     args = parser.parse_args()
 
     cfg = OddsCrawlerConfig()
@@ -441,7 +460,12 @@ def main() -> None:
         if not args.skip_props and today_et.month not in _MLB_OFF_SEASON_MONTHS:
             if credits_remaining is None or credits_remaining >= cfg.min_credits_remaining:
                 # Today's games
-                result = _fetch_prop_lines_for_day(cfg, conn, today_et)
+                result = _fetch_prop_lines_for_day(
+                    cfg,
+                    conn,
+                    today_et,
+                    force=args.force_props,
+                )
                 if result is not None:
                     credits_remaining = result
                 # Tomorrow's games stored as today so leakage guard is satisfied

@@ -10,7 +10,7 @@ import math
 from typing import Any
 
 from .prop_replay import american_to_prob, no_vig_probs
-from .side_recalibration import clean_float, logit, price_bucket, prop_line_bucket, sigmoid
+from .side_recalibration import clean_float, logit, price_bucket, prop_line_bucket, prop_line_surface, sigmoid
 
 _NUMERIC_FEATURES = [
     "raw_p_side",
@@ -19,6 +19,31 @@ _NUMERIC_FEATURES = [
     "market_line",
     "abs_price",
     "is_plus_price",
+    "confirmed_batting_order",
+    "projected_pa",
+    "projected_bf",
+    "projected_pitch_count",
+    "is_home",
+    "team_implied_runs",
+    "opponent_implied_runs",
+    "game_total_line",
+    "opp_sp_k_pct_10",
+    "opp_sp_bb_pct",
+    "opp_sp_xwoba",
+    "opp_sp_hard_hit_pct",
+    "opp_sp_whiff_pct",
+    "opp_bp_era_10",
+    "opp_bp_whip_10",
+    "opp_bp_k9_10",
+    "opp_team_k_pct_10",
+    "batter_vs_hand_hits_avg_10",
+    "batter_vs_hand_tb_avg_10",
+    "batter_vs_hand_hr_avg_10",
+    "batter_vs_hand_iso_avg_10",
+    "batter_vs_hand_k_rate_10",
+    "batter_vs_rp_slg_30",
+    "batter_vs_rp_hr_rate_30",
+    "pinch_hit_risk",
 ]
 
 _CATEGORICAL_FEATURES = [
@@ -26,6 +51,9 @@ _CATEGORICAL_FEATURES = [
     "side",
     "line_bucket",
     "price_bucket",
+    "bookmaker_key",
+    "line_surface",
+    "opp_sp_hand",
     "model_family",
 ]
 
@@ -146,6 +174,7 @@ def build_betting_features(
     under_price=None,
     model_family: str = "unknown",
     bookmaker_key: str = "unknown",
+    opportunity: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     raw = clean_float(raw_p_side)
     line_v = clean_float(line)
@@ -155,10 +184,12 @@ def build_betting_features(
     no_vig_side = nv_over if side == "over" else nv_under
     if no_vig_side is None:
         no_vig_side = market_prob
+    opp = opportunity or {}
     return {
         "market": str(market or "unknown"),
         "side": str(side or "unknown"),
         "line_bucket": prop_line_bucket(str(market or ""), line_v),
+        "line_surface": prop_line_surface(str(market or ""), str(side or ""), line_v),
         "price_bucket": price_bucket(price_v),
         "bookmaker_key": str(bookmaker_key or "unknown"),
         "model_family": str(model_family or "unknown"),
@@ -168,6 +199,32 @@ def build_betting_features(
         "market_line": line_v,
         "abs_price": abs(price_v) if price_v is not None else None,
         "is_plus_price": 1.0 if price_v is not None and price_v > 0 else 0.0 if price_v is not None else None,
+        "confirmed_batting_order": clean_float(opp.get("confirmed_batting_order")),
+        "projected_pa": clean_float(opp.get("projected_pa")),
+        "projected_bf": clean_float(opp.get("projected_bf")),
+        "projected_pitch_count": clean_float(opp.get("projected_pitch_count")),
+        "is_home": clean_float(opp.get("is_home")),
+        "team_implied_runs": clean_float(opp.get("team_implied_runs")),
+        "opponent_implied_runs": clean_float(opp.get("opponent_implied_runs")),
+        "game_total_line": clean_float(opp.get("game_total_line")),
+        "opp_sp_hand": str(opp.get("opp_sp_hand") or "unknown"),
+        "opp_sp_k_pct_10": clean_float(opp.get("opp_sp_k_pct_10")),
+        "opp_sp_bb_pct": clean_float(opp.get("opp_sp_bb_pct")),
+        "opp_sp_xwoba": clean_float(opp.get("opp_sp_xwoba")),
+        "opp_sp_hard_hit_pct": clean_float(opp.get("opp_sp_hard_hit_pct")),
+        "opp_sp_whiff_pct": clean_float(opp.get("opp_sp_whiff_pct")),
+        "opp_bp_era_10": clean_float(opp.get("opp_bp_era_10")),
+        "opp_bp_whip_10": clean_float(opp.get("opp_bp_whip_10")),
+        "opp_bp_k9_10": clean_float(opp.get("opp_bp_k9_10")),
+        "opp_team_k_pct_10": clean_float(opp.get("opp_team_k_pct_10")),
+        "batter_vs_hand_hits_avg_10": clean_float(opp.get("batter_vs_hand_hits_avg_10")),
+        "batter_vs_hand_tb_avg_10": clean_float(opp.get("batter_vs_hand_tb_avg_10")),
+        "batter_vs_hand_hr_avg_10": clean_float(opp.get("batter_vs_hand_hr_avg_10")),
+        "batter_vs_hand_iso_avg_10": clean_float(opp.get("batter_vs_hand_iso_avg_10")),
+        "batter_vs_hand_k_rate_10": clean_float(opp.get("batter_vs_hand_k_rate_10")),
+        "batter_vs_rp_slg_30": clean_float(opp.get("batter_vs_rp_slg_30")),
+        "batter_vs_rp_hr_rate_30": clean_float(opp.get("batter_vs_rp_hr_rate_30")),
+        "pinch_hit_risk": clean_float(opp.get("pinch_hit_risk")),
     }
 
 
@@ -281,6 +338,7 @@ def apply_prop_betting_layer(
     under_price=None,
     model_family: str = "unknown",
     bookmaker_key: str = "unknown",
+    opportunity: dict[str, Any] | None = None,
 ) -> tuple[float | None, str | None]:
     raw = clean_float(raw_p_side)
     if raw is None:
@@ -296,6 +354,7 @@ def apply_prop_betting_layer(
         under_price=under_price,
         model_family=model_family,
         bookmaker_key=bookmaker_key,
+        opportunity=opportunity,
     )
     key, rec = _lookup_model(
         payload,
@@ -332,6 +391,7 @@ def apply_prop_clv_layer(
     under_price=None,
     model_family: str = "unknown",
     bookmaker_key: str = "unknown",
+    opportunity: dict[str, Any] | None = None,
 ) -> tuple[float | None, str | None]:
     """Score the chance that this side beats the closing price."""
     raw = clean_float(raw_p_side)
@@ -347,6 +407,7 @@ def apply_prop_clv_layer(
         under_price=under_price,
         model_family=model_family,
         bookmaker_key=bookmaker_key,
+        opportunity=opportunity,
     )
     key, rec = _lookup_model(
         payload,

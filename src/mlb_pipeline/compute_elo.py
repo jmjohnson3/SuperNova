@@ -1,9 +1,8 @@
 # src/mlb_pipeline/compute_elo.py
 """Compute FiveThirtyEight-style Elo ratings for all MLB teams.
 
-Reads completed games from raw.mlb_games (chronological order) and upserts
-per-game pre/post Elo values into raw.mlb_elo.  Safe to re-run: fully
-idempotent via ON CONFLICT DO UPDATE.
+Reads completed games from raw.mlb_games (chronological order) and replaces
+the derived per-game pre/post Elo values in raw.mlb_elo. Safe to re-run.
 
 Algorithm (tuned for baseball)
 ------------------------------
@@ -112,7 +111,8 @@ def compute_all_elo(conn) -> list[tuple]:
                home_team_abbr, away_team_abbr,
                home_score, away_score
         FROM   raw.mlb_games
-        WHERE  home_score IS NOT NULL
+        WHERE  status = 'final'
+          AND  home_score IS NOT NULL
           AND  away_score IS NOT NULL
         ORDER  BY game_date_et, game_slug
         """,
@@ -187,10 +187,11 @@ def main() -> None:
             return
 
         with conn.cursor() as cur:
+            cur.execute("DELETE FROM raw.mlb_elo")
             cur.executemany(_UPSERT, rows)
         conn.commit()
 
-    log.info("Done. Upserted %d rows into raw.mlb_elo.", len(rows))
+    log.info("Done. Replaced raw.mlb_elo with %d rows.", len(rows))
 
 
 if __name__ == "__main__":

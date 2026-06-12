@@ -50,6 +50,7 @@ def parse_all_pbp(conn, *, commit_every_games: int = 50) -> int:
     FROM raw.api_responses ar
     WHERE ar.provider = 'mysportsfeeds'
       AND ar.endpoint = 'playbyplay'
+      AND ar.url LIKE '%/nba/%'
       AND ar.season IS NOT NULL
       AND ar.game_slug IS NOT NULL
       AND NOT EXISTS (

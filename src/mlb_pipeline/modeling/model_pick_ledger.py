@@ -20,14 +20,17 @@ from .bankroll_ledger import (
     _clean_float,
     _clean_int,
     _json,
-    _load_game_closes,
     _normalize_name,
     _pick_key,
     _price_clv,
     _profit_units,
-    _prop_close,
     _run_line_side_label,
     _ET,
+)
+from .game_line_clv import game_line_clv, resolve_valid_game_close
+from .prop_offer_snapshots import (
+    ensure_prop_offer_snapshot_schema,
+    resolve_valid_prop_close,
 )
 
 log = logging.getLogger("mlb_pipeline.modeling.model_pick_ledger")
@@ -83,6 +86,9 @@ def ensure_model_pick_ledger_schema(conn) -> None:
                 game_slug TEXT NOT NULL,
                 market TEXT NOT NULL,
                 stat TEXT,
+                prediction_key TEXT,
+                prop_offer_id BIGINT,
+                prop_offer_source_row_id INTEGER,
                 side TEXT NOT NULL,
                 label TEXT,
                 team_abbr TEXT,
@@ -96,6 +102,7 @@ def ensure_model_pick_ledger_schema(conn) -> None:
                 market_line NUMERIC,
                 bet_line NUMERIC,
                 market_price NUMERIC,
+                minimum_acceptable_price NUMERIC,
                 link TEXT,
                 pred_value NUMERIC,
                 pred_count NUMERIC,
@@ -107,6 +114,7 @@ def ensure_model_pick_ledger_schema(conn) -> None:
                 model_tier TEXT,
                 warning_reasons TEXT,
                 stake_pct NUMERIC,
+                stake_usd NUMERIC,
                 model_meta JSONB NOT NULL DEFAULT '{}'::jsonb,
                 thresholds JSONB NOT NULL DEFAULT '{}'::jsonb,
                 result_status TEXT NOT NULL DEFAULT 'pending',
@@ -123,35 +131,58 @@ def ensure_model_pick_ledger_schema(conn) -> None:
                 closing_price NUMERIC,
                 clv_line NUMERIC,
                 clv_price NUMERIC,
+                closing_snapshot_id BIGINT,
+                lock_snapshot_id BIGINT,
+                locked_at_utc TIMESTAMPTZ,
+                clv_valid BOOLEAN,
+                clv_status TEXT,
+                clv_unknown_reason TEXT,
                 graded_at_utc TIMESTAMPTZ,
                 grade_source TEXT
             );
+            ALTER TABLE bets.mlb_model_pick_ledger
+                ADD COLUMN IF NOT EXISTS prediction_key TEXT,
+                ADD COLUMN IF NOT EXISTS prop_offer_id BIGINT,
+                ADD COLUMN IF NOT EXISTS prop_offer_source_row_id INTEGER,
+                ADD COLUMN IF NOT EXISTS minimum_acceptable_price NUMERIC,
+                ADD COLUMN IF NOT EXISTS stake_usd NUMERIC,
+                ADD COLUMN IF NOT EXISTS closing_snapshot_id BIGINT,
+                ADD COLUMN IF NOT EXISTS lock_snapshot_id BIGINT,
+                ADD COLUMN IF NOT EXISTS locked_at_utc TIMESTAMPTZ,
+                ADD COLUMN IF NOT EXISTS clv_valid BOOLEAN,
+                ADD COLUMN IF NOT EXISTS clv_status TEXT,
+                ADD COLUMN IF NOT EXISTS clv_unknown_reason TEXT;
             CREATE INDEX IF NOT EXISTS idx_mlb_model_pick_ledger_date
                 ON bets.mlb_model_pick_ledger (game_date_et);
             CREATE INDEX IF NOT EXISTS idx_mlb_model_pick_ledger_pending
                 ON bets.mlb_model_pick_ledger (result_status, game_date_et);
             CREATE INDEX IF NOT EXISTS idx_mlb_model_pick_ledger_market
                 ON bets.mlb_model_pick_ledger (source, market, side);
+            CREATE INDEX IF NOT EXISTS idx_mlb_model_pick_ledger_prop_offer
+                ON bets.mlb_model_pick_ledger (prop_offer_id);
             """
         )
+    ensure_prop_offer_snapshot_schema(conn)
 
 
 _INSERT_SQL = """
 INSERT INTO bets.mlb_model_pick_ledger (
-    pick_key, source, game_date_et, game_slug, market, stat, side, label,
+    pick_key, source, game_date_et, game_slug, market, stat,
+    prediction_key, prop_offer_id, prop_offer_source_row_id, side, label,
     team_abbr, opponent_abbr, home_team_abbr, away_team_abbr,
     player_id, player_name, player_name_norm, bookmaker_key,
     market_line, bet_line, market_price, link, pred_value, pred_count, model_prob,
     edge, edge_type, ev, kelly_fraction, model_tier, warning_reasons, stake_pct,
-    model_meta, thresholds
+    stake_usd, minimum_acceptable_price, locked_at_utc, model_meta, thresholds
 ) VALUES (
     %(pick_key)s, %(source)s, %(game_date_et)s, %(game_slug)s, %(market)s, %(stat)s,
+    %(prediction_key)s, %(prop_offer_id)s, %(prop_offer_source_row_id)s,
     %(side)s, %(label)s, %(team_abbr)s, %(opponent_abbr)s, %(home_team_abbr)s,
     %(away_team_abbr)s, %(player_id)s, %(player_name)s, %(player_name_norm)s,
     %(bookmaker_key)s, %(market_line)s, %(bet_line)s, %(market_price)s, %(link)s,
     %(pred_value)s, %(pred_count)s, %(model_prob)s, %(edge)s, %(edge_type)s, %(ev)s,
     %(kelly_fraction)s, %(model_tier)s, %(warning_reasons)s, %(stake_pct)s,
-    %(model_meta)s, %(thresholds)s
+    %(stake_usd)s, %(minimum_acceptable_price)s, %(locked_at_utc)s, %(model_meta)s, %(thresholds)s
 ) ON CONFLICT (pick_key) DO NOTHING
 """
 
@@ -162,6 +193,12 @@ def insert_model_pick_rows(conn, rows: Iterable[dict[str, Any]]) -> int:
         return 0
     ensure_model_pick_ledger_schema(conn)
     for row in payload:
+        row.setdefault("prediction_key", None)
+        row.setdefault("prop_offer_id", None)
+        row.setdefault("prop_offer_source_row_id", None)
+        row.setdefault("stake_usd", None)
+        row.setdefault("minimum_acceptable_price", None)
+        row.setdefault("locked_at_utc", datetime.now(timezone.utc))
         row["model_meta"] = _json(row.get("model_meta"))
         row["thresholds"] = _json(row.get("thresholds"))
     inserted = 0
@@ -213,45 +250,6 @@ def backfill_missing_game_model_pick_probabilities(conn) -> int:
     return len(updates)
 
 
-def sync_pending_game_model_pick_metadata(conn, rows: Iterable[dict[str, Any]]) -> int:
-    """Refresh mutable bankroll/research labels on pending locked game picks."""
-    payload = list(rows)
-    if not payload:
-        return 0
-    ensure_model_pick_ledger_schema(conn)
-    updated = 0
-    with conn.cursor() as cur:
-        for row in payload:
-            cur.execute(
-                """
-                UPDATE bets.mlb_model_pick_ledger
-                SET model_tier = %s,
-                    warning_reasons = %s,
-                    stake_pct = %s,
-                    kelly_fraction = %s,
-                    ev = %s,
-                    model_meta = model_meta || %s::jsonb
-                WHERE pick_key = %s
-                  AND source = 'game'
-                  AND result_status = 'pending'
-                """,
-                (
-                    row.get("model_tier"),
-                    row.get("warning_reasons"),
-                    row.get("stake_pct"),
-                    row.get("kelly_fraction"),
-                    row.get("ev"),
-                    json.dumps({
-                        "model_pick_label_synced_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-                    }),
-                    row.get("pick_key"),
-                ),
-            )
-            updated += cur.rowcount
-    conn.commit()
-    return updated
-
-
 def insert_game_model_pick_ledger(conn, rows: list[dict[str, Any]], *, fd_links=None, cfg=None) -> int:
     thresholds = _cfg_thresholds(cfg)
     out: list[dict[str, Any]] = []
@@ -260,7 +258,7 @@ def insert_game_model_pick_ledger(conn, rows: list[dict[str, Any]], *, fd_links=
         slug = row.get("game_slug")
         home = row.get("home_team_abbr")
         away = row.get("away_team_abbr")
-        fd = (fd_links or {}).get((home, away))
+        fd = (fd_links or {}).get(slug) or (fd_links or {}).get((home, away))
 
         edge_rl = _clean_float(row.get("edge_run_line"))
         home_line = _clean_float(row.get("market_run_line"))
@@ -380,9 +378,6 @@ def insert_game_model_pick_ledger(conn, rows: list[dict[str, Any]], *, fd_links=
     filled = backfill_missing_game_model_pick_probabilities(conn)
     if filled:
         log.info("Filled %d MLB game model-pick probability gaps from locked edge/sigma", filled)
-    synced = sync_pending_game_model_pick_metadata(conn, out)
-    if synced:
-        log.info("Synced %d pending MLB game model-pick tier labels", synced)
     return inserted
 
 
@@ -402,7 +397,7 @@ def insert_prop_model_pick_ledger(conn, rows: list[dict[str, Any]], *, prop_line
         stat = row.get("stat")
         norm = _normalize_name(name)
         ld = (prop_lines or {}).get((norm, stat), {})
-        link = ld.get("over_link") if side == "over" else ld.get("under_link")
+        link = row.get("bet_link") or (ld.get("over_link") if side == "over" else ld.get("under_link"))
         bookmaker = row.get("bookmaker_key")
         if side == "under" and ld.get("under_link_book"):
             bookmaker = ld.get("under_link_book")
@@ -410,13 +405,22 @@ def insert_prop_model_pick_ledger(conn, rows: list[dict[str, Any]], *, prop_line
         p_over = _clean_float(row.get("pred_prob_over"))
         model_prob = p_over if side == "over" else (1.0 - p_over if p_over is not None else None)
         line = _clean_float(row.get("book_line"))
+        prop_offer_id = _clean_int(row.get("prop_offer_id"))
+        prop_offer_source_row_id = _clean_int(row.get("prop_offer_source_row_id"))
         out.append({
-            "pick_key": _pick_key("mlb", "model", "prop", row.get("game_date_et"), row.get("game_slug"), row.get("player_id"), stat, side),
+            "pick_key": _pick_key(
+                "mlb", "model", "prop", row.get("game_date_et"), row.get("game_slug"),
+                row.get("player_id"), stat, side, line, bookmaker,
+                prop_offer_id or row.get("prediction_key") or link,
+            ),
             "source": "prop",
             "game_date_et": row.get("game_date_et"),
             "game_slug": row.get("game_slug"),
             "market": stat,
             "stat": stat,
+            "prediction_key": row.get("prediction_key"),
+            "prop_offer_id": prop_offer_id,
+            "prop_offer_source_row_id": prop_offer_source_row_id,
             "side": side,
             "label": f"{name} {stat} {side} {line}",
             "team_abbr": row.get("team_abbr"),
@@ -441,10 +445,15 @@ def insert_prop_model_pick_ledger(conn, rows: list[dict[str, Any]], *, prop_line
             "model_tier": row.get("bankroll_tier"),
             "warning_reasons": row.get("bankroll_reasons"),
             "stake_pct": _clean_float(row.get("stake_pct")),
+            "stake_usd": _clean_float(row.get("stake_usd")),
+            "minimum_acceptable_price": _clean_float(row.get("minimum_acceptable_price")),
             "model_meta": {
                 "model_family": row.get("model_family"),
                 "line_bucket": row.get("line_bucket"),
                 "bookmaker_key": row.get("bookmaker_key"),
+                "prediction_key": row.get("prediction_key"),
+                "prop_offer_id": prop_offer_id,
+                "prop_offer_source_row_id": prop_offer_source_row_id,
             },
             "thresholds": thresholds,
         })
@@ -490,7 +499,6 @@ def _grade_game_model_pick_ledger(conn) -> int:
         )
         finals = {r["game_slug"]: r for r in cur.fetchall()}
 
-    closes = _load_game_closes(conn, list({r["game_date_et"] for r in rows}))
     updated = 0
     with conn.cursor() as cur:
         for row in rows:
@@ -517,30 +525,19 @@ def _grade_game_model_pick_ledger(conn) -> int:
                 over_hit = actual_total > market_line
                 won = None if push else (over_hit if side == "over" else not over_hit)
 
-            close = closes.get((row["home_team_abbr"], row["away_team_abbr"], row["game_date_et"]))
+            close = resolve_valid_game_close(conn, dict(row))
             closing_line = closing_price = clv_line = clv_price = None
-            if close:
-                if row["market"] == "run_line":
-                    closing_line = _clean_float(close.get("closing_run_line"))
-                    if side == "home":
-                        closing_price = _clean_float(close.get("closing_rl_home_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(market_line - closing_line, 2)
-                    else:
-                        closing_price = _clean_float(close.get("closing_rl_away_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(closing_line - market_line, 2)
-                elif row["market"] == "total":
-                    closing_line = _clean_float(close.get("closing_total"))
-                    if side == "over":
-                        closing_price = _clean_float(close.get("closing_total_over_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(closing_line - market_line, 2)
-                    else:
-                        closing_price = _clean_float(close.get("closing_total_under_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(market_line - closing_line, 2)
-                clv_price = _price_clv(row["market_price"], closing_price)
+            if close["valid"]:
+                closing_line = _clean_float(close.get("closing_line"))
+                closing_price = _clean_float(close.get("closing_price"))
+                clv_line = game_line_clv(
+                    row["market"],
+                    side,
+                    close.get("entry_line"),
+                    closing_line,
+                )
+                if close.get("entry_line") == closing_line:
+                    clv_price = _price_clv(close.get("entry_price"), closing_price)
 
             profit = _profit_units(won, push, row["market_price"])
             cur.execute(
@@ -559,6 +556,9 @@ def _grade_game_model_pick_ledger(conn) -> int:
                     closing_price = %s,
                     clv_line = %s,
                     clv_price = %s,
+                    clv_valid = %s,
+                    clv_status = %s,
+                    clv_unknown_reason = %s,
                     graded_at_utc = NOW(),
                     grade_source = 'raw.mlb_games'
                 WHERE id = %s
@@ -576,6 +576,9 @@ def _grade_game_model_pick_ledger(conn) -> int:
                     closing_price,
                     clv_line,
                     clv_price,
+                    close["valid"],
+                    close["status"],
+                    close["unknown_reason"],
                     row["id"],
                 ),
             )
@@ -592,7 +595,7 @@ def _grade_prop_model_pick_ledger(conn) -> int:
             SELECT *
             FROM bets.mlb_model_pick_ledger
             WHERE source = 'prop'
-              AND result_status = 'pending'
+              AND (result_status = 'pending' OR clv_status IS NULL)
               AND game_date_et <= %s
             """,
             (today,),
@@ -640,9 +643,15 @@ def _grade_prop_model_pick_ledger(conn) -> int:
             if actual_value is None or market_line is None:
                 continue
             push = abs(actual_value - market_line) <= 1e-9
-            over_hit = actual_value > market_line
+            over_hit = None if push else actual_value > market_line
             won = None if push else (over_hit if row["side"] == "over" else not over_hit)
-            closing_line, closing_price, _, _ = _prop_close(conn, row)
+            close = resolve_valid_prop_close(conn, dict(row))
+            closing_line = closing_price = None
+            if close["valid"]:
+                closing_line = _clean_float(close.get("line"))
+                closing_price = _clean_float(
+                    close.get("over_price") if row["side"] == "over" else close.get("under_price")
+                )
             clv_line = None
             if closing_line is not None:
                 clv_line = round(closing_line - market_line, 2) if row["side"] == "over" else round(market_line - closing_line, 2)
@@ -661,6 +670,10 @@ def _grade_prop_model_pick_ledger(conn) -> int:
                     closing_price = %s,
                     clv_line = %s,
                     clv_price = %s,
+                    closing_snapshot_id = %s,
+                    clv_valid = %s,
+                    clv_status = %s,
+                    clv_unknown_reason = %s,
                     graded_at_utc = NOW(),
                     grade_source = 'raw.mlb_player_gamelogs'
                 WHERE id = %s
@@ -675,6 +688,10 @@ def _grade_prop_model_pick_ledger(conn) -> int:
                     closing_price,
                     clv_line,
                     clv_price,
+                    close.get("snapshot_id") if close["valid"] else None,
+                    close["valid"],
+                    close["status"],
+                    close["unknown_reason"],
                     row["id"],
                 ),
             )

@@ -68,6 +68,27 @@ def _get(path: str, params: dict | None = None, timeout: int = 20) -> dict:
 # Schedule fetch + mlb_games upsert
 # ---------------------------------------------------------------------------
 
+_FINAL_DETAILED_STATES = {"Final", "Completed Early", "Game Over"}
+_POSTPONED_DETAILED_STATES = {"Postponed", "Cancelled", "Canceled", "Suspended"}
+_LIVE_DETAILED_STATES = {"In Progress", "Delayed", "Delayed: Rain", "Manager Challenge"}
+
+
+def _status_from_schedule_game(game: dict) -> str:
+    """Normalize MLB Stats API status without treating postponed games as final."""
+    status = game.get("status") or {}
+    detailed = str(status.get("detailedState") or "")
+    abstract = str(status.get("abstractGameState") or "")
+    coded = str(status.get("codedGameState") or "")
+
+    if detailed in _POSTPONED_DETAILED_STATES:
+        return "postponed"
+    if abstract == "Final" or detailed in _FINAL_DETAILED_STATES or coded in {"F", "O"}:
+        return "final"
+    if abstract == "Live" or detailed in _LIVE_DETAILED_STATES:
+        return "in_progress"
+    return "scheduled"
+
+
 def fetch_schedule(season_slug: str, start_date: str | None = None, end_date: str | None = None) -> list[dict]:
     """
     Fetch the full regular-season schedule from MLB Stats API.
@@ -189,16 +210,16 @@ def upsert_mlb_games_from_schedule(conn, games: list[dict], season_slug: str) ->
         venue = g.get("venue", {})
         venue_id = venue.get("id")  # integer venue ID from MLB Stats API
 
-        status_detail = g.get("status", {}).get("detailedState", "")
-        if status_detail == "Final":
-            status = "final"
-        elif status_detail in ("In Progress", "Delayed: Rain"):
-            status = "in_progress"
-        else:
-            status = "scheduled"
+        status = _status_from_schedule_game(g)
 
         home_score = teams.get("home", {}).get("score")
         away_score = teams.get("away", {}).get("score")
+        if status not in {"in_progress", "final"}:
+            # Stats API emits 0-0 score fields for some unplayed schedule rows.
+            # Keep those NULL so downstream completed-game checks cannot mistake
+            # a scheduled game for a result.
+            home_score = None
+            away_score = None
 
         rows.append({
             "game_slug": slug,
@@ -208,6 +229,7 @@ def upsert_mlb_games_from_schedule(conn, games: list[dict], season_slug: str) ->
             "home_team_abbr": home_abbr,
             "away_team_abbr": away_abbr,
             "venue_id": venue_id,
+            "source_game_id": g.get("gamePk"),
             "status": status,
             "home_score": home_score,
             "away_score": away_score,
@@ -217,15 +239,31 @@ def upsert_mlb_games_from_schedule(conn, games: list[dict], season_slug: str) ->
     if not rows:
         return 0
 
+    with conn.cursor() as cur:
+        cur.execute("""
+            ALTER TABLE raw.mlb_games
+                ADD COLUMN IF NOT EXISTS source_game_id BIGINT;
+            CREATE INDEX IF NOT EXISTS idx_mlb_games_source_game_id
+                ON raw.mlb_games (source_game_id)
+                WHERE source_game_id IS NOT NULL;
+        """)
+
     sql = """
     INSERT INTO raw.mlb_games (
         game_slug, season, game_date_et, start_ts_utc,
-        home_team_abbr, away_team_abbr, venue_id,
+        home_team_abbr, away_team_abbr, venue_id, source_game_id,
         status, home_score, away_score,
         source_fetched_at_utc, updated_at_utc
     )
     VALUES %s
     ON CONFLICT (game_slug) DO UPDATE SET
+        season               = EXCLUDED.season,
+        game_date_et         = EXCLUDED.game_date_et,
+        start_ts_utc         = EXCLUDED.start_ts_utc,
+        home_team_abbr       = EXCLUDED.home_team_abbr,
+        away_team_abbr       = EXCLUDED.away_team_abbr,
+        venue_id             = EXCLUDED.venue_id,
+        source_game_id       = EXCLUDED.source_game_id,
         status               = EXCLUDED.status,
         home_score           = EXCLUDED.home_score,
         away_score           = EXCLUDED.away_score,
@@ -238,14 +276,47 @@ def upsert_mlb_games_from_schedule(conn, games: list[dict], season_slug: str) ->
             cur, sql, rows,
             template="""(
                 %(game_slug)s, %(season)s, %(game_date_et)s, %(start_ts_utc)s,
-                %(home_team_abbr)s, %(away_team_abbr)s, %(venue_id)s,
+                %(home_team_abbr)s, %(away_team_abbr)s, %(venue_id)s, %(source_game_id)s,
                 %(status)s, %(home_score)s, %(away_score)s,
                 %(source_fetched_at_utc)s, now()
             )""",
             page_size=500,
         )
+
+        current_ids = [
+            {"source_game_id": row["source_game_id"], "game_slug": row["game_slug"]}
+            for row in rows
+            if row["source_game_id"] is not None
+        ]
+        if current_ids:
+            execute_values(
+                cur,
+                """
+                UPDATE raw.mlb_games AS old
+                SET status = 'postponed',
+                    updated_at_utc = now()
+                FROM (VALUES %s) AS current(source_game_id, game_slug)
+                WHERE old.source_game_id = current.source_game_id
+                  AND old.game_slug <> current.game_slug
+                  AND old.status <> 'final'
+                """,
+                current_ids,
+                template="(%(source_game_id)s, %(game_slug)s)",
+                page_size=500,
+            )
+
+        cur.execute("""
+            UPDATE raw.mlb_games
+            SET status = 'postponed',
+                updated_at_utc = now()
+            WHERE status IN ('scheduled', 'in_progress')
+              AND start_ts_utc < now() - INTERVAL '24 hours'
+        """)
+        stale_count = cur.rowcount
     conn.commit()
     log.info("Upserted %d rows into raw.mlb_games", len(rows))
+    if stale_count:
+        log.info("Marked %d stale unfinished MLB game rows as postponed", stale_count)
     return len(rows)
 
 
@@ -1009,7 +1080,7 @@ def backfill_season(
         if slug not in already_done and slug in schedule_index
     ]
 
-    if max_games:
+    if max_games is not None:
         to_fetch = to_fetch[:max_games]
 
     log.info(

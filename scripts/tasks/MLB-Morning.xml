@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="UTF-16"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
-    <Description>SuperNovaBets MLB — Full morning pipeline (crawl, parse, train, predict, Discord)</Description>
+    <Description>SuperNovaBets MLB - Morning operational pipeline (crawl, parse, predict, shadow lock, Discord)</Description>
     <Author>SuperNovaBets</Author>
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2026-01-01T08:00:00</StartBoundary>
+      <StartBoundary>2026-01-01T06:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByDay>
         <DaysInterval>1</DaysInterval>
@@ -16,16 +16,17 @@
   <Principals>
     <Principal id="Author">
       <LogonType>InteractiveToken</LogonType>
-      <RunLevel>HighestAvailable</RunLevel>
+      <RunLevel>LeastPrivilege</RunLevel>
     </Principal>
   </Principals>
   <Settings>
     <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
     <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    <ExecutionTimeLimit>PT6H</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT3H</ExecutionTimeLimit>
     <StartWhenAvailable>true</StartWhenAvailable>
     <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
+    <WakeToRun>true</WakeToRun>
     <Enabled>true</Enabled>
   </Settings>
   <Actions Context="Author">

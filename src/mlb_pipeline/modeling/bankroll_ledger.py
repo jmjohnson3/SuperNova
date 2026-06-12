@@ -9,17 +9,27 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import unicodedata
 from datetime import datetime, timezone
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+import psycopg2
 import psycopg2.extras
+
+from .game_line_clv import game_line_clv, resolve_valid_game_close
+from .prop_offer_snapshots import (
+    ensure_prop_offer_snapshot_schema,
+    resolve_valid_prop_close,
+)
 
 log = logging.getLogger("mlb_pipeline.modeling.bankroll_ledger")
 
 _ET = ZoneInfo("America/New_York")
+_SCHEMA_READY = False
+_SCHEMA_LOCK_KEY = "mlb_prop_schema_ddl"
 
 _STAT_COL = {
     "pitcher_strikeouts": "strikeouts_pitcher",
@@ -32,8 +42,9 @@ _STAT_COL = {
 
 def _normalize_name(name: str) -> str:
     s = unicodedata.normalize("NFKD", name or "")
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    return " ".join(s.lower().replace(".", "").split())
+    ascii_str = s.encode("ascii", "ignore").decode("ascii")
+    ascii_str = re.sub(r"[^a-z0-9\s]", "", ascii_str.lower())
+    return re.sub(r"\s+", " ", ascii_str).strip()
 
 
 def _clean_float(value) -> float | None:
@@ -62,6 +73,104 @@ def _json(data: dict[str, Any] | None) -> psycopg2.extras.Json:
 def _pick_key(*parts: Any) -> str:
     raw = "|".join("" if p is None else str(p) for p in parts)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:40]
+
+
+def game_bankroll_pick_key(row: dict[str, Any], market: str) -> str | None:
+    if market == "run_line":
+        side = row.get("run_line_bet_side")
+    elif market == "total":
+        side = row.get("total_bet_side")
+    else:
+        return None
+    if not side:
+        return None
+    return _pick_key(
+        "mlb",
+        "game",
+        row.get("game_date_et"),
+        row.get("game_slug"),
+        market,
+        side,
+    )
+
+
+def game_bankroll_risk_slot(row: dict[str, Any], market: str) -> str | None:
+    if market not in {"run_line", "total"}:
+        return None
+    return _pick_key(
+        "mlb",
+        "bankroll_risk",
+        "game",
+        row.get("game_date_et"),
+        row.get("game_slug"),
+        market,
+    )
+
+
+def _prop_link_bookmaker(
+    row: dict[str, Any],
+    prop_lines=None,
+) -> tuple[str | None, str | None]:
+    side = (row.get("bet_side") or "").lower()
+    name = row.get("player_name") or ""
+    stat = row.get("stat")
+    norm = _normalize_name(name)
+    ld = (prop_lines or {}).get((norm, stat), {})
+    link = row.get("bet_link") or (
+        ld.get("over_link") if side == "over" else ld.get("under_link")
+    )
+    bookmaker = row.get("bookmaker_key")
+    if link and "fanduel.com" in link:
+        bookmaker = "fanduel"
+    elif link and "draftkings.com" in link:
+        bookmaker = "draftkings"
+    elif side == "under" and ld.get("under_link_book"):
+        bookmaker = ld.get("under_link_book")
+    return link, bookmaker
+
+
+def prop_bankroll_pick_key(row: dict[str, Any], prop_lines=None) -> str | None:
+    side = (row.get("bet_side") or "").lower()
+    if side not in {"over", "under"}:
+        return None
+    link, bookmaker = _prop_link_bookmaker(row, prop_lines)
+    line = _clean_float(row.get("book_line"))
+    prop_offer_id = _clean_int(row.get("prop_offer_id"))
+    return _pick_key(
+        "mlb",
+        "prop",
+        row.get("game_date_et"),
+        row.get("game_slug"),
+        row.get("player_id"),
+        row.get("stat"),
+        side,
+        line,
+        bookmaker,
+        prop_offer_id or row.get("prediction_key") or link,
+    )
+
+
+def prop_bankroll_risk_slot(row: dict[str, Any]) -> str | None:
+    if not row.get("stat"):
+        return None
+    return _pick_key(
+        "mlb",
+        "bankroll_risk",
+        "prop",
+        row.get("game_date_et"),
+        row.get("game_slug"),
+        row.get("player_id"),
+        row.get("stat"),
+    )
+
+
+def _ledger_risk_slot(row: dict[str, Any]) -> str | None:
+    source = row.get("source")
+    if source == "game":
+        return game_bankroll_risk_slot(row, row.get("market"))
+    if source == "prop":
+        return prop_bankroll_risk_slot(row)
+    return None
 
 
 def _american_profit_mult(price) -> float | None:
@@ -135,125 +244,305 @@ def _cfg_thresholds(cfg) -> dict[str, Any]:
         "bankroll_max_stake_pct",
         "bankroll_max_daily_exposure_pct",
         "bankroll_max_lay_price",
+        "bankroll_reference_usd",
+        "bankroll_micro_stake_usd",
+        "bankroll_starter_stake_pct",
     ]
     return {key: getattr(cfg, key) for key in keys if hasattr(cfg, key)}
 
 
 def ensure_bankroll_ledger_schema(conn) -> None:
+    global _SCHEMA_READY
+    if _SCHEMA_READY:
+        return
+    if _bankroll_ledger_exists(conn) and _bankroll_ledger_has_required_columns(conn):
+        _SCHEMA_READY = True
+        return
+    try:
+        ensure_prop_offer_snapshot_schema(conn)
+        with conn.cursor() as cur:
+            cur.execute("SET LOCAL lock_timeout = '2s'")
+            cur.execute("SET LOCAL statement_timeout = '15s'")
+            cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (_SCHEMA_LOCK_KEY,))
+            cur.execute(
+                """
+                CREATE SCHEMA IF NOT EXISTS bets;
+                CREATE TABLE IF NOT EXISTS bets.mlb_bankroll_ledger (
+                    id BIGSERIAL PRIMARY KEY,
+                    pick_key TEXT NOT NULL UNIQUE,
+                    inserted_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    sport TEXT NOT NULL DEFAULT 'mlb',
+                    source TEXT NOT NULL,
+                    game_date_et DATE NOT NULL,
+                    game_slug TEXT NOT NULL,
+                    market TEXT NOT NULL,
+                    stat TEXT,
+                    prediction_key TEXT,
+                    prop_offer_id BIGINT,
+                    prop_offer_source_row_id INTEGER,
+                    side TEXT NOT NULL,
+                    label TEXT,
+                    team_abbr TEXT,
+                    opponent_abbr TEXT,
+                    home_team_abbr TEXT,
+                    away_team_abbr TEXT,
+                    player_id BIGINT,
+                    player_name TEXT,
+                    player_name_norm TEXT,
+                    bookmaker_key TEXT,
+                    market_line NUMERIC,
+                    bet_line NUMERIC,
+                    market_price NUMERIC,
+                    minimum_acceptable_price NUMERIC,
+                    link TEXT,
+                    pred_value NUMERIC,
+                    pred_count NUMERIC,
+                    model_prob NUMERIC,
+                    edge NUMERIC,
+                    edge_type TEXT,
+                    ev NUMERIC,
+                    kelly_fraction NUMERIC,
+                    bankroll_tier TEXT,
+                    bankroll_reasons TEXT,
+                    stake_pct NUMERIC,
+                    stake_usd NUMERIC,
+                    model_meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    thresholds JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    result_status TEXT NOT NULL DEFAULT 'pending',
+                    won BOOLEAN,
+                    push BOOLEAN NOT NULL DEFAULT FALSE,
+                    profit_units NUMERIC,
+                    actual_value NUMERIC,
+                    actual_home_score NUMERIC,
+                    actual_away_score NUMERIC,
+                    actual_run_diff NUMERIC,
+                    actual_total NUMERIC,
+                    over_hit BOOLEAN,
+                    closing_line NUMERIC,
+                    closing_price NUMERIC,
+                    clv_line NUMERIC,
+                    clv_price NUMERIC,
+                    closing_snapshot_id BIGINT,
+                    lock_snapshot_id BIGINT,
+                    locked_at_utc TIMESTAMPTZ,
+                    clv_valid BOOLEAN,
+                    clv_status TEXT,
+                    clv_unknown_reason TEXT,
+                    graded_at_utc TIMESTAMPTZ,
+                    grade_source TEXT
+                );
+                ALTER TABLE bets.mlb_bankroll_ledger
+                    ADD COLUMN IF NOT EXISTS model_meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    ADD COLUMN IF NOT EXISTS thresholds JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    ADD COLUMN IF NOT EXISTS prediction_key TEXT,
+                    ADD COLUMN IF NOT EXISTS prop_offer_id BIGINT,
+                    ADD COLUMN IF NOT EXISTS prop_offer_source_row_id INTEGER,
+                    ADD COLUMN IF NOT EXISTS bookmaker_key TEXT,
+                    ADD COLUMN IF NOT EXISTS bet_line NUMERIC,
+                    ADD COLUMN IF NOT EXISTS minimum_acceptable_price NUMERIC,
+                    ADD COLUMN IF NOT EXISTS player_name_norm TEXT,
+                    ADD COLUMN IF NOT EXISTS push BOOLEAN NOT NULL DEFAULT FALSE,
+                    ADD COLUMN IF NOT EXISTS clv_price NUMERIC,
+                    ADD COLUMN IF NOT EXISTS closing_snapshot_id BIGINT,
+                    ADD COLUMN IF NOT EXISTS lock_snapshot_id BIGINT,
+                    ADD COLUMN IF NOT EXISTS locked_at_utc TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS clv_valid BOOLEAN,
+                    ADD COLUMN IF NOT EXISTS clv_status TEXT,
+                    ADD COLUMN IF NOT EXISTS clv_unknown_reason TEXT;
+                ALTER TABLE bets.mlb_bankroll_ledger
+                    ADD COLUMN IF NOT EXISTS stake_usd NUMERIC;
+                UPDATE bets.mlb_bankroll_ledger
+                SET bet_line = CASE
+                    WHEN market = 'run_line' AND side = 'away' THEN -market_line
+                    ELSE market_line
+                END
+                WHERE bet_line IS NULL
+                  AND market_line IS NOT NULL;
+                CREATE INDEX IF NOT EXISTS idx_mlb_bankroll_ledger_date
+                    ON bets.mlb_bankroll_ledger (game_date_et);
+                CREATE INDEX IF NOT EXISTS idx_mlb_bankroll_ledger_pending
+                    ON bets.mlb_bankroll_ledger (result_status, game_date_et);
+                CREATE INDEX IF NOT EXISTS idx_mlb_bankroll_ledger_prop_offer
+                    ON bets.mlb_bankroll_ledger (prop_offer_id);
+                """
+            )
+        conn.commit()
+        _SCHEMA_READY = True
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def _is_schema_lock_error(exc: Exception) -> bool:
+    return getattr(exc, "pgcode", None) in {"40P01", "55P03"}
+
+
+def _bankroll_ledger_exists(conn) -> bool:
+    with conn.cursor() as cur:
+        cur.execute("SELECT to_regclass('bets.mlb_bankroll_ledger')")
+        return cur.fetchone()[0] is not None
+
+
+def _bankroll_ledger_has_required_columns(conn) -> bool:
+    required = {
+        "pick_key", "source", "game_date_et", "game_slug", "market", "side",
+        "prediction_key", "prop_offer_id", "prop_offer_source_row_id",
+        "bookmaker_key", "market_line", "bet_line", "market_price",
+        "minimum_acceptable_price", "stake_pct", "stake_usd", "model_meta",
+        "thresholds", "result_status", "profit_units", "lock_snapshot_id",
+        "locked_at_utc", "clv_valid", "clv_status", "clv_unknown_reason",
+    }
     with conn.cursor() as cur:
         cur.execute(
             """
-            CREATE SCHEMA IF NOT EXISTS bets;
-            CREATE TABLE IF NOT EXISTS bets.mlb_bankroll_ledger (
-                id BIGSERIAL PRIMARY KEY,
-                pick_key TEXT NOT NULL UNIQUE,
-                inserted_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                sport TEXT NOT NULL DEFAULT 'mlb',
-                source TEXT NOT NULL,
-                game_date_et DATE NOT NULL,
-                game_slug TEXT NOT NULL,
-                market TEXT NOT NULL,
-                stat TEXT,
-                side TEXT NOT NULL,
-                label TEXT,
-                team_abbr TEXT,
-                opponent_abbr TEXT,
-                home_team_abbr TEXT,
-                away_team_abbr TEXT,
-                player_id BIGINT,
-                player_name TEXT,
-                player_name_norm TEXT,
-                bookmaker_key TEXT,
-                market_line NUMERIC,
-                bet_line NUMERIC,
-                market_price NUMERIC,
-                link TEXT,
-                pred_value NUMERIC,
-                pred_count NUMERIC,
-                model_prob NUMERIC,
-                edge NUMERIC,
-                edge_type TEXT,
-                ev NUMERIC,
-                kelly_fraction NUMERIC,
-                bankroll_tier TEXT,
-                bankroll_reasons TEXT,
-                stake_pct NUMERIC,
-                model_meta JSONB NOT NULL DEFAULT '{}'::jsonb,
-                thresholds JSONB NOT NULL DEFAULT '{}'::jsonb,
-                result_status TEXT NOT NULL DEFAULT 'pending',
-                won BOOLEAN,
-                push BOOLEAN NOT NULL DEFAULT FALSE,
-                profit_units NUMERIC,
-                actual_value NUMERIC,
-                actual_home_score NUMERIC,
-                actual_away_score NUMERIC,
-                actual_run_diff NUMERIC,
-                actual_total NUMERIC,
-                over_hit BOOLEAN,
-                closing_line NUMERIC,
-                closing_price NUMERIC,
-                clv_line NUMERIC,
-                clv_price NUMERIC,
-                graded_at_utc TIMESTAMPTZ,
-                grade_source TEXT
-            );
-            ALTER TABLE bets.mlb_bankroll_ledger
-                ADD COLUMN IF NOT EXISTS model_meta JSONB NOT NULL DEFAULT '{}'::jsonb,
-                ADD COLUMN IF NOT EXISTS thresholds JSONB NOT NULL DEFAULT '{}'::jsonb,
-                ADD COLUMN IF NOT EXISTS bookmaker_key TEXT,
-                ADD COLUMN IF NOT EXISTS bet_line NUMERIC,
-                ADD COLUMN IF NOT EXISTS player_name_norm TEXT,
-                ADD COLUMN IF NOT EXISTS push BOOLEAN NOT NULL DEFAULT FALSE,
-                ADD COLUMN IF NOT EXISTS clv_price NUMERIC;
-            UPDATE bets.mlb_bankroll_ledger
-            SET bet_line = CASE
-                WHEN market = 'run_line' AND side = 'away' THEN -market_line
-                ELSE market_line
-            END
-            WHERE bet_line IS NULL
-              AND market_line IS NOT NULL;
-            CREATE INDEX IF NOT EXISTS idx_mlb_bankroll_ledger_date
-                ON bets.mlb_bankroll_ledger (game_date_et);
-            CREATE INDEX IF NOT EXISTS idx_mlb_bankroll_ledger_pending
-                ON bets.mlb_bankroll_ledger (result_status, game_date_et);
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'bets'
+              AND table_name = 'mlb_bankroll_ledger'
             """
         )
+        existing = {str(row[0]) for row in cur.fetchall()}
+    return required.issubset(existing)
 
 
 _INSERT_SQL = """
 INSERT INTO bets.mlb_bankroll_ledger (
-    pick_key, source, game_date_et, game_slug, market, stat, side, label,
+    pick_key, source, game_date_et, game_slug, market, stat,
+    prediction_key, prop_offer_id, prop_offer_source_row_id, side, label,
     team_abbr, opponent_abbr, home_team_abbr, away_team_abbr,
     player_id, player_name, player_name_norm, bookmaker_key,
     market_line, bet_line, market_price, link, pred_value, pred_count, model_prob,
     edge, edge_type, ev, kelly_fraction, bankroll_tier, bankroll_reasons,
-    stake_pct, model_meta, thresholds
+    stake_pct, stake_usd, minimum_acceptable_price, locked_at_utc, model_meta, thresholds
 ) VALUES (
     %(pick_key)s, %(source)s, %(game_date_et)s, %(game_slug)s, %(market)s, %(stat)s,
+    %(prediction_key)s, %(prop_offer_id)s, %(prop_offer_source_row_id)s,
     %(side)s, %(label)s, %(team_abbr)s, %(opponent_abbr)s, %(home_team_abbr)s,
     %(away_team_abbr)s, %(player_id)s, %(player_name)s, %(player_name_norm)s,
     %(bookmaker_key)s, %(market_line)s, %(bet_line)s, %(market_price)s, %(link)s,
     %(pred_value)s, %(pred_count)s, %(model_prob)s, %(edge)s, %(edge_type)s, %(ev)s,
     %(kelly_fraction)s, %(bankroll_tier)s, %(bankroll_reasons)s, %(stake_pct)s,
-    %(model_meta)s, %(thresholds)s
+    %(stake_usd)s, %(minimum_acceptable_price)s, %(locked_at_utc)s, %(model_meta)s, %(thresholds)s
 ) ON CONFLICT (pick_key) DO NOTHING
 """
 
 
-def insert_ledger_rows(conn, rows: Iterable[dict[str, Any]]) -> int:
+def _locked_bankroll_state_for_date(cur, game_date_et) -> tuple[float, set[str], set[str]]:
+    cur.execute(
+        """
+        SELECT
+            pick_key, source, game_date_et, game_slug, market, stat, player_id,
+            COALESCE(stake_pct, 0) AS stake_pct
+        FROM bets.mlb_bankroll_ledger
+        WHERE game_date_et = %s
+          AND result_status <> 'voided'
+        """,
+        (game_date_et,),
+    )
+    exposure = 0.0
+    pick_keys: set[str] = set()
+    risk_slots: set[str] = set()
+    for row in cur.fetchall():
+        if not isinstance(row, dict):
+            row = {
+                "pick_key": row[0],
+                "source": row[1],
+                "game_date_et": row[2],
+                "game_slug": row[3],
+                "market": row[4],
+                "stat": row[5],
+                "player_id": row[6],
+                "stake_pct": row[7],
+            }
+        pick_keys.add(row["pick_key"])
+        slot = _ledger_risk_slot(row)
+        if slot:
+            risk_slots.add(slot)
+        exposure += max(_clean_float(row.get("stake_pct")) or 0.0, 0.0)
+    return exposure, pick_keys, risk_slots
+
+
+def locked_bankroll_state(conn, game_date_et) -> tuple[float, set[str], set[str]]:
+    """Return non-voided daily exposure, exact pick keys, and occupied risk slots."""
+    try:
+        ensure_bankroll_ledger_schema(conn)
+    except psycopg2.Error as exc:
+        conn.rollback()
+        if not _is_schema_lock_error(exc) or not _bankroll_ledger_exists(conn):
+            raise
+        log.warning(
+            "Bankroll ledger schema ensure hit transient lock/deadlock; "
+            "reading existing ledger state without running DDL",
+            exc_info=True,
+        )
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        return _locked_bankroll_state_for_date(cur, game_date_et)
+
+
+def insert_ledger_rows(
+    conn,
+    rows: Iterable[dict[str, Any]],
+    *,
+    max_daily_exposure_pct: float | None = None,
+) -> int:
     payload = list(rows)
     if not payload:
         return 0
     ensure_bankroll_ledger_schema(conn)
+    cap = _clean_float(max_daily_exposure_pct)
     for row in payload:
+        row.setdefault("prediction_key", None)
+        row.setdefault("prop_offer_id", None)
+        row.setdefault("prop_offer_source_row_id", None)
+        row.setdefault("stake_usd", None)
+        row.setdefault("minimum_acceptable_price", None)
+        row.setdefault("locked_at_utc", datetime.now(timezone.utc))
         row["model_meta"] = _json(row.get("model_meta"))
         row["thresholds"] = _json(row.get("thresholds"))
-    with conn.cursor() as cur:
+    rows_by_date: dict[Any, list[dict[str, Any]]] = {}
+    for row in payload:
+        rows_by_date.setdefault(row.get("game_date_et"), []).append(row)
+
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         inserted = 0
-        for row in payload:
-            cur.execute(_INSERT_SQL + " RETURNING id", row)
-            if cur.fetchone() is not None:
-                inserted += 1
+        for game_date_et, date_rows in rows_by_date.items():
+            cur.execute(
+                "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                (f"mlb_bankroll_ledger:{game_date_et}",),
+            )
+            exposure, pick_keys, risk_slots = _locked_bankroll_state_for_date(
+                cur,
+                game_date_et,
+            )
+            for row in date_rows:
+                pick_key = row.get("pick_key")
+                if pick_key in pick_keys:
+                    continue
+                risk_slot = _ledger_risk_slot(row)
+                if risk_slot and risk_slot in risk_slots:
+                    log.warning(
+                        "Skipped MLB bankroll lock for occupied risk slot: %s",
+                        row.get("label") or pick_key,
+                    )
+                    continue
+                stake = max(_clean_float(row.get("stake_pct")) or 0.0, 0.0)
+                if cap is not None and exposure + stake > cap + 1e-12:
+                    log.warning(
+                        "Skipped MLB bankroll lock above daily cap: %s "
+                        "(used=%.4f stake=%.4f cap=%.4f)",
+                        row.get("label") or pick_key,
+                        exposure,
+                        stake,
+                        cap,
+                    )
+                    continue
+                cur.execute(_INSERT_SQL + " RETURNING id", row)
+                if cur.fetchone() is not None:
+                    inserted += 1
+                    exposure += stake
+                    pick_keys.add(pick_key)
+                    if risk_slot:
+                        risk_slots.add(risk_slot)
     conn.commit()
     return inserted
 
@@ -317,46 +606,6 @@ def void_negative_ev_game_bankroll_candidates(conn, cfg=None) -> int:
     return len(voids)
 
 
-def sync_pending_game_bankroll_metadata(conn, rows: Iterable[dict[str, Any]]) -> int:
-    payload = list(rows)
-    if not payload:
-        return 0
-    ensure_bankroll_ledger_schema(conn)
-    updated = 0
-    with conn.cursor() as cur:
-        for row in payload:
-            cur.execute(
-                """
-                UPDATE bets.mlb_bankroll_ledger
-                SET model_prob = %s,
-                    ev = %s,
-                    kelly_fraction = %s,
-                    bankroll_tier = %s,
-                    bankroll_reasons = %s,
-                    stake_pct = %s,
-                    model_meta = model_meta || %s::jsonb
-                WHERE pick_key = %s
-                  AND source = 'game'
-                  AND result_status = 'pending'
-                """,
-                (
-                    row.get("model_prob"),
-                    row.get("ev"),
-                    row.get("kelly_fraction"),
-                    row.get("bankroll_tier"),
-                    row.get("bankroll_reasons"),
-                    row.get("stake_pct"),
-                    json.dumps({
-                        "bankroll_label_synced_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-                    }),
-                    row.get("pick_key"),
-                ),
-            )
-            updated += cur.rowcount
-    conn.commit()
-    return updated
-
-
 def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=None, cfg=None) -> int:
     thresholds = _cfg_thresholds(cfg)
     out: list[dict[str, Any]] = []
@@ -365,7 +614,7 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
         slug = row.get("game_slug")
         home = row.get("home_team_abbr")
         away = row.get("away_team_abbr")
-        fd = (fd_links or {}).get((home, away))
+        fd = (fd_links or {}).get(slug) or (fd_links or {}).get((home, away))
 
         if row.get("bankroll_candidate_rl"):
             side = row.get("run_line_bet_side")
@@ -380,7 +629,7 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
             model_prob = _clean_float(row.get("win_prob_rl"))
             market_price = _clean_float(row.get("market_rl_price"))
             out.append({
-                "pick_key": _pick_key("mlb", "game", game_date, slug, "run_line", side),
+                "pick_key": game_bankroll_pick_key(row, "run_line"),
                 "source": "game",
                 "game_date_et": game_date,
                 "game_slug": slug,
@@ -427,7 +676,7 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
             model_prob = _clean_float(row.get("win_prob_total"))
             market_price = _clean_float(row.get("market_total_price"))
             out.append({
-                "pick_key": _pick_key("mlb", "game", game_date, slug, "total", side),
+                "pick_key": game_bankroll_pick_key(row, "total"),
                 "source": "game",
                 "game_date_et": game_date,
                 "game_slug": slug,
@@ -465,10 +714,8 @@ def insert_game_bankroll_ledger(conn, rows: list[dict[str, Any]], *, fd_links=No
                 },
                 "thresholds": thresholds,
             })
-    inserted = insert_ledger_rows(conn, out)
-    synced = sync_pending_game_bankroll_metadata(conn, out)
-    if synced:
-        log.info("Synced %d pending MLB game bankroll rows", synced)
+    cap = _clean_float(getattr(cfg, "bankroll_max_daily_exposure_pct", None)) if cfg else None
+    inserted = insert_ledger_rows(conn, out, max_daily_exposure_pct=cap)
     voided = void_negative_ev_game_bankroll_candidates(conn, cfg=cfg)
     if voided:
         log.info("Voided %d pending MLB game bankroll rows below price-adjusted EV minimum", voided)
@@ -487,23 +734,22 @@ def insert_prop_bankroll_ledger(conn, rows: list[dict[str, Any]], *, prop_lines=
         name = row.get("player_name") or ""
         stat = row.get("stat")
         norm = _normalize_name(name)
-        ld = (prop_lines or {}).get((norm, stat), {})
-        link = ld.get("over_link") if side == "over" else ld.get("under_link")
-        bookmaker = row.get("bookmaker_key")
-        if link and "fanduel.com" in link:
-            bookmaker = "fanduel"
-        elif side == "under" and ld.get("under_link_book"):
-            bookmaker = ld.get("under_link_book")
+        link, bookmaker = _prop_link_bookmaker(row, prop_lines)
         p_over = _clean_float(row.get("pred_prob_over"))
         model_prob = p_over if side == "over" else (1.0 - p_over if p_over is not None else None)
         line = _clean_float(row.get("book_line"))
+        prop_offer_id = _clean_int(row.get("prop_offer_id"))
+        prop_offer_source_row_id = _clean_int(row.get("prop_offer_source_row_id"))
         out.append({
-            "pick_key": _pick_key("mlb", "prop", row.get("game_date_et"), row.get("game_slug"), row.get("player_id"), stat, side),
+            "pick_key": prop_bankroll_pick_key(row, prop_lines),
             "source": "prop",
             "game_date_et": row.get("game_date_et"),
             "game_slug": row.get("game_slug"),
             "market": stat,
             "stat": stat,
+            "prediction_key": row.get("prediction_key"),
+            "prop_offer_id": prop_offer_id,
+            "prop_offer_source_row_id": prop_offer_source_row_id,
             "side": side,
             "label": f"{name} {stat} {side} {line}",
             "team_abbr": row.get("team_abbr"),
@@ -528,14 +774,20 @@ def insert_prop_bankroll_ledger(conn, rows: list[dict[str, Any]], *, prop_lines=
             "bankroll_tier": row.get("bankroll_tier"),
             "bankroll_reasons": row.get("bankroll_reasons"),
             "stake_pct": _clean_float(row.get("stake_pct")),
+            "stake_usd": _clean_float(row.get("stake_usd")),
+            "minimum_acceptable_price": _clean_float(row.get("minimum_acceptable_price")),
             "model_meta": {
                 "model_family": row.get("model_family"),
                 "line_bucket": row.get("line_bucket"),
                 "bookmaker_key": row.get("bookmaker_key"),
+                "prediction_key": row.get("prediction_key"),
+                "prop_offer_id": prop_offer_id,
+                "prop_offer_source_row_id": prop_offer_source_row_id,
             },
             "thresholds": thresholds,
         })
-    return insert_ledger_rows(conn, out)
+    cap = _clean_float(getattr(cfg, "bankroll_max_daily_exposure_pct", None)) if cfg else None
+    return insert_ledger_rows(conn, out, max_daily_exposure_pct=cap)
 
 
 def grade_bankroll_ledger(conn) -> int:
@@ -543,33 +795,6 @@ def grade_bankroll_ledger(conn) -> int:
     updated = _grade_game_ledger(conn) + _grade_prop_ledger(conn)
     conn.commit()
     return updated
-
-
-def _load_game_closes(conn, dates: list) -> dict[tuple, dict]:
-    if not dates:
-        return {}
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute(
-            """
-            SELECT DISTINCT ON (home_team, away_team, as_of_date)
-                home_team, away_team, as_of_date,
-                spread_home_points AS closing_run_line,
-                total_points AS closing_total,
-                spread_home_price AS closing_rl_home_price,
-                spread_away_price AS closing_rl_away_price,
-                total_over_price AS closing_total_over_price,
-                total_under_price AS closing_total_under_price
-            FROM odds.mlb_game_lines
-            WHERE as_of_date = ANY(%s::date[])
-              AND (spread_home_points IS NOT NULL OR total_points IS NOT NULL)
-            ORDER BY
-                home_team, away_team, as_of_date,
-                CASE WHEN bookmaker_key = 'fanduel' THEN 0 ELSE 1 END,
-                fetched_at_utc DESC
-            """,
-            (dates,),
-        )
-        return {(r["home_team"], r["away_team"], r["as_of_date"]): r for r in cur.fetchall()}
 
 
 def _grade_game_ledger(conn) -> int:
@@ -604,7 +829,6 @@ def _grade_game_ledger(conn) -> int:
         )
         finals = {r["game_slug"]: r for r in cur.fetchall()}
 
-    closes = _load_game_closes(conn, list({r["game_date_et"] for r in rows}))
     updated = 0
     with conn.cursor() as cur:
         for row in rows:
@@ -631,30 +855,19 @@ def _grade_game_ledger(conn) -> int:
                 over_hit = actual_total > market_line
                 won = None if push else (over_hit if side == "over" else not over_hit)
 
-            close = closes.get((row["home_team_abbr"], row["away_team_abbr"], row["game_date_et"]))
+            close = resolve_valid_game_close(conn, dict(row))
             closing_line = closing_price = clv_line = clv_price = None
-            if close:
-                if row["market"] == "run_line":
-                    closing_line = _clean_float(close.get("closing_run_line"))
-                    if side == "home":
-                        closing_price = _clean_float(close.get("closing_rl_home_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(market_line - closing_line, 2)
-                    else:
-                        closing_price = _clean_float(close.get("closing_rl_away_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(closing_line - market_line, 2)
-                elif row["market"] == "total":
-                    closing_line = _clean_float(close.get("closing_total"))
-                    if side == "over":
-                        closing_price = _clean_float(close.get("closing_total_over_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(closing_line - market_line, 2)
-                    else:
-                        closing_price = _clean_float(close.get("closing_total_under_price"))
-                        if closing_line is not None and market_line is not None:
-                            clv_line = round(market_line - closing_line, 2)
-                clv_price = _price_clv(row["market_price"], closing_price)
+            if close["valid"]:
+                closing_line = _clean_float(close.get("closing_line"))
+                closing_price = _clean_float(close.get("closing_price"))
+                clv_line = game_line_clv(
+                    row["market"],
+                    side,
+                    close.get("entry_line"),
+                    closing_line,
+                )
+                if close.get("entry_line") == closing_line:
+                    clv_price = _price_clv(close.get("entry_price"), closing_price)
 
             profit = _profit_units(won, push, row["market_price"])
             cur.execute(
@@ -673,6 +886,9 @@ def _grade_game_ledger(conn) -> int:
                     closing_price = %s,
                     clv_line = %s,
                     clv_price = %s,
+                    clv_valid = %s,
+                    clv_status = %s,
+                    clv_unknown_reason = %s,
                     graded_at_utc = NOW(),
                     grade_source = 'raw.mlb_games'
                 WHERE id = %s
@@ -690,6 +906,9 @@ def _grade_game_ledger(conn) -> int:
                     closing_price,
                     clv_line,
                     clv_price,
+                    close["valid"],
+                    close["status"],
+                    close["unknown_reason"],
                     row["id"],
                 ),
             )
@@ -699,47 +918,8 @@ def _grade_game_ledger(conn) -> int:
 
 
 def _prop_close(conn, row: dict) -> tuple[float | None, float | None, float | None, float | None]:
-    norm = row.get("player_name_norm") or _normalize_name(row.get("player_name") or "")
-    stat = row.get("stat") or row.get("market")
-    if not norm or not stat:
-        return None, None, None, None
-    bookmaker = row.get("bookmaker_key")
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        if bookmaker:
-            cur.execute(
-                """
-                SELECT line, over_price, under_price
-                FROM odds.mlb_player_prop_lines
-                WHERE as_of_date = %s
-                  AND player_name_norm = %s
-                  AND stat = %s
-                  AND bookmaker_key = %s
-                ORDER BY fetched_at_utc DESC
-                LIMIT 1
-                """,
-                (row["game_date_et"], norm, stat, bookmaker),
-            )
-            close = cur.fetchone()
-            if close:
-                closing_line = _clean_float(close.get("line"))
-                closing_price = _clean_float(close.get("over_price") if row["side"] == "over" else close.get("under_price"))
-                return closing_line, closing_price, None, None
-        cur.execute(
-            """
-            SELECT line, over_price, under_price
-            FROM odds.mlb_player_prop_lines
-            WHERE as_of_date = %s
-              AND player_name_norm = %s
-              AND stat = %s
-            ORDER BY
-              CASE WHEN bookmaker_key = 'fanduel' THEN 0 ELSE 1 END,
-              fetched_at_utc DESC
-            LIMIT 1
-            """,
-            (row["game_date_et"], norm, stat),
-        )
-        close = cur.fetchone()
-    if not close:
+    close = resolve_valid_prop_close(conn, dict(row))
+    if not close["valid"]:
         return None, None, None, None
     closing_line = _clean_float(close.get("line"))
     closing_price = _clean_float(close.get("over_price") if row["side"] == "over" else close.get("under_price"))
@@ -754,7 +934,7 @@ def _grade_prop_ledger(conn) -> int:
             SELECT *
             FROM bets.mlb_bankroll_ledger
             WHERE source = 'prop'
-              AND result_status = 'pending'
+              AND (result_status = 'pending' OR clv_status IS NULL)
               AND game_date_et <= %s
             """,
             (today,),
@@ -802,9 +982,15 @@ def _grade_prop_ledger(conn) -> int:
             if actual_value is None or market_line is None:
                 continue
             push = abs(actual_value - market_line) <= 1e-9
-            over_hit = actual_value > market_line
+            over_hit = None if push else actual_value > market_line
             won = None if push else (over_hit if row["side"] == "over" else not over_hit)
-            closing_line, closing_price, _, _ = _prop_close(conn, row)
+            close = resolve_valid_prop_close(conn, dict(row))
+            closing_line = closing_price = None
+            if close["valid"]:
+                closing_line = _clean_float(close.get("line"))
+                closing_price = _clean_float(
+                    close.get("over_price") if row["side"] == "over" else close.get("under_price")
+                )
             clv_line = None
             if closing_line is not None:
                 clv_line = round(closing_line - market_line, 2) if row["side"] == "over" else round(market_line - closing_line, 2)
@@ -823,6 +1009,10 @@ def _grade_prop_ledger(conn) -> int:
                     closing_price = %s,
                     clv_line = %s,
                     clv_price = %s,
+                    closing_snapshot_id = %s,
+                    clv_valid = %s,
+                    clv_status = %s,
+                    clv_unknown_reason = %s,
                     graded_at_utc = NOW(),
                     grade_source = 'raw.mlb_player_gamelogs'
                 WHERE id = %s
@@ -837,6 +1027,10 @@ def _grade_prop_ledger(conn) -> int:
                     closing_price,
                     clv_line,
                     clv_price,
+                    close.get("snapshot_id") if close["valid"] else None,
+                    close["valid"],
+                    close["status"],
+                    close["unknown_reason"],
                     row["id"],
                 ),
             )

@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import unicodedata
 from typing import Any, Optional
 
 import psycopg2
@@ -40,14 +41,21 @@ CREATE TABLE IF NOT EXISTS raw.mlb_lineups (
     game_slug      TEXT     NOT NULL,
     team_abbr      TEXT     NOT NULL,
     player_id      INTEGER  NOT NULL,
+    player_name    TEXT,
+    player_name_norm TEXT,
     batting_order  SMALLINT,           -- 1-9; NULL for pitcher/bench
     field_position TEXT,               -- RF, 3B, P, DH, etc.
     lineup_source  TEXT,               -- 'actual' or 'expected'
     updated_at     TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (game_slug, team_abbr, player_id)
 );
+ALTER TABLE raw.mlb_lineups
+    ADD COLUMN IF NOT EXISTS player_name TEXT,
+    ADD COLUMN IF NOT EXISTS player_name_norm TEXT;
 CREATE INDEX IF NOT EXISTS idx_mlb_lineups_game_slug
     ON raw.mlb_lineups (game_slug, team_abbr);
+CREATE INDEX IF NOT EXISTS idx_mlb_lineups_name_norm
+    ON raw.mlb_lineups (game_slug, team_abbr, player_name_norm);
 """
 
 # ---------------------------------------------------------------------------
@@ -70,6 +78,22 @@ def _as_int(x: Any) -> Optional[int]:
         return None
 
 
+def _normalize_name(name: Any) -> str:
+    text = unicodedata.normalize("NFKD", str(name or ""))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def _player_name(player: dict[str, Any]) -> str | None:
+    full = (player.get("fullName") or "").strip()
+    if full:
+        return full
+    first = (player.get("firstName") or "").strip()
+    last = (player.get("lastName") or "").strip()
+    full = " ".join(part for part in (first, last) if part)
+    return full or None
+
+
 def _ensure_obj(payload: Any) -> dict:
     if isinstance(payload, dict):
         return payload
@@ -86,7 +110,8 @@ def parse_lineup_payload(game_slug: str, payload: dict) -> list[dict]:
     """Parse one MSF MLB lineup payload into batter rows.
 
     Returns a list of dicts with keys:
-      game_slug, team_abbr, player_id, batting_order, field_position, lineup_source
+      game_slug, team_abbr, player_id, player_name, player_name_norm,
+      batting_order, field_position, lineup_source
     """
     rows: list[dict] = []
     team_lineups = payload.get("teamLineups") or []
@@ -121,16 +146,23 @@ def parse_lineup_payload(game_slug: str, payload: dict) -> list[dict]:
             pid = _as_int(player.get("id"))
             if pid is None:
                 continue  # TBD / empty slot
+            player_name = _player_name(player)
+            player_name_norm = _normalize_name(player_name) if player_name else None
 
             if pid not in player_data:
                 player_data[pid] = {
                     "game_slug": game_slug,
                     "team_abbr": team_abbr,
                     "player_id": pid,
+                    "player_name": player_name,
+                    "player_name_norm": player_name_norm,
                     "batting_order": None,
                     "field_position": None,
                     "lineup_source": source,
                 }
+            elif player_name and not player_data[pid].get("player_name"):
+                player_data[pid]["player_name"] = player_name
+                player_data[pid]["player_name_norm"] = player_name_norm
 
             if position.startswith("BO") and len(position) > 2:
                 try:
@@ -167,11 +199,13 @@ def upsert_lineups(conn, rows: list[dict]) -> int:
 
     sql = """
     INSERT INTO raw.mlb_lineups (
-        game_slug, team_abbr, player_id,
+        game_slug, team_abbr, player_id, player_name, player_name_norm,
         batting_order, field_position, lineup_source, updated_at
     )
     VALUES %s
     ON CONFLICT (game_slug, team_abbr, player_id) DO UPDATE SET
+        player_name    = COALESCE(EXCLUDED.player_name, raw.mlb_lineups.player_name),
+        player_name_norm = COALESCE(EXCLUDED.player_name_norm, raw.mlb_lineups.player_name_norm),
         batting_order  = EXCLUDED.batting_order,
         field_position = EXCLUDED.field_position,
         lineup_source  = EXCLUDED.lineup_source,
@@ -185,6 +219,7 @@ def upsert_lineups(conn, rows: list[dict]) -> int:
             rows,
             template="""(
                 %(game_slug)s, %(team_abbr)s, %(player_id)s,
+                %(player_name)s, %(player_name_norm)s,
                 %(batting_order)s, %(field_position)s, %(lineup_source)s, now()
             )""",
             page_size=500,

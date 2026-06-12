@@ -21,6 +21,8 @@ import psycopg2
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
+from .side_recalibration import prop_line_surface
+
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 
@@ -34,16 +36,43 @@ _NUMERIC_FEATURES = [
     "count_edge_side",
     "pred_count",
     "pred_value",
+    "confirmed_batting_order",
+    "projected_pa",
+    "projected_bf",
+    "projected_pitch_count",
+    "is_home",
+    "team_implied_runs",
+    "opponent_implied_runs",
+    "game_total_line",
+    "opp_sp_k_pct_10",
+    "opp_sp_bb_pct",
+    "opp_sp_xwoba",
+    "opp_sp_hard_hit_pct",
+    "opp_sp_whiff_pct",
+    "opp_bp_era_10",
+    "opp_bp_whip_10",
+    "opp_bp_k9_10",
+    "opp_team_k_pct_10",
+    "batter_vs_hand_hits_avg_10",
+    "batter_vs_hand_tb_avg_10",
+    "batter_vs_hand_hr_avg_10",
+    "batter_vs_hand_iso_avg_10",
+    "batter_vs_hand_k_rate_10",
+    "batter_vs_rp_slg_30",
+    "batter_vs_rp_hr_rate_30",
+    "pinch_hit_risk",
 ]
 
 _CATEGORICAL_FEATURES = [
     "market",
     "side",
+    "line_surface",
     "line_bucket",
     "price_bucket",
     "bookmaker_key",
     "model_family",
     "edge_type",
+    "opp_sp_hand",
 ]
 
 
@@ -81,6 +110,32 @@ SELECT
     count_edge_side::float AS count_edge_side,
     pred_count::float AS pred_count,
     pred_value::float AS pred_value,
+    confirmed_batting_order::float AS confirmed_batting_order,
+    projected_pa::float AS projected_pa,
+    projected_bf::float AS projected_bf,
+    projected_pitch_count::float AS projected_pitch_count,
+    is_home::float AS is_home,
+    team_implied_runs::float AS team_implied_runs,
+    opponent_implied_runs::float AS opponent_implied_runs,
+    game_total_line::float AS game_total_line,
+    opp_sp_hand,
+    opp_sp_k_pct_10::float AS opp_sp_k_pct_10,
+    opp_sp_bb_pct::float AS opp_sp_bb_pct,
+    opp_sp_xwoba::float AS opp_sp_xwoba,
+    opp_sp_hard_hit_pct::float AS opp_sp_hard_hit_pct,
+    opp_sp_whiff_pct::float AS opp_sp_whiff_pct,
+    opp_bp_era_10::float AS opp_bp_era_10,
+    opp_bp_whip_10::float AS opp_bp_whip_10,
+    opp_bp_k9_10::float AS opp_bp_k9_10,
+    opp_team_k_pct_10::float AS opp_team_k_pct_10,
+    batter_vs_hand_hits_avg_10::float AS batter_vs_hand_hits_avg_10,
+    batter_vs_hand_tb_avg_10::float AS batter_vs_hand_tb_avg_10,
+    batter_vs_hand_hr_avg_10::float AS batter_vs_hand_hr_avg_10,
+    batter_vs_hand_iso_avg_10::float AS batter_vs_hand_iso_avg_10,
+    batter_vs_hand_k_rate_10::float AS batter_vs_hand_k_rate_10,
+    batter_vs_rp_slg_30::float AS batter_vs_rp_slg_30,
+    batter_vs_rp_hr_rate_30::float AS batter_vs_rp_hr_rate_30,
+    pinch_hit_risk::float AS pinch_hit_risk,
     CASE WHEN won IS TRUE THEN 1 ELSE 0 END AS target,
     COALESCE(push, false) AS push,
     profit_units::float AS profit_units,
@@ -114,12 +169,20 @@ def _table_exists(conn, schema: str, table: str) -> bool:
         return bool(cur.fetchone()[0])
 
 
+def _query_df(conn, sql: str, params: dict[str, object]) -> pd.DataFrame:
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description] if cur.description else []
+    return pd.DataFrame(rows, columns=columns)
+
+
 def _load(cfg: PropDirectSideConfig) -> pd.DataFrame:
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days)).isoformat()
     with psycopg2.connect(cfg.pg_dsn) as conn:
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
             return pd.DataFrame()
-        df = pd.read_sql(SQL, conn, params={"cutoff": cutoff})
+        df = _query_df(conn, SQL, {"cutoff": cutoff})
     if df.empty:
         return df
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
@@ -127,6 +190,10 @@ def _load(cfg: PropDirectSideConfig) -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=["model_prob_side", "target"])
     df["model_prob_side"] = df["model_prob_side"].clip(1e-6, 1.0 - 1e-6)
+    df["line_surface"] = [
+        prop_line_surface(market, side, line)
+        for market, side, line in zip(df["market"], df["side"], df["market_line"])
+    ]
     df["target"] = df["target"].astype(int)
     df["push"] = df["push"].fillna(False).astype(bool)
     for col in _CATEGORICAL_FEATURES:
@@ -134,9 +201,19 @@ def _load(cfg: PropDirectSideConfig) -> pd.DataFrame:
     return df
 
 
+def _write_payload(cfg: PropDirectSideConfig, payload: dict) -> None:
+    out_path = cfg.model_dir / cfg.out_file
+    if payload.get("status") in {"no_rows", "no_models"} and out_path.exists():
+        payload["preserved_existing_model_file"] = True
+        payload["skipped_write_reason"] = payload.get("status")
+        return
+    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
 def _key(
     market: str = "*",
     side: str = "*",
+    line_surface: str = "*",
     line_bucket: str = "*",
     price_bucket: str = "*",
     bookmaker_key: str = "*",
@@ -145,6 +222,7 @@ def _key(
     return "|".join([
         market or "*",
         side or "*",
+        line_surface or "*",
         line_bucket or "*",
         price_bucket or "*",
         bookmaker_key or "*",
@@ -261,11 +339,13 @@ def _fit_group(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFram
 
 def _group_specs() -> Iterable[tuple[tuple[str, ...], int, int]]:
     return [
-        (("market", "side", "line_bucket", "price_bucket", "bookmaker_key", "model_family"), 180, 45),
-        (("market", "side", "line_bucket", "price_bucket", "bookmaker_key"), 180, 45),
-        (("market", "side", "line_bucket", "price_bucket"), 180, 45),
-        (("market", "side", "line_bucket"), 180, 45),
+        (("market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key", "model_family"), 180, 45),
+        (("market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"), 180, 45),
+        (("market", "side", "line_surface", "line_bucket", "price_bucket"), 180, 45),
+        (("market", "side", "line_surface", "line_bucket"), 180, 45),
+        (("market", "side", "line_surface"), 150, 40),
         (("market", "side"), 150, 40),
+        (("line_surface", "side"), 260, 80),
         (("side",), 260, 80),
         (tuple(), 400, 120),
     ]
@@ -279,6 +359,7 @@ def _key_for_group(group_cols: tuple[str, ...], values) -> str:
     return _key(
         d.get("market", "*"),
         d.get("side", "*"),
+        d.get("line_surface", "*"),
         d.get("line_bucket", "*"),
         d.get("price_bucket", "*"),
         d.get("bookmaker_key", "*"),
@@ -306,7 +387,7 @@ def train(cfg: PropDirectSideConfig) -> dict:
     }
     if df.empty:
         payload["status"] = "no_rows"
-        (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        _write_payload(cfg, payload)
         return payload
     train_mask, holdout_mask, split_strategy = _split_mask(df, cfg)
     payload["split_strategy"] = split_strategy
@@ -344,7 +425,7 @@ def train(cfg: PropDirectSideConfig) -> dict:
             })
     payload["status"] = "trained" if payload["models"] else "no_models"
     payload["backtest"].sort(key=lambda r: r["key"])
-    (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    _write_payload(cfg, payload)
     return payload
 
 

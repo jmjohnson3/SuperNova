@@ -4,13 +4,15 @@ import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Iterable, Optional
+from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
 
 log = logging.getLogger("nba_pipeline.parse_oddsapi")
+_ET = ZoneInfo("America/New_York")
 
 UPSERT_SQL = """
 INSERT INTO odds.nba_game_lines (
@@ -112,11 +114,30 @@ def _to_int(x: Any) -> Optional[int]:
         return None
 
 
+def _event_matches_as_of_date(as_of_date: date, commence_time_utc: Any) -> bool:
+    """Return true only when an event actually starts on the ET date bucket."""
+    if not commence_time_utc:
+        return False
+    try:
+        commence = datetime.fromisoformat(str(commence_time_utc).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+    return commence.astimezone(_ET).date() == as_of_date
+
+
 def iter_rows(as_of_date: date, fetched_at_utc, events: list[dict]) -> Iterable[tuple]:
     provider = "oddsapi"
     for ev in events:
         event_id = ev.get("id")
         commence_time_utc = ev.get("commence_time")
+        if not _event_matches_as_of_date(as_of_date, commence_time_utc):
+            log.debug(
+                "Skipping NBA odds event %s: commence_time=%s is outside ET date %s",
+                event_id,
+                commence_time_utc,
+                as_of_date,
+            )
+            continue
         home_team = ev.get("home_team")
         away_team = ev.get("away_team")
 

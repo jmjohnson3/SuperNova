@@ -4,7 +4,215 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a8b48474-6e90-4e60-b81d-144213686383" name="Changes" comment="improve prediction accuracy" />
+    <list default="true" id="a8b48474-6e90-4e60-b81d-144213686383" name="Changes" comment="improve prediction accuracy">
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-03_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-04_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-05.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-05_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-06.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-06_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-07.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-07_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-08.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-08_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-09.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-09_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-10.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-10_close.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_bookability_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_bucket_promotion_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_distribution_models_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_market_residual_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_miss_diagnostic_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_offer_audit_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_opportunity_feature_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_opportunity_models_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_postmortem_2026-06-03.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-04.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-05.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-06.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-07.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-08.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-09.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_2026-06-10.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_probability_shadow_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_readiness_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_snapshot_coverage_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_target_quality_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reports/mlb_prop_walk_forward_accuracy_latest.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/scripts/mlb_training.bat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/scripts/run_with_mlb_mutex.ps1" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/scripts/tasks/MLB-PreGame-Evening.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/scripts/tasks/MLB-Training.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sql/V027_nba_raw_sport_boundary_cleanup.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/backfill_prop_clean_replay.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/build_prop_offer_links_table.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/game_line_clv.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/grade_prop_prediction_replay.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bookability_model.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_promotion_report.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_trust_scores.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_distribution_models.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_market_residual_models.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_miss_diagnostic_report.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_opportunity_feature_report.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_opportunity_models.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_target_quality_report.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_walk_forward_accuracy_report.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/offer_level_prop_audit_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_bucket_promotion_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_candidate_engine.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_clean_slate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_miss_diagnostic_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_offer_links.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_offer_snapshots.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_opportunity_feature_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_real_money_readiness_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_slate_postmortem_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_snapshot_coverage_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_target_quality_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_walk_forward_accuracy_report.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/refresh_prop_replay_clv.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/shadow_lock_prop_predictions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/test_pipeline_safeguards.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_bookability_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_distribution_models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_market_residual_models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_opportunity_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reports/mlb_daily_2026-05-25_close.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-05-25_close.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/install_tasks.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/install_tasks.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/mlb_close.bat" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/mlb_close.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/mlb_morning.bat" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/mlb_morning.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/mlb_pregame.bat" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/mlb_pregame.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/tasks/MLB-Close.xml" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/tasks/MLB-Close.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/tasks/MLB-Morning.xml" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/tasks/MLB-Morning.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/tasks/MLB-PreGame.xml" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/tasks/MLB-PreGame.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/MLB000_schema_bootstrap.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/MLB000_schema_bootstrap.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/MLB006_mlb_game_features.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/MLB006_mlb_game_features.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/V026_game_lines_views.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/V026_game_lines_views.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/compute_elo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/compute_elo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/crawler.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/crawler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/crawler_oddsapi.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/crawler_oddsapi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/crawler_oddsapi_props_backfill.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/crawler_oddsapi_props_backfill.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/crawler_statsapi.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/crawler_statsapi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/backfill_prop_prediction_replay.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/backfill_prop_prediction_replay.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_layers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_layers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_ledger.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_ledger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_ledger_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_ledger_report.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_readiness_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/bankroll_readiness_report.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/build_prop_market_training_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/build_prop_market_training_table.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/compare_prop_probability_variants.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/compare_prop_probability_variants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/features.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/generate_cards.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/generate_cards.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/model_pick_ledger.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/model_pick_ledger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/calibration.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/calibration.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_columns.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_columns.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_importance.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_importance.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_medians.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_medians.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/optuna_best_params.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/optuna_best_params.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/backtest_alt_clf.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/backtest_alt_clf.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/backtest_clf.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/backtest_clf.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/backtest_mae.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/backtest_mae.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_bucket_controls.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_bucket_controls.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_alt_batters.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_alt_batters.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_alt_pitchers.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_alt_pitchers.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_batters.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_batters.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_pitchers.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/clf_calibration_pitchers.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_alt_clf_batters.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_alt_clf_batters.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_alt_clf_pitchers.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_alt_clf_pitchers.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_batters.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_batters.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_clf_batters.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_clf_batters.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_clf_pitchers.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_clf_pitchers.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_pitchers.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/feature_medians_pitchers.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/hits_alt_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/hits_alt_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/hits_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/hits_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/hits_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/hits_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/home_runs_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/home_runs_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/home_runs_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/home_runs_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_hits.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_hits.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_hits_alt_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_hits_alt_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_hits_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_hits_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_home_runs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_home_runs.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_home_runs_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_home_runs_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts_alt_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts_alt_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_strikeouts_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_total_bases.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_total_bases.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_total_bases_alt_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_total_bases_alt_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_total_bases_clf.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/lgb_total_bases_clf.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/optuna_best_params.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/optuna_best_params.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_betting_layer.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_betting_layer.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_reopen_policy.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_reopen_policy.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_direct_side_models.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_direct_side_models.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_market_side_priors.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_market_side_priors.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_probability_variant_comparison.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_probability_variant_comparison.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_side_recalibrators.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_side_recalibrators.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_thresholds.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_thresholds.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_alt_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_alt_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/strikeouts_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/total_bases_alt_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/total_bases_alt_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/total_bases_clf_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/total_bases_clf_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/total_bases_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/total_bases_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q10_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q10_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q25_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q25_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q50_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q50_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q75_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q75_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q90_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q90_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_resid_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_resid_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q10_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q10_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q25_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q25_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q50_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q50_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q75_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q75_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q90_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q90_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_resid_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_resid_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_player_props.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_player_props.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_today.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/predict_today.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_betting_layer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_betting_layer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_market_history.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_market_history.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_market_training.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_market_training.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_replay.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/prop_replay.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/real_money_audit_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/real_money_audit_report.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/side_recalibration.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/side_recalibration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/test_feature_alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/test_feature_alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_game_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_game_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_betting_layer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_betting_layer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_bucket_reopen_policy.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_bucket_reopen_policy.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_direct_side_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/train_prop_direct_side_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/update_outcomes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/update_outcomes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/parse_games.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/parse_games.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/parse_oddsapi.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/parse_oddsapi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/run_daily.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/run_daily.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/run_daily_and_notify.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/run_daily_and_notify.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/compute_elo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/compute_elo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi_backfill.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/crawler_oddsapi_backfill.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/discord_notify.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/discord_notify.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/post_parlay.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/post_parlay.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_player_props.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_player_props.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_today.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/predict_today.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/modeling/update_outcomes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/modeling/update_outcomes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_all.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_all.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_boxscore.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_boxscore.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_games.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_games.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_lineup.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_lineup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_meta.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_meta.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_oddsapi.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_oddsapi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_pbp.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_pbp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_player_gamelogs.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_player_gamelogs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/parse_referees.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/parse_referees.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/run_daily.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/run_daily.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/run_daily_and_notify.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/run_daily_and_notify.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nba_pipeline/run_nightly.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nba_pipeline/run_nightly.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

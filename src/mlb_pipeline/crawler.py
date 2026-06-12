@@ -44,8 +44,6 @@ def _norm_abbr(abbr: str) -> str:
 
 
 _ET = ZoneInfo("America/New_York")
-
-
 @dataclass(frozen=True)
 class Season:
     league: str
@@ -307,8 +305,12 @@ def crawl_season_incremental(
     end_date: date,
     commit_every: int = 50,
     force_meta: bool = False,
+    force_lineups: bool = False,
 ) -> None:
-    log.info("Crawling season=%s start=%s end=%s force_meta=%s", season.season_slug, start_date, end_date, force_meta)
+    log.info(
+        "Crawling season=%s start=%s end=%s force_meta=%s force_lineups=%s",
+        season.season_slug, start_date, end_date, force_meta, force_lineups,
+    )
 
     saved = 0
 
@@ -417,11 +419,17 @@ def crawl_season_incremental(
 
         # Build task list using pre-loaded caches (batch check, no per-slug DB queries).
         _pg_tasks: list = []
+        # Lineups are volatile before first pitch.  A cached early-morning
+        # payload can be empty or projected, so refresh the active slate even
+        # when the lineup URL was seen before.
+        _active_lineup_window = (
+            (today_et - timedelta(days=1)) <= d <= (today_et + timedelta(days=1))
+        )
         for _slug in slugs:
             if not is_future_date and _slug not in completed_slugs:
                 _pg_tasks.append(("boxscore", _slug, build_url_boxscore(season, _slug)))
             _lu_url = build_url_lineup(season, _slug)
-            if _lu_url not in lineup_cached:
+            if force_lineups or _active_lineup_window or _lu_url not in lineup_cached:
                 _pg_tasks.append(("lineup", _slug, _lu_url))
 
         if _pg_tasks:
@@ -566,6 +574,11 @@ def main() -> None:
         action="store_true",
         help="Re-fetch meta endpoints (injuries/standings/venues) even if already fetched today.",
     )
+    parser.add_argument(
+        "--force-lineups",
+        action="store_true",
+        help="Re-fetch lineup endpoints even if their URLs were already cached.",
+    )
     args = parser.parse_args()
 
     cfg = CrawlerConfig()
@@ -622,6 +635,7 @@ def main() -> None:
                     end_date=end,
                     commit_every=cfg.commit_every,
                     force_meta=args.force_meta,
+                    force_lineups=args.force_lineups,
                 )
 
             conn.commit()

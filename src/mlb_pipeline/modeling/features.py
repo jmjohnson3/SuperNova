@@ -1676,6 +1676,9 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
             X["hr_vs_hand_weighted"] = X["hr_avg_40_vs_hand"].fillna(0.0) * rel
 
     # ── Batter vs specific pitcher H2H career stats (MLB015) ─────────────────
+    # Consolidate the many inserted derived columns before adding the next block.
+    X = X.copy()
+
     if "h2h_games" in X.columns:
         _games = pd.to_numeric(X["h2h_games"], errors="coerce").fillna(0.0)
 
@@ -1761,6 +1764,9 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
     # hard-hit rate directly correlate with extra-base hit outcomes.
 
     # Barrel rate × park HR factor: elite power in a hitter's park
+    # Consolidate before the dense Statcast interaction block.
+    X = X.copy()
+
     if "sc_barrel_rate" in X.columns and "park_hr_factor" in X.columns:
         X["sc_barrel_x_park_hr"] = X["sc_barrel_rate"].fillna(0.0) * X["park_hr_factor"].fillna(1.0)
 
@@ -2430,6 +2436,9 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["h2h_hot_vs_sp"] = (_last3 >= 0.400).fillna(False).astype(int)
 
     # ── Batter venue stats (MLB023, Retrain 2 #9) ─────────────────────────────
+    # Consolidate before the final venue/lineup feature blocks.
+    X = X.copy()
+
     if "batter_venue_ba" in X.columns and "hits_avg_10" in X.columns:
         _vba = pd.to_numeric(X["batter_venue_ba"], errors="coerce")
         _rba = pd.to_numeric(X["hits_avg_10"],     errors="coerce").fillna(0.25)
@@ -2450,6 +2459,9 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["batter_venue_hr_delta"] = X["batter_venue_hr_adj"] - _rhr
 
     # ── Confirmed batting order (raw.mlb_lineups) ────────────────────────────
+    # Consolidate once more before final lineup/opportunity features.
+    X = X.copy()
+
     if "confirmed_batting_order" in X.columns:
         _conf = pd.to_numeric(X["confirmed_batting_order"], errors="coerce")
         _avg5 = (pd.to_numeric(X["batting_order_avg_5"], errors="coerce")
@@ -2461,7 +2473,7 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["batting_order_top4"]    = (_eff <= 4).where(_eff.notna()).fillna(0).astype(int)
         X["batting_order_bottom3"] = (_eff >= 7).where(_eff.notna()).fillna(0).astype(int)
 
-    return X
+    return X.copy()
 
 
 def build_fd_parlay_url(links) -> str | None:

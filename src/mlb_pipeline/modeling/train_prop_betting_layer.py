@@ -86,6 +86,8 @@ SELECT
     game_date_et,
     market,
     side,
+    COALESCE(bookmaker_key, 'unknown') AS bookmaker_key,
+    COALESCE(line_surface, 'unknown') AS line_surface,
     line_bucket,
     price_bucket,
     COALESCE(model_family, 'unknown') AS model_family,
@@ -93,13 +95,43 @@ SELECT
     market_prob_side::float AS market_prob_side,
     prob_edge_vs_market::float AS prob_edge_vs_market,
     market_line::float AS market_line,
+    confirmed_batting_order::float AS confirmed_batting_order,
+    projected_pa::float AS projected_pa,
+    projected_bf::float AS projected_bf,
+    projected_pitch_count::float AS projected_pitch_count,
+    is_home::float AS is_home,
+    team_implied_runs::float AS team_implied_runs,
+    opponent_implied_runs::float AS opponent_implied_runs,
+    game_total_line::float AS game_total_line,
+    opp_sp_hand,
+    opp_sp_k_pct_10::float AS opp_sp_k_pct_10,
+    opp_sp_bb_pct::float AS opp_sp_bb_pct,
+    opp_sp_xwoba::float AS opp_sp_xwoba,
+    opp_sp_hard_hit_pct::float AS opp_sp_hard_hit_pct,
+    opp_sp_whiff_pct::float AS opp_sp_whiff_pct,
+    opp_bp_era_10::float AS opp_bp_era_10,
+    opp_bp_whip_10::float AS opp_bp_whip_10,
+    opp_bp_k9_10::float AS opp_bp_k9_10,
+    opp_team_k_pct_10::float AS opp_team_k_pct_10,
+    batter_vs_hand_hits_avg_10::float AS batter_vs_hand_hits_avg_10,
+    batter_vs_hand_tb_avg_10::float AS batter_vs_hand_tb_avg_10,
+    batter_vs_hand_hr_avg_10::float AS batter_vs_hand_hr_avg_10,
+    batter_vs_hand_iso_avg_10::float AS batter_vs_hand_iso_avg_10,
+    batter_vs_hand_k_rate_10::float AS batter_vs_hand_k_rate_10,
+    batter_vs_rp_slg_30::float AS batter_vs_rp_slg_30,
+    batter_vs_rp_hr_rate_30::float AS batter_vs_rp_hr_rate_30,
+    pinch_hit_risk::float AS pinch_hit_risk,
     ABS(market_price::float) AS abs_price,
     CASE
         WHEN market_price IS NULL THEN NULL
         WHEN market_price::float > 0 THEN 1.0
         ELSE 0.0
     END AS is_plus_price,
-    CASE WHEN won IS TRUE THEN 1 ELSE 0 END AS target,
+    CASE
+        WHEN won IS TRUE THEN 1
+        WHEN won IS FALSE THEN 0
+        ELSE NULL
+    END AS target,
     CASE
         WHEN beat_clv_price IS TRUE THEN 1
         WHEN beat_clv_price IS FALSE THEN 0
@@ -112,7 +144,7 @@ WHERE game_date_et >= %(cutoff)s
   AND model_prob_side IS NOT NULL
   AND market_line IS NOT NULL
   AND model_prob_side BETWEEN 0.0 AND 1.0
-  AND won IS NOT NULL
+  AND (won IS NOT NULL OR beat_clv_price IS NOT NULL)
 """
 
 
@@ -230,10 +262,15 @@ def _prepare_matrix(df: pd.DataFrame, *, means=None, scales=None, cats=None):
     cat_values = {}
     for name in _CATEGORICAL_FEATURES:
         values = cats.get(name)
+        base_series = (
+            df[name]
+            if name in df.columns
+            else pd.Series(["unknown"] * len(df), index=df.index)
+        )
         if values is None:
-            values = sorted(str(v) for v in df[name].fillna("unknown").astype(str).unique())
+            values = sorted(str(v) for v in base_series.fillna("unknown").astype(str).unique())
         cat_values[name] = values
-        series = df[name].fillna("unknown").astype(str)
+        series = base_series.fillna("unknown").astype(str)
         for value in values:
             parts.append((series == value).astype(float).to_numpy().reshape(-1, 1))
             feature_names.append(f"{name}={value}")

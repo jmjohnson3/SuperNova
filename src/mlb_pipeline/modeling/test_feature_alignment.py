@@ -14,7 +14,6 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -59,7 +58,7 @@ def load_model_artifacts(model_dir: Path) -> tuple[list[str], dict[str, float]]:
     return feature_cols, feature_medians
 
 
-def test_columns_vs_medians(feature_cols: list[str], feature_medians: dict[str, float]) -> bool:
+def test_columns_vs_medians(feature_cols: list[str], feature_medians: dict[str, float]) -> None:
     """Check that every column in feature_columns has a median (and vice versa)."""
     print("\n=== Test 1: Feature columns vs medians alignment ===")
 
@@ -90,10 +89,10 @@ def test_columns_vs_medians(feature_cols: list[str], feature_medians: dict[str, 
     if success:
         print(f"PASS: {len(feature_cols)} columns ↔ {len(feature_medians)} medians (100% aligned)")
 
-    return success
+    assert success
 
 
-def test_derived_features_consistency(feature_cols: list[str]) -> bool:
+def test_derived_features_consistency(feature_cols: list[str]) -> None:
     """Test that add_game_derived_features produces consistent columns."""
     print("\n=== Test 2: Derived features consistency ===")
 
@@ -147,14 +146,10 @@ def test_derived_features_consistency(feature_cols: list[str]) -> bool:
 
     # All columns should be numeric
     non_numeric = [c for c in result_df.columns if not pd.api.types.is_numeric_dtype(result_df[c])]
-    if non_numeric:
-        print(f"FAIL: Non-numeric columns after add_game_derived_features: {non_numeric}")
-        return False
-
-    return True
+    assert not non_numeric, f"Non-numeric columns after add_game_derived_features: {non_numeric}"
 
 
-def test_inference_path_consistency(feature_cols: list[str], feature_medians: dict[str, float]) -> bool:
+def test_inference_path_consistency(feature_cols: list[str], feature_medians: dict[str, float]) -> None:
     """
     Simulate the inference path: create a mock game frame, apply feature prep
     (like _prep_features does), and verify no unexpected columns appear.
@@ -186,20 +181,14 @@ def test_inference_path_consistency(feature_cols: list[str], feature_medians: di
     # Add derived features (as _prep_features does)
     X = add_game_derived_features(X)
 
-    # Align to feature_cols (add missing, drop extra)
-    for c in feature_cols:
-        if c not in X.columns:
-            X[c] = np.nan
-
     extra = [c for c in X.columns if c not in feature_cols]
     if extra:
         print(f"WARN: Inference created {len(extra)} extra columns: {extra[:5]}")
-        X = X.drop(columns=extra)
+    X = X.reindex(columns=feature_cols)
 
     # After alignment, should have exactly feature_cols
     if set(X.columns) == set(feature_cols):
         print(f"PASS: Inference frame aligns to {len(feature_cols)} training columns")
-        return True
     else:
         missing = set(feature_cols) - set(X.columns)
         extra = set(X.columns) - set(feature_cols)
@@ -211,7 +200,7 @@ def test_inference_path_consistency(feature_cols: list[str], feature_medians: di
             print(f"FAIL: Extra {len(extra)} columns in inference frame")
             for c in sorted(extra)[:5]:
                 print(f"  - {c}")
-        return False
+    assert set(X.columns) == set(feature_cols)
 
 
 def main():
@@ -229,13 +218,19 @@ def main():
     print(f"Loaded: {len(feature_cols)} columns, {len(feature_medians)} medians")
 
     tests = [
-        test_columns_vs_medians(feature_cols, feature_medians),
-        test_derived_features_consistency(feature_cols),
-        test_inference_path_consistency(feature_cols, feature_medians),
+        (test_columns_vs_medians, (feature_cols, feature_medians)),
+        (test_derived_features_consistency, (feature_cols,)),
+        (test_inference_path_consistency, (feature_cols, feature_medians)),
     ]
 
     print("\n" + "=" * 60)
-    passed = sum(tests)
+    passed = 0
+    for test, args in tests:
+        try:
+            test(*args)
+            passed += 1
+        except AssertionError as exc:
+            print(f"FAIL: {test.__name__}: {exc}")
     total = len(tests)
     print(f"Results: {passed}/{total} tests passed")
 

@@ -8,7 +8,7 @@ Run after games complete:
 """
 import logging
 import math
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 
 import psycopg2
@@ -18,6 +18,60 @@ log = logging.getLogger("nba_pipeline.modeling.update_outcomes")
 
 _ET = ZoneInfo("America/New_York")
 PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+GAME_MARKET_BOOK = "draftkings"
+
+
+def _spread_bet_result(
+    actual_margin_home: float,
+    market_spread_home: float,
+    side: str,
+) -> bool | None:
+    result = actual_margin_home + market_spread_home
+    if math.isclose(result, 0.0, abs_tol=1e-9):
+        return None
+    return result > 0 if side == "home" else result < 0
+
+
+def _total_bet_result(actual_total: float, market_total: float, side: str) -> bool | None:
+    result = actual_total - market_total
+    if math.isclose(result, 0.0, abs_tol=1e-9):
+        return None
+    return result > 0 if side == "over" else result < 0
+
+
+def _over_hit(actual: float | None, line: float | None) -> bool | None:
+    if actual is None or line is None or math.isclose(float(actual), float(line), abs_tol=1e-9):
+        return None
+    return float(actual) > float(line)
+
+
+def _resolve_valid_close(row: dict, candidates: list[dict]) -> dict | None:
+    """Return a same-book close taken after lock and within two hours of tip."""
+    locked_at = row.get("predicted_at_utc")
+    if locked_at is None:
+        return None
+
+    valid: list[dict] = []
+    for close in candidates:
+        close_at = close.get("close_fetched_at_utc")
+        commence = close.get("commence_time_utc")
+        if close_at is None or commence is None:
+            continue
+        if close_at <= locked_at:
+            continue
+        if close_at > commence or close_at < commence - timedelta(hours=2):
+            continue
+        valid.append(close)
+
+    if not valid:
+        return None
+
+    game_start = row.get("game_start_ts_utc")
+    if game_start is not None:
+        valid.sort(key=lambda close: abs((close["commence_time_utc"] - game_start).total_seconds()))
+    else:
+        valid.sort(key=lambda close: close["close_fetched_at_utc"], reverse=True)
+    return valid[0]
 
 
 def _ensure_schema(conn) -> None:
@@ -165,12 +219,14 @@ def update_game_outcomes(conn) -> int:
 
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
-            SELECT gp.id, gp.game_slug, gp.game_date_et,
+            SELECT gp.id, gp.game_slug, gp.game_date_et, gp.predicted_at_utc,
                    gp.market_spread_home, gp.market_total,
                    gp.spread_bet_side, gp.total_bet_side,
                    gp.pred_margin_home,
-                   gp.home_team_abbr, gp.away_team_abbr
+                   gp.home_team_abbr, gp.away_team_abbr,
+                   g.start_ts_utc AS game_start_ts_utc
             FROM bets.game_predictions gp
+            LEFT JOIN raw.nba_games g ON g.game_slug = gp.game_slug
             WHERE gp.actual_margin_home IS NULL
               AND gp.game_date_et <= %s
         """, (today,))
@@ -193,25 +249,25 @@ def update_game_outcomes(conn) -> int:
         finals = {r["game_slug"]: r for r in cur.fetchall()}
 
     # Fetch closing lines for CLV computation.
-    # Match on (home_team_abbr, away_team_abbr, as_of_date) using game_date_et.
-    # Take the most favorable close per game (best bookmaker closing line).
+    # The prediction feature uses DraftKings, so CLV must use the same book.
+    # Timing validation happens per prediction below.
     dates = list({r["game_date_et"] for r in pending})  # keep as date objects
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("""
-                SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
-                    home_team_abbr, away_team_abbr, as_of_date,
-                    close_spread_home_points, close_total
+                SELECT home_team_abbr, away_team_abbr, as_of_date,
+                       close_spread_home_points, close_total,
+                       close_fetched_at_utc, commence_time_utc, odds_event_id
                 FROM odds.nba_game_lines_open_close
                 WHERE as_of_date = ANY(%s::date[])
+                  AND bookmaker_key = %s
                 ORDER BY home_team_abbr, away_team_abbr, as_of_date, close_fetched_at_utc DESC
-            """, (dates,))
+            """, (dates, GAME_MARKET_BOOK))
             closing_rows = cur.fetchall()
-        # Key: (home_team_abbr, away_team_abbr, game_date_et as date obj)
-        closing_lines = {
-            (r["home_team_abbr"], r["away_team_abbr"], r["as_of_date"]): r
-            for r in closing_rows
-        }
+        closing_lines: dict[tuple, list[dict]] = {}
+        for close in closing_rows:
+            key = (close["home_team_abbr"], close["away_team_abbr"], close["as_of_date"])
+            closing_lines.setdefault(key, []).append(close)
     except Exception as exc:
         log.warning("Could not fetch closing lines for CLV: %s", exc)
         closing_lines = {}
@@ -236,20 +292,13 @@ def update_game_outcomes(conn) -> int:
             spread_covered = None
             if row["market_spread_home"] is not None and row["spread_bet_side"] is not None:
                 mkt_s = float(row["market_spread_home"])
-                covered = actual_margin > -mkt_s
-                if row["spread_bet_side"] == "home":
-                    spread_covered = covered
-                else:
-                    spread_covered = not covered
+                spread_covered = _spread_bet_result(actual_margin, mkt_s, row["spread_bet_side"])
 
             # Total: correct if prediction direction matches actual
             total_correct = None
             if row["market_total"] is not None and row["total_bet_side"] is not None:
                 mkt_t = float(row["market_total"])
-                if row["total_bet_side"] == "over":
-                    total_correct = actual_total > mkt_t
-                else:
-                    total_correct = actual_total < mkt_t
+                total_correct = _total_bet_result(actual_total, mkt_t, row["total_bet_side"])
 
             # Directional accuracy: did the model correctly predict home win vs. away win?
             pred_margin = float(row["pred_margin_home"]) if row["pred_margin_home"] is not None else None
@@ -267,7 +316,7 @@ def update_game_outcomes(conn) -> int:
             clv_spread = None
             clv_total = None
             cl_key = (row["home_team_abbr"], row["away_team_abbr"], row["game_date_et"])
-            cl = closing_lines.get(cl_key)
+            cl = _resolve_valid_close(row, closing_lines.get(cl_key, []))
             if cl:
                 if cl["close_spread_home_points"] is not None:
                     closing_spread = float(cl["close_spread_home_points"])
@@ -319,13 +368,17 @@ def backfill_clv(conn) -> int:
     """
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
-            SELECT id, game_date_et, home_team_abbr, away_team_abbr,
-                   market_spread_home, market_total,
-                   spread_bet_side, total_bet_side
-            FROM bets.game_predictions
-            WHERE actual_margin_home IS NOT NULL
-              AND clv_spread IS NULL
-              AND (spread_bet_side IS NOT NULL OR total_bet_side IS NOT NULL)
+            SELECT gp.id, gp.game_date_et, gp.home_team_abbr, gp.away_team_abbr,
+                   gp.predicted_at_utc, gp.market_spread_home, gp.market_total,
+                   gp.spread_bet_side, gp.total_bet_side,
+                   g.start_ts_utc AS game_start_ts_utc
+            FROM bets.game_predictions gp
+            LEFT JOIN raw.nba_games g ON g.game_slug = gp.game_slug
+            WHERE gp.actual_margin_home IS NOT NULL
+              AND (
+                    (gp.spread_bet_side IS NOT NULL AND gp.clv_spread IS NULL)
+                 OR (gp.total_bet_side IS NOT NULL AND gp.clv_total IS NULL)
+              )
         """)
         rows = cur.fetchall()
 
@@ -337,17 +390,18 @@ def backfill_clv(conn) -> int:
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("""
-                SELECT DISTINCT ON (home_team_abbr, away_team_abbr, as_of_date)
-                    home_team_abbr, away_team_abbr, as_of_date,
-                    close_spread_home_points, close_total
+                SELECT home_team_abbr, away_team_abbr, as_of_date,
+                       close_spread_home_points, close_total,
+                       close_fetched_at_utc, commence_time_utc, odds_event_id
                 FROM odds.nba_game_lines_open_close
                 WHERE as_of_date = ANY(%s::date[])
+                  AND bookmaker_key = %s
                 ORDER BY home_team_abbr, away_team_abbr, as_of_date, close_fetched_at_utc DESC
-            """, (dates,))
-            closing_lines = {
-                (r["home_team_abbr"], r["away_team_abbr"], r["as_of_date"]): r
-                for r in cur.fetchall()
-            }
+            """, (dates, GAME_MARKET_BOOK))
+            closing_lines: dict[tuple, list[dict]] = {}
+            for close in cur.fetchall():
+                key = (close["home_team_abbr"], close["away_team_abbr"], close["as_of_date"])
+                closing_lines.setdefault(key, []).append(close)
     except Exception as exc:
         log.warning("backfill_clv: could not fetch closing lines: %s", exc)
         return 0
@@ -356,7 +410,7 @@ def backfill_clv(conn) -> int:
     with conn.cursor() as cur:
         for row in rows:
             cl_key = (row["home_team_abbr"], row["away_team_abbr"], row["game_date_et"])
-            cl = closing_lines.get(cl_key)
+            cl = _resolve_valid_close(row, closing_lines.get(cl_key, []))
             if not cl:
                 continue
 
@@ -445,16 +499,19 @@ def update_prop_outcomes(conn) -> int:
                     actual_rebounds = %s,
                     actual_assists  = %s,
                     pts_over_hit    = CASE WHEN %s IS NOT NULL AND book_line_pts IS NOT NULL
+                                               AND %s <> book_line_pts
                                           THEN %s > book_line_pts ELSE NULL END,
                     reb_over_hit    = CASE WHEN %s IS NOT NULL AND book_line_reb IS NOT NULL
+                                               AND %s <> book_line_reb
                                           THEN %s > book_line_reb ELSE NULL END,
                     ast_over_hit    = CASE WHEN %s IS NOT NULL AND book_line_ast IS NOT NULL
+                                               AND %s <> book_line_ast
                                           THEN %s > book_line_ast ELSE NULL END
                 WHERE id = %s
             """, (a["points"], a["rebounds"], a["assists"],
-                  a["points"], a["points"],
-                  a["rebounds"], a["rebounds"],
-                  a["assists"], a["assists"],
+                  a["points"], a["points"], a["points"],
+                  a["rebounds"], a["rebounds"], a["rebounds"],
+                  a["assists"], a["assists"], a["assists"],
                   row["id"]))
             updated += 1
 
@@ -493,11 +550,11 @@ def backfill_prop_over_hit(conn) -> int:
         for row in rows:
             pts_hit = reb_hit = ast_hit = None
             if row["actual_points"] is not None and row["book_line_pts"] is not None:
-                pts_hit = float(row["actual_points"]) > float(row["book_line_pts"])
+                pts_hit = _over_hit(row["actual_points"], row["book_line_pts"])
             if row["actual_rebounds"] is not None and row["book_line_reb"] is not None:
-                reb_hit = float(row["actual_rebounds"]) > float(row["book_line_reb"])
+                reb_hit = _over_hit(row["actual_rebounds"], row["book_line_reb"])
             if row["actual_assists"] is not None and row["book_line_ast"] is not None:
-                ast_hit = float(row["actual_assists"]) > float(row["book_line_ast"])
+                ast_hit = _over_hit(row["actual_assists"], row["book_line_ast"])
             if pts_hit is None and reb_hit is None and ast_hit is None:
                 continue
             cur.execute("""

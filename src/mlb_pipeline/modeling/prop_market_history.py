@@ -18,7 +18,7 @@ import psycopg2
 import psycopg2.extras
 
 from .prop_replay import american_to_prob, ev_per_unit, no_vig_probs
-from .side_recalibration import price_bucket, prop_line_bucket
+from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MARKETS = ("pitcher_strikeouts", "batter_hits", "batter_total_bases", "batter_home_runs")
@@ -93,6 +93,7 @@ def ensure_prop_market_history_schema(conn) -> None:
                 market_prob_side NUMERIC,
                 price_bucket TEXT,
                 line_bucket TEXT,
+                line_surface TEXT,
                 actual_value NUMERIC,
                 over_hit BOOLEAN,
                 won BOOLEAN,
@@ -102,11 +103,13 @@ def ensure_prop_market_history_schema(conn) -> None:
                 example_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                 UNIQUE (game_date_et, player_id, market, side, bookmaker_key, market_line)
             );
+            ALTER TABLE features.mlb_prop_market_history_examples
+                ADD COLUMN IF NOT EXISTS line_surface TEXT;
             CREATE INDEX IF NOT EXISTS idx_mlb_prop_market_history_date
                 ON features.mlb_prop_market_history_examples (game_date_et);
             CREATE INDEX IF NOT EXISTS idx_mlb_prop_market_history_bucket
                 ON features.mlb_prop_market_history_examples
-                (market, side, line_bucket, price_bucket, bookmaker_key);
+                (market, side, line_surface, line_bucket, price_bucket, bookmaker_key);
             """
         )
     conn.commit()
@@ -289,6 +292,7 @@ def _expand_sides(row: pd.Series) -> list[dict[str, Any]]:
             "market_prob_side": market_prob,
             "price_bucket": price_bucket(price),
             "line_bucket": prop_line_bucket(market, line),
+            "line_surface": prop_line_surface(market, side, line),
             "actual_value": actual,
             "over_hit": over_hit,
             "won": won,
@@ -304,13 +308,13 @@ INSERT INTO features.mlb_prop_market_history_examples (
     source, game_date_et, game_slug, player_id, player_name, player_name_norm,
     team_abbr, market, side, bookmaker_key, market_line, market_price,
     paired_price, raw_market_prob, no_vig_market_prob, market_prob_side,
-    price_bucket, line_bucket, actual_value, over_hit, won, push,
+    price_bucket, line_bucket, line_surface, actual_value, over_hit, won, push,
     profit_units, fetched_at_utc, example_updated_at
 ) VALUES (
     %(source)s, %(game_date_et)s, %(game_slug)s, %(player_id)s, %(player_name)s, %(player_name_norm)s,
     %(team_abbr)s, %(market)s, %(side)s, %(bookmaker_key)s, %(market_line)s, %(market_price)s,
     %(paired_price)s, %(raw_market_prob)s, %(no_vig_market_prob)s, %(market_prob_side)s,
-    %(price_bucket)s, %(line_bucket)s, %(actual_value)s, %(over_hit)s, %(won)s, %(push)s,
+    %(price_bucket)s, %(line_bucket)s, %(line_surface)s, %(actual_value)s, %(over_hit)s, %(won)s, %(push)s,
     %(profit_units)s, %(fetched_at_utc)s, now()
 )
 ON CONFLICT (game_date_et, player_id, market, side, bookmaker_key, market_line) DO UPDATE SET
@@ -324,6 +328,7 @@ ON CONFLICT (game_date_et, player_id, market, side, bookmaker_key, market_line) 
     market_prob_side = EXCLUDED.market_prob_side,
     price_bucket = EXCLUDED.price_bucket,
     line_bucket = EXCLUDED.line_bucket,
+    line_surface = EXCLUDED.line_surface,
     actual_value = EXCLUDED.actual_value,
     over_hit = EXCLUDED.over_hit,
     won = EXCLUDED.won,

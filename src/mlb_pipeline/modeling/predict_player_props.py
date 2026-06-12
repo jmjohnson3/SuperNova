@@ -12,11 +12,12 @@ Edge formula:  edge = pred - book_line
 Bet signal:    |edge| >= threshold (K: 2.0, H: 0.75, TB: 1.5, HR: 0.05/0.45)
 
 Discord output (DISCORD_FORMAT=1): compact grouped by game.
-DB: bets.mlb_prop_predictions — one row per (game_date_et, game_slug, player_id, stat).
+DB: bets.mlb_prop_predictions — one row per locked side-level prop offer.
 """
 from __future__ import annotations
 
 import json
+import hashlib
 import logging
 import math
 import os
@@ -26,7 +27,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 # Ensure stdout is UTF-8 on Windows
@@ -41,20 +42,50 @@ from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_
 from xgboost import XGBRegressor
 
 try:
+    import joblib
+except ImportError:
+    joblib = None
+
+try:
     import lightgbm as lgb
     _HAS_LGB = True
 except ImportError:
     _HAS_LGB = False
 
 from .bankroll_layers import BankrollAssessment, assess_bankroll_layer, bankroll_tag
-from .bankroll_ledger import insert_prop_bankroll_ledger
+from .bankroll_ledger import (
+    insert_prop_bankroll_ledger,
+    locked_bankroll_state,
+    prop_bankroll_pick_key,
+    prop_bankroll_risk_slot,
+)
 from .model_pick_ledger import insert_prop_model_pick_ledger
 from .features import add_player_prop_derived_features, build_fd_parlay_url
+from .prop_candidate_engine import (
+    STAT_DISPLAY as _PROP_STAT_DISPLAY,
+    STAT_SECTIONS as _PROP_STAT_SECTIONS,
+    book_label as _prop_book_label,
+    candidate_from_prediction_row,
+    pick_score as _prop_pick_score,
+)
 from .prop_betting_layer import apply_prop_betting_layer, apply_prop_market_side_prior
+from .prop_offer_links import (
+    build_prop_line_map,
+    build_prop_line_map_for_date,
+    filter_prop_offers_for_game,
+)
+from .prop_offer_snapshots import minimum_american_price
+from .prop_shadow_selector import (
+    SelectorContext as PropSelectorContext,
+    ShadowSelectorConfig as PropSelectorConfig,
+    score_prediction_row as score_prop_shadow_row,
+)
+from .discord_record_summary import format_record_summary
 from .side_recalibration import (
     apply_side_calibrator,
     price_bucket as _cal_price_bucket,
     prop_line_bucket as _cal_prop_line_bucket,
+    prop_line_surface as _cal_prop_line_surface,
 )
 
 log = logging.getLogger("mlb_pipeline.modeling.predict_player_props")
@@ -62,6 +93,7 @@ _ET = ZoneInfo("America/New_York")
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
+_SQL_DIR = Path(__file__).resolve().parents[3] / "sql"
 _BREAKEVEN_PROB = 0.524  # P(win) needed to break even at -110 juice
 
 
@@ -122,6 +154,8 @@ class PredictConfig:
     market_side_priors_file: str = "prop_market_side_priors.json"
     apply_market_side_priors: bool = False
     market_side_prior_max_blend: float = 0.35
+    walk_forward_policy_file: str = "prop_walk_forward_accuracy_report.json"
+    apply_walk_forward_policy: bool = True
     # Bankroll props reopen only after this policy approves the exact market/side/line/price bucket.
     bucket_reopen_policy_file: str = "prop_bucket_reopen_policy.json"
     enforce_prop_bucket_reopen: bool = True
@@ -136,6 +170,9 @@ class PredictConfig:
     bankroll_max_stake_pct: float = 0.005
     bankroll_max_daily_exposure_pct: float = 0.02
     bankroll_max_lay_price: int = -180
+    bankroll_reference_usd: float = 1000.0
+    bankroll_micro_stake_usd: float = 1.0
+    bankroll_starter_stake_pct: float = 0.001
     # Discord research output: keep bankroll links/parlays first, then show
     # linked paper props by stat so research plays do not get mistaken for
     # bankroll bets. Set paper limit to 0 to show every priced row per section.
@@ -153,6 +190,8 @@ WITH games_today AS (
     SELECT game_slug, home_team_abbr, away_team_abbr, start_ts_utc, game_date_et
     FROM raw.mlb_games
     WHERE game_date_et = %(game_date)s
+      AND status = 'scheduled'
+      AND (start_ts_utc IS NULL OR start_ts_utc > NOW())
 ),
 today_starters AS (
     SELECT
@@ -566,6 +605,8 @@ WITH games_today AS (
     SELECT game_slug, home_team_abbr, away_team_abbr, start_ts_utc, game_date_et
     FROM raw.mlb_games
     WHERE game_date_et = %(game_date)s
+      AND status = 'scheduled'
+      AND (start_ts_utc IS NULL OR start_ts_utc > NOW())
 ),
 teams_today AS (
     SELECT home_team_abbr AS team_abbr, away_team_abbr AS opponent_abbr,
@@ -814,6 +855,7 @@ SELECT
     -- Confirmed batting order from pre-game lineup (raw.mlb_lineups)
     conf_lu.batting_order  AS confirmed_batting_order,
     conf_lu.lineup_source  AS confirmed_lineup_source,
+    team_lu.lineup_slots   AS confirmed_team_lineup_slots,
     -- Batter career stats with today's home plate umpire (MLB025)
     btu.btu_games,
     btu.btu_ba,
@@ -1110,11 +1152,41 @@ LEFT JOIN LATERAL (
 LEFT JOIN raw.mlb_statcast_catcher_framing opp_cf
     ON opp_cf.player_id   = opp_cat_recent.opp_catcher_id
     AND opp_cf.season_year = EXTRACT(YEAR FROM %(game_date)s::date)::INT
--- Confirmed batting order from pre-game lineup
-LEFT JOIN raw.mlb_lineups conf_lu
-    ON  conf_lu.game_slug  = tt.game_slug
-    AND conf_lu.team_abbr  = tt.team_abbr
-    AND conf_lu.player_id  = rp.player_id
+-- Confirmed batting order from pre-game lineup.  MySportsFeeds lineup player
+-- IDs are not always the same IDs used by gamelogs/boxscores, so prefer ID
+-- matches but fall back to the normalized player name.
+LEFT JOIN LATERAL (
+    SELECT LOWER(REGEXP_REPLACE(
+        UNACCENT(bx.first_name || ' ' || bx.last_name), '[^a-z ]', '', 'gi'
+    )) AS player_name_norm
+    FROM raw.mlb_boxscore_player_stats bx
+    WHERE bx.player_id = rp.player_id
+    ORDER BY bx.game_slug DESC
+    LIMIT 1
+) rp_name ON TRUE
+LEFT JOIN LATERAL (
+    SELECT COUNT(*) FILTER (WHERE lu.batting_order IS NOT NULL) AS lineup_slots
+    FROM raw.mlb_lineups lu
+    WHERE lu.game_slug = tt.game_slug
+      AND lu.team_abbr = tt.team_abbr
+) team_lu ON TRUE
+LEFT JOIN LATERAL (
+    SELECT lu.batting_order, lu.lineup_source
+    FROM raw.mlb_lineups lu
+    WHERE lu.game_slug = tt.game_slug
+      AND lu.team_abbr = tt.team_abbr
+      AND (
+          lu.player_id = rp.player_id
+          OR (
+              rp_name.player_name_norm IS NOT NULL
+              AND lu.player_name_norm = rp_name.player_name_norm
+          )
+      )
+    ORDER BY
+      CASE WHEN lu.player_id = rp.player_id THEN 0 ELSE 1 END,
+      lu.batting_order NULLS LAST
+    LIMIT 1
+) conf_lu ON TRUE
 -- Market over_price on canonical batter lines (FanDuel; today's game)
 -- Hits O/U 0.5: over_price encodes implied P(≥1 hit) — varies widely by player/matchup
 -- TB   O/U 1.5: over_price encodes implied P(≥2 TB)
@@ -1886,6 +1958,26 @@ def _load_prop_market_side_priors(model_dir: Path, file_name: str) -> dict:
     return raw
 
 
+def _load_prop_walk_forward_policy(model_dir: Path, file_name: str) -> dict:
+    path = model_dir / file_name
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse prop walk-forward policy at %s: %s", path, exc)
+        return {}
+    policy = raw.get("live_policy") or {}
+    n = (
+        len(policy.get("exact_bucket") or {})
+        + len(policy.get("line_surface") or {})
+        + len(policy.get("market_side") or {})
+    )
+    if n:
+        log.info("Loaded prop walk-forward live policy from %s (%d buckets)", path, n)
+    return policy
+
+
 def _load_prop_bucket_reopen_policy(model_dir: Path, file_name: str) -> dict:
     path = model_dir / file_name
     if not path.exists():
@@ -1900,12 +1992,294 @@ def _load_prop_bucket_reopen_policy(model_dir: Path, file_name: str) -> dict:
     return raw
 
 
-def _prop_reopen_bucket_key(stat: str, side: str, line: Optional[float], price) -> str:
+def _float_or_none(value: Any) -> Optional[float]:
+    try:
+        if value is None or pd.isna(value):
+            return None
+        out = float(value)
+    except Exception:
+        return None
+    return out if math.isfinite(out) else None
+
+
+def _slot_pa_prior(slot: Optional[float]) -> Optional[float]:
+    if slot is None:
+        return None
+    try:
+        return max(3.2, min(4.85, 4.75 - 0.16 * (float(slot) - 1.0)))
+    except Exception:
+        return None
+
+
+def _rough_hitter_projected_pa(row: pd.Series, effective_order: Optional[float]) -> Optional[float]:
+    ab_per_game = _float_or_none(row.get("ab_per_game_played"))
+    if ab_per_game is None:
+        ab_per_game = _float_or_none(row.get("ab_avg_10"))
+    bb_avg_10 = _float_or_none(row.get("bb_avg_10")) or 0.0
+    if ab_per_game is not None:
+        return max(1.0, min(5.8, ab_per_game + max(0.0, bb_avg_10)))
+    return _slot_pa_prior(effective_order)
+
+
+def _load_hitter_pa_artifact(model_dir: Path) -> Optional[dict]:
+    if joblib is None:
+        return None
+    path = model_dir / "hitter_player_game_outcome_models.joblib"
+    if not path.exists():
+        return None
+    try:
+        artifact = joblib.load(path)
+    except Exception as exc:
+        log.warning("Could not load hitter player-game outcome artifact at %s: %s", path, exc)
+        return None
+    models = artifact.get("models") or {}
+    pa_model = models.get("pa_model")
+    if pa_model is None:
+        return None
+    rec = artifact.get("recommendation") or {}
+    pa_gain = _float_or_none(rec.get("pa_mae_gain_vs_slot_prior"))
+    if pa_gain is not None and pa_gain <= 0.0:
+        log.info("Hitter PA artifact present but disabled; PA gain vs slot prior is %.4f", pa_gain)
+        return None
+    log.info(
+        "Loaded validated hitter PA model from %s (PA MAE gain vs slot prior=%s)",
+        path,
+        "unknown" if pa_gain is None else f"{pa_gain:.4f}",
+    )
+    return artifact
+
+
+def _pa_feature_value(row: pd.Series, name: str, projected_pa: Optional[float], effective_order: Optional[float]) -> Any:
+    if name == "lineup_slot":
+        return effective_order
+    if name == "confirmed_starter_num":
+        return 1.0 if _float_or_none(row.get("confirmed_batting_order")) is not None else 0.0
+    if name == "projected_pa":
+        return projected_pa
+    if name == "pa_games":
+        return row.get("n_games_prev_10")
+    if name == "team_implied_runs":
+        # Live hitter snapshots usually have game total but not side implied
+        # runs; half-total is a neutral fallback for the PA model.
+        implied = row.get("team_implied_runs")
+        if _float_or_none(implied) is not None:
+            return implied
+        total = _float_or_none(row.get("game_total_line")) or _float_or_none(row.get("market_total"))
+        return None if total is None else total / 2.0
+    if name == "opponent_implied_runs":
+        implied = row.get("opponent_implied_runs")
+        if _float_or_none(implied) is not None:
+            return implied
+        total = _float_or_none(row.get("game_total_line")) or _float_or_none(row.get("market_total"))
+        return None if total is None else total / 2.0
+    if name == "game_total_line":
+        return row.get("game_total_line") if "game_total_line" in row else row.get("market_total")
+    if name == "lineup_confirmed_flag":
+        return 1.0 if _float_or_none(row.get("confirmed_batting_order")) is not None else 0.0
+    if name == "confirmed_team_lineup_slots":
+        return row.get("confirmed_team_lineup_slots")
+    if name == "team_lineup_confirmed_flag":
+        slots = _float_or_none(row.get("confirmed_team_lineup_slots"))
+        return 1.0 if slots is not None and slots >= 7.0 else 0.0
+    if name == "lineup_boxscore_proxy_flag":
+        return 0.0 if _float_or_none(row.get("confirmed_batting_order")) is not None else 1.0
+    if name == "lineup_slot_x_team_implied_runs":
+        runs = _pa_feature_value(row, "team_implied_runs", projected_pa, effective_order)
+        return None if effective_order is None or runs is None else float(effective_order) * float(runs)
+    live_aliases = {
+        "own_lineup_xslg_avg": ("own_lineup_slg_avg_10",),
+        "batter_sc_barrel_rate": ("sc_barrel_rate",),
+        "batter_sc_hard_hit_pct": ("sc_hard_hit_pct",),
+        "batter_sc_avg_exit_velo": ("sc_avg_exit_velo",),
+        "batter_sc_avg_launch_angle": ("sc_avg_launch_angle",),
+        "batter_sc_sweet_spot_pct": ("sc_sweet_spot_pct",),
+        "batter_sc_fb_pct": ("sc_fb_pct",),
+        "batter_sc_gb_pct": ("sc_gb_pct",),
+        "batter_sc_ld_pct": ("sc_ld_pct",),
+        "batter_sc_xba": ("sc_xba",),
+        "batter_sc_xslg": ("sc_xslg",),
+        "batter_sc_xwoba": ("sc_xwoba",),
+        "batter_sc_xiso": ("sc_xiso",),
+        "batter_sc_pull_pct": ("sc_pull_pct",),
+        "batter_sc_opposite_pct": ("sc_opposite_pct",),
+        "batter_sc_popup_pct": ("sc_popup_pct",),
+        "batter_sc_brl_pa": ("sc_brl_pa",),
+        "batter_sprint_speed": ("sprint_speed",),
+        "batter_disc_oz_swing_pct": ("sc_b_oz_swing_pct",),
+        "batter_disc_iz_contact_pct": ("sc_b_iz_contact_pct",),
+        "batter_disc_oz_contact_pct": ("sc_b_oz_contact_pct",),
+        "batter_disc_whiff_pct": ("sc_b_disc_whiff_pct",),
+        "batter_disc_out_zone_pct": ("sc_b_out_zone_pct",),
+        "batter_disc_k_pct": ("sc_b_k_pct",),
+        "batter_disc_bb_pct": ("sc_b_bb_pct",),
+        "opp_sp_sc_barrel_rate": ("opp_sp_sc_barrel_rate",),
+        "opp_sp_sc_hard_hit_pct": ("opp_sp_sc_hard_hit_pct",),
+        "opp_sp_sc_avg_exit_velo": ("opp_sp_sc_avg_exit_velo",),
+        "opp_sp_sc_avg_launch_angle": ("opp_sp_sc_avg_launch_angle",),
+        "opp_sp_sc_xba": ("opp_sp_sc_xba",),
+        "opp_sp_sc_xslg": ("opp_sp_sc_xslg",),
+        "opp_sp_sc_xwoba": ("opp_sp_sc_xwoba",),
+        "opp_sp_sc_xiso": ("opp_sp_sc_xiso",),
+    }
+    for alias in live_aliases.get(name, ()):
+        if alias in row and _float_or_none(row.get(alias)) is not None:
+            return row.get(alias)
+    if name == "opp_sp_hand_l":
+        hand = str(row.get("opp_sp_hand") or "").upper()
+        return 1.0 if hand == "L" else (0.0 if hand in {"R", "S"} else None)
+    if name == "opp_sp_k_pct_10":
+        return row.get("opp_sp_k_pct_10") if "opp_sp_k_pct_10" in row else row.get("opp_sp_k_pct_5")
+    if name == "opp_sp_bb_pct":
+        return row.get("opp_sp_bb_pct") if "opp_sp_bb_pct" in row else row.get("opp_sp_bb_pct_5")
+    if name == "opp_sp_xwoba":
+        return row.get("opp_sp_xwoba") if "opp_sp_xwoba" in row else row.get("opp_sp_sc_xwoba")
+    if name == "opp_sp_hard_hit_pct":
+        return row.get("opp_sp_hard_hit_pct") if "opp_sp_hard_hit_pct" in row else row.get("opp_sp_sc_hard_hit_pct")
+    if name == "opp_sp_whiff_pct":
+        return row.get("opp_sp_whiff_pct") if "opp_sp_whiff_pct" in row else row.get("opp_sp_fb_whiff_pct")
+    if name == "opp_bp_k9_10":
+        return row.get("opp_bp_k9_10") if "opp_bp_k9_10" in row else row.get("opp_bp_k9_5")
+    if name == "batter_vs_hand_hits_avg_10":
+        return row.get("batter_vs_hand_hits_avg_10") if "batter_vs_hand_hits_avg_10" in row else row.get("hits_avg_10_vs_hand")
+    if name == "batter_vs_hand_tb_avg_10":
+        return row.get("batter_vs_hand_tb_avg_10") if "batter_vs_hand_tb_avg_10" in row else row.get("tb_avg_10_vs_hand")
+    if name == "batter_vs_hand_hr_avg_10":
+        return row.get("batter_vs_hand_hr_avg_10") if "batter_vs_hand_hr_avg_10" in row else row.get("hr_avg_10_vs_hand")
+    if name == "batter_vs_hand_iso_avg_10":
+        return row.get("batter_vs_hand_iso_avg_10") if "batter_vs_hand_iso_avg_10" in row else row.get("iso_avg_10_vs_hand")
+    if name == "batter_vs_hand_k_rate_10":
+        return row.get("batter_vs_hand_k_rate_10") if "batter_vs_hand_k_rate_10" in row else row.get("k_rate_avg_40_vs_hand")
+    if name == "batter_vs_hand_games_10":
+        if "batter_vs_hand_games_10" in row:
+            return row.get("batter_vs_hand_games_10")
+        hand = str(row.get("opp_sp_hand") or "").upper()
+        return row.get("n_games_vs_lhp_10") if hand == "L" else row.get("n_games_vs_rhp_10")
+    if name == "batter_vs_rp_ba_30":
+        return row.get("batter_vs_rp_ba_30") if "batter_vs_rp_ba_30" in row else row.get("bvr_ba_30")
+    if name == "batter_vs_rp_slg_30":
+        return row.get("batter_vs_rp_slg_30") if "batter_vs_rp_slg_30" in row else row.get("bvr_slg_30")
+    if name == "batter_vs_rp_hr_rate_30":
+        return row.get("batter_vs_rp_hr_rate_30") if "batter_vs_rp_hr_rate_30" in row else row.get("bvr_hr_rate_30")
+    if name == "batter_vs_rp_k_rate_30":
+        return row.get("batter_vs_rp_k_rate_30") if "batter_vs_rp_k_rate_30" in row else row.get("bvr_k_rate_30")
+    return row.get(name)
+
+
+def _pa_feature_category(row: pd.Series, name: str) -> Any:
+    if name == "lineup_source":
+        return row.get("confirmed_lineup_source") or "rolling_batting_order"
+    if name == "starter_status_source":
+        return "confirmed_lineup" if _float_or_none(row.get("confirmed_batting_order")) is not None else "rolling_batting_order"
+    if name == "primary_position":
+        return row.get("primary_position") or "unknown"
+    return row.get(name) or "unknown"
+
+
+def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> list[dict[str, Any]]:
+    infos: list[dict[str, Any]] = []
+    feature_rows: list[Optional[dict[str, Any]]] = []
+    numeric_features = list((artifact or {}).get("numeric_features") or [])
+    categorical_features = list((artifact or {}).get("categorical_features") or [])
+
+    for _, row in df.iterrows():
+        conf_order = _float_or_none(row.get("confirmed_batting_order"))
+        avg_order = _float_or_none(row.get("batting_order_avg_10"))
+        team_lineup_slots = _float_or_none(row.get("confirmed_team_lineup_slots"))
+        team_lineup_available = team_lineup_slots is not None and team_lineup_slots >= 7
+        effective_order = conf_order if conf_order is not None else avg_order
+        baseline_pa = _rough_hitter_projected_pa(row, effective_order)
+        allow_pa_model = conf_order is not None or team_lineup_available
+        info = {
+            "confirmed_batting_order": conf_order,
+            "confirmed_team_lineup_slots": team_lineup_slots,
+            "effective_batting_order": effective_order,
+            "baseline_projected_pa": baseline_pa,
+            "projected_pa": baseline_pa,
+            "pa_scale": 1.0,
+            "pa_model_source": "baseline" if allow_pa_model else "baseline_no_team_lineup",
+        }
+        infos.append(info)
+
+        if artifact and allow_pa_model:
+            feat = {
+                name: _pa_feature_value(row, name, baseline_pa, effective_order)
+                for name in numeric_features
+            }
+            feat.update({name: _pa_feature_category(row, name) for name in categorical_features})
+            feature_rows.append(feat)
+        elif artifact:
+            feature_rows.append(None)
+
+    if not artifact or not feature_rows:
+        return infos
+
+    model = ((artifact.get("models") or {}).get("pa_model"))
+    if model is None:
+        return infos
+    try:
+        valid_indices = [i for i, feat in enumerate(feature_rows) if feat is not None]
+        if not valid_indices:
+            return infos
+        X = pd.DataFrame([feature_rows[i] for i in valid_indices])
+        for col in numeric_features:
+            if col not in X:
+                X[col] = np.nan
+            X[col] = pd.to_numeric(X[col], errors="coerce")
+        for col in categorical_features:
+            if col not in X:
+                X[col] = "unknown"
+            X[col] = X[col].fillna("unknown").astype(str)
+        pred = np.clip(np.asarray(model.predict(X[numeric_features + categorical_features]), dtype=float), 0.4, 6.4)
+    except Exception:
+        log.warning("Validated hitter PA model failed at prediction time; using baseline PA", exc_info=True)
+        return infos
+
+    for i, pa in zip(valid_indices, pred):
+        if not math.isfinite(float(pa)):
+            continue
+        base = infos[i].get("baseline_projected_pa")
+        scale = 1.0
+        if base is not None and base > 0:
+            scale = max(0.75, min(1.25, float(pa) / float(base)))
+        infos[i].update({
+            "projected_pa": float(pa),
+            "validated_projected_pa": float(pa),
+            "pa_scale": scale,
+            "pa_model_source": "validated_pa_model",
+        })
+    return infos
+
+
+def _prop_reopen_bucket_key(
+    stat: str,
+    side: str,
+    line: Optional[float],
+    price,
+    bookmaker_key: Optional[str] = None,
+) -> str:
+    return "|".join([
+        str(stat or "*"),
+        str(side or "*"),
+        _cal_prop_line_surface(str(stat or ""), side, line),
+        _cal_prop_line_bucket(str(stat or ""), line),
+        _cal_price_bucket(price),
+        str(bookmaker_key or "*"),
+    ])
+
+
+def _prop_reopen_bucket_key_legacy(
+    stat: str,
+    side: str,
+    line: Optional[float],
+    price,
+    bookmaker_key: Optional[str] = None,
+) -> str:
     return "|".join([
         str(stat or "*"),
         str(side or "*"),
         _cal_prop_line_bucket(str(stat or ""), line),
         _cal_price_bucket(price),
+        str(bookmaker_key or "*"),
     ])
 
 
@@ -1916,14 +2290,64 @@ def _prop_bucket_is_reopened(
     side: str | None,
     line: Optional[float],
     price,
+    bookmaker_key: Optional[str] = None,
 ) -> tuple[bool, str | None]:
-    if not policy or not policy.get("source") or not side:
-        return True, None
-    key = _prop_reopen_bucket_key(stat, side, line, price)
+    tier, key, _record = _prop_bucket_ladder_tier(
+        policy,
+        stat=stat,
+        side=side,
+        line=line,
+        price=price,
+        bookmaker_key=bookmaker_key,
+    )
+    return tier in {"micro", "starter", "bankroll"}, key
+
+
+def _prop_bucket_ladder_tier(
+    policy: Optional[dict],
+    *,
+    stat: str,
+    side: str | None,
+    line: Optional[float],
+    price,
+    bookmaker_key: Optional[str] = None,
+) -> tuple[str, str | None, dict]:
+    if not side:
+        return "watch", None, {}
+    if not policy or not policy.get("source"):
+        return "watch", None, {}
+    key = _prop_reopen_bucket_key(stat, side, line, price, bookmaker_key)
     if policy.get("force_reopen_all"):
-        return True, key
+        return ("watch" if policy.get("research_only") else "bankroll"), key, {}
+    ladder = policy.get("ladder_buckets") or {}
+    record = ladder.get(key)
+    if record:
+        return str(record.get("ladder_tier") or "watch"), key, record
     reopened = policy.get("reopen_buckets") or {}
-    return key in reopened, key
+    if key in reopened:
+        record = reopened[key] or {}
+        return str(record.get("ladder_tier") or "bankroll"), key, record
+    legacy_key = _prop_reopen_bucket_key_legacy(stat, side, line, price, bookmaker_key)
+    if legacy_key in reopened:
+        record = reopened[legacy_key] or {}
+        return str(record.get("ladder_tier") or "bankroll"), key, record
+    return "watch", key, {}
+
+
+def _is_tail_alt_over(stat: str, side: str | None, line: Optional[float]) -> bool:
+    if side != "over" or line is None:
+        return False
+    try:
+        line_v = float(line)
+    except (TypeError, ValueError):
+        return False
+    if stat == "batter_hits":
+        return line_v >= 2.5
+    if stat == "batter_total_bases":
+        return line_v >= 3.5
+    if stat == "batter_home_runs":
+        return line_v >= 1.5
+    return False
 
 
 def _signed_probability_edge_for_side(
@@ -1947,6 +2371,107 @@ def _signed_probability_edge_for_side(
     return None
 
 
+def _clean_float_or_none(value) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def _clip_probability(value) -> Optional[float]:
+    v = _clean_float_or_none(value)
+    if v is None:
+        return None
+    return max(1e-6, min(1.0 - 1e-6, v))
+
+
+def _no_vig_side_probability(*, side: str, price, over_price, under_price) -> Optional[float]:
+    raw = _american_to_implied_prob(price)
+    over_raw = _american_to_implied_prob(over_price)
+    under_raw = _american_to_implied_prob(under_price)
+    if over_raw is not None and under_raw is not None and over_raw + under_raw > 0:
+        if side == "over":
+            return over_raw / (over_raw + under_raw)
+        if side == "under":
+            return under_raw / (over_raw + under_raw)
+    return raw
+
+
+def _walk_forward_policy_record(
+    policy: dict | None,
+    *,
+    market: str,
+    side: str,
+    line: Optional[float],
+    price=None,
+    bookmaker_key: Optional[str] = None,
+) -> tuple[dict | None, str | None]:
+    if not policy or side not in {"over", "under"}:
+        return None, None
+    line_surface = _cal_prop_line_surface(market, side, line)
+    line_bucket = _cal_prop_line_bucket(market, line)
+    price_bucket_value = _cal_price_bucket(price)
+    book = str(bookmaker_key or "*").lower()
+    lookups = [
+        ("exact_bucket", f"{market}|{side}|{line_surface}|{line_bucket}|{price_bucket_value}|{book}"),
+        ("line_surface", f"{market}|{side}|{line_surface}"),
+        ("market_side", f"{market}|{side}"),
+    ]
+    for level, key in lookups:
+        rec = (policy.get(level) or {}).get(key)
+        if rec:
+            return rec, f"{level}:{key}"
+    return None, None
+
+
+def _apply_walk_forward_probability_policy(
+    p_side: Optional[float],
+    policy: dict | None,
+    *,
+    market: str,
+    side: str,
+    line: Optional[float],
+    price,
+    over_price,
+    under_price,
+    bookmaker_key: Optional[str] = None,
+) -> tuple[Optional[float], Optional[str]]:
+    model_prob = _clip_probability(p_side)
+    if model_prob is None:
+        return p_side, None
+    rec, key = _walk_forward_policy_record(
+        policy,
+        market=market,
+        side=side,
+        line=line,
+        price=price,
+        bookmaker_key=bookmaker_key,
+    )
+    if not rec:
+        return model_prob, None
+    variant = str(rec.get("variant") or "model_only")
+    market_prob = _clip_probability(_no_vig_side_probability(
+        side=side,
+        price=price,
+        over_price=over_price,
+        under_price=under_price,
+    ))
+    if market_prob is None:
+        return model_prob, None
+    if variant == "market_no_vig":
+        return market_prob, key
+    if variant == "walk_forward_blend":
+        weight = _clean_float_or_none(rec.get("model_weight"))
+        if weight is None:
+            return model_prob, None
+        weight = max(0.0, min(1.0, weight))
+        return _clip_probability(weight * model_prob + (1.0 - weight) * market_prob), key
+    return model_prob, None
+
+
 def _apply_prop_side_recalibration(
     *,
     stat: str,
@@ -1959,6 +2484,8 @@ def _apply_prop_side_recalibration(
     market_side_priors: dict | None = None,
     apply_market_side_priors: bool = False,
     market_side_prior_max_blend: float = 0.35,
+    walk_forward_policy: dict | None = None,
+    opportunity_features: Optional[Dict[str, float]] = None,
 ) -> tuple[Optional[float], Optional[float], Optional[str]]:
     """Return calibrated P(over), signed price-aware edge, and calibrator key."""
     if raw_p_over is None:
@@ -2006,6 +2533,18 @@ def _apply_prop_side_recalibration(
         under_price=line_data.get("under_price"),
         model_family=family,
         bookmaker_key=line_data.get("over_bookmaker_key") or line_data.get("bookmaker_key"),
+        opportunity=opportunity_features,
+    )
+    p_over_side, wf_key_over = _apply_walk_forward_probability_policy(
+        p_over_side,
+        walk_forward_policy,
+        market=stat,
+        side="over",
+        line=line,
+        price=line_data.get("over_price"),
+        over_price=line_data.get("over_price"),
+        under_price=line_data.get("under_price"),
+        bookmaker_key=line_data.get("over_bookmaker_key") or line_data.get("bookmaker_key"),
     )
     p_under_side, key_under = apply_side_calibrator(
         1.0 - raw_p,
@@ -2049,9 +2588,25 @@ def _apply_prop_side_recalibration(
             or line_data.get("under_link_book")
             or line_data.get("bookmaker_key")
         ),
+        opportunity=opportunity_features,
     )
-    key_over = bet_key_over or key_over
-    key_under = bet_key_under or key_under
+    p_under_side, wf_key_under = _apply_walk_forward_probability_policy(
+        p_under_side,
+        walk_forward_policy,
+        market=stat,
+        side="under",
+        line=line,
+        price=line_data.get("under_price"),
+        over_price=line_data.get("over_price"),
+        under_price=line_data.get("under_price"),
+        bookmaker_key=(
+            line_data.get("under_bookmaker_key")
+            or line_data.get("under_link_book")
+            or line_data.get("bookmaker_key")
+        ),
+    )
+    key_over = wf_key_over or bet_key_over or key_over
+    key_under = wf_key_under or bet_key_under or key_under
 
     cands: list[tuple[float, str, float, str | None]] = []
     ev_over = _ev_per_unit(p_over_side, line_data.get("over_price"))
@@ -2497,6 +3052,7 @@ def _prop_bankroll_assessment(
     bet_price: Optional[float],
     ev: Optional[float],
     kelly_fraction: Optional[float],
+    bookmaker_key: Optional[str] = None,
     blocked_sides: Optional[set[str]] = None,
     bucket_reopen_policy: Optional[dict] = None,
     has_signal: Optional[bool] = None,
@@ -2505,9 +3061,28 @@ def _prop_bankroll_assessment(
     """Label a prop signal for shadow-bankroll readiness."""
     hard: list[str] = []
     soft: list[str] = []
+    ladder_tier, _ladder_key, _ladder_record = _prop_bucket_ladder_tier(
+        bucket_reopen_policy,
+        stat=stat,
+        side=side,
+        line=line,
+        price=bet_price,
+        bookmaker_key=bookmaker_key,
+    )
 
     if side and side in (blocked_sides or set()):
         soft.append(f"weak_{side}_bucket")
+    if _is_tail_alt_over(stat, side, line):
+        tail_reopened, _tail_key = _prop_bucket_is_reopened(
+            bucket_reopen_policy,
+            stat=stat,
+            side=side,
+            line=line,
+            price=bet_price,
+            bookmaker_key=bookmaker_key,
+        )
+        if not tail_reopened:
+            hard.append("tail_alt_not_reopened")
     if cfg.enforce_prop_bucket_reopen:
         reopened, _bucket_key = _prop_bucket_is_reopened(
             bucket_reopen_policy,
@@ -2515,6 +3090,7 @@ def _prop_bankroll_assessment(
             side=side,
             line=line,
             price=bet_price,
+            bookmaker_key=bookmaker_key,
         )
         if not reopened:
             hard.append("bucket_not_reopened")
@@ -2545,13 +3121,48 @@ def _prop_bankroll_assessment(
     if kelly_fraction is None or kelly_fraction <= 0:
         soft.append("zero_kelly")
 
-    return assess_bankroll_layer(
+    assessment = assess_bankroll_layer(
         has_signal=(side is not None if has_signal is None else has_signal),
         hard_blocks=hard,
         soft_warnings=soft,
         kelly_fraction=kelly_fraction,
         max_stake_pct=cfg.bankroll_max_stake_pct,
         no_signal_reason=no_signal_reason,
+    )
+    if not assessment.candidate:
+        if ladder_tier == "watch" and side is not None:
+            return BankrollAssessment(
+                tier="watch",
+                candidate=False,
+                reasons=assessment.reasons,
+                stake_pct=0.0,
+                stake_usd=0.0,
+            )
+        return assessment
+    if ladder_tier == "micro":
+        stake_usd = max(0.0, float(cfg.bankroll_micro_stake_usd))
+        reference = max(1.0, float(cfg.bankroll_reference_usd))
+        return BankrollAssessment(
+            tier="micro",
+            candidate=True,
+            reasons="",
+            stake_pct=stake_usd / reference,
+            stake_usd=stake_usd,
+        )
+    if ladder_tier == "starter":
+        return BankrollAssessment(
+            tier="starter",
+            candidate=True,
+            reasons="",
+            stake_pct=max(0.0, float(cfg.bankroll_starter_stake_pct)),
+            stake_usd=0.0,
+        )
+    return BankrollAssessment(
+        tier="bankroll",
+        candidate=True,
+        reasons="",
+        stake_pct=assessment.stake_pct,
+        stake_usd=0.0,
     )
 
 
@@ -2594,6 +3205,11 @@ def _prop_bankroll_from_pick(
         bet_price=price,
         ev=ev,
         kelly_fraction=kelly,
+        bookmaker_key=(
+            ld.get("over_bookmaker_key")
+            if side == "over"
+            else (ld.get("under_bookmaker_key") or ld.get("under_link_book"))
+        ) or ld.get("bookmaker_key"),
         blocked_sides=blocked_sides,
         bucket_reopen_policy=bucket_reopen_policy,
         has_signal=has_signal,
@@ -2614,6 +3230,7 @@ def _downgrade_for_daily_cap(assessment: BankrollAssessment) -> BankrollAssessme
         candidate=False,
         reasons=_append_bankroll_reason(assessment.reasons, "daily_exposure_cap"),
         stake_pct=0.0,
+        stake_usd=0.0,
     )
 
 
@@ -2645,14 +3262,26 @@ def _cap_bankroll_output(items: List[Dict], cfg: PredictConfig) -> None:
         item["bankroll"] = capped
 
 
-def _cap_prop_db_rows(rows: List[Dict], cfg: PredictConfig) -> List[Dict]:
+def _cap_prop_db_rows(
+    rows: List[Dict],
+    cfg: PredictConfig,
+    *,
+    existing_exposure_pct: float = 0.0,
+    existing_pick_keys: set[str] | None = None,
+    existing_risk_slots: set[str] | None = None,
+    prop_lines=None,
+    require_locked: bool = False,
+) -> List[Dict]:
     """Apply daily bankroll exposure cap to persisted prop candidates."""
     candidate_indexes = [
         i for i, row in enumerate(rows)
         if bool(row.get("bankroll_candidate"))
     ]
+    pick_keys = set(existing_pick_keys or set())
+    risk_slots = set(existing_risk_slots or set())
+    initially_occupied_slots = set(risk_slots)
 
-    def _score(idx: int) -> tuple[float, float]:
+    def _score(idx: int) -> tuple[bool, float, float]:
         row = rows[idx]
         ev = row.get("ev")
         edge = row.get("edge")
@@ -2664,28 +3293,97 @@ def _cap_prop_db_rows(rows: List[Dict], cfg: PredictConfig) -> List[Dict]:
             edge_score = abs(float(edge)) if edge is not None else 0.0
         except (TypeError, ValueError):
             edge_score = 0.0
-        return ev_score, edge_score
+        return prop_bankroll_pick_key(row, prop_lines) in pick_keys, ev_score, edge_score
 
-    used = 0.0
+    used = max(float(existing_exposure_pct or 0.0), 0.0)
+    seen_player_stat: set[tuple] = set()
     for idx in sorted(candidate_indexes, key=_score, reverse=True):
         row = rows[idx]
+        player_stat_key = (
+            row.get("game_date_et"),
+            row.get("game_slug"),
+            row.get("player_id"),
+            row.get("stat"),
+        )
+        pick_key = prop_bankroll_pick_key(row, prop_lines)
+        risk_slot = prop_bankroll_risk_slot(row)
+        if pick_key and pick_key in pick_keys:
+            seen_player_stat.add(player_stat_key)
+            continue
+        block_reason = None
+        if not pick_key or not risk_slot:
+            block_reason = "missing_locked_pick_key"
+        elif risk_slot in initially_occupied_slots:
+            block_reason = "already_locked_player_stat"
+        elif require_locked:
+            block_reason = "not_in_locked_bankroll_ledger"
+        if player_stat_key in seen_player_stat:
+            block_reason = block_reason or "duplicate_offer_lower_rank"
+        seen_player_stat.add(player_stat_key)
         stake = float(row.get("stake_pct") or 0.0)
-        if used + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12:
+        if (
+            block_reason is None
+            and used + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12
+        ):
             used += stake
+            pick_keys.add(pick_key)
+            risk_slots.add(risk_slot)
             continue
         row["bankroll_candidate"] = False
         row["bankroll_tier"] = "paper"
         row["bankroll_reasons"] = _append_bankroll_reason(
             row.get("bankroll_reasons") or "",
-            "daily_exposure_cap",
+            block_reason or "daily_exposure_cap",
         )
         row["stake_pct"] = 0.0
+        row["stake_usd"] = 0.0
     return rows
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DB table
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _apply_prop_shadow_selector_gate(rows: List[Dict], cfg: PredictConfig) -> List[Dict]:
+    """Attach residual/CLV-aware selector fields and fail real-money props closed."""
+    if not rows:
+        return rows
+    try:
+        selector_ctx = PropSelectorContext(cfg.model_dir)
+    except Exception:
+        log.exception("Could not load prop shadow selector artifacts; blocking prop bankroll rows")
+        selector_ctx = None
+    selector_cfg = PropSelectorConfig(
+        pg_dsn=cfg.pg_dsn,
+        report_date=cfg.et_date,
+        model_dir=cfg.model_dir,
+        min_ev=cfg.min_ev,
+    )
+    for row in rows:
+        selector = None
+        if selector_ctx is not None:
+            try:
+                selector = score_prop_shadow_row(row, ctx=selector_ctx, cfg=selector_cfg)
+            except Exception:
+                log.exception("Could not score prop selector row %s", row.get("prediction_key"))
+        if selector:
+            row["selector_score"] = selector.get("selector_score")
+            row["selector_tier"] = selector.get("selector_tier")
+            row["selector_real_candidate"] = selector.get("selector_real_candidate")
+            row["selector_prob_side"] = selector.get("selector_prob_side")
+            row["selector_ev"] = selector.get("selector_ev")
+            row["selector_reasons"] = "; ".join(selector.get("selector_reasons") or [])
+        if bool(row.get("bankroll_candidate")) and not (selector or {}).get("selector_real_candidate"):
+            row["bankroll_candidate"] = False
+            row["bankroll_tier"] = "watch"
+            row["bankroll_reasons"] = _append_bankroll_reason(
+                row.get("bankroll_reasons") or "",
+                "selector_clv_residual_block",
+            )
+            row["stake_pct"] = 0.0
+            row["stake_usd"] = 0.0
+    return rows
+
 
 def _round_or_none(value: Optional[float], ndigits: int) -> Optional[float]:
     if value is None:
@@ -2696,6 +3394,167 @@ def _round_or_none(value: Optional[float], ndigits: int) -> Optional[float]:
     except Exception:
         pass
     return round(float(value), ndigits)
+
+
+def _clean_int_or_none(value) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        try:
+            return int(float(value))
+        except (TypeError, ValueError):
+            return None
+
+
+def _prop_prediction_key(
+    *,
+    game_date_et: date,
+    game_slug: str,
+    player_id: int,
+    stat: str,
+    side: Optional[str],
+    book_line: Optional[float],
+    bookmaker_key: Optional[str],
+    prop_offer_id: Optional[int],
+) -> str:
+    parts = [
+        "mlb",
+        "prop_prediction",
+        game_date_et,
+        game_slug,
+        player_id,
+        stat,
+        side or "",
+        _round_or_none(book_line, 3),
+        (bookmaker_key or "").lower(),
+        prop_offer_id or "",
+    ]
+    raw = "|".join("" if p is None else str(p) for p in parts)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:40]
+
+
+def _prop_offers_for_key(
+    prop_lines: Dict,
+    norm: str,
+    stat: str,
+    game_row: Optional[Dict] = None,
+) -> List[Dict]:
+    ld = prop_lines.get((norm, stat)) or {}
+    offers = ld.get("offers") or []
+    out = [dict(o) for o in offers if o.get("side") in {"over", "under"} and o.get("line") is not None]
+    if out and game_row is not None:
+        out = filter_prop_offers_for_game(
+            out,
+            team_abbr=game_row.get("team_abbr"),
+            opponent_abbr=game_row.get("opponent_abbr"),
+            start_ts_utc=game_row.get("start_ts_utc"),
+        )
+    if offers or ld.get("line") is None:
+        return out
+    line = ld.get("line")
+    for side in ("over", "under"):
+        price = ld.get(f"{side}_price")
+        link = ld.get(f"{side}_link")
+        if price is None and not link:
+            continue
+        out.append({
+            "id": ld.get(f"{side}_offer_id"),
+            "source_row_id": ld.get(f"{side}_offer_source_row_id"),
+            "player_name_norm": norm,
+            "stat": stat,
+            "side": side,
+            "line": line,
+            "price": price,
+            "link": link,
+            "bookmaker_key": (
+                ld.get(f"{side}_bookmaker_key")
+                or (ld.get("under_link_book") if side == "under" else None)
+                or ld.get("bookmaker_key")
+            ),
+        })
+    return out
+
+
+def _prop_line_data_for_row(
+    prop_lines: Dict,
+    norm: str,
+    stat: str,
+    game_row: Dict,
+) -> tuple[Optional[Dict], List[Dict]]:
+    offers = _prop_offers_for_key(prop_lines, norm, stat, game_row)
+    if not offers:
+        return None, []
+    line_map = build_prop_line_map(offers)
+    return line_map.get((norm, stat)), offers
+
+
+def _offer_line_data(offer: Dict, sibling_offers: Optional[List[Dict]] = None) -> Dict:
+    """Return legacy line-data shape for one locked side-level offer.
+
+    The selected side gets a link; the opposite side may keep its price for
+    calibration/no-vig context but not its link, so side selection stays locked
+    to the offer being evaluated.
+    """
+    side = (offer.get("side") or "").lower()
+    line = _round_or_none(offer.get("line"), 3)
+    book = (offer.get("bookmaker_key") or "").lower() or None
+    ld = {
+        "line": line,
+        "bookmaker_key": book,
+        "selected_offer_side": side,
+        "selected_offer_id": _clean_int_or_none(offer.get("id")),
+        "selected_offer_source_row_id": _clean_int_or_none(offer.get("source_row_id")),
+        "selected_offer_link": offer.get("link"),
+        "selected_offer_price": offer.get("price"),
+        "offer_source": "features.mlb_prop_offer_links",
+    }
+    for candidate in sibling_offers or [offer]:
+        candidate_side = (candidate.get("side") or "").lower()
+        candidate_book = (candidate.get("bookmaker_key") or "").lower()
+        candidate_line = _round_or_none(candidate.get("line"), 3)
+        if candidate_side not in {"over", "under"}:
+            continue
+        if candidate_book != book or candidate_line != line:
+            continue
+        prefix = "over" if candidate_side == "over" else "under"
+        ld[f"{prefix}_price"] = candidate.get("price")
+        ld[f"{prefix}_bookmaker_key"] = candidate_book
+        ld[f"{prefix}_offer_id"] = _clean_int_or_none(candidate.get("id"))
+        ld[f"{prefix}_offer_source_row_id"] = _clean_int_or_none(candidate.get("source_row_id"))
+        if candidate_side == side:
+            ld[f"{prefix}_link"] = candidate.get("link")
+            if candidate_side == "under":
+                ld["under_link_book"] = candidate_book
+    if side == "over":
+        ld.setdefault("over_price", offer.get("price"))
+        ld.setdefault("over_link", offer.get("link"))
+        ld.setdefault("over_bookmaker_key", book)
+        ld.setdefault("over_offer_id", _clean_int_or_none(offer.get("id")))
+        ld.setdefault("over_offer_source_row_id", _clean_int_or_none(offer.get("source_row_id")))
+    elif side == "under":
+        ld.setdefault("under_price", offer.get("price"))
+        ld.setdefault("under_link", offer.get("link"))
+        ld.setdefault("under_bookmaker_key", book)
+        ld.setdefault("under_link_book", book)
+        ld.setdefault("under_offer_id", _clean_int_or_none(offer.get("id")))
+        ld.setdefault("under_offer_source_row_id", _clean_int_or_none(offer.get("source_row_id")))
+    return ld
+
+
+def _same_line(a, b) -> bool:
+    if a is None or b is None:
+        return False
+    try:
+        return abs(float(a) - float(b)) <= 1e-9
+    except (TypeError, ValueError):
+        return False
 
 
 def _prop_db_row(
@@ -2715,15 +3574,16 @@ def _prop_db_row(
     model_family: Optional[str],
     kelly_fraction: Optional[float],
     ld: Optional[Dict],
+    forced_side: Optional[str] = None,
     cfg: Optional[PredictConfig] = None,
     blocked_sides: Optional[set[str]] = None,
     bucket_reopen_policy: Optional[dict] = None,
 ) -> Dict:
     """Build the persisted prop row with explicit count/probability/price fields."""
     line = float(book_line) if book_line is not None else None
-    side = None
+    side = (forced_side or "").lower() or None
     if edge is not None and abs(float(edge)) > 1e-12:
-        side = "over" if float(edge) > 0 else "under"
+        side = side or ("over" if float(edge) > 0 else "under")
 
     p_over = pred_prob_over
     if p_over is None and pred_count is not None and line is not None:
@@ -2749,8 +3609,31 @@ def _prop_db_row(
         )
     else:
         bookmaker_key = line_data.get("bookmaker_key")
+    prop_offer_id = None
+    prop_offer_source_row_id = None
+    bet_link = None
+    if side == "over":
+        prop_offer_id = line_data.get("over_offer_id") or line_data.get("selected_offer_id")
+        prop_offer_source_row_id = (
+            line_data.get("over_offer_source_row_id")
+            or line_data.get("selected_offer_source_row_id")
+        )
+        bet_link = line_data.get("over_link") or line_data.get("selected_offer_link")
+    elif side == "under":
+        prop_offer_id = line_data.get("under_offer_id") or line_data.get("selected_offer_id")
+        prop_offer_source_row_id = (
+            line_data.get("under_offer_source_row_id")
+            or line_data.get("selected_offer_source_row_id")
+        )
+        bet_link = line_data.get("under_link") or line_data.get("selected_offer_link")
+    prop_offer_id = _clean_int_or_none(prop_offer_id)
+    prop_offer_source_row_id = _clean_int_or_none(prop_offer_source_row_id)
     breakeven = _american_to_implied_prob(bet_price)
     ev = _ev_per_unit(p_side, bet_price)
+    minimum_acceptable_price = minimum_american_price(
+        p_side,
+        cfg.min_ev if cfg is not None else 0.0,
+    )
     kelly_for_bankroll = kelly_fraction
     if (kelly_for_bankroll is None or kelly_for_bankroll <= 0) and p_side is not None:
         kelly_for_bankroll = _kelly_from_price(p_side, bet_price)
@@ -2775,6 +3658,7 @@ def _prop_db_row(
             bet_price=bet_price,
             ev=ev,
             kelly_fraction=kelly_for_bankroll,
+            bookmaker_key=bookmaker_key,
             blocked_sides=blocked_sides,
             bucket_reopen_policy=bucket_reopen_policy,
             has_signal=not no_signal_reason,
@@ -2791,6 +3675,18 @@ def _prop_db_row(
         "player_name": player_name,
         "team_abbr": team_abbr,
         "stat": stat,
+        "prediction_key": _prop_prediction_key(
+            game_date_et=game_date_et,
+            game_slug=game_slug,
+            player_id=int(player_id),
+            stat=stat,
+            side=side,
+            book_line=line,
+            bookmaker_key=bookmaker_key,
+            prop_offer_id=prop_offer_id,
+        ),
+        "prop_offer_id": prop_offer_id,
+        "prop_offer_source_row_id": prop_offer_source_row_id,
         # Backward compatibility: pred_value remains what older reports expect.
         "pred_value": _round_or_none(pred_value, 3),
         "pred_count": _round_or_none(pred_count, 3),
@@ -2804,14 +3700,17 @@ def _prop_db_row(
         "over_price": _round_or_none(over_price, 0),
         "under_price": _round_or_none(under_price, 0),
         "bet_price": _round_or_none(bet_price, 0),
+        "minimum_acceptable_price": minimum_acceptable_price,
         "breakeven_prob": _round_or_none(breakeven, 4),
         "ev": _round_or_none(ev, 4),
         "bookmaker_key": bookmaker_key,
+        "bet_link": bet_link,
         "kelly_fraction": _round_or_none(kelly_for_bankroll, 4),
         "bankroll_tier": bankroll.tier,
         "bankroll_candidate": bankroll.candidate,
         "bankroll_reasons": bankroll.reasons,
         "stake_pct": _round_or_none(bankroll.stake_pct, 4),
+        "stake_usd": _round_or_none(bankroll.stake_usd, 2),
     }
 
 
@@ -2824,17 +3723,44 @@ CREATE TABLE IF NOT EXISTS bets.mlb_prop_predictions (
     player_name      TEXT,
     team_abbr        TEXT,
     stat             TEXT        NOT NULL,
+    prediction_key   TEXT,
+    prop_offer_id    BIGINT,
+    prop_offer_source_row_id INTEGER,
     pred_value       NUMERIC,
     book_line        NUMERIC,
     edge             NUMERIC,
     kelly_fraction   NUMERIC,
     actual_value     NUMERIC,
     over_hit         BOOLEAN,
+    closing_line     NUMERIC,
+    closing_price    NUMERIC,
+    clv_line         NUMERIC,
+    clv_price        NUMERIC,
+    beat_clv_line    BOOLEAN,
+    beat_clv_price   BOOLEAN,
+    run_id           TEXT,
+    is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+    superseded_at    TIMESTAMPTZ,
+    stale_reason     TEXT,
     created_at       TIMESTAMPTZ DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (game_date_et, game_slug, player_id, stat)
 );
 
 ALTER TABLE bets.mlb_prop_predictions
+    DROP CONSTRAINT IF EXISTS mlb_prop_predictions_game_date_et_game_slug_player_id_stat_key,
+    DROP CONSTRAINT IF EXISTS mlb_prop_predictions_game_slug_player_id_stat_key;
+
+ALTER TABLE bets.mlb_prop_predictions
+    ADD COLUMN IF NOT EXISTS prediction_key   TEXT,
+    ADD COLUMN IF NOT EXISTS prop_offer_id    BIGINT,
+    ADD COLUMN IF NOT EXISTS prop_offer_source_row_id INTEGER,
+    ADD COLUMN IF NOT EXISTS closing_line     NUMERIC,
+    ADD COLUMN IF NOT EXISTS closing_price    NUMERIC,
+    ADD COLUMN IF NOT EXISTS clv_line         NUMERIC,
+    ADD COLUMN IF NOT EXISTS clv_price        NUMERIC,
+    ADD COLUMN IF NOT EXISTS beat_clv_line    BOOLEAN,
+    ADD COLUMN IF NOT EXISTS beat_clv_price   BOOLEAN,
     ADD COLUMN IF NOT EXISTS pred_count      NUMERIC,
     ADD COLUMN IF NOT EXISTS pred_prob_over  NUMERIC,
     ADD COLUMN IF NOT EXISTS edge_type       TEXT,
@@ -2844,32 +3770,62 @@ ALTER TABLE bets.mlb_prop_predictions
     ADD COLUMN IF NOT EXISTS over_price      NUMERIC,
     ADD COLUMN IF NOT EXISTS under_price     NUMERIC,
     ADD COLUMN IF NOT EXISTS bet_price       NUMERIC,
+    ADD COLUMN IF NOT EXISTS minimum_acceptable_price NUMERIC,
     ADD COLUMN IF NOT EXISTS breakeven_prob  NUMERIC,
     ADD COLUMN IF NOT EXISTS ev              NUMERIC,
     ADD COLUMN IF NOT EXISTS bookmaker_key   TEXT,
+    ADD COLUMN IF NOT EXISTS bet_link        TEXT,
     ADD COLUMN IF NOT EXISTS bankroll_tier   TEXT,
     ADD COLUMN IF NOT EXISTS bankroll_candidate BOOLEAN,
     ADD COLUMN IF NOT EXISTS bankroll_reasons TEXT,
-    ADD COLUMN IF NOT EXISTS stake_pct       NUMERIC;
+    ADD COLUMN IF NOT EXISTS stake_pct       NUMERIC,
+    ADD COLUMN IF NOT EXISTS stake_usd       NUMERIC,
+    ADD COLUMN IF NOT EXISTS lock_snapshot_id BIGINT,
+    ADD COLUMN IF NOT EXISTS locked_at_utc   TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS closing_snapshot_id BIGINT,
+    ADD COLUMN IF NOT EXISTS closing_source_row_id BIGINT,
+    ADD COLUMN IF NOT EXISTS closing_fetched_at_utc TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS clv_match_method TEXT,
+    ADD COLUMN IF NOT EXISTS clv_valid BOOLEAN,
+    ADD COLUMN IF NOT EXISTS clv_status TEXT,
+    ADD COLUMN IF NOT EXISTS clv_unknown_reason TEXT,
+    ADD COLUMN IF NOT EXISTS run_id          TEXT,
+    ADD COLUMN IF NOT EXISTS is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS superseded_at   TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS stale_reason    TEXT,
+    ADD COLUMN IF NOT EXISTS updated_at      TIMESTAMPTZ DEFAULT NOW();
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_mlb_prop_predictions_prediction_key
+    ON bets.mlb_prop_predictions (prediction_key);
+CREATE INDEX IF NOT EXISTS idx_mlb_prop_predictions_offer
+    ON bets.mlb_prop_predictions (prop_offer_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_prop_predictions_date_market
+    ON bets.mlb_prop_predictions (game_date_et, stat, bet_side);
 """
 
 _UPSERT_SQL = """
 INSERT INTO bets.mlb_prop_predictions
     (game_date_et, game_slug, player_id, player_name, team_abbr, stat,
+     prediction_key, prop_offer_id, prop_offer_source_row_id,
      pred_value, pred_count, pred_prob_over, book_line, edge, edge_type,
      model_family, bet_side, line_bucket, over_price, under_price, bet_price,
-     breakeven_prob, ev, bookmaker_key, kelly_fraction,
-     bankroll_tier, bankroll_candidate, bankroll_reasons, stake_pct)
+     minimum_acceptable_price, breakeven_prob, ev, bookmaker_key, bet_link, kelly_fraction,
+     bankroll_tier, bankroll_candidate, bankroll_reasons, stake_pct, stake_usd,
+     run_id, is_active, stale_reason)
 VALUES
     (%(game_date_et)s, %(game_slug)s, %(player_id)s, %(player_name)s, %(team_abbr)s,
-     %(stat)s, %(pred_value)s, %(pred_count)s, %(pred_prob_over)s, %(book_line)s,
+     %(stat)s, %(prediction_key)s, %(prop_offer_id)s, %(prop_offer_source_row_id)s,
+     %(pred_value)s, %(pred_count)s, %(pred_prob_over)s, %(book_line)s,
      %(edge)s, %(edge_type)s, %(model_family)s, %(bet_side)s, %(line_bucket)s,
-     %(over_price)s, %(under_price)s, %(bet_price)s, %(breakeven_prob)s,
-     %(ev)s, %(bookmaker_key)s, %(kelly_fraction)s,
-     %(bankroll_tier)s, %(bankroll_candidate)s, %(bankroll_reasons)s, %(stake_pct)s)
-ON CONFLICT (game_date_et, game_slug, player_id, stat) DO UPDATE SET
+     %(over_price)s, %(under_price)s, %(bet_price)s, %(minimum_acceptable_price)s, %(breakeven_prob)s,
+     %(ev)s, %(bookmaker_key)s, %(bet_link)s, %(kelly_fraction)s,
+     %(bankroll_tier)s, %(bankroll_candidate)s, %(bankroll_reasons)s, %(stake_pct)s, %(stake_usd)s,
+     %(run_id)s, TRUE, NULL)
+ON CONFLICT (prediction_key) DO UPDATE SET
     player_name     = EXCLUDED.player_name,
     team_abbr       = EXCLUDED.team_abbr,
+    prop_offer_id   = EXCLUDED.prop_offer_id,
+    prop_offer_source_row_id = EXCLUDED.prop_offer_source_row_id,
     pred_value      = EXCLUDED.pred_value,
     pred_count      = EXCLUDED.pred_count,
     pred_prob_over  = EXCLUDED.pred_prob_over,
@@ -2882,14 +3838,39 @@ ON CONFLICT (game_date_et, game_slug, player_id, stat) DO UPDATE SET
     over_price      = EXCLUDED.over_price,
     under_price     = EXCLUDED.under_price,
     bet_price       = EXCLUDED.bet_price,
+    minimum_acceptable_price = EXCLUDED.minimum_acceptable_price,
     breakeven_prob  = EXCLUDED.breakeven_prob,
     ev              = EXCLUDED.ev,
     bookmaker_key   = EXCLUDED.bookmaker_key,
+    bet_link        = EXCLUDED.bet_link,
     kelly_fraction  = EXCLUDED.kelly_fraction,
     bankroll_tier   = EXCLUDED.bankroll_tier,
     bankroll_candidate = EXCLUDED.bankroll_candidate,
     bankroll_reasons = EXCLUDED.bankroll_reasons,
-    stake_pct       = EXCLUDED.stake_pct
+    stake_pct       = EXCLUDED.stake_pct,
+    stake_usd       = EXCLUDED.stake_usd,
+    run_id          = EXCLUDED.run_id,
+    is_active       = TRUE,
+    stale_reason    = NULL,
+    superseded_at   = NULL,
+    lock_snapshot_id = NULL,
+    locked_at_utc   = NULL,
+    actual_value    = NULL,
+    over_hit        = NULL,
+    closing_line    = NULL,
+    closing_price   = NULL,
+    clv_line        = NULL,
+    clv_price       = NULL,
+    beat_clv_line   = NULL,
+    beat_clv_price  = NULL,
+    closing_source_row_id = NULL,
+    closing_snapshot_id = NULL,
+    closing_fetched_at_utc = NULL,
+    clv_match_method = NULL,
+    clv_valid       = NULL,
+    clv_status      = NULL,
+    clv_unknown_reason = NULL,
+    updated_at      = NOW()
 """
 
 
@@ -2897,32 +3878,158 @@ def _ensure_schema(conn) -> None:
     with conn.cursor() as cur:
         cur.execute(_ENSURE_TABLE_SQL)
     conn.commit()
+    _ensure_lineup_quality_dependency(conn)
+
+
+def _regclass_exists(conn, name: str) -> bool:
+    with conn.cursor() as cur:
+        cur.execute("SELECT to_regclass(%s) IS NOT NULL", (name,))
+        return bool(cur.fetchone()[0])
+
+
+def _ensure_player_batting_rolling_mat(conn) -> None:
+    if _regclass_exists(conn, "features.mlb_player_batting_rolling_mat"):
+        return
+    if not _regclass_exists(conn, "features.mlb_player_batting_rolling"):
+        log.warning("features.mlb_player_batting_rolling missing; lineup quality will use empty fallback")
+        return
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_batting_rolling_mat AS
+            SELECT * FROM features.mlb_player_batting_rolling
+            WITH DATA;
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_batting_player_mat_pk
+                ON features.mlb_player_batting_rolling_mat (game_slug, player_id);
+            CREATE INDEX IF NOT EXISTS idx_mlb_batting_player_mat_player_date
+                ON features.mlb_player_batting_rolling_mat (player_id, game_date_et DESC, game_slug DESC);
+            """
+        )
+    conn.commit()
+    log.info("Created compatibility matview features.mlb_player_batting_rolling_mat")
+
+
+def _create_empty_lineup_quality_mat(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE SCHEMA IF NOT EXISTS features;
+            DROP MATERIALIZED VIEW IF EXISTS features.mlb_lineup_quality_mat;
+            CREATE MATERIALIZED VIEW features.mlb_lineup_quality_mat AS
+            SELECT
+                NULL::text AS game_slug,
+                NULL::text AS team_abbr,
+                NULL::boolean AS is_home,
+                NULL::numeric AS lineup_avg_avg_10,
+                NULL::numeric AS lineup_slg_avg_10,
+                NULL::numeric AS lineup_iso_avg_10,
+                NULL::numeric AS top4_slg_avg_10,
+                NULL::double precision AS lineup_data_completeness,
+                NULL::double precision AS lineup_xwoba_avg,
+                NULL::double precision AS lineup_xslg_avg,
+                NULL::double precision AS lineup_barrel_avg,
+                NULL::double precision AS lineup_hard_hit_avg,
+                NULL::numeric AS lineup_k_pct_std,
+                NULL::numeric AS lineup_k_pct_cv,
+                NULL::numeric AS pct_lhb
+            WHERE false;
+            CREATE UNIQUE INDEX IF NOT EXISTS mlb_lineup_quality_mat_pk
+                ON features.mlb_lineup_quality_mat (game_slug, team_abbr);
+            """
+        )
+    conn.commit()
+    log.warning("Created empty fallback features.mlb_lineup_quality_mat; lineup quality fields will be median-imputed")
+
+
+def _ensure_lineup_quality_dependency(conn) -> None:
+    if _regclass_exists(conn, "features.mlb_lineup_quality_mat"):
+        return
+    try:
+        _ensure_player_batting_rolling_mat(conn)
+        lineup_sql = _SQL_DIR / "MLB011_mlb_lineup_quality.sql"
+        mat_sql = _SQL_DIR / "MLB011b_mlb_lineup_quality_mat.sql"
+        if not lineup_sql.exists() or not mat_sql.exists():
+            raise FileNotFoundError("MLB011 lineup quality SQL files are missing")
+        with conn.cursor() as cur:
+            cur.execute(lineup_sql.read_text(encoding="utf-8"))
+            cur.execute(mat_sql.read_text(encoding="utf-8"))
+        conn.commit()
+        log.info("Created features.mlb_lineup_quality_mat for player prop prediction")
+    except Exception:
+        conn.rollback()
+        log.exception("Could not create full lineup quality matview; using empty fallback")
+        _create_empty_lineup_quality_mat(conn)
 
 
 def _save_predictions(conn, rows: List[Dict]) -> None:
     if not rows:
         return
+    run_id = datetime.now(timezone.utc).strftime("prop-predict-%Y%m%dT%H%M%SZ")
     with conn.cursor() as cur:
+        run_dates = sorted({row.get("game_date_et") for row in rows if row.get("game_date_et")})
+        current_keys = sorted({
+            str(row.get("prediction_key"))
+            for row in rows
+            if row.get("prediction_key")
+        })
+        if run_dates:
+            cur.execute(
+                """
+                UPDATE bets.mlb_prop_predictions
+                SET is_active = FALSE,
+                    stale_reason = 'not_in_latest_prediction_run',
+                    superseded_at = COALESCE(superseded_at, NOW()),
+                    updated_at = NOW()
+                WHERE game_date_et = ANY(%s::date[])
+                  AND COALESCE(is_active, TRUE) IS TRUE
+                  AND actual_value IS NULL
+                  AND (
+                    prediction_key IS NULL
+                    OR NOT (prediction_key = ANY(%s::text[]))
+                  )
+                """,
+                (run_dates, current_keys),
+            )
+            if cur.rowcount:
+                log.info("_save_predictions: marked %d stale prop rows inactive for %s", cur.rowcount, run_dates)
         # Remove stale predictions for players now marked OUT/DOUBTFUL who were
-        # predicted in earlier runs today (upsert alone won't delete them).
+        # predicted in earlier runs today (upsert alone won't hide them).
         cur.execute("""
-            DELETE FROM bets.mlb_prop_predictions pp
-            USING raw.mlb_injuries inj
+            UPDATE bets.mlb_prop_predictions pp
+            SET is_active = FALSE,
+                bankroll_candidate = FALSE,
+                bankroll_tier = 'paper',
+                stake_pct = 0,
+                stake_usd = 0,
+                bankroll_reasons = CASE
+                    WHEN COALESCE(bankroll_reasons, '') = '' THEN 'inactive_player'
+                    WHEN bankroll_reasons NOT LIKE '%inactive_player%' THEN bankroll_reasons || '; inactive_player'
+                    ELSE bankroll_reasons
+                END,
+                stale_reason = 'inactive_player',
+                superseded_at = COALESCE(superseded_at, NOW()),
+                updated_at = NOW()
+            FROM raw.mlb_injuries inj
             WHERE inj.mlb_player_id = pp.player_id
               AND inj.playing_probability IN ('OUT', 'DOUBTFUL')
               AND pp.game_date_et = CURRENT_DATE
+              AND COALESCE(pp.is_active, TRUE) IS TRUE
+              AND pp.actual_value IS NULL
         """)
         deleted = cur.rowcount
         if deleted:
-            log.info("_save_predictions: removed %d stale rows for OUT/DOUBTFUL players", deleted)
+            log.info("_save_predictions: marked %d rows inactive for OUT/DOUBTFUL players", deleted)
         for row in rows:
             for key in (
                 "pred_count", "pred_prob_over", "edge_type", "model_family",
                 "bet_side", "line_bucket", "over_price", "under_price",
-                "bet_price", "breakeven_prob", "ev", "bookmaker_key",
-                "bankroll_tier", "bankroll_candidate", "bankroll_reasons", "stake_pct",
+                "bet_price", "minimum_acceptable_price", "breakeven_prob", "ev", "bookmaker_key",
+                "prediction_key", "prop_offer_id", "prop_offer_source_row_id", "bet_link",
+                "bankroll_tier", "bankroll_candidate", "bankroll_reasons", "stake_pct", "stake_usd",
             ):
                 row.setdefault(key, None)
+            row["run_id"] = run_id
             cur.execute(_UPSERT_SQL, row)
     conn.commit()
     log.info("Saved %d prop prediction rows", len(rows))
@@ -2933,6 +4040,16 @@ def _save_predictions(conn, rows: List[Dict]) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _load_prop_lines(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
+    try:
+        line_map = build_prop_line_map_for_date(conn, game_date)
+        if line_map:
+            return line_map
+    except Exception:
+        log.warning("Normalized prop offer map failed; falling back to legacy loader", exc_info=True)
+    return _load_prop_lines_legacy(conn, game_date)
+
+
+def _load_prop_lines_legacy(conn, game_date: date) -> Dict[Tuple[str, str], Dict]:
     """
     Returns {(player_name_norm, stat): {line, over_link, under_link, bookmaker_key}}.
 
@@ -3580,6 +4697,35 @@ def _grade_lottery_picks(conn) -> int:
     return n
 
 
+def _prop_offer_health(prop_lines: Dict) -> Dict[str, int]:
+    entries = len(prop_lines or {})
+    offer_rows = 0
+    priced_sides = 0
+    linked_sides = 0
+    for line_data in (prop_lines or {}).values():
+        offers = list(line_data.get("offers") or [])
+        offer_rows += len(offers)
+        priced_sides += sum(1 for offer in offers if offer.get("price") is not None)
+        linked_sides += sum(1 for offer in offers if offer.get("link"))
+        if not offers:
+            for side in ("over", "under"):
+                if line_data.get(f"{side}_price") is not None:
+                    priced_sides += 1
+                if line_data.get(f"{side}_link"):
+                    linked_sides += 1
+    return {
+        "entries": entries,
+        "offer_rows": offer_rows,
+        "priced_sides": priced_sides,
+        "linked_sides": linked_sides,
+    }
+
+
+def _prop_offers_missing(prop_lines: Dict) -> bool:
+    health = _prop_offer_health(prop_lines)
+    return health["entries"] == 0 or (health["offer_rows"] == 0 and health["priced_sides"] == 0)
+
+
 def _print_discord(
     all_pitcher_rows: List[Dict],
     all_batter_rows: List[Dict],
@@ -3598,6 +4744,18 @@ def _print_discord(
     """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
     fd_links: List[str] = []
+    prop_selector_ctx: Optional[PropSelectorContext] = None
+    prop_selector_cfg = PropSelectorConfig(
+        pg_dsn=cfg.pg_dsn,
+        report_date=cfg.et_date,
+        model_dir=cfg.model_dir,
+        min_ev=cfg.min_ev,
+    )
+    if db_rows is not None:
+        try:
+            prop_selector_ctx = PropSelectorContext(cfg.model_dir)
+        except Exception:
+            log.exception("Failed to load prop shadow selector artifacts")
 
     # Discord mode: Top-10 leaderboards per stat + HR parlay + lottery parlay.
     if is_discord:
@@ -3752,36 +4910,17 @@ def _print_discord(
                         return val
             return cfg.et_date
 
-        def _existing_game_bankroll_exposure() -> float:
+        def _locked_bankroll_exposure() -> float:
             game_date = _message_game_date()
             if not game_date:
                 return 0.0
             try:
                 with psycopg2.connect(cfg.pg_dsn) as conn:
-                    with conn.cursor() as cur:
-                        cur.execute(
-                            """
-                            SELECT
-                                COALESCE(SUM(
-                                    CASE WHEN bankroll_candidate_rl
-                                         THEN COALESCE(stake_pct_rl, 0)
-                                         ELSE 0 END
-                                ), 0)
-                                +
-                                COALESCE(SUM(
-                                    CASE WHEN bankroll_candidate_total
-                                         THEN COALESCE(stake_pct_total, 0)
-                                         ELSE 0 END
-                                ), 0)
-                            FROM bets.mlb_game_predictions
-                            WHERE game_date_et = %s
-                            """,
-                            (game_date,),
-                        )
-                        return float(cur.fetchone()[0] or 0.0)
+                    exposure, _keys, _slots = locked_bankroll_state(conn, game_date)
+                    return exposure
             except Exception:
-                log.debug("Could not load existing game bankroll exposure", exc_info=True)
-                return 0.0
+                log.exception("Could not load locked MLB bankroll exposure")
+                return cfg.bankroll_max_daily_exposure_pct
 
         def _record_prop_item(
             *,
@@ -3820,28 +4959,33 @@ def _print_discord(
                 paper_rows.append(item)
 
         def _book_label(link: Optional[str], fallback: Optional[str] = None) -> str:
-            if link:
-                low = link.lower()
-                if "fanduel.com" in low:
-                    return "FD"
-                if "draftkings.com" in low:
-                    return "DK"
-            fb = (fallback or "").lower()
-            if fb == "fanduel":
-                return "FD"
-            if fb == "draftkings":
-                return "DK"
-            return "Bet"
+            return _prop_book_label(link, fallback)
 
         def _print_prop_item(item: Dict, *, include_link: bool) -> None:
             pred_s = item["pred_fmt"].format(item["pred_val"])
-            p_s = f" P={item['p_over']:.1%}" if item["p_over"] is not None else ""
-            ev_s = f" EV={item['ev']:+.1%}" if item.get("ev") is not None else ""
+            display_prob = _as_float(item.get("selector_prob_side"))
+            if display_prob is None:
+                display_prob = item.get("p_over")
+            display_ev = _as_float(item.get("selector_ev"))
+            if display_ev is None:
+                display_ev = item.get("ev")
+            p_s = f" P={display_prob:.1%}" if display_prob is not None else ""
+            ev_s = f" EV={display_ev:+.1%}" if display_ev is not None else ""
+            selector_tier = item.get("selector_tier")
+            selector_s = f" Sel={selector_tier}" if selector_tier else ""
+            clv_prob = _as_float(item.get("clv_beat_prob"))
+            clv_s = f" CLV={clv_prob:.0%}" if clv_prob is not None else ""
+            current_price = _as_float(item.get("current_price"))
+            minimum_price = _as_float(item.get("minimum_acceptable_price"))
+            price_s = f" Price={current_price:+.0f}" if current_price is not None else " Price=?"
+            min_s = f" Min={minimum_price:+.0f}" if minimum_price is not None else " Min=?"
+            drift_s = "" if item.get("price_drift_ok") else " DRIFT BLOCK"
             book = item.get("book") or _book_label(item.get("link"))
             link_s = f" [Bet {book}](<{item['link']}>)" if include_link and item.get("link") else ""
             print(
                 f"- {item['name']} ({item['team']} vs {item['opp']}) "
-                f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}{p_s}{ev_s} "
+                f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}{p_s}{ev_s}"
+                f"{clv_s}{selector_s}{price_s}{min_s}{drift_s} "
                 f"[{bankroll_tag(item['bankroll'])}]{link_s}"
             )
 
@@ -3858,18 +5002,8 @@ def _print_discord(
             except (TypeError, ValueError):
                 return None
 
-        stat_labels = {
-            "pitcher_strikeouts": ("K", "{:.1f}"),
-            "batter_hits": ("H", "{:.3f}"),
-            "batter_total_bases": ("TB", "{:.3f}"),
-            "batter_home_runs": ("HR", "{:.3f}"),
-        }
-        stat_sections = [
-            ("pitcher_strikeouts", "Strikeouts"),
-            ("batter_hits", "Hits"),
-            ("batter_total_bases", "Total Bases"),
-            ("batter_home_runs", "Home Runs"),
-        ]
+        stat_labels = _PROP_STAT_DISPLAY
+        stat_sections = _PROP_STAT_SECTIONS
 
         def _opponent_for_row(row: Dict) -> str:
             gm = game_map.get(row.get("game_slug"), {})
@@ -3883,61 +5017,57 @@ def _print_discord(
             return row.get("opponent_abbr") or "?"
 
         def _db_row_to_prop_item(row: Dict) -> Optional[Dict]:
-            stat = row.get("stat")
-            if stat not in stat_labels:
-                return None
-            side_raw = (row.get("bet_side") or "").lower()
-            if side_raw not in {"over", "under"}:
-                return None
-            market, pred_fmt = stat_labels[stat]
-            name = row.get("player_name", f"id={row.get('player_id')}")
-            ld = prop_lines.get((_normalize_name(name), stat))
-            link = None
-            book = row.get("bookmaker_key")
-            if ld:
-                link = ld.get("over_link") if side_raw == "over" else ld.get("under_link")
-                if side_raw == "over":
-                    book = ld.get("over_bookmaker_key") or ld.get("bookmaker_key") or book
-                else:
-                    book = (
-                        ld.get("under_bookmaker_key")
-                        or ld.get("under_link_book")
-                        or ld.get("bookmaker_key")
-                        or book
-                    )
-            p_over = _as_float(row.get("pred_prob_over"))
-            p_side = (1.0 - p_over) if side_raw == "under" and p_over is not None else p_over
-            assessment = BankrollAssessment(
-                tier=row.get("bankroll_tier") or "paper",
-                candidate=bool(row.get("bankroll_candidate")),
-                reasons=row.get("bankroll_reasons") or "",
-                stake_pct=float(row.get("stake_pct") or 0.0),
+            item = candidate_from_prediction_row(
+                row,
+                prop_lines,
+                opponent=_opponent_for_row(row),
             )
-            return {
-                "market": market,
-                "stat_key": stat,
-                "side": "O" if side_raw == "over" else "U",
-                "name": name,
-                "team": row.get("team_abbr", "?"),
-                "opp": _opponent_for_row(row),
-                "pred_val": _as_float(row.get("pred_count")) or _as_float(row.get("pred_value")) or 0.0,
-                "pred_fmt": pred_fmt,
-                "line": _as_float(row.get("book_line")) or 0.0,
-                "p_over": p_side,
-                "ev": _as_float(row.get("ev")),
-                "edge": _as_float(row.get("edge")),
-                "link": link,
-                "book": _book_label(link, book),
-                "bankroll": assessment,
-            }
+            if item is None:
+                return None
+            if prop_selector_ctx is not None:
+                selector_row = dict(row)
+                selector_row["price_drift_ok"] = item.get("price_drift_ok")
+                if item.get("current_price") is not None:
+                    selector_row["bet_price"] = item.get("current_price")
+                try:
+                    selector = score_prop_shadow_row(
+                        selector_row,
+                        ctx=prop_selector_ctx,
+                        cfg=prop_selector_cfg,
+                    )
+                    item.update({
+                        "selector_score": selector.get("selector_score"),
+                        "selector_tier": selector.get("selector_tier"),
+                        "selector_real_candidate": selector.get("selector_real_candidate"),
+                        "selector_prob_side": selector.get("selector_prob_side"),
+                        "selector_ev": selector.get("selector_ev"),
+                        "clv_beat_prob": selector.get("clv_beat_prob"),
+                        "bookable_prob": selector.get("bookable_prob"),
+                        "policy_variant": selector.get("policy_variant"),
+                        "bucket_trust_status": selector.get("bucket_trust_status"),
+                        "selector_reasons": selector.get("selector_reasons") or [],
+                    })
+                    if item["bankroll"].candidate and not selector.get("selector_real_candidate"):
+                        item["bankroll"] = BankrollAssessment(
+                            tier="watch",
+                            candidate=False,
+                            reasons=_append_bankroll_reason(
+                                item["bankroll"].reasons,
+                                "selector_clv_residual_block",
+                            ),
+                            stake_pct=0.0,
+                            stake_usd=0.0,
+                        )
+                except Exception:
+                    log.exception("Failed to apply prop shadow selector to %s", row.get("prediction_key"))
+            return item
 
         def _pick_score(item: Dict) -> tuple[float, float]:
-            ev = item.get("ev")
-            edge = item.get("edge")
-            return (
-                float(ev) if ev is not None else -999.0,
-                abs(float(edge)) if edge is not None else 0.0,
-            )
+            selector_score = _as_float(item.get("selector_score"))
+            if selector_score is not None:
+                selector_ev = _as_float(item.get("selector_ev"))
+                return selector_score, selector_ev if selector_ev is not None else -999.0
+            return _prop_pick_score(item)
 
         def _print_prop_parlay(title: str, links: List[str]) -> None:
             dedup = [
@@ -3950,13 +5080,30 @@ def _print_discord(
             if parlay_url:
                 print(f"- {title}: [FD]({parlay_url})")
 
-        def _print_paper_sections(rows: List[Dict], *, source_label: str) -> None:
+        def _is_tail_alt_item(item: Dict) -> bool:
+            stat_key = str(item.get("stat_key") or "")
+            side = str(item.get("side") or "").upper()
+            line = _as_float(item.get("line"))
+            if side != "O" or line is None:
+                return False
+            return (
+                (stat_key == "batter_hits" and line >= 2.5)
+                or (stat_key == "batter_total_bases" and line >= 3.5)
+                or (stat_key == "batter_home_runs" and line >= 1.5)
+            )
+
+        def _print_paper_sections(
+            rows: List[Dict],
+            *,
+            source_label: str,
+            title: str = "PAPER / RESEARCH",
+        ) -> None:
             per_section_limit = int(cfg.discord_paper_limit or 0)
             printed_section = False
             total_shown = 0
             print("")
             print(
-                f"**PAPER / RESEARCH ({len(rows)} {source_label}; "
+                f"**{title} ({len(rows)} {source_label}; "
                 f"{len(model_pick_rows)} positive-EV)**"
             )
             for stat_key, label in stat_sections:
@@ -4007,6 +5154,23 @@ def _print_discord(
             paper_source.sort(key=_pick_score, reverse=True)
             paper_rows = [item for item in paper_source if not item["bankroll"].candidate]
 
+            prop_record = format_record_summary(
+                pg_dsn=cfg.pg_dsn,
+                end_date=cfg.et_date,
+                lookback_days=30,
+                include_game_bankroll=False,
+                include_game_model=False,
+                include_prop_shadow=True,
+            )
+            if prop_record:
+                print(prop_record)
+                print("")
+            offers_missing = _prop_offers_missing(prop_lines)
+            if offers_missing:
+                print("**PROP OFFER HEALTH**")
+                print("- Prop odds not loaded yet — no links/rankings generated")
+                print("")
+
             if bankroll_rows:
                 print(f"**BANKROLL BETS ({len(bankroll_rows)})**")
                 for item in bankroll_rows:
@@ -4016,8 +5180,7 @@ def _print_discord(
                 print("**BANKROLL BETS**")
                 print("- No bankroll-qualified player props today")
 
-            game_exposure = _existing_game_bankroll_exposure()
-            combined_exposure = game_exposure + used_bankroll_exposure
+            combined_exposure = _locked_bankroll_exposure()
             cap = cfg.bankroll_max_daily_exposure_pct
             if combined_exposure > cap + 1e-12:
                 print(
@@ -4027,11 +5190,23 @@ def _print_discord(
 
             if paper_rows:
                 source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
-                _print_paper_sections(paper_rows, source_label=source_label)
+                main_paper_rows = [item for item in paper_rows if not _is_tail_alt_item(item)]
+                tail_alt_rows = [item for item in paper_rows if _is_tail_alt_item(item)]
+                if main_paper_rows:
+                    _print_paper_sections(main_paper_rows, source_label=source_label)
+                if tail_alt_rows:
+                    _print_paper_sections(
+                        tail_alt_rows,
+                        source_label="high-variance alt-line props",
+                        title="ALT-LINE LOTTERY / RESEARCH",
+                    )
             elif not research_rows:
                 print("")
                 print("**PAPER / RESEARCH**")
-                print("- No priced player prop rows with bet links today")
+                if offers_missing:
+                    print("- Waiting on normalized prop offers before ranking/linking props")
+                else:
+                    print("- No priced player prop rows with bet links today")
             else:
                 print("")
 
@@ -4167,8 +5342,7 @@ def _print_discord(
         if parlay_url:
             print(f"- Bankroll Props Parlay: [FD]({parlay_url})")
 
-        game_exposure = _existing_game_bankroll_exposure()
-        combined_exposure = game_exposure + used_bankroll_exposure
+        combined_exposure = _locked_bankroll_exposure()
         cap = cfg.bankroll_max_daily_exposure_pct
         if combined_exposure > cap + 1e-12:
             print(
@@ -4177,7 +5351,16 @@ def _print_discord(
             )
 
         if paper_rows:
-            _print_paper_sections(paper_rows, source_label="model picks")
+            main_paper_rows = [item for item in paper_rows if not _is_tail_alt_item(item)]
+            tail_alt_rows = [item for item in paper_rows if _is_tail_alt_item(item)]
+            if main_paper_rows:
+                _print_paper_sections(main_paper_rows, source_label="model picks")
+            if tail_alt_rows:
+                _print_paper_sections(
+                    tail_alt_rows,
+                    source_label="high-variance alt-line props",
+                    title="ALT-LINE LOTTERY / RESEARCH",
+                )
 
         print("")
         return []
@@ -4751,6 +5934,7 @@ def _print_best_bets(
     all_batter_rows: List[Dict],
     prop_lines: Dict,
     cfg: PredictConfig,
+    bucket_reopen_policy: Optional[dict] = None,
 ) -> List[str]:
     """Print best bets ranked by |edge| as a table. Returns FD links for parlay."""
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
@@ -5008,6 +6192,7 @@ def predict_props(cfg: PredictConfig) -> None:
     # Alt-line binary CLF (FD all-lines) — used in lottery parlay scoring
     pitcher_alt_clf_arts = None
     batter_alt_clf_arts  = None
+    hitter_pa_artifact = None
 
     if pitcher_artifacts_ok:
         try:
@@ -5050,6 +6235,10 @@ def predict_props(cfg: PredictConfig) -> None:
                          list(batter_alt_clf_arts[0].keys()))
         except Exception:
             log.warning("Could not load batter alt CLF artifacts")
+        try:
+            hitter_pa_artifact = _load_hitter_pa_artifact(model_dir)
+        except Exception:
+            log.warning("Could not load hitter PA artifact", exc_info=True)
 
     if not pitcher_artifacts_ok and not batter_artifacts_ok:
         log.warning("No prop models found. Run train_player_prop_models first.")
@@ -5071,6 +6260,11 @@ def predict_props(cfg: PredictConfig) -> None:
     side_recalibrators = _load_prop_side_recalibrators(cfg.model_dir, cfg.side_recalibrators_file)
     betting_layer = _load_prop_betting_layer(cfg.model_dir, cfg.betting_layer_file)
     market_side_priors = _load_prop_market_side_priors(cfg.model_dir, cfg.market_side_priors_file)
+    walk_forward_policy = (
+        _load_prop_walk_forward_policy(cfg.model_dir, cfg.walk_forward_policy_file)
+        if cfg.apply_walk_forward_policy
+        else {}
+    )
     bucket_reopen_policy = _load_prop_bucket_reopen_policy(cfg.model_dir, cfg.bucket_reopen_policy_file)
 
     # ── Pitcher predictions ────────────────────────────────────────────────
@@ -5101,12 +6295,16 @@ def predict_props(cfg: PredictConfig) -> None:
                 _normalize_name(row.get("player_name", f"id={row['player_id']}"))
                 for _, row in df_p.iterrows()
             ])
+            pitcher_offer_contexts = [
+                _prop_line_data_for_row(prop_lines, norm, "pitcher_strikeouts", row)
+                for norm, (_, row) in zip(norms_p, df_p.iterrows())
+            ]
             clf_pover_k: Optional[np.ndarray] = None
             if pitcher_clf_arts is not None:
                 xgb_clf, lgb_clf, feat_p_clf, meds_p_clf, _bt_p_clf, cal_p_map = pitcher_clf_arts
                 lines_p = np.array([
-                    (prop_lines.get((nm, "pitcher_strikeouts")) or {}).get("line", np.nan)
-                    for nm in norms_p
+                    (line_data or {}).get("line", np.nan)
+                    for line_data, _offers in pitcher_offer_contexts
                 ], dtype=float)
                 X_p_clf = _prep_features_clf(X_p, lines_p, feat_p_clf, meds_p_clf)
                 raw_p = np.clip(_predict_ensemble(X_p_clf, xgb_clf, lgb_clf), 0.01, 0.99)
@@ -5129,8 +6327,16 @@ def predict_props(cfg: PredictConfig) -> None:
                 pk = max(0.0, float(pred_k[i]))
                 name = row.get("player_name", f"id={row['player_id']}")
                 norm = _normalize_name(name)
-                ld = prop_lines.get((norm, "pitcher_strikeouts"))
+                ld, offer_rows = pitcher_offer_contexts[i]
                 line = ld["line"] if ld else None
+                try:
+                    _ip_avg_5 = float(row.get("ip_avg_5")) if row.get("ip_avg_5") is not None else None
+                except Exception:
+                    _ip_avg_5 = None
+                pitcher_opportunity = {
+                    "projected_bf": (_ip_avg_5 * 4.25) if _ip_avg_5 is not None else None,
+                    "projected_pitch_count": (_ip_avg_5 * 16.5) if _ip_avg_5 is not None else None,
+                }
                 # Dynamic side-penalty (with shrinkage) for weak directional buckets.
                 if line is not None:
                     pk, _pen_k = _apply_count_side_penalty(
@@ -5182,6 +6388,8 @@ def predict_props(cfg: PredictConfig) -> None:
                         market_side_priors=market_side_priors,
                         apply_market_side_priors=cfg.apply_market_side_priors,
                         market_side_prior_max_blend=cfg.market_side_prior_max_blend,
+                        walk_forward_policy=walk_forward_policy,
+                        opportunity_features=pitcher_opportunity,
                     )
                     kel = 0.0
                     pred_for_db = p_over_k
@@ -5202,6 +6410,8 @@ def predict_props(cfg: PredictConfig) -> None:
                         market_side_priors=market_side_priors,
                         apply_market_side_priors=cfg.apply_market_side_priors,
                         market_side_prior_max_blend=cfg.market_side_prior_max_blend,
+                        walk_forward_policy=walk_forward_policy,
+                        opportunity_features=pitcher_opportunity,
                     )
                     kel = 0.0
                     edge_type = "probability" if pred_prob_for_db is not None else "count"
@@ -5217,6 +6427,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     "opponent_abbr": row.get("opponent_abbr"),
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_strikeouts": pk,
+                    "projected_bf": pitcher_opportunity.get("projected_bf"),
+                    "projected_pitch_count": pitcher_opportunity.get("projected_pitch_count"),
                     "clf_p_over": {"pitcher_strikeouts": None if clf_k_disabled else p_over_k},
                     "sigma_strikeouts": sigma_k,
                     "weak_prop_sides": {
@@ -5228,26 +6440,78 @@ def predict_props(cfg: PredictConfig) -> None:
                     },
                 }
                 all_pitcher_rows.append(r)
-                db_rows.append(_prop_db_row(
-                    game_date_et=et_date,
-                    game_slug=row["game_slug"],
-                    player_id=int(row["player_id"]),
-                    player_name=name,
-                    team_abbr=row.get("team_abbr"),
-                    stat="pitcher_strikeouts",
-                    pred_value=pred_for_db,
-                    pred_count=pk,
-                    pred_prob_over=pred_prob_for_db,
-                    book_line=line,
-                    edge=edge,
-                    edge_type=edge_type,
-                    model_family=model_family,
-                    kelly_fraction=kel,
-                    ld=ld,
-                    cfg=cfg,
-                    blocked_sides=_blocked_sides_for_row(r, "pitcher_strikeouts"),
-                    bucket_reopen_policy=bucket_reopen_policy,
-                ))
+                for offer in offer_rows:
+                    offer_ld = _offer_line_data(offer, offer_rows)
+                    offer_line = offer_ld.get("line")
+                    offer_side = offer_ld.get("selected_offer_side")
+                    offer_raw_p = None
+                    offer_family = "regression"
+                    alt_offer_p = _lookup_alt_clf_prob(
+                        _pitcher_alt_clf_probs,
+                        norm,
+                        "pitcher_strikeouts",
+                        offer_line,
+                    )
+                    if alt_offer_p is not None:
+                        offer_raw_p = _apply_regression_gate(
+                            alt_offer_p,
+                            pk,
+                            offer_line,
+                            "pitcher_strikeouts",
+                        )
+                        offer_family = "alt_clf"
+                    elif (
+                        clf_pover_k is not None
+                        and _same_line(offer_line, line)
+                        and not clf_k_disabled
+                    ):
+                        v = float(clf_pover_k[i])
+                        if not np.isnan(v):
+                            offer_raw_p = _apply_regression_gate(
+                                v,
+                                pk,
+                                offer_line,
+                                "pitcher_strikeouts",
+                            )
+                            offer_family = "clf"
+                    if offer_raw_p is None and offer_line is not None:
+                        offer_raw_p = _prob_over_from_regression(pk, offer_line, sigma_k)
+                        offer_family = "regression"
+                    offer_p_over, offer_edge, _offer_cal_key = _apply_prop_side_recalibration(
+                        stat="pitcher_strikeouts",
+                        line=offer_line,
+                        raw_p_over=offer_raw_p,
+                        model_family=offer_family,
+                        ld=offer_ld,
+                        recalibrators=side_recalibrators,
+                        betting_layer=betting_layer,
+                        market_side_priors=market_side_priors,
+                        apply_market_side_priors=cfg.apply_market_side_priors,
+                        market_side_prior_max_blend=cfg.market_side_prior_max_blend,
+                        walk_forward_policy=walk_forward_policy,
+                        opportunity_features=pitcher_opportunity,
+                    )
+                    db_rows.append(_prop_db_row(
+                        game_date_et=et_date,
+                        game_slug=row["game_slug"],
+                        player_id=int(row["player_id"]),
+                        player_name=name,
+                        team_abbr=row.get("team_abbr"),
+                        stat="pitcher_strikeouts",
+                        pred_value=offer_p_over if offer_family != "regression" else pk,
+                        pred_count=pk,
+                        pred_prob_over=offer_p_over,
+                        book_line=offer_line,
+                        edge=offer_edge,
+                        edge_type="probability" if offer_p_over is not None else "count",
+                        model_family=offer_family,
+                        kelly_fraction=0.0,
+                        ld=offer_ld,
+                        forced_side=offer_side,
+                        cfg=cfg,
+                        blocked_sides=_blocked_sides_for_row(r, "pitcher_strikeouts"),
+                        bucket_reopen_policy=bucket_reopen_policy,
+                    ))
 
     # ── Batter predictions ─────────────────────────────────────────────────
     all_batter_rows: List[Dict] = []
@@ -5296,6 +6560,18 @@ def predict_props(cfg: PredictConfig) -> None:
             sigma_h  = bt.get("ci_hits")        if bt else None
             sigma_tb = bt.get("ci_total_bases") if bt else None
             sigma_hr = bt.get("ci_home_runs")   if bt else None
+            hitter_pa_infos = _predict_validated_hitter_pa(df_b, hitter_pa_artifact)
+            _pa_scales = [
+                float(info.get("pa_scale") or 1.0)
+                for info in hitter_pa_infos
+                if info.get("pa_model_source") == "validated_pa_model"
+            ]
+            if _pa_scales:
+                log.info(
+                    "Applied validated hitter PA model to %d batter rows (avg count scale %.3f)",
+                    len(_pa_scales),
+                    float(np.mean(_pa_scales)),
+                )
 
 
             # Binary classifier predictions (if models trained)
@@ -5306,14 +6582,21 @@ def predict_props(cfg: PredictConfig) -> None:
             }
             pids_arr = df_b["player_id"].astype(int).values
             norms_arr = np.array([_normalize_name(name_map.get(p, "")) for p in pids_arr])
+            batter_offer_contexts = {
+                stat_key: [
+                    _prop_line_data_for_row(prop_lines, norm, stat_key, row)
+                    for norm, (_, row) in zip(norms_arr, df_b.iterrows())
+                ]
+                for stat_key in clf_pover
+            }
             if batter_clf_arts is not None:
                 clf_models, feat_clf, meds_clf, _bt_clf, cal_map_b = batter_clf_arts
                 for stat_key in clf_pover:
                     if stat_key not in clf_models:
                         continue
                     lines_arr = np.array([
-                        (prop_lines.get((nm, stat_key)) or {}).get("line", np.nan)
-                        for nm in norms_arr
+                        (line_data or {}).get("line", np.nan)
+                        for line_data, _offers in batter_offer_contexts[stat_key]
                     ], dtype=float)
                     X_clf = _prep_features_clf(X_b, lines_arr, feat_clf, meds_clf)
                     xgb_c, lgb_c = clf_models[stat_key]
@@ -5349,21 +6632,27 @@ def predict_props(cfg: PredictConfig) -> None:
 
                 name = name_map.get(pid, f"id={pid}")
                 norm = _normalize_name(name)
+                pa_info = hitter_pa_infos[i] if i < len(hitter_pa_infos) else {}
+                pa_scale = float(pa_info.get("pa_scale") or 1.0)
                 # Regression predictions with additive bias correction
-                raw_ph  = max(0.0, float(pred_h[i])  + bias.get("batter_hits",        0.0))
-                raw_ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0))
-                raw_phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs",   0.0))
+                raw_ph  = max(0.0, float(pred_h[i])  + bias.get("batter_hits",        0.0)) * pa_scale
+                raw_ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0)) * pa_scale
+                raw_phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs",   0.0)) * pa_scale
 
-                line_h = (prop_lines.get((norm, "batter_hits")) or {}).get("line")
-                line_tb = (prop_lines.get((norm, "batter_total_bases")) or {}).get("line")
-                line_hr = (prop_lines.get((norm, "batter_home_runs")) or {}).get("line")
+                row_offer_contexts = {
+                    stat_key: batter_offer_contexts[stat_key][i]
+                    for stat_key in clf_pover
+                }
+                line_h = (row_offer_contexts["batter_hits"][0] or {}).get("line")
+                line_tb = (row_offer_contexts["batter_total_bases"][0] or {}).get("line")
+                line_hr = (row_offer_contexts["batter_home_runs"][0] or {}).get("line")
                 ph, _pen_h = _apply_count_side_penalty("batter_hits", raw_ph, line_h, side_penalties)
                 ptb, _pen_tb = _apply_count_side_penalty("batter_total_bases", raw_ptb, line_tb, side_penalties)
                 phr, _pen_hr = _apply_count_side_penalty("batter_home_runs", raw_phr, line_hr, side_penalties)
 
                 # Collect binary CLF P(over) for each stat (None when clf unavailable or no line).
                 def _safe_clf_with_family(stat_key: str) -> tuple[Optional[float], Optional[str]]:
-                    ld_for_stat = prop_lines.get((norm, stat_key))
+                    ld_for_stat = row_offer_contexts[stat_key][0]
                     line_for_stat = ld_for_stat["line"] if ld_for_stat else None
                     alt_p = _lookup_alt_clf_prob(
                         _batter_alt_clf_probs,
@@ -5390,8 +6679,17 @@ def predict_props(cfg: PredictConfig) -> None:
                 _clf_tb, _clf_tb_family = _safe_clf_with_family("batter_total_bases")
                 _clf_hr, _clf_hr_family = _safe_clf_with_family("batter_home_runs")
 
-                _conf_order = row.get("confirmed_batting_order")
-                _avg_order  = row.get("batting_order_avg_10")
+                _conf_order = pa_info.get("confirmed_batting_order")
+                _effective_order = pa_info.get("effective_batting_order")
+                _projected_pa = pa_info.get("projected_pa")
+                batter_opportunity = {
+                    "confirmed_batting_order": _conf_order,
+                    "projected_pa": _projected_pa,
+                    "baseline_projected_pa": pa_info.get("baseline_projected_pa"),
+                    "validated_projected_pa": pa_info.get("validated_projected_pa"),
+                    "pa_model_scale": pa_scale,
+                    "pa_model_source": pa_info.get("pa_model_source"),
+                }
                 r = {
                     "game_slug": slug,
                     "game_date_et": et_date,
@@ -5433,11 +6731,13 @@ def predict_props(cfg: PredictConfig) -> None:
                     "market_hits_over_price": row.get("market_hits_over_price"),
                     "market_tb_over_price":   row.get("market_tb_over_price"),
                     "opp_sp_source":          row.get("opp_sp_source"),
+                    "projected_pa":           _projected_pa,
+                    "baseline_projected_pa":  pa_info.get("baseline_projected_pa"),
+                    "validated_projected_pa": pa_info.get("validated_projected_pa"),
+                    "pa_model_scale":         pa_scale,
+                    "pa_model_source":        pa_info.get("pa_model_source"),
                     # Effective batting order: confirmed if available, else rolling avg
-                    "effective_batting_order": (
-                        int(_conf_order) if _conf_order is not None
-                        else (float(_avg_order) if _avg_order is not None else None)
-                    ),
+                    "effective_batting_order": _effective_order,
                 }
                 all_batter_rows.append(r)
 
@@ -5446,101 +6746,132 @@ def predict_props(cfg: PredictConfig) -> None:
                     ("batter_total_bases", "batter_total_bases", ptb, sigma_tb),
                     ("batter_home_runs",   "batter_home_runs",   phr, sigma_hr),
                 ]:
-                    ld = prop_lines.get((norm, stat_key))
+                    ld, offer_rows = row_offer_contexts[stat_key]
                     line = ld["line"] if ld else None
-
-                    # Use binary CLF edge when model exists and line is available
-                    p_over_i = (r.get("clf_p_over") or {}).get(stat_key)
-                    clf_family_i = (r.get("clf_model_family") or {}).get(stat_key) or "clf"
-                    use_clf = (
-                        p_over_i is not None
-                        and line is not None
-                        and not _clf_bucket_is_disabled(
-                            clf_controls,
+                    canonical_clf_p = (r.get("clf_p_over") or {}).get(stat_key)
+                    canonical_clf_family = (r.get("clf_model_family") or {}).get(stat_key) or "clf"
+                    for offer in offer_rows:
+                        offer_ld = _offer_line_data(offer, offer_rows)
+                        offer_line = offer_ld.get("line")
+                        offer_side = offer_ld.get("selected_offer_side")
+                        offer_raw_p = None
+                        offer_family = "regression"
+                        alt_offer_p = _lookup_alt_clf_prob(
+                            _batter_alt_clf_probs,
+                            norm,
                             stat_key,
-                            line,
-                            honor_controls=cfg.honor_clf_bucket_controls,
+                            offer_line,
                         )
-                    )
-
-                    if use_clf:
-                        # CLF: pred_value = P(over), edge is signed side probability edge.
-                        p_over_i = _apply_regression_gate(p_over_i, reg_pred, line, stat_key)
-                        p_over_i, edge, _cal_key = _apply_prop_side_recalibration(
+                        if alt_offer_p is not None:
+                            offer_raw_p = _apply_regression_gate(
+                                alt_offer_p,
+                                reg_pred,
+                                offer_line,
+                                stat_key,
+                            )
+                            offer_family = "alt_clf"
+                        elif (
+                            canonical_clf_p is not None
+                            and _same_line(offer_line, line)
+                            and not _clf_bucket_is_disabled(
+                                clf_controls,
+                                stat_key,
+                                offer_line,
+                                honor_controls=cfg.honor_clf_bucket_controls,
+                            )
+                        ):
+                            offer_raw_p = _apply_regression_gate(
+                                canonical_clf_p,
+                                reg_pred,
+                                offer_line,
+                                stat_key,
+                            )
+                            offer_family = canonical_clf_family
+                        if offer_raw_p is None and offer_line is not None:
+                            offer_raw_p = _prob_over_from_regression(reg_pred, offer_line, sigma)
+                            offer_family = "regression"
+                        offer_p_over, offer_edge, _offer_cal_key = _apply_prop_side_recalibration(
                             stat=stat_key,
-                            line=line,
-                            raw_p_over=p_over_i,
-                            model_family=clf_family_i,
-                            ld=ld,
+                            line=offer_line,
+                            raw_p_over=offer_raw_p,
+                            model_family=offer_family,
+                            ld=offer_ld,
                             recalibrators=side_recalibrators,
                             betting_layer=betting_layer,
                             market_side_priors=market_side_priors,
                             apply_market_side_priors=cfg.apply_market_side_priors,
                             market_side_prior_max_blend=cfg.market_side_prior_max_blend,
+                            walk_forward_policy=walk_forward_policy,
+                            opportunity_features=batter_opportunity,
                         )
-                        pred_v = p_over_i
-                        # Kelly: full Kelly capped at 5%
-                        kel = 0.0
-                        pred_prob_for_db = p_over_i
-                        edge_type = "probability"
-                        model_family = clf_family_i
-                    elif line is not None:
-                        # Regression fallback
-                        pred_v = reg_pred
-                        pred_prob_for_db = _prob_over_from_regression(pred_v, line, sigma)
-                        pred_prob_for_db, edge, _cal_key = _apply_prop_side_recalibration(
-                            stat=stat_key,
-                            line=line,
-                            raw_p_over=pred_prob_for_db,
-                            model_family="regression",
-                            ld=ld,
-                            recalibrators=side_recalibrators,
-                            betting_layer=betting_layer,
-                            market_side_priors=market_side_priors,
-                            apply_market_side_priors=cfg.apply_market_side_priors,
-                            market_side_prior_max_blend=cfg.market_side_prior_max_blend,
-                        )
-                        kel = 0.0
-                        edge_type = "probability" if pred_prob_for_db is not None else "count"
-                        model_family = "regression"
-                    else:
-                        pred_v = reg_pred
-                        edge   = None
-                        kel    = 0.0
-                        pred_prob_for_db = None
-                        edge_type = "count"
-                        model_family = "regression"
-
-                    db_rows.append(_prop_db_row(
-                        game_date_et=et_date,
-                        game_slug=slug,
-                        player_id=pid,
-                        player_name=name,
-                        team_abbr=row.get("team_abbr"),
-                        stat=stat_label,
-                        pred_value=pred_v,
-                        pred_count=pred_v if model_family == "regression" else reg_pred,
-                        pred_prob_over=pred_prob_for_db,
-                        book_line=line,
-                        edge=edge,
-                        edge_type=edge_type,
-                        model_family=model_family,
-                        kelly_fraction=kel,
-                        ld=ld,
-                        cfg=cfg,
-                        blocked_sides=_blocked_sides_for_row(r, stat_label),
-                        bucket_reopen_policy=bucket_reopen_policy,
-                    ))
+                        db_rows.append(_prop_db_row(
+                            game_date_et=et_date,
+                            game_slug=slug,
+                            player_id=pid,
+                            player_name=name,
+                            team_abbr=row.get("team_abbr"),
+                            stat=stat_label,
+                            pred_value=offer_p_over if offer_family != "regression" else reg_pred,
+                            pred_count=reg_pred,
+                            pred_prob_over=offer_p_over,
+                            book_line=offer_line,
+                            edge=offer_edge,
+                            edge_type="probability" if offer_p_over is not None else "count",
+                            model_family=offer_family,
+                            kelly_fraction=0.0,
+                            ld=offer_ld,
+                            forced_side=offer_side,
+                            cfg=cfg,
+                            blocked_sides=_blocked_sides_for_row(r, stat_label),
+                            bucket_reopen_policy=bucket_reopen_policy,
+                        ))
 
     # ── Save to DB ────────────────────────────────────────────────────────
-    db_rows = _cap_prop_db_rows(db_rows, cfg)
-    _save_predictions(conn, db_rows)
+    db_rows = _apply_prop_shadow_selector_gate(db_rows, cfg)
+
+    try:
+        existing_exposure, existing_keys, existing_slots = locked_bankroll_state(
+            conn,
+            et_date,
+        )
+    except Exception:
+        conn.rollback()
+        log.exception("Could not load locked MLB bankroll state; failing prop cap closed")
+        existing_exposure = cfg.bankroll_max_daily_exposure_pct
+        existing_keys = set()
+        existing_slots = set()
+    db_rows = _cap_prop_db_rows(
+        db_rows,
+        cfg,
+        existing_exposure_pct=existing_exposure,
+        existing_pick_keys=existing_keys,
+        existing_risk_slots=existing_slots,
+        prop_lines=prop_lines,
+    )
     try:
         locked = insert_prop_bankroll_ledger(conn, db_rows, prop_lines=prop_lines, cfg=cfg)
         log.info("Locked %d MLB prop bankroll ledger rows", locked)
     except Exception:
         conn.rollback()
         log.exception("Failed to lock MLB prop bankroll ledger rows")
+    try:
+        locked_exposure, locked_keys, locked_slots = locked_bankroll_state(conn, et_date)
+    except Exception:
+        conn.rollback()
+        log.exception("Could not verify locked MLB prop bankroll rows; failing output closed")
+        locked_exposure = cfg.bankroll_max_daily_exposure_pct
+        locked_keys = set()
+        locked_slots = set()
+    db_rows = _cap_prop_db_rows(
+        db_rows,
+        cfg,
+        existing_exposure_pct=locked_exposure,
+        existing_pick_keys=locked_keys,
+        existing_risk_slots=locked_slots,
+        prop_lines=prop_lines,
+        require_locked=True,
+    )
+    _save_predictions(conn, db_rows)
     try:
         locked = insert_prop_model_pick_ledger(conn, db_rows, prop_lines=prop_lines, cfg=cfg)
         log.info("Locked %d MLB prop model-pick ledger rows", locked)
@@ -5592,7 +6923,13 @@ def predict_props(cfg: PredictConfig) -> None:
                    db_rows=db_rows)
 
     if not is_discord:
-        fd_links = _print_best_bets(all_pitcher_rows, all_batter_rows, prop_lines, cfg)
+        fd_links = _print_best_bets(
+            all_pitcher_rows,
+            all_batter_rows,
+            prop_lines,
+            cfg,
+            bucket_reopen_policy=bucket_reopen_policy,
+        )
 
         # Top HR hitters leaderboard
         _print_top_hr_hitters(all_batter_rows, prop_lines)
@@ -5649,6 +6986,8 @@ def main() -> None:
     parser.add_argument("--lottery-max-per-game", type=int, default=None)
     parser.add_argument("--bucket-reopen-policy-file", type=str, default=None)
     parser.add_argument("--fun-reopen-props", action="store_true")
+    parser.add_argument("--walk-forward-policy-file", type=str, default=None)
+    parser.add_argument("--disable-walk-forward-policy", action="store_true")
     parser.add_argument("--discord-paper-limit", type=int, default=None)
     parser.add_argument("--hide-discord-paper-links", action="store_true")
     parser.add_argument(
@@ -5700,6 +7039,15 @@ def main() -> None:
         or os.getenv("MLB_PROP_BUCKET_REOPEN_POLICY_FILE")
         or ("prop_bucket_reopen_policy_fun.json" if fun_reopen_props else "prop_bucket_reopen_policy.json")
     )
+    walk_forward_policy_file = (
+        args.walk_forward_policy_file
+        or os.getenv("MLB_PROP_WALK_FORWARD_POLICY_FILE")
+        or "prop_walk_forward_accuracy_report.json"
+    )
+    walk_forward_env = os.getenv("MLB_PROP_APPLY_WALK_FORWARD_POLICY")
+    apply_walk_forward_policy = not args.disable_walk_forward_policy
+    if walk_forward_env is not None and not args.disable_walk_forward_policy:
+        apply_walk_forward_policy = walk_forward_env.strip().lower() in {"1", "true", "yes", "on"}
     paper_links_env = os.getenv("MLB_DISCORD_PAPER_LINKS")
     discord_show_paper_links = not args.hide_discord_paper_links
     if paper_links_env is not None and not args.hide_discord_paper_links:
@@ -5713,6 +7061,9 @@ def main() -> None:
         if args.discord_paper_limit is not None
         else int(os.getenv("MLB_DISCORD_PAPER_LIMIT", "10"))
     )
+    bankroll_reference_usd = float(os.getenv("MLB_BANKROLL_REFERENCE_USD", "1000"))
+    bankroll_micro_stake_usd = float(os.getenv("MLB_PROP_MICRO_STAKE_USD", "1"))
+    bankroll_starter_stake_pct = float(os.getenv("MLB_PROP_STARTER_STAKE_PCT", "0.001"))
 
     cfg = PredictConfig(
         et_date=et_date,
@@ -5722,9 +7073,14 @@ def main() -> None:
         lottery_max_american=lottery_max_american,
         lottery_max_per_game=lottery_max_per_game,
         bucket_reopen_policy_file=bucket_reopen_policy_file,
+        walk_forward_policy_file=walk_forward_policy_file,
+        apply_walk_forward_policy=apply_walk_forward_policy,
         discord_show_paper_links=discord_show_paper_links,
         discord_include_all_priced_props=discord_include_all_priced_props,
         discord_paper_limit=discord_paper_limit,
+        bankroll_reference_usd=bankroll_reference_usd,
+        bankroll_micro_stake_usd=bankroll_micro_stake_usd,
+        bankroll_starter_stake_pct=bankroll_starter_stake_pct,
     )
     _apply_threshold_overrides(cfg)
     predict_props(cfg)

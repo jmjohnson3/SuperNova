@@ -1,12 +1,17 @@
-<?xml version="1.0" encoding="UTF-16"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
-    <Description>SuperNovaBets MLB — Closing line capture (re-crawl odds, grade outcomes + CLV)</Description>
+    <Description>SuperNovaBets MLB - Closing line captures for day and evening slates</Description>
     <Author>SuperNovaBets</Author>
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2026-01-01T18:30:00</StartBoundary>
+      <StartBoundary>2026-01-01T07:45:00</StartBoundary>
+      <Repetition>
+        <Interval>PT1H</Interval>
+        <Duration>PT15H</Duration>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
       <Enabled>true</Enabled>
       <ScheduleByDay>
         <DaysInterval>1</DaysInterval>
@@ -16,7 +21,7 @@
   <Principals>
     <Principal id="Author">
       <LogonType>InteractiveToken</LogonType>
-      <RunLevel>HighestAvailable</RunLevel>
+      <RunLevel>LeastPrivilege</RunLevel>
     </Principal>
   </Principals>
   <Settings>
@@ -26,6 +31,7 @@
     <ExecutionTimeLimit>PT30M</ExecutionTimeLimit>
     <StartWhenAvailable>true</StartWhenAvailable>
     <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
+    <WakeToRun>true</WakeToRun>
     <Enabled>true</Enabled>
   </Settings>
   <Actions Context="Author">

@@ -190,6 +190,7 @@ def parse_all_player_gamelogs(conn, *, commit_every: int = 250) -> int:
     FROM raw.api_responses
     WHERE provider='mysportsfeeds'
       AND endpoint='player_gamelogs'
+      AND url LIKE '%/nba/%'
       AND season IS NOT NULL
       AND payload IS NOT NULL
     ORDER BY fetched_at_utc ASC

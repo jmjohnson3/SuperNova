@@ -480,10 +480,7 @@ def main() -> None:
 
     et_date = date.fromisoformat(args.date) if args.date else datetime.now(_ET).date()
 
-    webhook_url = "" if args.no_post else os.getenv(
-        "MLB_DISCORD_WEBHOOK_URL",
-        "https://discord.com/api/webhooks/1487880251886403596/fB9WT_Krl2QdOV8MD6o0Pzdp-BgnsJ8wISAJ6-Xi0wMVQfViVjbKU2wV4VC9f52Iwo9n",
-    )
+    webhook_url = "" if args.no_post else os.getenv("MLB_DISCORD_WEBHOOK_URL", "")
     save_dir = Path(args.save_dir) if args.save_dir else None
 
     asyncio.run(generate_and_post(webhook_url, et_date, save_dir=save_dir))

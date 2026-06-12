@@ -65,6 +65,7 @@ def main() -> None:
     parser.add_argument("--run-predictor", action="store_true", help="Run current prop predictor for each date before snapshotting.")
     parser.add_argument("--predict-timeout-s", type=int, default=900)
     parser.add_argument("--side-only", action="store_true", help="Only snapshot rows with over/under model sides.")
+    parser.add_argument("--include-inactive", action="store_true", help="Snapshot inactive/stale prediction rows too.")
     parser.add_argument("--grade", action="store_true", help="Grade replay rows after snapshotting.")
     parser.add_argument("--regrade", action="store_true", help="Recompute already-graded replay rows for this run.")
     args = parser.parse_args()
@@ -90,6 +91,7 @@ def main() -> None:
                 date_from=day,
                 date_to=day,
                 include_no_side=not args.side_only,
+                active_only=not args.include_inactive,
             )
             total_snapshotted += n
         print(f"[{day}] snapshotted {n} rows into run_id={run_id}")

@@ -32,10 +32,7 @@ import httpx
 
 log = logging.getLogger("nba_pipeline.run_daily_and_notify")
 
-DISCORD_WEBHOOK_URL = os.getenv(
-    "DISCORD_WEBHOOK_URL",
-    "https://discord.com/api/webhooks/1461420766108319858/LenBk50YR1eS1isFMSOzE8gMWgSgBTSYmU4Ac1unf2SOo_kPSGk71afBqbBiQDuUZwD3",
-)
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 
 DISCORD_LIMIT = 1950  # Discord hard cap is 2000; keep a buffer
 
@@ -56,9 +53,10 @@ STEPS: list[Step] = [
     Step("Odds Crawler",              "nba_pipeline.crawler_oddsapi",                    critical=True,  post_output=False, timeout_s=14400),
     Step("MSF Crawler",               "nba_pipeline.crawler",                            critical=True,  post_output=False, timeout_s=14400),
     Step("Parse + Load",              "nba_pipeline.parse_all",                          critical=True,  post_output=False, timeout_s=14400),
+    Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=True,  post_output=False, timeout_s=14400),
+    Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=True,  post_output=False, timeout_s=14400),
     Step("Yesterday's Results",       "nba_pipeline.grade_predictions",                  critical=False, post_output=True,  timeout_s=14400),
-    Step("Materialize Features",      "nba_pipeline.materialize_features",               critical=False, post_output=False, timeout_s=14400),
-    Step("Elo Ratings",               "nba_pipeline.compute_elo",                        critical=False, post_output=False, timeout_s=14400),
+    Step("Update Outcomes + CLV",     "nba_pipeline.modeling.update_outcomes",           critical=False, post_output=True,  timeout_s=14400),
     Step("Train Game Models",         "nba_pipeline.modeling.train_game_models",          critical=True,  post_output=False, timeout_s=14400),
     Step("Train Player Prop Models",  "nba_pipeline.modeling.train_player_prop_models",   critical=True,  post_output=False, timeout_s=28800),
     Step("Prop Lines Refresh",        "nba_pipeline.refresh_prop_links",                  critical=False, post_output=False, timeout_s=600),

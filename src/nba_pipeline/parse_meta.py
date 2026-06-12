@@ -48,6 +48,7 @@ def upsert_venues(conn) -> int:
     FROM raw.api_responses
     WHERE provider='mysportsfeeds'
       AND endpoint='venues'
+      AND url LIKE '%/nba/%'
     ORDER BY fetched_at_utc DESC
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -143,6 +144,13 @@ def upsert_venues(conn) -> int:
             """,
             page_size=500,
         )
+        cur.execute(
+            """
+            DELETE FROM raw.nba_venues
+            WHERE NOT (venue_id = ANY(%s))
+            """,
+            (list(by_venue_id),),
+        )
 
     return len(upsert_rows)
 
@@ -156,6 +164,7 @@ def upsert_injuries(conn) -> int:
     FROM raw.api_responses
     WHERE provider='mysportsfeeds'
       AND endpoint='injuries'
+      AND url LIKE '%/nba/%'
     ORDER BY fetched_at_utc DESC
     LIMIT 1
     """
@@ -170,8 +179,12 @@ def upsert_injuries(conn) -> int:
     payload = _ensure_obj(r["payload"])
     fetched_at = r["fetched_at_utc"]
 
+    players = payload.get("players")
+    if not isinstance(players, list):
+        raise ValueError("Latest NBA injuries payload is missing a players list")
+
     rows = []
-    for p in payload.get("players", []) or []:
+    for p in players:
         pid = _as_int(p.get("id"))
         if pid is None:
             continue
@@ -193,9 +206,6 @@ def upsert_injuries(conn) -> int:
                 "source_fetched_at_utc": fetched_at,
             }
         )
-
-    if not rows:
-        return 0
 
     sql = """
     INSERT INTO raw.nba_injuries (
@@ -219,19 +229,29 @@ def upsert_injuries(conn) -> int:
     """
 
     with conn.cursor() as cur:
-        execute_values(
-            cur,
-            sql,
-            rows,
-            template="""
-            (
-              %(player_id)s, %(first_name)s, %(last_name)s, %(primary_position)s, %(jersey_number)s,
-              %(team_abbr)s, %(roster_status)s, %(injury_description)s, %(playing_probability)s,
-              %(source_fetched_at_utc)s
+        if rows:
+            execute_values(
+                cur,
+                sql,
+                rows,
+                template="""
+                (
+                  %(player_id)s, %(first_name)s, %(last_name)s, %(primary_position)s, %(jersey_number)s,
+                  %(team_abbr)s, %(roster_status)s, %(injury_description)s, %(playing_probability)s,
+                  %(source_fetched_at_utc)s
+                )
+                """,
+                page_size=1000,
             )
-            """,
-            page_size=1000,
-        )
+            cur.execute(
+                """
+                DELETE FROM raw.nba_injuries
+                WHERE NOT (player_id = ANY(%s))
+                """,
+                ([row["player_id"] for row in rows],),
+            )
+        else:
+            cur.execute("DELETE FROM raw.nba_injuries")
 
     return len(rows)
 
@@ -284,6 +304,18 @@ def snapshot_injuries_history(conn) -> int:
     """
 
     with conn.cursor() as cur:
+        cur.execute(
+            """
+            DELETE FROM raw.nba_injuries_history h
+            WHERE h.as_of_date = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM raw.nba_injuries i
+                  WHERE i.player_id = h.player_id
+              )
+            """,
+            (today_et,),
+        )
         cur.execute(sql, (today_et,))
         row_count = cur.rowcount
 
@@ -300,6 +332,7 @@ def insert_standings_snapshot(conn) -> int:
     FROM raw.api_responses
     WHERE provider='mysportsfeeds'
       AND endpoint='standings'
+      AND url LIKE '%/nba/%'
       AND season IS NOT NULL
     ORDER BY fetched_at_utc DESC
     """

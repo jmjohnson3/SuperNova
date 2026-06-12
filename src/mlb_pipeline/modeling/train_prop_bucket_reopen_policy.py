@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -17,7 +17,10 @@ import numpy as np
 import pandas as pd
 import psycopg2
 
-from .side_recalibration import prop_line_bucket
+from .prop_clean_slate import CleanSlateThresholds, clean_date_set, load_clean_slate_rows
+from .prop_market_history import ensure_prop_market_history_schema
+from .prop_market_training import ensure_prop_market_training_schema
+from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
@@ -45,9 +48,27 @@ class PropBucketReopenConfig:
     min_unique_players: int = 20
     min_unique_teams: int = 6
     min_unique_dates: int = 5
+    min_clean_unique_dates: int = 5
+    clean_slate_min_side_locks: int = 100
+    clean_slate_min_valid_side_locks: int = 100
+    clean_slate_min_valid_coverage: float = 0.25
+    clean_slate_max_missing_lock_rate: float = 0.02
+    clean_slate_max_stale_close_rate: float = 0.05
     max_player_share: float = 0.12
     max_team_share: float = 0.25
     max_game_date_share: float = 0.35
+    starter_min_total_rows: int = 250
+    starter_min_holdout_rows: int = 60
+    starter_min_clv_price_rows: int = 50
+    starter_min_unique_dates: int = 8
+    starter_min_clean_unique_dates: int = 8
+    starter_max_abs_calibration_error: float = 0.04
+    bankroll_min_total_rows: int = 500
+    bankroll_min_holdout_rows: int = 100
+    bankroll_min_clv_price_rows: int = 100
+    bankroll_min_unique_dates: int = 12
+    bankroll_min_clean_unique_dates: int = 12
+    bankroll_max_abs_calibration_error: float = 0.03
     history_lookback_days: int = 540
     min_history_rows: int = 500
     min_history_priced_rate: float = 0.80
@@ -56,6 +77,23 @@ class PropBucketReopenConfig:
     enforce_history_guard: bool = False
     force_reopen_all: bool = False
     research_only: bool = False
+    enable_bootstrap_micro: bool = True
+    bootstrap_common_only: bool = True
+    bootstrap_min_rows: int = 150
+    bootstrap_min_priced_rate: float = 0.95
+    bootstrap_min_roi: float = 0.0
+    bootstrap_min_avg_ev: float = 0.0
+    bootstrap_min_avg_clv_price: float = 0.0
+    bootstrap_min_clv_beat_rate: float = 0.55
+    bootstrap_min_clv_price_rows: int = 30
+    bootstrap_max_abs_calibration_error: float = 0.05
+    bootstrap_min_unique_players: int = 20
+    bootstrap_min_unique_teams: int = 6
+    bootstrap_min_unique_dates: int = 5
+    bootstrap_min_clean_unique_dates: int = 5
+    bootstrap_max_player_share: float = 0.12
+    bootstrap_max_team_share: float = 0.25
+    bootstrap_max_game_date_share: float = 0.35
 
 
 SQL = """
@@ -66,7 +104,9 @@ SELECT
     team_abbr,
     market,
     side,
+    COALESCE(bookmaker_key, '*') AS bookmaker_key,
     COALESCE(line_bucket, 'unknown') AS line_bucket,
+    COALESCE(line_surface, 'unknown') AS line_surface,
     COALESCE(price_bucket, 'missing_price') AS price_bucket,
     COALESCE(model_family, 'unknown') AS model_family,
     market_line::float AS market_line,
@@ -79,16 +119,16 @@ SELECT
     CASE WHEN won IS TRUE THEN 1 ELSE 0 END AS won,
     COALESCE(push, false) AS push,
     profit_units::float AS profit_units,
-    clv_price::float AS clv_price,
+    CASE WHEN clv_valid IS TRUE THEN clv_price::float ELSE NULL END AS clv_price,
     CASE
-        WHEN beat_clv_price IS TRUE THEN 1
-        WHEN beat_clv_price IS FALSE THEN 0
+        WHEN clv_valid IS TRUE AND beat_clv_price IS TRUE THEN 1
+        WHEN clv_valid IS TRUE AND beat_clv_price IS FALSE THEN 0
         ELSE NULL
     END AS beat_clv_price,
-    clv_line::float AS clv_line,
+    CASE WHEN clv_valid IS TRUE THEN clv_line::float ELSE NULL END AS clv_line,
     CASE
-        WHEN beat_clv_line IS TRUE THEN 1
-        WHEN beat_clv_line IS FALSE THEN 0
+        WHEN clv_valid IS TRUE AND beat_clv_line IS TRUE THEN 1
+        WHEN clv_valid IS TRUE AND beat_clv_line IS FALSE THEN 0
         ELSE NULL
     END AS beat_clv_line
 FROM features.mlb_prop_market_training_examples
@@ -105,7 +145,9 @@ SELECT
     game_date_et,
     market,
     side,
+    COALESCE(bookmaker_key, '*') AS bookmaker_key,
     COALESCE(line_bucket, 'unknown') AS line_bucket,
+    COALESCE(line_surface, 'unknown') AS line_surface,
     COALESCE(price_bucket, 'missing_price') AS price_bucket,
     market_line::float AS market_line,
     market_price::float AS market_price,
@@ -135,19 +177,33 @@ def _table_exists(conn, schema: str, table: str) -> bool:
         return bool(cur.fetchone()[0])
 
 
+def _query_df(conn, sql: str, params: dict[str, object]) -> pd.DataFrame:
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description] if cur.description else []
+    return pd.DataFrame(rows, columns=columns)
+
+
 def _load(cfg: PropBucketReopenConfig) -> pd.DataFrame:
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days)).isoformat()
     with psycopg2.connect(cfg.pg_dsn) as conn:
+        ensure_prop_market_training_schema(conn)
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
             return pd.DataFrame()
-        df = pd.read_sql(SQL, conn, params={"cutoff": cutoff, "markets": list(_MARKETS)})
+        df = _query_df(conn, SQL, {"cutoff": cutoff, "markets": list(_MARKETS)})
     if df.empty:
         return df
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
     df["line_bucket"] = [
-        lb if isinstance(lb, str) and lb and lb != "unknown" else prop_line_bucket(market, line)
-        for market, line, lb in zip(df["market"], df["market_line"], df["line_bucket"])
+        prop_line_bucket(market, line)
+        for market, line in zip(df["market"], df["market_line"])
     ]
+    df["line_surface"] = [
+        prop_line_surface(market, side, line)
+        for market, side, line in zip(df["market"], df["side"], df["market_line"])
+    ]
+    df["price_bucket"] = df["market_price"].map(price_bucket)
     for col in (
         "market_line",
         "market_price",
@@ -171,20 +227,46 @@ def _load(cfg: PropBucketReopenConfig) -> pd.DataFrame:
 def _load_history(cfg: PropBucketReopenConfig) -> pd.DataFrame:
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=cfg.history_lookback_days)).isoformat()
     with psycopg2.connect(cfg.pg_dsn) as conn:
+        ensure_prop_market_history_schema(conn)
         if not _table_exists(conn, "features", "mlb_prop_market_history_examples"):
             return pd.DataFrame()
-        df = pd.read_sql(HISTORY_SQL, conn, params={"cutoff": cutoff, "markets": list(_MARKETS)})
+        df = _query_df(conn, HISTORY_SQL, {"cutoff": cutoff, "markets": list(_MARKETS)})
     if df.empty:
         return df
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
     df["line_bucket"] = [
-        lb if isinstance(lb, str) and lb and lb != "unknown" else prop_line_bucket(market, line)
-        for market, line, lb in zip(df["market"], df["market_line"], df["line_bucket"])
+        prop_line_bucket(market, line)
+        for market, line in zip(df["market"], df["market_line"])
     ]
+    df["line_surface"] = [
+        prop_line_surface(market, side, line)
+        for market, side, line in zip(df["market"], df["side"], df["market_line"])
+    ]
+    df["price_bucket"] = df["market_price"].map(price_bucket)
     for col in ("market_line", "market_price", "market_prob_side", "won", "profit_units"):
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df["push"] = df["push"].fillna(False).astype(bool)
     return df.replace([np.inf, -np.inf], np.nan)
+
+
+def _load_clean_dates(cfg: PropBucketReopenConfig, *, date_to: date | None = None) -> tuple[set[date], list[dict]]:
+    cutoff = datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days)
+    end_date = date_to or datetime.now(timezone.utc).date()
+    thresholds = CleanSlateThresholds(
+        min_side_locks=cfg.clean_slate_min_side_locks,
+        min_valid_side_locks=cfg.clean_slate_min_valid_side_locks,
+        min_valid_coverage=cfg.clean_slate_min_valid_coverage,
+        max_missing_lock_rate=cfg.clean_slate_max_missing_lock_rate,
+        max_stale_close_rate=cfg.clean_slate_max_stale_close_rate,
+    )
+    with psycopg2.connect(cfg.pg_dsn) as conn:
+        rows = load_clean_slate_rows(
+            conn,
+            date_from=cutoff,
+            date_to=end_date,
+            thresholds=thresholds,
+        )
+    return clean_date_set(rows), rows
 
 
 def _mean(series: pd.Series) -> float | None:
@@ -236,6 +318,8 @@ def _summary(rows: pd.DataFrame) -> dict:
             "unique_players": 0,
             "unique_teams": 0,
             "unique_dates": 0,
+            "unique_clean_dates": 0,
+            "clean_rows": 0,
             "max_player_share": None,
             "max_team_share": None,
             "max_game_date_share": None,
@@ -253,6 +337,7 @@ def _summary(rows: pd.DataFrame) -> dict:
     calibration_error = (win_rate - avg_model) if win_rate is not None and avg_model is not None else None
     return {
         "rows": row_count,
+        "clean_rows": int(rows.get("clean_slate", pd.Series(False, index=rows.index)).fillna(False).astype(bool).sum()),
         "priced_rows": priced_rows,
         "priced_rate": float(priced_rows / row_count) if row_count else None,
         "win_rate": win_rate,
@@ -273,6 +358,12 @@ def _summary(rows: pd.DataFrame) -> dict:
         "unique_players": _nunique(rows, "player_id"),
         "unique_teams": _nunique(rows, "team_abbr"),
         "unique_dates": _nunique(rows, "game_date_et"),
+        "unique_clean_dates": _nunique(
+            rows.loc[
+                rows.get("clean_slate", pd.Series(False, index=rows.index)).fillna(False).astype(bool)
+            ],
+            "game_date_et",
+        ),
         "max_player_share": _max_share(rows, "player_id"),
         "max_team_share": _max_share(rows, "team_abbr"),
         "max_game_date_share": _max_share(rows, "game_date_et"),
@@ -358,6 +449,8 @@ def _policy_reasons(train: dict, holdout: dict, cfg: PropBucketReopenConfig) -> 
         reasons.append(f"unique_teams<{cfg.min_unique_teams}")
     if holdout["unique_dates"] < cfg.min_unique_dates:
         reasons.append(f"unique_dates<{cfg.min_unique_dates}")
+    if holdout["unique_clean_dates"] < cfg.min_clean_unique_dates:
+        reasons.append(f"clean_unique_dates<{cfg.min_clean_unique_dates}")
     if _gt(holdout["max_player_share"], cfg.max_player_share):
         reasons.append(f"max_player_share>{cfg.max_player_share:.2f}")
     if _gt(holdout["max_team_share"], cfg.max_team_share):
@@ -365,6 +458,126 @@ def _policy_reasons(train: dict, holdout: dict, cfg: PropBucketReopenConfig) -> 
     if _gt(holdout["max_game_date_share"], cfg.max_game_date_share):
         reasons.append(f"max_game_date_share>{cfg.max_game_date_share:.2f}")
     return reasons
+
+
+def _bootstrap_micro_reasons(
+    summary: dict,
+    cfg: PropBucketReopenConfig,
+    values: dict,
+) -> list[str]:
+    reasons: list[str] = []
+    if not cfg.enable_bootstrap_micro:
+        reasons.append("bootstrap_micro_disabled")
+    if cfg.bootstrap_common_only and values.get("line_surface") == "alt_tail":
+        reasons.append("bootstrap_common_only")
+    if summary["rows"] < cfg.bootstrap_min_rows:
+        reasons.append(f"bootstrap_rows<{cfg.bootstrap_min_rows}")
+    if _lt(summary["priced_rate"], cfg.bootstrap_min_priced_rate):
+        reasons.append(f"bootstrap_priced_rate<{cfg.bootstrap_min_priced_rate:.2f}")
+    if _lt(summary["roi"], cfg.bootstrap_min_roi):
+        reasons.append(f"bootstrap_roi<{cfg.bootstrap_min_roi:.3f}")
+    if _lt(summary["avg_ev"], cfg.bootstrap_min_avg_ev):
+        reasons.append(f"bootstrap_avg_ev<{cfg.bootstrap_min_avg_ev:.3f}")
+    if _lt(summary["avg_clv_price"], cfg.bootstrap_min_avg_clv_price):
+        reasons.append(f"bootstrap_avg_clv_price<{cfg.bootstrap_min_avg_clv_price:.3f}")
+    if summary["clv_price_rows"] < cfg.bootstrap_min_clv_price_rows:
+        reasons.append(f"bootstrap_clv_price_rows<{cfg.bootstrap_min_clv_price_rows}")
+    if _lt(summary["clv_beat_rate"], cfg.bootstrap_min_clv_beat_rate):
+        reasons.append(f"bootstrap_clv_beat_rate<{cfg.bootstrap_min_clv_beat_rate:.2f}")
+    if _gt_abs(summary["calibration_error"], cfg.bootstrap_max_abs_calibration_error):
+        reasons.append(f"bootstrap_abs_calibration_error>{cfg.bootstrap_max_abs_calibration_error:.3f}")
+    if summary["unique_players"] < cfg.bootstrap_min_unique_players:
+        reasons.append(f"bootstrap_unique_players<{cfg.bootstrap_min_unique_players}")
+    if summary["unique_teams"] < cfg.bootstrap_min_unique_teams:
+        reasons.append(f"bootstrap_unique_teams<{cfg.bootstrap_min_unique_teams}")
+    if summary["unique_dates"] < cfg.bootstrap_min_unique_dates:
+        reasons.append(f"bootstrap_unique_dates<{cfg.bootstrap_min_unique_dates}")
+    if summary["unique_clean_dates"] < cfg.bootstrap_min_clean_unique_dates:
+        reasons.append(f"bootstrap_clean_unique_dates<{cfg.bootstrap_min_clean_unique_dates}")
+    if _gt(summary["max_player_share"], cfg.bootstrap_max_player_share):
+        reasons.append(f"bootstrap_max_player_share>{cfg.bootstrap_max_player_share:.2f}")
+    if _gt(summary["max_team_share"], cfg.bootstrap_max_team_share):
+        reasons.append(f"bootstrap_max_team_share>{cfg.bootstrap_max_team_share:.2f}")
+    if _gt(summary["max_game_date_share"], cfg.bootstrap_max_game_date_share):
+        reasons.append(f"bootstrap_max_game_date_share>{cfg.bootstrap_max_game_date_share:.2f}")
+    return reasons
+
+
+_LADDER_TIERS = ("watch", "micro", "starter", "bankroll")
+_LADDER_RANK = {tier: idx for idx, tier in enumerate(_LADDER_TIERS)}
+
+
+def _additional_ladder_reasons(
+    train: dict,
+    holdout: dict,
+    cfg: PropBucketReopenConfig,
+    tier: str,
+) -> list[str]:
+    if tier == "micro":
+        return []
+    total_rows = int(train["rows"] or 0) + int(holdout["rows"] or 0)
+    if tier == "starter":
+        thresholds = (
+            ("total_rows", total_rows, cfg.starter_min_total_rows),
+            ("holdout_rows", int(holdout["rows"] or 0), cfg.starter_min_holdout_rows),
+            ("clv_price_rows", int(holdout["clv_price_rows"] or 0), cfg.starter_min_clv_price_rows),
+            ("unique_dates", int(holdout["unique_dates"] or 0), cfg.starter_min_unique_dates),
+            ("clean_unique_dates", int(holdout["unique_clean_dates"] or 0), cfg.starter_min_clean_unique_dates),
+        )
+        max_cal = cfg.starter_max_abs_calibration_error
+    else:
+        thresholds = (
+            ("total_rows", total_rows, cfg.bankroll_min_total_rows),
+            ("holdout_rows", int(holdout["rows"] or 0), cfg.bankroll_min_holdout_rows),
+            ("clv_price_rows", int(holdout["clv_price_rows"] or 0), cfg.bankroll_min_clv_price_rows),
+            ("unique_dates", int(holdout["unique_dates"] or 0), cfg.bankroll_min_unique_dates),
+            ("clean_unique_dates", int(holdout["unique_clean_dates"] or 0), cfg.bankroll_min_clean_unique_dates),
+        )
+        max_cal = cfg.bankroll_max_abs_calibration_error
+    reasons = [f"{name}<{minimum}" for name, value, minimum in thresholds if value < minimum]
+    if _gt_abs(holdout.get("calibration_error"), max_cal):
+        reasons.append(f"abs_calibration_error>{max_cal:.3f}")
+    return reasons
+
+
+def _desired_ladder_tier(
+    train: dict,
+    holdout: dict,
+    cfg: PropBucketReopenConfig,
+    base_reasons: list[str],
+) -> tuple[str, dict[str, list[str]]]:
+    reasons_by_tier = {
+        "micro": list(base_reasons),
+        "starter": list(base_reasons) + _additional_ladder_reasons(train, holdout, cfg, "starter"),
+        "bankroll": list(base_reasons) + _additional_ladder_reasons(train, holdout, cfg, "bankroll"),
+    }
+    for tier in ("bankroll", "starter", "micro"):
+        if not reasons_by_tier[tier]:
+            return tier, reasons_by_tier
+    return "watch", reasons_by_tier
+
+
+def _graduate_one_rung(previous: str, desired: str) -> str:
+    previous = previous if previous in _LADDER_RANK else "watch"
+    desired = desired if desired in _LADDER_RANK else "watch"
+    if _LADDER_RANK[desired] <= _LADDER_RANK[previous]:
+        return desired
+    return _LADDER_TIERS[min(_LADDER_RANK[previous] + 1, _LADDER_RANK[desired])]
+
+
+def _load_previous_ladder(path: Path) -> dict[str, dict]:
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    out: dict[str, dict] = {}
+    for key, record in (payload.get("ladder_buckets") or {}).items():
+        out[str(key)] = dict(record or {})
+    for key, record in (payload.get("reopen_buckets") or {}).items():
+        out.setdefault(str(key), dict(record or {}))
+    return out
 
 
 def _history_guard_reasons(history: dict, cfg: PropBucketReopenConfig) -> list[str]:
@@ -382,8 +595,9 @@ def _history_guard_reasons(history: dict, cfg: PropBucketReopenConfig) -> list[s
 
 def _group_specs() -> Iterable[tuple[str, tuple[str, ...]]]:
     return [
-        ("bucket", ("market", "side", "line_bucket", "price_bucket")),
-        ("line_bucket", ("market", "side", "line_bucket")),
+        ("bucket", ("market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key")),
+        ("line_bucket", ("market", "side", "line_surface", "line_bucket", "bookmaker_key")),
+        ("market_side_surface", ("market", "side", "line_surface")),
         ("market_side", ("market", "side")),
     ]
 
@@ -392,9 +606,15 @@ def _bucket_key(values: dict) -> str:
     return "|".join([
         str(values.get("market", "*")),
         str(values.get("side", "*")),
+        str(values.get("line_surface", "*")),
         str(values.get("line_bucket", "*")),
         str(values.get("price_bucket", "*")),
+        str(values.get("bookmaker_key", "*")),
     ])
+
+
+def _is_tail_alt_bucket(values: dict) -> bool:
+    return values.get("line_surface") == "alt_tail"
 
 
 def _history_index(history_df: pd.DataFrame) -> dict[tuple[str, str], dict]:
@@ -411,12 +631,19 @@ def _history_index(history_df: pd.DataFrame) -> dict[tuple[str, str], dict]:
 
 def train(cfg: PropBucketReopenConfig) -> dict:
     cfg.model_dir.mkdir(parents=True, exist_ok=True)
+    output_path = cfg.model_dir / cfg.out_file
+    previous_ladder = _load_previous_ladder(output_path)
     df = _load(cfg)
     history_df = _load_history(cfg)
+    evidence_date_to = max(df["game_date_et"]) if not df.empty else None
+    clean_dates, clean_slate_rows = _load_clean_dates(cfg, date_to=evidence_date_to)
+    if not df.empty:
+        df["clean_slate"] = df["game_date_et"].isin(clean_dates)
     history_by_level = _history_index(history_df)
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source": "features.mlb_prop_market_training_examples",
+        "promotion_scope": "exact_bucket_only",
         "lookback_days": cfg.lookback_days,
         "holdout_days": cfg.holdout_days,
         "thresholds": {
@@ -434,9 +661,27 @@ def train(cfg: PropBucketReopenConfig) -> dict:
             "min_unique_players": cfg.min_unique_players,
             "min_unique_teams": cfg.min_unique_teams,
             "min_unique_dates": cfg.min_unique_dates,
+            "min_clean_unique_dates": cfg.min_clean_unique_dates,
+            "clean_slate_min_side_locks": cfg.clean_slate_min_side_locks,
+            "clean_slate_min_valid_side_locks": cfg.clean_slate_min_valid_side_locks,
+            "clean_slate_min_valid_coverage": cfg.clean_slate_min_valid_coverage,
+            "clean_slate_max_missing_lock_rate": cfg.clean_slate_max_missing_lock_rate,
+            "clean_slate_max_stale_close_rate": cfg.clean_slate_max_stale_close_rate,
             "max_player_share": cfg.max_player_share,
             "max_team_share": cfg.max_team_share,
             "max_game_date_share": cfg.max_game_date_share,
+            "starter_min_total_rows": cfg.starter_min_total_rows,
+            "starter_min_holdout_rows": cfg.starter_min_holdout_rows,
+            "starter_min_clv_price_rows": cfg.starter_min_clv_price_rows,
+            "starter_min_unique_dates": cfg.starter_min_unique_dates,
+            "starter_min_clean_unique_dates": cfg.starter_min_clean_unique_dates,
+            "starter_max_abs_calibration_error": cfg.starter_max_abs_calibration_error,
+            "bankroll_min_total_rows": cfg.bankroll_min_total_rows,
+            "bankroll_min_holdout_rows": cfg.bankroll_min_holdout_rows,
+            "bankroll_min_clv_price_rows": cfg.bankroll_min_clv_price_rows,
+            "bankroll_min_unique_dates": cfg.bankroll_min_unique_dates,
+            "bankroll_min_clean_unique_dates": cfg.bankroll_min_clean_unique_dates,
+            "bankroll_max_abs_calibration_error": cfg.bankroll_max_abs_calibration_error,
             "history_lookback_days": cfg.history_lookback_days,
             "min_history_rows": cfg.min_history_rows,
             "min_history_priced_rate": cfg.min_history_priced_rate,
@@ -445,18 +690,38 @@ def train(cfg: PropBucketReopenConfig) -> dict:
             "enforce_history_guard": cfg.enforce_history_guard,
             "force_reopen_all": cfg.force_reopen_all,
             "research_only": cfg.research_only,
+            "enable_bootstrap_micro": cfg.enable_bootstrap_micro,
+            "bootstrap_common_only": cfg.bootstrap_common_only,
+            "bootstrap_min_rows": cfg.bootstrap_min_rows,
+            "bootstrap_min_priced_rate": cfg.bootstrap_min_priced_rate,
+            "bootstrap_min_roi": cfg.bootstrap_min_roi,
+            "bootstrap_min_avg_ev": cfg.bootstrap_min_avg_ev,
+            "bootstrap_min_avg_clv_price": cfg.bootstrap_min_avg_clv_price,
+            "bootstrap_min_clv_beat_rate": cfg.bootstrap_min_clv_beat_rate,
+            "bootstrap_min_clv_price_rows": cfg.bootstrap_min_clv_price_rows,
+            "bootstrap_max_abs_calibration_error": cfg.bootstrap_max_abs_calibration_error,
+            "bootstrap_min_unique_players": cfg.bootstrap_min_unique_players,
+            "bootstrap_min_unique_teams": cfg.bootstrap_min_unique_teams,
+            "bootstrap_min_unique_dates": cfg.bootstrap_min_unique_dates,
+            "bootstrap_min_clean_unique_dates": cfg.bootstrap_min_clean_unique_dates,
+            "bootstrap_max_player_share": cfg.bootstrap_max_player_share,
+            "bootstrap_max_team_share": cfg.bootstrap_max_team_share,
+            "bootstrap_max_game_date_share": cfg.bootstrap_max_game_date_share,
         },
         "rows": int(len(df)),
         "history_rows": int(len(history_df)),
+        "clean_slate_count": len(clean_dates),
+        "clean_slate_rows": clean_slate_rows,
         "force_reopen_all": cfg.force_reopen_all,
         "research_only": cfg.research_only,
         "reopen_buckets": {},
+        "ladder_buckets": {},
         "closed_buckets": {},
         "diagnostics": [],
     }
     if df.empty:
         payload["status"] = "no_rows"
-        (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        output_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
         return payload
 
     split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
@@ -469,6 +734,7 @@ def train(cfg: PropBucketReopenConfig) -> dict:
             value_dict = dict(zip(group_cols, values))
             train_summary = _summary(sub.loc[train_mask.loc[sub.index]])
             holdout_summary = _summary(sub.loc[holdout_mask.loc[sub.index]])
+            all_summary = _summary(sub)
             reasons = _policy_reasons(train_summary, holdout_summary, cfg)
             history_summary = history_by_level.get(
                 (level, _bucket_key(value_dict)),
@@ -477,32 +743,119 @@ def train(cfg: PropBucketReopenConfig) -> dict:
             history_reasons = _history_guard_reasons(history_summary, cfg)
             if cfg.enforce_history_guard:
                 reasons.extend(history_reasons)
-            status = "forced_reopen" if cfg.force_reopen_all else "reopen_candidate" if not reasons else "closed"
+            if _is_tail_alt_bucket(value_dict) and reasons:
+                reasons = ["tail_alt_requires_proof", *[r for r in reasons if r != "tail_alt_requires_proof"]]
             key = _bucket_key(value_dict)
+            desired_tier, reasons_by_tier = _desired_ladder_tier(
+                train_summary,
+                holdout_summary,
+                cfg,
+                reasons,
+            )
+            bootstrap_reasons = (
+                _bootstrap_micro_reasons(all_summary, cfg, value_dict)
+                if level == "bucket"
+                else ["bootstrap_exact_bucket_only"]
+            )
+            bootstrap_micro_eligible = (
+                level == "bucket"
+                and cfg.enable_bootstrap_micro
+                and desired_tier == "watch"
+                and int(train_summary.get("rows") or 0) < cfg.min_train_rows
+                and not bootstrap_reasons
+            )
+            promotion_source = "full_policy" if desired_tier != "watch" else "closed"
+            if bootstrap_micro_eligible:
+                desired_tier = "micro"
+                reasons_by_tier["micro"] = []
+                reasons_by_tier["starter"] = sorted(set(
+                    list(reasons_by_tier.get("starter") or []) + ["bootstrap_micro_only"]
+                ))
+                reasons_by_tier["bankroll"] = sorted(set(
+                    list(reasons_by_tier.get("bankroll") or []) + ["bootstrap_micro_only"]
+                ))
+                promotion_source = "bootstrap_micro"
+            if cfg.force_reopen_all and not cfg.research_only:
+                desired_tier = "bankroll"
+                promotion_source = "forced"
+            previous_record = previous_ladder.get(key, {})
+            previous_tier = str(previous_record.get("ladder_tier") or "watch")
+            previous_evidence_dates = int(previous_record.get("ladder_evidence_unique_dates") or 0)
+            current_evidence_dates = int(holdout_summary.get("unique_dates") or 0)
+            awaiting_new_slate = (
+                bool(previous_record)
+                and _LADDER_RANK.get(desired_tier, 0) > _LADDER_RANK.get(previous_tier, 0)
+                and current_evidence_dates <= previous_evidence_dates
+            )
+            if cfg.research_only:
+                ladder_tier = "watch"
+            elif awaiting_new_slate:
+                ladder_tier = previous_tier
+            else:
+                ladder_tier = _graduate_one_rung(previous_tier, desired_tier)
+            ladder_changed = ladder_tier != previous_tier
+            last_ladder_change_at_utc = (
+                payload["generated_at_utc"]
+                if ladder_changed
+                else previous_record.get("last_ladder_change_at_utc")
+            )
+            status = (
+                "research_only"
+                if cfg.research_only
+                else f"{ladder_tier}_eligible"
+                if ladder_tier != "watch"
+                else "closed"
+            )
             record = {
                 "key": key,
                 "level": level,
                 "market": value_dict.get("market", "*"),
                 "side": value_dict.get("side", "*"),
+                "line_surface": value_dict.get("line_surface", "*"),
                 "line_bucket": value_dict.get("line_bucket", "*"),
                 "price_bucket": value_dict.get("price_bucket", "*"),
+                "bookmaker_key": value_dict.get("bookmaker_key", "*"),
                 "status": status,
+                "ladder_tier": ladder_tier,
+                "desired_ladder_tier": desired_tier,
+                "previous_ladder_tier": previous_tier,
+                "awaiting_new_slate": awaiting_new_slate,
+                "ladder_block_reason": "awaiting_new_slate_for_next_rung" if awaiting_new_slate else None,
+                "ladder_evidence_unique_dates": current_evidence_dates,
+                "last_ladder_change_at_utc": last_ladder_change_at_utc,
+                "ladder_reasons": reasons_by_tier,
+                "promotion_source": promotion_source,
+                "bootstrap_micro_eligible": bootstrap_micro_eligible,
+                "bootstrap_micro_reasons": bootstrap_reasons,
                 "reasons": reasons,
                 "model_reasons": reasons,
                 "history_reasons": history_reasons,
                 "train": train_summary,
                 "holdout": holdout_summary,
+                "bootstrap": all_summary,
                 "history": history_summary,
             }
             payload["diagnostics"].append(record)
             if level == "bucket":
-                if status in {"reopen_candidate", "forced_reopen"}:
-                    payload["reopen_buckets"][key] = {
+                ladder_record = {
                         "market": record["market"],
                         "side": record["side"],
+                        "line_surface": record["line_surface"],
                         "line_bucket": record["line_bucket"],
                         "price_bucket": record["price_bucket"],
+                        "bookmaker_key": record["bookmaker_key"],
                         "status": status,
+                        "ladder_tier": ladder_tier,
+                        "desired_ladder_tier": desired_tier,
+                        "previous_ladder_tier": previous_tier,
+                        "awaiting_new_slate": awaiting_new_slate,
+                        "ladder_block_reason": "awaiting_new_slate_for_next_rung" if awaiting_new_slate else None,
+                        "ladder_evidence_unique_dates": current_evidence_dates,
+                        "last_ladder_change_at_utc": last_ladder_change_at_utc,
+                        "ladder_reasons": reasons_by_tier,
+                        "promotion_source": promotion_source,
+                        "bootstrap_micro_eligible": bootstrap_micro_eligible,
+                        "bootstrap_micro_reasons": bootstrap_reasons,
                         "research_only": cfg.research_only,
                         "train_rows": train_summary["rows"],
                         "holdout_rows": holdout_summary["rows"],
@@ -516,9 +869,27 @@ def train(cfg: PropBucketReopenConfig) -> dict:
                         "holdout_unique_players": holdout_summary["unique_players"],
                         "holdout_unique_teams": holdout_summary["unique_teams"],
                         "holdout_unique_dates": holdout_summary["unique_dates"],
+                        "holdout_unique_clean_dates": holdout_summary["unique_clean_dates"],
+                        "holdout_clean_rows": holdout_summary["clean_rows"],
                         "holdout_max_player_share": holdout_summary["max_player_share"],
                         "holdout_max_team_share": holdout_summary["max_team_share"],
                         "holdout_max_game_date_share": holdout_summary["max_game_date_share"],
+                        "bootstrap_rows": all_summary["rows"],
+                        "bootstrap_roi": all_summary["roi"],
+                        "bootstrap_win_rate": all_summary["win_rate"],
+                        "bootstrap_avg_model_prob": all_summary["avg_model_prob"],
+                        "bootstrap_calibration_error": all_summary["calibration_error"],
+                        "bootstrap_avg_ev": all_summary["avg_ev"],
+                        "bootstrap_avg_clv_price": all_summary["avg_clv_price"],
+                        "bootstrap_clv_beat_rate": all_summary["clv_beat_rate"],
+                        "bootstrap_clv_price_rows": all_summary["clv_price_rows"],
+                        "bootstrap_unique_players": all_summary["unique_players"],
+                        "bootstrap_unique_teams": all_summary["unique_teams"],
+                        "bootstrap_unique_dates": all_summary["unique_dates"],
+                        "bootstrap_unique_clean_dates": all_summary["unique_clean_dates"],
+                        "bootstrap_max_player_share": all_summary["max_player_share"],
+                        "bootstrap_max_team_share": all_summary["max_team_share"],
+                        "bootstrap_max_game_date_share": all_summary["max_game_date_share"],
                         "history_rows": history_summary["rows"],
                         "history_roi": history_summary["roi"],
                         "history_win_rate": history_summary["win_rate"],
@@ -527,15 +898,20 @@ def train(cfg: PropBucketReopenConfig) -> dict:
                         "model_reasons": reasons,
                         "history_reasons": history_reasons,
                     }
+                payload["ladder_buckets"][key] = ladder_record
+                if ladder_tier in {"micro", "starter", "bankroll"} and not cfg.research_only:
+                    payload["reopen_buckets"][key] = ladder_record
                 else:
                     payload["closed_buckets"][key] = reasons
 
-    payload["diagnostics"].sort(key=lambda r: (r["level"], r["market"], r["side"], r["line_bucket"], r["price_bucket"]))
+    payload["diagnostics"].sort(key=lambda r: (
+        r["level"], r["market"], r["side"], r.get("line_surface", "*"), r["line_bucket"], r["price_bucket"]
+    ))
     if cfg.force_reopen_all:
         payload["status"] = "forced_reopen_all_research" if cfg.research_only else "forced_reopen_all"
     else:
         payload["status"] = "ready_for_bucket_review" if payload["reopen_buckets"] else "all_buckets_closed"
-    (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    output_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     return payload
 
 
@@ -560,9 +936,27 @@ def main() -> None:
     parser.add_argument("--min-unique-players", type=int, default=20)
     parser.add_argument("--min-unique-teams", type=int, default=6)
     parser.add_argument("--min-unique-dates", type=int, default=5)
+    parser.add_argument("--min-clean-unique-dates", type=int, default=5)
+    parser.add_argument("--clean-slate-min-side-locks", type=int, default=100)
+    parser.add_argument("--clean-slate-min-valid-side-locks", type=int, default=100)
+    parser.add_argument("--clean-slate-min-valid-coverage", type=float, default=0.25)
+    parser.add_argument("--clean-slate-max-missing-lock-rate", type=float, default=0.02)
+    parser.add_argument("--clean-slate-max-stale-close-rate", type=float, default=0.05)
     parser.add_argument("--max-player-share", type=float, default=0.12)
     parser.add_argument("--max-team-share", type=float, default=0.25)
     parser.add_argument("--max-game-date-share", type=float, default=0.35)
+    parser.add_argument("--starter-min-total-rows", type=int, default=250)
+    parser.add_argument("--starter-min-holdout-rows", type=int, default=60)
+    parser.add_argument("--starter-min-clv-price-rows", type=int, default=50)
+    parser.add_argument("--starter-min-unique-dates", type=int, default=8)
+    parser.add_argument("--starter-min-clean-unique-dates", type=int, default=8)
+    parser.add_argument("--starter-max-abs-calibration-error", type=float, default=0.04)
+    parser.add_argument("--bankroll-min-total-rows", type=int, default=500)
+    parser.add_argument("--bankroll-min-holdout-rows", type=int, default=100)
+    parser.add_argument("--bankroll-min-clv-price-rows", type=int, default=100)
+    parser.add_argument("--bankroll-min-unique-dates", type=int, default=12)
+    parser.add_argument("--bankroll-min-clean-unique-dates", type=int, default=12)
+    parser.add_argument("--bankroll-max-abs-calibration-error", type=float, default=0.03)
     parser.add_argument("--history-lookback-days", type=int, default=540)
     parser.add_argument("--min-history-rows", type=int, default=500)
     parser.add_argument("--min-history-priced-rate", type=float, default=0.80)
@@ -571,6 +965,23 @@ def main() -> None:
     parser.add_argument("--enforce-history-guard", action="store_true")
     parser.add_argument("--force-reopen-all", action="store_true")
     parser.add_argument("--research-only", action="store_true")
+    parser.add_argument("--disable-bootstrap-micro", action="store_true")
+    parser.add_argument("--allow-bootstrap-alt-tail", action="store_true")
+    parser.add_argument("--bootstrap-min-rows", type=int, default=150)
+    parser.add_argument("--bootstrap-min-priced-rate", type=float, default=0.95)
+    parser.add_argument("--bootstrap-min-roi", type=float, default=0.0)
+    parser.add_argument("--bootstrap-min-avg-ev", type=float, default=0.0)
+    parser.add_argument("--bootstrap-min-avg-clv-price", type=float, default=0.0)
+    parser.add_argument("--bootstrap-min-clv-beat-rate", type=float, default=0.55)
+    parser.add_argument("--bootstrap-min-clv-price-rows", type=int, default=30)
+    parser.add_argument("--bootstrap-max-abs-calibration-error", type=float, default=0.05)
+    parser.add_argument("--bootstrap-min-unique-players", type=int, default=20)
+    parser.add_argument("--bootstrap-min-unique-teams", type=int, default=6)
+    parser.add_argument("--bootstrap-min-unique-dates", type=int, default=5)
+    parser.add_argument("--bootstrap-min-clean-unique-dates", type=int, default=5)
+    parser.add_argument("--bootstrap-max-player-share", type=float, default=0.12)
+    parser.add_argument("--bootstrap-max-team-share", type=float, default=0.25)
+    parser.add_argument("--bootstrap-max-game-date-share", type=float, default=0.35)
     args = parser.parse_args()
     payload = train(PropBucketReopenConfig(
         pg_dsn=args.pg_dsn,
@@ -592,9 +1003,27 @@ def main() -> None:
         min_unique_players=args.min_unique_players,
         min_unique_teams=args.min_unique_teams,
         min_unique_dates=args.min_unique_dates,
+        min_clean_unique_dates=args.min_clean_unique_dates,
+        clean_slate_min_side_locks=args.clean_slate_min_side_locks,
+        clean_slate_min_valid_side_locks=args.clean_slate_min_valid_side_locks,
+        clean_slate_min_valid_coverage=args.clean_slate_min_valid_coverage,
+        clean_slate_max_missing_lock_rate=args.clean_slate_max_missing_lock_rate,
+        clean_slate_max_stale_close_rate=args.clean_slate_max_stale_close_rate,
         max_player_share=args.max_player_share,
         max_team_share=args.max_team_share,
         max_game_date_share=args.max_game_date_share,
+        starter_min_total_rows=args.starter_min_total_rows,
+        starter_min_holdout_rows=args.starter_min_holdout_rows,
+        starter_min_clv_price_rows=args.starter_min_clv_price_rows,
+        starter_min_unique_dates=args.starter_min_unique_dates,
+        starter_min_clean_unique_dates=args.starter_min_clean_unique_dates,
+        starter_max_abs_calibration_error=args.starter_max_abs_calibration_error,
+        bankroll_min_total_rows=args.bankroll_min_total_rows,
+        bankroll_min_holdout_rows=args.bankroll_min_holdout_rows,
+        bankroll_min_clv_price_rows=args.bankroll_min_clv_price_rows,
+        bankroll_min_unique_dates=args.bankroll_min_unique_dates,
+        bankroll_min_clean_unique_dates=args.bankroll_min_clean_unique_dates,
+        bankroll_max_abs_calibration_error=args.bankroll_max_abs_calibration_error,
         history_lookback_days=args.history_lookback_days,
         min_history_rows=args.min_history_rows,
         min_history_priced_rate=args.min_history_priced_rate,
@@ -603,8 +1032,25 @@ def main() -> None:
         enforce_history_guard=args.enforce_history_guard,
         force_reopen_all=args.force_reopen_all,
         research_only=args.research_only,
+        enable_bootstrap_micro=not args.disable_bootstrap_micro,
+        bootstrap_common_only=not args.allow_bootstrap_alt_tail,
+        bootstrap_min_rows=args.bootstrap_min_rows,
+        bootstrap_min_priced_rate=args.bootstrap_min_priced_rate,
+        bootstrap_min_roi=args.bootstrap_min_roi,
+        bootstrap_min_avg_ev=args.bootstrap_min_avg_ev,
+        bootstrap_min_avg_clv_price=args.bootstrap_min_avg_clv_price,
+        bootstrap_min_clv_beat_rate=args.bootstrap_min_clv_beat_rate,
+        bootstrap_min_clv_price_rows=args.bootstrap_min_clv_price_rows,
+        bootstrap_max_abs_calibration_error=args.bootstrap_max_abs_calibration_error,
+        bootstrap_min_unique_players=args.bootstrap_min_unique_players,
+        bootstrap_min_unique_teams=args.bootstrap_min_unique_teams,
+        bootstrap_min_unique_dates=args.bootstrap_min_unique_dates,
+        bootstrap_min_clean_unique_dates=args.bootstrap_min_clean_unique_dates,
+        bootstrap_max_player_share=args.bootstrap_max_player_share,
+        bootstrap_max_team_share=args.bootstrap_max_team_share,
+        bootstrap_max_game_date_share=args.bootstrap_max_game_date_share,
     ))
-    print(json.dumps(payload, indent=2))
+    print(json.dumps(payload, indent=2, default=str))
 
 
 if __name__ == "__main__":

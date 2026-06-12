@@ -75,7 +75,10 @@ SELECT
     -1.0 * l.spread_home_points AS market_margin_prior
 FROM odds.nba_game_lines l
 LEFT JOIN odds.team_name_map hm ON hm.team_name = l.home_team
-LEFT JOIN odds.team_name_map am ON am.team_name = l.away_team;
+LEFT JOIN odds.team_name_map am ON am.team_name = l.away_team
+WHERE l.commence_time_utc IS NOT NULL
+  AND (l.commence_time_utc AT TIME ZONE 'America/New_York')::date = l.as_of_date
+  AND l.fetched_at_utc <= l.commence_time_utc;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. nba_game_lines_open_close: first + last fetch per game per day
@@ -110,12 +113,12 @@ WITH ranked AS (
         (n.commence_time_utc AT TIME ZONE 'America/New_York')::date AS game_date_et,
         ROW_NUMBER() OVER (
             PARTITION BY (n.commence_time_utc AT TIME ZONE 'America/New_York')::date,
-                         n.bookmaker_key, n.home_team_abbr, n.away_team_abbr
+                         n.bookmaker_key, n.event_id, n.home_team_abbr, n.away_team_abbr
             ORDER BY n.fetched_at_utc
         ) AS rn_open,
         ROW_NUMBER() OVER (
             PARTITION BY (n.commence_time_utc AT TIME ZONE 'America/New_York')::date,
-                         n.bookmaker_key, n.home_team_abbr, n.away_team_abbr
+                         n.bookmaker_key, n.event_id, n.home_team_abbr, n.away_team_abbr
             ORDER BY n.fetched_at_utc DESC
         ) AS rn_close
     FROM odds.nba_game_lines_norm n
@@ -136,11 +139,14 @@ SELECT
     c.market_margin_prior             AS close_market_margin_prior,
     c.total_points                    AS close_total,
     c.market_margin_prior - o.market_margin_prior  AS line_move_margin,
-    c.total_points        - o.total_points         AS line_move_total
+    c.total_points        - o.total_points         AS line_move_total,
+    c.event_id                              AS odds_event_id,
+    c.commence_time_utc
 FROM ranked o
 JOIN ranked c
   ON  c.game_date_et    = o.game_date_et
   AND c.bookmaker_key   = o.bookmaker_key
+  AND c.event_id        = o.event_id
   AND c.home_team_abbr  = o.home_team_abbr
   AND c.away_team_abbr  = o.away_team_abbr
 WHERE o.rn_open = 1

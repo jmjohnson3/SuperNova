@@ -65,7 +65,7 @@ Traceback (most recent call last):
   File "C:\Users\josh\Git\SuperNovaBets\.venv\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
     raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.the-odds-api.com', port=443): Max retries exceeded with url: /v4/sports/baseball_mlb/odds?apiKey=5b6f0290e265c3329b3ed27897d79eaf&regions=us&markets=spreads%2Ctotals&bookmakers=fanduel%2Cdraftkings&oddsFormat=american&dateFormat=iso&commenceTimeFrom=2026-05-24T18%3A00%3A00Z&commenceTimeTo=2026-05-26T04%3A00%3A00Z&includeLinks=true (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.the-odds-api.com', port=443): Max retries exceeded with url: /v4/sports/baseball_mlb/odds?apiKey=[REDACTED]&regions=us&markets=spreads%2Ctotals&bookmakers=fanduel%2Cdraftkings&oddsFormat=american&dateFormat=iso&commenceTimeFrom=2026-05-24T18%3A00%3A00Z&commenceTimeTo=2026-05-26T04%3A00%3A00Z&includeLinks=true (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
 
 During handling of the above exception, another exception occurred:
 
@@ -87,7 +87,7 @@ Traceback (most recent call last):
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\Users\josh\Git\SuperNovaBets\.venv\Lib\site-packages\requests\adapters.py", line 675, in send
     raise SSLError(e, request=request)
-requests.exceptions.SSLError: HTTPSConnectionPool(host='api.the-odds-api.com', port=443): Max retries exceeded with url: /v4/sports/baseball_mlb/odds?apiKey=5b6f0290e265c3329b3ed27897d79eaf&regions=us&markets=spreads%2Ctotals&bookmakers=fanduel%2Cdraftkings&oddsFormat=american&dateFormat=iso&commenceTimeFrom=2026-05-24T18%3A00%3A00Z&commenceTimeTo=2026-05-26T04%3A00%3A00Z&includeLinks=true (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+requests.exceptions.SSLError: HTTPSConnectionPool(host='api.the-odds-api.com', port=443): Max retries exceeded with url: /v4/sports/baseball_mlb/odds?apiKey=[REDACTED]&regions=us&markets=spreads%2Ctotals&bookmakers=fanduel%2Cdraftkings&oddsFormat=american&dateFormat=iso&commenceTimeFrom=2026-05-24T18%3A00%3A00Z&commenceTimeTo=2026-05-26T04%3A00%3A00Z&includeLinks=true (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
 2026-05-25 18:42:32,136 | INFO | mlb_pipeline.crawler_oddsapi | Live 2026-05-25 | events=6 | credits_remaining=97366
 2026-05-25 18:42:32,954 | INFO | mlb_pipeline.crawler_oddsapi | Fetching live odds for ET date=2026-05-26 window=2026-05-25T18:00:00Z..2026-05-27T04:00:00Z
 2026-05-25 18:42:33,576 | INFO | mlb_pipeline.crawler_oddsapi | Live 2026-05-26 | events=19 | credits_remaining=97364

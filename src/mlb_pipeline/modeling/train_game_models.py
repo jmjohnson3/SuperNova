@@ -1342,8 +1342,9 @@ def main() -> None:
                         n_market_all, cfg.min_market_rows)
 
         # Save schema artifacts
+        selected_medians = {c: medians_all[c] for c in feature_cols}
         (model_dir / "feature_columns.json").write_text(json.dumps(feature_cols), encoding="utf-8")
-        (model_dir / "feature_medians.json").write_text(json.dumps(medians_all),  encoding="utf-8")
+        (model_dir / "feature_medians.json").write_text(json.dumps(selected_medians), encoding="utf-8")
 
         # Save Optuna best params for reproducibility
         if best_run_line_params or best_total_params:

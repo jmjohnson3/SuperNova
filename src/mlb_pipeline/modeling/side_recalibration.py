@@ -40,7 +40,13 @@ def price_bucket(price) -> str:
     if p is None:
         return "missing_price"
     if p > 0:
-        return "plus_money"
+        if p < 150:
+            return "plus_100_149"
+        if p < 250:
+            return "plus_150_249"
+        if p < 500:
+            return "plus_250_499"
+        return "plus_500_plus"
     if p >= -129:
         return "fair_lay"
     if p >= -149:
@@ -67,16 +73,39 @@ def prop_line_bucket(stat: str, line) -> str:
             return "TB 0.5"
         if line_v < 2.0:
             return "TB 1.5"
-        return "TB 2.5+"
+        if line_v < 3.0:
+            return "TB 2.5"
+        if line_v < 4.0:
+            return "TB 3.5"
+        return "TB 4.5+"
     if stat == "batter_hits":
         if line_v < 1.0:
             return "H 0.5"
         if line_v < 2.0:
             return "H 1.5"
-        return "H 2.5+"
+        if line_v < 3.0:
+            return "H 2.5"
+        return "H 3.5+"
     if stat == "batter_home_runs":
         return "HR 0.5" if line_v < 1.0 else "HR 1.5+"
     return "other"
+
+
+def prop_line_surface(stat: str, side: str | None, line) -> str:
+    """Classify an offered prop line into common/canonical vs high-variance alt tail."""
+    line_v = clean_float(line)
+    side_v = (side or "").lower()
+    if line_v is None:
+        return "missing_line"
+    if side_v != "over":
+        return "common"
+    if stat == "batter_hits" and line_v >= 2.5:
+        return "alt_tail"
+    if stat == "batter_total_bases" and line_v >= 3.5:
+        return "alt_tail"
+    if stat == "batter_home_runs" and line_v >= 1.5:
+        return "alt_tail"
+    return "common"
 
 
 def game_total_line_bucket(line) -> str:

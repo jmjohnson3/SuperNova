@@ -26,7 +26,7 @@ from sklearn.metrics import brier_score_loss, log_loss
 
 from .prop_betting_layer import apply_prop_market_side_prior
 from .prop_replay import ev_per_unit
-from .side_recalibration import clean_float, logit, sigmoid
+from .side_recalibration import clean_float, logit, prop_line_surface, sigmoid
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
@@ -42,16 +42,43 @@ _DIRECT_NUMERIC_FEATURES = [
     "count_edge_side",
     "pred_count",
     "pred_value",
+    "confirmed_batting_order",
+    "projected_pa",
+    "projected_bf",
+    "projected_pitch_count",
+    "is_home",
+    "team_implied_runs",
+    "opponent_implied_runs",
+    "game_total_line",
+    "opp_sp_k_pct_10",
+    "opp_sp_bb_pct",
+    "opp_sp_xwoba",
+    "opp_sp_hard_hit_pct",
+    "opp_sp_whiff_pct",
+    "opp_bp_era_10",
+    "opp_bp_whip_10",
+    "opp_bp_k9_10",
+    "opp_team_k_pct_10",
+    "batter_vs_hand_hits_avg_10",
+    "batter_vs_hand_tb_avg_10",
+    "batter_vs_hand_hr_avg_10",
+    "batter_vs_hand_iso_avg_10",
+    "batter_vs_hand_k_rate_10",
+    "batter_vs_rp_slg_30",
+    "batter_vs_rp_hr_rate_30",
+    "pinch_hit_risk",
 ]
 
 _DIRECT_CATEGORICAL_FEATURES = [
     "market",
     "side",
+    "line_surface",
     "line_bucket",
     "price_bucket",
     "bookmaker_key",
     "model_family",
     "edge_type",
+    "opp_sp_hand",
 ]
 
 
@@ -97,6 +124,32 @@ SELECT
     market_prob_side::float AS market_prob_side,
     prob_edge_vs_market::float AS prob_edge_vs_market,
     count_edge_side::float AS count_edge_side,
+    confirmed_batting_order::float AS confirmed_batting_order,
+    projected_pa::float AS projected_pa,
+    projected_bf::float AS projected_bf,
+    projected_pitch_count::float AS projected_pitch_count,
+    is_home::float AS is_home,
+    team_implied_runs::float AS team_implied_runs,
+    opponent_implied_runs::float AS opponent_implied_runs,
+    game_total_line::float AS game_total_line,
+    opp_sp_hand,
+    opp_sp_k_pct_10::float AS opp_sp_k_pct_10,
+    opp_sp_bb_pct::float AS opp_sp_bb_pct,
+    opp_sp_xwoba::float AS opp_sp_xwoba,
+    opp_sp_hard_hit_pct::float AS opp_sp_hard_hit_pct,
+    opp_sp_whiff_pct::float AS opp_sp_whiff_pct,
+    opp_bp_era_10::float AS opp_bp_era_10,
+    opp_bp_whip_10::float AS opp_bp_whip_10,
+    opp_bp_k9_10::float AS opp_bp_k9_10,
+    opp_team_k_pct_10::float AS opp_team_k_pct_10,
+    batter_vs_hand_hits_avg_10::float AS batter_vs_hand_hits_avg_10,
+    batter_vs_hand_tb_avg_10::float AS batter_vs_hand_tb_avg_10,
+    batter_vs_hand_hr_avg_10::float AS batter_vs_hand_hr_avg_10,
+    batter_vs_hand_iso_avg_10::float AS batter_vs_hand_iso_avg_10,
+    batter_vs_hand_k_rate_10::float AS batter_vs_hand_k_rate_10,
+    batter_vs_rp_slg_30::float AS batter_vs_rp_slg_30,
+    batter_vs_rp_hr_rate_30::float AS batter_vs_rp_hr_rate_30,
+    pinch_hit_risk::float AS pinch_hit_risk,
     CASE WHEN market_price IS NULL THEN NULL ELSE ABS(market_price::float) END AS abs_price,
     CASE
         WHEN market_price IS NULL THEN NULL
@@ -143,12 +196,20 @@ def _table_exists(conn, schema: str, table: str) -> bool:
         return bool(cur.fetchone()[0])
 
 
+def _query_df(conn, sql: str, params: dict[str, object]) -> pd.DataFrame:
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description] if cur.description else []
+    return pd.DataFrame(rows, columns=columns)
+
+
 def _load_rows(cfg: PropProbabilityComparisonConfig) -> pd.DataFrame:
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days)).isoformat()
     with psycopg2.connect(cfg.pg_dsn) as conn:
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
             return pd.DataFrame()
-        df = pd.read_sql(SQL, conn, params={"cutoff": cutoff})
+        df = _query_df(conn, SQL, {"cutoff": cutoff})
     if df.empty:
         return df
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
@@ -173,6 +234,10 @@ def _load_rows(cfg: PropProbabilityComparisonConfig) -> pd.DataFrame:
     ]
     for col in numeric:
         df[col] = pd.to_numeric(df[col], errors="coerce")
+    df["line_surface"] = [
+        prop_line_surface(market, side, line)
+        for market, side, line in zip(df["market"], df["side"], df["market_line"])
+    ]
     df["target"] = df["target"].astype(int)
     df["push"] = df["push"].fillna(False).astype(bool)
     for col in _DIRECT_CATEGORICAL_FEATURES:
@@ -190,6 +255,26 @@ def _load_json(path: Path) -> dict:
 
 
 def _direct_key(
+    market: str = "*",
+    side: str = "*",
+    line_surface: str = "*",
+    line_bucket: str = "*",
+    price_bucket: str = "*",
+    bookmaker_key: str = "*",
+    model_family: str = "*",
+) -> str:
+    return "|".join([
+        market or "*",
+        side or "*",
+        line_surface or "*",
+        line_bucket or "*",
+        price_bucket or "*",
+        bookmaker_key or "*",
+        model_family or "*",
+    ])
+
+
+def _direct_key_legacy(
     market: str = "*",
     side: str = "*",
     line_bucket: str = "*",
@@ -214,12 +299,29 @@ def _lookup_direct_model(payload: dict, row: pd.Series) -> tuple[str | None, dic
     values = {
         "market": str(row.get("market") or "unknown"),
         "side": str(row.get("side") or "unknown"),
+        "line_surface": str(row.get("line_surface") or "unknown"),
         "line_bucket": str(row.get("line_bucket") or "unknown"),
         "price_bucket": str(row.get("price_bucket") or "missing_price"),
         "bookmaker_key": str(row.get("bookmaker_key") or "unknown"),
         "model_family": str(row.get("model_family") or "unknown"),
     }
     priorities = [
+        (values["market"], values["side"], values["line_surface"], values["line_bucket"], values["price_bucket"], values["bookmaker_key"], values["model_family"]),
+        (values["market"], values["side"], values["line_surface"], values["line_bucket"], values["price_bucket"], values["bookmaker_key"], "*"),
+        (values["market"], values["side"], values["line_surface"], values["line_bucket"], values["price_bucket"], "*", "*"),
+        (values["market"], values["side"], values["line_surface"], values["line_bucket"], "*", "*", "*"),
+        (values["market"], values["side"], values["line_surface"], "*", "*", "*", "*"),
+        (values["market"], values["side"], "*", "*", "*", "*", "*"),
+        ("*", values["side"], values["line_surface"], "*", "*", "*", "*"),
+        ("*", values["side"], "*", "*", "*", "*", "*"),
+        ("*", "*", "*", "*", "*", "*", "*"),
+    ]
+    for key_parts in priorities:
+        key = _direct_key(*key_parts)
+        rec = models.get(key)
+        if rec:
+            return key, rec
+    legacy_priorities = [
         (values["market"], values["side"], values["line_bucket"], values["price_bucket"], values["bookmaker_key"], values["model_family"]),
         (values["market"], values["side"], values["line_bucket"], values["price_bucket"], values["bookmaker_key"], "*"),
         (values["market"], values["side"], values["line_bucket"], values["price_bucket"], "*", "*"),
@@ -228,8 +330,8 @@ def _lookup_direct_model(payload: dict, row: pd.Series) -> tuple[str | None, dic
         ("*", values["side"], "*", "*", "*", "*"),
         ("*", "*", "*", "*", "*", "*"),
     ]
-    for key_parts in priorities:
-        key = _direct_key(*key_parts)
+    for key_parts in legacy_priorities:
+        key = _direct_key_legacy(*key_parts)
         rec = models.get(key)
         if rec:
             return key, rec
@@ -618,6 +720,26 @@ def _write_report(payload: dict, cfg: PropProbabilityComparisonConfig) -> str:
         )
     lines.extend([
         "",
+        "## Line Surface Recommendations",
+        "",
+        "| Bucket | Rows | Recommendation | Model Brier | Prior Brier | Model ROI | Prior ROI | Prior CLV beat |",
+        "|---|---:|---|---:|---:|---:|---:|---:|",
+    ])
+    for rec in payload.get("line_surface", []):
+        variants = rec.get("variants", {})
+        model = variants.get("model_only", {})
+        prior = variants.get("model_plus_prior", {})
+        mf = model.get("forecast", {})
+        pf = prior.get("forecast", {})
+        ms = model.get("selection", {})
+        ps = prior.get("selection", {})
+        lines.append(
+            f"| {rec['key']} | {rec['rows']} | {rec['recommendation']} | "
+            f"{_fmt_num(mf.get('brier'))} | {_fmt_num(pf.get('brier'))} | "
+            f"{_fmt_pct(ms.get('roi'))} | {_fmt_pct(ps.get('roi'))} | {_fmt_pct(ps.get('clv_price_beat_rate'))} |"
+        )
+    lines.extend([
+        "",
         "## Shadow Winner",
         "",
         payload.get("shadow_winner", {}).get("reason", "No shadow winner available."),
@@ -657,6 +779,7 @@ def compare(cfg: PropProbabilityComparisonConfig) -> dict:
         "overall": {},
         "shadow_winner": {},
         "market_side": [],
+        "line_surface": [],
         "bucket": [],
     }
     if df.empty:
@@ -667,7 +790,8 @@ def compare(cfg: PropProbabilityComparisonConfig) -> dict:
     payload["overall"] = _summaries_for(scored, cfg)
     payload["shadow_winner"] = _choose_shadow_variant(payload["overall"], cfg)
     payload["market_side"] = _group_summaries(scored, cfg, ["market", "side"])
-    payload["bucket"] = _group_summaries(scored, cfg, ["market", "side", "line_bucket", "price_bucket"])
+    payload["line_surface"] = _group_summaries(scored, cfg, ["market", "side", "line_surface"])
+    payload["bucket"] = _group_summaries(scored, cfg, ["market", "side", "line_surface", "line_bucket", "price_bucket"])
     payload["status"] = "ready"
     payload["report_path"] = _write_report(payload, cfg)
     (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")

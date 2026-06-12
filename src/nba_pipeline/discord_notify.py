@@ -14,7 +14,7 @@ DISCORD_MAX_LEN = 2000  # hard limit for Discord messages
 
 @dataclass(frozen=True)
 class DiscordConfig:
-    webhook_url: str = "https://discord.com/api/webhooks/1461420766108319858/LenBk50YR1eS1isFMSOzE8gMWgSgBTSYmU4Ac1unf2SOo_kPSGk71afBqbBiQDuUZwD3"
+    webhook_url: str = ""
     username: str = "1408438245594763375"
     avatar_url: str | None = None
     timeout_s: int = 20

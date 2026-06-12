@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -63,7 +64,7 @@ LIMIT 1;
 @dataclass(frozen=True)
 class BackfillConfig:
     pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
-    oddsapi_key: str = "5b6f0290e265c3329b3ed27897d79eaf"
+    oddsapi_key: str = os.getenv("ODDS_API_KEY", "")
 
     sport: str = "basketball_nba"
     regions: str = "us"
@@ -102,9 +103,17 @@ def _sha256_json(obj: object) -> str:
     return hashlib.sha256(b).hexdigest()
 
 
+def _to_z(dt: datetime) -> str:
+    return dt.astimezone(_UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def _build_full_url(url: str, params: dict) -> str:
     # deterministic query string
-    qs = "&".join([f"{k}={params[k]}" for k in sorted(params.keys())])
+    qs = "&".join(
+        f"{k}={params[k]}"
+        for k in sorted(params.keys())
+        if k.lower() != "apikey"
+    )
     return f"{url}?{qs}"
 
 
@@ -136,7 +145,13 @@ def _fetch_with_backoff(cfg: BackfillConfig, url: str, params: dict) -> tuple[ob
         except Exception as e:
             last_err = e
             wait = cfg.base_backoff_s * (2 ** (attempt - 1))
-            log.warning("Fetch failed. sleeping %.1fs (attempt %d/%d)", wait, attempt, cfg.max_retries, exc_info=True)
+            log.warning(
+                "Fetch failed (%s). sleeping %.1fs (attempt %d/%d)",
+                e.__class__.__name__,
+                wait,
+                attempt,
+                cfg.max_retries,
+            )
             time.sleep(wait)
 
     raise RuntimeError(f"Failed to fetch after retries: {url}") from last_err
@@ -181,12 +196,19 @@ def _get_events_from_historical_payload(conn, et_day: date) -> list[dict]:
 
     events = []
     for ev in payload or []:
-        if isinstance(ev, dict) and ev.get("id"):
-            events.append({
-                "event_id": ev["id"],
-                "home_team": ev.get("home_team"),
-                "away_team": ev.get("away_team"),
-            })
+        if not isinstance(ev, dict) or not ev.get("id"):
+            continue
+        commence = ev.get("commence_time")
+        if not commence:
+            continue
+        commence_et = datetime.fromisoformat(commence.replace("Z", "+00:00")).astimezone(_ET)
+        if commence_et.date() != et_day:
+            continue
+        events.append({
+            "event_id": ev["id"],
+            "home_team": ev.get("home_team"),
+            "away_team": ev.get("away_team"),
+        })
     return events
 
 
@@ -318,7 +340,7 @@ def main() -> None:
                         help=(
                             "Backfill historical player prop lines (PTS/REB/AST) from DraftKings. "
                             "Reads event IDs from already-stored nba_odds_historical payloads. "
-                            "~27 credits/day; full current-season run ≈ 3,240 credits."
+                            "~27 credits/day; full current-season run about 3,240 credits."
                         ))
     args = parser.parse_args()
 
@@ -370,6 +392,8 @@ def main() -> None:
                 tzinfo=_UTC,
             )
             snap_ts = snap_dt_utc.isoformat().replace("+00:00", "Z")
+            et_start = datetime(et_day.year, et_day.month, et_day.day, tzinfo=_ET)
+            et_end = et_start + timedelta(days=1)
 
             params = {
                 "apiKey": cfg.oddsapi_key,
@@ -379,6 +403,8 @@ def main() -> None:
                 "oddsFormat": cfg.odds_format,
                 "dateFormat": cfg.date_format,
                 "date": snap_ts,
+                "commenceTimeFrom": _to_z(et_start),
+                "commenceTimeTo": _to_z(et_end),
             }
 
             full_url = _build_full_url(url, params)

@@ -16,20 +16,28 @@ Run:
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
+from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
 
+from .modeling.prop_offer_snapshots import (
+    ensure_prop_offer_snapshot_schema,
+    insert_market_prop_snapshots,
+)
+
 log = logging.getLogger("mlb_pipeline.parse_oddsapi")
 
 DSN = "postgresql://josh:password@localhost:5432/nba"
+_ET = ZoneInfo("America/New_York")
 
 # ---------------------------------------------------------------------------
 # Team name normalization
@@ -274,6 +282,7 @@ WHERE provider = 'oddsapi'
   AND endpoint IN ('mlb_prop_odds', 'mlb_prop_odds_historical')
   AND (%(as_of_date)s IS NULL OR as_of_date = %(as_of_date)s)
   AND (%(since_date)s IS NULL OR as_of_date >= %(since_date)s)
+  AND (%(min_fetched_at_utc)s IS NULL OR fetched_at_utc >= %(min_fetched_at_utc)s)
 ORDER BY fetched_at_utc;
 """
 
@@ -299,11 +308,23 @@ def _to_int(x: Any) -> Optional[int]:
         return None
 
 
+def _event_matches_as_of_date(as_of_date: date, commence_time_utc: Any) -> bool:
+    """Return true only when an event actually starts on the ET date bucket."""
+    if not commence_time_utc:
+        return False
+    try:
+        commence = datetime.fromisoformat(str(commence_time_utc).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+    return commence.astimezone(_ET).date() == as_of_date
+
+
 def _normalize_name(name: str) -> str:
     """Lowercase, strip accents, remove non-alpha-space characters."""
     nfkd = unicodedata.normalize("NFKD", name)
     ascii_name = nfkd.encode("ascii", "ignore").decode("ascii")
-    return re.sub(r"[^a-z ]", "", ascii_name.lower()).strip()
+    cleaned = re.sub(r"[^a-z0-9\s]", "", ascii_name.lower())
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 def _get_market(book: dict, key: str) -> Optional[dict]:
@@ -332,6 +353,14 @@ def _iter_game_rows(
     for ev in events:
         event_id = ev.get("id")
         commence_time_utc = ev.get("commence_time")
+        if not _event_matches_as_of_date(as_of_date, commence_time_utc):
+            log.debug(
+                "Skipping MLB odds event %s: commence_time=%s is outside ET date %s",
+                event_id,
+                commence_time_utc,
+                as_of_date,
+            )
+            continue
         # The Odds API returns full team names; normalize to abbreviations
         home_team_raw = ev.get("home_team") or ""
         away_team_raw = ev.get("away_team") or ""
@@ -684,6 +713,9 @@ def parse_prop_odds(
     conn,
     as_of_date: Optional[date] = None,
     since_date: Optional[date] = None,
+    snapshot_role: str = "open",
+    snapshot_max_age_minutes: Optional[float] = None,
+    allow_historical_snapshots: bool = False,
 ) -> None:
     """Parse mlb_prop_odds payloads into odds.mlb_player_prop_lines.
 
@@ -696,6 +728,24 @@ def parse_prop_odds(
 
     Pass since_date to force re-parsing from a specific date (e.g. after backfill).
     """
+    role = str(snapshot_role or "").lower()
+    if role not in {"open", "close"}:
+        raise ValueError(f"Prop snapshot role must be open or close, got {snapshot_role!r}")
+    if role == "close" and snapshot_max_age_minutes is None and not allow_historical_snapshots:
+        snapshot_max_age_minutes = 30.0
+    min_fetched_at_utc = None
+    if snapshot_max_age_minutes is not None:
+        if snapshot_max_age_minutes <= 0:
+            raise ValueError("snapshot_max_age_minutes must be positive")
+        min_fetched_at_utc = datetime.now(timezone.utc) - timedelta(
+            minutes=float(snapshot_max_age_minutes)
+        )
+        log.info(
+            "Only assigning %s prop snapshots to raw payloads fetched since %s.",
+            role,
+            min_fetched_at_utc.isoformat(),
+        )
+
     # Compute incremental since_date
     if since_date is None and as_of_date is None:
         with conn.cursor() as cur:
@@ -711,7 +761,14 @@ def parse_prop_odds(
         log.info("Forced MLB prop odds re-parse: since %s", since_date)
 
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute(_SQL_LOAD_PROP_ODDS, {"as_of_date": as_of_date, "since_date": since_date})
+        cur.execute(
+            _SQL_LOAD_PROP_ODDS,
+            {
+                "as_of_date": as_of_date,
+                "since_date": since_date,
+                "min_fetched_at_utc": min_fetched_at_utc,
+            },
+        )
         snaps = cur.fetchall()
 
     if not snaps:
@@ -719,6 +776,7 @@ def parse_prop_odds(
         return
 
     total_rows = 0
+    snapshot_rows = 0
     with conn.cursor() as cur:
         for s in snaps:
             fetched_at = s["fetched_at_utc"]
@@ -751,10 +809,20 @@ def parse_prop_odds(
                     rows,
                     page_size=500,
                 )
+                snapshot_rows += insert_market_prop_snapshots(
+                    conn,
+                    rows,
+                    snapshot_role=role,
+                )
                 total_rows += len(rows)
 
     conn.commit()
     log.info("Upserted %d rows into odds.mlb_player_prop_lines.", total_rows)
+    log.info(
+        "Processed %d immutable %s prop snapshot observations for odds.mlb_player_prop_line_snapshots.",
+        snapshot_rows,
+        role,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -766,6 +834,7 @@ def _ensure_tables(conn) -> None:
         cur.execute(_GAME_LINES_DDL)
         cur.execute(_PROP_LINES_DDL)
     conn.commit()
+    ensure_prop_offer_snapshot_schema(conn)
 
 
 # ---------------------------------------------------------------------------
@@ -773,6 +842,40 @@ def _ensure_tables(conn) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Parse MLB Odds API payloads")
+    parser.add_argument(
+        "--prop-snapshot-role",
+        choices=("open", "close"),
+        default="open",
+        help="Immutable role assigned to parsed prop market observations.",
+    )
+    parser.add_argument(
+        "--prop-snapshot-max-age-minutes",
+        type=float,
+        default=None,
+        help=(
+            "Only parse prop raw payloads fetched within this many minutes. "
+            "Defaults to 30 minutes for close snapshots and no age limit for open snapshots."
+        ),
+    )
+    parser.add_argument(
+        "--prop-snapshot-allow-historical",
+        action="store_true",
+        help="Do not apply the live close max-age default when parsing historical prop snapshots.",
+    )
+    parser.add_argument(
+        "--prop-as-of-date",
+        type=date.fromisoformat,
+        default=None,
+        help="Parse prop payloads only for this ET date.",
+    )
+    parser.add_argument(
+        "--prop-since-date",
+        type=date.fromisoformat,
+        default=None,
+        help="Parse prop payloads from this ET date forward.",
+    )
+    args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -784,7 +887,14 @@ def main() -> None:
         _ensure_tables(conn)
         parse_game_odds(conn)
         parse_game_odds_historical(conn)
-        parse_prop_odds(conn)
+        parse_prop_odds(
+            conn,
+            as_of_date=args.prop_as_of_date,
+            since_date=args.prop_since_date,
+            snapshot_role=args.prop_snapshot_role,
+            snapshot_max_age_minutes=args.prop_snapshot_max_age_minutes,
+            allow_historical_snapshots=args.prop_snapshot_allow_historical,
+        )
         log.info("Done.")
     except Exception:
         conn.rollback()

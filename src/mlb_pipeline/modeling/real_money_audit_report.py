@@ -1,8 +1,8 @@
-"""Audit current real-money MLB bet gates against saved predictions.
+"""Replay current MLB bet gates against mutable saved predictions.
 
 This is a saved-prediction audit, not a locked-ledger walk-forward. Rows can be
-overwritten by reruns, so use this as a gate-health report until a ledger stores
-every Discord candidate exactly once.
+overwritten by reruns, so use this only as a gate-health diagnostic. Use
+bankroll_ledger_report for bankroll evidence.
 """
 from __future__ import annotations
 
@@ -57,6 +57,7 @@ SELECT
     run_line_covered,
     clv_run_line,
     clv_rl_price,
+    clv_rl_valid,
     total_bet_side,
     market_total,
     edge_total,
@@ -64,7 +65,8 @@ SELECT
     market_total_price,
     total_covered,
     clv_total,
-    clv_total_price
+    clv_total_price,
+    clv_total_valid
 FROM bets.mlb_game_predictions
 WHERE game_date_et BETWEEN :start_date AND :end_date
   AND (
@@ -117,6 +119,17 @@ def _as_float(value) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _is_true(value) -> bool:
+    if value is None:
+        return False
+    try:
+        if pd.isna(value):
+            return False
+    except Exception:
+        pass
+    return bool(value)
 
 
 def _american_profit_mult(price: float | None) -> float | None:
@@ -272,8 +285,8 @@ def _load_games(engine, cfg: AuditConfig) -> pd.DataFrame:
                 "edge": _as_float(row.get("edge_run_line")),
                 "won": won,
                 "profit": _profit(won, price),
-                "clv": _as_float(row.get("clv_run_line")),
-                "price_clv": _as_float(row.get("clv_rl_price")),
+                "clv": _as_float(row.get("clv_run_line")) if _is_true(row.get("clv_rl_valid")) else None,
+                "price_clv": _as_float(row.get("clv_rl_price")) if _is_true(row.get("clv_rl_valid")) else None,
                 "qualifies": not reasons,
                 "reason": "; ".join(reasons) if reasons else "ok",
                 "stake_pct": cfg.max_stake_pct,
@@ -304,8 +317,8 @@ def _load_games(engine, cfg: AuditConfig) -> pd.DataFrame:
                 "edge": _as_float(row.get("edge_total")),
                 "won": won,
                 "profit": _profit(won, price),
-                "clv": _as_float(row.get("clv_total")),
-                "price_clv": _as_float(row.get("clv_total_price")),
+                "clv": _as_float(row.get("clv_total")) if _is_true(row.get("clv_total_valid")) else None,
+                "price_clv": _as_float(row.get("clv_total_price")) if _is_true(row.get("clv_total_valid")) else None,
                 "qualifies": not reasons,
                 "reason": "; ".join(reasons) if reasons else "ok",
                 "stake_pct": cfg.max_stake_pct,
@@ -406,6 +419,7 @@ def _summary(df: pd.DataFrame) -> dict:
         "losses": n - wins,
         "win_pct": (wins / n * 100.0) if n else float("nan"),
         "roi": roi,
+        "clv_n": int(pd.to_numeric(df.get("clv"), errors="coerce").notna().sum()) if n and "clv" in df else 0,
         "avg_clv": float(pd.to_numeric(df.get("clv"), errors="coerce").mean()) if n and "clv" in df else float("nan"),
         "avg_price_clv": float(pd.to_numeric(df.get("price_clv"), errors="coerce").mean()) if n and "price_clv" in df else float("nan"),
     }
@@ -449,6 +463,7 @@ def _bucket_rows(df: pd.DataFrame, cfg: AuditConfig, by: list[str], limit: int =
             "w_l": f"{s['wins']}-{s['losses']}",
             "win_pct": _fmt_pct(s["win_pct"]),
             "roi": _fmt_pct(s["roi"]),
+            "clv_n": s["clv_n"],
             "avg_clv": _fmt_num(s["avg_clv"]),
             "flag": "OK" if s["roi"] > 0 else "FAIL",
         })
@@ -507,10 +522,11 @@ def build_report(cfg: AuditConfig) -> str:
         reject_rows = reject_rows[:25]
 
     lines = [
-        f"# MLB Real-Money Audit ({cfg.start_date} to {cfg.end_date})",
+        f"# MLB Saved-Prediction Gate Replay ({cfg.start_date} to {cfg.end_date})",
         "",
         "Scope: saved prediction rows re-filtered through current real-money gates.",
         "Limitation: this is not a locked-ledger walk-forward; reruns can overwrite historical predictions.",
+        "Do not use this report as bankroll evidence. Use `bankroll_ledger_report` for locked bets.",
         "",
         "## Overall",
         "",
@@ -520,6 +536,7 @@ def build_report(cfg: AuditConfig) -> str:
         f"- No-bet days: {no_bet_days}/{len(days)}",
         f"- Avg selected bets/day: {avg_bets:.2f}",
         f"- Global cap: {cfg.global_cap_pct * 100:.2f}% per day",
+        f"- Valid CLV rows: {overall['clv_n']}/{overall['n']}",
         f"- Prop thresholds: K {cfg.threshold_strikeouts:g}, H {cfg.threshold_hits:g}, "
         f"TB {cfg.threshold_total_bases:g}, HR over {cfg.threshold_home_runs_over:g}",
         "",
@@ -539,6 +556,7 @@ def build_report(cfg: AuditConfig) -> str:
                 ("W-L", "w_l"),
                 ("Win%", "win_pct"),
                 ("ROI", "roi"),
+                ("CLV N", "clv_n"),
                 ("Avg CLV", "avg_clv"),
                 ("Flag", "flag"),
             ],

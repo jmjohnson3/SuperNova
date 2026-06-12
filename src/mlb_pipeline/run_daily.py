@@ -84,6 +84,7 @@ class Step:
     timeout_s: int | None = None
     critical: bool = True
     parallel: bool = False   # if True, run concurrently with adjacent parallel steps
+    fail_task_on_error: bool = False
 
 
 @dataclass
@@ -193,18 +194,22 @@ def main() -> None:
     parser.add_argument(
         "--close-only", action="store_true",
         help=(
-            "Evening closing-line run (~2h before first pitch). "
-            "Re-crawls live odds, re-parses into odds.mlb_game_lines, then grades outcomes for CLV. "
-            "Skips parse/train/predict. Schedule this at ~5 PM ET for true closing line CLV."
+            "Closing-line run near first pitch. "
+            "Re-crawls live game and prop odds, captures immutable prop close snapshots, "
+            "then grades outcomes and CLV. Skips train/predict."
         ),
     )
     parser.add_argument(
         "--pre-game", action="store_true",
         help=(
-            "Pre-game update run (~4:30 PM ET). Re-crawls injuries (force) + latest game odds, "
-            "re-parses, re-predicts player props (with line movement + updated injury list), "
+            "Pre-game update run. Re-crawls injuries and latest game odds, rebuilds prop offers, "
+            "re-predicts player props, "
             "and auto-posts to Discord (DISCORD_FORMAT=1)."
         ),
+    )
+    parser.add_argument(
+        "--lock-phase", default=None,
+        help="Stable shadow-lock phase for a pre-game run, such as day_pregame or evening_pregame.",
     )
     args = parser.parse_args()
 
@@ -224,10 +229,13 @@ def main() -> None:
 
     if args.pre_game:
         # ── Pre-game update run (~4:30 PM ET) ────────────────────────────────
-        # Re-fetches injuries (force) + latest game odds (no props needed),
-        # re-parses both into the DB, re-predicts player props with the freshest
-        # injury list + line movement signal, and auto-posts to Discord.
+        # Re-fetches injuries + latest odds, records a close for the morning
+        # lock, re-predicts and locks the refreshed props, then captures a
+        # second close observation that can be valid for the refreshed lock.
         extra_env["DISCORD_FORMAT"] = "1"
+        lock_phase = args.lock_phase or (
+            "day_pregame" if datetime.now(tz=_ET).hour < 14 else "evening_pregame"
+        )
         steps = [
             Step(
                 name="Re-crawl injuries (force-meta)",
@@ -237,10 +245,28 @@ def main() -> None:
                 critical=False,
             ),
             Step(
-                name="Re-crawl game odds (no props)",
+                name="Re-crawl same-day lineups",
+                module="mlb_pipeline.crawler",
+                args=(
+                    "--force-lineups",
+                    "--start-date", et_day.isoformat(),
+                    "--end-date", et_day.isoformat(),
+                ),
+                timeout_s=300,
+                critical=False,
+            ),
+            Step(
+                name="Re-crawl game odds",
                 module="mlb_pipeline.crawler_oddsapi",
                 args=("--skip-props",),
-                timeout_s=300,
+                timeout_s=600,
+                critical=False,
+            ),
+            Step(
+                name="Re-crawl prop odds",
+                module="mlb_pipeline.crawler_oddsapi",
+                args=("--skip-live", "--force-props"),
+                timeout_s=600,
                 critical=True,
             ),
             Step(
@@ -250,9 +276,22 @@ def main() -> None:
                 critical=False,
             ),
             Step(
-                name="Re-parse game odds",
-                module="mlb_pipeline.parse_oddsapi",
+                name="Re-parse same-day lineups",
+                module="mlb_pipeline.parse_lineup",
                 timeout_s=120,
+                critical=False,
+            ),
+            Step(
+                name="Re-parse game odds + morning-lock prop close snapshot",
+                module="mlb_pipeline.parse_oddsapi",
+                args=("--prop-snapshot-role", "close"),
+                timeout_s=300,
+                critical=True,
+            ),
+            Step(
+                name="Rebuild prop offer links",
+                module="mlb_pipeline.modeling.build_prop_offer_links_table",
+                timeout_s=300,
                 critical=True,
             ),
             Step(
@@ -261,31 +300,180 @@ def main() -> None:
                 timeout_s=300,
                 critical=True,
             ),
+            Step(
+                name="Shadow-lock prop predictions",
+                module="mlb_pipeline.modeling.shadow_lock_prop_predictions",
+                args=("--phase", lock_phase),
+                timeout_s=120,
+                critical=False,
+            ),
+            Step(
+                name="Re-crawl post-lock closing prop odds",
+                module="mlb_pipeline.crawler_oddsapi",
+                args=("--skip-live", "--force-props"),
+                timeout_s=600,
+                critical=False,
+            ),
+            Step(
+                name="Capture post-lock prop close snapshot",
+                module="mlb_pipeline.parse_oddsapi",
+                args=("--prop-snapshot-role", "close"),
+                timeout_s=300,
+                critical=False,
+            ),
+            Step(
+                name="Refresh prop replay CLV",
+                module="mlb_pipeline.modeling.refresh_prop_replay_clv",
+                timeout_s=300,
+                critical=False,
+            ),
+            Step(
+                name="Build prop market training table",
+                module="mlb_pipeline.modeling.build_prop_market_training_table",
+                args=("--lookback-days", "14", "--include-pending"),
+                timeout_s=600,
+                critical=False,
+                fail_task_on_error=True,
+            ),
+            Step(
+                name="Prop walk-forward accuracy report",
+                module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
+                args=("--no-refresh-clv",),
+                timeout_s=600,
+                critical=False,
+            ),
+            Step(
+                name="Prop shadow selector report",
+                module="mlb_pipeline.modeling.prop_shadow_selector",
+                timeout_s=300,
+                critical=False,
+                fail_task_on_error=True,
+            ),
+            Step(
+                name="Prop miss diagnostic report",
+                module="mlb_pipeline.modeling.prop_miss_diagnostic_report",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="Prop bucket repair report",
+                module="mlb_pipeline.modeling.prop_bucket_repair_report",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="TB prop repair report",
+                module="mlb_pipeline.modeling.prop_tb_repair_report",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="Prop target quality report",
+                module="mlb_pipeline.modeling.prop_target_quality_report",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="Prop snapshot coverage report",
+                module="mlb_pipeline.modeling.prop_snapshot_coverage_report",
+                timeout_s=120,
+                critical=False,
+            ),
         ]
     elif args.close_only:
         # ── Evening closing-line run ─────────────────────────────────────────
-        # Re-crawl live odds so odds.mlb_game_lines gets a late-day snapshot
-        # (the live endpoint has no dedup; ON CONFLICT DO UPDATE overwrites the
-        # morning payload, then parse_oddsapi inserts a new row with the latest
-        # fetched_at_utc).  update_outcomes then picks the highest fetched_at_utc
-        # per game as the closing line for CLV.
+        # Re-crawl live odds so game lines and prop lines get a late-day snapshot.
+        # Prop CLV only accepts immutable close-role snapshots that were captured
+        # after the prediction lock and within two hours of first pitch.
         steps.append(Step(
-            name="Re-crawl closing odds (Odds API)",
+            name="Re-crawl closing game odds (Odds API)",
             module="mlb_pipeline.crawler_oddsapi",
-            args=("--skip-props",),   # props not needed for game CLV
+            args=("--skip-props",),
+            timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Re-crawl closing prop odds (Odds API)",
+            module="mlb_pipeline.crawler_oddsapi",
+            args=("--skip-live", "--force-props"),
             timeout_s=600,
             critical=True,
         ))
         steps.append(Step(
             name="Re-parse closing odds into odds.mlb_game_lines",
             module="mlb_pipeline.parse_oddsapi",
+            args=("--prop-snapshot-role", "close"),
             timeout_s=300,
             critical=True,
         ))
         steps.append(Step(
-            name="Grade outcomes + CLV (update_outcomes)",
+            name="Refresh prop replay CLV",
+            module="mlb_pipeline.modeling.refresh_prop_replay_clv",
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Build prop market training table",
+            module="mlb_pipeline.modeling.build_prop_market_training_table",
+            args=("--lookback-days", "14", "--include-pending"),
+            timeout_s=600,
+            critical=False,
+            fail_task_on_error=True,
+        ))
+        steps.append(Step(
+            name="Prop walk-forward accuracy report",
+            module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
+            args=("--no-refresh-clv",),
+            timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop shadow selector report",
+            module="mlb_pipeline.modeling.prop_shadow_selector",
+            timeout_s=300,
+            critical=False,
+            fail_task_on_error=True,
+        ))
+        steps.append(Step(
+            name="Prop miss diagnostic report",
+            module="mlb_pipeline.modeling.prop_miss_diagnostic_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop bucket repair report",
+            module="mlb_pipeline.modeling.prop_bucket_repair_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="TB prop repair report",
+            module="mlb_pipeline.modeling.prop_tb_repair_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop target quality report",
+            module="mlb_pipeline.modeling.prop_target_quality_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Grade outcomes + ledgers",
             module="mlb_pipeline.modeling.update_outcomes",
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop snapshot coverage report",
+            module="mlb_pipeline.modeling.prop_snapshot_coverage_report",
             timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Grade shadow prop replay",
+            module="mlb_pipeline.modeling.grade_prop_prediction_replay",
+            timeout_s=300,
             critical=False,
         ))
     else:
@@ -312,6 +500,7 @@ def main() -> None:
             steps.append(Step(
                 name="Crawl odds (Odds API)",
                 module="mlb_pipeline.crawler_oddsapi",
+                args=("--force-props",),
                 timeout_s=3600,
                 critical=True,
                 parallel=True,
@@ -320,6 +509,13 @@ def main() -> None:
                 name="Crawl Statcast (Baseball Savant)",
                 module="mlb_pipeline.crawler_statcast",
                 timeout_s=300,
+                critical=False,
+                parallel=True,
+            ))
+            steps.append(Step(
+                name="Crawl extended Statcast features",
+                module="mlb_pipeline.crawler_statcast_extended",
+                timeout_s=600,
                 critical=False,
                 parallel=True,
             ))
@@ -340,11 +536,54 @@ def main() -> None:
                 critical=False,
             ))
 
+        steps.append(Step(
+            name="Grade shadow prop replay",
+            module="mlb_pipeline.modeling.grade_prop_prediction_replay",
+            timeout_s=300,
+            critical=False,
+        ))
+
+        # Offer rows must be rebuilt after every odds parse, even when model
+        # training is skipped.
+        steps.append(Step(
+            name="Build prop offer links",
+            module="mlb_pipeline.modeling.build_prop_offer_links_table",
+            timeout_s=300,
+            critical=False,
+        ))
+
+        if not args.skip_predict:
+            # predict_today writes to bets.mlb_game_predictions,
+            # predict_player_props writes to bets.mlb_prop_predictions — no overlap.
+            steps.append(Step(
+                name="Predict today",
+                module="mlb_pipeline.modeling.predict_today",
+                timeout_s=600,
+                critical=False,
+                parallel=True,
+            ))
+            steps.append(Step(
+                name="Predict player props",
+                module="mlb_pipeline.modeling.predict_player_props",
+                timeout_s=900,
+                critical=False,
+                parallel=True,
+            ))
+            steps.append(Step(
+                name="Shadow-lock prop predictions",
+                module="mlb_pipeline.modeling.shadow_lock_prop_predictions",
+                args=("--phase", "morning"),
+                timeout_s=120,
+                critical=False,
+            ))
+
+        # Train after predictions so a slow refresh cannot delay today's slate.
+        # These artifacts are consumed by the next prediction run.
         if not args.skip_train:
             steps.append(Step(
                 name="Train game models",
                 module="mlb_pipeline.modeling.train_game_models",
-                timeout_s=3600,
+                timeout_s=14400,
                 critical=True,
                 parallel=True,
             ))
@@ -362,37 +601,201 @@ def main() -> None:
                 critical=False,
                 parallel=True,
             ))
-
-        if not args.skip_predict:
-            # predict_today writes to bets.mlb_game_predictions,
-            # predict_player_props writes to bets.mlb_prop_predictions — no overlap.
             steps.append(Step(
-                name="Predict today",
-                module="mlb_pipeline.modeling.predict_today",
+                name="Build prop market training table",
+                module="mlb_pipeline.modeling.build_prop_market_training_table",
+                args=("--include-pending",),
                 timeout_s=600,
                 critical=False,
-                parallel=True,
+                fail_task_on_error=True,
             ))
             steps.append(Step(
-                name="Predict player props",
-                module="mlb_pipeline.modeling.predict_player_props",
+                name="Build hitter player-game training table",
+                module="mlb_pipeline.modeling.build_hitter_player_game_training_table",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train hitter player-game outcome models",
+                module="mlb_pipeline.modeling.train_hitter_player_game_outcome_models",
+                timeout_s=900,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Hitter event feature ablation report",
+                module="mlb_pipeline.modeling.hitter_event_feature_ablation_report",
+                timeout_s=900,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Build prop market history table",
+                module="mlb_pipeline.modeling.build_prop_market_history_table",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop market side priors",
+                module="mlb_pipeline.modeling.train_prop_market_side_priors",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Optimize prop thresholds",
+                module="mlb_pipeline.modeling.optimize_prop_thresholds",
                 timeout_s=300,
                 critical=False,
-                parallel=True,
+            ))
+            steps.append(Step(
+                name="Monitor prop calibration",
+                module="mlb_pipeline.modeling.monitor_prop_calibration",
+                timeout_s=300,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop side recalibrators",
+                module="mlb_pipeline.modeling.train_prop_side_recalibrators",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop betting layer",
+                module="mlb_pipeline.modeling.train_prop_betting_layer",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop direct side models",
+                module="mlb_pipeline.modeling.train_prop_direct_side_models",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop opportunity models",
+                module="mlb_pipeline.modeling.train_prop_opportunity_models",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop bookability model",
+                module="mlb_pipeline.modeling.train_prop_bookability_model",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop market-residual models",
+                module="mlb_pipeline.modeling.train_prop_market_residual_models",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop distribution models",
+                module="mlb_pipeline.modeling.train_prop_distribution_models",
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Compare prop probability variants",
+                module="mlb_pipeline.modeling.compare_prop_probability_variants",
+                timeout_s=900,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Prop opportunity feature report",
+                module="mlb_pipeline.modeling.prop_opportunity_feature_report",
+                args=("--lookback-days", "30"),
+                timeout_s=600,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train prop bucket reopen policy",
+                module="mlb_pipeline.modeling.train_prop_bucket_reopen_policy",
+                timeout_s=300,
+                critical=False,
             ))
 
-        # Grade completed games + props (always runs regardless of skip flags)
-        steps.append(Step(
-            name="Grade outcomes (update_outcomes)",
-            module="mlb_pipeline.modeling.update_outcomes",
-            timeout_s=120,
-            critical=False,
-        ))
         steps.append(Step(
             name="Paper trading report",
             module="mlb_pipeline.modeling.paper_trading_report",
             args=("--days", "90"),
             timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Offer-level prop audit report",
+            module="mlb_pipeline.modeling.offer_level_prop_audit_report",
+            args=("--lookback-days", "90", "--min-bucket-rows", "5", "--top-n", "25"),
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop real-money readiness report",
+            module="mlb_pipeline.modeling.prop_real_money_readiness_report",
+            args=("--lookback-days", "90", "--top-n", "25"),
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop bucket promotion report",
+            module="mlb_pipeline.modeling.prop_bucket_promotion_report",
+            args=("--lookback-days", "365", "--top-n", "25"),
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop walk-forward accuracy report",
+            module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
+            timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop shadow selector report",
+            module="mlb_pipeline.modeling.prop_shadow_selector",
+            timeout_s=300,
+            critical=False,
+            fail_task_on_error=True,
+        ))
+        steps.append(Step(
+            name="Prop miss diagnostic report",
+            module="mlb_pipeline.modeling.prop_miss_diagnostic_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop bucket repair report",
+            module="mlb_pipeline.modeling.prop_bucket_repair_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="TB prop repair report",
+            module="mlb_pipeline.modeling.prop_tb_repair_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop target quality report",
+            module="mlb_pipeline.modeling.prop_target_quality_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop opportunity feature report",
+            module="mlb_pipeline.modeling.prop_opportunity_feature_report",
+            args=("--lookback-days", "30"),
+            timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop snapshot coverage report",
+            module="mlb_pipeline.modeling.prop_snapshot_coverage_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop slate post-mortem report",
+            module="mlb_pipeline.modeling.prop_slate_postmortem_report",
+            args=("--top-n", "25"),
+            timeout_s=120,
             critical=False,
         ))
 
@@ -404,6 +807,7 @@ def main() -> None:
 
     results: list[StepResult] = []
     pipeline_failed = False
+    task_failed = False
 
     # Group consecutive parallel steps so they run simultaneously
     for is_parallel, group_iter in itertools.groupby(steps, key=lambda s: s.parallel):
@@ -423,6 +827,14 @@ def main() -> None:
                 _panel(console, f"{r.name}: {status_str} ({r.secs:.0f}s)", ok=r.ok)
                 if not r.ok and r.stderr:
                     _p(console, _tail(r.stderr, 20))
+                if not r.ok and step.fail_task_on_error:
+                    _p(
+                        console,
+                        "[red]Step is required for scheduler success; final exit will be non-zero.[/red]"
+                        if console
+                        else "Step is required for scheduler success; final exit will be non-zero.",
+                    )
+                    task_failed = True
                 if not r.ok and step.critical:
                     _p(console, "[red]Stopping pipeline due to critical failure.[/red]" if console
                        else "Stopping pipeline (critical failure).")
@@ -455,6 +867,14 @@ def main() -> None:
                     _panel(console, f"FAILED (rc={r.rc})", ok=False)
                     if r.stderr:
                         _p(console, _tail(r.stderr, 40))
+                    if step.fail_task_on_error:
+                        _p(
+                            console,
+                            "[red]Step is required for scheduler success; final exit will be non-zero.[/red]"
+                            if console
+                            else "Step is required for scheduler success; final exit will be non-zero.",
+                        )
+                        task_failed = True
                     if step.critical:
                         _p(console, "[red]Stopping pipeline due to critical failure.[/red]" if console
                            else "Stopping pipeline (critical failure).")
@@ -490,6 +910,8 @@ def main() -> None:
     report_path.write_text("\n".join(md), encoding="utf-8")
 
     _p(console, f"\n[green]Saved report:[/green] {report_path}\n" if console else f"\nSaved report: {report_path}\n")
+    if pipeline_failed or task_failed:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

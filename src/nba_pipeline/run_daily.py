@@ -206,7 +206,13 @@ def main() -> None:
             name="Compute Elo ratings",
             module="nba_pipeline.compute_elo",
             timeout_s=300,
-            critical=False,
+            critical=True,
+        ))
+        steps.append(Step(
+            name="Materialize features",
+            module="nba_pipeline.materialize_features",
+            timeout_s=1800,
+            critical=True,
         ))
 
     if not args.skip_train:

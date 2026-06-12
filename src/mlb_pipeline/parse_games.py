@@ -89,11 +89,24 @@ def _extract_scores(game_obj: dict) -> tuple[Optional[int], Optional[int]]:
 
 def _status_from_game_obj(game_obj: dict, start_ts_utc: Optional[datetime]) -> str:
     """
-    Derive a simple status string:
-      - 'final'      if both team scores are present
-      - 'scheduled'  if start time is in the future (or unknown)
-      - 'in_progress' otherwise
+    Derive a simple status string, preferring MySportsFeeds schedule metadata.
+
+    Some feeds can expose placeholder score fields for games that have not
+    been played, so scores alone are only a fallback signal.
     """
+    sched = game_obj.get("schedule") or {}
+    played_status = str(sched.get("playedStatus") or "").upper()
+    schedule_status = str(sched.get("scheduleStatus") or "").upper()
+
+    if schedule_status in {"POSTPONED", "CANCELLED", "CANCELED", "SUSPENDED"}:
+        return "postponed"
+    if played_status in {"COMPLETED", "FINAL"}:
+        return "final"
+    if played_status in {"LIVE", "IN_PROGRESS", "IN PROGRESS"}:
+        return "in_progress"
+    if played_status in {"UNPLAYED", "SCHEDULED"}:
+        return "scheduled"
+
     home_score, away_score = _extract_scores(game_obj)
 
     if home_score is not None and away_score is not None:
@@ -158,6 +171,9 @@ def parse_games_payload(
 
         home_score, away_score = _extract_scores(g)
         status = _status_from_game_obj(g, dt_utc)
+        if status not in {"in_progress", "final"}:
+            home_score = None
+            away_score = None
 
         rows.append(
             GameRow(
@@ -199,16 +215,39 @@ def upsert_mlb_games(conn, rows: list[GameRow]) -> int:
     )
     VALUES %s
     ON CONFLICT (game_slug) DO UPDATE SET
-      season               = EXCLUDED.season,
-      game_date_et         = EXCLUDED.game_date_et,
-      start_ts_utc         = EXCLUDED.start_ts_utc,
-      home_team_abbr       = EXCLUDED.home_team_abbr,
-      away_team_abbr       = EXCLUDED.away_team_abbr,
-      venue_id             = EXCLUDED.venue_id,
-      status               = EXCLUDED.status,
-      home_score           = EXCLUDED.home_score,
-      away_score           = EXCLUDED.away_score,
-      source_fetched_at_utc = EXCLUDED.source_fetched_at_utc,
+      season               = CASE WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc THEN EXCLUDED.season ELSE raw.mlb_games.season END,
+      game_date_et         = CASE WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc THEN EXCLUDED.game_date_et ELSE raw.mlb_games.game_date_et END,
+      start_ts_utc         = CASE WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc THEN EXCLUDED.start_ts_utc ELSE raw.mlb_games.start_ts_utc END,
+      home_team_abbr       = CASE WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc THEN EXCLUDED.home_team_abbr ELSE raw.mlb_games.home_team_abbr END,
+      away_team_abbr       = CASE WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc THEN EXCLUDED.away_team_abbr ELSE raw.mlb_games.away_team_abbr END,
+      venue_id             = CASE WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc THEN EXCLUDED.venue_id ELSE raw.mlb_games.venue_id END,
+      status               = CASE
+                               WHEN raw.mlb_games.status IN ('final', 'postponed', 'cancelled')
+                                    AND EXCLUDED.status <> 'final'
+                                 THEN raw.mlb_games.status
+                               WHEN EXCLUDED.source_fetched_at_utc >= raw.mlb_games.source_fetched_at_utc
+                                 THEN EXCLUDED.status
+                               ELSE raw.mlb_games.status
+                             END,
+      home_score           = CASE
+                               WHEN EXCLUDED.source_fetched_at_utc < raw.mlb_games.source_fetched_at_utc
+                                 THEN raw.mlb_games.home_score
+                               WHEN raw.mlb_games.status = 'final' AND EXCLUDED.status <> 'final'
+                                 THEN raw.mlb_games.home_score
+                               WHEN EXCLUDED.status IN ('scheduled', 'postponed', 'cancelled')
+                                 THEN NULL
+                               ELSE COALESCE(EXCLUDED.home_score, raw.mlb_games.home_score)
+                             END,
+      away_score           = CASE
+                               WHEN EXCLUDED.source_fetched_at_utc < raw.mlb_games.source_fetched_at_utc
+                                 THEN raw.mlb_games.away_score
+                               WHEN raw.mlb_games.status = 'final' AND EXCLUDED.status <> 'final'
+                                 THEN raw.mlb_games.away_score
+                               WHEN EXCLUDED.status IN ('scheduled', 'postponed', 'cancelled')
+                                 THEN NULL
+                               ELSE COALESCE(EXCLUDED.away_score, raw.mlb_games.away_score)
+                             END,
+      source_fetched_at_utc = GREATEST(EXCLUDED.source_fetched_at_utc, raw.mlb_games.source_fetched_at_utc),
       updated_at_utc       = now()
     ;
     """

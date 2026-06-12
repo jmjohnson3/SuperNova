@@ -142,7 +142,7 @@ def _run_step(step: Step, extra_env: Optional[dict[str, str]] = None) -> StepRes
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Post-game nightly run: crawl → parse → grade predictions."
+        description="Post-game nightly run: crawl -> parse -> grade predictions."
     )
     parser.add_argument(
         "--date",
@@ -217,12 +217,24 @@ def main() -> None:
             critical=False,  # non-critical — CLV is a nice-to-have at night
         ))
 
-    # 3) Parse everything into structured tables + refresh feature views.
+    # 3) Parse everything into structured tables, then refresh Elo and features.
     if not args.skip_parse:
         steps.append(Step(
             name="Parse + load (parse_all)",
             module="nba_pipeline.parse_all",
             timeout_s=10800,
+            critical=True,
+        ))
+        steps.append(Step(
+            name="Compute Elo ratings",
+            module="nba_pipeline.compute_elo",
+            timeout_s=300,
+            critical=True,
+        ))
+        steps.append(Step(
+            name="Materialize features",
+            module="nba_pipeline.materialize_features",
+            timeout_s=1800,
             critical=True,
         ))
 

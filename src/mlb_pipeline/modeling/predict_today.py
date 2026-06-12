@@ -24,9 +24,15 @@ except ImportError:
 from sqlalchemy import create_engine, text
 
 from .bankroll_layers import BankrollAssessment, assess_bankroll_layer, bankroll_tag
-from .bankroll_ledger import insert_game_bankroll_ledger
+from .bankroll_ledger import (
+    game_bankroll_pick_key,
+    game_bankroll_risk_slot,
+    insert_game_bankroll_ledger,
+    locked_bankroll_state,
+)
 from .model_pick_ledger import insert_game_model_pick_ledger
 from .features import add_game_derived_features, build_fd_parlay_url
+from .discord_record_summary import format_record_summary
 from .side_recalibration import (
     apply_side_calibrator,
     game_total_line_bucket as _cal_game_total_line_bucket,
@@ -108,7 +114,10 @@ WHERE g.game_date_et = :game_date
 
 
 SQL_FANDUEL_LINKS = """
-SELECT home_team  AS home_abbr,
+SELECT DISTINCT ON (event_id)
+       event_id,
+       commence_time_utc,
+       home_team  AS home_abbr,
        away_team  AS away_abbr,
        spread_home_link,
        spread_away_link,
@@ -121,9 +130,22 @@ SELECT home_team  AS home_abbr,
 FROM odds.mlb_game_lines
 WHERE as_of_date = :d
   AND bookmaker_key = 'fanduel'
+  AND NULLIF(commence_time_utc, '') IS NOT NULL
+  AND (NULLIF(commence_time_utc, '')::timestamptz AT TIME ZONE 'America/New_York')::date = as_of_date
+  AND fetched_at_utc <= NULLIF(commence_time_utc, '')::timestamptz
   AND (spread_home_link IS NOT NULL OR total_over_link IS NOT NULL)
-ORDER BY fetched_at_utc DESC
+ORDER BY event_id, fetched_at_utc DESC
 """
+
+
+def _game_link_row(fd_links: dict | None, row) -> object | None:
+    """Return the FanDuel row matched to this exact game, with legacy fallback."""
+    if not fd_links:
+        return None
+    slug = row.get("game_slug")
+    if slug and slug in fd_links:
+        return fd_links[slug]
+    return fd_links.get((row.get("home_team_abbr"), row.get("away_team_abbr")))
 
 
 def _coerce_numeric_cols(X: pd.DataFrame) -> pd.DataFrame:
@@ -191,16 +213,8 @@ def _prep_features(
     # Derived interaction features — single source of truth in features.py
     X = add_game_derived_features(X)
 
-    # Align to training schema
-    for c in feature_cols:
-        if c not in X.columns:
-            X[c] = np.nan
-
-    extra = [c for c in X.columns if c not in feature_cols]
-    if extra:
-        X = X.drop(columns=extra)
-
-    X = X[feature_cols]
+    # Align to the exact training schema in one operation to avoid frame fragmentation.
+    X = X.reindex(columns=feature_cols)
 
     # Fill with training medians
     for c, med in feature_medians.items():
@@ -804,7 +818,15 @@ def _append_bankroll_reason(existing: str, reason: str) -> str:
     return "; ".join(parts)
 
 
-def _cap_game_bankroll_rows(rows: list[dict], cfg: PredictConfig) -> list[dict]:
+def _cap_game_bankroll_rows(
+    rows: list[dict],
+    cfg: PredictConfig,
+    *,
+    existing_exposure_pct: float = 0.0,
+    existing_pick_keys: set[str] | None = None,
+    existing_risk_slots: set[str] | None = None,
+    require_locked: bool = False,
+) -> list[dict]:
     candidates: list[tuple[float, int, str]] = []
     for idx, row in enumerate(rows):
         if row.get("bankroll_candidate_rl"):
@@ -812,55 +834,150 @@ def _cap_game_bankroll_rows(rows: list[dict], cfg: PredictConfig) -> list[dict]:
         if row.get("bankroll_candidate_total"):
             candidates.append((abs(float(row.get("edge_total") or 0.0)), idx, "total"))
 
-    used = 0.0
+    used = max(float(existing_exposure_pct or 0.0), 0.0)
+    pick_keys = set(existing_pick_keys or set())
+    risk_slots = set(existing_risk_slots or set())
     for _score, idx, market in sorted(candidates, reverse=True):
         row = rows[idx]
         if market == "rl":
+            ledger_market = "run_line"
             stake_key = "stake_pct_rl"
             candidate_key = "bankroll_candidate_rl"
             tier_key = "bankroll_tier_rl"
             reasons_key = "bankroll_reasons_rl"
         else:
+            ledger_market = "total"
             stake_key = "stake_pct_total"
             candidate_key = "bankroll_candidate_total"
             tier_key = "bankroll_tier_total"
             reasons_key = "bankroll_reasons_total"
 
+        pick_key = game_bankroll_pick_key(row, ledger_market)
+        risk_slot = game_bankroll_risk_slot(row, ledger_market)
+        if pick_key and pick_key in pick_keys:
+            continue
+        block_reason = None
+        if not pick_key or not risk_slot:
+            block_reason = "missing_locked_pick_key"
+        elif risk_slot in risk_slots:
+            block_reason = "already_locked_market"
+        elif require_locked:
+            block_reason = "not_in_locked_bankroll_ledger"
         stake = float(row.get(stake_key) or 0.0)
-        if used + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12:
+        if (
+            block_reason is None
+            and used + stake <= cfg.bankroll_max_daily_exposure_pct + 1e-12
+        ):
             used += stake
+            pick_keys.add(pick_key)
+            risk_slots.add(risk_slot)
             continue
         row[candidate_key] = False
         row[tier_key] = "paper"
         row[reasons_key] = _append_bankroll_reason(
             row.get(reasons_key) or "",
-            "daily_exposure_cap",
+            block_reason or "daily_exposure_cap",
         )
         row[stake_key] = 0.0
     return rows
 
 
-def _existing_prop_bankroll_exposure(engine, et_day: date) -> float:
+def _load_locked_bankroll_state(
+    cfg: PredictConfig,
+    et_day: date,
+) -> tuple[float, set[str], set[str]]:
     try:
-        with engine.begin() as conn:
-            val = conn.execute(
-                text(
-                    """
-                    SELECT COALESCE(SUM(
-                        CASE WHEN bankroll_candidate
-                             THEN COALESCE(stake_pct, 0)
-                             ELSE 0 END
-                    ), 0)
-                    FROM bets.mlb_prop_predictions
-                    WHERE game_date_et = :game_date
-                    """
-                ),
-                {"game_date": et_day},
-            ).scalar()
-            return float(val or 0.0)
+        with psycopg2.connect(cfg.pg_dsn) as conn:
+            return locked_bankroll_state(conn, et_day)
     except Exception:
-        log.debug("Could not load existing prop bankroll exposure", exc_info=True)
-        return 0.0
+        log.exception("Could not load locked MLB bankroll state; failing daily cap closed")
+        return cfg.bankroll_max_daily_exposure_pct, set(), set()
+
+
+def _downgrade_game_output_for_cap(item: dict, reason: str) -> None:
+    assessment = item.get("assessment")
+    if not isinstance(assessment, BankrollAssessment):
+        return
+    downgraded = BankrollAssessment(
+        tier="paper",
+        candidate=False,
+        reasons=_append_bankroll_reason(assessment.reasons, reason),
+        stake_pct=0.0,
+    )
+    item["assessment"] = downgraded
+    item["bankroll"] = bankroll_tag(downgraded)
+    item["stake"] = 0.0
+
+
+def _cap_game_bankroll_output(
+    items: list[dict],
+    cfg: PredictConfig,
+    *,
+    existing_exposure_pct: float = 0.0,
+    existing_pick_keys: set[str] | None = None,
+    existing_risk_slots: set[str] | None = None,
+    require_locked: bool = False,
+) -> float:
+    used = max(float(existing_exposure_pct or 0.0), 0.0)
+    pick_keys = set(existing_pick_keys or set())
+    risk_slots = set(existing_risk_slots or set())
+    for item in items:
+        assessment = item.get("assessment")
+        if not isinstance(assessment, BankrollAssessment) or not assessment.candidate:
+            continue
+        pick_key = item.get("pick_key")
+        risk_slot = item.get("risk_slot")
+        if pick_key and pick_key in pick_keys:
+            continue
+        if not pick_key or not risk_slot:
+            _downgrade_game_output_for_cap(item, "missing_locked_pick_key")
+            continue
+        if risk_slot in risk_slots:
+            _downgrade_game_output_for_cap(item, "already_locked_market")
+            continue
+        if require_locked:
+            _downgrade_game_output_for_cap(item, "not_in_locked_bankroll_ledger")
+            continue
+        stake = float(assessment.stake_pct or 0.0)
+        if used + stake > cfg.bankroll_max_daily_exposure_pct + 1e-12:
+            _downgrade_game_output_for_cap(item, "daily_exposure_cap")
+            continue
+        used += stake
+        pick_keys.add(pick_key)
+        risk_slots.add(risk_slot)
+    return used
+
+
+def _require_locked_game_assessment(
+    assessment: BankrollAssessment,
+    cfg: PredictConfig,
+    *,
+    et_day: date,
+    game_slug: str,
+    market: str,
+    side: str,
+    locked_pick_keys: set[str],
+    locked_risk_slots: set[str],
+) -> BankrollAssessment:
+    identity = {
+        "game_date_et": et_day,
+        "game_slug": game_slug,
+        "run_line_bet_side": side if market == "run_line" else None,
+        "total_bet_side": side if market == "total" else None,
+    }
+    item = {
+        "assessment": assessment,
+        "pick_key": game_bankroll_pick_key(identity, market),
+        "risk_slot": game_bankroll_risk_slot(identity, market),
+    }
+    _cap_game_bankroll_output(
+        [item],
+        cfg,
+        existing_pick_keys=locked_pick_keys,
+        existing_risk_slots=locked_risk_slots,
+        require_locked=True,
+    )
+    return item["assessment"]
 
 
 def _p_over_from_quantiles(q_preds: dict, market_line: float) -> float:
@@ -932,7 +1049,26 @@ def _ensure_bets_schema(engine) -> None:
         ADD COLUMN IF NOT EXISTS bankroll_reasons_rl TEXT,
         ADD COLUMN IF NOT EXISTS bankroll_reasons_total TEXT,
         ADD COLUMN IF NOT EXISTS stake_pct_rl NUMERIC,
-        ADD COLUMN IF NOT EXISTS stake_pct_total NUMERIC;
+        ADD COLUMN IF NOT EXISTS stake_pct_total NUMERIC,
+        ADD COLUMN IF NOT EXISTS actual_home_score INTEGER,
+        ADD COLUMN IF NOT EXISTS actual_away_score INTEGER,
+        ADD COLUMN IF NOT EXISTS total_covered BOOLEAN,
+        ADD COLUMN IF NOT EXISTS closing_run_line NUMERIC,
+        ADD COLUMN IF NOT EXISTS closing_total NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_run_line NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_total NUMERIC,
+        ADD COLUMN IF NOT EXISTS closing_rl_price NUMERIC,
+        ADD COLUMN IF NOT EXISTS closing_total_price NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_rl_price NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_total_price NUMERIC,
+        ADD COLUMN IF NOT EXISTS clv_rl_valid BOOLEAN,
+        ADD COLUMN IF NOT EXISTS clv_rl_status TEXT,
+        ADD COLUMN IF NOT EXISTS clv_rl_unknown_reason TEXT,
+        ADD COLUMN IF NOT EXISTS clv_total_valid BOOLEAN,
+        ADD COLUMN IF NOT EXISTS clv_total_status TEXT,
+        ADD COLUMN IF NOT EXISTS clv_total_unknown_reason TEXT,
+        ADD COLUMN IF NOT EXISTS created_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        ADD COLUMN IF NOT EXISTS updated_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW();
     """
     with engine.begin() as conn:
         conn.execute(text(ddl))
@@ -1016,7 +1152,28 @@ def _save_predictions(
             bankroll_reasons_rl = EXCLUDED.bankroll_reasons_rl,
             bankroll_reasons_total = EXCLUDED.bankroll_reasons_total,
             stake_pct_rl        = EXCLUDED.stake_pct_rl,
-            stake_pct_total     = EXCLUDED.stake_pct_total
+            stake_pct_total     = EXCLUDED.stake_pct_total,
+            actual_home_score   = NULL,
+            actual_away_score   = NULL,
+            actual_run_diff     = NULL,
+            actual_total        = NULL,
+            run_line_covered    = NULL,
+            total_covered       = NULL,
+            closing_run_line    = NULL,
+            closing_total       = NULL,
+            clv_run_line        = NULL,
+            clv_total           = NULL,
+            closing_rl_price    = NULL,
+            closing_total_price = NULL,
+            clv_rl_price        = NULL,
+            clv_total_price     = NULL,
+            clv_rl_valid        = NULL,
+            clv_rl_status       = NULL,
+            clv_rl_unknown_reason = NULL,
+            clv_total_valid     = NULL,
+            clv_total_status    = NULL,
+            clv_total_unknown_reason = NULL,
+            updated_at_utc      = NOW()
     """)
 
     _calib = calib or {}
@@ -1039,7 +1196,7 @@ def _save_predictions(
                     _calib.get("resid_total_rmse"  if (used_blend and w_total > 0) else "direct_total_rmse",  3.0))
 
         both_sp = bool(r.get("both_sp_known", True))
-        _fdr = (fd_links or {}).get((r["home_team_abbr"], r["away_team_abbr"]))
+        _fdr = _game_link_row(fd_links, r)
         rl_signal_price = _signal_run_line_price(_fdr, edge_rl)
         total_signal_price = _signal_total_price(_fdr, edge_t)
 
@@ -1172,16 +1329,35 @@ def _save_predictions(
         })
 
     if rows:
-        rows = _cap_game_bankroll_rows(rows, cfg)
-        with engine.begin() as conn:
-            conn.execute(upsert_sql, rows)
-        log.info("Saved %d MLB game predictions to bets.mlb_game_predictions", len(rows))
+        existing_exposure, existing_keys, existing_slots = _load_locked_bankroll_state(
+            cfg,
+            et_day,
+        )
+        rows = _cap_game_bankroll_rows(
+            rows,
+            cfg,
+            existing_exposure_pct=existing_exposure,
+            existing_pick_keys=existing_keys,
+            existing_risk_slots=existing_slots,
+        )
         try:
             with psycopg2.connect(cfg.pg_dsn) as ledger_conn:
                 locked = insert_game_bankroll_ledger(ledger_conn, rows, fd_links=fd_links, cfg=cfg)
             log.info("Locked %d MLB game bankroll ledger rows", locked)
         except Exception:
             log.exception("Failed to lock MLB game bankroll ledger rows")
+        locked_exposure, locked_keys, locked_slots = _load_locked_bankroll_state(cfg, et_day)
+        rows = _cap_game_bankroll_rows(
+            rows,
+            cfg,
+            existing_exposure_pct=locked_exposure,
+            existing_pick_keys=locked_keys,
+            existing_risk_slots=locked_slots,
+            require_locked=True,
+        )
+        with engine.begin() as conn:
+            conn.execute(upsert_sql, rows)
+        log.info("Saved %d MLB game predictions to bets.mlb_game_predictions", len(rows))
         try:
             with psycopg2.connect(cfg.pg_dsn) as ledger_conn:
                 locked = insert_game_model_pick_ledger(ledger_conn, rows, fd_links=fd_links, cfg=cfg)
@@ -1256,14 +1432,30 @@ def main() -> None:
         log.debug("Could not load starting pitchers (table may not exist yet): %s", exc)
 
     # Load FanDuel deeplinks for today's games (present after includeLinks=true crawls)
-    fd_links: dict[tuple[str, str], object] = {}
+    fd_links: dict[object, object] = {}
     try:
         with engine.connect() as conn:
             fd_rows = conn.execute(text(SQL_FANDUEL_LINKS), {"d": et_day}).fetchall()
+        by_matchup: dict[tuple[str, str], list[object]] = {}
         for row in fd_rows:
-            key = (row.home_abbr, row.away_abbr)
-            if key not in fd_links:
-                fd_links[key] = row
+            by_matchup.setdefault((row.home_abbr, row.away_abbr), []).append(row)
+        for _, game in df.iterrows():
+            candidates = by_matchup.get((game["home_team_abbr"], game["away_team_abbr"]), [])
+            if not candidates:
+                continue
+            game_start = pd.to_datetime(game.get("start_ts_utc"), utc=True, errors="coerce")
+            if pd.isna(game_start):
+                fd_links[game["game_slug"]] = candidates[0]
+                continue
+            fd_links[game["game_slug"]] = min(
+                candidates,
+                key=lambda candidate: abs(
+                    (
+                        pd.to_datetime(candidate.commence_time_utc, utc=True)
+                        - game_start
+                    ).total_seconds()
+                ),
+            )
         if fd_links:
             log.info("Loaded FanDuel deeplinks for %d games", len(fd_links))
     except Exception as exc:
@@ -1469,14 +1661,14 @@ def main() -> None:
     ]
     out["signal_rl_price"] = [
         _signal_run_line_price(
-            fd_links.get((out.iloc[i]["home_team_abbr"], out.iloc[i]["away_team_abbr"])),
+            _game_link_row(fd_links, out.iloc[i]),
             out.iloc[i].get("edge_run_line"),
         )
         for i in range(len(out))
     ]
     out["signal_total_price"] = [
         _signal_total_price(
-            fd_links.get((out.iloc[i]["home_team_abbr"], out.iloc[i]["away_team_abbr"])),
+            _game_link_row(fd_links, out.iloc[i]),
             out.iloc[i].get("edge_total"),
         )
         for i in range(len(out))
@@ -1545,7 +1737,40 @@ def main() -> None:
         f"{n_high_edge} high-edge bets ({n_rl_bets} run-line, {n_total_bets} total)  "
         f"[{model_note}]"
     )
+
+    # Lock bankroll rows before rendering output so Discord only advertises bets
+    # that survived the authoritative combined daily exposure cap.
+    try:
+        _save_predictions(
+            out,
+            engine,
+            et_day,
+            cfg,
+            calib=calib,
+            w_rl=w_rl,
+            w_total=w_total,
+            fd_links=fd_links,
+            total_side_recalibrators=total_side_recalibrators,
+        )
+    except Exception:
+        log.exception("Failed to save predictions")
+    locked_exposure, locked_pick_keys, locked_risk_slots = _load_locked_bankroll_state(
+        cfg,
+        et_day,
+    )
+
     print(summary_line)
+    if discord:
+        record_summary = format_record_summary(
+            pg_dsn=cfg.pg_dsn,
+            end_date=et_day,
+            lookback_days=30,
+            include_game_bankroll=True,
+            include_game_model=True,
+            include_prop_shadow=True,
+        )
+        if record_summary:
+            print(record_summary)
 
     # Discord: print "BETS TODAY" summary block before per-game detail
     compact_discord = False
@@ -1562,7 +1787,7 @@ def main() -> None:
             _both_sp = bool(_r.get("both_sp_known", True))
             _home2   = _r["home_team_abbr"]
             _away2   = _r["away_team_abbr"]
-            _fd2     = fd_links.get((_home2, _away2))
+            _fd2     = _game_link_row(fd_links, _r)
             _ub      = bool(_r.get("used_market_recon", False))
             _sq_rl2  = _r.get("sigma_q_rl")
             _sq_t2   = _r.get("sigma_q_total")
@@ -1613,12 +1838,19 @@ def main() -> None:
                 _lnk = (_fd2.spread_home_link if _e > 0 else _fd2.spread_away_link) if _fd2 else None
                 if _lnk:
                     _rl_bet_links.append(_lnk)
+                _pick_identity = {
+                    "game_date_et": et_day,
+                    "game_slug": _r["game_slug"],
+                    "run_line_bet_side": "home" if _e > 0 else "away",
+                }
                 _bets_today.append({
                     "desc": f"**{_bt} {_ml}** (vs {_vs} · {_t2})",
                     "edge": abs(_e), "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
                     "assessment": _bankroll,
                     "bankroll": bankroll_tag(_bankroll),
                     "stake": _bankroll.stake_pct * 1000,
+                    "pick_key": game_bankroll_pick_key(_pick_identity, "run_line"),
+                    "risk_slot": game_bankroll_risk_slot(_pick_identity, "run_line"),
                 })
             if (
                 _both_sp
@@ -1656,12 +1888,19 @@ def main() -> None:
                 _lnk = _fd2.total_over_link if _fd2 else None
                 if _lnk:
                     _total_bet_links.append(_lnk)
+                _pick_identity = {
+                    "game_date_et": et_day,
+                    "game_slug": _r["game_slug"],
+                    "total_bet_side": "over",
+                }
                 _bets_today.append({
                     "desc": f"**OVER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
                     "assessment": _bankroll,
                     "bankroll": bankroll_tag(_bankroll),
                     "stake": _bankroll.stake_pct * 1000,
+                    "pick_key": game_bankroll_pick_key(_pick_identity, "total"),
+                    "risk_slot": game_bankroll_risk_slot(_pick_identity, "total"),
                 })
             elif (
                 _both_sp
@@ -1700,16 +1939,31 @@ def main() -> None:
                 _lnk = _fd2.total_under_link if _fd2 else None
                 if _lnk:
                     _total_bet_links.append(_lnk)
+                _pick_identity = {
+                    "game_date_et": et_day,
+                    "game_slug": _r["game_slug"],
+                    "total_bet_side": "under",
+                }
                 _bets_today.append({
                     "desc": f"**UNDER {_mtl}** ({_away2} @ {_home2} · {_t2})",
                     "edge": _e, "p": _p, "qk": (_k / 4) * 1000, "link": _lnk,
                     "assessment": _bankroll,
                     "bankroll": bankroll_tag(_bankroll),
                     "stake": _bankroll.stake_pct * 1000,
+                    "pick_key": game_bankroll_pick_key(_pick_identity, "total"),
+                    "risk_slot": game_bankroll_risk_slot(_pick_identity, "total"),
                 })
 
         _bets_today.sort(key=lambda x: x["edge"], reverse=True)
         if _bets_today:
+            _combined_exposure = _cap_game_bankroll_output(
+                _bets_today,
+                cfg,
+                existing_exposure_pct=locked_exposure,
+                existing_pick_keys=locked_pick_keys,
+                existing_risk_slots=locked_risk_slots,
+                require_locked=True,
+            )
             _bankroll_bets = [b for b in _bets_today if b["assessment"].candidate]
             _model_bets = _bets_today[:cfg.top_n_game_bets]
             _paper_bets = [b for b in _model_bets if not b["assessment"].candidate]
@@ -1747,9 +2001,6 @@ def main() -> None:
                 [b["link"] for b in _bankroll_bets if b.get("link")],
             )
 
-            _game_exposure = sum(float(b["assessment"].stake_pct or 0.0) for b in _bankroll_bets)
-            _prop_exposure = _existing_prop_bankroll_exposure(engine, et_day)
-            _combined_exposure = _game_exposure + _prop_exposure
             _cap = cfg.bankroll_max_daily_exposure_pct
             if _combined_exposure > _cap + 1e-12:
                 print(
@@ -1792,20 +2043,6 @@ def main() -> None:
     if compact_discord:
         # In compact Discord mode, summary list above is the primary output.
         # Skip verbose per-game sections that are hard to read on mobile.
-        try:
-            _save_predictions(
-                out,
-                engine,
-                et_day,
-                cfg,
-                calib=calib,
-                w_rl=w_rl,
-                w_total=w_total,
-                fd_links=fd_links,
-                total_side_recalibrators=total_side_recalibrators,
-            )
-        except Exception:
-            log.exception("Failed to save predictions")
         return
 
     for _, r in out.iterrows():
@@ -1822,7 +2059,7 @@ def main() -> None:
         home_sp = r.get("home_sp_name") or "TBD"
         away_sp = r.get("away_sp_name") or "TBD"
 
-        _ld = fd_links.get((home, away))  # FanDuel deeplink row for this game
+        _ld = _game_link_row(fd_links, r)  # FanDuel deeplink row for this game
 
         if discord:
             print(f"\n**{away} @ {home}** · {time_str}")
@@ -1881,11 +2118,22 @@ def main() -> None:
                 both_sp_known=both_sp,
                 market_line=mkt_rl,
             )
+            bankroll = _require_locked_game_assessment(
+                bankroll,
+                cfg,
+                et_day=et_day,
+                game_slug=r["game_slug"],
+                market="run_line",
+                side=side_key,
+                locked_pick_keys=locked_pick_keys,
+                locked_risk_slots=locked_risk_slots,
+            )
             bankroll_label = bankroll_tag(bankroll)
             mkt_label = _run_line_label_for_side(mkt_rl, "home" if e_rl > 0 else "away")
             # FD link: home covers → spread_home_link; away covers → spread_away_link
             _sl = (_ld.spread_home_link if e_rl > 0 else _ld.spread_away_link) if _ld else None
-            best_links.append(_sl)
+            if bankroll.candidate:
+                best_links.append(_sl)
             _link_str = f"  [Bet FD](<{_sl}>)" if (_sl and discord) else ""
             if discord:
                 print(f"  Run line: {bet_team} {mkt_label}  * **EDGE +{abs(e_rl):.2f}  [bet {bet_side}] [{bankroll_label}]**{_link_str}")
@@ -1942,10 +2190,21 @@ def main() -> None:
                 both_sp_known=both_sp,
                 market_line=mkt_tot,
             )
+            bankroll = _require_locked_game_assessment(
+                bankroll,
+                cfg,
+                et_day=et_day,
+                game_slug=r["game_slug"],
+                market="total",
+                side="over",
+                locked_pick_keys=locked_pick_keys,
+                locked_risk_slots=locked_risk_slots,
+            )
             bankroll_label = bankroll_tag(bankroll)
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_over_link if _ld else None
-            best_links.append(_tl)
+            if bankroll.candidate:
+                best_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
                 print(f"  Total: OVER {mkt_t_label}  * **EDGE +{e_t:.2f}  [bet OVER] [{bankroll_label}]**{_link_str}")
@@ -1980,10 +2239,21 @@ def main() -> None:
                 both_sp_known=both_sp,
                 market_line=mkt_tot,
             )
+            bankroll = _require_locked_game_assessment(
+                bankroll,
+                cfg,
+                et_day=et_day,
+                game_slug=r["game_slug"],
+                market="total",
+                side="under",
+                locked_pick_keys=locked_pick_keys,
+                locked_risk_slots=locked_risk_slots,
+            )
             bankroll_label = bankroll_tag(bankroll)
             mkt_t_label = f"{float(mkt_tot):.1f}" if pd.notna(mkt_tot) else "n/a"
             _tl = _ld.total_under_link if _ld else None
-            best_links.append(_tl)
+            if bankroll.candidate:
+                best_links.append(_tl)
             _link_str = f"  [Bet FD](<{_tl}>)" if (_tl and discord) else ""
             if discord:
                 print(f"  Total: UNDER {mkt_t_label}  * **EDGE +{-e_t:.2f}  [bet UNDER] [{bankroll_label}]**{_link_str}")
@@ -2017,23 +2287,6 @@ def main() -> None:
                     print(f"\n**{title}{sfx}** [FD]({url})")
 
         _game_parlay("Best Bets Parlay", best_links)
-
-    # Save predictions to DB
-    try:
-        _save_predictions(
-            out,
-            engine,
-            et_day,
-            cfg,
-            calib=calib,
-            w_rl=w_rl,
-            w_total=w_total,
-            fd_links=fd_links,
-            total_side_recalibrators=total_side_recalibrators,
-        )
-    except Exception as exc:
-        log.warning("Could not save predictions to DB: %s", exc)
-
 
 if __name__ == "__main__":
     main()

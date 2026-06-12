@@ -92,7 +92,7 @@ def main() -> None:
         "--global-max-exposure-pct",
         type=float,
         default=0.02,
-        help="Global daily bankroll cap as a fraction, default 0.02 = 2%",
+        help="Global daily bankroll cap as a fraction, default 0.02 = 2%%",
     )
     args = parser.parse_args()
 

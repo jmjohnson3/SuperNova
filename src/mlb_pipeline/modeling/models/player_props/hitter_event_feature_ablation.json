@@ -1,0 +1,1036 @@
+{
+  "generated_at_utc": "2026-06-12T15:19:28.237422+00:00",
+  "source": "features.mlb_hitter_player_game_training",
+  "rows": 51249,
+  "lookback_days": 365,
+  "holdout_days": 28,
+  "status": "ok",
+  "ablation": [
+    {
+      "feature_set": "baseline",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games"
+      ],
+      "dropped_all_null_numeric_features": [],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.5205319892635865,
+          "rmse": 0.6599167854937248,
+          "bias": 0.003953480966016601
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 1.000588076904984,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6942815738063031,
+              "bias_per_pa": 0.0007596897110561107
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09021773628494961,
+              "bias_per_pa": -0.0036354938262131292
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.14013017816347334,
+              "bias_per_pa": 0.0008416488143297429
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.04205907472891945,
+              "bias_per_pa": -0.00029754940165706983
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.003388278030449887,
+              "bias_per_pa": 0.0003823537282296803
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.029923158985904755,
+              "bias_per_pa": 0.0019493509742546065
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.637160621009314,
+            "rmse": 0.8298267334690419,
+            "bias": 0.004338337711875021
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.2479701953996574,
+            "rmse": 1.66384501149274,
+            "bias": 0.016805187741904346
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.20041393550496792,
+            "rmse": 0.33904833151594255,
+            "bias": 0.0037104313570816873
+          },
+          "weighted_event_brier": 0.48582393878697916
+        }
+      }
+    },
+    {
+      "feature_set": "+lineup",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games",
+        "own_lineup_xwoba_avg",
+        "own_lineup_xslg_avg",
+        "own_lineup_barrel_avg",
+        "own_lineup_hard_hit_avg",
+        "own_lineup_k_pct_cv",
+        "own_lineup_pct_lhb",
+        "lineup_confirmed_flag",
+        "confirmed_team_lineup_slots",
+        "team_lineup_confirmed_flag",
+        "lineup_boxscore_proxy_flag",
+        "lineup_slot_x_team_implied_runs"
+      ],
+      "dropped_all_null_numeric_features": [],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.520887059301877,
+          "rmse": 0.6589815542725326,
+          "bias": -0.017027830621734432
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 1.0007943759020101,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6909241518512891,
+              "bias_per_pa": 0.004117111666070095
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09447019761672794,
+              "bias_per_pa": -0.007887955157991455
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.14148598751385016,
+              "bias_per_pa": -0.0005141605360470813
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.0421127678356229,
+              "bias_per_pa": -0.00035124250836052195
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.00315928830547343,
+              "bias_per_pa": 0.0006113434532061374
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.027847606877036517,
+              "bias_per_pa": 0.004024903083122845
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.6373030078445362,
+            "rmse": 0.8291886568451067,
+            "bias": 0.0033008526624545183
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.242206174183078,
+            "rmse": 1.663528924263699,
+            "bias": 0.03801982389281825
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.1949503209069089,
+            "rmse": 0.33910264148667624,
+            "bias": 0.01101308417829115
+          },
+          "weighted_event_brier": 0.48585215171840235
+        }
+      },
+      "delta_vs_previous": {
+        "pa_mae_gain": -0.00035507003829049477,
+        "event_brier_gain": -2.821293142318826e-05
+      }
+    },
+    {
+      "feature_set": "+park",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games",
+        "own_lineup_xwoba_avg",
+        "own_lineup_xslg_avg",
+        "own_lineup_barrel_avg",
+        "own_lineup_hard_hit_avg",
+        "own_lineup_k_pct_cv",
+        "own_lineup_pct_lhb",
+        "lineup_confirmed_flag",
+        "confirmed_team_lineup_slots",
+        "team_lineup_confirmed_flag",
+        "lineup_boxscore_proxy_flag",
+        "lineup_slot_x_team_implied_runs",
+        "park_run_factor",
+        "park_hr_factor",
+        "park_babip_factor"
+      ],
+      "dropped_all_null_numeric_features": [],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.5210879596803942,
+          "rmse": 0.6589724985941477,
+          "bias": -0.017903834387888506
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 1.0007043384540217,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6912688756495493,
+              "bias_per_pa": 0.0037723878678098677
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09403116708536531,
+              "bias_per_pa": -0.007448924626628828
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.14151321674676173,
+              "bias_per_pa": -0.00054138976895865
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.04230105266352124,
+              "bias_per_pa": -0.000539527336258859
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.0033190514200849247,
+              "bias_per_pa": 0.0004515803385946428
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.02756663643471744,
+              "bias_per_pa": 0.004305873525441921
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.6385487359040093,
+            "rmse": 0.8295239069042971,
+            "bias": 0.002319844824718344
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.2428061910031705,
+            "rmse": 1.6650428583943797,
+            "bias": 0.03794757159280444
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.19423314297172592,
+            "rmse": 0.33921540411834594,
+            "bias": 0.011969499842278698
+          },
+          "weighted_event_brier": 0.4857832712986006
+        }
+      },
+      "delta_vs_previous": {
+        "pa_mae_gain": -0.00020090037851727693,
+        "event_brier_gain": 6.888041980174231e-05
+      }
+    },
+    {
+      "feature_set": "+batter_statcast",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games",
+        "own_lineup_xwoba_avg",
+        "own_lineup_xslg_avg",
+        "own_lineup_barrel_avg",
+        "own_lineup_hard_hit_avg",
+        "own_lineup_k_pct_cv",
+        "own_lineup_pct_lhb",
+        "lineup_confirmed_flag",
+        "confirmed_team_lineup_slots",
+        "team_lineup_confirmed_flag",
+        "lineup_boxscore_proxy_flag",
+        "lineup_slot_x_team_implied_runs",
+        "park_run_factor",
+        "park_hr_factor",
+        "park_babip_factor",
+        "batter_sc_barrel_rate",
+        "batter_sc_hard_hit_pct",
+        "batter_sc_avg_exit_velo",
+        "batter_sc_avg_launch_angle",
+        "batter_sc_sweet_spot_pct",
+        "batter_sc_fb_pct",
+        "batter_sc_gb_pct",
+        "batter_sc_ld_pct",
+        "batter_sc_xba",
+        "batter_sc_xslg",
+        "batter_sc_xwoba",
+        "batter_sc_xiso",
+        "batter_sc_brl_pa",
+        "batter_sprint_speed"
+      ],
+      "dropped_all_null_numeric_features": [],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.5208830934713671,
+          "rmse": 0.6582672653574937,
+          "bias": -0.016647600643058535
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 0.9990810424238432,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6912064112230772,
+              "bias_per_pa": 0.003834852294281932
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09417961055656895,
+              "bias_per_pa": -0.0075973680978324715
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.14087583049502972,
+              "bias_per_pa": 9.599648277336392e-05
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.04242295474489591,
+              "bias_per_pa": -0.00066142941763353
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.003217104437741111,
+              "bias_per_pa": 0.0005535273209384566
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.028098088542687097,
+              "bias_per_pa": 0.003774421417472265
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.6397046376934414,
+            "rmse": 0.8297210706129791,
+            "bias": 0.0028875255801328065
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.2427316424897679,
+            "rmse": 1.6641956030096905,
+            "bias": 0.03329510697600737
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.19467917537755464,
+            "rmse": 0.3384745093250644,
+            "bias": 0.010073043799075032
+          },
+          "weighted_event_brier": 0.4854793439952808
+        }
+      },
+      "delta_vs_previous": {
+        "pa_mae_gain": 0.0002048662090271547,
+        "event_brier_gain": 0.00030392730331979534
+      }
+    },
+    {
+      "feature_set": "+pitcher_statcast",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games",
+        "own_lineup_xwoba_avg",
+        "own_lineup_xslg_avg",
+        "own_lineup_barrel_avg",
+        "own_lineup_hard_hit_avg",
+        "own_lineup_k_pct_cv",
+        "own_lineup_pct_lhb",
+        "lineup_confirmed_flag",
+        "confirmed_team_lineup_slots",
+        "team_lineup_confirmed_flag",
+        "lineup_boxscore_proxy_flag",
+        "lineup_slot_x_team_implied_runs",
+        "park_run_factor",
+        "park_hr_factor",
+        "park_babip_factor",
+        "batter_sc_barrel_rate",
+        "batter_sc_hard_hit_pct",
+        "batter_sc_avg_exit_velo",
+        "batter_sc_avg_launch_angle",
+        "batter_sc_sweet_spot_pct",
+        "batter_sc_fb_pct",
+        "batter_sc_gb_pct",
+        "batter_sc_ld_pct",
+        "batter_sc_xba",
+        "batter_sc_xslg",
+        "batter_sc_xwoba",
+        "batter_sc_xiso",
+        "batter_sc_brl_pa",
+        "batter_sprint_speed",
+        "opp_sp_sc_barrel_rate",
+        "opp_sp_sc_hard_hit_pct",
+        "opp_sp_sc_avg_exit_velo",
+        "opp_sp_sc_avg_launch_angle",
+        "opp_sp_sc_xba",
+        "opp_sp_sc_xslg",
+        "opp_sp_sc_xwoba",
+        "opp_sp_sc_xiso",
+        "opp_sp_fb_pct",
+        "opp_sp_fb_hard_hit_pct",
+        "opp_sp_fb_xwoba",
+        "opp_sp_fb_run_value_per_100",
+        "opp_sp_fb_whiff_pct",
+        "opp_sp_fb_k_pct",
+        "opp_sp_si_pct",
+        "opp_sp_si_hard_hit_pct",
+        "opp_sp_si_xwoba",
+        "opp_sp_si_whiff_pct",
+        "opp_sp_si_k_pct",
+        "opp_sp_sl_pct",
+        "opp_sp_sl_hard_hit_pct",
+        "opp_sp_sl_xwoba",
+        "opp_sp_sl_run_value_per_100",
+        "opp_sp_sl_whiff_pct",
+        "opp_sp_sl_k_pct",
+        "opp_sp_ch_pct",
+        "opp_sp_ch_hard_hit_pct",
+        "opp_sp_ch_xwoba",
+        "opp_sp_ch_run_value_per_100",
+        "opp_sp_ch_whiff_pct",
+        "opp_sp_ch_k_pct",
+        "opp_sp_fastball_family_pct",
+        "opp_sp_pitch_diversity"
+      ],
+      "dropped_all_null_numeric_features": [],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.5209178675408916,
+          "rmse": 0.6585835062491736,
+          "bias": -0.0157431191250819
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 0.9989921178803716,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6917772600103053,
+              "bias_per_pa": 0.003264003507053914
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09379988814805049,
+              "bias_per_pa": -0.007217645689314003
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.14105082183817913,
+              "bias_per_pa": -7.899486037604708e-05
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.042210788638543564,
+              "bias_per_pa": -0.0004492633112811867
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.0032409428603818505,
+              "bias_per_pa": 0.000529688898297717
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.027920298504539785,
+              "bias_per_pa": 0.003952211455619577
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.640607676520477,
+            "rmse": 0.8297094124896977,
+            "bias": 0.0035739766609221265
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.24220606794714,
+            "rmse": 1.664405292405738,
+            "bias": 0.03691359987019656
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.19428952754446463,
+            "rmse": 0.33866422838786253,
+            "bias": 0.010807529033092334
+          },
+          "weighted_event_brier": 0.48537647891635016
+        }
+      },
+      "delta_vs_previous": {
+        "pa_mae_gain": -3.477406952456796e-05,
+        "event_brier_gain": 0.00010286507893064734
+      }
+    },
+    {
+      "feature_set": "+discipline",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games",
+        "own_lineup_xwoba_avg",
+        "own_lineup_xslg_avg",
+        "own_lineup_barrel_avg",
+        "own_lineup_hard_hit_avg",
+        "own_lineup_k_pct_cv",
+        "own_lineup_pct_lhb",
+        "lineup_confirmed_flag",
+        "confirmed_team_lineup_slots",
+        "team_lineup_confirmed_flag",
+        "lineup_boxscore_proxy_flag",
+        "lineup_slot_x_team_implied_runs",
+        "park_run_factor",
+        "park_hr_factor",
+        "park_babip_factor",
+        "batter_sc_barrel_rate",
+        "batter_sc_hard_hit_pct",
+        "batter_sc_avg_exit_velo",
+        "batter_sc_avg_launch_angle",
+        "batter_sc_sweet_spot_pct",
+        "batter_sc_fb_pct",
+        "batter_sc_gb_pct",
+        "batter_sc_ld_pct",
+        "batter_sc_xba",
+        "batter_sc_xslg",
+        "batter_sc_xwoba",
+        "batter_sc_xiso",
+        "batter_sc_brl_pa",
+        "batter_sprint_speed",
+        "opp_sp_sc_barrel_rate",
+        "opp_sp_sc_hard_hit_pct",
+        "opp_sp_sc_avg_exit_velo",
+        "opp_sp_sc_avg_launch_angle",
+        "opp_sp_sc_xba",
+        "opp_sp_sc_xslg",
+        "opp_sp_sc_xwoba",
+        "opp_sp_sc_xiso",
+        "opp_sp_fb_pct",
+        "opp_sp_fb_hard_hit_pct",
+        "opp_sp_fb_xwoba",
+        "opp_sp_fb_run_value_per_100",
+        "opp_sp_fb_whiff_pct",
+        "opp_sp_fb_k_pct",
+        "opp_sp_si_pct",
+        "opp_sp_si_hard_hit_pct",
+        "opp_sp_si_xwoba",
+        "opp_sp_si_whiff_pct",
+        "opp_sp_si_k_pct",
+        "opp_sp_sl_pct",
+        "opp_sp_sl_hard_hit_pct",
+        "opp_sp_sl_xwoba",
+        "opp_sp_sl_run_value_per_100",
+        "opp_sp_sl_whiff_pct",
+        "opp_sp_sl_k_pct",
+        "opp_sp_ch_pct",
+        "opp_sp_ch_hard_hit_pct",
+        "opp_sp_ch_xwoba",
+        "opp_sp_ch_run_value_per_100",
+        "opp_sp_ch_whiff_pct",
+        "opp_sp_ch_k_pct",
+        "opp_sp_fastball_family_pct",
+        "opp_sp_pitch_diversity",
+        "batter_disc_oz_swing_pct",
+        "batter_disc_iz_contact_pct",
+        "batter_disc_oz_contact_pct",
+        "batter_disc_whiff_pct",
+        "batter_disc_out_zone_pct",
+        "batter_disc_k_pct",
+        "batter_disc_bb_pct"
+      ],
+      "dropped_all_null_numeric_features": [],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.520897394175755,
+          "rmse": 0.6585121153632776,
+          "bias": -0.01536310703170939
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 0.998851310850378,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6923592015675648,
+              "bias_per_pa": 0.0026820619497943676
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09414361928857838,
+              "bias_per_pa": -0.007561376829841898
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.1405068511244223,
+              "bias_per_pa": 0.00046497585338078906
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.04192764166915334,
+              "bias_per_pa": -0.00016611634189096086
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.003324614354481692,
+              "bias_per_pa": 0.00044601740419787563
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.027738071995799543,
+              "bias_per_pa": 0.004134437964359819
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.6403344772857933,
+            "rmse": 0.8290156520881425,
+            "bias": 0.006484515136472876
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.2393299672251985,
+            "rmse": 1.6637960624761774,
+            "bias": 0.04199235553311098
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.19368282500209294,
+            "rmse": 0.33866672199292724,
+            "bias": 0.011459961721050415
+          },
+          "weighted_event_brier": 0.485265496353017
+        }
+      },
+      "delta_vs_previous": {
+        "pa_mae_gain": 2.047336513666398e-05,
+        "event_brier_gain": 0.0001109825633331396
+      }
+    },
+    {
+      "feature_set": "+market",
+      "numeric_features": [
+        "lineup_slot",
+        "confirmed_starter_num",
+        "is_home",
+        "team_implied_runs",
+        "opponent_implied_runs",
+        "game_total_line",
+        "opp_sp_hand_l",
+        "opp_sp_k_pct_10",
+        "opp_sp_bb_pct",
+        "opp_sp_xwoba",
+        "opp_sp_hard_hit_pct",
+        "opp_sp_whiff_pct",
+        "opp_bp_era_10",
+        "opp_bp_whip_10",
+        "opp_bp_k9_10",
+        "opp_bp_ip_last_3",
+        "opp_bp_ip_last_7",
+        "opp_team_k_pct_10",
+        "opp_team_avg_10",
+        "opp_team_obp_10",
+        "opp_team_slg_10",
+        "batter_vs_hand_hits_avg_10",
+        "batter_vs_hand_tb_avg_10",
+        "batter_vs_hand_hr_avg_10",
+        "batter_vs_hand_iso_avg_10",
+        "batter_vs_hand_k_rate_10",
+        "batter_vs_hand_games_10",
+        "batter_vs_rp_ba_30",
+        "batter_vs_rp_slg_30",
+        "batter_vs_rp_hr_rate_30",
+        "batter_vs_rp_k_rate_30",
+        "projected_pa",
+        "pa_games",
+        "own_lineup_xwoba_avg",
+        "own_lineup_xslg_avg",
+        "own_lineup_barrel_avg",
+        "own_lineup_hard_hit_avg",
+        "own_lineup_k_pct_cv",
+        "own_lineup_pct_lhb",
+        "lineup_confirmed_flag",
+        "confirmed_team_lineup_slots",
+        "team_lineup_confirmed_flag",
+        "lineup_boxscore_proxy_flag",
+        "lineup_slot_x_team_implied_runs",
+        "park_run_factor",
+        "park_hr_factor",
+        "park_babip_factor",
+        "batter_sc_barrel_rate",
+        "batter_sc_hard_hit_pct",
+        "batter_sc_avg_exit_velo",
+        "batter_sc_avg_launch_angle",
+        "batter_sc_sweet_spot_pct",
+        "batter_sc_fb_pct",
+        "batter_sc_gb_pct",
+        "batter_sc_ld_pct",
+        "batter_sc_xba",
+        "batter_sc_xslg",
+        "batter_sc_xwoba",
+        "batter_sc_xiso",
+        "batter_sc_brl_pa",
+        "batter_sprint_speed",
+        "opp_sp_sc_barrel_rate",
+        "opp_sp_sc_hard_hit_pct",
+        "opp_sp_sc_avg_exit_velo",
+        "opp_sp_sc_avg_launch_angle",
+        "opp_sp_sc_xba",
+        "opp_sp_sc_xslg",
+        "opp_sp_sc_xwoba",
+        "opp_sp_sc_xiso",
+        "opp_sp_fb_pct",
+        "opp_sp_fb_hard_hit_pct",
+        "opp_sp_fb_xwoba",
+        "opp_sp_fb_run_value_per_100",
+        "opp_sp_fb_whiff_pct",
+        "opp_sp_fb_k_pct",
+        "opp_sp_si_pct",
+        "opp_sp_si_hard_hit_pct",
+        "opp_sp_si_xwoba",
+        "opp_sp_si_whiff_pct",
+        "opp_sp_si_k_pct",
+        "opp_sp_sl_pct",
+        "opp_sp_sl_hard_hit_pct",
+        "opp_sp_sl_xwoba",
+        "opp_sp_sl_run_value_per_100",
+        "opp_sp_sl_whiff_pct",
+        "opp_sp_sl_k_pct",
+        "opp_sp_ch_pct",
+        "opp_sp_ch_hard_hit_pct",
+        "opp_sp_ch_xwoba",
+        "opp_sp_ch_run_value_per_100",
+        "opp_sp_ch_whiff_pct",
+        "opp_sp_ch_k_pct",
+        "opp_sp_fastball_family_pct",
+        "opp_sp_pitch_diversity",
+        "batter_disc_oz_swing_pct",
+        "batter_disc_iz_contact_pct",
+        "batter_disc_oz_contact_pct",
+        "batter_disc_whiff_pct",
+        "batter_disc_out_zone_pct",
+        "batter_disc_k_pct",
+        "batter_disc_bb_pct",
+        "prop_example_rows",
+        "prop_offer_rows"
+      ],
+      "dropped_all_null_numeric_features": [
+        "model_pred_hits",
+        "model_pred_total_bases",
+        "model_pred_home_runs",
+        "paired_price_rate",
+        "same_book_pair_rate"
+      ],
+      "metrics": {
+        "pa": {
+          "rows": 7894,
+          "mae": 0.5208973941757549,
+          "rmse": 0.6585121153632775,
+          "bias": -0.01536310703171006
+        },
+        "event": {
+          "train_event_rows": 80284,
+          "holdout_rows": 7587,
+          "weighted_event_log_loss": 0.9988513109258879,
+          "event_rates": {
+            "rows": 7587,
+            "actual_pa": 28112.0,
+            "out": {
+              "actual_per_pa": 0.6950412635173592,
+              "pred_mean_prob": 0.6923592014160671,
+              "bias_per_pa": 0.002682062101292071
+            },
+            "walk": {
+              "actual_per_pa": 0.08658224245873648,
+              "pred_mean_prob": 0.09414361917068494,
+              "bias_per_pa": -0.007561376711948453
+            },
+            "single": {
+              "actual_per_pa": 0.14097182697780308,
+              "pred_mean_prob": 0.14050685123592765,
+              "bias_per_pa": 0.00046497574187542856
+            },
+            "double": {
+              "actual_per_pa": 0.04176152532726238,
+              "pred_mean_prob": 0.041927641808218216,
+              "bias_per_pa": -0.00016611648095583853
+            },
+            "triple": {
+              "actual_per_pa": 0.0037706317586795675,
+              "pred_mean_prob": 0.003324614313636215,
+              "bias_per_pa": 0.00044601744504335237
+            },
+            "hr": {
+              "actual_per_pa": 0.03187250996015936,
+              "pred_mean_prob": 0.027738072055465933,
+              "bias_per_pa": 0.004134437904693429
+            },
+            "mean_row_weight": 3.7052853565309083
+          },
+          "hits": {
+            "rows": 7587,
+            "mae": 0.6403344774464377,
+            "rmse": 0.8290156521717273,
+            "bias": 0.006484514352393432
+          },
+          "total_bases": {
+            "rows": 7587,
+            "mae": 1.2393299677239844,
+            "rmse": 1.6637960625757182,
+            "bias": 0.04199235391733279
+          },
+          "home_runs": {
+            "rows": 7587,
+            "mae": 0.19368282515109914,
+            "rmse": 0.3386667220254811,
+            "bias": 0.011459961495860711
+          },
+          "weighted_event_brier": 0.4852654963778337
+        }
+      },
+      "delta_vs_previous": {
+        "pa_mae_gain": 1.1102230246251565e-16,
+        "event_brier_gain": -2.4816704247143662e-11
+      }
+    }
+  ],
+  "train_rows": 43355,
+  "holdout_rows": 7894
+}

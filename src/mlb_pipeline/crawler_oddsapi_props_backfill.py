@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import time
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -55,7 +56,7 @@ _PROP_MARKETS = (
 )
 
 _PG_DSN  = "postgresql://josh:password@localhost:5432/nba"
-_API_KEY  = "5b6f0290e265c3329b3ed27897d79eaf"
+_API_KEY  = os.getenv("ODDS_API_KEY", "")
 _SPORT    = "baseball_mlb"
 
 # Historical endpoints
@@ -75,6 +76,23 @@ def _snapshot_utc(game_date: date) -> str:
     dt = datetime(game_date.year, game_date.month, game_date.day,
                   _SNAPSHOT_HOUR_UTC, 0, 0, tzinfo=_UTC)
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _parse_utc(value: str | datetime) -> datetime:
+    if isinstance(value, datetime):
+        dt = value
+    else:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_UTC)
+    return dt.astimezone(_UTC)
+
+
+def _close_snapshot_utc(event: dict, minutes_before_start: int) -> str:
+    """Return ISO-Z snapshot time close to first pitch for one event."""
+    commence = _parse_utc(event["commence_time"])
+    snapshot = commence - timedelta(minutes=int(minutes_before_start))
+    return snapshot.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _already_backfilled(conn, game_date: date) -> bool:
@@ -99,7 +117,8 @@ def _save_raw(conn, game_date: date, event_id: str, payload: dict,
     import hashlib, json
     raw_json = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     sha = hashlib.sha256(raw_json.encode()).hexdigest()
-    url_key = f"historical_props/{game_date}/{event_id}"
+    fetched_key = fetched_at.astimezone(_UTC).strftime("%Y%m%dT%H%M%SZ")
+    url_key = f"historical_props/{game_date}/{event_id}/{fetched_key}"
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -186,7 +205,15 @@ def run_backfill(
     dry_run: bool,
     min_credits_floor: int = 5_000,
     sleep_s: float = 0.3,
+    snapshot_mode: str = "fixed",
+    close_minutes_before_start: int = 30,
+    force: bool = False,
 ) -> None:
+    mode = str(snapshot_mode or "fixed").lower()
+    if mode not in {"fixed", "close"}:
+        raise ValueError(f"snapshot_mode must be fixed or close, got {snapshot_mode!r}")
+    if close_minutes_before_start <= 0:
+        raise ValueError("close_minutes_before_start must be positive")
     conn = psycopg2.connect(_PG_DSN)
     credits_spent = 0
     days_done = 0
@@ -199,13 +226,13 @@ def run_backfill(
             current += timedelta(days=1)
             continue
 
-        if not dry_run and _already_backfilled(conn, current):
+        if not dry_run and mode == "fixed" and not force and _already_backfilled(conn, current):
             log.info("Already have props for %s — skipping", current)
             current += timedelta(days=1)
             continue
 
         snapshot_z = _snapshot_utc(current)
-        log.info("--- %s  (snapshot %s) ---", current, snapshot_z)
+        log.info("--- %s  (events snapshot %s, mode=%s) ---", current, snapshot_z, mode)
 
         if dry_run:
             # Estimate only: fetch events list (1 credit) then multiply by 20/event
@@ -238,7 +265,6 @@ def run_backfill(
         day_events = _filter_events_for_date(events, current)
         log.info("  %d events on %s", len(day_events), current)
 
-        fetched_at = datetime.now(_UTC)
         day_events_fetched = 0
 
         for ev in day_events:
@@ -250,9 +276,15 @@ def run_backfill(
             event_id   = ev["id"]
             home_team  = ev.get("home_team", "?")
             away_team  = ev.get("away_team", "?")
+            event_snapshot_z = (
+                _close_snapshot_utc(ev, close_minutes_before_start)
+                if mode == "close"
+                else snapshot_z
+            )
+            fetched_at = _parse_utc(event_snapshot_z)
 
             try:
-                payload, cr = _get_historical_props(event_id, snapshot_z)
+                payload, cr = _get_historical_props(event_id, event_snapshot_z)
                 credits_spent += 20  # historical event odds cost
                 time.sleep(sleep_s)
             except Exception as exc:
@@ -270,8 +302,8 @@ def run_backfill(
 
             _save_raw(conn, current, event_id, payload, fetched_at)
             day_events_fetched += 1
-            log.info("  Saved %s @ %s (event=%s) | credits_remaining=%s",
-                     away_team, home_team, event_id,
+            log.info("  Saved %s @ %s (event=%s snapshot=%s) | credits_remaining=%s",
+                     away_team, home_team, event_id, event_snapshot_z,
                      cr if cr is not None else "unknown")
 
             if cr is not None and cr < min_credits_floor:
@@ -320,7 +352,27 @@ def main() -> None:
         "--sleep", type=float, default=0.3,
         help="Seconds to sleep between API calls (default 0.3)"
     )
+    parser.add_argument(
+        "--snapshot-mode",
+        choices=("fixed", "close"),
+        default="fixed",
+        help="Use the fixed daily snapshot or one close snapshot per event.",
+    )
+    parser.add_argument(
+        "--close-minutes-before-start",
+        type=int,
+        default=30,
+        help="For --snapshot-mode close, fetch this many minutes before first pitch.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="For fixed-mode backfills, fetch even when historical rows already exist.",
+    )
     args = parser.parse_args()
+
+    if not _API_KEY:
+        parser.error("ODDS_API_KEY is required")
 
     end = args.end or (date.today() - timedelta(days=1))
     if args.start > end:
@@ -332,6 +384,9 @@ def main() -> None:
         max_credits=args.max_credits,
         dry_run=args.dry_run,
         sleep_s=args.sleep,
+        snapshot_mode=args.snapshot_mode,
+        close_minutes_before_start=args.close_minutes_before_start,
+        force=args.force,
     )
 
 
