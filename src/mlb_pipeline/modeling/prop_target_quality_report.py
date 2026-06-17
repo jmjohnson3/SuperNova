@@ -204,6 +204,45 @@ def _pairing_quality(df: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
+def _fanduel_market_evidence(df: pd.DataFrame) -> list[dict[str, Any]]:
+    if df.empty:
+        return []
+    work = df.loc[
+        df["bookmaker_key"].fillna("").astype(str).str.lower().eq("fanduel")
+        & df["market"].isin(["batter_hits", "batter_total_bases", "batter_home_runs"])
+    ].copy()
+    if work.empty:
+        return []
+    source = work["paired_price_source"].fillna("missing").astype(str)
+    quality = work["pair_quality"].fillna("unknown").astype(str)
+    market_source = work["market_prob_source"].fillna("unknown").astype(str)
+    work["true_pair"] = quality.isin(["same_book", "cross_book"]) | source.isin([
+        "prediction_same_book",
+        "same_book_exact_line",
+        "same_book_exact_line_fallback",
+        "cross_book_exact_line",
+        "cross_book_exact_line_fallback",
+    ])
+    work["synthetic_pair"] = quality.eq("synthetic") | source.eq("synthetic_fanduel_over_only_complement") | market_source.eq("synthetic_fanduel_over_only")
+    work["clean_market_evidence"] = work["true_pair"] & ~work["synthetic_pair"] & ~market_source.isin(["raw_implied", "synthetic_fanduel_over_only"])
+    rows: list[dict[str, Any]] = []
+    for (date_value, market), group in work.groupby(["game_date_et", "market"], dropna=False):
+        rows.append({
+            "date": str(date_value),
+            "market": market,
+            "rows": int(len(group)),
+            "true_pair_rate": float(group["true_pair"].mean()) if len(group) else None,
+            "synthetic_rate": float(group["synthetic_pair"].mean()) if len(group) else None,
+            "clean_market_evidence_rate": float(group["clean_market_evidence"].mean()) if len(group) else None,
+            "same_book_pairs": int((group["pair_quality"].fillna("").astype(str).eq("same_book")).sum()),
+            "cross_book_pairs": int((group["pair_quality"].fillna("").astype(str).eq("cross_book")).sum()),
+            "synthetic_pairs": int(group["synthetic_pair"].sum()),
+            "action": "extract_true_opposite_side_or_demote" if float(group["clean_market_evidence"].mean()) < 0.50 else "usable",
+        })
+    rows.sort(key=lambda rec: (rec["date"], rec["market"]), reverse=True)
+    return rows
+
+
 def _bad_examples(df: pd.DataFrame, limit: int = 30) -> list[dict[str, Any]]:
     problems = []
     for _, row in df.iterrows():
@@ -238,6 +277,17 @@ def _fmt_pct(value: Any) -> str:
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return "-"
     return f"{float(value) * 100:.1f}%"
+
+
+def _write_text_with_lock_fallback(path: Path, text: str) -> Path:
+    try:
+        path.write_text(text, encoding="utf-8")
+        return path
+    except PermissionError:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        fallback = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
+        fallback.write_text(text, encoding="utf-8")
+        return fallback
 
 
 def _write_report(payload: dict[str, Any], cfg: TargetQualityConfig) -> str:
@@ -308,6 +358,19 @@ def _write_report(payload: dict[str, Any], cfg: TargetQualityConfig) -> str:
         )
     lines.extend([
         "",
+        "## FanDuel Hitter Market Evidence",
+        "",
+        "| Date | Market | Rows | True Pair | Synthetic | Clean Evidence | Same-Book | Cross-Book | Synthetic Rows | Action |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---|",
+    ])
+    for rec in payload.get("fanduel_market_evidence", [])[:60]:
+        lines.append(
+            f"| {rec['date']} | {rec['market']} | {rec['rows']} | {_fmt_pct(rec.get('true_pair_rate'))} | "
+            f"{_fmt_pct(rec.get('synthetic_rate'))} | {_fmt_pct(rec.get('clean_market_evidence_rate'))} | "
+            f"{rec['same_book_pairs']} | {rec['cross_book_pairs']} | {rec['synthetic_pairs']} | {rec['action']} |"
+        )
+    lines.extend([
+        "",
         "## Problem Examples",
         "",
         "| Date | Player | Bet | Missing Fields | Pairing Note | CLV Status | CLV Reason |",
@@ -319,8 +382,7 @@ def _write_report(payload: dict[str, Any], cfg: TargetQualityConfig) -> str:
             f"{rec.get('pairing_note') or ''} | {rec.get('clv_status') or ''} | "
             f"{rec.get('clv_unknown_reason') or ''} |"
         )
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return str(path)
+    return str(_write_text_with_lock_fallback(path, "\n".join(lines) + "\n"))
 
 
 def build_report(cfg: TargetQualityConfig) -> dict[str, Any]:
@@ -340,6 +402,7 @@ def build_report(cfg: TargetQualityConfig) -> dict[str, Any]:
         payload["coverage"] = _coverage(df)
         payload["date_quality"] = _date_quality(df)
         payload["pairing_quality"] = _pairing_quality(df)
+        payload["fanduel_market_evidence"] = _fanduel_market_evidence(df)
         payload["clv_status_counts"] = {
             str(k): int(v) for k, v in df["clv_status"].fillna("missing").value_counts(dropna=False).items()
         }

@@ -1,152 +1,152 @@
 {
-  "generated_at_utc": "2026-06-12T15:12:15.443692+00:00",
+  "generated_at_utc": "2026-06-17T08:38:37.498932+00:00",
   "source": "features.mlb_hitter_player_game_training",
-  "rows": 51249,
+  "rows": 51146,
   "status": "ok",
-  "train_rows": 43355,
-  "holdout_rows": 7894,
-  "holdout_start": "2026-05-15",
-  "holdout_end": "2026-06-11",
+  "train_rows": 43365,
+  "holdout_rows": 7781,
+  "holdout_start": "2026-05-19",
+  "holdout_end": "2026-06-15",
   "metrics": {
     "pa_model": {
       "model": {
-        "rows": 7894,
-        "mae": 0.520897394175755,
-        "rmse": 0.6585121153632774,
-        "bias": -0.015363107031709674
+        "rows": 7781,
+        "mae": 0.5105439027924609,
+        "rmse": 0.6466214818468292,
+        "bias": -0.021668933167278706
       },
       "slot_prior": {
-        "rows": 7894,
-        "mae": 0.9512032534894197,
-        "rmse": 1.3034264673070521,
-        "bias": -0.028018019700519644
+        "rows": 7781,
+        "mae": 0.9437724962537748,
+        "rmse": 1.2919936287894145,
+        "bias": -0.033373006652130374
       },
       "existing_projected_pa": {
-        "rows": 7818,
-        "mae": 0.8906152164114559,
-        "rmse": 1.1803312019104453,
-        "bias": -0.018674091534797595
+        "rows": 7704,
+        "mae": 0.8898572067283127,
+        "rmse": 1.1846410869767545,
+        "bias": -0.03640857563170646
       }
     },
     "rate_models": {
       "single_rate": {
-        "rate_rows": 7587,
+        "rate_rows": 7471,
         "count_model": {
-          "rows": 7587,
-          "mae": 0.5694864713622235,
-          "rmse": 0.6935075552593073,
-          "bias": 0.0004565000558931719
+          "rows": 7471,
+          "mae": 0.5732903036434827,
+          "rmse": 0.6993929536796665,
+          "bias": 0.006912567130470143
         },
         "slot_rate_prior": {
-          "rows": 7587,
-          "mae": 0.5776594914059399,
-          "rmse": 0.696110718954261,
-          "bias": 0.018202712952698548
+          "rows": 7471,
+          "mae": 0.5808655364853966,
+          "rmse": 0.7020169692356938,
+          "bias": 0.020943717572302022
         }
       },
       "double_rate": {
-        "rate_rows": 7587,
+        "rate_rows": 7471,
         "count_model": {
-          "rows": 7587,
-          "mae": 0.2577021647495707,
-          "rmse": 0.38996332676902407,
-          "bias": 0.0029382877480029594
+          "rows": 7471,
+          "mae": 0.25270118717555096,
+          "rmse": 0.3881534692074694,
+          "bias": 0.0039101876154161675
         },
         "slot_rate_prior": {
-          "rows": 7587,
-          "mae": 0.2583785940287036,
-          "rmse": 0.38914398122787636,
-          "bias": 0.0031719189420618315
+          "rows": 7471,
+          "mae": 0.2569105490814519,
+          "rmse": 0.3866328385525019,
+          "bias": -0.0007720057590212838
         }
       },
       "triple_rate": {
-        "rate_rows": 7587,
+        "rate_rows": 7471,
         "count_model": {
-          "rows": 7587,
-          "mae": 0.026345806515523044,
-          "rmse": 0.11844658721286108,
-          "bias": 0.00105573909406927
+          "rows": 7471,
+          "mae": 0.026102398186470813,
+          "rmse": 0.1202617179080743,
+          "bias": 0.0022783821524647785
         },
         "slot_rate_prior": {
-          "rows": 7587,
-          "mae": 0.025214187176973876,
-          "rmse": 0.118396613817163,
-          "bias": 0.0023630691666613616
+          "rows": 7471,
+          "mae": 0.025607584579833642,
+          "rmse": 0.12038586003310721,
+          "bias": 0.0029270969255346235
         }
       },
       "hr_rate": {
-        "rate_rows": 7587,
+        "rate_rows": 7471,
         "count_model": {
-          "rows": 7587,
-          "mae": 0.19138750574938204,
-          "rmse": 0.3382215648845162,
-          "bias": 0.014113020619736807
+          "rows": 7471,
+          "mae": 0.19655823039602177,
+          "rmse": 0.3456389699080732,
+          "bias": 0.01676977115784906
         },
         "slot_rate_prior": {
-          "rows": 7587,
-          "mae": 0.19950597979401427,
-          "rmse": 0.3403393775054472,
-          "bias": 0.008582240243294471
+          "rows": 7471,
+          "mae": 0.20327349894774743,
+          "rmse": 0.3478679165020618,
+          "bias": 0.01337043035677729
         }
       },
       "walk_rate": {
-        "rate_rows": 7587,
+        "rate_rows": 7471,
         "count_model": {
-          "rows": 7587,
-          "mae": 0.44761926596737217,
-          "rmse": 0.5561171798388586,
-          "bias": -0.026877511068040375
+          "rows": 7471,
+          "mae": 0.4440506179598833,
+          "rmse": 0.5495455308765943,
+          "bias": -0.028737687228675778
         },
         "slot_rate_prior": {
-          "rows": 7587,
-          "mae": 0.44609212189172887,
-          "rmse": 0.5590719114877991,
-          "bias": 0.006726812405677937
+          "rows": 7471,
+          "mae": 0.4434077756174123,
+          "rmse": 0.5529740408057257,
+          "bias": 0.0020537469273861904
         }
       }
     },
     "structured_counts": {
-      "rows": 7587,
+      "rows": 7471,
       "hits": {
-        "rows": 7587,
-        "mae": 0.639229417363709,
-        "rmse": 0.8287799862207956,
-        "bias": 0.018563547517702207
+        "rows": 7471,
+        "mae": 0.6411222080869335,
+        "rmse": 0.8333979918076454,
+        "bias": 0.02987090805620015
       },
       "total_bases": {
-        "rows": 7587,
-        "mae": 1.2324934347360073,
-        "rmse": 1.662057999868469,
-        "bias": 0.06595237531305413
+        "rows": 7471,
+        "mae": 1.24059617420682,
+        "rmse": 1.6850221638371343,
+        "bias": 0.08864717345009306
       },
       "home_runs": {
-        "rows": 7587,
-        "mae": 0.19138750574938204,
-        "rmse": 0.3382215648845162,
-        "bias": 0.014113020619736807
+        "rows": 7471,
+        "mae": 0.19655823039602177,
+        "rmse": 0.3456389699080732,
+        "bias": 0.01676977115784906
       },
       "slot_prior_hits": {
-        "rows": 7587,
-        "mae": 0.6365931248749069,
-        "rmse": 0.831365632310925,
-        "bias": 0.03231994130471621
+        "rows": 7471,
+        "mae": 0.6390017967356579,
+        "rmse": 0.8365255119478304,
+        "bias": 0.03646923909559265
       },
       "slot_prior_total_bases": {
-        "rows": 7587,
-        "mae": 1.2114431978690454,
-        "rmse": 1.6799357588301984,
-        "bias": 0.19948257468248293
+        "rows": 7471,
+        "mae": 1.2237606833671242,
+        "rmse": 1.7064486295988142,
+        "bias": 0.21501005260873116
       },
       "slot_prior_home_runs": {
-        "rows": 7587,
-        "mae": 0.19950597979401427,
-        "rmse": 0.3403393775054472,
-        "bias": 0.008582240243294471
+        "rows": 7471,
+        "mae": 0.20327349894774743,
+        "rmse": 0.3478679165020618,
+        "bias": 0.01337043035677729
       }
     },
     "direct_event_model": {
-      "train_event_rows": 80284,
-      "holdout_rows": 7587,
+      "train_event_rows": 80335,
+      "holdout_rows": 7471,
       "active_event_model": "linear_multinomial",
       "classes": [
         "double",
@@ -157,114 +157,116 @@
         "walk"
       ],
       "linear_multinomial": {
-        "weighted_event_log_loss": 0.998851310890634,
+        "weighted_event_log_loss": 1.0063603176060947,
+        "weighted_event_brier": 0.48582495668515313,
         "event_rates": {
-          "rows": 7587,
-          "actual_pa": 28112.0,
+          "rows": 7471,
+          "actual_pa": 27659.0,
           "out": {
-            "actual_per_pa": 0.6950412635173592,
-            "pred_mean_prob": 0.692359201486646,
-            "bias_per_pa": 0.002682062030713195
+            "actual_per_pa": 0.6946744278535015,
+            "pred_mean_prob": 0.693777201255045,
+            "bias_per_pa": 0.0008972265984564798
           },
           "walk": {
-            "actual_per_pa": 0.08658224245873648,
-            "pred_mean_prob": 0.09414361922571748,
-            "bias_per_pa": -0.007561376766981001
+            "actual_per_pa": 0.08550562203984237,
+            "pred_mean_prob": 0.09386004717101938,
+            "bias_per_pa": -0.008354425131177012
           },
           "single": {
-            "actual_per_pa": 0.14097182697780308,
-            "pred_mean_prob": 0.14050685118399273,
-            "bias_per_pa": 0.00046497579381035714
+            "actual_per_pa": 0.14179832965761596,
+            "pred_mean_prob": 0.14078587680646262,
+            "bias_per_pa": 0.0010124528511533393
           },
           "double": {
-            "actual_per_pa": 0.04176152532726238,
-            "pred_mean_prob": 0.04192764174332621,
-            "bias_per_pa": -0.0001661164160638301
+            "actual_per_pa": 0.04092700386854189,
+            "pred_mean_prob": 0.040205143431220065,
+            "bias_per_pa": 0.0007218604373218224
           },
           "triple": {
-            "actual_per_pa": 0.0037706317586795675,
-            "pred_mean_prob": 0.0033246143326948587,
-            "bias_per_pa": 0.0004460174259847088
+            "actual_per_pa": 0.003904696482157706,
+            "pred_mean_prob": 0.0031954863647335493,
+            "bias_per_pa": 0.0007092101174241568
           },
           "hr": {
-            "actual_per_pa": 0.03187250996015936,
-            "pred_mean_prob": 0.027738072027622802,
-            "bias_per_pa": 0.00413443793253656
+            "actual_per_pa": 0.03318992009834051,
+            "pred_mean_prob": 0.02817624497151938,
+            "bias_per_pa": 0.005013675126821129
           },
-          "mean_row_weight": 3.7052853565309083
+          "mean_row_weight": 3.7021817695087673
         },
         "hits": {
-          "rows": 7587,
-          "mae": 0.640334477371575,
-          "rmse": 0.8290156521327086,
-          "bias": 0.006484514717697168
+          "rows": 7471,
+          "mae": 0.6416019612070651,
+          "rmse": 0.8329371064540272,
+          "bias": 0.014475914739212371
         },
         "total_bases": {
-          "rows": 7587,
-          "mae": 1.2393299674912912,
-          "rmse": 1.6637960625292165,
-          "bias": 0.04199235467062308
+          "rows": 7471,
+          "mae": 1.2471871425630854,
+          "rmse": 1.6850144339525102,
+          "bias": 0.06292534774504248
         },
         "home_runs": {
-          "rows": 7587,
-          "mae": 0.19368282508156828,
-          "rmse": 0.3386667220102716,
-          "bias": 0.011459961600922082
+          "rows": 7471,
+          "mae": 0.19858234338430872,
+          "rmse": 0.3462591817603014,
+          "bias": 0.014363301867030132
         }
       },
-      "weighted_event_log_loss": 0.998851310890634,
+      "weighted_event_log_loss": 1.0063603176060947,
+      "weighted_event_brier": 0.48582495668515313,
       "event_rates": {
-        "rows": 7587,
-        "actual_pa": 28112.0,
+        "rows": 7471,
+        "actual_pa": 27659.0,
         "out": {
-          "actual_per_pa": 0.6950412635173592,
-          "pred_mean_prob": 0.692359201486646,
-          "bias_per_pa": 0.002682062030713195
+          "actual_per_pa": 0.6946744278535015,
+          "pred_mean_prob": 0.693777201255045,
+          "bias_per_pa": 0.0008972265984564798
         },
         "walk": {
-          "actual_per_pa": 0.08658224245873648,
-          "pred_mean_prob": 0.09414361922571748,
-          "bias_per_pa": -0.007561376766981001
+          "actual_per_pa": 0.08550562203984237,
+          "pred_mean_prob": 0.09386004717101938,
+          "bias_per_pa": -0.008354425131177012
         },
         "single": {
-          "actual_per_pa": 0.14097182697780308,
-          "pred_mean_prob": 0.14050685118399273,
-          "bias_per_pa": 0.00046497579381035714
+          "actual_per_pa": 0.14179832965761596,
+          "pred_mean_prob": 0.14078587680646262,
+          "bias_per_pa": 0.0010124528511533393
         },
         "double": {
-          "actual_per_pa": 0.04176152532726238,
-          "pred_mean_prob": 0.04192764174332621,
-          "bias_per_pa": -0.0001661164160638301
+          "actual_per_pa": 0.04092700386854189,
+          "pred_mean_prob": 0.040205143431220065,
+          "bias_per_pa": 0.0007218604373218224
         },
         "triple": {
-          "actual_per_pa": 0.0037706317586795675,
-          "pred_mean_prob": 0.0033246143326948587,
-          "bias_per_pa": 0.0004460174259847088
+          "actual_per_pa": 0.003904696482157706,
+          "pred_mean_prob": 0.0031954863647335493,
+          "bias_per_pa": 0.0007092101174241568
         },
         "hr": {
-          "actual_per_pa": 0.03187250996015936,
-          "pred_mean_prob": 0.027738072027622802,
-          "bias_per_pa": 0.00413443793253656
+          "actual_per_pa": 0.03318992009834051,
+          "pred_mean_prob": 0.02817624497151938,
+          "bias_per_pa": 0.005013675126821129
         },
-        "mean_row_weight": 3.7052853565309083
+        "mean_row_weight": 3.7021817695087673
       },
       "hits": {
-        "rows": 7587,
-        "mae": 0.640334477371575,
-        "rmse": 0.8290156521327086,
-        "bias": 0.006484514717697168
+        "rows": 7471,
+        "mae": 0.6416019612070651,
+        "rmse": 0.8329371064540272,
+        "bias": 0.014475914739212371
       },
       "total_bases": {
-        "rows": 7587,
-        "mae": 1.2393299674912912,
-        "rmse": 1.6637960625292165,
-        "bias": 0.04199235467062308
+        "rows": 7471,
+        "mae": 1.2471871425630854,
+        "rmse": 1.6850144339525102,
+        "bias": 0.06292534774504248
       },
       "home_runs": {
-        "rows": 7587,
-        "mae": 0.19368282508156828,
-        "rmse": 0.3386667220102716,
-        "bias": 0.011459961600922082
+        "rows": 7471,
+        "mae": 0.19858234338430872,
+        "rmse": 0.3462591817603014,
+        "bias": 0.014363301867030132
       },
       "boosted_binary": {
         "classes": [
@@ -275,194 +277,231 @@
           "triple",
           "walk"
         ],
-        "weighted_event_log_loss": 1.008483735744645,
+        "weighted_event_log_loss": 1.0105313971886665,
+        "weighted_event_brier": 0.488406924391461,
         "event_rates": {
-          "rows": 7587,
-          "actual_pa": 28112.0,
+          "rows": 7471,
+          "actual_pa": 27659.0,
           "out": {
-            "actual_per_pa": 0.6950412635173592,
-            "pred_mean_prob": 0.7084129740743287,
-            "bias_per_pa": -0.013371710556969507
+            "actual_per_pa": 0.6946744278535015,
+            "pred_mean_prob": 0.7119490104223176,
+            "bias_per_pa": -0.017274582568816088
           },
           "walk": {
-            "actual_per_pa": 0.08658224245873648,
-            "pred_mean_prob": 0.0800496809714009,
-            "bias_per_pa": 0.006532561487335581
+            "actual_per_pa": 0.08550562203984237,
+            "pred_mean_prob": 0.07858552824861756,
+            "bias_per_pa": 0.00692009379122481
           },
           "single": {
-            "actual_per_pa": 0.14097182697780308,
-            "pred_mean_prob": 0.13927270985239104,
-            "bias_per_pa": 0.0016991171254120419
+            "actual_per_pa": 0.14179832965761596,
+            "pred_mean_prob": 0.13802250139708702,
+            "bias_per_pa": 0.0037758282605289406
           },
           "double": {
-            "actual_per_pa": 0.04176152532726238,
-            "pred_mean_prob": 0.038192782033524976,
-            "bias_per_pa": 0.0035687432937374017
+            "actual_per_pa": 0.04092700386854189,
+            "pred_mean_prob": 0.03796648396385048,
+            "bias_per_pa": 0.002960519904691407
           },
           "triple": {
-            "actual_per_pa": 0.0037706317586795675,
-            "pred_mean_prob": 0.0034863392768355954,
-            "bias_per_pa": 0.00028429248184397207
+            "actual_per_pa": 0.003904696482157706,
+            "pred_mean_prob": 0.003454766114261509,
+            "bias_per_pa": 0.0004499303678961973
           },
           "hr": {
-            "actual_per_pa": 0.03187250996015936,
-            "pred_mean_prob": 0.03058551379151879,
-            "bias_per_pa": 0.0012869961686405723
+            "actual_per_pa": 0.03318992009834051,
+            "pred_mean_prob": 0.030021709853865736,
+            "bias_per_pa": 0.0031682102444747715
           },
-          "mean_row_weight": 3.7052853565309083
+          "mean_row_weight": 3.7021817695087673
         },
         "hits": {
-          "rows": 7587,
-          "mae": 0.639281687104468,
-          "rmse": 0.8329562251530483,
-          "bias": 0.030670548695973243
+          "rows": 7471,
+          "mae": 0.6429890861104156,
+          "rmse": 0.8386568479426195,
+          "bias": 0.042510759489320656
         },
         "total_bases": {
-          "rows": 7587,
-          "mae": 1.2556587925454537,
-          "rmse": 1.6749902829619099,
-          "bias": 0.06487492448485473
+          "rows": 7471,
+          "mae": 1.2638155260974797,
+          "rmse": 1.7017233701785544,
+          "bias": 0.09569368451333576
         },
         "home_runs": {
-          "rows": 7587,
-          "mae": 0.20325204197342683,
-          "rmse": 0.3421348551164786,
-          "bias": 0.005946812861680364
+          "rows": 7471,
+          "mae": 0.20555346959721887,
+          "rmse": 0.34964163636717344,
+          "bias": 0.01269954547962534
         }
+      },
+      "model_selection": {
+        "linear_composite": 2.265842753422842,
+        "boosted_composite": 2.280550781756702,
+        "linear_brier": 0.48582495668515313,
+        "boosted_brier": 0.488406924391461,
+        "linear_log_loss": 1.0063603176060947,
+        "boosted_log_loss": 1.0105313971886665,
+        "selected": "linear_multinomial"
       }
     },
     "hr_any_model": {
-      "rows": 7587,
-      "model_brier": 0.09570564665639462,
-      "prior_brier": 0.09877488779183316,
-      "model_log_loss": 0.3313572580440878,
-      "prior_log_loss": 0.34888075478037023,
-      "auc": 0.6700352424333251,
-      "base_rate": 0.10803610004320484
+      "rows": 7471,
+      "model_brier": 0.09891524487449313,
+      "prior_brier": 0.10201491578467864,
+      "model_log_loss": 0.34058685112418946,
+      "prior_log_loss": 0.3576026923535937,
+      "auc": 0.6656725019811253,
+      "base_rate": 0.10811459283075003
     },
     "existing_prop_projection_holdout": {
       "hits": {
-        "rows": 2062,
-        "mae": 0.6917596358660738,
-        "rmse": 0.8801079815919636,
-        "bias": 0.024936466035580977
+        "rows": 2909,
+        "mae": 0.6944108436844084,
+        "rmse": 0.8816537844043907,
+        "bias": 0.03289441836380647
       },
       "total_bases": {
-        "rows": 1902,
-        "mae": 1.3626985867007162,
-        "rmse": 1.8054311804028205,
-        "bias": 0.13680110535276147
+        "rows": 2741,
+        "mae": 1.3769041674629234,
+        "rmse": 1.8385185720114758,
+        "bias": 0.1339789104891622
       },
       "home_runs": {
-        "rows": 1732,
-        "mae": 0.24276943802925327,
-        "rmse": 0.3679789170818497,
-        "bias": -0.005931870669745959
+        "rows": 2571,
+        "mae": 0.24912971606378842,
+        "rmse": 0.37840147561426135,
+        "bias": -0.0046462465966549986
       }
     }
   },
   "feature_coverage": {
-    "lineup_slot": 0.9999414622724346,
+    "lineup_slot": 0.9999413443866578,
     "confirmed_starter_num": 1.0,
     "is_home": 1.0,
-    "team_implied_runs": 0.9940291517883276,
-    "opponent_implied_runs": 0.9940291517883276,
-    "game_total_line": 0.3986028995687721,
-    "park_run_factor": 0.8054401061484127,
-    "park_hr_factor": 0.8054401061484127,
+    "team_implied_runs": 0.9940171274390959,
+    "opponent_implied_runs": 0.9940171274390959,
+    "game_total_line": 0.4215969968325969,
+    "park_run_factor": 0.8033863840769562,
+    "park_hr_factor": 0.8033863840769562,
     "park_babip_factor": 1.0,
     "own_lineup_xwoba_avg": 1.0,
     "own_lineup_xslg_avg": 1.0,
     "own_lineup_barrel_avg": 1.0,
     "own_lineup_hard_hit_avg": 1.0,
-    "own_lineup_k_pct_cv": 0.9940291517883276,
+    "own_lineup_k_pct_cv": 0.9940171274390959,
     "own_lineup_pct_lhb": 1.0,
     "lineup_confirmed_flag": 1.0,
     "confirmed_team_lineup_slots": 1.0,
     "team_lineup_confirmed_flag": 1.0,
     "lineup_boxscore_proxy_flag": 1.0,
-    "lineup_slot_x_team_implied_runs": 0.9939706140607621,
+    "lineup_slot_x_team_implied_runs": 0.9939584718257537,
     "opp_sp_hand_l": 1.0,
-    "opp_sp_k_pct_10": 0.9201155144490624,
-    "opp_sp_bb_pct": 0.9151007824542918,
+    "opp_sp_k_pct_10": 0.9195636022367341,
+    "opp_sp_bb_pct": 0.916552614085168,
     "opp_sp_xwoba": 1.0,
-    "opp_sp_hard_hit_pct": 0.999160959238229,
-    "opp_sp_whiff_pct": 0.9151007824542918,
-    "opp_bp_era_10": 0.9940291517883276,
-    "opp_bp_whip_10": 0.9940291517883276,
-    "opp_bp_k9_10": 0.9940291517883276,
+    "opp_sp_hard_hit_pct": 0.9989246470887264,
+    "opp_sp_whiff_pct": 0.916552614085168,
+    "opp_bp_era_10": 0.9940171274390959,
+    "opp_bp_whip_10": 0.9940171274390959,
+    "opp_bp_k9_10": 0.9940171274390959,
     "opp_bp_ip_last_3": 1.0,
     "opp_bp_ip_last_7": 1.0,
-    "opp_team_k_pct_10": 0.9940291517883276,
-    "opp_team_avg_10": 0.9940291517883276,
-    "opp_team_obp_10": 0.9940291517883276,
-    "opp_team_slg_10": 0.9940291517883276,
-    "batter_vs_hand_hits_avg_10": 0.9154715213955394,
-    "batter_vs_hand_tb_avg_10": 0.9154715213955394,
-    "batter_vs_hand_hr_avg_10": 0.9154715213955394,
-    "batter_vs_hand_iso_avg_10": 0.9154715213955394,
-    "batter_vs_hand_k_rate_10": 0.9154715213955394,
-    "batter_vs_hand_games_10": 0.9503990321762376,
-    "batter_vs_rp_ba_30": 0.9431793791098363,
-    "batter_vs_rp_slg_30": 0.9431793791098363,
-    "batter_vs_rp_hr_rate_30": 0.9431793791098363,
-    "batter_vs_rp_k_rate_30": 0.9431793791098363,
-    "batter_sc_barrel_rate": 0.8817537903178598,
-    "batter_sc_hard_hit_pct": 0.8817537903178598,
-    "batter_sc_avg_exit_velo": 0.8817537903178598,
-    "batter_sc_avg_launch_angle": 0.8817537903178598,
-    "batter_sc_sweet_spot_pct": 0.8817537903178598,
-    "batter_sc_fb_pct": 0.8817537903178598,
-    "batter_sc_gb_pct": 0.8817537903178598,
-    "batter_sc_ld_pct": 0.8817537903178598,
-    "batter_sc_xba": 0.8817537903178598,
-    "batter_sc_xslg": 0.8817537903178598,
-    "batter_sc_xwoba": 0.8817537903178598,
-    "batter_sc_xiso": 0.8817537903178598,
-    "batter_sc_brl_pa": 0.8817537903178598,
-    "batter_sprint_speed": 0.8686803644949169,
-    "batter_disc_oz_swing_pct": 0.8545142344240864,
-    "batter_disc_iz_contact_pct": 0.8545142344240864,
-    "batter_disc_oz_contact_pct": 0.8545142344240864,
-    "batter_disc_whiff_pct": 0.8545142344240864,
-    "batter_disc_out_zone_pct": 0.8545142344240864,
-    "batter_disc_k_pct": 0.8545142344240864,
-    "batter_disc_bb_pct": 0.8545142344240864,
-    "opp_sp_sc_barrel_rate": 0.8637827079552772,
-    "opp_sp_sc_hard_hit_pct": 0.8637827079552772,
-    "opp_sp_sc_avg_exit_velo": 0.8637827079552772,
-    "opp_sp_sc_avg_launch_angle": 0.8637827079552772,
-    "opp_sp_sc_xba": 0.8637827079552772,
-    "opp_sp_sc_xslg": 0.8637827079552772,
-    "opp_sp_sc_xwoba": 0.8637827079552772,
-    "opp_sp_sc_xiso": 0.8637827079552772,
-    "opp_sp_fb_pct": 0.6754863509531893,
-    "opp_sp_fb_hard_hit_pct": 0.6754863509531893,
-    "opp_sp_fb_xwoba": 0.6754863509531893,
-    "opp_sp_fb_run_value_per_100": 0.6754863509531893,
-    "opp_sp_fb_whiff_pct": 0.6754863509531893,
-    "opp_sp_fb_k_pct": 0.6754863509531893,
-    "opp_sp_si_pct": 0.43458408944564775,
-    "opp_sp_si_hard_hit_pct": 0.43458408944564775,
-    "opp_sp_si_xwoba": 0.43458408944564775,
-    "opp_sp_si_whiff_pct": 0.43458408944564775,
-    "opp_sp_si_k_pct": 0.43458408944564775,
-    "opp_sp_sl_pct": 0.35434837752931764,
-    "opp_sp_sl_hard_hit_pct": 0.35434837752931764,
-    "opp_sp_sl_xwoba": 0.35434837752931764,
-    "opp_sp_sl_run_value_per_100": 0.35434837752931764,
-    "opp_sp_sl_whiff_pct": 0.35434837752931764,
-    "opp_sp_sl_k_pct": 0.35434837752931764,
-    "opp_sp_ch_pct": 0.36469004273254113,
-    "opp_sp_ch_hard_hit_pct": 0.36469004273254113,
-    "opp_sp_ch_xwoba": 0.36469004273254113,
-    "opp_sp_ch_run_value_per_100": 0.36469004273254113,
-    "opp_sp_ch_whiff_pct": 0.36469004273254113,
-    "opp_sp_ch_k_pct": 0.36469004273254113,
-    "opp_sp_fastball_family_pct": 0.7806786473882418,
-    "opp_sp_pitch_diversity": 0.7887763663681242,
-    "projected_pa": 0.9901656617690101,
+    "opp_team_k_pct_10": 0.9940171274390959,
+    "opp_team_avg_10": 0.9940171274390959,
+    "opp_team_obp_10": 0.9940171274390959,
+    "opp_team_slg_10": 0.9940171274390959,
+    "batter_vs_hand_hits_avg_10": 0.9156532280139209,
+    "batter_vs_hand_tb_avg_10": 0.9156532280139209,
+    "batter_vs_hand_hr_avg_10": 0.9156532280139209,
+    "batter_vs_hand_iso_avg_10": 0.9156532280139209,
+    "batter_vs_hand_k_rate_10": 0.9156532280139209,
+    "batter_vs_hand_games_10": 0.9504360067258437,
+    "batter_vs_rp_ba_30": 0.943104055058069,
+    "batter_vs_rp_slg_30": 0.943104055058069,
+    "batter_vs_rp_hr_rate_30": 0.943104055058069,
+    "batter_vs_rp_k_rate_30": 0.943104055058069,
+    "batter_sc_barrel_rate": 0.8819849059554999,
+    "batter_sc_hard_hit_pct": 0.8819849059554999,
+    "batter_sc_avg_exit_velo": 0.8819849059554999,
+    "batter_sc_avg_launch_angle": 0.8819849059554999,
+    "batter_sc_sweet_spot_pct": 0.8819849059554999,
+    "batter_sc_fb_pct": 0.8819849059554999,
+    "batter_sc_gb_pct": 0.8819849059554999,
+    "batter_sc_ld_pct": 0.8819849059554999,
+    "batter_sc_xba": 0.8819849059554999,
+    "batter_sc_xslg": 0.8819849059554999,
+    "batter_sc_xwoba": 0.8819849059554999,
+    "batter_sc_xiso": 0.8819849059554999,
+    "batter_sc_brl_pa": 0.8819849059554999,
+    "batter_sprint_speed": 0.8687873929535056,
+    "batter_disc_oz_swing_pct": 0.8546318382669221,
+    "batter_disc_iz_contact_pct": 0.8546318382669221,
+    "batter_disc_oz_contact_pct": 0.8546318382669221,
+    "batter_disc_whiff_pct": 0.8546318382669221,
+    "batter_disc_out_zone_pct": 0.8546318382669221,
+    "batter_disc_k_pct": 0.8546318382669221,
+    "batter_disc_bb_pct": 0.8546318382669221,
+    "opp_sp_sc_barrel_rate": 0.8654049192507723,
+    "opp_sp_sc_hard_hit_pct": 0.8654049192507723,
+    "opp_sp_sc_avg_exit_velo": 0.8654049192507723,
+    "opp_sp_sc_avg_launch_angle": 0.8654049192507723,
+    "opp_sp_sc_xba": 0.8654049192507723,
+    "opp_sp_sc_xslg": 0.8654049192507723,
+    "opp_sp_sc_xwoba": 0.8654049192507723,
+    "opp_sp_sc_xiso": 0.8654049192507723,
+    "opp_sp_fb_pct": 0.679349313729324,
+    "opp_sp_fb_hard_hit_pct": 0.679349313729324,
+    "opp_sp_fb_xwoba": 0.679349313729324,
+    "opp_sp_fb_run_value_per_100": 0.679349313729324,
+    "opp_sp_fb_whiff_pct": 0.679349313729324,
+    "opp_sp_fb_k_pct": 0.679349313729324,
+    "opp_sp_si_pct": 0.4343839205411958,
+    "opp_sp_si_hard_hit_pct": 0.4343839205411958,
+    "opp_sp_si_xwoba": 0.4343839205411958,
+    "opp_sp_si_whiff_pct": 0.4343839205411958,
+    "opp_sp_si_k_pct": 0.4343839205411958,
+    "opp_sp_sl_pct": 0.35652836976498653,
+    "opp_sp_sl_hard_hit_pct": 0.35652836976498653,
+    "opp_sp_sl_xwoba": 0.35652836976498653,
+    "opp_sp_sl_run_value_per_100": 0.35652836976498653,
+    "opp_sp_sl_whiff_pct": 0.35652836976498653,
+    "opp_sp_sl_k_pct": 0.35652836976498653,
+    "opp_sp_ch_pct": 0.3644664294372971,
+    "opp_sp_ch_hard_hit_pct": 0.3644664294372971,
+    "opp_sp_ch_xwoba": 0.3644664294372971,
+    "opp_sp_ch_run_value_per_100": 0.3644664294372971,
+    "opp_sp_ch_whiff_pct": 0.3644664294372971,
+    "opp_sp_ch_k_pct": 0.3644664294372971,
+    "opp_sp_fastball_family_pct": 0.7825440894693623,
+    "opp_sp_pitch_diversity": 0.7904039416572166,
+    "projected_pa": 0.9902045125718532,
     "pa_games": 1.0,
+    "lineup_slot_pa_prior": 0.0,
+    "lineup_slot_low_pa_prior": 0.0,
+    "top_order_flag": 0.0,
+    "middle_order_flag": 0.0,
+    "bottom_order_flag": 0.0,
+    "projected_pa_slot_delta": 0.0,
+    "projected_pa_x_slot_prior": 0.0,
+    "implied_run_diff": 0.0,
+    "abs_implied_run_diff": 0.0,
+    "favorite_flag": 0.0,
+    "underdog_flag": 0.0,
+    "close_game_flag": 0.0,
+    "blowout_risk": 0.0,
+    "high_total_flag": 0.0,
+    "low_total_flag": 0.0,
+    "home_favorite_ninth_penalty": 0.0,
+    "away_trailing_extra_pa_chance": 0.0,
+    "slot_prior_x_home_ninth_penalty": 0.0,
+    "slot_prior_x_blowout_risk": 0.0,
+    "projected_pa_x_implied_runs": 0.0,
+    "projected_pa_x_close_game": 0.0,
+    "catcher_flag": 0.0,
+    "catcher_low_pa_risk": 0.0,
+    "platoon_same_hand_flag": 0.0,
+    "platoon_advantage_flag": 0.0,
+    "batter_hand_known_flag": 0.0,
+    "opp_sp_hand_known_flag": 0.0,
     "team_abbr": 1.0,
     "opponent_abbr": 1.0,
     "lineup_source": 1.0,
@@ -474,15 +513,15 @@
   "recommendation": {
     "production_status": "diagnostic_only",
     "reason": "Require repeated holdout gains before replacing prop projections.",
-    "holdout_rows": 7894,
-    "pa_mae_gain_vs_slot_prior": 0.4303058593136647,
-    "hits_mae_gain_vs_slot_rate_prior": -0.002636292488802039,
-    "tb_mae_gain_vs_slot_rate_prior": -0.021050236866961836,
-    "hr_mae_gain_vs_slot_rate_prior": 0.008118474044632229,
-    "direct_event_hits_mae_gain_vs_independent_rates": -0.0011050600078660322,
-    "direct_event_tb_mae_gain_vs_independent_rates": -0.006836532755283953,
-    "direct_event_hr_mae_gain_vs_independent_rates": -0.002295319332186241,
-    "hr_any_brier_gain_vs_prior": 0.0030692411354385357,
+    "holdout_rows": 7781,
+    "pa_mae_gain_vs_slot_prior": 0.4332285934613139,
+    "hits_mae_gain_vs_slot_rate_prior": -0.0021204113512756084,
+    "tb_mae_gain_vs_slot_rate_prior": -0.01683549083969571,
+    "hr_mae_gain_vs_slot_rate_prior": 0.006715268551725662,
+    "direct_event_hits_mae_gain_vs_independent_rates": -0.00047975312013159854,
+    "direct_event_tb_mae_gain_vs_independent_rates": -0.006590968356265492,
+    "direct_event_hr_mae_gain_vs_independent_rates": -0.002024112988286947,
+    "hr_any_brier_gain_vs_prior": 0.003099670910185509,
     "passes_basic_gate": false
   }
 }

@@ -36,6 +36,8 @@ class ShadowSelectorConfig:
     min_ev: float = 0.02
     min_clv_beat_prob: float = 0.55
     min_bookable_prob: float = 0.60
+    min_close_capture_prob: float = 0.60
+    min_line_available_prob: float = 0.60
     min_bucket_clv_beat_rate: float = 0.55
     min_hitter_projected_pa: float = 3.2
     min_pitcher_projected_bf: float = 16.0
@@ -305,6 +307,7 @@ class SelectorContext:
         self.model_dir = Path(model_dir)
         self.walk_forward = _load_json(self.model_dir / "prop_walk_forward_accuracy_report.json")
         self.residual = _load_json(self.model_dir / "prop_market_residual_models.json")
+        self.distribution = _load_json(self.model_dir / "prop_distribution_models.json")
         self.bookability = _load_json(self.model_dir / "prop_bookability_model.json")
         self.trust = _load_json(self.model_dir / "prop_bucket_trust_scores.json")
         self.promotion = _load_json(self.model_dir / "prop_bucket_promotion_report.json")
@@ -319,13 +322,23 @@ class SelectorContext:
             str(key): dict(value or {})
             for key, value in (self.trust.get("bucket_scores") or {}).items()
         }
-        holdout = self.bookability.get("holdout") or {}
+        self.bookability_targets = self.bookability.get("targets") or {}
+        capture_target = self.bookability_targets.get("valid_close_snapshot_captured") or {}
+        availability_target = self.bookability_targets.get("line_available_at_close") or {}
+        holdout = capture_target.get("holdout") or self.bookability.get("holdout") or {}
         self.bookability_model_usable = bool(
             holdout.get("model_usable", True)
-            and self.bookability.get("selected_scoring_method", "logistic") == "logistic"
+            and (capture_target.get("selected_scoring_method") or self.bookability.get("selected_scoring_method", "logistic")) == "logistic"
+        )
+        availability_holdout = availability_target.get("holdout") or {}
+        self.line_availability_model_usable = bool(
+            availability_holdout.get("model_usable")
+            and availability_target.get("selected_scoring_method") == "logistic"
         )
         self.bookability_rates = self.bookability.get("empirical_bookability_rates") or {}
         self.default_bookability_rate = _clean_float(holdout.get("actual_bookable_rate"))
+        self.default_close_capture_rate = self.default_bookability_rate
+        self.default_line_available_rate = _clean_float(availability_holdout.get("actual_bookable_rate"))
 
 
 def _sigmoid(z: float) -> float:
@@ -348,7 +361,9 @@ def _logistic_score(model: dict[str, Any] | None, row: dict[str, Any]) -> float 
         z = 0.0
     means = model.get("numeric_means") or {}
     scales = model.get("numeric_scales") or {}
-    for name in model.get("numeric_features") or []:
+    numeric_features = model.get("numeric_features") or list((model.get("numeric_means") or {}).keys())
+    categorical_features = model.get("categorical_features") or list((model.get("categorical_values") or {}).keys())
+    for name in numeric_features:
         mean = _clean_float(means.get(name))
         if mean is None:
             mean = 0.0
@@ -359,16 +374,73 @@ def _logistic_score(model: dict[str, Any] | None, row: dict[str, Any]) -> float 
         if value is None:
             value = mean
         z += float(coef.get(name) or 0.0) * ((value - mean) / scale)
-    for name in model.get("categorical_features") or []:
+    for name in categorical_features:
         value = str(row.get(name) if row.get(name) is not None else "unknown")
         z += float(coef.get(f"{name}={value}") or 0.0)
     return max(1e-6, min(1.0 - 1e-6, _sigmoid(z)))
 
 
-def _bookability_empirical_score(ctx: SelectorContext, feature_row: dict[str, Any], bucket_key: str) -> tuple[float | None, str | None]:
+def _event_side_line_model(ctx: SelectorContext) -> dict[str, Any] | None:
+    model = (
+        ((ctx.distribution.get("distribution_calibrators") or {}).get("side_line_models") or {})
+        .get("win_probability")
+    )
+    if not isinstance(model, dict) or model.get("status") != "trained":
+        return None
+    brier_model = _clean_float(model.get("brier_model_holdout"))
+    brier_baseline = _clean_float(model.get("brier_baseline_holdout"))
+    if brier_model is not None and brier_baseline is not None and brier_model > brier_baseline - 0.001:
+        return None
+    return model
+
+
+def _event_side_line_preferred(ctx: SelectorContext) -> bool:
+    overall = ctx.distribution.get("overall") or {}
+    event_brier = _clean_float(((overall.get("event_side_line") or {}).get("forecast") or {}).get("brier"))
+    if event_brier is None:
+        return False
+    other_briers: list[float] = []
+    for variant in ("model_only", "market_no_vig", "distribution", "distribution_empirical_blend"):
+        brier = _clean_float(((overall.get(variant) or {}).get("forecast") or {}).get("brier"))
+        if brier is not None:
+            other_briers.append(brier)
+    return bool(other_briers) and event_brier <= min(other_briers) - 0.001
+
+
+def _event_side_line_score(
+    ctx: SelectorContext,
+    feature_row: dict[str, Any],
+    distribution_prob: float | None,
+) -> float | None:
+    model = _event_side_line_model(ctx)
+    if model is None:
+        return None
+    row = dict(feature_row)
+    dist = distribution_prob
+    model_prob = _clean_float(row.get("model_prob_side"))
+    market_prob = _clean_float(row.get("market_prob_side"))
+    if dist is None:
+        dist = model_prob
+    blend_values = [v for v in (dist, model_prob, market_prob) if v is not None]
+    blend = sum(blend_values) / len(blend_values) if blend_values else None
+    row.update({
+        "p_distribution_side": dist,
+        "p_distribution_calibrated": dist,
+        "p_distribution_blend": blend,
+        "p_empirical_bucket": market_prob if market_prob is not None else blend,
+        "opp_model_pa": row.get("opp_model_pa") or row.get("projected_pa"),
+    })
+    return _logistic_score(model, row)
+
+
+def _bookability_empirical_components(
+    ctx: SelectorContext,
+    feature_row: dict[str, Any],
+    bucket_key: str,
+) -> tuple[float | None, float | None, str | None]:
     parts = bucket_key.split("|")
     if len(parts) < 6:
-        return ctx.default_bookability_rate, "holdout_default"
+        return ctx.default_close_capture_rate, ctx.default_line_available_rate, "holdout_default"
     stat, side, surface, line_bucket_value, price_bucket_value, book = parts[:6]
     lookups = [
         ("exact_bucket", bucket_key),
@@ -379,20 +451,46 @@ def _bookability_empirical_score(ctx: SelectorContext, feature_row: dict[str, An
     ]
     for level, key in lookups:
         rec = ((ctx.bookability_rates.get(level) or {}).get(key) or {})
-        rate = _clean_float(rec.get("bookable_rate"))
-        if rate is not None and int(rec.get("rows") or 0) >= 10:
-            return max(1e-6, min(1.0 - 1e-6, rate)), level
-    return ctx.default_bookability_rate, "holdout_default"
+        close_rate = _clean_float(rec.get("close_capture_rate"))
+        if close_rate is None:
+            close_rate = _clean_float(rec.get("bookable_rate"))
+        line_rate = _clean_float(rec.get("line_available_rate"))
+        if close_rate is not None and int(rec.get("rows") or 0) >= 10:
+            return (
+                max(1e-6, min(1.0 - 1e-6, close_rate)),
+                max(1e-6, min(1.0 - 1e-6, line_rate)) if line_rate is not None else None,
+                level,
+            )
+    return ctx.default_close_capture_rate, ctx.default_line_available_rate, "holdout_default"
 
 
-def _bookability_score(ctx: SelectorContext, feature_row: dict[str, Any], bucket_key: str) -> tuple[float | None, str | None]:
-    empirical, empirical_source = _bookability_empirical_score(ctx, feature_row, bucket_key)
-    if not ctx.bookability_model_usable:
-        return empirical, empirical_source
-    logistic = _logistic_score((ctx.bookability.get("models") or {}).get("global"), feature_row)
-    if logistic is None:
-        return empirical, empirical_source
-    return logistic, "logistic"
+def _bookability_score(
+    ctx: SelectorContext,
+    feature_row: dict[str, Any],
+    bucket_key: str,
+) -> tuple[float | None, str | None, float | None, float | None]:
+    empirical_close, empirical_line, empirical_source = _bookability_empirical_components(ctx, feature_row, bucket_key)
+    models = ctx.bookability.get("models") or {}
+    close_capture_prob = empirical_close
+    line_available_prob = empirical_line
+    close_source = empirical_source
+    line_source = empirical_source if empirical_line is not None else None
+    if ctx.bookability_model_usable:
+        logistic = _logistic_score(models.get("valid_close_snapshot_captured") or models.get("global"), feature_row)
+        if logistic is not None:
+            close_capture_prob = logistic
+            close_source = "close_capture_logistic"
+    if ctx.line_availability_model_usable:
+        logistic = _logistic_score(models.get("line_available_at_close"), feature_row)
+        if logistic is not None:
+            line_available_prob = logistic
+            line_source = "line_available_logistic"
+    components = [p for p in (close_capture_prob, line_available_prob) if p is not None]
+    combined = min(components) if components else None
+    source_parts = [f"capture:{close_source or 'none'}"]
+    if line_available_prob is not None:
+        source_parts.append(f"line:{line_source or 'empirical'}")
+    return combined, ";".join(source_parts), line_available_prob, close_capture_prob
 
 
 def _side_model_prob(row: dict[str, Any]) -> float | None:
@@ -482,6 +580,16 @@ def _model_row(row: dict[str, Any], bucket_key: str) -> dict[str, Any]:
     market_prob = training_market_prob if training_market_prob is not None else paired_market_prob
     market_source = str(row.get("market_prob_source") or market_prob_source)
     pair_quality = _pair_quality(row, market_source)
+    same_book_pair_flag = 1.0 if pair_quality == "same_book" else 0.0
+    cross_book_pair_flag = 1.0 if pair_quality == "cross_book" else 0.0
+    synthetic_pair_flag = 1.0 if pair_quality == "synthetic" else 0.0
+    true_pair_flag = 1.0 if pair_quality in {"same_book", "cross_book"} else 0.0
+    clean_market_pair_flag = (
+        1.0
+        if true_pair_flag
+        and market_source not in {"raw_implied", "synthetic_fanduel_over_only"}
+        else 0.0
+    )
     line = _prediction_line(row)
     pred_count = _clean_float(row.get("pred_count"))
     count_edge = None
@@ -504,7 +612,15 @@ def _model_row(row: dict[str, Any], bucket_key: str) -> dict[str, Any]:
         "model_prob_side": model_prob,
         "market_prob_side": market_prob,
         "market_prob_source": market_source,
+        "paired_price_source": row.get("paired_price_source"),
         "pair_quality": pair_quality,
+        "same_book_pair_flag": _clean_float(row.get("same_book_pair_flag")) if row.get("same_book_pair_flag") is not None else same_book_pair_flag,
+        "cross_book_pair_flag": _clean_float(row.get("cross_book_pair_flag")) if row.get("cross_book_pair_flag") is not None else cross_book_pair_flag,
+        "synthetic_pair_flag": _clean_float(row.get("synthetic_pair_flag")) if row.get("synthetic_pair_flag") is not None else synthetic_pair_flag,
+        "clean_market_pair_flag": _clean_float(row.get("clean_market_pair_flag")) if row.get("clean_market_pair_flag") is not None else clean_market_pair_flag,
+        "true_pair_flag": _clean_float(row.get("true_pair_flag")) if row.get("true_pair_flag") is not None else true_pair_flag,
+        "minutes_to_first_pitch_at_lock": _clean_float(row.get("minutes_to_first_pitch_at_lock")),
+        "lock_price_age_minutes": _clean_float(row.get("lock_price_age_minutes")),
         "distribution_prob_side": _distribution_side_prob(row, side, line),
         "prob_edge_vs_market": (
             model_prob - market_prob
@@ -524,6 +640,7 @@ def _policy_prob(
     market_prob: float | None,
     residual_prob: float | None,
     distribution_prob: float | None,
+    event_side_line_prob: float | None,
     policy_rec: dict[str, Any] | None,
 ) -> float | None:
     if variant == "market_no_vig":
@@ -532,6 +649,8 @@ def _policy_prob(
         return residual_prob
     if variant == "distribution":
         return distribution_prob
+    if variant == "event_side_line":
+        return event_side_line_prob
     if variant == "walk_forward_blend":
         if model_prob is None:
             return market_prob
@@ -557,6 +676,24 @@ def _is_tail_alt(stat: str, side: str, line: float | None, surface: str) -> bool
     )
 
 
+def _is_fanduel_synthetic_hitter_evidence(feature_row: dict[str, Any]) -> bool:
+    stat = str(feature_row.get("market") or feature_row.get("stat") or "")
+    if stat not in {"batter_hits", "batter_total_bases", "batter_home_runs"}:
+        return False
+    if _book_key(feature_row) != "fanduel":
+        return False
+    pair_quality = str(feature_row.get("pair_quality") or "").lower()
+    market_source = str(feature_row.get("market_prob_source") or "").lower()
+    pair_source = str(feature_row.get("paired_price_source") or "").lower()
+    synthetic_flag = _clean_float(feature_row.get("synthetic_pair_flag")) or 0.0
+    return (
+        pair_quality == "synthetic"
+        or market_source == "synthetic_fanduel_over_only"
+        or pair_source == "synthetic_fanduel_over_only_complement"
+        or synthetic_flag >= 0.5
+    )
+
+
 def score_prediction_row(
     row: dict[str, Any],
     *,
@@ -570,19 +707,43 @@ def score_prediction_row(
     model_prob = _clean_float(feature_row.get("model_prob_side"))
     market_prob = _clean_float(feature_row.get("market_prob_side"))
     distribution_prob = _clean_float(feature_row.get("distribution_prob_side"))
+    event_side_line_prob = _event_side_line_score(ctx, feature_row, distribution_prob)
     price = _prediction_price(feature_row)
     breakeven = american_to_prob(price)
     residual_prob = _logistic_score((ctx.residual.get("models") or {}).get("global"), feature_row)
     clv_prob = _logistic_score((ctx.residual.get("models") or {}).get("clv_beat"), feature_row)
-    bookable_prob, bookability_source = _bookability_score(ctx, feature_row, bucket_key)
+    bookable_prob, bookability_source, line_available_prob, close_capture_prob = _bookability_score(ctx, feature_row, bucket_key)
 
     policy_level, policy_rec = _walk_forward_record(ctx, bucket_key)
     residual_bucket = _residual_bucket_record(ctx, bucket_key)
     trust = ctx.trust_scores.get(bucket_key) or {}
+    pair_quality = str(feature_row.get("pair_quality") or "unknown").lower()
+    market_prob_source = str(feature_row.get("market_prob_source") or "unknown").lower()
+    synthetic_fanduel_evidence = _is_fanduel_synthetic_hitter_evidence(feature_row)
+    market_pair_confirms = (
+        pair_quality in {"same_book", "cross_book"}
+        and market_prob_source not in {"raw_implied", "synthetic_fanduel_over_only"}
+        and not synthetic_fanduel_evidence
+    )
     variant = str((policy_rec or {}).get("variant") or "model_only")
     if residual_bucket and str(residual_bucket.get("decision") or "").startswith("use_market_residual"):
         variant = "market_residual"
-    selected_prob = _policy_prob(variant, model_prob, market_prob, residual_prob, distribution_prob, policy_rec)
+    elif (
+        event_side_line_prob is not None
+        and market_pair_confirms
+        and _event_side_line_preferred(ctx)
+        and variant in {"model_only", "distribution", "walk_forward_blend"}
+    ):
+        variant = "event_side_line"
+    selected_prob = _policy_prob(
+        variant,
+        model_prob,
+        market_prob,
+        residual_prob,
+        distribution_prob,
+        event_side_line_prob,
+        policy_rec,
+    )
     selected_ev = ev_per_unit(selected_prob, price)
 
     stat = str(feature_row.get("market") or "")
@@ -592,12 +753,6 @@ def score_prediction_row(
     tail_alt = _is_tail_alt(stat, side, line, surface)
     residual_decision = str((residual_bucket or {}).get("decision") or "")
     no_bet_decision = residual_decision.startswith("no_bet")
-    pair_quality = str(feature_row.get("pair_quality") or "unknown").lower()
-    market_prob_source = str(feature_row.get("market_prob_source") or "unknown").lower()
-    market_pair_confirms = (
-        pair_quality in {"same_book", "cross_book"}
-        and market_prob_source not in {"raw_implied", "synthetic_fanduel_over_only"}
-    )
     trust_status = str(trust.get("status") or "closed")
     trust_score = _clean_float(trust.get("trust_score")) or 0.0
     bucket_roi = _clean_float(trust.get("roi"))
@@ -638,10 +793,14 @@ def score_prediction_row(
     )
     clv_wins = clv_prob is not None and clv_prob >= cfg.min_clv_beat_prob
     bookable = bookable_prob is not None and bookable_prob >= cfg.min_bookable_prob
+    close_capture_confirms = close_capture_prob is not None and close_capture_prob >= cfg.min_close_capture_prob
+    line_available_confirms = line_available_prob is None or line_available_prob >= cfg.min_line_available_prob
     real_candidate = (
         model_wins
         and clv_wins
         and bookable
+        and close_capture_confirms
+        and line_available_confirms
         and bucket_confirms
         and opportunity_confirms
         and market_pair_confirms
@@ -656,6 +815,10 @@ def score_prediction_row(
         reasons.append("clv_model_not_confirming")
     if not bookable:
         reasons.append("bookability_not_confirming")
+    if not close_capture_confirms:
+        reasons.append("close_capture_not_confirming")
+    if not line_available_confirms:
+        reasons.append("line_availability_not_confirming")
     if trust_status not in {"bankroll", "starter", "micro"}:
         reasons.append(f"bucket_{trust_status or 'closed'}")
     elif not bucket_confirms:
@@ -666,6 +829,8 @@ def score_prediction_row(
         reasons.append(f"pair_quality_{pair_quality or 'unknown'}")
     elif pair_quality == "cross_book":
         reasons.append("cross_book_market_pair")
+    if synthetic_fanduel_evidence:
+        reasons.append("fanduel_synthetic_market_evidence")
     if bucket_roi is not None and bucket_roi < 0:
         reasons.append("bucket_roi_negative")
     if bucket_clv_beat_rate is not None and bucket_clv_beat_rate < cfg.min_bucket_clv_beat_rate:
@@ -689,10 +854,16 @@ def score_prediction_row(
         score += 0.25 * (clv_prob - 0.50)
     else:
         score -= 0.05
+    if model_wins and not clv_wins:
+        score -= 0.35
     if bookable_prob is not None:
         score += 0.10 * (bookable_prob - 0.50)
     else:
         score -= 0.03
+    if close_capture_prob is not None and close_capture_prob < cfg.min_close_capture_prob:
+        score -= 0.12
+    if line_available_prob is not None and line_available_prob < cfg.min_line_available_prob:
+        score -= 0.12
     score += 0.05 * max(0.0, min(1.0, trust_score / 100.0))
     if bucket_roi is not None and bucket_roi < 0:
         score -= min(0.20, abs(bucket_roi) * 0.75)
@@ -707,7 +878,9 @@ def score_prediction_row(
     elif pair_quality == "cross_book":
         score -= 0.03
     elif pair_quality in {"synthetic", "one_sided", "unknown"}:
-        score -= 0.18
+        score -= 0.30
+    if synthetic_fanduel_evidence:
+        score -= 0.50
     if no_bet_decision:
         score -= 0.25
     if tail_alt and trust_status not in {"bankroll", "starter", "micro"}:
@@ -722,8 +895,10 @@ def score_prediction_row(
         tier = "lottery"
     elif no_bet_decision:
         tier = "no_bet"
-    elif model_wins and opportunity_confirms:
+    elif model_wins and opportunity_confirms and market_pair_confirms and clv_wins and bookable:
         tier = "paper"
+    elif model_wins and opportunity_confirms and pair_quality in {"synthetic", "one_sided", "unknown"} and not synthetic_fanduel_evidence:
+        tier = "lottery"
     elif model_wins:
         tier = "no_bet"
 
@@ -751,8 +926,11 @@ def score_prediction_row(
         "pair_quality": pair_quality,
         "residual_prob_side": residual_prob,
         "distribution_prob_side": distribution_prob,
+        "event_side_line_prob_side": event_side_line_prob,
         "clv_beat_prob": clv_prob,
         "bookable_prob": bookable_prob,
+        "line_available_prob": line_available_prob,
+        "close_capture_prob": close_capture_prob,
         "bookability_source": bookability_source,
         "selector_prob_side": selected_prob,
         "selector_ev": selected_ev,
@@ -868,6 +1046,13 @@ SELECT
     e.market_prob_source,
     e.paired_price_source,
     e.pair_quality,
+    e.same_book_pair_flag::float AS same_book_pair_flag,
+    e.cross_book_pair_flag::float AS cross_book_pair_flag,
+    e.synthetic_pair_flag::float AS synthetic_pair_flag,
+    e.clean_market_pair_flag::float AS clean_market_pair_flag,
+    e.true_pair_flag::float AS true_pair_flag,
+    e.minutes_to_first_pitch_at_lock::float AS minutes_to_first_pitch_at_lock,
+    e.lock_price_age_minutes::float AS lock_price_age_minutes,
     e.line_surface,
     e.line_bucket,
     e.price_bucket,
@@ -921,7 +1106,12 @@ def load_active_rows(conn, report_date: date) -> list[dict[str, Any]]:
         conn,
         "features",
         "mlb_prop_market_training_examples",
-        {"market_prob_source", "paired_price_source", "pair_quality"},
+        {
+            "market_prob_source", "paired_price_source", "pair_quality",
+            "same_book_pair_flag", "cross_book_pair_flag", "synthetic_pair_flag",
+            "clean_market_pair_flag", "true_pair_flag",
+            "minutes_to_first_pitch_at_lock", "lock_price_age_minutes",
+        },
     )
     sql = (
         _ACTIVE_SQL_JOIN
@@ -945,6 +1135,17 @@ def _fmt_num(value: Any, digits: int = 2, *, signed: bool = False) -> str:
     if v is None:
         return "-"
     return f"{v:+.{digits}f}" if signed else f"{v:.{digits}f}"
+
+
+def _write_text_with_lock_fallback(path: Path, text: str) -> Path:
+    try:
+        path.write_text(text, encoding="utf-8")
+        return path
+    except PermissionError:
+        stamp = datetime.now(ZoneInfo("UTC")).strftime("%Y%m%dT%H%M%SZ")
+        fallback = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
+        fallback.write_text(text, encoding="utf-8")
+        return fallback
 
 
 def build_payload(cfg: ShadowSelectorConfig) -> dict[str, Any]:
@@ -1017,6 +1218,8 @@ def write_report(payload: dict[str, Any], cfg: ShadowSelectorConfig) -> str:
                 "ev": _fmt_pct(row.get("selector_ev"), signed=True),
                 "clv": _fmt_pct(row.get("clv_beat_prob")),
                 "bookable": _fmt_pct(row.get("bookable_prob")),
+                "line_avail": _fmt_pct(row.get("line_available_prob")),
+                "close_cap": _fmt_pct(row.get("close_capture_prob")),
                 "book_src": row.get("bookability_source"),
                 "pair": row.get("pair_quality"),
                 "trust": row.get("bucket_trust_status"),
@@ -1038,6 +1241,8 @@ def write_report(payload: dict[str, Any], cfg: ShadowSelectorConfig) -> str:
         ("EV", "ev"),
         ("CLV", "clv"),
         ("Bookable", "bookable"),
+        ("Line Avail", "line_avail"),
+        ("Close Cap", "close_cap"),
         ("Book Src", "book_src"),
         ("Pair", "pair"),
         ("Trust", "trust"),
@@ -1099,8 +1304,7 @@ def write_report(payload: dict[str, Any], cfg: ShadowSelectorConfig) -> str:
         _table(_display_rows(payload.get("top_rows") or []), row_columns),
         "",
     ])
-    path.write_text(text, encoding="utf-8")
-    return str(path)
+    return str(_write_text_with_lock_fallback(path, text))
 
 
 def main() -> None:

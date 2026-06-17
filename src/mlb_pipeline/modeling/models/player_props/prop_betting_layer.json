@@ -1,17 +1,17 @@
 {
-  "generated_at_utc": "2026-06-12T08:53:46Z",
+  "generated_at_utc": "2026-06-17T08:49:37Z",
   "source": "market_training_table",
   "run_id": null,
   "lookback_days": 365,
   "holdout_days": 28,
-  "base_rows": 20577,
-  "side_rows": 41155,
+  "base_rows": 36675,
+  "side_rows": 73351,
   "models": {},
   "backtest": [],
   "clv_models": {},
   "clv_backtest": [],
-  "win_rows": 38710,
-  "clv_rows": 35545,
+  "win_rows": 65072,
+  "clv_rows": 66233,
   "status": "no_models",
   "clv_status": "no_clv_models"
 }

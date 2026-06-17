@@ -24,8 +24,10 @@ from .train_hitter_player_game_outcome_models import (
     _build_event_training_examples,
     _count_metrics,
     _event_count_matrix,
-    _event_log_loss_from_counts,
     _event_projection_metrics,
+    _event_model_composite,
+    _fit_boosted_event_binary_models,
+    _predict_boosted_event_probabilities,
     _classifier_pipeline,
     _load,
     _regression_pipeline,
@@ -86,6 +88,35 @@ FEATURE_GROUPS: list[tuple[str, list[str]]] = [
         "team_lineup_confirmed_flag",
         "lineup_boxscore_proxy_flag",
         "lineup_slot_x_team_implied_runs",
+    ]),
+    ("+opportunity_v3", [
+        "lineup_slot_pa_prior",
+        "lineup_slot_low_pa_prior",
+        "top_order_flag",
+        "middle_order_flag",
+        "bottom_order_flag",
+        "projected_pa_slot_delta",
+        "projected_pa_x_slot_prior",
+        "implied_run_diff",
+        "abs_implied_run_diff",
+        "favorite_flag",
+        "underdog_flag",
+        "close_game_flag",
+        "blowout_risk",
+        "high_total_flag",
+        "low_total_flag",
+        "home_favorite_ninth_penalty",
+        "away_trailing_extra_pa_chance",
+        "slot_prior_x_home_ninth_penalty",
+        "slot_prior_x_blowout_risk",
+        "projected_pa_x_implied_runs",
+        "projected_pa_x_close_game",
+        "catcher_flag",
+        "catcher_low_pa_risk",
+        "platoon_same_hand_flag",
+        "platoon_advantage_flag",
+        "batter_hand_known_flag",
+        "opp_sp_hand_known_flag",
     ]),
     ("+park", [
         "park_run_factor",
@@ -205,6 +236,8 @@ def _evaluate(
     holdout: pd.DataFrame,
     numeric_features: list[str],
     categorical_features: list[str],
+    *,
+    evaluate_boosted: bool = False,
 ) -> dict[str, Any]:
     train_features = prepare_hitter_outcome_features(train, numeric_features, categorical_features)
     holdout_features = prepare_hitter_outcome_features(holdout, numeric_features, categorical_features)
@@ -217,20 +250,57 @@ def _evaluate(
     X_event, y_event, w_event = _build_event_training_examples(event_train, numeric_features, categorical_features)
     event_payload: dict[str, Any] = {"train_event_rows": int(len(y_event)), "holdout_rows": int(len(event_holdout))}
     if len(y_event) > 0 and len(np.unique(y_event)) >= 4 and len(event_holdout) > 0:
-        event_model = _classifier_pipeline(numeric_features, categorical_features)
-        event_model.fit(X_event[numeric_features + categorical_features], y_event, model__sample_weight=w_event)
         event_features = prepare_hitter_outcome_features(event_holdout, numeric_features, categorical_features)
-        raw = event_model.predict_proba(event_features[numeric_features + categorical_features])
-        probs = pd.DataFrame(0.0, index=event_holdout.index, columns=[f"p_{cls}" for cls in EVENT_CLASSES])
-        for i, cls in enumerate(event_model.classes_):
-            if cls in EVENT_CLASSES:
-                probs[f"p_{cls}"] = raw[:, i]
-        probs = probs.div(probs.sum(axis=1).replace(0.0, np.nan), axis=0).fillna(1.0 / len(EVENT_CLASSES))
+        X_hold = event_features[numeric_features + categorical_features]
         event_pa_pred = pd.Series(pa_pred, index=holdout.index).loc[event_holdout.index].to_numpy(dtype=float)
         counts = _event_count_matrix(event_holdout)
-        event_payload.update(_event_projection_metrics(event_holdout, probs, event_pa_pred))
-        event_payload["weighted_event_brier"] = _weighted_multiclass_brier(counts, probs)
-        event_payload["weighted_event_log_loss"] = _event_log_loss_from_counts(counts, probs)
+        event_model = _classifier_pipeline(numeric_features, categorical_features)
+        event_model.fit(X_event[numeric_features + categorical_features], y_event, model__sample_weight=w_event)
+        raw = event_model.predict_proba(X_hold)
+        linear_probs = pd.DataFrame(0.0, index=event_holdout.index, columns=[f"p_{cls}" for cls in EVENT_CLASSES])
+        for i, cls in enumerate(event_model.classes_):
+            if cls in EVENT_CLASSES:
+                linear_probs[f"p_{cls}"] = raw[:, i]
+        linear_probs = linear_probs.div(linear_probs.sum(axis=1).replace(0.0, np.nan), axis=0).fillna(1.0 / len(EVENT_CLASSES))
+        linear_metrics = _event_projection_metrics(event_holdout, linear_probs, event_pa_pred)
+        linear_metrics["weighted_event_brier"] = _weighted_multiclass_brier(counts, linear_probs)
+
+        boosted_metrics: dict[str, Any] = {}
+        if evaluate_boosted:
+            try:
+                boosted_models = _fit_boosted_event_binary_models(
+                    X_event,
+                    y_event,
+                    w_event,
+                    numeric_features,
+                    categorical_features,
+                )
+            except Exception as exc:
+                boosted_models = {}
+                event_payload["boosted_error"] = str(exc)
+            if len(boosted_models) >= 4:
+                boosted_probs = _predict_boosted_event_probabilities(
+                    boosted_models,
+                    event_holdout,
+                    numeric_features,
+                    categorical_features,
+                )
+                boosted_metrics = _event_projection_metrics(event_holdout, boosted_probs, event_pa_pred)
+                boosted_metrics["weighted_event_brier"] = _weighted_multiclass_brier(counts, boosted_probs)
+        else:
+            event_payload["boosted_skipped"] = "limited_to_opportunity_v3_and_final_feature_set"
+
+        linear_score = _event_model_composite(linear_metrics)
+        boosted_score = _event_model_composite(boosted_metrics) if boosted_metrics else None
+        use_boosted = boosted_score is not None and (linear_score is None or float(boosted_score) <= float(linear_score))
+        chosen = boosted_metrics if use_boosted else linear_metrics
+        event_payload.update(chosen)
+        event_payload["active_event_model"] = "boosted_binary_calibrated" if use_boosted else "linear_multinomial"
+        event_payload["linear_multinomial"] = linear_metrics
+        if boosted_metrics:
+            event_payload["boosted_binary_calibrated"] = boosted_metrics
+        event_payload["linear_composite"] = linear_score
+        event_payload["boosted_composite"] = boosted_score
     return {
         "pa": _count_metrics(holdout["actual_pa"], pa_pred),
         "event": event_payload,
@@ -281,7 +351,13 @@ def build_report(cfg: FeatureAblationConfig) -> dict[str, Any]:
             "feature_set": label,
             "numeric_features": list(usable_numeric),
             "dropped_all_null_numeric_features": dropped_numeric,
-            "metrics": _evaluate(train, holdout, usable_numeric, CATEGORICAL_FEATURES),
+            "metrics": _evaluate(
+                train,
+                holdout,
+                usable_numeric,
+                CATEGORICAL_FEATURES,
+                evaluate_boosted=label in {"+opportunity_v3", "+market"},
+            ),
         }
         if previous:
             cur_pa = ((rec["metrics"].get("pa") or {}).get("mae"))
@@ -327,8 +403,8 @@ def _write_outputs(payload: dict[str, Any], cfg: FeatureAblationConfig) -> None:
         "",
         "The `+market` row is diagnostic context only; bankroll gating should still rely on locked offer-level reports.",
         "",
-        "| Feature Set | PA MAE | Event Brier | Event Log Loss | Hits MAE | TB MAE | HR MAE | PA Gain | Brier Gain |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Feature Set | Event Model | PA MAE | Event Brier | Event Log Loss | Hits MAE | TB MAE | HR MAE | PA Gain | Brier Gain |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for rec in payload.get("ablation", []):
         metrics = rec.get("metrics") or {}
@@ -336,7 +412,7 @@ def _write_outputs(payload: dict[str, Any], cfg: FeatureAblationConfig) -> None:
         event = metrics.get("event") or {}
         delta = rec.get("delta_vs_previous") or {}
         lines.append(
-            f"| {rec.get('feature_set')} | {_fmt(pa.get('mae'), 3)} | "
+            f"| {rec.get('feature_set')} | {event.get('active_event_model', '-')} | {_fmt(pa.get('mae'), 3)} | "
             f"{_fmt(event.get('weighted_event_brier'), 5)} | {_fmt(event.get('weighted_event_log_loss'), 5)} | "
             f"{_fmt((event.get('hits') or {}).get('mae'), 3)} | "
             f"{_fmt((event.get('total_bases') or {}).get('mae'), 3)} | "

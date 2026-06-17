@@ -30,6 +30,7 @@ except Exception:  # pragma: no cover - optional runtime dependency
     joblib = None
 
 from .prop_replay import ev_per_unit
+from .prop_market_training import ensure_prop_market_training_schema
 from .train_hitter_player_game_outcome_models import (
     CATEGORICAL_FEATURES as HITTER_OUTCOME_CATEGORICAL,
     EVENT_CLASSES,
@@ -62,6 +63,11 @@ _SIDE_LINE_NUMERIC = [
     "pred_value",
     "projected_pa",
     "opp_model_pa",
+    "same_book_pair_flag",
+    "cross_book_pair_flag",
+    "synthetic_pair_flag",
+    "clean_market_pair_flag",
+    "true_pair_flag",
 ]
 
 _SIDE_LINE_CATEGORICAL = [
@@ -71,6 +77,8 @@ _SIDE_LINE_CATEGORICAL = [
     "line_bucket",
     "price_bucket",
     "bookmaker_key",
+    "pair_quality",
+    "market_prob_source",
 ]
 
 
@@ -102,6 +110,21 @@ SELECT
     COALESCE(e.line_bucket, 'unknown') AS line_bucket,
     COALESCE(e.price_bucket, 'missing_price') AS price_bucket,
     COALESCE(e.bookmaker_key, 'unknown') AS bookmaker_key,
+    COALESCE(e.pair_quality, 'unknown') AS pair_quality,
+    COALESCE(e.market_prob_source, 'unknown') AS market_prob_source,
+    COALESCE(e.same_book_pair_flag::float, CASE WHEN e.pair_quality = 'same_book' THEN 1.0 ELSE 0.0 END) AS same_book_pair_flag,
+    COALESCE(e.cross_book_pair_flag::float, CASE WHEN e.pair_quality = 'cross_book' THEN 1.0 ELSE 0.0 END) AS cross_book_pair_flag,
+    COALESCE(e.synthetic_pair_flag::float, CASE WHEN e.pair_quality = 'synthetic' THEN 1.0 ELSE 0.0 END) AS synthetic_pair_flag,
+    COALESCE(
+        e.clean_market_pair_flag::float,
+        CASE
+            WHEN e.pair_quality IN ('same_book', 'cross_book')
+             AND COALESCE(e.market_prob_source, '') NOT IN ('raw_implied', 'synthetic_fanduel_over_only')
+            THEN 1.0
+            ELSE 0.0
+        END
+    ) AS clean_market_pair_flag,
+    COALESCE(e.true_pair_flag::float, CASE WHEN e.pair_quality IN ('same_book', 'cross_book') THEN 1.0 ELSE 0.0 END) AS true_pair_flag,
     e.market_line::float AS market_line,
     e.market_price::float AS market_price,
     e.model_prob_side::float AS model_prob_side,
@@ -275,6 +298,7 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
     with psycopg2.connect(cfg.pg_dsn) as conn:
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
             return pd.DataFrame()
+        ensure_prop_market_training_schema(conn)
         df = _query_df(conn, SQL, {"cutoff": cutoff})
     if df.empty:
         return df
@@ -284,6 +308,8 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
         "pred_count", "pred_value", "projected_pa", "projected_bf",
         "projected_ip", "projected_pitch_count", "actual_pa", "actual_value", "target", "profit_units",
         "clv_price", "beat_clv_price",
+        "same_book_pair_flag", "cross_book_pair_flag", "synthetic_pair_flag",
+        "clean_market_pair_flag", "true_pair_flag",
         "component_hits", "component_singles", "component_doubles", "component_triples",
         "component_home_runs", "component_total_bases",
     ] + HITTER_NUMERIC + HITTER_OUTCOME_NUMERIC + PITCHER_NUMERIC
@@ -292,6 +318,10 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
             df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
     for col in sorted(set(HITTER_CATEGORICAL + PITCHER_CATEGORICAL)):
+        df[col] = df[col].fillna("unknown").astype(str)
+    for col in ("pair_quality", "market_prob_source"):
+        if col not in df.columns:
+            df[col] = "unknown"
         df[col] = df[col].fillna("unknown").astype(str)
     df = add_hitter_pa_v2_features(df)
     df = df.replace([np.inf, -np.inf], np.nan)
@@ -1551,6 +1581,18 @@ def _prepare_side_line_matrix(df: pd.DataFrame, *, state: dict[str, Any] | None 
     }
 
 
+def _clean_market_side_line_rows(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df.copy()
+    if "clean_market_pair_flag" in df.columns:
+        clean = pd.to_numeric(df["clean_market_pair_flag"], errors="coerce").fillna(0.0) >= 0.5
+        return df.loc[clean].copy()
+    pair_quality = df.get("pair_quality", pd.Series(["unknown"] * len(df), index=df.index)).fillna("unknown").astype(str).str.lower()
+    market_source = df.get("market_prob_source", pd.Series(["unknown"] * len(df), index=df.index)).fillna("unknown").astype(str).str.lower()
+    clean = pair_quality.isin(["same_book", "cross_book"]) & ~market_source.isin(["raw_implied", "synthetic_fanduel_over_only"])
+    return df.loc[clean].copy()
+
+
 def _fit_one_side_line_model(
     train: pd.DataFrame,
     holdout: pd.DataFrame,
@@ -1560,10 +1602,19 @@ def _fit_one_side_line_model(
     min_train: int = 250,
     min_holdout: int = 80,
 ) -> dict[str, Any]:
-    tr = train.dropna(subset=[target_col, "p_distribution_blend"]).copy()
-    ho = holdout.dropna(subset=[target_col, "p_distribution_blend"]).copy()
+    train_clean = _clean_market_side_line_rows(train)
+    holdout_clean = _clean_market_side_line_rows(holdout)
+    tr = train_clean.dropna(subset=[target_col, "p_distribution_blend"]).copy()
+    ho = holdout_clean.dropna(subset=[target_col, "p_distribution_blend"]).copy()
     if len(tr) < min_train or len(ho) < min_holdout or tr[target_col].nunique() < 2 or ho[target_col].nunique() < 2:
-        return {"status": "insufficient_rows", "train_rows": int(len(tr)), "holdout_rows": int(len(ho))}
+        return {
+            "status": "insufficient_rows",
+            "train_rows": int(len(tr)),
+            "holdout_rows": int(len(ho)),
+            "clean_pair_required": True,
+            "raw_train_rows": int(len(train.dropna(subset=[target_col, "p_distribution_blend"]))),
+            "raw_holdout_rows": int(len(holdout.dropna(subset=[target_col, "p_distribution_blend"]))),
+        }
     X_train, state = _prepare_side_line_matrix(tr)
     y_train = tr[target_col].astype(int).to_numpy()
     model = LogisticRegression(max_iter=2500, C=0.55)
@@ -1587,6 +1638,9 @@ def _fit_one_side_line_model(
         "target": target_col,
         "train_rows": int(len(tr)),
         "holdout_rows": int(len(ho)),
+        "clean_pair_required": True,
+        "raw_train_rows": int(len(train.dropna(subset=[target_col, "p_distribution_blend"]))),
+        "raw_holdout_rows": int(len(holdout.dropna(subset=[target_col, "p_distribution_blend"]))),
         "actual_rate_holdout": float(y.mean()),
         "avg_model_holdout": float(np.mean(p)),
         "avg_baseline_holdout": float(baseline.mean()),

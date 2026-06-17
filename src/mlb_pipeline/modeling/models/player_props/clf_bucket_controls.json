@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-12T08:53:26Z",
+  "generated_at_utc": "2026-06-17T08:48:53Z",
   "lookback_days": 120,
   "min_samples": 40,
   "max_abs_cal_error": 0.08,
@@ -9,11 +9,9 @@
       "H 1.5"
     ],
     "batter_total_bases": [
-      "TB 0.5",
-      "TB 1.5"
+      "TB 0.5"
     ],
     "pitcher_strikeouts": [
-      "K 4.5-6.0",
       "K 6.5-8.0",
       "K <4.5"
     ]
@@ -22,46 +20,46 @@
     {
       "stat": "batter_hits",
       "bucket": "H 0.5",
-      "n": 13515,
-      "p_mean": 0.7075,
-      "win_rate": 0.5906,
-      "abs_cal_error": 0.1169,
+      "n": 16055,
+      "p_mean": 0.6935,
+      "win_rate": 0.5938,
+      "abs_cal_error": 0.0997,
       "disable": true
     },
     {
       "stat": "batter_hits",
       "bucket": "H 1.5",
-      "n": 2766,
-      "p_mean": 0.3785,
-      "win_rate": 0.2491,
-      "abs_cal_error": 0.1294,
+      "n": 4042,
+      "p_mean": 0.3495,
+      "win_rate": 0.2484,
+      "abs_cal_error": 0.1011,
       "disable": true
     },
     {
       "stat": "batter_hits",
       "bucket": "H 2.5+",
-      "n": 3055,
-      "p_mean": 0.0372,
-      "win_rate": 0.0327,
-      "abs_cal_error": 0.0045,
+      "n": 3611,
+      "p_mean": 0.0374,
+      "win_rate": 0.033,
+      "abs_cal_error": 0.0044,
       "disable": false
     },
     {
       "stat": "batter_home_runs",
       "bucket": "HR 0.5",
-      "n": 11863,
-      "p_mean": 0.1148,
-      "win_rate": 0.1157,
-      "abs_cal_error": 0.0009,
+      "n": 12791,
+      "p_mean": 0.1158,
+      "win_rate": 0.1181,
+      "abs_cal_error": 0.0023,
       "disable": false
     },
     {
       "stat": "batter_home_runs",
       "bucket": "HR 1.5+",
-      "n": 1590,
-      "p_mean": 0.0126,
-      "win_rate": 0.0094,
-      "abs_cal_error": 0.0032,
+      "n": 2518,
+      "p_mean": 0.0128,
+      "win_rate": 0.0103,
+      "abs_cal_error": 0.0025,
       "disable": false
     },
     {
@@ -76,19 +74,19 @@
     {
       "stat": "batter_total_bases",
       "bucket": "TB 1.5",
-      "n": 5494,
-      "p_mean": 0.4701,
-      "win_rate": 0.3671,
-      "abs_cal_error": 0.103,
-      "disable": true
+      "n": 7476,
+      "p_mean": 0.4536,
+      "win_rate": 0.3748,
+      "abs_cal_error": 0.0788,
+      "disable": false
     },
     {
       "stat": "batter_total_bases",
       "bucket": "TB 2.5+",
-      "n": 4784,
-      "p_mean": 0.174,
-      "win_rate": 0.1576,
-      "abs_cal_error": 0.0164,
+      "n": 7584,
+      "p_mean": 0.1823,
+      "win_rate": 0.1578,
+      "abs_cal_error": 0.0244,
       "disable": false
     },
     {
@@ -112,37 +110,37 @@
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K 4.5-6.0",
-      "n": 542,
-      "p_mean": 0.4962,
-      "win_rate": 0.4059,
-      "abs_cal_error": 0.0903,
-      "disable": true
+      "n": 856,
+      "p_mean": 0.493,
+      "win_rate": 0.4276,
+      "abs_cal_error": 0.0654,
+      "disable": false
     },
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K 6.5-8.0",
-      "n": 153,
-      "p_mean": 0.5168,
-      "win_rate": 0.3922,
-      "abs_cal_error": 0.1246,
+      "n": 205,
+      "p_mean": 0.5115,
+      "win_rate": 0.4195,
+      "abs_cal_error": 0.0919,
       "disable": true
     },
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K 8.5+",
-      "n": 7,
-      "p_mean": 0.5251,
-      "win_rate": 0.1429,
-      "abs_cal_error": 0.3822,
+      "n": 11,
+      "p_mean": 0.5243,
+      "win_rate": 0.4545,
+      "abs_cal_error": 0.0697,
       "disable": false
     },
     {
       "stat": "pitcher_strikeouts",
       "bucket": "K <4.5",
-      "n": 152,
-      "p_mean": 0.4762,
-      "win_rate": 0.5658,
-      "abs_cal_error": 0.0896,
+      "n": 264,
+      "p_mean": 0.4898,
+      "win_rate": 0.5833,
+      "abs_cal_error": 0.0935,
       "disable": true
     }
   ],

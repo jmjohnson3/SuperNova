@@ -144,6 +144,33 @@ NUMERIC_FEATURES = [
     "opp_sp_pitch_diversity",
     "projected_pa",
     "pa_games",
+    "lineup_slot_pa_prior",
+    "lineup_slot_low_pa_prior",
+    "top_order_flag",
+    "middle_order_flag",
+    "bottom_order_flag",
+    "projected_pa_slot_delta",
+    "projected_pa_x_slot_prior",
+    "implied_run_diff",
+    "abs_implied_run_diff",
+    "favorite_flag",
+    "underdog_flag",
+    "close_game_flag",
+    "blowout_risk",
+    "high_total_flag",
+    "low_total_flag",
+    "home_favorite_ninth_penalty",
+    "away_trailing_extra_pa_chance",
+    "slot_prior_x_home_ninth_penalty",
+    "slot_prior_x_blowout_risk",
+    "projected_pa_x_implied_runs",
+    "projected_pa_x_close_game",
+    "catcher_flag",
+    "catcher_low_pa_risk",
+    "platoon_same_hand_flag",
+    "platoon_advantage_flag",
+    "batter_hand_known_flag",
+    "opp_sp_hand_known_flag",
 ]
 
 CATEGORICAL_FEATURES = [
@@ -165,6 +192,29 @@ RATE_TARGETS = {
 }
 
 EVENT_CLASSES = ["out", "walk", "single", "double", "triple", "hr"]
+
+_LINEUP_PA_PRIORS = {
+    1: 4.65,
+    2: 4.55,
+    3: 4.45,
+    4: 4.35,
+    5: 4.20,
+    6: 4.05,
+    7: 3.90,
+    8: 3.75,
+    9: 3.60,
+}
+_LINEUP_LOW_PA_PRIORS = {
+    1: 0.04,
+    2: 0.05,
+    3: 0.05,
+    4: 0.06,
+    5: 0.07,
+    6: 0.09,
+    7: 0.12,
+    8: 0.15,
+    9: 0.18,
+}
 
 
 @dataclass(frozen=True)
@@ -338,6 +388,73 @@ def prepare_hitter_outcome_features(
             src.fillna("confirmed_or_projected_lineup") if isinstance(src, pd.Series) else "confirmed_or_projected_lineup",
             "unknown",
         )
+
+    slot_i = slot.round().where(slot.between(1, 9)).astype("Int64")
+    slot_prior = slot_i.map(_LINEUP_PA_PRIORS).astype("float64").fillna(4.05)
+    low_pa_prior = slot_i.map(_LINEUP_LOW_PA_PRIORS).astype("float64").fillna(0.14)
+    projected_pa = pd.to_numeric(out.get("projected_pa"), errors="coerce")
+    team_runs = pd.to_numeric(out.get("team_implied_runs"), errors="coerce")
+    opp_runs = pd.to_numeric(out.get("opponent_implied_runs"), errors="coerce")
+    total = pd.to_numeric(out.get("game_total_line"), errors="coerce")
+    is_home = pd.to_numeric(out.get("is_home"), errors="coerce").fillna(0.0).clip(0.0, 1.0)
+    run_diff = team_runs - opp_runs
+    abs_diff = run_diff.abs()
+    favorite = (run_diff > 0.15).astype(float)
+    underdog = (run_diff < -0.15).astype(float)
+    close_game = (abs_diff <= 0.75).astype(float)
+    blowout_risk = ((abs_diff - 1.25) / 2.25).clip(lower=0.0, upper=1.0)
+    top_order = slot_i.between(1, 4).fillna(False).astype(float)
+    middle_order = slot_i.between(5, 6).fillna(False).astype(float)
+    bottom_order = slot_i.between(7, 9).fillna(False).astype(float)
+    home_fav_penalty = (is_home * favorite * (0.45 + 0.55 * blowout_risk)).clip(0.0, 1.0)
+    away_trailing_extra = ((1.0 - is_home) * underdog * (0.35 + 0.65 * close_game)).clip(0.0, 1.0)
+
+    primary_pos = out.get("primary_position", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str).str.upper()
+    catcher = primary_pos.str.contains(r"\bC\b|CATCHER", regex=True).astype(float)
+    lineup_source = out.get("lineup_source", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str).str.lower()
+    boxscore_proxy = lineup_source.str.contains("boxscore", regex=False).astype(float)
+
+    batter_hand = out.get("batter_hand", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str).str.upper()
+    opp_hand = out.get("opp_sp_hand", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str).str.upper()
+    batter_known = batter_hand.isin(["L", "R", "S"]).astype(float)
+    opp_known = opp_hand.isin(["L", "R"]).astype(float)
+    same_hand = (
+        ((batter_hand == "L") & (opp_hand == "L"))
+        | ((batter_hand == "R") & (opp_hand == "R"))
+    ).astype(float)
+    platoon_adv = (
+        ((batter_hand == "L") & (opp_hand == "R"))
+        | ((batter_hand == "R") & (opp_hand == "L"))
+        | (batter_hand == "S")
+    ).astype(float)
+
+    out["lineup_slot_pa_prior"] = slot_prior
+    out["lineup_slot_low_pa_prior"] = low_pa_prior
+    out["top_order_flag"] = top_order
+    out["middle_order_flag"] = middle_order
+    out["bottom_order_flag"] = bottom_order
+    out["projected_pa_slot_delta"] = projected_pa - slot_prior
+    out["projected_pa_x_slot_prior"] = projected_pa * slot_prior
+    out["implied_run_diff"] = run_diff
+    out["abs_implied_run_diff"] = abs_diff
+    out["favorite_flag"] = favorite
+    out["underdog_flag"] = underdog
+    out["close_game_flag"] = close_game
+    out["blowout_risk"] = blowout_risk
+    out["high_total_flag"] = (total >= 9.0).astype(float)
+    out["low_total_flag"] = (total <= 7.5).astype(float)
+    out["home_favorite_ninth_penalty"] = home_fav_penalty
+    out["away_trailing_extra_pa_chance"] = away_trailing_extra
+    out["slot_prior_x_home_ninth_penalty"] = slot_prior * home_fav_penalty
+    out["slot_prior_x_blowout_risk"] = slot_prior * blowout_risk
+    out["projected_pa_x_implied_runs"] = projected_pa * team_runs
+    out["projected_pa_x_close_game"] = projected_pa * close_game
+    out["catcher_flag"] = catcher
+    out["catcher_low_pa_risk"] = (catcher * (0.45 + 0.35 * boxscore_proxy + 0.20 * bottom_order)).clip(0.0, 1.0)
+    out["platoon_same_hand_flag"] = same_hand
+    out["platoon_advantage_flag"] = platoon_adv
+    out["batter_hand_known_flag"] = batter_known
+    out["opp_sp_hand_known_flag"] = opp_known
 
     data: dict[str, Any] = {}
     for col in numeric_features:
@@ -607,6 +724,22 @@ def _predict_boosted_event_probabilities(
     return probs
 
 
+def _weighted_multiclass_brier(counts: pd.DataFrame, probs: pd.DataFrame) -> float | None:
+    total = float(counts[EVENT_CLASSES].sum(axis=1).sum())
+    if total <= 0:
+        return None
+    p_mat = np.column_stack([
+        pd.to_numeric(probs[f"p_{cls}"], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+        for cls in EVENT_CLASSES
+    ])
+    p_sq = np.sum(p_mat * p_mat, axis=1)
+    loss = 0.0
+    for i, cls in enumerate(EVENT_CLASSES):
+        weights = pd.to_numeric(counts[cls], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+        loss += float(np.sum(weights * (p_sq - 2.0 * p_mat[:, i] + 1.0)))
+    return loss / total
+
+
 def _event_log_loss_from_counts(counts: pd.DataFrame, probs: pd.DataFrame) -> float | None:
     total = float(counts[EVENT_CLASSES].sum(axis=1).sum())
     if total <= 0:
@@ -657,11 +790,38 @@ def _event_projection_metrics(
     event_counts = _event_count_matrix(event_holdout)
     return {
         "weighted_event_log_loss": _event_log_loss_from_counts(event_counts, event_probs),
+        "weighted_event_brier": _weighted_multiclass_brier(event_counts, event_probs),
         "event_rates": _event_rate_table(event_holdout, event_probs),
         "hits": _count_metrics(event_holdout["actual_hits"], event_hit_count),
         "total_bases": _count_metrics(event_holdout["actual_total_bases"], event_tb_count),
         "home_runs": _count_metrics(event_holdout["actual_home_runs"], event_hr_count),
     }
+
+
+def _mae_from_metric(metrics: dict[str, Any], key: str) -> float | None:
+    try:
+        value = ((metrics.get(key) or {}).get("mae"))
+        return None if value is None else float(value)
+    except Exception:
+        return None
+
+
+def _event_model_composite(metrics: dict[str, Any]) -> float | None:
+    brier = metrics.get("weighted_event_brier")
+    hits = _mae_from_metric(metrics, "hits")
+    tb = _mae_from_metric(metrics, "total_bases")
+    hr = _mae_from_metric(metrics, "home_runs")
+    pieces = [float(v) for v in (brier, hits, tb, hr) if v is not None and math.isfinite(float(v))]
+    if not pieces:
+        return None
+    # Brier drives probability quality; count MAE keeps the event curve honest
+    # for hits/TB/HR pricing.
+    return (
+        (float(brier) * 4.0 if brier is not None else 0.0)
+        + (float(hits) * 0.20 if hits is not None else 0.0)
+        + (float(tb) * 0.10 if tb is not None else 0.0)
+        + (float(hr) * 0.35 if hr is not None else 0.0)
+    )
 
 
 def _safe_auc(y_true: Any, prob: Any) -> float | None:
@@ -827,10 +987,33 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
             }
             linear_loss = linear_metrics.get("weighted_event_log_loss")
             boosted_loss = boosted_metrics.get("weighted_event_log_loss")
+            linear_brier = linear_metrics.get("weighted_event_brier")
+            boosted_brier = boosted_metrics.get("weighted_event_brier")
+            linear_score = _event_model_composite(linear_metrics)
+            boosted_score = _event_model_composite(boosted_metrics)
             use_boosted = (
-                boosted_loss is not None
-                and (linear_loss is None or float(boosted_loss) <= float(linear_loss))
+                boosted_score is not None
+                and (
+                    linear_score is None
+                    or float(boosted_score) <= float(linear_score)
+                    or (
+                        boosted_brier is not None
+                        and linear_brier is not None
+                        and float(boosted_brier) <= float(linear_brier) + 0.002
+                        and boosted_loss is not None
+                        and (linear_loss is None or float(boosted_loss) <= float(linear_loss) + 0.015)
+                    )
+                )
             )
+            event_metrics["model_selection"] = {
+                "linear_composite": linear_score,
+                "boosted_composite": boosted_score,
+                "linear_brier": linear_brier,
+                "boosted_brier": boosted_brier,
+                "linear_log_loss": linear_loss,
+                "boosted_log_loss": boosted_loss,
+                "selected": "boosted_binary_calibrated" if use_boosted else "linear_multinomial",
+            }
             models["event_binary_models"] = boosted_models
             if use_boosted:
                 event_metrics.update({
@@ -1023,6 +1206,11 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         "lineup_confirmed_flag",
         "confirmed_team_lineup_slots",
         "team_lineup_confirmed_flag",
+        "lineup_slot_pa_prior",
+        "home_favorite_ninth_penalty",
+        "blowout_risk",
+        "catcher_low_pa_risk",
+        "platoon_advantage_flag",
         "batter_sc_barrel_rate",
         "batter_sc_xwoba",
         "batter_sc_xslg",
@@ -1077,6 +1265,7 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         f"- Active event curve: {direct.get('active_event_model', '-')}",
         f"- Train event rows: {direct.get('train_event_rows', 0)}",
         f"- Holdout player-games: {direct.get('holdout_rows', 0)}",
+        f"- Weighted event Brier: {num(direct.get('weighted_event_brier'), 5)}",
         f"- Weighted event log loss: {num(direct.get('weighted_event_log_loss'), 5)}",
         f"- Classes: {', '.join(map(str, direct.get('classes', []))) if direct.get('classes') else '-'}",
         "",
@@ -1097,14 +1286,19 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
             "",
             "## Event Model Candidates",
             "",
-            "| Candidate | Log Loss | Hits MAE | TB MAE | HR MAE |",
-            "|---|---:|---:|---:|---:|",
+            f"- Selected: {(direct.get('model_selection') or {}).get('selected', direct.get('active_event_model', '-'))}",
+            "",
+            "| Candidate | Brier | Log Loss | Composite | Hits MAE | TB MAE | HR MAE |",
+            "|---|---:|---:|---:|---:|---:|---:|",
         ])
+        selection = direct.get("model_selection") or {}
         for label, row in [("linear_multinomial", linear), ("boosted_binary_calibrated", boosted)]:
             if not row:
                 continue
+            composite = selection.get("linear_composite") if label == "linear_multinomial" else selection.get("boosted_composite")
             lines.append(
-                f"| {label} | {num(row.get('weighted_event_log_loss'), 5)} | "
+                f"| {label} | {num(row.get('weighted_event_brier'), 5)} | "
+                f"{num(row.get('weighted_event_log_loss'), 5)} | {num(composite, 5)} | "
                 f"{num((row.get('hits') or {}).get('mae'))} | "
                 f"{num((row.get('total_bases') or {}).get('mae'))} | "
                 f"{num((row.get('home_runs') or {}).get('mae'))} |"

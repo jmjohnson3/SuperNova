@@ -1989,11 +1989,11 @@ def main() -> None:
                     print(f"\n**{title}{sfx}** [FD]({url})")
 
             if _bankroll_bets:
-                print(f"\n**BANKROLL BETS ({len(_bankroll_bets)})**")
+                print(f"\n**BANKROLL GAME BETS ({len(_bankroll_bets)})**")
                 for _b in _bankroll_bets:
                     _print_game_bet(_b, include_link=True)
             else:
-                print("\n**BANKROLL BETS**")
+                print("\n**BANKROLL GAME BETS**")
                 print("- No bankroll-qualified game bets today")
 
             _print_chunked_parlays(
@@ -2009,7 +2009,7 @@ def main() -> None:
                 )
 
             if _paper_bets:
-                print(f"\n**PAPER / RESEARCH ({len(_paper_bets)} of {len(_model_bets)} model picks)**")
+                print(f"\n**PAPER GAME BETS ({len(_paper_bets)} of {len(_model_bets)} model picks)**")
                 for _b in _paper_bets:
                     _print_game_bet(_b, include_link=False)
         else:

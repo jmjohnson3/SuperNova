@@ -66,6 +66,21 @@ SELECT
     COALESCE(line_bucket, 'unknown') AS line_bucket,
     COALESCE(line_surface, 'unknown') AS line_surface,
     COALESCE(price_bucket, 'missing_price') AS price_bucket,
+    COALESCE(pair_quality, 'unknown') AS pair_quality,
+    COALESCE(market_prob_source, 'unknown') AS market_prob_source,
+    COALESCE(same_book_pair_flag::float, CASE WHEN pair_quality = 'same_book' THEN 1.0 ELSE 0.0 END) AS same_book_pair_flag,
+    COALESCE(cross_book_pair_flag::float, CASE WHEN pair_quality = 'cross_book' THEN 1.0 ELSE 0.0 END) AS cross_book_pair_flag,
+    COALESCE(synthetic_pair_flag::float, CASE WHEN pair_quality = 'synthetic' THEN 1.0 ELSE 0.0 END) AS synthetic_pair_flag,
+    COALESCE(
+        clean_market_pair_flag::float,
+        CASE
+            WHEN pair_quality IN ('same_book', 'cross_book')
+             AND COALESCE(market_prob_source, '') NOT IN ('raw_implied', 'synthetic_fanduel_over_only')
+            THEN 1.0
+            ELSE 0.0
+        END
+    ) AS clean_market_pair_flag,
+    COALESCE(true_pair_flag::float, CASE WHEN pair_quality IN ('same_book', 'cross_book') THEN 1.0 ELSE 0.0 END) AS true_pair_flag,
     model_prob_side::float AS model_prob_side,
     market_prob_side::float AS market_prob_side,
     ev::float AS ev,
@@ -142,6 +157,16 @@ def _rate(mask: pd.Series) -> float | None:
     return float(mask.mean()) if len(mask) else None
 
 
+def _brier(group: pd.DataFrame, prob_col: str) -> float | None:
+    prob = pd.to_numeric(group[prob_col], errors="coerce")
+    target = pd.to_numeric(group["won"], errors="coerce")
+    mask = prob.notna() & target.notna()
+    if not mask.any():
+        return None
+    err = prob[mask].clip(1e-6, 1.0 - 1e-6) - target[mask]
+    return float((err * err).mean())
+
+
 def _bucket_key(row: pd.Series | dict[str, Any]) -> str:
     return "|".join([
         str(row.get("market", "*")),
@@ -166,6 +191,8 @@ def _load(cfg: RepairConfig) -> pd.DataFrame:
     for col in (
         "market_line", "market_price", "model_prob_side", "market_prob_side",
         "ev", "won", "profit_units", "clv_price", "beat_clv_price",
+        "same_book_pair_flag", "cross_book_pair_flag", "synthetic_pair_flag",
+        "clean_market_pair_flag", "true_pair_flag",
         "confirmed_batting_order", "projected_pa", "actual_pa",
         "projected_bf", "actual_bf", "projected_pitch_count", "actual_pitch_count_proxy",
     ):
@@ -239,6 +266,8 @@ def _reason_category(reason: str) -> str:
         return "opportunity"
     if reason.startswith("tb_over") or reason.startswith("hitter_over"):
         return "distribution"
+    if reason.startswith("true_pair") or reason.startswith("synthetic_pair") or reason == "market_beats_model_brier":
+        return "market_evidence"
     return "other"
 
 
@@ -251,6 +280,8 @@ def _repair_action(reasons: list[str], rec: dict[str, Any]) -> str:
         return "collect_more_clean_rows"
     if "bookability" in cats:
         return "repair_bookability_or_close_capture"
+    if "market_evidence" in cats:
+        return "repair_true_pair_coverage_or_market_model"
     if "opportunity" in cats:
         return "repair_opportunity_features"
     if "distribution" in cats:
@@ -274,6 +305,9 @@ def _fixability_score(rec: dict[str, Any], reasons: list[str], cfg: RepairConfig
     avg_clv = _clean_float(rec.get("avg_clv_price"))
     clv_beat = _clean_float(rec.get("clv_beat_rate"))
     bookable = _clean_float(rec.get("bookability_rate"))
+    true_pair = _clean_float(rec.get("true_pair_rate"))
+    synthetic_pair = _clean_float(rec.get("synthetic_pair_rate"))
+    brier_gap = _clean_float(rec.get("model_market_brier_gap"))
     score = 0.0
     score += min(25.0, 25.0 * graded / max(1, cfg.min_rows))
     score += min(15.0, 15.0 * clv_rows / max(1, cfg.min_clv_rows))
@@ -287,6 +321,12 @@ def _fixability_score(rec: dict[str, Any], reasons: list[str], cfg: RepairConfig
         score += max(-12.0, min(12.0, (clv_beat - 0.45) * 80.0))
     if bookable is not None:
         score += max(-10.0, min(10.0, (bookable - 0.60) * 50.0))
+    if true_pair is not None:
+        score += max(-8.0, min(8.0, (true_pair - 0.50) * 20.0))
+    if synthetic_pair is not None and synthetic_pair > 0.25:
+        score -= min(12.0, synthetic_pair * 12.0)
+    if brier_gap is not None and brier_gap > 0:
+        score -= min(15.0, brier_gap * 180.0)
     if "opportunity" in {_reason_category(r) for r in reasons}:
         score += 4.0
     if "distribution" in {_reason_category(r) for r in reasons}:
@@ -312,6 +352,19 @@ def _bucket_summary(key: str, group: pd.DataFrame, promotion: dict[str, Any], cf
     clv_price = pd.to_numeric(valid_clv["clv_price"], errors="coerce").dropna()
     clv_beat = pd.to_numeric(valid_clv["beat_clv_price"], errors="coerce").dropna()
     unknown = group.loc[~group["clv_valid"].fillna(False).astype(bool), "clv_unknown_reason"].fillna("none").astype(str)
+    pair_quality = group["pair_quality"].fillna("unknown").astype(str).str.lower()
+    true_pair_rate = _mean(group["true_pair_flag"])
+    same_book_pair_rate = _mean(group["same_book_pair_flag"])
+    cross_book_pair_rate = _mean(group["cross_book_pair_flag"])
+    synthetic_pair_rate = _mean(group["synthetic_pair_flag"])
+    clean_market_pair_rate = _mean(group["clean_market_pair_flag"])
+    model_brier = _brier(settled, "model_prob_side")
+    market_brier = _brier(settled, "market_prob_side")
+    model_market_brier_gap = (
+        model_brier - market_brier
+        if model_brier is not None and market_brier is not None
+        else None
+    )
     opp = _opportunity_metrics(group)
 
     reasons: list[str] = []
@@ -329,6 +382,12 @@ def _bucket_summary(key: str, group: pd.DataFrame, promotion: dict[str, Any], cf
         reasons.append(f"avg_clv_price<={cfg.min_avg_clv_price:.3f}")
     if calibration_error is None or abs(calibration_error) > cfg.max_abs_calibration_error:
         reasons.append(f"calibration_abs>{cfg.max_abs_calibration_error:.3f}")
+    if true_pair_rate is None or true_pair_rate < 0.50:
+        reasons.append("true_pair_rate<0.50")
+    if synthetic_pair_rate is not None and synthetic_pair_rate > 0.25:
+        reasons.append("synthetic_pair_rate>0.25")
+    if model_market_brier_gap is not None and model_market_brier_gap > 0.002:
+        reasons.append("market_beats_model_brier")
 
     bookability_rate = float(group["clv_valid"].mean()) if len(group) else None
     stale_rate = _rate(unknown == "stale_close_before_lock")
@@ -376,6 +435,15 @@ def _bucket_summary(key: str, group: pd.DataFrame, promotion: dict[str, Any], cf
         "units": units,
         "avg_model_prob": avg_prob,
         "calibration_error": calibration_error,
+        "true_pair_rate": true_pair_rate,
+        "same_book_pair_rate": same_book_pair_rate,
+        "cross_book_pair_rate": cross_book_pair_rate,
+        "synthetic_pair_rate": synthetic_pair_rate,
+        "clean_market_pair_rate": clean_market_pair_rate,
+        "pair_quality_counts": dict(Counter(pair_quality).most_common()),
+        "model_brier": model_brier,
+        "market_brier": market_brier,
+        "model_market_brier_gap": model_market_brier_gap,
         "clv_beat_rate": clv_beat_rate,
         "avg_clv_price": avg_clv_price,
         "bookability_rate": bookability_rate,
@@ -414,6 +482,10 @@ def build_payload(cfg: RepairConfig) -> dict[str, Any]:
         r for r in rows
         if "bookability" in (r.get("repair_categories") or {}) or "clv" in (r.get("repair_categories") or {})
     ]
+    market_evidence = [
+        r for r in rows
+        if "market_evidence" in (r.get("repair_categories") or {})
+    ]
     no_bet = [
         r for r in rows
         if r.get("repair_action") == "likely_no_bet_bucket"
@@ -443,6 +515,7 @@ def build_payload(cfg: RepairConfig) -> dict[str, Any]:
         "most_fixable_alt": alt[: cfg.top_n],
         "hitter_tb_over_repair": hitter_tb_over[: cfg.top_n],
         "bookability_clv_repair": bookability[: cfg.top_n],
+        "market_evidence_repair": market_evidence[: cfg.top_n],
         "likely_no_bet_buckets": no_bet[: cfg.top_n],
         "all_buckets": rows,
     }
@@ -500,6 +573,9 @@ def _display_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "clv_beat": _fmt_pct(row.get("clv_beat_rate")),
             "avg_clv": _fmt_num(row.get("avg_clv_price"), 2, signed=True),
             "cal": _fmt_pct(row.get("calibration_error"), signed=True),
+            "true_pair": _fmt_pct(row.get("true_pair_rate")),
+            "synthetic": _fmt_pct(row.get("synthetic_pair_rate")),
+            "brier_gap": _fmt_num(row.get("model_market_brier_gap"), 3, signed=True),
             "bookable": _fmt_pct(row.get("bookability_rate")),
             "stale": _fmt_pct(row.get("stale_close_rate")),
             "opp": opportunity,
@@ -526,6 +602,9 @@ def write_report(payload: dict[str, Any], cfg: RepairConfig) -> str:
         ("CLV Beat", "clv_beat"),
         ("Avg CLV", "avg_clv"),
         ("Cal", "cal"),
+        ("True Pair", "true_pair"),
+        ("Synthetic", "synthetic"),
+        ("Brier Gap", "brier_gap"),
         ("Bookable", "bookable"),
         ("Stale", "stale"),
         ("Opportunity", "opp"),
@@ -540,7 +619,7 @@ def write_report(payload: dict[str, Any], cfg: RepairConfig) -> str:
         f"- Rows: {payload['rows']}",
         f"- Exact buckets: {payload['bucket_count']}",
         "",
-        "This report does not reopen bankroll props. It ranks exact buckets by what is most repairable: ROI, CLV, calibration, opportunity, and bookability/close capture.",
+        "This report does not reopen bankroll props. It ranks exact buckets by what is most repairable: ROI, CLV, calibration, true-pair market evidence, opportunity, and bookability/close capture.",
         "",
         "## Repair Action Counts",
         "",
@@ -560,6 +639,10 @@ def write_report(payload: dict[str, Any], cfg: RepairConfig) -> str:
         "## Bookability And CLV Repair Focus",
         "",
         _table(_display_rows(payload.get("bookability_clv_repair") or []), cols),
+        "",
+        "## Market Evidence Repair Focus",
+        "",
+        _table(_display_rows(payload.get("market_evidence_repair") or []), cols),
         "",
         "## Alt-Line Lottery Repair Watchlist",
         "",

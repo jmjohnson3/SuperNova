@@ -62,6 +62,13 @@ _NUMERIC = [
     "batter_vs_rp_slg_30",
     "batter_vs_rp_hr_rate_30",
     "pinch_hit_risk",
+    "same_book_pair_flag",
+    "cross_book_pair_flag",
+    "synthetic_pair_flag",
+    "clean_market_pair_flag",
+    "true_pair_flag",
+    "minutes_to_first_pitch_at_lock",
+    "lock_price_age_minutes",
 ]
 
 _CATEGORICAL = [
@@ -72,6 +79,7 @@ _CATEGORICAL = [
     "price_bucket",
     "bookmaker_key",
     "pair_quality",
+    "paired_price_source",
     "market_prob_source",
     "model_family",
     "edge_type",
@@ -116,9 +124,25 @@ SELECT
     COALESCE(e.price_bucket, 'missing_price') AS price_bucket,
     COALESCE(e.bookmaker_key, 'unknown') AS bookmaker_key,
     COALESCE(e.pair_quality, 'unknown') AS pair_quality,
+    COALESCE(e.paired_price_source, 'unknown') AS paired_price_source,
     COALESCE(e.market_prob_source, 'unknown') AS market_prob_source,
+    COALESCE(e.same_book_pair_flag::float, CASE WHEN e.pair_quality = 'same_book' THEN 1.0 ELSE 0.0 END) AS same_book_pair_flag,
+    COALESCE(e.cross_book_pair_flag::float, CASE WHEN e.pair_quality = 'cross_book' THEN 1.0 ELSE 0.0 END) AS cross_book_pair_flag,
+    COALESCE(e.synthetic_pair_flag::float, CASE WHEN e.pair_quality = 'synthetic' THEN 1.0 ELSE 0.0 END) AS synthetic_pair_flag,
+    COALESCE(
+        e.clean_market_pair_flag::float,
+        CASE
+            WHEN e.pair_quality IN ('same_book', 'cross_book')
+             AND COALESCE(e.market_prob_source, '') NOT IN ('raw_implied', 'synthetic_fanduel_over_only')
+            THEN 1.0
+            ELSE 0.0
+        END
+    ) AS clean_market_pair_flag,
+    COALESCE(e.true_pair_flag::float, CASE WHEN e.pair_quality IN ('same_book', 'cross_book') THEN 1.0 ELSE 0.0 END) AS true_pair_flag,
     COALESCE(e.model_family, 'unknown') AS model_family,
     COALESCE(e.edge_type, 'unknown') AS edge_type,
+    e.minutes_to_first_pitch_at_lock::float AS minutes_to_first_pitch_at_lock,
+    e.lock_price_age_minutes::float AS lock_price_age_minutes,
     e.market_line::float AS market_line,
     e.market_price::float AS market_price,
     ABS(e.market_price::float) AS abs_price,
@@ -168,6 +192,25 @@ WHERE e.game_date_et >= %(cutoff)s
   AND e.market_prob_side IS NOT NULL
   AND e.market_line IS NOT NULL
   AND e.won IS NOT NULL
+  AND COALESCE(
+        e.clean_market_pair_flag::float,
+        CASE
+            WHEN e.pair_quality IN ('same_book', 'cross_book')
+             AND COALESCE(e.market_prob_source, '') NOT IN ('raw_implied', 'synthetic_fanduel_over_only')
+            THEN 1.0
+            ELSE 0.0
+        END
+      ) = 1.0
+  AND NOT (
+        LOWER(COALESCE(e.bookmaker_key, '')) = 'fanduel'
+    AND e.market IN ('batter_hits','batter_total_bases','batter_home_runs')
+    AND (
+          COALESCE(e.pair_quality, '') = 'synthetic'
+       OR COALESCE(e.market_prob_source, '') = 'synthetic_fanduel_over_only'
+       OR COALESCE(e.paired_price_source, '') = 'synthetic_fanduel_over_only_complement'
+       OR COALESCE(e.synthetic_pair_flag::float, 0.0) >= 0.5
+    )
+  )
 ORDER BY e.game_date_et, e.replay_id
 """
 
@@ -441,6 +484,17 @@ def _fmt_num(value: Any, digits: int = 3) -> str:
     return f"{float(value):.{digits}f}"
 
 
+def _write_text_with_lock_fallback(path: Path, text: str) -> Path:
+    try:
+        path.write_text(text, encoding="utf-8")
+        return path
+    except PermissionError:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        fallback = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
+        fallback.write_text(text, encoding="utf-8")
+        return fallback
+
+
 def _write_report(payload: dict[str, Any], cfg: MarketResidualConfig) -> str:
     _REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = _REPORT_DIR / cfg.report_file
@@ -498,8 +552,7 @@ def _write_report(payload: dict[str, Any], cfg: MarketResidualConfig) -> str:
             f"{_fmt_pct(rec.get('residual_calibration_error'))} | "
             f"{'; '.join(rec.get('residual_proof_blockers') or [])} |"
         )
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return str(path)
+    return str(_write_text_with_lock_fallback(path, "\n".join(lines) + "\n"))
 
 
 def train(cfg: MarketResidualConfig) -> dict[str, Any]:

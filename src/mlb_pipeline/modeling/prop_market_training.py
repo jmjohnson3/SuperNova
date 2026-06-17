@@ -140,6 +140,13 @@ def ensure_prop_market_training_schema(conn) -> None:
                 paired_bookmaker_key TEXT,
                 paired_price_source TEXT,
                 pair_quality TEXT,
+                same_book_pair_flag NUMERIC,
+                cross_book_pair_flag NUMERIC,
+                synthetic_pair_flag NUMERIC,
+                clean_market_pair_flag NUMERIC,
+                true_pair_flag NUMERIC,
+                minutes_to_first_pitch_at_lock NUMERIC,
+                lock_price_age_minutes NUMERIC,
                 raw_market_prob NUMERIC,
                 no_vig_market_prob NUMERIC,
                 market_prob_side NUMERIC,
@@ -235,6 +242,13 @@ def ensure_prop_market_training_schema(conn) -> None:
                 ADD COLUMN IF NOT EXISTS paired_bookmaker_key TEXT,
                 ADD COLUMN IF NOT EXISTS paired_price_source TEXT,
                 ADD COLUMN IF NOT EXISTS pair_quality TEXT,
+                ADD COLUMN IF NOT EXISTS same_book_pair_flag NUMERIC,
+                ADD COLUMN IF NOT EXISTS cross_book_pair_flag NUMERIC,
+                ADD COLUMN IF NOT EXISTS synthetic_pair_flag NUMERIC,
+                ADD COLUMN IF NOT EXISTS clean_market_pair_flag NUMERIC,
+                ADD COLUMN IF NOT EXISTS true_pair_flag NUMERIC,
+                ADD COLUMN IF NOT EXISTS minutes_to_first_pitch_at_lock NUMERIC,
+                ADD COLUMN IF NOT EXISTS lock_price_age_minutes NUMERIC,
                 ADD COLUMN IF NOT EXISTS market_prob_source TEXT,
                 ADD COLUMN IF NOT EXISTS closing_source_row_id BIGINT,
                 ADD COLUMN IF NOT EXISTS closing_snapshot_id BIGINT,
@@ -370,6 +384,9 @@ def _market_training_has_required_columns(conn) -> bool:
         "prediction_key", "prop_offer_id", "prop_offer_source_row_id",
         "lock_snapshot_id", "market", "side", "market_line", "market_price",
         "paired_price", "paired_bookmaker_key", "paired_price_source", "pair_quality",
+        "same_book_pair_flag", "cross_book_pair_flag", "synthetic_pair_flag",
+        "clean_market_pair_flag", "true_pair_flag", "minutes_to_first_pitch_at_lock",
+        "lock_price_age_minutes",
         "no_vig_market_prob", "market_prob_side", "market_prob_source",
         "line_surface", "projected_pa", "projected_bf",
         "projected_pitch_count", "actual_pa", "actual_bf",
@@ -552,6 +569,12 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                     WHEN synthetic_pair.price IS NOT NULL THEN 'synthetic_fanduel_over_only_complement'
                     ELSE NULL
                 END AS paired_price_source_resolved,
+                EXTRACT(EPOCH FROM (
+                    g.start_ts_utc - COALESCE(r.locked_at_utc, r.source_created_at, r.run_started_at_utc)
+                )) / 60.0 AS minutes_to_first_pitch_at_lock,
+                EXTRACT(EPOCH FROM (
+                    COALESCE(r.locked_at_utc, r.source_created_at, r.run_started_at_utc) - selected_offer.fetched_at_utc
+                )) / 60.0 AS lock_price_age_minutes,
                 COALESCE(bps.batting_order, lu.batting_order, lu_name.batting_order) AS confirmed_batting_order,
                 CASE
                     WHEN bps.batting_order IS NOT NULL THEN 'boxscore_actual'
@@ -929,6 +952,16 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
         else:
             market_prob_source = "raw_implied"
         pair_quality = _pair_quality(paired_price_source, paired)
+        same_book_pair_flag = 1.0 if pair_quality == "same_book" else 0.0
+        cross_book_pair_flag = 1.0 if pair_quality == "cross_book" else 0.0
+        synthetic_pair_flag = 1.0 if pair_quality == "synthetic" else 0.0
+        true_pair_flag = 1.0 if pair_quality in {"same_book", "cross_book"} else 0.0
+        clean_market_pair_flag = (
+            1.0
+            if true_pair_flag
+            and market_prob_source not in {"raw_implied", "synthetic_fanduel_over_only"}
+            else 0.0
+        )
         p_side = p_over if side == "over" else 1.0 - p_over
         target_won = None
         if over_hit is not None and not push:
@@ -978,6 +1011,13 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
             "paired_bookmaker_key": paired_bookmaker_key,
             "paired_price_source": paired_price_source,
             "pair_quality": pair_quality,
+            "same_book_pair_flag": same_book_pair_flag,
+            "cross_book_pair_flag": cross_book_pair_flag,
+            "synthetic_pair_flag": synthetic_pair_flag,
+            "clean_market_pair_flag": clean_market_pair_flag,
+            "true_pair_flag": true_pair_flag,
+            "minutes_to_first_pitch_at_lock": _clean_float(row.get("minutes_to_first_pitch_at_lock")),
+            "lock_price_age_minutes": _clean_float(row.get("lock_price_age_minutes")),
             "raw_market_prob": raw_mkt,
             "no_vig_market_prob": no_vig,
             "market_prob_side": market_prob,
@@ -1071,7 +1111,10 @@ INSERT INTO features.mlb_prop_market_training_examples (
     prop_offer_id, prop_offer_source_row_id, lock_snapshot_id, game_date_et, game_slug,
     player_id, player_name, player_name_norm, team_abbr, market, side,
     bookmaker_key, market_line, market_price, paired_price, paired_bookmaker_key,
-    paired_price_source, pair_quality, raw_market_prob, no_vig_market_prob, market_prob_side,
+    paired_price_source, pair_quality, same_book_pair_flag, cross_book_pair_flag,
+    synthetic_pair_flag, clean_market_pair_flag, true_pair_flag,
+    minutes_to_first_pitch_at_lock, lock_price_age_minutes,
+    raw_market_prob, no_vig_market_prob, market_prob_side,
     market_prob_source, price_bucket, line_bucket, line_surface,
     model_family, edge_type, pred_value, pred_count, model_prob_over,
     model_prob_side, count_edge_side, prob_edge_vs_market, confirmed_batting_order,
@@ -1099,7 +1142,10 @@ INSERT INTO features.mlb_prop_market_training_examples (
     %(prop_offer_id)s, %(prop_offer_source_row_id)s, %(lock_snapshot_id)s, %(game_date_et)s, %(game_slug)s,
     %(player_id)s, %(player_name)s, %(player_name_norm)s, %(team_abbr)s, %(market)s, %(side)s,
     %(bookmaker_key)s, %(market_line)s, %(market_price)s, %(paired_price)s, %(paired_bookmaker_key)s,
-    %(paired_price_source)s, %(pair_quality)s, %(raw_market_prob)s, %(no_vig_market_prob)s, %(market_prob_side)s,
+    %(paired_price_source)s, %(pair_quality)s, %(same_book_pair_flag)s, %(cross_book_pair_flag)s,
+    %(synthetic_pair_flag)s, %(clean_market_pair_flag)s, %(true_pair_flag)s,
+    %(minutes_to_first_pitch_at_lock)s, %(lock_price_age_minutes)s,
+    %(raw_market_prob)s, %(no_vig_market_prob)s, %(market_prob_side)s,
     %(market_prob_source)s, %(price_bucket)s, %(line_bucket)s, %(line_surface)s,
     %(model_family)s, %(edge_type)s, %(pred_value)s, %(pred_count)s, %(model_prob_over)s,
     %(model_prob_side)s, %(count_edge_side)s, %(prob_edge_vs_market)s, %(confirmed_batting_order)s,
@@ -1130,6 +1176,13 @@ ON CONFLICT (run_id, replay_id, side) DO UPDATE SET
     paired_bookmaker_key = EXCLUDED.paired_bookmaker_key,
     paired_price_source = EXCLUDED.paired_price_source,
     pair_quality = EXCLUDED.pair_quality,
+    same_book_pair_flag = EXCLUDED.same_book_pair_flag,
+    cross_book_pair_flag = EXCLUDED.cross_book_pair_flag,
+    synthetic_pair_flag = EXCLUDED.synthetic_pair_flag,
+    clean_market_pair_flag = EXCLUDED.clean_market_pair_flag,
+    true_pair_flag = EXCLUDED.true_pair_flag,
+    minutes_to_first_pitch_at_lock = EXCLUDED.minutes_to_first_pitch_at_lock,
+    lock_price_age_minutes = EXCLUDED.lock_price_age_minutes,
     raw_market_prob = EXCLUDED.raw_market_prob,
     no_vig_market_prob = EXCLUDED.no_vig_market_prob,
     market_prob_side = EXCLUDED.market_prob_side,

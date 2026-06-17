@@ -1,10 +1,14 @@
-"""Train a shadow MLB prop bookability model.
+"""Train shadow MLB prop bookability models.
 
-Target: whether a locked offer later receives a valid same-book exact-line
-close snapshot. This catches lines that existed at lock but disappeared,
-changed, or could not be verified near first pitch. Same-day rows are only
-used after their first pitch has passed, so late games are not mislabeled as
-unbookable before their close window has had a chance to occur.
+Bookability has two different failure modes that should not share one label:
+
+* line_available_at_close: the same book/player/stat/side/line was observed at
+  close when we have evidence about availability.
+* valid_close_snapshot_captured: the operational close snapshot was captured
+  after lock and inside the valid close window.
+
+Same-day rows are only used after their first pitch has passed, so late games
+are not mislabeled before their close window has had a chance to occur.
 """
 from __future__ import annotations
 
@@ -60,6 +64,15 @@ _CATEGORICAL = [
     "opp_sp_hand",
 ]
 
+_VALID_CLOSE_STATUSES = {"valid_close", "valid_movement", "true_no_movement"}
+_LINE_UNAVAILABLE_REASONS = {
+    "line_unavailable_at_close",
+    "line_disappeared_at_close",
+    "offer_unavailable_at_close",
+    "same_book_line_unavailable",
+    "book_line_removed",
+}
+
 
 @dataclass(frozen=True)
 class BookabilityConfig:
@@ -105,6 +118,8 @@ SELECT
     e.opp_bp_ip_last_7::float AS opp_bp_ip_last_7,
     e.pinch_hit_risk::float AS pinch_hit_risk,
     COALESCE(e.clv_valid, false) AS clv_valid,
+    e.clv_status,
+    e.closing_snapshot_id,
     COALESCE(e.clv_unknown_reason, 'valid_close') AS clv_unknown_reason,
     EXTRACT(EPOCH FROM (l.commence_time_utc - l.snapshot_at_utc)) / 60.0 AS minutes_lock_to_start,
     EXTRACT(HOUR FROM l.snapshot_at_utc AT TIME ZONE 'UTC')::float AS lock_hour_utc
@@ -154,7 +169,20 @@ def _load(cfg: BookabilityConfig) -> pd.DataFrame:
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
     for col in _NUMERIC:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    df["target"] = df["clv_valid"].fillna(False).astype(bool).astype(int)
+    status = df["clv_status"].fillna("").astype(str)
+    reason = df["clv_unknown_reason"].fillna("").astype(str)
+    close_captured = df["clv_valid"].fillna(False).astype(bool)
+    observed_close = (
+        close_captured
+        | status.isin(_VALID_CLOSE_STATUSES)
+        | df["closing_snapshot_id"].notna()
+    )
+    line_available = pd.Series(np.nan, index=df.index, dtype="float64")
+    line_available.loc[observed_close] = 1.0
+    line_available.loc[reason.isin(_LINE_UNAVAILABLE_REASONS)] = 0.0
+    df["valid_close_snapshot_captured"] = close_captured.astype(int)
+    df["line_available_at_close"] = line_available
+    df["target"] = df["valid_close_snapshot_captured"]
     for col in _CATEGORICAL:
         df[col] = df[col].fillna("unknown").astype(str)
     return df.replace([np.inf, -np.inf], np.nan)
@@ -219,10 +247,14 @@ def _bucket_rows(df: pd.DataFrame) -> list[dict[str, Any]]:
     group_cols = ["market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"]
     for key, group in df.groupby(group_cols, dropna=False):
         key = key if isinstance(key, tuple) else (key,)
+        line_target = pd.to_numeric(group.get("line_available_at_close"), errors="coerce")
         rows.append({
             "bucket": "|".join(str(v) for v in key),
             "rows": int(len(group)),
-            "bookable_rate": _mean(group["target"]),
+            "bookable_rate": _mean(group["valid_close_snapshot_captured"]),
+            "close_capture_rate": _mean(group["valid_close_snapshot_captured"]),
+            "line_available_rate": _mean(line_target),
+            "line_available_rows": int(line_target.notna().sum()),
             "stale_rate": float((group["clv_unknown_reason"] == "stale_close_before_lock").mean()),
             "no_valid_rate": float((group["clv_unknown_reason"] == "no_valid_close_snapshot").mean()),
         })
@@ -243,23 +275,30 @@ def _prob_bucket(value: Any) -> str:
     return f"{lo:02d}-{hi:02d}%"
 
 
-def _prediction_calibration_rows(df: pd.DataFrame) -> list[dict[str, Any]]:
-    if df.empty or "bookability_pred" not in df.columns:
+def _prediction_calibration_rows(
+    df: pd.DataFrame,
+    *,
+    target_col: str = "target",
+    pred_col: str = "bookability_pred",
+) -> list[dict[str, Any]]:
+    if df.empty or pred_col not in df.columns or target_col not in df.columns:
         return []
     rows: list[dict[str, Any]] = []
-    work = df.dropna(subset=["bookability_pred", "target"]).copy()
+    work = df.dropna(subset=[pred_col, target_col]).copy()
     if work.empty:
         return []
-    work["pred_bin"] = work["bookability_pred"].map(_prob_bucket)
+    work["pred_bin"] = work[pred_col].map(_prob_bucket)
     for bucket, group in work.groupby("pred_bin", dropna=False):
+        actual = _mean(group[target_col])
+        predicted = _mean(group[pred_col])
         rows.append({
             "bucket": str(bucket),
             "rows": int(len(group)),
-            "actual_bookable_rate": _mean(group["target"]),
-            "avg_pred_bookable": _mean(group["bookability_pred"]),
+            "actual_bookable_rate": actual,
+            "avg_pred_bookable": predicted,
             "calibration_error": (
-                _mean(group["target"]) - _mean(group["bookability_pred"])
-                if _mean(group["target"]) is not None and _mean(group["bookability_pred"]) is not None
+                actual - predicted
+                if actual is not None and predicted is not None
                 else None
             ),
         })
@@ -267,8 +306,14 @@ def _prediction_calibration_rows(df: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
-def _group_prediction_gaps(df: pd.DataFrame, *, min_rows: int = 10) -> list[dict[str, Any]]:
-    if df.empty or "bookability_pred" not in df.columns:
+def _group_prediction_gaps(
+    df: pd.DataFrame,
+    *,
+    target_col: str = "target",
+    pred_col: str = "bookability_pred",
+    min_rows: int = 10,
+) -> list[dict[str, Any]]:
+    if df.empty or pred_col not in df.columns or target_col not in df.columns:
         return []
     specs = [
         ("market_side", ["market", "side"]),
@@ -282,8 +327,8 @@ def _group_prediction_gaps(df: pd.DataFrame, *, min_rows: int = 10) -> list[dict
             if len(group) < min_rows:
                 continue
             key_tuple = key if isinstance(key, tuple) else (key,)
-            actual = _mean(group["target"])
-            pred = _mean(group["bookability_pred"])
+            actual = _mean(group[target_col])
+            pred = _mean(group[pred_col])
             if actual is None or pred is None:
                 continue
             error = actual - pred
@@ -308,7 +353,9 @@ def _reason_rows(df: pd.DataFrame) -> list[dict[str, Any]]:
         rows.append({
             "reason": str(reason or "unknown"),
             "rows": int(len(group)),
-            "bookable_rate": _mean(group["target"]),
+            "bookable_rate": _mean(group["valid_close_snapshot_captured"]),
+            "close_capture_rate": _mean(group["valid_close_snapshot_captured"]),
+            "line_available_rate": _mean(group["line_available_at_close"]),
             "avg_pred_bookable": _mean(group["bookability_pred"]) if "bookability_pred" in group else None,
         })
     rows.sort(key=lambda rec: rec["rows"], reverse=True)
@@ -332,12 +379,16 @@ def _empirical_rate_rows(df: pd.DataFrame, *, min_rows: int = 10) -> dict[str, d
             if len(group) < min_rows:
                 continue
             key_tuple = key if isinstance(key, tuple) else (key,)
-            unknown = group.loc[~group["target"].astype(bool), "clv_unknown_reason"].fillna("none").astype(str)
+            unknown = group.loc[~group["valid_close_snapshot_captured"].astype(bool), "clv_unknown_reason"].fillna("none").astype(str)
+            line_target = pd.to_numeric(group.get("line_available_at_close"), errors="coerce")
             level_rows["|".join(str(v) for v in key_tuple)] = {
                 "level": level,
                 "key": "|".join(str(v) for v in key_tuple),
                 "rows": int(len(group)),
-                "bookable_rate": _mean(group["target"]),
+                "bookable_rate": _mean(group["valid_close_snapshot_captured"]),
+                "close_capture_rate": _mean(group["valid_close_snapshot_captured"]),
+                "line_available_rate": _mean(line_target),
+                "line_available_rows": int(line_target.notna().sum()),
                 "stale_rate": _rate(unknown == "stale_close_before_lock"),
                 "no_valid_rate": _rate(unknown == "no_valid_close_snapshot"),
                 "close_window_miss_rate": _rate(unknown == "close_outside_two_hour_window"),
@@ -358,6 +409,17 @@ def _fmt_num(value: Any, digits: int = 3) -> str:
     return f"{float(value):.{digits}f}"
 
 
+def _write_text_with_lock_fallback(path: Path, text: str) -> Path:
+    try:
+        path.write_text(text, encoding="utf-8")
+        return path
+    except PermissionError:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        fallback = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
+        fallback.write_text(text, encoding="utf-8")
+        return fallback
+
+
 def _write_report(payload: dict[str, Any], cfg: BookabilityConfig) -> str:
     _REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = _REPORT_DIR / cfg.report_file
@@ -369,7 +431,7 @@ def _write_report(payload: dict[str, Any], cfg: BookabilityConfig) -> str:
         f"Date range: {payload.get('date_min')} to {payload.get('date_max')}",
         f"Status: {payload.get('status')}",
         "",
-        "## Holdout",
+        "## Close Capture Holdout",
         "",
         "| Metric | Value |",
         "|---|---:|",
@@ -383,9 +445,27 @@ def _write_report(payload: dict[str, Any], cfg: BookabilityConfig) -> str:
             rendered = _fmt_pct(value) if "rate" in key else _fmt_num(value)
         lines.append(f"| {key} | {rendered} |")
     lines.append(f"| selected_scoring_method | {payload.get('selected_scoring_method', '-')} |")
+    availability = ((payload.get("targets") or {}).get("line_available_at_close") or {})
+    if availability:
+        lines.extend([
+            "",
+            "## Line Availability Holdout",
+            "",
+            "| Metric | Value |",
+            "|---|---:|",
+        ])
+        avail_holdout = availability.get("holdout") or {}
+        for key in ("rows", "actual_bookable_rate", "avg_pred_bookable", "brier_baseline", "brier_model", "log_loss_model", "auc_model", "model_usable"):
+            value = avail_holdout.get(key)
+            if isinstance(value, bool):
+                rendered = "yes" if value else "no"
+            else:
+                rendered = _fmt_pct(value) if "rate" in key else _fmt_num(value)
+            lines.append(f"| {key} | {rendered} |")
+        lines.append(f"| selected_scoring_method | {availability.get('selected_scoring_method', '-')} |")
     lines.extend([
         "",
-        "## Prediction Calibration",
+        "## Close Capture Calibration",
         "",
         "| Predicted Bucket | Rows | Actual Bookable | Avg Predicted | Error |",
         "|---|---:|---:|---:|---:|",
@@ -395,9 +475,22 @@ def _write_report(payload: dict[str, Any], cfg: BookabilityConfig) -> str:
             f"| {rec['bucket']} | {rec['rows']} | {_fmt_pct(rec['actual_bookable_rate'])} | "
             f"{_fmt_pct(rec['avg_pred_bookable'])} | {_fmt_pct(rec['calibration_error'], signed=True)} |"
         )
+    if availability.get("calibration_bins"):
+        lines.extend([
+            "",
+            "## Line Availability Calibration",
+            "",
+            "| Predicted Bucket | Rows | Actual Available | Avg Predicted | Error |",
+            "|---|---:|---:|---:|---:|",
+        ])
+        for rec in availability.get("calibration_bins", []):
+            lines.append(
+                f"| {rec['bucket']} | {rec['rows']} | {_fmt_pct(rec['actual_bookable_rate'])} | "
+                f"{_fmt_pct(rec['avg_pred_bookable'])} | {_fmt_pct(rec['calibration_error'], signed=True)} |"
+            )
     lines.extend([
         "",
-        "## Prediction Gap Audit",
+        "## Close Capture Prediction Gap Audit",
         "",
         "| Level | Bucket | Rows | Actual | Predicted | Error | Note |",
         "|---|---|---:|---:|---:|---:|---|",
@@ -414,28 +507,96 @@ def _write_report(payload: dict[str, Any], cfg: BookabilityConfig) -> str:
         "",
         "`clv_unknown_reason` is label-only and is not used as a training feature.",
         "",
-        "| Reason | Rows | Actual Bookable | Avg Predicted |",
-        "|---|---:|---:|---:|",
+        "| Reason | Rows | Close Captured | Line Available | Avg Predicted Capture |",
+        "|---|---:|---:|---:|---:|",
     ])
     for rec in payload.get("close_reason_audit", []):
         lines.append(
-            f"| {rec['reason']} | {rec['rows']} | {_fmt_pct(rec['bookable_rate'])} | "
+            f"| {rec['reason']} | {rec['rows']} | {_fmt_pct(rec['close_capture_rate'])} | "
+            f"{_fmt_pct(rec.get('line_available_rate'))} | "
             f"{_fmt_pct(rec.get('avg_pred_bookable'))} |"
         )
     lines.extend([
         "",
         "## Least Bookable Buckets",
         "",
-        "| Bucket | Rows | Bookable | Stale | No Valid Close |",
-        "|---|---:|---:|---:|---:|",
+        "| Bucket | Rows | Close Captured | Line Available | Avail Rows | Stale | No Valid Close |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ])
     for rec in payload.get("buckets", [])[:40]:
         lines.append(
-            f"| {rec['bucket']} | {rec['rows']} | {_fmt_pct(rec['bookable_rate'])} | "
+            f"| {rec['bucket']} | {rec['rows']} | {_fmt_pct(rec['close_capture_rate'])} | "
+            f"{_fmt_pct(rec.get('line_available_rate'))} | {rec.get('line_available_rows', 0)} | "
             f"{_fmt_pct(rec['stale_rate'])} | {_fmt_pct(rec['no_valid_rate'])} |"
         )
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return str(path)
+    return str(_write_text_with_lock_fallback(path, "\n".join(lines) + "\n"))
+
+
+def _fit_target_model(
+    df: pd.DataFrame,
+    cfg: BookabilityConfig,
+    *,
+    target_col: str,
+    pred_col: str,
+    method: str,
+) -> tuple[dict[str, Any], dict[str, Any] | None, pd.DataFrame]:
+    work = df.dropna(subset=[target_col]).copy()
+    out: dict[str, Any] = {
+        "target": target_col,
+        "rows": int(len(work)),
+        "status": "insufficient_rows",
+        "selected_scoring_method": "empirical_bucket_rate",
+    }
+    if work.empty or work[target_col].nunique() < 2:
+        return out, None, work
+    train_df, holdout_df, split = _split(work, cfg)
+    out["split_strategy"] = split
+    out["train_rows"] = int(len(train_df))
+    out["holdout_rows"] = int(len(holdout_df))
+    if len(train_df) < cfg.min_train_rows or len(holdout_df) < cfg.min_holdout_rows or train_df[target_col].nunique() < 2:
+        return out, None, holdout_df
+
+    X_train, names, means, scales, cats = _prepare(train_df)
+    y_train = train_df[target_col].astype(int).to_numpy()
+    model = LogisticRegression(max_iter=3000, solver="lbfgs")
+    model.fit(X_train, y_train)
+    X_hold, _, _, _, _ = _prepare(holdout_df, means=means, scales=scales, cats=cats)
+    y_hold = holdout_df[target_col].astype(int).to_numpy()
+    pred = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
+    holdout_scored = holdout_df.copy()
+    holdout_scored[pred_col] = pred
+    base_rate = float(np.clip(y_train.mean(), 1e-6, 1 - 1e-6))
+    base = np.repeat(base_rate, len(y_hold))
+    out["holdout"] = {
+        "rows": int(len(holdout_df)),
+        "actual_bookable_rate": float(y_hold.mean()),
+        "avg_pred_bookable": float(pred.mean()),
+        "brier_baseline": float(brier_score_loss(y_hold, base)),
+        "brier_model": float(brier_score_loss(y_hold, pred)),
+        "log_loss_model": float(log_loss(y_hold, pred, labels=[0, 1])),
+        "auc_model": float(roc_auc_score(y_hold, pred)) if len(np.unique(y_hold)) == 2 else None,
+    }
+    out["holdout"]["model_usable"] = bool(
+        out["holdout"]["brier_model"] <= out["holdout"]["brier_baseline"]
+        and (out["holdout"]["auc_model"] is None or out["holdout"]["auc_model"] >= 0.50)
+        and abs(out["holdout"]["avg_pred_bookable"] - out["holdout"]["actual_bookable_rate"]) <= 0.10
+    )
+    out["selected_scoring_method"] = "logistic" if out["holdout"]["model_usable"] else "empirical_bucket_rate"
+    out["calibration_bins"] = _prediction_calibration_rows(holdout_scored, target_col=target_col, pred_col=pred_col)
+    out["prediction_gap_audit"] = _group_prediction_gaps(holdout_scored, target_col=target_col, pred_col=pred_col)
+    out["status"] = "ready"
+    model_payload = {
+        "method": method,
+        "target": target_col,
+        "intercept": float(model.intercept_[0]),
+        "coef": {name: float(value) for name, value in zip(names, model.coef_[0]) if abs(float(value)) > 1e-12},
+        "numeric_means": means,
+        "numeric_scales": scales,
+        "categorical_values": cats,
+        "numeric_features": _NUMERIC,
+        "categorical_features": _CATEGORICAL,
+    }
+    return out, model_payload, holdout_scored
 
 
 def train(cfg: BookabilityConfig) -> dict[str, Any]:
@@ -457,55 +618,41 @@ def train(cfg: BookabilityConfig) -> dict[str, Any]:
         payload["report_path"] = _write_report(payload, cfg)
         (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return payload
-    train_df, holdout_df, split = _split(df, cfg)
-    payload["split_strategy"] = split
-    payload["train_rows"] = int(len(train_df))
-    payload["holdout_rows"] = int(len(holdout_df))
-    if len(train_df) < cfg.min_train_rows or len(holdout_df) < cfg.min_holdout_rows or train_df["target"].nunique() < 2:
+    capture_target, capture_model, capture_holdout = _fit_target_model(
+        df,
+        cfg,
+        target_col="valid_close_snapshot_captured",
+        pred_col="bookability_pred",
+        method="valid_close_snapshot_capture_logistic",
+    )
+    availability_target, availability_model, _availability_holdout = _fit_target_model(
+        df,
+        cfg,
+        target_col="line_available_at_close",
+        pred_col="line_available_pred",
+        method="line_available_at_close_logistic",
+    )
+    payload["targets"] = {
+        "valid_close_snapshot_captured": capture_target,
+        "line_available_at_close": availability_target,
+    }
+    payload["split_strategy"] = capture_target.get("split_strategy")
+    payload["train_rows"] = int(capture_target.get("train_rows") or 0)
+    payload["holdout_rows"] = int(capture_target.get("holdout_rows") or 0)
+    if capture_target.get("status") != "ready" or capture_model is None:
         payload["status"] = "insufficient_rows"
         payload["report_path"] = _write_report(payload, cfg)
         (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return payload
-
-    X_train, names, means, scales, cats = _prepare(train_df)
-    y_train = train_df["target"].astype(int).to_numpy()
-    model = LogisticRegression(max_iter=3000, solver="lbfgs")
-    model.fit(X_train, y_train)
-    X_hold, _, _, _, _ = _prepare(holdout_df, means=means, scales=scales, cats=cats)
-    y_hold = holdout_df["target"].astype(int).to_numpy()
-    pred = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
-    holdout_scored = holdout_df.copy()
-    holdout_scored["bookability_pred"] = pred
-    base_rate = float(np.clip(y_train.mean(), 1e-6, 1 - 1e-6))
-    base = np.repeat(base_rate, len(y_hold))
-    payload["holdout"] = {
-        "rows": int(len(holdout_df)),
-        "actual_bookable_rate": float(y_hold.mean()),
-        "avg_pred_bookable": float(pred.mean()),
-        "brier_baseline": float(brier_score_loss(y_hold, base)),
-        "brier_model": float(brier_score_loss(y_hold, pred)),
-        "log_loss_model": float(log_loss(y_hold, pred, labels=[0, 1])),
-        "auc_model": float(roc_auc_score(y_hold, pred)) if len(np.unique(y_hold)) == 2 else None,
-    }
-    payload["holdout"]["model_usable"] = bool(
-        payload["holdout"]["brier_model"] <= payload["holdout"]["brier_baseline"]
-        and (payload["holdout"]["auc_model"] is None or payload["holdout"]["auc_model"] >= 0.50)
-        and abs(payload["holdout"]["avg_pred_bookable"] - payload["holdout"]["actual_bookable_rate"]) <= 0.10
-    )
-    payload["selected_scoring_method"] = "logistic" if payload["holdout"]["model_usable"] else "empirical_bucket_rate"
-    payload["calibration_bins"] = _prediction_calibration_rows(holdout_scored)
-    payload["prediction_gap_audit"] = _group_prediction_gaps(holdout_scored)
-    payload["close_reason_audit"] = _reason_rows(holdout_scored)
-    payload["models"]["global"] = {
-        "method": "locked_offer_bookability_logistic",
-        "intercept": float(model.intercept_[0]),
-        "coef": {name: float(value) for name, value in zip(names, model.coef_[0]) if abs(float(value)) > 1e-12},
-        "numeric_means": means,
-        "numeric_scales": scales,
-        "categorical_values": cats,
-        "numeric_features": _NUMERIC,
-        "categorical_features": _CATEGORICAL,
-    }
+    payload["holdout"] = capture_target.get("holdout") or {}
+    payload["selected_scoring_method"] = capture_target.get("selected_scoring_method")
+    payload["calibration_bins"] = capture_target.get("calibration_bins") or []
+    payload["prediction_gap_audit"] = capture_target.get("prediction_gap_audit") or []
+    payload["close_reason_audit"] = _reason_rows(capture_holdout)
+    payload["models"]["global"] = capture_model
+    payload["models"]["valid_close_snapshot_captured"] = capture_model
+    if availability_model is not None:
+        payload["models"]["line_available_at_close"] = availability_model
     payload["status"] = "ready"
     payload["report_path"] = _write_report(payload, cfg)
     (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")

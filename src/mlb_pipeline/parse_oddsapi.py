@@ -447,8 +447,8 @@ def _iter_prop_rows(
       outcome.link        = betslip deeplink (optional)
 
     Alternate market format (FanDuel batter props — Over-only, multi-line):
-      All outcomes have name="Over" with different point values per player.
-      We pick the single line with abs(price) closest to 0 (most even-money).
+      Outcomes commonly have name="Over" with different point values per player.
+      If matching Under outcomes exist for the same player/point, store them.
       Only FanDuel rows are stored for alternate markets; other books that have
       both standard and alternate are stored via the standard market only.
     """
@@ -469,34 +469,44 @@ def _iter_prop_rows(
                 continue
 
             if market_key in _ALTERNATE_MARKETS:
-                # FanDuel alternate format: Over-only, multiple line values per player.
+                # FanDuel alternate format: usually Over-only, multiple line values per player.
                 # Skip non-FanDuel bookmakers — they have standard lines already.
                 if bookmaker_key != "fanduel":
                     continue
 
-                # Collect all Over outcomes per player, then pick the most even-money line.
-                by_player: dict[str, list[dict]] = {}
+                # Collect all lines per player. If true Under outcomes exist,
+                # preserve them instead of falling back to synthetic complements.
+                by_player: dict[str, dict[float, dict]] = {}
                 for outcome in (market.get("outcomes") or []):
-                    if (outcome.get("name") or "").strip().lower() != "over":
+                    side = (outcome.get("name") or "").strip().lower()
+                    if side not in {"over", "under"}:
                         continue
                     player = (outcome.get("description") or "").strip()
                     if not player:
                         continue
-                    by_player.setdefault(player, []).append({
-                        "price": _to_int(outcome.get("price")),
-                        "point": _to_num(outcome.get("point")),
-                        "link":  outcome.get("link"),
+                    point = _to_num(outcome.get("point"))
+                    price = _to_int(outcome.get("price"))
+                    if point is None or price is None:
+                        continue
+                    entry = by_player.setdefault(player, {}).setdefault(float(point), {
+                        "point": point,
+                        "over_price": None,
+                        "under_price": None,
+                        "over_link": None,
+                        "under_link": None,
                     })
+                    entry[f"{side}_price"] = price
+                    entry[f"{side}_link"] = outcome.get("link")
 
-                for player_name, candidates in by_player.items():
-                    if not candidates:
+                for player_name, by_line in by_player.items():
+                    if not by_line:
                         continue
                     # Store ALL available lines so the lottery parlay can pick the
                     # highest line where the model still has edge.  The DB unique
                     # constraint now includes `line`, so each (player, stat, line)
                     # gets its own row.
-                    for cand in candidates:
-                        if cand.get("point") is None or cand.get("price") is None:
+                    for cand in by_line.values():
+                        if cand.get("point") is None or cand.get("over_price") is None:
                             continue
                         yield (
                             as_of_date,
@@ -510,10 +520,10 @@ def _iter_prop_rows(
                             _normalize_name(player_name),
                             stat,
                             cand["point"],   # line
-                            cand["price"],   # over_price
-                            None,            # under_price — FD alternate is Over-only
-                            cand["link"],    # over_link
-                            None,            # under_link
+                            cand["over_price"],
+                            cand.get("under_price"),
+                            cand.get("over_link"),
+                            cand.get("under_link"),
                             fetched_at_utc,
                             cand["point"],   # open_line
                         )

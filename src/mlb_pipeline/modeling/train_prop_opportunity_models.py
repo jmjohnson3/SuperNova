@@ -96,7 +96,46 @@ HITTER_PA_V2_NUMERIC = [
     "bench_or_removal_risk",
 ]
 
-HITTER_NUMERIC = [*HITTER_NUMERIC, *HITTER_PA_V2_NUMERIC]
+OPPORTUNITY_V3_NUMERIC = [
+    "implied_run_diff",
+    "abs_implied_run_diff",
+    "favorite_flag",
+    "underdog_flag",
+    "close_game_flag",
+    "blowout_risk",
+    "high_total_flag",
+    "low_total_flag",
+    "home_favorite_ninth_penalty",
+    "away_trailing_extra_pa_chance",
+    "slot_prior_x_home_ninth_penalty",
+    "slot_prior_x_blowout_risk",
+    "projected_pa_x_implied_runs",
+    "projected_pa_x_close_game",
+    "projected_pitch_per_bf",
+    "projected_bf_per_ip",
+    "short_leash_projection_flag",
+    "deep_leash_projection_flag",
+    "pitcher_favorite_leash",
+    "pitcher_blowout_hook_risk",
+    "opponent_onbase_pressure",
+]
+
+PITCHER_LEASH_V2_NUMERIC = [
+    "bullpen_fatigue_ip_3",
+    "bullpen_fatigue_ip_7",
+    "bullpen_fatigue_leash_support",
+    "opponent_k_leash_support",
+    "opponent_patience_hook_risk",
+    "opponent_power_hook_risk",
+    "pitcher_projection_leash_score",
+    "pitcher_pitch_count_x_opponent_k",
+    "pitcher_bf_x_close_game",
+    "pitcher_bf_x_bullpen_fatigue",
+    "pitcher_game_script_leash_support",
+    "pitcher_leash_v2_score",
+]
+
+HITTER_NUMERIC = [*HITTER_NUMERIC, *HITTER_PA_V2_NUMERIC, *OPPORTUNITY_V3_NUMERIC]
 
 PITCHER_NUMERIC = [
     "projected_ip",
@@ -107,10 +146,22 @@ PITCHER_NUMERIC = [
     "team_implied_runs",
     "opponent_implied_runs",
     "game_total_line",
+    "opp_sp_k_pct_10",
+    "opp_sp_bb_pct",
+    "opp_sp_xwoba",
+    "opp_sp_hard_hit_pct",
+    "opp_sp_whiff_pct",
+    "opp_bp_era_10",
+    "opp_bp_whip_10",
+    "opp_bp_k9_10",
+    "opp_bp_ip_last_3",
+    "opp_bp_ip_last_7",
     "opp_team_k_pct_10",
     "opp_team_avg_10",
     "opp_team_obp_10",
     "opp_team_slg_10",
+    *OPPORTUNITY_V3_NUMERIC,
+    *PITCHER_LEASH_V2_NUMERIC,
 ]
 
 HITTER_CATEGORICAL = ["confirmed_lineup_source", "opp_sp_hand", "team_abbr", "opponent_abbr"]
@@ -295,7 +346,147 @@ def add_hitter_pa_v2_features(df: pd.DataFrame) -> pd.DataFrame:
         + 0.25 * out["bottom_order_flag"]
         + 0.20 * pinch_risk
     ).clip(0.0, 1.0)
-    for col in HITTER_PA_V2_NUMERIC:
+
+    add_opportunity_v3_features(out, in_place=True)
+
+    for col in [*HITTER_PA_V2_NUMERIC, *OPPORTUNITY_V3_NUMERIC]:
+        out[col] = pd.to_numeric(out.get(col), errors="coerce")
+    return out
+
+
+def add_opportunity_v3_features(df: pd.DataFrame, *, in_place: bool = False) -> pd.DataFrame:
+    """Add leakage-safe opportunity context used by PA/BF shadow models.
+
+    These are deterministic lock-time transforms of existing market-training
+    fields: game environment, projected usage, and lineup slot priors. They do
+    not use actual PA/BF outcomes.
+    """
+    out = df if in_place else df.copy()
+    if out.empty:
+        return out
+
+    team_runs = _numeric_series(out, "team_implied_runs")
+    opp_runs = _numeric_series(out, "opponent_implied_runs")
+    total = _numeric_series(out, "game_total_line")
+    is_home = _numeric_series(out, "is_home", 0.0).fillna(0.0).clip(0.0, 1.0)
+    projected_pa = _numeric_series(out, "projected_pa")
+    projected_bf = _numeric_series(out, "projected_bf")
+    projected_ip = _numeric_series(out, "projected_ip")
+    projected_pitch_count = _numeric_series(out, "projected_pitch_count")
+    slot_prior = _numeric_series(out, "lineup_slot_pa_prior", 4.05).fillna(4.05)
+
+    run_diff = team_runs - opp_runs
+    abs_diff = run_diff.abs()
+    favorite = (run_diff > 0.15).astype(float)
+    underdog = (run_diff < -0.15).astype(float)
+    close_game = (abs_diff <= 0.75).astype(float)
+    blowout_risk = ((abs_diff - 1.25) / 2.25).clip(lower=0.0, upper=1.0)
+    high_total = (total >= 9.0).astype(float)
+    low_total = (total <= 7.5).astype(float)
+
+    # Home favorites can lose a bottom-ninth plate appearance. Away teams that
+    # trail retain ninth-inning opportunity more often.
+    home_fav_penalty = (is_home * favorite * (0.45 + 0.55 * blowout_risk)).clip(0.0, 1.0)
+    away_trailing_extra = ((1.0 - is_home) * underdog * (0.35 + 0.65 * close_game)).clip(0.0, 1.0)
+
+    out["implied_run_diff"] = run_diff
+    out["abs_implied_run_diff"] = abs_diff
+    out["favorite_flag"] = favorite
+    out["underdog_flag"] = underdog
+    out["close_game_flag"] = close_game
+    out["blowout_risk"] = blowout_risk
+    out["high_total_flag"] = high_total
+    out["low_total_flag"] = low_total
+    out["home_favorite_ninth_penalty"] = home_fav_penalty
+    out["away_trailing_extra_pa_chance"] = away_trailing_extra
+    out["slot_prior_x_home_ninth_penalty"] = slot_prior * home_fav_penalty
+    out["slot_prior_x_blowout_risk"] = slot_prior * blowout_risk
+    out["projected_pa_x_implied_runs"] = projected_pa * team_runs
+    out["projected_pa_x_close_game"] = projected_pa * close_game
+
+    bf_denom = projected_bf.where(projected_bf > 0.5, np.nan)
+    ip_denom = projected_ip.where(projected_ip > 0.1, np.nan)
+    out["projected_pitch_per_bf"] = (projected_pitch_count / bf_denom).clip(2.5, 6.5)
+    out["projected_bf_per_ip"] = (projected_bf / ip_denom).clip(2.5, 7.5)
+    out["short_leash_projection_flag"] = (
+        (projected_pitch_count < 78.0) | (projected_bf < 20.0) | (projected_ip < 5.0)
+    ).astype(float)
+    out["deep_leash_projection_flag"] = (
+        (projected_pitch_count >= 94.0) & (projected_bf >= 24.0) & (projected_ip >= 5.8)
+    ).astype(float)
+    out["pitcher_favorite_leash"] = (favorite * (0.65 + 0.35 * close_game)).clip(0.0, 1.0)
+    out["pitcher_blowout_hook_risk"] = (blowout_risk * (0.5 + 0.5 * high_total)).clip(0.0, 1.0)
+    out["opponent_onbase_pressure"] = (
+        _numeric_series(out, "opp_team_obp_10").fillna(0.315)
+        + 0.45 * _numeric_series(out, "opp_team_slg_10").fillna(0.405)
+        - 0.45
+    ).clip(-0.20, 0.35)
+
+    add_pitcher_leash_v2_features(out, in_place=True)
+
+    for col in OPPORTUNITY_V3_NUMERIC:
+        out[col] = pd.to_numeric(out.get(col), errors="coerce")
+    return out
+
+
+def add_pitcher_leash_v2_features(df: pd.DataFrame, *, in_place: bool = False) -> pd.DataFrame:
+    """Add pitcher opportunity features for BF and pitch-count modeling."""
+    out = df if in_place else df.copy()
+    if out.empty:
+        return out
+
+    projected_bf = _numeric_series(out, "projected_bf")
+    projected_ip = _numeric_series(out, "projected_ip")
+    projected_pitch_count = _numeric_series(out, "projected_pitch_count")
+    opp_k = _numeric_series(out, "opp_team_k_pct_10").fillna(0.225)
+    opp_obp = _numeric_series(out, "opp_team_obp_10").fillna(0.315)
+    opp_slg = _numeric_series(out, "opp_team_slg_10").fillna(0.405)
+    opp_sp_bb = _numeric_series(out, "opp_sp_bb_pct").fillna(0.080)
+    opp_sp_xwoba = _numeric_series(out, "opp_sp_xwoba").fillna(0.320)
+    bp_ip_3 = _numeric_series(out, "opp_bp_ip_last_3").fillna(9.0)
+    bp_ip_7 = _numeric_series(out, "opp_bp_ip_last_7").fillna(21.0)
+    close_game = _numeric_series(out, "close_game_flag", 0.0).fillna(0.0).clip(0.0, 1.0)
+    favorite = _numeric_series(out, "favorite_flag", 0.0).fillna(0.0).clip(0.0, 1.0)
+    blowout = _numeric_series(out, "blowout_risk", 0.0).fillna(0.0).clip(0.0, 1.0)
+
+    out["bullpen_fatigue_ip_3"] = bp_ip_3
+    out["bullpen_fatigue_ip_7"] = bp_ip_7
+    out["bullpen_fatigue_leash_support"] = (
+        0.55 * ((bp_ip_3 - 8.5) / 5.0).clip(-1.0, 2.0)
+        + 0.45 * ((bp_ip_7 - 20.0) / 10.0).clip(-1.0, 2.0)
+    ).clip(-1.0, 2.5)
+    out["opponent_k_leash_support"] = ((opp_k - 0.215) / 0.060).clip(-2.0, 2.5)
+    out["opponent_patience_hook_risk"] = (
+        0.60 * ((opp_obp - 0.320) / 0.045).clip(-2.0, 2.5)
+        + 0.40 * ((opp_sp_bb - 0.080) / 0.035).clip(-2.0, 2.5)
+    ).clip(-2.0, 2.5)
+    out["opponent_power_hook_risk"] = (
+        0.55 * ((opp_slg - 0.405) / 0.070).clip(-2.0, 2.5)
+        + 0.45 * ((opp_sp_xwoba - 0.320) / 0.055).clip(-2.0, 2.5)
+    ).clip(-2.0, 2.5)
+    out["pitcher_projection_leash_score"] = (
+        0.35 * ((projected_pitch_count - 85.0) / 15.0).clip(-2.0, 2.5)
+        + 0.35 * ((projected_bf - 21.0) / 5.0).clip(-2.0, 2.5)
+        + 0.30 * ((projected_ip - 5.2) / 1.2).clip(-2.0, 2.5)
+    ).clip(-2.5, 3.0)
+    out["pitcher_pitch_count_x_opponent_k"] = projected_pitch_count * opp_k
+    out["pitcher_bf_x_close_game"] = projected_bf * close_game
+    out["pitcher_bf_x_bullpen_fatigue"] = projected_bf * out["bullpen_fatigue_leash_support"]
+    out["pitcher_game_script_leash_support"] = (
+        0.55 * favorite
+        + 0.35 * close_game
+        - 0.45 * blowout
+    ).clip(-1.0, 1.5)
+    out["pitcher_leash_v2_score"] = (
+        out["pitcher_projection_leash_score"]
+        + 0.30 * out["bullpen_fatigue_leash_support"]
+        + 0.22 * out["opponent_k_leash_support"]
+        + 0.18 * out["pitcher_game_script_leash_support"]
+        - 0.30 * out["opponent_patience_hook_risk"]
+        - 0.25 * out["opponent_power_hook_risk"]
+    ).clip(-3.5, 4.0)
+
+    for col in PITCHER_LEASH_V2_NUMERIC:
         out[col] = pd.to_numeric(out.get(col), errors="coerce")
     return out
 
@@ -585,6 +776,17 @@ def _fmt_pct(value: Any, signed: bool = False) -> str:
     return f"{v:+.1f}%" if signed else f"{v:.1f}%"
 
 
+def _write_text_with_lock_fallback(path: Path, text: str) -> Path:
+    try:
+        path.write_text(text, encoding="utf-8")
+        return path
+    except PermissionError:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        fallback = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
+        fallback.write_text(text, encoding="utf-8")
+        return fallback
+
+
 def _write_report(payload: dict[str, Any], cfg: OpportunityConfig) -> str:
     _REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = _REPORT_DIR / cfg.report_file
@@ -645,8 +847,7 @@ def _write_report(payload: dict[str, Any], cfg: OpportunityConfig) -> str:
         for feature, coef in _top_coefficients(rec):
             lines.append(f"| {feature} | {_fmt_num(coef, signed=True)} |")
         lines.append("")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return str(path)
+    return str(_write_text_with_lock_fallback(path, "\n".join(lines) + "\n"))
 
 
 def train(cfg: OpportunityConfig) -> dict[str, Any]:

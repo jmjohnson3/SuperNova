@@ -1,38 +1,38 @@
 # MLB Prop Opportunity Models
 
-Generated UTC: 2026-06-12T08:54:55Z
-Rows: 38710
-Date range: 2026-05-31 to 2026-06-10
+Generated UTC: 2026-06-17T08:51:05Z
+Rows: 65072
+Date range: 2026-05-31 to 2026-06-15
 Status: ready
 
 ## Regression Holdouts
 
 | Model | Rows | Base MAE | Model MAE | Base RMSE | Model RMSE | Model Bias | R2 | Decision |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| hitter_pa | 228 | 0.698 | 0.635 | 0.894 | 0.831 | -0.095 | 0.152 | model_helped |
-| pitcher_bf | 24 | 3.008 | - | 3.953 | - | - | - | insufficient_rows |
-| pitcher_ip | 24 | 0.924 | - | 1.120 | - | - | - | insufficient_rows |
-| pitcher_pitch_count_proxy | 24 | 11.582 | - | 15.218 | - | - | - | insufficient_rows |
+| hitter_pa | 158 | 0.594 | 0.526 | 0.783 | 0.729 | +0.015 | 0.211 | model_helped |
+| pitcher_bf | 15 | 3.400 | - | 3.980 | - | - | - | insufficient_rows |
+| pitcher_ip | 15 | 1.001 | - | 1.262 | - | - | - | insufficient_rows |
+| pitcher_pitch_count_proxy | 15 | 13.090 | - | 15.322 | - | - | - | insufficient_rows |
 
 ## Low-PA / Removal Risk
 
 | Rows | Actual | Avg Prob | Brier | Log Loss | AUC | Status |
 |---:|---:|---:|---:|---:|---:|---|
-| 228 | 6.1% | 7.9% | 0.061 | 0.219 | 0.750 | trained |
+| 158 | 8.2% | 8.2% | 0.067 | 0.243 | 0.777 | trained |
 
 ## Lineup Slot Impact
 
 | Slot | Rows | Avg Actual PA | Low-PA Rate |
 |---:|---:|---:|---:|
-| 1 | 251 | 4.510 | 2.8% |
-| 2 | 259 | 4.432 | 3.1% |
-| 3 | 265 | 4.325 | 2.3% |
-| 4 | 241 | 4.245 | 2.5% |
-| 5 | 211 | 3.995 | 6.6% |
-| 6 | 210 | 3.971 | 6.7% |
-| 7 | 206 | 3.772 | 8.7% |
-| 8 | 166 | 3.470 | 13.9% |
-| 9 | 195 | 3.200 | 26.2% |
+| 1 | 366 | 4.505 | 2.5% |
+| 2 | 377 | 4.403 | 3.2% |
+| 3 | 386 | 4.280 | 2.8% |
+| 4 | 355 | 4.211 | 2.3% |
+| 5 | 309 | 4.000 | 5.8% |
+| 6 | 315 | 3.898 | 8.9% |
+| 7 | 298 | 3.725 | 9.1% |
+| 8 | 252 | 3.480 | 13.1% |
+| 9 | 286 | 3.227 | 22.4% |
 
 ## Largest Coefficients
 
@@ -40,35 +40,35 @@ Status: ready
 
 | Feature | Coef |
 |---|---:|
-| projected_pa_x_slot_prior | +0.783 |
-| opponent_abbr=PIT | +0.770 |
-| opponent_abbr=WAS | -0.735 |
-| opponent_abbr=COL | +0.700 |
+| projected_pa_x_slot_prior | +1.018 |
+| opponent_abbr=COL | +0.629 |
+| opponent_abbr=PIT | +0.617 |
 | opponent_abbr=ATH | +0.606 |
-| team_abbr=MIN | -0.564 |
-| opponent_abbr=ATL | -0.560 |
-| opponent_abbr=NYM | -0.555 |
-| opponent_abbr=LAD | -0.516 |
-| opponent_abbr=MIN | +0.486 |
-| team_abbr=SF | +0.480 |
-| opponent_abbr=MIL | -0.469 |
+| opponent_abbr=WAS | -0.553 |
+| opponent_abbr=MIN | +0.544 |
+| team_abbr=SF | +0.513 |
+| team_abbr=MIL | +0.482 |
+| team_abbr=CHC | -0.405 |
+| opponent_abbr=SF | +0.384 |
+| favorite_flag | +0.379 |
+| confirmed_batting_order | +0.360 |
 
 ### hitter_low_pa
 
 | Feature | Coef |
 |---|---:|
-| lineup_slot_low_pa_prior | +1.405 |
-| opponent_abbr=WAS | +1.179 |
-| team_abbr=MIN | +0.783 |
-| opponent_abbr=PIT | -0.679 |
-| projected_pa_x_slot_prior | -0.663 |
-| opponent_abbr=ATH | -0.637 |
-| confirmed_batting_order | -0.607 |
-| opponent_abbr=TOR | +0.587 |
-| opponent_abbr=CIN | +0.575 |
-| team_abbr=BAL | +0.552 |
-| bullpen_quality_risk | -0.543 |
-| team_abbr=TOR | -0.541 |
+| projected_pa_x_slot_prior | -1.391 |
+| opponent_abbr=WAS | +1.236 |
+| lineup_slot_low_pa_prior | +1.075 |
+| confirmed_batting_order | -0.902 |
+| opponent_abbr=ATH | -0.758 |
+| team_abbr=MIN | +0.741 |
+| opponent_abbr=CIN | +0.695 |
+| opponent_abbr=BAL | -0.674 |
+| team_abbr=HOU | +0.666 |
+| opponent_abbr=PIT | -0.661 |
+| team_abbr=DET | +0.654 |
+| team_abbr=TEX | +0.648 |
 
 ### pitcher_bf
 

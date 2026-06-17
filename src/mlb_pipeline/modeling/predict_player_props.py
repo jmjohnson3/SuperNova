@@ -24,6 +24,7 @@ import os
 import re
 import sys
 import unicodedata
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -177,7 +178,7 @@ class PredictConfig:
     # linked paper props by stat so research plays do not get mistaken for
     # bankroll bets. Set paper limit to 0 to show every priced row per section.
     discord_show_paper_links: bool = True
-    discord_include_all_priced_props: bool = True
+    discord_include_all_priced_props: bool = False
     discord_paper_limit: int = 10
 
 
@@ -4971,8 +4972,6 @@ def _print_discord(
                 display_ev = item.get("ev")
             p_s = f" P={display_prob:.1%}" if display_prob is not None else ""
             ev_s = f" EV={display_ev:+.1%}" if display_ev is not None else ""
-            selector_tier = item.get("selector_tier")
-            selector_s = f" Sel={selector_tier}" if selector_tier else ""
             clv_prob = _as_float(item.get("clv_beat_prob"))
             clv_s = f" CLV={clv_prob:.0%}" if clv_prob is not None else ""
             current_price = _as_float(item.get("current_price"))
@@ -4980,12 +4979,13 @@ def _print_discord(
             price_s = f" Price={current_price:+.0f}" if current_price is not None else " Price=?"
             min_s = f" Min={minimum_price:+.0f}" if minimum_price is not None else " Min=?"
             drift_s = "" if item.get("price_drift_ok") else " DRIFT BLOCK"
+            tags_s = _tag_text(item)
             book = item.get("book") or _book_label(item.get("link"))
             link_s = f" [Bet {book}](<{item['link']}>)" if include_link and item.get("link") else ""
             print(
                 f"- {item['name']} ({item['team']} vs {item['opp']}) "
                 f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}{p_s}{ev_s}"
-                f"{clv_s}{selector_s}{price_s}{min_s}{drift_s} "
+                f"{clv_s}{price_s}{min_s}{drift_s}{tags_s} "
                 f"[{bankroll_tag(item['bankroll'])}]{link_s}"
             )
 
@@ -5044,7 +5044,11 @@ def _print_discord(
                         "clv_beat_prob": selector.get("clv_beat_prob"),
                         "bookable_prob": selector.get("bookable_prob"),
                         "policy_variant": selector.get("policy_variant"),
+                        "pair_quality": selector.get("pair_quality"),
+                        "market_prob_source": selector.get("market_prob_source"),
+                        "event_side_line_prob_side": selector.get("event_side_line_prob_side"),
                         "bucket_trust_status": selector.get("bucket_trust_status"),
+                        "no_bet_decision": selector.get("no_bet_decision"),
                         "selector_reasons": selector.get("selector_reasons") or [],
                     })
                     if item["bankroll"].candidate and not selector.get("selector_real_candidate"):
@@ -5092,25 +5096,130 @@ def _print_discord(
                 or (stat_key == "batter_home_runs" and line >= 1.5)
             )
 
+        def _compact_reason(reason: str) -> Optional[str]:
+            r = str(reason or "").lower()
+            if not r:
+                return None
+            if "synthetic" in r:
+                return "synthetic"
+            if "one_sided" in r or ("unknown" in r and "pair_quality" in r):
+                return "one-sided"
+            if "cross_book" in r:
+                return "cross-book"
+            if "clv" in r:
+                return "CLV-weak"
+            if "bookability" in r:
+                return "bookability"
+            if "opportunity" in r:
+                return "opportunity"
+            if "bucket_closed" in r or r.startswith("bucket_watch"):
+                return "bucket-closed"
+            if "bucket_roi_negative" in r or "roi" in r:
+                return "ROI-weak"
+            if "market_beats" in r or "market_residual" in r or "market_disagreement" in r:
+                return "market-better"
+            if "alt_line" in r or "lottery" in r:
+                return "lottery"
+            if "drift" in r:
+                return "drift"
+            if "no_bet" in r:
+                return "no-bet"
+            return None
+
+        def _selector_tags(item: Dict) -> List[str]:
+            tags: List[str] = []
+            tier = str(item.get("selector_tier") or "").lower()
+            if tier in {"paper", "lottery", "no_bet"}:
+                tags.append("paper" if tier == "paper" else ("lottery" if tier == "lottery" else "no-bet"))
+            pair = str(item.get("pair_quality") or "").lower()
+            if pair == "same_book":
+                tags.append("clean-pair")
+            elif pair == "cross_book":
+                tags.append("cross-book")
+            elif pair in {"synthetic", "one_sided", "unknown"}:
+                tags.append("synthetic" if pair == "synthetic" else "one-sided")
+            clv_prob = _as_float(item.get("clv_beat_prob"))
+            if clv_prob is not None:
+                tags.append("CLV+" if clv_prob >= prop_selector_cfg.min_clv_beat_prob else "CLV-weak")
+            if not item.get("price_drift_ok", True):
+                tags.append("drift")
+            for reason in item.get("selector_reasons") or []:
+                tag = _compact_reason(reason)
+                if tag:
+                    tags.append(tag)
+            out: List[str] = []
+            for tag in tags:
+                if tag not in out:
+                    out.append(tag)
+            return out[:5]
+
+        def _tag_text(item: Dict) -> str:
+            tags = _selector_tags(item)
+            return f" tags={','.join(tags)}" if tags else ""
+
+        def _reason_counts(rows: List[Dict]) -> Counter:
+            counts: Counter = Counter()
+            for item in rows:
+                row_tags: List[str] = []
+                for reason in item.get("selector_reasons") or []:
+                    tag = _compact_reason(reason)
+                    if tag and tag not in row_tags:
+                        row_tags.append(tag)
+                if not row_tags:
+                    row_tags = _selector_tags(item)
+                counts.update(row_tags)
+            return counts
+
+        def _print_no_bet_summary(rows: List[Dict]) -> None:
+            print("")
+            print("**NO-BET SUMMARY**")
+            if not rows:
+                print("- No selector no-bet rows in the displayed model-pick pool")
+                return
+            counts = _reason_counts(rows)
+            top = ", ".join(f"{reason} {count}" for reason, count in counts.most_common(6))
+            print(f"- No-bet rows: {len(rows)}")
+            print(f"- Top blockers: {top or 'none'}")
+
+        def _print_data_health(rows: List[Dict], *, offers_missing: bool) -> None:
+            health = _prop_offer_health(prop_lines)
+            clean_pairs = sum(1 for item in rows if item.get("pair_quality") in {"same_book", "cross_book"})
+            synthetic = sum(1 for item in rows if item.get("pair_quality") == "synthetic")
+            clv_known = sum(1 for item in rows if _as_float(item.get("clv_beat_prob")) is not None)
+            total = len(rows)
+            clean_pair_s = f"{(clean_pairs / total):.0%}" if total else "-"
+            synthetic_s = f"{(synthetic / total):.0%}" if total else "-"
+            clv_s = f"{(clv_known / total):.0%}" if total else "-"
+            print("")
+            print("**DATA HEALTH**")
+            if offers_missing:
+                print("- Prop odds not loaded yet - no links/rankings generated")
+            else:
+                print(
+                    f"- Offers: {health['entries']} markets, {health['offer_rows']} normalized offers, "
+                    f"{health['linked_sides']} linked sides"
+                )
+            print(f"- Display pool: {total} rows; clean pair {clean_pair_s}; synthetic {synthetic_s}; CLV model coverage {clv_s}")
+
         def _print_paper_sections(
             rows: List[Dict],
             *,
             source_label: str,
-            title: str = "PAPER / RESEARCH",
+            title: str = "PAPER PROPS - COMMON LINES",
+            include_empty_stats: bool = True,
         ) -> None:
             per_section_limit = int(cfg.discord_paper_limit or 0)
             printed_section = False
             total_shown = 0
             print("")
-            print(
-                f"**{title} ({len(rows)} {source_label}; "
-                f"{len(model_pick_rows)} positive-EV)**"
-            )
+            print(f"**{title} ({len(rows)} {source_label})**")
             for stat_key, label in stat_sections:
                 stat_rows = [item for item in rows if item.get("stat_key") == stat_key]
                 stat_rows.sort(key=_pick_score, reverse=True)
                 shown = stat_rows if per_section_limit <= 0 else stat_rows[:per_section_limit]
                 if not shown:
+                    if include_empty_stats:
+                        print(f"- {label}: no qualifying rows")
                     continue
                 printed_section = True
                 total_shown += len(shown)
@@ -5123,8 +5232,8 @@ def _print_discord(
                 print(f"**{heading}**")
                 for item in shown:
                     _print_prop_item(item, include_link=cfg.discord_show_paper_links)
-            if not printed_section:
-                print("- No paper/research player props to show")
+            if not printed_section and not include_empty_stats:
+                print("- No qualifying player props to show")
             elif per_section_limit > 0 and total_shown < len(rows):
                 print("")
                 print(f"- Showing {total_shown} of {len(rows)} paper/research rows")
@@ -5150,9 +5259,25 @@ def _print_discord(
                 key=lambda item: (item["bankroll"].stake_pct, item.get("p_over") or 0.0),
                 reverse=True,
             )
-            paper_source = research_rows if cfg.discord_include_all_priced_props else model_pick_rows
-            paper_source.sort(key=_pick_score, reverse=True)
-            paper_rows = [item for item in paper_source if not item["bankroll"].candidate]
+            display_source = research_rows if cfg.discord_include_all_priced_props else model_pick_rows
+            display_source.sort(key=_pick_score, reverse=True)
+            non_bankroll_rows = [item for item in display_source if not item["bankroll"].candidate]
+            paper_rows: List[Dict] = []
+            lottery_rows: List[Dict] = []
+            no_bet_rows: List[Dict] = []
+            watch_rows: List[Dict] = []
+            for item in non_bankroll_rows:
+                tier = str(item.get("selector_tier") or "").lower()
+                if tier == "no_bet" or item.get("no_bet_decision"):
+                    no_bet_rows.append(item)
+                elif tier == "lottery" or _is_tail_alt_item(item):
+                    lottery_rows.append(item)
+                elif tier == "paper":
+                    paper_rows.append(item)
+                elif item in model_pick_rows and not _is_tail_alt_item(item):
+                    watch_rows.append(item)
+                else:
+                    no_bet_rows.append(item)
 
             prop_record = format_record_summary(
                 pg_dsn=cfg.pg_dsn,
@@ -5164,20 +5289,17 @@ def _print_discord(
             )
             if prop_record:
                 print(prop_record)
-                print("")
             offers_missing = _prop_offers_missing(prop_lines)
-            if offers_missing:
-                print("**PROP OFFER HEALTH**")
-                print("- Prop odds not loaded yet — no links/rankings generated")
-                print("")
-
+            _print_data_health(display_source, offers_missing=offers_missing)
             if bankroll_rows:
-                print(f"**BANKROLL BETS ({len(bankroll_rows)})**")
+                print("")
+                print(f"**BANKROLL PROP BETS ({len(bankroll_rows)})**")
                 for item in bankroll_rows:
                     _print_prop_item(item, include_link=True)
                 _print_prop_parlay("Bankroll Props Parlay", bankroll_links)
             else:
-                print("**BANKROLL BETS**")
+                print("")
+                print("**BANKROLL PROP BETS**")
                 print("- No bankroll-qualified player props today")
 
             combined_exposure = _locked_bankroll_exposure()
@@ -5188,27 +5310,32 @@ def _print_discord(
                     f"vs daily cap {cap:.2%} (over by {combined_exposure - cap:.2%})"
                 )
 
-            if paper_rows:
-                source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
-                main_paper_rows = [item for item in paper_rows if not _is_tail_alt_item(item)]
-                tail_alt_rows = [item for item in paper_rows if _is_tail_alt_item(item)]
-                if main_paper_rows:
-                    _print_paper_sections(main_paper_rows, source_label=source_label)
-                if tail_alt_rows:
-                    _print_paper_sections(
-                        tail_alt_rows,
-                        source_label="high-variance alt-line props",
-                        title="ALT-LINE LOTTERY / RESEARCH",
-                    )
-            elif not research_rows:
-                print("")
-                print("**PAPER / RESEARCH**")
-                if offers_missing:
-                    print("- Waiting on normalized prop offers before ranking/linking props")
-                else:
-                    print("- No priced player prop rows with bet links today")
+            source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
+            _print_paper_sections(
+                paper_rows,
+                source_label=source_label,
+                title="PAPER PROPS - COMMON LINES",
+                include_empty_stats=True,
+            )
+            if watch_rows:
+                _print_paper_sections(
+                    watch_rows,
+                    source_label="watch model picks",
+                    title="WATCHLIST - NOT SELECTOR APPROVED",
+                    include_empty_stats=False,
+                )
+            if lottery_rows:
+                _print_paper_sections(
+                    lottery_rows,
+                    source_label="high-variance rows",
+                    title="LOTTERY / RESEARCH",
+                    include_empty_stats=False,
+                )
             else:
                 print("")
+                print("**LOTTERY / RESEARCH**")
+                print("- No lottery/research rows in the displayed model-pick pool")
+            _print_no_bet_summary(no_bet_rows)
 
             print("")
             return []
@@ -5327,11 +5454,11 @@ def _print_discord(
         )
 
         if bankroll_rows:
-            print(f"**BANKROLL BETS ({len(bankroll_rows)})**")
+            print(f"**BANKROLL PROP BETS ({len(bankroll_rows)})**")
             for item in bankroll_rows:
                 _print_prop_item(item, include_link=True)
         else:
-            print("**BANKROLL BETS**")
+            print("**BANKROLL PROP BETS**")
             print("- No bankroll-qualified player props today")
 
         fd_bankroll_links = [
@@ -6993,7 +7120,7 @@ def main() -> None:
     parser.add_argument(
         "--discord-model-picks-only",
         action="store_true",
-        help="Only show positive-EV paper model picks instead of all priced props.",
+        help="Keep Discord paper sections limited to positive-EV model picks.",
     )
     args = parser.parse_args()
 
@@ -7053,7 +7180,7 @@ def main() -> None:
     if paper_links_env is not None and not args.hide_discord_paper_links:
         discord_show_paper_links = paper_links_env.strip().lower() in {"1", "true", "yes", "on"}
     all_priced_env = os.getenv("MLB_DISCORD_ALL_PRICED_PROPS")
-    discord_include_all_priced_props = not args.discord_model_picks_only
+    discord_include_all_priced_props = False
     if all_priced_env is not None and not args.discord_model_picks_only:
         discord_include_all_priced_props = all_priced_env.strip().lower() in {"1", "true", "yes", "on"}
     discord_paper_limit = (
