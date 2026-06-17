@@ -404,7 +404,7 @@ def _compute_blend_weight_total(calib: dict) -> float:
 def _compute_live_bias(engine) -> tuple[float, float]:
     """Rolling mean prediction error from recent graded MLB games.
 
-    Returns (rl_bias, total_bias). Requires >= 10 graded games in last 30 days;
+    Returns (rl_bias, total_bias). Requires >= 5 graded games in last 45 days;
     otherwise returns (0.0, 0.0).
     """
     sql = text("""
@@ -414,13 +414,13 @@ def _compute_live_bias(engine) -> tuple[float, float]:
             AVG(pred_total    - actual_total)          AS total_bias
         FROM bets.mlb_game_predictions
         WHERE actual_run_diff IS NOT NULL
-          AND game_date_et >= CURRENT_DATE - INTERVAL '30 days'
+          AND game_date_et >= CURRENT_DATE - INTERVAL '45 days'
     """)
     try:
         with engine.connect() as conn:
             row = conn.execute(sql).fetchone()
-        if row is None or row[0] is None or int(row[0]) < 10:
-            log.info("Auto bias correction: not enough data (need 10+ graded games in last 30 days).")
+        if row is None or row[0] is None or int(row[0]) < 5:
+            log.info("Auto bias correction: not enough data (need 5+ graded games in last 45 days).")
             return 0.0, 0.0
         rb = float(row[1] or 0.0)
         tb = float(row[2] or 0.0)
@@ -1520,7 +1520,18 @@ def main() -> None:
             )
             used_market = ok.values
 
-    # Bias correction
+    # Static OOF intercept correction (structural bias baked in during training)
+    oof_total_bias = float(calib.get("oof_total_mean_bias", 0.0))
+    oof_rl_bias    = float(calib.get("oof_rl_mean_bias",    0.0))
+    if abs(oof_total_bias) > 0.01 or abs(oof_rl_bias) > 0.01:
+        log.info(
+            "Static OOF intercept correction: total=%.3f runs  rl=%.3f runs",
+            oof_total_bias, oof_rl_bias,
+        )
+    pred_total_final    = pred_total_final    - oof_total_bias
+    pred_run_diff_final = pred_run_diff_final - oof_rl_bias
+
+    # Live bias correction (residual post-retrain drift, last 45 days)
     bias_rl, bias_total = _compute_live_bias(engine)
     pred_run_diff_final = pred_run_diff_final - bias_rl
     pred_total_final    = pred_total_final    - bias_total

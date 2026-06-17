@@ -915,13 +915,13 @@ def add_game_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["altitude_run_boost"] = (_alt / 5280.0).clip(upper=1.0) * 0.18
         # Interaction: altitude effect amplified in warm parks (hot + thin air)
         if "temperature_f" in X.columns:
-            _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(72.0)
+            _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(65.0)
             X["altitude_x_temp"] = X["altitude_run_boost"] * (_temp / 72.0).clip(lower=0.5)
 
     # ── Weather interactions for game totals ─────────────────────────────────
     # Cold temperatures suppress scoring — ball doesn't carry in cold air.
     if "temperature_f" in X.columns:
-        _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(72.0)
+        _temp = pd.to_numeric(X["temperature_f"], errors="coerce").fillna(65.0)
         _dome = pd.to_numeric(
             X["is_dome"] if "is_dome" in X.columns else pd.Series(0.0, index=X.index),
             errors="coerce",
@@ -1314,8 +1314,8 @@ def add_player_prop_derived_features(X: pd.DataFrame) -> pd.DataFrame:
         X["pull_vs_oppo_wind_net"] = X["pull_wind_boost"] - X["oppo_wind_boost"]
 
     if "temperature_f" in X.columns:
-        X["is_cold_game"]  = (X["temperature_f"].fillna(72.0) < 50.0).astype(int)
-        X["temp_below_60"] = (60.0 - X["temperature_f"].fillna(72.0)).clip(lower=0.0)
+        X["is_cold_game"]  = (X["temperature_f"].fillna(65.0) < 50.0).astype(int)
+        X["temp_below_60"] = (60.0 - X["temperature_f"].fillna(65.0)).clip(lower=0.0)
 
     # ── Walk count trend + umpire interaction ─────────────────────────────────
     if "bb_avg_5" in X.columns and "bb_avg_10" in X.columns:

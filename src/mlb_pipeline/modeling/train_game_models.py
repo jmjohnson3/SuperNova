@@ -1024,6 +1024,11 @@ def main() -> None:
         rl_dir = directional_accuracy_margin(rl_true_np, rl_pred_np)
         cal = calibration_stats(rl_true_np, rl_pred_np)
 
+        oof_total_mean_bias = float(np.mean(tot_pred_np - tot_true_np))
+        oof_rl_mean_bias    = float(np.mean(rl_pred_np  - rl_true_np))
+        log.info("OOF MEAN BIAS | total=%.3f runs  rl=%.3f runs",
+                 oof_total_mean_bias, oof_rl_mean_bias)
+
         log.info(
             "WALK-FORWARD DIRECT OVERALL | rows=%d | RL MAE=%.3f RMSE=%.3f DIR=%.3f "
             "std_ratio=%.3f slope=%.3f intercept=%.3f | TOTAL MAE=%.3f RMSE=%.3f",
@@ -1076,6 +1081,8 @@ def main() -> None:
             "direct_total_rmse":  float(tot_rmse),
             "direct_total_p68":   tot_p68,
             "direct_total_p90":   tot_p90,
+            "oof_total_mean_bias": oof_total_mean_bias,
+            "oof_rl_mean_bias":    oof_rl_mean_bias,
         }
 
         # F5 walk-forward MAE
