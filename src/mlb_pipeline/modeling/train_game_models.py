@@ -218,7 +218,7 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
       y_f5        — total_f5 (first-5-innings total), clipped to [0, 25]; NaN where unavailable
     """
     y_run_diff = df["run_diff"].astype(float).clip(-15.0, 15.0)
-    y_total = df["total_runs"].astype(float).clip(0.0, 40.0)
+    y_total = df["total_runs"].astype(float).clip(1.0, 30.0)
     y_f5 = (
         df["total_f5"].astype(float).clip(0.0, 25.0)
         if "total_f5" in df.columns

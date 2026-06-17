@@ -418,7 +418,10 @@ def main() -> None:
             if n_v:
                 log.info("Fetched velocity data for %d pitcher-games", n_v)
     except Exception:
-        log.exception("SP velocity crawl failed — continuing without velocity trend")
+        log.exception(
+            "SP velocity crawl failed — today's predictions will run WITHOUT velocity trend "
+            "features (mlb_sp_velocity_rolling). Check Baseball Savant connectivity."
+        )
 
     _apply_sql_views(_PG_DSN)   # applies MLB001-010 (creates raw.mlb_weather table)
 
@@ -438,7 +441,10 @@ def main() -> None:
             if n_refresh:
                 log.info("Refreshed today's weather forecast for %d games", n_refresh)
     except Exception:
-        log.exception("Weather crawl failed — continuing without weather data")
+        log.exception(
+            "Weather crawl failed — today's predictions will run WITHOUT weather features "
+            "(wind_speed_mph, temp_f, etc.). Check Open-Meteo connectivity."
+        )
 
     # Create/refresh materialized rolling views for fast prediction queries
     _refresh_matviews(_PG_DSN)
