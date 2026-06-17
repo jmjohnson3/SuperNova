@@ -292,6 +292,7 @@ def _refresh_matviews(pg_dsn: str) -> None:
                 _refresh_one_matview,
                 [pg_dsn] * len(_matview_fqns),
                 _matview_fqns,
+                timeout=600,  # 10-minute hard cap; prevents infinite hang if a worker stalls
             ):
                 if err is not None:
                     log.error("Failed to refresh %s: %s", fqn, err)

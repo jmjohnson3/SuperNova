@@ -303,7 +303,11 @@ def _fetch_prop_lines_for_day(
     try:
         events = _get_live_event_ids(cfg, target_date)
     except Exception as exc:
-        log.warning("Failed to fetch event list for %s: %s", target_date, exc)
+        log.warning(
+            "Failed to fetch Odds API event list for %s: %s — "
+            "prop lines for this date will be SKIPPED entirely. Check Odds API connectivity.",
+            target_date, exc,
+        )
         return None
 
     if not events:

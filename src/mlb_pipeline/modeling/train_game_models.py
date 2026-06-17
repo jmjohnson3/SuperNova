@@ -87,6 +87,15 @@ def load_training_frame(conn) -> pd.DataFrame:
         bad = df[df["game_date_et"].isna()].head(5)
         raise RuntimeError(f"Some game_date_et values could not be parsed. Examples:\n{bad}")
 
+    elo_null_pct = df["elo_diff"].isna().mean()
+    if elo_null_pct > 0.5:
+        import logging
+        logging.getLogger(__name__).warning(
+            "%.0f%% of training rows have NULL elo features — "
+            "run compute_elo before training for best results.",
+            elo_null_pct * 100,
+        )
+
     return df.sort_values(["game_date_et", "game_slug"]).reset_index(drop=True)
 
 
