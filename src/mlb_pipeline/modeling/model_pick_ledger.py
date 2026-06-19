@@ -35,6 +35,29 @@ from .prop_offer_snapshots import (
 
 log = logging.getLogger("mlb_pipeline.modeling.model_pick_ledger")
 
+_SCHEMA_READY = False
+
+
+def _model_pick_ledger_has_required_columns(conn) -> bool:
+    required = {
+        "pick_key", "source", "game_date_et", "game_slug", "market", "stat",
+        "prediction_key", "prop_offer_id", "prop_offer_source_row_id",
+        "minimum_acceptable_price", "stake_usd",
+        "closing_snapshot_id", "lock_snapshot_id", "locked_at_utc",
+        "clv_valid", "clv_status", "clv_unknown_reason",
+    }
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'bets'
+              AND table_name = 'mlb_model_pick_ledger'
+            """
+        )
+        existing = {str(row[0]) for row in cur.fetchall()}
+    return required.issubset(existing)
+
 
 def _ev_per_unit(p_win, price) -> float | None:
     p = _clean_float(p_win)
@@ -72,6 +95,16 @@ def _link_bookmaker(link: str | None, fallback: str | None = None) -> str | None
 
 
 def ensure_model_pick_ledger_schema(conn) -> None:
+    global _SCHEMA_READY
+    if _SCHEMA_READY:
+        return
+    with conn.cursor() as cur:
+        cur.execute("SELECT to_regclass('bets.mlb_model_pick_ledger')")
+        exists = cur.fetchone()[0] is not None
+    if exists and _model_pick_ledger_has_required_columns(conn):
+        _SCHEMA_READY = True
+        ensure_prop_offer_snapshot_schema(conn)
+        return
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -163,6 +196,7 @@ def ensure_model_pick_ledger_schema(conn) -> None:
             """
         )
     ensure_prop_offer_snapshot_schema(conn)
+    _SCHEMA_READY = True
 
 
 _INSERT_SQL = """

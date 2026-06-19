@@ -108,7 +108,7 @@ STEPS: list[Step] = [
     Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
          critical=False, post_output=True),
     Step("Shadow-Lock Prop Predictions", "mlb_pipeline.modeling.shadow_lock_prop_predictions",
-         args=("--phase", "morning"), critical=True, post_output=False, timeout_s=120,
+         args=("--phase", "morning"), critical=True, post_output=False, timeout_s=600,
          fail_task_on_error=True),
     Step("Prop Snapshot Coverage", "mlb_pipeline.modeling.prop_snapshot_coverage_report",
          critical=False, post_output=False, timeout_s=120),

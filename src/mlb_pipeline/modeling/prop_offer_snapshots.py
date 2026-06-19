@@ -58,8 +58,8 @@ def ensure_prop_offer_snapshot_schema(conn) -> None:
         return
     try:
         with conn.cursor() as cur:
-            cur.execute("SET LOCAL lock_timeout = '2s'")
-            cur.execute("SET LOCAL statement_timeout = '15s'")
+            cur.execute("SET LOCAL lock_timeout = '30s'")
+            cur.execute("SET LOCAL statement_timeout = '60s'")
             cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (_SCHEMA_LOCK_KEY,))
             cur.execute(
                 """

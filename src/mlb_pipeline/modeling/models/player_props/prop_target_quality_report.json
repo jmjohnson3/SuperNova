@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-19T14:56:37Z",
+  "generated_at_utc": "2026-06-19T19:02:32Z",
   "source": "features.mlb_prop_market_training_examples",
   "rows": 91654,
   "date_min": "2026-05-31",
@@ -92,27 +92,27 @@
     },
     {
       "field": "closing_line",
-      "present": 71547,
-      "missing": 20107,
-      "coverage": 0.7806205948458332
+      "present": 71853,
+      "missing": 19801,
+      "coverage": 0.7839592380037969
     },
     {
       "field": "closing_price",
-      "present": 71547,
-      "missing": 20107,
-      "coverage": 0.7806205948458332
+      "present": 71853,
+      "missing": 19801,
+      "coverage": 0.7839592380037969
     },
     {
       "field": "closing_snapshot_id",
-      "present": 71547,
-      "missing": 20107,
-      "coverage": 0.7806205948458332
+      "present": 71853,
+      "missing": 19801,
+      "coverage": 0.7839592380037969
     },
     {
       "field": "closing_fetched_at_utc",
-      "present": 71547,
-      "missing": 20107,
-      "coverage": 0.7806205948458332
+      "present": 71853,
+      "missing": 19801,
+      "coverage": 0.7839592380037969
     },
     {
       "field": "clv_valid",
@@ -128,13 +128,13 @@
       "offer_id_rate": 1.0,
       "price_lock_rate": 1.0,
       "same_book_pair_rate": 0.3058252427184466,
-      "cross_book_pair_rate": 0.12965210355987056,
-      "synthetic_pair_rate": 0.5645226537216829,
-      "true_pair_rate": 0.43547734627831713,
+      "cross_book_pair_rate": 0.13389967637540454,
+      "synthetic_pair_rate": 0.5602750809061489,
+      "true_pair_rate": 0.43972491909385114,
       "any_pair_rate": 1.0,
       "graded_rate": 0.0,
-      "valid_close_rate": 0.0,
-      "stale_close_rate": 0.01820388349514563
+      "valid_close_rate": 0.061893203883495146,
+      "stale_close_rate": 0.013349514563106795
     },
     {
       "date": "2026-06-18",
@@ -410,15 +410,15 @@
       "bookmaker_key": "fanduel",
       "rows": 1716,
       "same_book_pairs": 0,
-      "cross_book_pairs": 192,
-      "synthetic_pairs": 1524,
+      "cross_book_pairs": 207,
+      "synthetic_pairs": 1509,
       "missing_pairs": 0,
       "same_book_quality": 0,
-      "cross_book_quality": 192,
-      "synthetic_quality": 1524,
+      "cross_book_quality": 207,
+      "synthetic_quality": 1509,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 1524
+      "synthetic_prob": 1509
     },
     {
       "date": "2026-06-19",
@@ -442,15 +442,15 @@
       "bookmaker_key": "fanduel",
       "rows": 858,
       "same_book_pairs": 0,
-      "cross_book_pairs": 449,
-      "synthetic_pairs": 409,
+      "cross_book_pairs": 455,
+      "synthetic_pairs": 403,
       "missing_pairs": 0,
       "same_book_quality": 0,
-      "cross_book_quality": 449,
-      "synthetic_quality": 409,
+      "cross_book_quality": 455,
+      "synthetic_quality": 403,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 409
+      "synthetic_prob": 403
     },
     {
       "date": "2026-06-19",
@@ -2490,12 +2490,12 @@
       "date": "2026-06-19",
       "market": "batter_total_bases",
       "rows": 1716,
-      "true_pair_rate": 0.11188811188811189,
-      "synthetic_rate": 0.8881118881118881,
-      "clean_market_evidence_rate": 0.11188811188811189,
+      "true_pair_rate": 0.12062937062937062,
+      "synthetic_rate": 0.8793706293706294,
+      "clean_market_evidence_rate": 0.12062937062937062,
       "same_book_pairs": 0,
-      "cross_book_pairs": 192,
-      "synthetic_pairs": 1524,
+      "cross_book_pairs": 207,
+      "synthetic_pairs": 1509,
       "action": "extract_true_opposite_side_or_demote"
     },
     {
@@ -2514,12 +2514,12 @@
       "date": "2026-06-19",
       "market": "batter_hits",
       "rows": 858,
-      "true_pair_rate": 0.5233100233100233,
-      "synthetic_rate": 0.4766899766899767,
-      "clean_market_evidence_rate": 0.5233100233100233,
+      "true_pair_rate": 0.5303030303030303,
+      "synthetic_rate": 0.4696969696969697,
+      "clean_market_evidence_rate": 0.5303030303030303,
       "same_book_pairs": 0,
-      "cross_book_pairs": 449,
-      "synthetic_pairs": 409,
+      "cross_book_pairs": 455,
+      "synthetic_pairs": 403,
       "action": "usable"
     },
     {
@@ -3172,17 +3172,17 @@
     }
   ],
   "clv_status_counts": {
-    "valid_movement": 50880,
-    "true_no_movement": 20667,
-    "unknown": 20107
+    "valid_movement": 51125,
+    "true_no_movement": 20728,
+    "unknown": 19801
   },
   "clv_unknown_reason_counts": {
-    "none": 71547,
-    "close_outside_two_hour_window": 12137,
-    "stale_close_before_lock": 6207,
+    "none": 71853,
+    "close_outside_two_hour_window": 11863,
+    "stale_close_before_lock": 6183,
     "line_disappeared_at_close": 1309,
     "fallback_other_book_only": 259,
-    "no_valid_close_snapshot": 195
+    "no_valid_close_snapshot": 187
   },
   "bad_examples": [
     {

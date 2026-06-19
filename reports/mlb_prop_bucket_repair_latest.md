@@ -1,6 +1,6 @@
 # MLB Prop Bucket Repair Report
 
-- Generated UTC: 2026-06-19T14:56:20Z
+- Generated UTC: 2026-06-19T19:02:04Z
 - Source: features.mlb_prop_market_training_examples
 - Lookback days: 365
 - Rows: 78285

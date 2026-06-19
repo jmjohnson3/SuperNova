@@ -1,6 +1,6 @@
 # MLB Prop Target Quality
 
-Generated UTC: 2026-06-19T14:56:37Z
+Generated UTC: 2026-06-19T19:02:32Z
 Rows: 91654
 Date range: 2026-05-31 to 2026-06-19
 
@@ -22,36 +22,36 @@ Date range: 2026-05-31 to 2026-06-19
 | pair_quality | 91654 | 0 | 100.0% |
 | no_vig_market_prob | 91654 | 0 | 100.0% |
 | market_prob_source | 91654 | 0 | 100.0% |
-| closing_line | 71547 | 20107 | 78.1% |
-| closing_price | 71547 | 20107 | 78.1% |
-| closing_snapshot_id | 71547 | 20107 | 78.1% |
-| closing_fetched_at_utc | 71547 | 20107 | 78.1% |
+| closing_line | 71853 | 19801 | 78.4% |
+| closing_price | 71853 | 19801 | 78.4% |
+| closing_snapshot_id | 71853 | 19801 | 78.4% |
+| closing_fetched_at_utc | 71853 | 19801 | 78.4% |
 | clv_valid | 91654 | 0 | 100.0% |
 
 ## CLV / Close Status
 
 | Status | Rows |
 |---|---:|
-| valid_movement | 50880 |
-| true_no_movement | 20667 |
-| unknown | 20107 |
+| valid_movement | 51125 |
+| true_no_movement | 20728 |
+| unknown | 19801 |
 
 ## CLV Unknown Reasons
 
 | Reason | Rows |
 |---|---:|
-| none | 71547 |
-| close_outside_two_hour_window | 12137 |
-| stale_close_before_lock | 6207 |
+| none | 71853 |
+| close_outside_two_hour_window | 11863 |
+| stale_close_before_lock | 6183 |
 | line_disappeared_at_close | 1309 |
 | fallback_other_book_only | 259 |
-| no_valid_close_snapshot | 195 |
+| no_valid_close_snapshot | 187 |
 
 ## Quality By Date
 
 | Date | Rows | Offer ID | Price+Lock | True Pair | Same-Book Pair | Cross-Book Pair | Synthetic Pair | Any Pair | Graded | Valid Close | Stale Close |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2026-06-19 | 4944 | 100.0% | 100.0% | 43.5% | 30.6% | 13.0% | 56.5% | 100.0% | 0.0% | 0.0% | 1.8% |
+| 2026-06-19 | 4944 | 100.0% | 100.0% | 44.0% | 30.6% | 13.4% | 56.0% | 100.0% | 0.0% | 6.2% | 1.3% |
 | 2026-06-18 | 2660 | 100.0% | 100.0% | 48.3% | 29.0% | 19.3% | 51.7% | 100.0% | 80.0% | 75.0% | 12.2% |
 | 2026-06-17 | 3707 | 100.0% | 100.0% | 45.6% | 25.8% | 19.7% | 54.4% | 100.0% | 93.1% | 89.6% | 3.4% |
 | 2026-06-16 | 8262 | 100.0% | 100.0% | 46.4% | 29.2% | 17.2% | 53.6% | 100.0% | 92.4% | 85.9% | 1.7% |
@@ -76,9 +76,9 @@ Date range: 2026-05-31 to 2026-06-19
 
 | Date | Market | Book | Rows | Same-Book Pairs | Cross-Book Pairs | Synthetic Pairs | Missing Pairs | Same-Book Quality | Cross-Book Quality | Synthetic Quality | One-Sided Quality | Raw-Implied Prob | Synthetic Prob |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2026-06-19 | batter_total_bases | fanduel | 1716 | 0 | 192 | 1524 | 0 | 0 | 192 | 1524 | 0 | 0 | 1524 |
+| 2026-06-19 | batter_total_bases | fanduel | 1716 | 0 | 207 | 1509 | 0 | 0 | 207 | 1509 | 0 | 0 | 1509 |
 | 2026-06-19 | batter_hits | draftkings | 928 | 928 | 0 | 0 | 0 | 928 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-19 | batter_hits | fanduel | 858 | 0 | 449 | 409 | 0 | 0 | 449 | 409 | 0 | 0 | 409 |
+| 2026-06-19 | batter_hits | fanduel | 858 | 0 | 455 | 403 | 0 | 0 | 455 | 403 | 0 | 0 | 403 |
 | 2026-06-19 | batter_home_runs | fanduel | 858 | 0 | 0 | 858 | 0 | 0 | 0 | 858 | 0 | 0 | 858 |
 | 2026-06-19 | batter_total_bases | draftkings | 388 | 388 | 0 | 0 | 0 | 388 | 0 | 0 | 0 | 0 | 0 |
 | 2026-06-19 | pitcher_strikeouts | draftkings | 100 | 100 | 0 | 0 | 0 | 100 | 0 | 0 | 0 | 0 | 0 |
@@ -161,9 +161,9 @@ Date range: 2026-05-31 to 2026-06-19
 
 | Date | Market | Rows | True Pair | Synthetic | Clean Evidence | Same-Book | Cross-Book | Synthetic Rows | Action |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| 2026-06-19 | batter_total_bases | 1716 | 11.2% | 88.8% | 11.2% | 0 | 192 | 1524 | extract_true_opposite_side_or_demote |
+| 2026-06-19 | batter_total_bases | 1716 | 12.1% | 87.9% | 12.1% | 0 | 207 | 1509 | extract_true_opposite_side_or_demote |
 | 2026-06-19 | batter_home_runs | 858 | 0.0% | 100.0% | 0.0% | 0 | 0 | 858 | extract_true_opposite_side_or_demote |
-| 2026-06-19 | batter_hits | 858 | 52.3% | 47.7% | 52.3% | 0 | 449 | 409 | usable |
+| 2026-06-19 | batter_hits | 858 | 53.0% | 47.0% | 53.0% | 0 | 455 | 403 | usable |
 | 2026-06-18 | batter_total_bases | 912 | 21.5% | 78.5% | 21.5% | 0 | 196 | 716 | extract_true_opposite_side_or_demote |
 | 2026-06-18 | batter_home_runs | 456 | 0.0% | 100.0% | 0.0% | 0 | 0 | 456 | extract_true_opposite_side_or_demote |
 | 2026-06-18 | batter_hits | 520 | 61.2% | 38.8% | 61.2% | 0 | 318 | 202 | usable |

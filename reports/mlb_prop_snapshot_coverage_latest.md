@@ -1,6 +1,6 @@
 # MLB Prop Snapshot Coverage
 
-Generated: 2026-06-19T10:58:19-04:00
+Generated: 2026-06-19T15:03:10-04:00
 Range: 2026-06-06 to 2026-06-19
 
 ## Collection Status
@@ -17,7 +17,7 @@ Range: 2026-06-06 to 2026-06-19
 
 | Date | Clean | Offers | Open | Locks | Side Locks | Close Obs | Valid Side Locks | Coverage | Missing Lock | Stale Close | Lock Phases | Close Times | Reasons |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| 2026-06-19 | no | 2906 | 2261 | 4944 | 4944 | 6580 | 0 | 0.0% | 0.0% | 1.8% | 2 | 3 | valid_side_locks<100, valid_clv_coverage<0.25 |
+| 2026-06-19 | no | 2979 | 2261 | 4944 | 4944 | 16299 | 306 | 6.2% | 0.0% | 1.3% | 2 | 7 | valid_clv_coverage<0.25 |
 | 2026-06-18 | no | 2569 | 1592 | 2660 | 2660 | 14372 | 1994 | 75.0% | 0.0% | 12.2% | 2 | 15 | stale_close_rate>0.05 |
 | 2026-06-17 | yes | 4267 | 380 | 3707 | 3707 | 31248 | 3328 | 89.8% | 0.0% | 3.4% | 2 | 18 |  |
 | 2026-06-16 | yes | 4276 | 2600 | 8262 | 8262 | 38949 | 7125 | 86.2% | 0.0% | 1.7% | 3 | 17 |  |

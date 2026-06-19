@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-19T14:49:07+00:00",
+  "generated_at_utc": "2026-06-19T19:51:32+00:00",
   "status": "ready",
   "source": "bets.mlb_prop_prediction_replay",
   "lookback_days": 365,
@@ -15,10 +15,10 @@
   "date_max": "2026-06-19",
   "unique_dates": 20,
   "clv": {
-    "valid_clv_rows": 71547,
-    "clv_coverage": 0.7730214467073632,
-    "avg_clv_price": 0.0613122842327421,
-    "clv_price_beat_rate": 0.37390806043579744,
+    "valid_clv_rows": 71853,
+    "clv_coverage": 0.7763275890011344,
+    "avg_clv_price": 0.06037354042280767,
+    "clv_price_beat_rate": 0.3737909342685761,
     "avg_clv_line": 0.0,
     "clv_line_beat_rate": 0.0
   },
@@ -171,10 +171,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 26018,
-        "clv_coverage": 0.7848803885486741,
-        "avg_clv_price": 0.1332220001537397,
-        "clv_price_beat_rate": 0.38527173495272504,
+        "valid_clv_rows": 26135,
+        "clv_coverage": 0.7884099067845184,
+        "avg_clv_price": 0.13233747847713795,
+        "clv_price_beat_rate": 0.38542184809642244,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -257,10 +257,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 22890,
-        "clv_coverage": 0.7792075163398693,
-        "avg_clv_price": 0.12373612931411095,
-        "clv_price_beat_rate": 0.3946701616426387,
+        "valid_clv_rows": 22974,
+        "clv_coverage": 0.7820669934640523,
+        "avg_clv_price": 0.12173369896404632,
+        "clv_price_beat_rate": 0.39409767563332465,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -343,10 +343,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 11536,
-        "clv_coverage": 0.7834827492529204,
-        "avg_clv_price": 0.04859309986130375,
-        "clv_price_beat_rate": 0.343619972260749,
+        "valid_clv_rows": 11592,
+        "clv_coverage": 0.7872860635696821,
+        "avg_clv_price": 0.04855244996549344,
+        "clv_price_beat_rate": 0.3435127674258109,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -429,10 +429,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5822,
-        "clv_coverage": 0.7274771960514806,
-        "avg_clv_price": -0.25533150120233594,
-        "clv_price_beat_rate": 0.32463071109584335,
+        "valid_clv_rows": 5850,
+        "clv_coverage": 0.7309758840434837,
+        "avg_clv_price": -0.2540273504273504,
+        "clv_price_beat_rate": 0.32495726495726496,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -515,10 +515,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3064,
-        "clv_coverage": 0.7381353890628765,
-        "avg_clv_price": -0.3405124020887728,
-        "clv_price_beat_rate": 0.3087467362924282,
+        "valid_clv_rows": 3069,
+        "clv_coverage": 0.739339918092026,
+        "avg_clv_price": -0.342593678722711,
+        "clv_price_beat_rate": 0.3088954056695992,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -601,10 +601,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1113,
-        "clv_coverage": 0.7346534653465346,
-        "avg_clv_price": -0.3250673854447439,
-        "clv_price_beat_rate": 0.35130278526504943,
+        "valid_clv_rows": 1121,
+        "clv_coverage": 0.73993399339934,
+        "avg_clv_price": -0.3156289027653881,
+        "clv_price_beat_rate": 0.35325602140945583,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -687,10 +687,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1104,
-        "clv_coverage": 0.7409395973154362,
-        "avg_clv_price": 0.3798188405797101,
-        "clv_price_beat_rate": 0.45561594202898553,
+        "valid_clv_rows": 1112,
+        "clv_coverage": 0.7463087248322148,
+        "avg_clv_price": 0.3697392086330935,
+        "clv_price_beat_rate": 0.45323741007194246,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -861,10 +861,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 17279,
-        "clv_coverage": 0.7681603983284432,
-        "avg_clv_price": 0.15201458417732508,
-        "clv_price_beat_rate": 0.41067191388390534,
+        "valid_clv_rows": 17363,
+        "clv_coverage": 0.7718947274828843,
+        "avg_clv_price": 0.1492282439670564,
+        "clv_price_beat_rate": 0.40983700973334103,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -947,10 +947,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 14498,
-        "clv_coverage": 0.7834639286679276,
-        "avg_clv_price": 0.1695371775417299,
-        "clv_price_beat_rate": 0.40840115878052147,
+        "valid_clv_rows": 14559,
+        "clv_coverage": 0.7867603350445825,
+        "avg_clv_price": 0.16855896696201664,
+        "clv_price_beat_rate": 0.40840717082217187,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1033,10 +1033,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 11520,
-        "clv_coverage": 0.7866703086588364,
-        "avg_clv_price": 0.08751909722222222,
-        "clv_price_beat_rate": 0.35616319444444444,
+        "valid_clv_rows": 11576,
+        "clv_coverage": 0.7904944004370391,
+        "avg_clv_price": 0.08678213545266068,
+        "clv_price_beat_rate": 0.3565134761575674,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1119,10 +1119,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5822,
-        "clv_coverage": 0.7274771960514806,
-        "avg_clv_price": -0.25533150120233594,
-        "clv_price_beat_rate": 0.32463071109584335,
+        "valid_clv_rows": 5850,
+        "clv_coverage": 0.7309758840434837,
+        "avg_clv_price": -0.2540273504273504,
+        "clv_price_beat_rate": 0.32495726495726496,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1291,10 +1291,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5791,
-        "clv_coverage": 0.783202596700027,
-        "avg_clv_price": 0.07595752029010534,
-        "clv_price_beat_rate": 0.35710585391124156,
+        "valid_clv_rows": 5819,
+        "clv_coverage": 0.7869894509061401,
+        "avg_clv_price": 0.07616772641347311,
+        "clv_price_beat_rate": 0.3572778827977316,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1377,10 +1377,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5745,
-        "clv_coverage": 0.7837653478854024,
-        "avg_clv_price": 0.021009573542210617,
-        "clv_price_beat_rate": 0.3300261096605744,
+        "valid_clv_rows": 5773,
+        "clv_coverage": 0.7875852660300137,
+        "avg_clv_price": 0.020717131474103583,
+        "clv_price_beat_rate": 0.3296379698596917,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1463,10 +1463,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3064,
-        "clv_coverage": 0.7381353890628765,
-        "avg_clv_price": -0.3405124020887728,
-        "clv_price_beat_rate": 0.3087467362924282,
+        "valid_clv_rows": 3069,
+        "clv_coverage": 0.739339918092026,
+        "avg_clv_price": -0.342593678722711,
+        "clv_price_beat_rate": 0.3088954056695992,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1549,10 +1549,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1113,
-        "clv_coverage": 0.7346534653465346,
-        "avg_clv_price": -0.3250673854447439,
-        "clv_price_beat_rate": 0.35130278526504943,
+        "valid_clv_rows": 1121,
+        "clv_coverage": 0.73993399339934,
+        "avg_clv_price": -0.3156289027653881,
+        "clv_price_beat_rate": 0.35325602140945583,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1635,10 +1635,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1104,
-        "clv_coverage": 0.7409395973154362,
-        "avg_clv_price": 0.3798188405797101,
-        "clv_price_beat_rate": 0.45561594202898553,
+        "valid_clv_rows": 1112,
+        "clv_coverage": 0.7463087248322148,
+        "avg_clv_price": 0.3697392086330935,
+        "clv_price_beat_rate": 0.45323741007194246,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1809,10 +1809,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 7657,
-        "clv_coverage": 0.7595476639222299,
-        "avg_clv_price": 0.05600626877367115,
-        "clv_price_beat_rate": 0.32297244351573723,
+        "valid_clv_rows": 7697,
+        "clv_coverage": 0.7635155242535463,
+        "avg_clv_price": 0.05558269455632065,
+        "clv_price_beat_rate": 0.323242821878654,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1981,10 +1981,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5745,
-        "clv_coverage": 0.7837653478854024,
-        "avg_clv_price": 0.021009573542210617,
-        "clv_price_beat_rate": 0.3300261096605744,
+        "valid_clv_rows": 5773,
+        "clv_coverage": 0.7875852660300137,
+        "avg_clv_price": 0.020717131474103583,
+        "clv_price_beat_rate": 0.3296379698596917,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2067,10 +2067,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3653,
-        "clv_coverage": 0.7467293540474244,
-        "avg_clv_price": 0.03894607172187243,
-        "clv_price_beat_rate": 0.3479332055844511,
+        "valid_clv_rows": 3673,
+        "clv_coverage": 0.7508176614881439,
+        "avg_clv_price": 0.04111080860332154,
+        "clv_price_beat_rate": 0.349033487612306,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2153,10 +2153,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3749,
-        "clv_coverage": 0.8241371730050561,
-        "avg_clv_price": 0.05018671645772204,
-        "clv_price_beat_rate": 0.37369965324086424,
+        "valid_clv_rows": 3757,
+        "clv_coverage": 0.8258958012750055,
+        "avg_clv_price": 0.048171413361724764,
+        "clv_price_beat_rate": 0.37290391269630024,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2239,10 +2239,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3331,
-        "clv_coverage": 0.7592888078413494,
-        "avg_clv_price": 0.09424797358150704,
-        "clv_price_beat_rate": 0.39717802461723206,
+        "valid_clv_rows": 3351,
+        "clv_coverage": 0.7638477319352632,
+        "avg_clv_price": 0.09474485228290062,
+        "clv_price_beat_rate": 0.39838854073410923,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2325,10 +2325,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3432,
-        "clv_coverage": 0.8428290766208252,
-        "avg_clv_price": 0.10972319347319345,
-        "clv_price_beat_rate": 0.4195804195804196,
+        "valid_clv_rows": 3446,
+        "clv_coverage": 0.8462671905697446,
+        "avg_clv_price": 0.1092658154381892,
+        "clv_price_beat_rate": 0.4204875217643645,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2411,10 +2411,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3287,
-        "clv_coverage": 0.7607035408470262,
-        "avg_clv_price": 0.19224520839671433,
-        "clv_price_beat_rate": 0.441435959841801,
+        "valid_clv_rows": 3308,
+        "clv_coverage": 0.7655635269613515,
+        "avg_clv_price": 0.18850967351874243,
+        "clv_price_beat_rate": 0.440447400241838,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2497,10 +2497,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2691,
-        "clv_coverage": 0.7458425720620843,
-        "avg_clv_price": 0.03702341137123744,
-        "clv_price_beat_rate": 0.3987365291713118,
+        "valid_clv_rows": 2700,
+        "clv_coverage": 0.7483370288248337,
+        "avg_clv_price": 0.03774074074074072,
+        "clv_price_beat_rate": 0.3988888888888889,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2583,10 +2583,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2806,
-        "clv_coverage": 0.8240822320117475,
-        "avg_clv_price": 0.12127227369921595,
-        "clv_price_beat_rate": 0.38524590163934425,
+        "valid_clv_rows": 2812,
+        "clv_coverage": 0.8258443465491924,
+        "avg_clv_price": 0.11930654338549075,
+        "clv_price_beat_rate": 0.38513513513513514,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2669,10 +2669,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2499,
-        "clv_coverage": 0.7477558348294434,
-        "avg_clv_price": -0.35038015206082435,
-        "clv_price_beat_rate": 0.3037214885954382,
+        "valid_clv_rows": 2517,
+        "clv_coverage": 0.7531418312387792,
+        "avg_clv_price": -0.3462653953118792,
+        "clv_price_beat_rate": 0.30512514898688914,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2755,10 +2755,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2336,
-        "clv_coverage": 0.7724867724867724,
-        "avg_clv_price": 0.37832191780821917,
-        "clv_price_beat_rate": 0.4623287671232877,
+        "valid_clv_rows": 2341,
+        "clv_coverage": 0.7741402116402116,
+        "avg_clv_price": 0.3810807347287484,
+        "clv_price_beat_rate": 0.4626228107646305,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2841,10 +2841,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1987,
-        "clv_coverage": 0.7081254454739844,
-        "avg_clv_price": 0.03863110216406643,
-        "clv_price_beat_rate": 0.36285858077503774,
+        "valid_clv_rows": 1994,
+        "clv_coverage": 0.7106200997861725,
+        "avg_clv_price": 0.03825977933801404,
+        "clv_price_beat_rate": 0.36258776328986964,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -2927,10 +2927,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2069,
-        "clv_coverage": 0.8476034412126178,
-        "avg_clv_price": 0.03552924117931369,
-        "clv_price_beat_rate": 0.3711938134364427,
+        "valid_clv_rows": 2073,
+        "clv_coverage": 0.849242113887751,
+        "avg_clv_price": 0.03371924746743851,
+        "clv_price_beat_rate": 0.3704775687409551,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3013,10 +3013,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2035,
-        "clv_coverage": 0.8550420168067226,
-        "avg_clv_price": 0.10485503685503686,
-        "clv_price_beat_rate": 0.3675675675675676,
+        "valid_clv_rows": 2043,
+        "clv_coverage": 0.8584033613445378,
+        "avg_clv_price": 0.10181106216348507,
+        "clv_price_beat_rate": 0.36612824278022515,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3099,10 +3099,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1868,
-        "clv_coverage": 0.7033132530120482,
-        "avg_clv_price": 0.2294111349036403,
-        "clv_price_beat_rate": 0.41809421841541755,
+        "valid_clv_rows": 1888,
+        "clv_coverage": 0.7108433734939759,
+        "avg_clv_price": 0.2262023305084746,
+        "clv_price_beat_rate": 0.4173728813559322,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3185,10 +3185,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1869,
-        "clv_coverage": 0.8709226467847158,
-        "avg_clv_price": 0.12068485821294812,
-        "clv_price_beat_rate": 0.3970037453183521,
+        "valid_clv_rows": 1873,
+        "clv_coverage": 0.8727865796831314,
+        "avg_clv_price": 0.1180672717565403,
+        "clv_price_beat_rate": 0.396155899626268,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3271,10 +3271,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1356,
-        "clv_coverage": 0.7851766068326578,
-        "avg_clv_price": -0.32534660766961654,
-        "clv_price_beat_rate": 0.3030973451327434,
+        "valid_clv_rows": 1358,
+        "clv_coverage": 0.7863346844238563,
+        "avg_clv_price": -0.3284462444771723,
+        "clv_price_beat_rate": 0.3026509572901325,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3357,10 +3357,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1355,
-        "clv_coverage": 0.7408419901585566,
-        "avg_clv_price": 0.1175350553505535,
-        "clv_price_beat_rate": 0.4132841328413284,
+        "valid_clv_rows": 1371,
+        "clv_coverage": 0.7495899398578458,
+        "avg_clv_price": 0.10846097738876735,
+        "clv_price_beat_rate": 0.4113785557986871,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3443,10 +3443,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1164,
-        "clv_coverage": 0.7390476190476191,
-        "avg_clv_price": 0.20874570446735397,
-        "clv_price_beat_rate": 0.4381443298969072,
+        "valid_clv_rows": 1174,
+        "clv_coverage": 0.7453968253968254,
+        "avg_clv_price": 0.20089437819420786,
+        "clv_price_beat_rate": 0.4352640545144804,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3701,10 +3701,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 571,
-        "clv_coverage": 0.5826530612244898,
-        "avg_clv_price": -0.6144308231173381,
-        "clv_price_beat_rate": 0.23642732049036777,
+        "valid_clv_rows": 573,
+        "clv_coverage": 0.5846938775510204,
+        "avg_clv_price": -0.6194938917975568,
+        "clv_price_beat_rate": 0.23734729493891799,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3787,10 +3787,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 726,
-        "clv_coverage": 0.8789346246973365,
-        "avg_clv_price": -0.07911845730027547,
-        "clv_price_beat_rate": 0.32644628099173556,
+        "valid_clv_rows": 728,
+        "clv_coverage": 0.8813559322033898,
+        "avg_clv_price": -0.08361263736263737,
+        "clv_price_beat_rate": 0.32554945054945056,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3873,10 +3873,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 641,
-        "clv_coverage": 0.7082872928176795,
-        "avg_clv_price": 0.6555538221528862,
-        "clv_price_beat_rate": 0.4789391575663027,
+        "valid_clv_rows": 647,
+        "clv_coverage": 0.7149171270718232,
+        "avg_clv_price": 0.6504636785162288,
+        "clv_price_beat_rate": 0.47913446676970634,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -3959,10 +3959,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 631,
-        "clv_coverage": 0.8313570487483531,
-        "avg_clv_price": -0.280919175911252,
-        "clv_price_beat_rate": 0.34072900158478603,
+        "valid_clv_rows": 632,
+        "clv_coverage": 0.8326745718050066,
+        "avg_clv_price": -0.2790506329113924,
+        "clv_price_beat_rate": 0.34177215189873417,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -4045,10 +4045,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 464,
-        "clv_coverage": 0.7051671732522796,
-        "avg_clv_price": 0.17474137931034486,
-        "clv_price_beat_rate": 0.41163793103448276,
+        "valid_clv_rows": 466,
+        "clv_coverage": 0.7082066869300911,
+        "avg_clv_price": 0.17010729613733908,
+        "clv_price_beat_rate": 0.40987124463519314,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -4217,10 +4217,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 427,
-        "clv_coverage": 0.6630434782608695,
-        "avg_clv_price": -0.6861826697892272,
-        "clv_price_beat_rate": 0.24355971896955503,
+        "valid_clv_rows": 430,
+        "clv_coverage": 0.6677018633540373,
+        "avg_clv_price": -0.6886046511627908,
+        "clv_price_beat_rate": 0.24186046511627907,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -4389,10 +4389,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 400,
-        "clv_coverage": 0.8810572687224669,
-        "avg_clv_price": 0.43127500000000013,
-        "clv_price_beat_rate": 0.435,
+        "valid_clv_rows": 402,
+        "clv_coverage": 0.8854625550660793,
+        "avg_clv_price": 0.42273631840796033,
+        "clv_price_beat_rate": 0.43283582089552236,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -4475,10 +4475,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 364,
-        "clv_coverage": 0.6442477876106195,
-        "avg_clv_price": 0.7032967032967034,
-        "clv_price_beat_rate": 0.489010989010989,
+        "valid_clv_rows": 367,
+        "clv_coverage": 0.6495575221238938,
+        "avg_clv_price": 0.7066757493188012,
+        "clv_price_beat_rate": 0.4904632152588556,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -4561,10 +4561,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 359,
-        "clv_coverage": 0.64568345323741,
-        "avg_clv_price": 0.2277158774373259,
-        "clv_price_beat_rate": 0.3732590529247911,
+        "valid_clv_rows": 363,
+        "clv_coverage": 0.6528776978417267,
+        "avg_clv_price": 0.2205785123966942,
+        "clv_price_beat_rate": 0.371900826446281,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -4647,10 +4647,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 269,
-        "clv_coverage": 0.6593137254901961,
-        "avg_clv_price": 0.25100371747211897,
-        "clv_price_beat_rate": 0.40148698884758366,
+        "valid_clv_rows": 272,
+        "clv_coverage": 0.6666666666666666,
+        "avg_clv_price": 0.24823529411764705,
+        "clv_price_beat_rate": 0.39705882352941174,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5077,10 +5077,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 171,
-        "clv_coverage": 0.6501901140684411,
-        "avg_clv_price": 0.15052631578947365,
-        "clv_price_beat_rate": 0.4093567251461988,
+        "valid_clv_rows": 173,
+        "clv_coverage": 0.6577946768060836,
+        "avg_clv_price": 0.12988439306358376,
+        "clv_price_beat_rate": 0.4046242774566474,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5163,10 +5163,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 98,
-        "clv_coverage": 0.593939393939394,
-        "avg_clv_price": 1.2614285714285716,
-        "clv_price_beat_rate": 0.5816326530612245,
+        "valid_clv_rows": 99,
+        "clv_coverage": 0.6,
+        "avg_clv_price": 1.266060606060606,
+        "clv_price_beat_rate": 0.5858585858585859,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5335,10 +5335,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 123,
-        "clv_coverage": 0.8367346938775511,
-        "avg_clv_price": 0.960650406504065,
-        "clv_price_beat_rate": 0.5365853658536586,
+        "valid_clv_rows": 126,
+        "clv_coverage": 0.8571428571428571,
+        "avg_clv_price": 0.8776984126984128,
+        "clv_price_beat_rate": 0.5238095238095238,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5507,10 +5507,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 123,
-        "clv_coverage": 0.8424657534246576,
-        "avg_clv_price": -0.8954471544715448,
-        "clv_price_beat_rate": 0.43089430894308944,
+        "valid_clv_rows": 126,
+        "clv_coverage": 0.863013698630137,
+        "avg_clv_price": -0.8144444444444445,
+        "clv_price_beat_rate": 0.4444444444444444,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5765,10 +5765,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 111,
-        "clv_coverage": 0.8604651162790697,
-        "avg_clv_price": 0.5528828828828828,
-        "clv_price_beat_rate": 0.38738738738738737,
+        "valid_clv_rows": 115,
+        "clv_coverage": 0.8914728682170543,
+        "avg_clv_price": 0.5134782608695653,
+        "clv_price_beat_rate": 0.3739130434782609,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5851,10 +5851,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 109,
-        "clv_coverage": 0.872,
-        "avg_clv_price": -0.5992660550458715,
-        "clv_price_beat_rate": 0.22935779816513763,
+        "valid_clv_rows": 113,
+        "clv_coverage": 0.904,
+        "avg_clv_price": -0.5584070796460177,
+        "clv_price_beat_rate": 0.23893805309734514,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -6625,10 +6625,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 56,
-        "clv_coverage": 0.7,
-        "avg_clv_price": -1.1910714285714286,
-        "clv_price_beat_rate": 0.3392857142857143,
+        "valid_clv_rows": 57,
+        "clv_coverage": 0.7125,
+        "avg_clv_price": -1.2010526315789476,
+        "clv_price_beat_rate": 0.3333333333333333,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -13266,7 +13266,7 @@
       "model_brier": 0.1826011488648168,
       "market_brier": 0.18248874749339125,
       "model_roi": -0.22049647806004619,
-      "valid_clv_rows": 10340
+      "valid_clv_rows": 10380
     },
     {
       "key": "batter_total_bases|batter_pa_3_8_to_4_2",
@@ -13277,7 +13277,7 @@
       "model_brier": 0.17809969470811757,
       "market_brier": 0.17770387602910165,
       "model_roi": -0.15009411101718792,
-      "valid_clv_rows": 10457
+      "valid_clv_rows": 10517
     },
     {
       "key": "batter_hits|batter_pa_3_8_to_4_2",
@@ -13288,7 +13288,7 @@
       "model_brier": 0.18186316490591287,
       "market_brier": 0.18180666635638376,
       "model_roi": 0.048961981063364884,
-      "valid_clv_rows": 10225
+      "valid_clv_rows": 10281
     },
     {
       "key": "batter_total_bases|batter_pa_under_3_8",
@@ -13299,7 +13299,7 @@
       "model_brier": 0.14671787989475793,
       "market_brier": 0.146236585146948,
       "model_roi": -0.15058761061946904,
-      "valid_clv_rows": 9235
+      "valid_clv_rows": 9275
     },
     {
       "key": "batter_total_bases|batter_pa_4_3_plus",
@@ -13310,7 +13310,7 @@
       "model_brier": 0.1928837635203064,
       "market_brier": 0.1939879950239838,
       "model_roi": -0.10749104303993796,
-      "valid_clv_rows": 9390
+      "valid_clv_rows": 9412
     },
     {
       "key": "batter_hits|batter_pa_4_3_plus",
@@ -13321,7 +13321,7 @@
       "model_brier": 0.17651655561704394,
       "market_brier": 0.17686364089022774,
       "model_roi": 0.11885583482944348,
-      "valid_clv_rows": 8147
+      "valid_clv_rows": 8163
     },
     {
       "key": "batter_home_runs|batter_pa_under_3_8",
@@ -13332,7 +13332,7 @@
       "model_brier": 0.050450988676629845,
       "market_brier": 0.049431245092303074,
       "model_roi": -0.14375757575757575,
-      "valid_clv_rows": 4175
+      "valid_clv_rows": 4195
     },
     {
       "key": "batter_home_runs|batter_pa_3_8_to_4_2",
@@ -13343,7 +13343,7 @@
       "model_brier": 0.06787505391392064,
       "market_brier": 0.06677668160955298,
       "model_roi": -0.09986376021798361,
-      "valid_clv_rows": 4065
+      "valid_clv_rows": 4093
     },
     {
       "key": "batter_home_runs|batter_pa_4_3_plus",
@@ -13354,7 +13354,7 @@
       "model_brier": 0.0796105971391455,
       "market_brier": 0.07813094306666628,
       "model_roi": -0.427,
-      "valid_clv_rows": 3296
+      "valid_clv_rows": 3304
     },
     {
       "key": "pitcher_strikeouts|pitcher_bf_20_to_23",
@@ -13365,7 +13365,7 @@
       "model_brier": 0.24976867582562748,
       "market_brier": 0.24930606379003797,
       "model_roi": 0.012687909319899241,
-      "valid_clv_rows": 1254
+      "valid_clv_rows": 1270
     },
     {
       "key": "pitcher_strikeouts|pitcher_bf_24_plus",
@@ -13391,15 +13391,15 @@
     }
   ],
   "clv_unknown_reasons": {
-    "close_outside_two_hour_window": 12137,
-    "stale_close_before_lock": 6207,
+    "close_outside_two_hour_window": 11867,
+    "stale_close_before_lock": 6183,
     "line_disappeared_at_close": 1309,
     "missing_lock_snapshot": 901,
     "fallback_other_book_only": 259,
-    "no_valid_close_snapshot": 195
+    "no_valid_close_snapshot": 183
   },
   "live_policy": {
-    "generated_at_utc": "2026-06-19T14:49:07+00:00",
+    "generated_at_utc": "2026-06-19T19:51:32+00:00",
     "min_rows": 150,
     "min_dates": 3,
     "min_brier_gain": 0.001,
