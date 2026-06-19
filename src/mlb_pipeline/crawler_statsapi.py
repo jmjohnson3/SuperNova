@@ -787,6 +787,17 @@ def fetch_probable_pitchers_for_date(conn, target_date: date) -> int:
     if not rows_to_upsert:
         return 0
 
+    deduped_rows: dict[tuple[str, str], dict] = {}
+    for row in rows_to_upsert:
+        deduped_rows[(row["game_slug"], row["team_abbr"])] = row
+    if len(deduped_rows) != len(rows_to_upsert):
+        log.warning(
+            "Deduped probable pitcher rows before upsert: %d -> %d",
+            len(rows_to_upsert),
+            len(deduped_rows),
+        )
+    rows_to_upsert = list(deduped_rows.values())
+
     # Upsert — never overwrites confirmed 'actual' source rows
     sql = """
     INSERT INTO raw.mlb_starting_pitchers (

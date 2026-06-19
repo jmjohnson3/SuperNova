@@ -63,8 +63,6 @@ from .bankroll_ledger import (
 from .model_pick_ledger import insert_prop_model_pick_ledger
 from .features import add_player_prop_derived_features, build_fd_parlay_url
 from .prop_candidate_engine import (
-    STAT_DISPLAY as _PROP_STAT_DISPLAY,
-    STAT_SECTIONS as _PROP_STAT_SECTIONS,
     book_label as _prop_book_label,
     candidate_from_prediction_row,
     pick_score as _prop_pick_score,
@@ -81,6 +79,7 @@ from .prop_shadow_selector import (
     ShadowSelectorConfig as PropSelectorConfig,
     score_prediction_row as score_prop_shadow_row,
 )
+from .prop_real_money_kill_switch import load_prop_kill_switch_state
 from .discord_record_summary import format_record_summary
 from .side_recalibration import (
     apply_side_calibrator,
@@ -160,6 +159,9 @@ class PredictConfig:
     # Bankroll props reopen only after this policy approves the exact market/side/line/price bucket.
     bucket_reopen_policy_file: str = "prop_bucket_reopen_policy.json"
     enforce_prop_bucket_reopen: bool = True
+    real_money_kill_switch_file: str = "prop_real_money_kill_switch.json"
+    enforce_prop_real_money_kill_switch: bool = True
+    real_money_kill_switch_max_age_hours: float = 36.0
     # Lottery parlay mode: HR/K/H/TB biased to plus-money lines with binary clf edge.
     lottery_mode: bool = False
     lottery_legs: int = 5
@@ -2206,6 +2208,14 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
                 name: _pa_feature_value(row, name, baseline_pa, effective_order)
                 for name in numeric_features
             }
+            try:
+                player_key = str(int(row.get("player_id")))
+            except (TypeError, ValueError):
+                player_key = str(row.get("player_id") or "")
+            player_prior = ((artifact.get("player_prior_state") or {}).get(player_key) or {})
+            for name, value in player_prior.items():
+                if name in feat:
+                    feat[name] = value
             feat.update({name: _pa_feature_category(row, name) for name in categorical_features})
             feature_rows.append(feat)
         elif artifact:
@@ -2214,8 +2224,12 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
     if not artifact or not feature_rows:
         return infos
 
-    model = ((artifact.get("models") or {}).get("pa_model"))
-    if model is None:
+    artifact_models = artifact.get("models") or {}
+    model = artifact_models.get("pa_model")
+    low_model = artifact_models.get("pa_low_model")
+    normal_model = artifact_models.get("pa_normal_model")
+    use_two_part = bool(artifact_models.get("pa_two_part_use") and low_model is not None and normal_model is not None)
+    if model is None and not use_two_part:
         return infos
     try:
         valid_indices = [i for i, feat in enumerate(feature_rows) if feat is not None]
@@ -2230,12 +2244,24 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
             if col not in X:
                 X[col] = "unknown"
             X[col] = X[col].fillna("unknown").astype(str)
-        pred = np.clip(np.asarray(model.predict(X[numeric_features + categorical_features]), dtype=float), 0.4, 6.4)
+        model_input = X[numeric_features + categorical_features]
+        if use_two_part:
+            low_prob = np.clip(np.asarray(low_model.predict_proba(model_input)[:, 1], dtype=float), 1e-5, 1.0 - 1e-5)
+            normal_pred = np.clip(np.asarray(normal_model.predict(model_input), dtype=float), 3.0, 7.0)
+            low_states = ((((artifact.get("pa_uncertainty") or {}).get("global") or {}).get("low_pa_state_probs"))
+                          or {"0": 0.05, "1": 0.20, "2": 0.75})
+            low_total = sum(float(low_states.get(str(n), 0.0)) for n in range(3)) or 1.0
+            low_mean = sum(n * float(low_states.get(str(n), 0.0)) for n in range(3)) / low_total
+            pred = np.clip(low_prob * low_mean + (1.0 - low_prob) * normal_pred, 0.4, 6.4)
+        else:
+            low_prob = np.full(len(model_input), np.nan, dtype=float)
+            normal_pred = np.full(len(model_input), np.nan, dtype=float)
+            pred = np.clip(np.asarray(model.predict(model_input), dtype=float), 0.4, 6.4)
     except Exception:
         log.warning("Validated hitter PA model failed at prediction time; using baseline PA", exc_info=True)
         return infos
 
-    for i, pa in zip(valid_indices, pred):
+    for pos, (i, pa) in enumerate(zip(valid_indices, pred)):
         if not math.isfinite(float(pa)):
             continue
         base = infos[i].get("baseline_projected_pa")
@@ -2246,7 +2272,9 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
             "projected_pa": float(pa),
             "validated_projected_pa": float(pa),
             "pa_scale": scale,
-            "pa_model_source": "validated_pa_model",
+            "pa_model_source": "validated_two_part_pa" if use_two_part else "validated_pa_model",
+            "low_pa_probability": float(low_prob[pos]) if math.isfinite(float(low_prob[pos])) else None,
+            "normal_projected_pa": float(normal_pred[pos]) if math.isfinite(float(normal_pred[pos])) else None,
         })
     return infos
 
@@ -3386,6 +3414,46 @@ def _apply_prop_shadow_selector_gate(rows: List[Dict], cfg: PredictConfig) -> Li
     return rows
 
 
+def _downgrade_prop_row(row: Dict, reason: str, *, tier: str = "watch") -> None:
+    row["bankroll_candidate"] = False
+    row["bankroll_tier"] = tier
+    row["bankroll_reasons"] = _append_bankroll_reason(
+        row.get("bankroll_reasons") or "",
+        reason,
+    )
+    row["stake_pct"] = 0.0
+    row["stake_usd"] = 0.0
+
+
+def _apply_prop_real_money_kill_switch(rows: List[Dict], cfg: PredictConfig) -> List[Dict]:
+    """Apply global and row-level real-money kill switches to prop candidates."""
+    if not rows or not getattr(cfg, "enforce_prop_real_money_kill_switch", True):
+        return rows
+    state = load_prop_kill_switch_state(
+        cfg.model_dir,
+        file_name=cfg.real_money_kill_switch_file,
+        max_age_hours=cfg.real_money_kill_switch_max_age_hours,
+    )
+    blockers = [str(reason) for reason in (state.get("blockers") or []) if str(reason)]
+    active = bool(state.get("active")) or str(state.get("status") or "").lower() == "disabled"
+    global_reasons = ["real_money_kill_switch_active", *blockers[:6]] if active else []
+    for row in rows:
+        if not bool(row.get("bankroll_candidate")):
+            continue
+        reasons = list(global_reasons)
+        if row.get("minimum_acceptable_price") is None:
+            reasons.append("minimum_acceptable_price_missing")
+        if not row.get("bet_link"):
+            reasons.append("bet_link_missing")
+        if not reasons:
+            continue
+        row["kill_switch_status"] = state.get("status")
+        row["kill_switch_blockers"] = "; ".join(blockers)
+        for reason in dict.fromkeys(reasons):
+            _downgrade_prop_row(row, reason)
+    return rows
+
+
 def _round_or_none(value: Optional[float], ndigits: int) -> Optional[float]:
     if value is None:
         return None
@@ -3546,6 +3614,47 @@ def _offer_line_data(offer: Dict, sibling_offers: Optional[List[Dict]] = None) -
         ld.setdefault("under_link_book", book)
         ld.setdefault("under_offer_id", _clean_int_or_none(offer.get("id")))
         ld.setdefault("under_offer_source_row_id", _clean_int_or_none(offer.get("source_row_id")))
+    exact_side_offers = [
+        candidate for candidate in (sibling_offers or [offer])
+        if str(candidate.get("side") or "").lower() == side
+        and _same_line(candidate.get("line"), line)
+        and candidate.get("price") is not None
+    ]
+    implied = [
+        value for value in (_american_to_implied_prob(candidate.get("price")) for candidate in exact_side_offers)
+        if value is not None
+    ]
+    selected_implied = _american_to_implied_prob(offer.get("price"))
+    open_implied = _american_to_implied_prob(offer.get("open_price"))
+    if open_implied is not None and bool(offer.get("open_exact_line")):
+        ld["open_price_implied"] = open_implied
+        ld["open_to_lock_prob_move"] = (
+            selected_implied - open_implied if selected_implied is not None else None
+        )
+    open_line = _round_or_none(offer.get("open_line"), 3)
+    if open_line is not None and line is not None:
+        line_move = float(line) - float(open_line)
+        ld["open_to_lock_line_move_side"] = line_move if side == "over" else -line_move
+    if implied:
+        consensus = float(np.mean(implied))
+        ld.update({
+            "lock_price_implied": selected_implied,
+            "consensus_prob_at_lock": consensus,
+            "consensus_price_dispersion": float(np.std(implied, ddof=0)),
+            "consensus_book_count": float(len({str(candidate.get('bookmaker_key') or '').lower() for candidate in exact_side_offers})),
+            "book_lead_lag_prob": (selected_implied - consensus) if selected_implied is not None else None,
+            "best_consensus_prob": float(min(implied)),
+            "worst_consensus_prob": float(max(implied)),
+        })
+    ld["lock_offer_available"] = 1.0 if offer.get("price") is not None else 0.0
+    ld["lock_same_book_pair_available"] = 1.0 if ld.get("over_price") is not None and ld.get("under_price") is not None else 0.0
+    fetched = pd.to_datetime(offer.get("fetched_at_utc"), utc=True, errors="coerce")
+    commence = pd.to_datetime(offer.get("commence_time_utc"), utc=True, errors="coerce")
+    now_utc = pd.Timestamp.now(tz="UTC")
+    if pd.notna(fetched):
+        ld["lock_price_age_minutes"] = max(0.0, float((now_utc - fetched).total_seconds() / 60.0))
+    if pd.notna(fetched) and pd.notna(commence):
+        ld["minutes_to_first_pitch_at_lock"] = float((commence - fetched).total_seconds() / 60.0)
     return ld
 
 
@@ -3712,6 +3821,17 @@ def _prop_db_row(
         "bankroll_reasons": bankroll.reasons,
         "stake_pct": _round_or_none(bankroll.stake_pct, 4),
         "stake_usd": _round_or_none(bankroll.stake_usd, 2),
+        "lock_price_implied": line_data.get("lock_price_implied"),
+        "consensus_prob_at_lock": line_data.get("consensus_prob_at_lock"),
+        "consensus_price_dispersion": line_data.get("consensus_price_dispersion"),
+        "consensus_book_count": line_data.get("consensus_book_count"),
+        "book_lead_lag_prob": line_data.get("book_lead_lag_prob"),
+        "best_consensus_prob": line_data.get("best_consensus_prob"),
+        "worst_consensus_prob": line_data.get("worst_consensus_prob"),
+        "lock_offer_available": line_data.get("lock_offer_available"),
+        "lock_same_book_pair_available": line_data.get("lock_same_book_pair_available"),
+        "minutes_to_first_pitch_at_lock": line_data.get("minutes_to_first_pitch_at_lock"),
+        "lock_price_age_minutes": line_data.get("lock_price_age_minutes"),
     }
 
 
@@ -4736,6 +4856,7 @@ def _print_discord(
     all_alt_lines: Optional[Dict] = None,
     lottery_legs: Optional[List[Dict]] = None,
     db_rows: Optional[List[Dict]] = None,
+    bucket_reopen_policy: Optional[Dict] = None,
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
 
@@ -4744,6 +4865,7 @@ def _print_discord(
     (no env var)      →  full table mode: all players in aligned columns.
     """
     is_discord = os.getenv("DISCORD_FORMAT") == "1"
+    bucket_reopen_policy = bucket_reopen_policy or {}
     fd_links: List[str] = []
     prop_selector_ctx: Optional[PropSelectorContext] = None
     prop_selector_cfg = PropSelectorConfig(
@@ -5002,9 +5124,6 @@ def _print_discord(
             except (TypeError, ValueError):
                 return None
 
-        stat_labels = _PROP_STAT_DISPLAY
-        stat_sections = _PROP_STAT_SECTIONS
-
         def _opponent_for_row(row: Dict) -> str:
             gm = game_map.get(row.get("game_slug"), {})
             team = row.get("team_abbr")
@@ -5205,36 +5324,39 @@ def _print_discord(
             rows: List[Dict],
             *,
             source_label: str,
-            title: str = "PAPER PROPS - COMMON LINES",
+            title: str = "PAPER PLAYER PROPS",
             include_empty_stats: bool = True,
+            heading_kind: str = "Paper",
         ) -> None:
-            per_section_limit = int(cfg.discord_paper_limit or 0)
+            configured_limit = int(cfg.discord_paper_limit or 10)
+            per_section_limit = min(max(configured_limit, 1), 10)
             printed_section = False
             total_shown = 0
             print("")
             print(f"**{title} ({len(rows)} {source_label})**")
-            for stat_key, label in stat_sections:
+            paper_stat_sections = [
+                ("pitcher_strikeouts", "Strikeouts"),
+                ("batter_total_bases", "Total Bases"),
+                ("batter_hits", "Hits"),
+                ("batter_home_runs", "Home Runs"),
+            ]
+            for stat_key, label in paper_stat_sections:
                 stat_rows = [item for item in rows if item.get("stat_key") == stat_key]
                 stat_rows.sort(key=_pick_score, reverse=True)
-                shown = stat_rows if per_section_limit <= 0 else stat_rows[:per_section_limit]
+                shown = stat_rows[:per_section_limit]
+                print("")
+                print(f"**Top {per_section_limit} {heading_kind} {label}**")
                 if not shown:
                     if include_empty_stats:
-                        print(f"- {label}: no qualifying rows")
+                        print("- No qualifying rows")
                     continue
                 printed_section = True
                 total_shown += len(shown)
-                heading = (
-                    f"All {label}"
-                    if per_section_limit <= 0
-                    else f"Top {per_section_limit} {label}"
-                )
-                print("")
-                print(f"**{heading}**")
                 for item in shown:
                     _print_prop_item(item, include_link=cfg.discord_show_paper_links)
             if not printed_section and not include_empty_stats:
                 print("- No qualifying player props to show")
-            elif per_section_limit > 0 and total_shown < len(rows):
+            elif total_shown < len(rows):
                 print("")
                 print(f"- Showing {total_shown} of {len(rows)} paper/research rows")
 
@@ -5263,7 +5385,6 @@ def _print_discord(
             display_source.sort(key=_pick_score, reverse=True)
             non_bankroll_rows = [item for item in display_source if not item["bankroll"].candidate]
             paper_rows: List[Dict] = []
-            lottery_rows: List[Dict] = []
             no_bet_rows: List[Dict] = []
             watch_rows: List[Dict] = []
             for item in non_bankroll_rows:
@@ -5271,7 +5392,7 @@ def _print_discord(
                 if tier == "no_bet" or item.get("no_bet_decision"):
                     no_bet_rows.append(item)
                 elif tier == "lottery" or _is_tail_alt_item(item):
-                    lottery_rows.append(item)
+                    continue
                 elif tier == "paper":
                     paper_rows.append(item)
                 elif item in model_pick_rows and not _is_tail_alt_item(item):
@@ -5301,6 +5422,12 @@ def _print_discord(
                 print("")
                 print("**BANKROLL PROP BETS**")
                 print("- No bankroll-qualified player props today")
+                blockers = _reason_counts(non_bankroll_rows)
+                if blockers:
+                    top_blockers = ", ".join(
+                        f"{reason} {count}" for reason, count in blockers.most_common(6)
+                    )
+                    print(f"- Real-money blockers: {top_blockers}")
 
             combined_exposure = _locked_bankroll_exposure()
             cap = cfg.bankroll_max_daily_exposure_pct
@@ -5314,7 +5441,7 @@ def _print_discord(
             _print_paper_sections(
                 paper_rows,
                 source_label=source_label,
-                title="PAPER PROPS - COMMON LINES",
+                title="PAPER PLAYER PROPS",
                 include_empty_stats=True,
             )
             if watch_rows:
@@ -5323,18 +5450,8 @@ def _print_discord(
                     source_label="watch model picks",
                     title="WATCHLIST - NOT SELECTOR APPROVED",
                     include_empty_stats=False,
+                    heading_kind="Watch",
                 )
-            if lottery_rows:
-                _print_paper_sections(
-                    lottery_rows,
-                    source_label="high-variance rows",
-                    title="LOTTERY / RESEARCH",
-                    include_empty_stats=False,
-                )
-            else:
-                print("")
-                print("**LOTTERY / RESEARCH**")
-                print("- No lottery/research rows in the displayed model-pick pool")
             _print_no_bet_summary(no_bet_rows)
 
             print("")
@@ -5460,6 +5577,12 @@ def _print_discord(
         else:
             print("**BANKROLL PROP BETS**")
             print("- No bankroll-qualified player props today")
+            blockers = _reason_counts(paper_rows)
+            if blockers:
+                top_blockers = ", ".join(
+                    f"{reason} {count}" for reason, count in blockers.most_common(6)
+                )
+                print(f"- Real-money blockers: {top_blockers}")
 
         fd_bankroll_links = [
             link for link in list(dict.fromkeys(bankroll_links))
@@ -5479,15 +5602,8 @@ def _print_discord(
 
         if paper_rows:
             main_paper_rows = [item for item in paper_rows if not _is_tail_alt_item(item)]
-            tail_alt_rows = [item for item in paper_rows if _is_tail_alt_item(item)]
             if main_paper_rows:
                 _print_paper_sections(main_paper_rows, source_label="model picks")
-            if tail_alt_rows:
-                _print_paper_sections(
-                    tail_alt_rows,
-                    source_label="high-variance alt-line props",
-                    title="ALT-LINE LOTTERY / RESEARCH",
-                )
 
         print("")
         return []
@@ -6691,7 +6807,7 @@ def predict_props(cfg: PredictConfig) -> None:
             _pa_scales = [
                 float(info.get("pa_scale") or 1.0)
                 for info in hitter_pa_infos
-                if info.get("pa_model_source") == "validated_pa_model"
+                if info.get("pa_model_source") in {"validated_pa_model", "validated_two_part_pa"}
             ]
             if _pa_scales:
                 log.info(
@@ -6816,6 +6932,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     "validated_projected_pa": pa_info.get("validated_projected_pa"),
                     "pa_model_scale": pa_scale,
                     "pa_model_source": pa_info.get("pa_model_source"),
+                    "opp_model_low_pa": pa_info.get("low_pa_probability"),
+                    "opp_model_normal_pa": pa_info.get("normal_projected_pa"),
                 }
                 r = {
                     "game_slug": slug,
@@ -6863,6 +6981,8 @@ def predict_props(cfg: PredictConfig) -> None:
                     "validated_projected_pa": pa_info.get("validated_projected_pa"),
                     "pa_model_scale":         pa_scale,
                     "pa_model_source":        pa_info.get("pa_model_source"),
+                    "opp_model_low_pa":       pa_info.get("low_pa_probability"),
+                    "opp_model_normal_pa":    pa_info.get("normal_projected_pa"),
                     # Effective batting order: confirmed if available, else rolling avg
                     "effective_batting_order": _effective_order,
                 }
@@ -6955,6 +7075,7 @@ def predict_props(cfg: PredictConfig) -> None:
 
     # ── Save to DB ────────────────────────────────────────────────────────
     db_rows = _apply_prop_shadow_selector_gate(db_rows, cfg)
+    db_rows = _apply_prop_real_money_kill_switch(db_rows, cfg)
 
     try:
         existing_exposure, existing_keys, existing_slots = locked_bankroll_state(
@@ -7047,7 +7168,7 @@ def predict_props(cfg: PredictConfig) -> None:
 
     _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg,
                    all_alt_lines=all_alt_lines, lottery_legs=lottery_legs_collected,
-                   db_rows=db_rows)
+                   db_rows=db_rows, bucket_reopen_policy=bucket_reopen_policy)
 
     if not is_discord:
         fd_links = _print_best_bets(

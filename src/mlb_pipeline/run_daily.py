@@ -12,6 +12,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 from typing import Optional
 
+from mlb_pipeline.subprocess_utils import kill_process_tree, run_subprocess_tree
+
 _ET = ZoneInfo("America/New_York")
 
 
@@ -107,30 +109,24 @@ def _tail(s: str, n_lines: int = 60) -> str:
 
 
 def _run_step(step: Step, extra_env: Optional[dict[str, str]] = None) -> StepResult:
-    t0 = time.perf_counter()
-
     cmd = [sys.executable, "-m", step.module, *step.args]
     env = os.environ.copy()
     if extra_env:
         env.update(extra_env)
 
-    proc = subprocess.run(
+    rc, stdout, stderr, secs = run_subprocess_tree(
         cmd,
-        text=True,
-        capture_output=True,
-        timeout=step.timeout_s,
-        check=False,
+        timeout_s=step.timeout_s,
         env=env,
     )
 
-    secs = time.perf_counter() - t0
     return StepResult(
         name=step.name,
-        ok=(proc.returncode == 0),
-        rc=proc.returncode,
+        ok=(rc == 0),
+        rc=rc,
         secs=secs,
-        stdout=(proc.stdout or "").strip(),
-        stderr=(proc.stderr or "").strip(),
+        stdout=stdout.strip(),
+        stderr=stderr.strip(),
     )
 
 
@@ -171,7 +167,7 @@ def _run_parallel_steps(
                 stderr=(stderr or "").strip(),
             ))
         except subprocess.TimeoutExpired:
-            proc.kill()
+            kill_process_tree(proc)
             stdout, stderr = proc.communicate()
             results.append(StepResult(
                 name=step.name,
@@ -305,35 +301,38 @@ def main() -> None:
                 module="mlb_pipeline.modeling.shadow_lock_prop_predictions",
                 args=("--phase", lock_phase),
                 timeout_s=120,
-                critical=False,
+                critical=True,
+                fail_task_on_error=True,
             ),
             Step(
                 name="Re-crawl post-lock closing prop odds",
                 module="mlb_pipeline.crawler_oddsapi",
                 args=("--skip-live", "--force-props"),
                 timeout_s=600,
-                critical=False,
+                critical=True,
+                fail_task_on_error=True,
             ),
             Step(
                 name="Capture post-lock prop close snapshot",
                 module="mlb_pipeline.parse_oddsapi",
                 args=("--prop-snapshot-role", "close"),
                 timeout_s=300,
-                critical=False,
+                critical=True,
+                fail_task_on_error=True,
             ),
             Step(
                 name="Refresh prop replay CLV",
                 module="mlb_pipeline.modeling.refresh_prop_replay_clv",
                 timeout_s=300,
-                critical=False,
+                critical=True,
+                fail_task_on_error=True,
             ),
             Step(
                 name="Build prop market training table",
                 module="mlb_pipeline.modeling.build_prop_market_training_table",
-                args=("--lookback-days", "14", "--include-pending"),
+                args=("--lookback-days", "3", "--include-pending", "--no-replace"),
                 timeout_s=600,
                 critical=False,
-                fail_task_on_error=True,
             ),
             Step(
                 name="Prop walk-forward accuracy report",
@@ -398,6 +397,7 @@ def main() -> None:
             args=("--skip-live", "--force-props"),
             timeout_s=600,
             critical=True,
+            fail_task_on_error=True,
         ))
         steps.append(Step(
             name="Re-parse closing odds into odds.mlb_game_lines",
@@ -405,20 +405,21 @@ def main() -> None:
             args=("--prop-snapshot-role", "close"),
             timeout_s=300,
             critical=True,
+            fail_task_on_error=True,
         ))
         steps.append(Step(
             name="Refresh prop replay CLV",
             module="mlb_pipeline.modeling.refresh_prop_replay_clv",
             timeout_s=300,
-            critical=False,
+            critical=True,
+            fail_task_on_error=True,
         ))
         steps.append(Step(
             name="Build prop market training table",
             module="mlb_pipeline.modeling.build_prop_market_training_table",
-            args=("--lookback-days", "14", "--include-pending"),
+            args=("--lookback-days", "3", "--include-pending", "--no-replace"),
             timeout_s=600,
             critical=False,
-            fail_task_on_error=True,
         ))
         steps.append(Step(
             name="Prop walk-forward accuracy report",
@@ -604,8 +605,8 @@ def main() -> None:
             steps.append(Step(
                 name="Build prop market training table",
                 module="mlb_pipeline.modeling.build_prop_market_training_table",
-                args=("--include-pending",),
-                timeout_s=600,
+                args=("--include-pending", "--ensure-schema"),
+                timeout_s=1800,
                 critical=False,
                 fail_task_on_error=True,
             ))
@@ -616,14 +617,14 @@ def main() -> None:
                 critical=False,
             ))
             steps.append(Step(
-                name="Train hitter player-game outcome models",
-                module="mlb_pipeline.modeling.train_hitter_player_game_outcome_models",
+                name="Hitter event feature ablation report",
+                module="mlb_pipeline.modeling.hitter_event_feature_ablation_report",
                 timeout_s=900,
                 critical=False,
             ))
             steps.append(Step(
-                name="Hitter event feature ablation report",
-                module="mlb_pipeline.modeling.hitter_event_feature_ablation_report",
+                name="Train hitter player-game outcome models",
+                module="mlb_pipeline.modeling.train_hitter_player_game_outcome_models",
                 timeout_s=900,
                 critical=False,
             ))
@@ -733,6 +734,13 @@ def main() -> None:
             args=("--lookback-days", "90", "--top-n", "25"),
             timeout_s=120,
             critical=False,
+        ))
+        steps.append(Step(
+            name="Prop real-money kill switch",
+            module="mlb_pipeline.modeling.prop_real_money_kill_switch",
+            timeout_s=60,
+            critical=False,
+            fail_task_on_error=True,
         ))
         steps.append(Step(
             name="Prop bucket promotion report",

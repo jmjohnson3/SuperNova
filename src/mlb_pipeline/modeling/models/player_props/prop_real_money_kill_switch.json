@@ -1,0 +1,83 @@
+{
+  "generated_at_utc": "2026-06-19T13:51:41+00:00",
+  "status": "disabled",
+  "active": true,
+  "blockers": [
+    "no_open_prop_buckets",
+    "stale_close_rate>0.02",
+    "valid_close_coverage<0.90"
+  ],
+  "warnings": [
+    "fanduel_synthetic_evidence_display_only:batter_hits",
+    "fanduel_synthetic_evidence_display_only:batter_home_runs",
+    "fanduel_synthetic_evidence_display_only:batter_total_bases",
+    "hitter_event_model_not_ready_for_distribution"
+  ],
+  "thresholds": {
+    "max_artifact_age_hours": 36.0,
+    "min_valid_close_coverage": 0.9,
+    "max_stale_close_rate": 0.02,
+    "min_clv_beat_rate": 0.55,
+    "require_open_bucket": true
+  },
+  "close_quality": {
+    "rows": 0,
+    "valid_close_coverage": null,
+    "stale_close_rate": null,
+    "line_disappeared_rate": null,
+    "unknown_counts": {}
+  },
+  "open_reopen_buckets": 0,
+  "selector_real_candidate_rows": 0,
+  "artifact_status": {
+    "readiness": {
+      "file": "prop_bucket_trust_scores.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-19T13:51:31+00:00",
+      "age_hours": 0.003009201944444444,
+      "status": "fresh"
+    },
+    "reopen_policy": {
+      "file": "prop_bucket_reopen_policy.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-18T15:59:56Z",
+      "age_hours": 21.86273982861111,
+      "status": "fresh"
+    },
+    "shadow_selector": {
+      "file": "prop_shadow_selector_report.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-19T04:52:11+00:00",
+      "age_hours": 8.991906495277778,
+      "status": "fresh"
+    },
+    "distribution": {
+      "file": "prop_distribution_models.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-19T05:27:07Z",
+      "age_hours": 8.409684273055555,
+      "status": "fresh"
+    },
+    "opportunity": {
+      "file": "prop_opportunity_models.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-19T06:52:56Z",
+      "age_hours": 6.979408728055556,
+      "status": "fresh"
+    },
+    "hitter_outcome": {
+      "file": "hitter_player_game_outcome_models.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-19T11:17:54.889236+00:00",
+      "age_hours": 2.563056203888889,
+      "status": "fresh"
+    },
+    "target_quality": {
+      "file": "prop_target_quality_report.json",
+      "exists": true,
+      "generated_at_utc": "2026-06-19T04:55:25Z",
+      "age_hours": 8.938025998611112,
+      "status": "fresh"
+    }
+  }
+}

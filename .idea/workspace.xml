@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="a8b48474-6e90-4e60-b81d-144213686383" name="Changes" comment="improve prediction accuracy">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reports/mlb_daily_2026-06-12_close.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-12_close.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reports/mlb_daily_2026-06-17_close.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_daily_2026-06-17_close.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reports/mlb_prop_bucket_repair_latest.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_prop_bucket_repair_latest.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reports/mlb_prop_miss_diagnostic_latest.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_prop_miss_diagnostic_latest.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reports/mlb_prop_opportunity_feature_latest.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_prop_opportunity_feature_latest.md" afterDir="false" />
@@ -15,15 +15,36 @@
       <change beforePath="$PROJECT_DIR$/reports/mlb_prop_target_quality_latest.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_prop_target_quality_latest.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reports/mlb_prop_tb_repair_latest.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_prop_tb_repair_latest.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reports/mlb_prop_walk_forward_accuracy_latest.md" beforeDir="false" afterPath="$PROJECT_DIR$/reports/mlb_prop_walk_forward_accuracy_latest.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_promotion_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_promotion_report.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/calibration.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/calibration.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_columns.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_columns.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_importance.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_importance.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_medians.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/feature_medians.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/optuna_best_params.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/optuna_best_params.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_repair_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_repair_report.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_trust_scores.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_bucket_trust_scores.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_miss_diagnostic_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_miss_diagnostic_report.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_opportunity_feature_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_opportunity_feature_report.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_shadow_selector_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_shadow_selector_report.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_target_quality_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_target_quality_report.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_tb_repair_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_tb_repair_report.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_walk_forward_accuracy_report.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/player_props/prop_walk_forward_accuracy_report.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q10_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q10_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q25_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q25_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q50_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q50_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q75_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q75_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q90_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_q90_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_resid_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/run_line_resid_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_f5_direct_xgb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q10_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q10_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q25_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q25_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q50_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q50_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q75_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q75_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q90_lgb.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_q90_lgb.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_resid_xgb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/mlb_pipeline/modeling/models/total_resid_xgb.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

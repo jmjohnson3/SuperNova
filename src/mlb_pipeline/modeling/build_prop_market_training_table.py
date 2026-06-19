@@ -28,6 +28,11 @@ def main() -> None:
         help="Include replay rows without lock snapshots. Research only; real-money reports should omit this.",
     )
     parser.add_argument("--no-replace", action="store_true", help="Upsert without deleting matching rows first.")
+    parser.add_argument(
+        "--ensure-schema",
+        action="store_true",
+        help="Create/upgrade required tables and compatibility views before refreshing. Use in maintenance/nightly jobs.",
+    )
     args = parser.parse_args()
 
     result = refresh_prop_market_training_examples(PropMarketTrainingConfig(
@@ -39,6 +44,7 @@ def main() -> None:
         include_pending=args.include_pending,
         require_lock=not args.allow_unlocked,
         replace=not args.no_replace,
+        ensure_schema=args.ensure_schema,
     ))
     print(json.dumps(result, indent=2))
 

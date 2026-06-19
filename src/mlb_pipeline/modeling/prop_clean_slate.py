@@ -18,9 +18,9 @@ import psycopg2.extras
 class CleanSlateThresholds:
     min_side_locks: int = 100
     min_valid_side_locks: int = 100
-    min_valid_coverage: float = 0.25
+    min_valid_coverage: float = 0.90
     max_missing_lock_rate: float = 0.02
-    max_stale_close_rate: float = 0.05
+    max_stale_close_rate: float = 0.02
     require_close_times: bool = True
 
 

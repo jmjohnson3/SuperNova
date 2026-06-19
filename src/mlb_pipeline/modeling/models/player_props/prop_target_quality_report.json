@@ -1,140 +1,168 @@
 {
-  "generated_at_utc": "2026-06-17T17:55:40Z",
+  "generated_at_utc": "2026-06-19T14:56:37Z",
   "source": "features.mlb_prop_market_training_examples",
-  "rows": 82745,
+  "rows": 91654,
   "date_min": "2026-05-31",
-  "date_max": "2026-06-17",
+  "date_max": "2026-06-19",
   "status": "ready",
   "coverage": [
     {
       "field": "bookmaker_key",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "market_line",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "market_price",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "prop_offer_id",
-      "present": 82088,
+      "present": 90997,
       "missing": 657,
-      "coverage": 0.9920599431989848
+      "coverage": 0.9928317367490781
     },
     {
       "field": "lock_snapshot_id",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "source_created_at",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "actual_value",
-      "present": 65072,
-      "missing": 17673,
-      "coverage": 0.7864160976494048
+      "present": 78285,
+      "missing": 13369,
+      "coverage": 0.8541362079123661
     },
     {
       "field": "won",
-      "present": 65072,
-      "missing": 17673,
-      "coverage": 0.7864160976494048
+      "present": 78285,
+      "missing": 13369,
+      "coverage": 0.8541362079123661
     },
     {
       "field": "paired_price",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "paired_bookmaker_key",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "paired_price_source",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "pair_quality",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "no_vig_market_prob",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "market_prob_source",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "closing_line",
-      "present": 67357,
-      "missing": 15388,
-      "coverage": 0.8140310592785063
+      "present": 71547,
+      "missing": 20107,
+      "coverage": 0.7806205948458332
     },
     {
       "field": "closing_price",
-      "present": 67357,
-      "missing": 15388,
-      "coverage": 0.8140310592785063
+      "present": 71547,
+      "missing": 20107,
+      "coverage": 0.7806205948458332
     },
     {
       "field": "closing_snapshot_id",
-      "present": 67357,
-      "missing": 15388,
-      "coverage": 0.8140310592785063
+      "present": 71547,
+      "missing": 20107,
+      "coverage": 0.7806205948458332
     },
     {
       "field": "closing_fetched_at_utc",
-      "present": 67357,
-      "missing": 15388,
-      "coverage": 0.8140310592785063
+      "present": 71547,
+      "missing": 20107,
+      "coverage": 0.7806205948458332
     },
     {
       "field": "clv_valid",
-      "present": 82745,
+      "present": 91654,
       "missing": 0,
       "coverage": 1.0
     }
   ],
   "date_quality": [
     {
-      "date": "2026-06-17",
-      "rows": 2402,
+      "date": "2026-06-19",
+      "rows": 4944,
       "offer_id_rate": 1.0,
       "price_lock_rate": 1.0,
-      "same_book_pair_rate": 0.26477935054121565,
-      "cross_book_pair_rate": 0.13072439633638636,
-      "synthetic_pair_rate": 0.604496253122398,
-      "true_pair_rate": 0.395503746877602,
+      "same_book_pair_rate": 0.3058252427184466,
+      "cross_book_pair_rate": 0.12965210355987056,
+      "synthetic_pair_rate": 0.5645226537216829,
+      "true_pair_rate": 0.43547734627831713,
       "any_pair_rate": 1.0,
       "graded_rate": 0.0,
-      "valid_close_rate": 0.46794338051623646,
-      "stale_close_rate": 0.022064945878434637
+      "valid_close_rate": 0.0,
+      "stale_close_rate": 0.01820388349514563
+    },
+    {
+      "date": "2026-06-18",
+      "rows": 2660,
+      "offer_id_rate": 1.0,
+      "price_lock_rate": 1.0,
+      "same_book_pair_rate": 0.29022556390977444,
+      "cross_book_pair_rate": 0.19323308270676692,
+      "synthetic_pair_rate": 0.5165413533834586,
+      "true_pair_rate": 0.48345864661654137,
+      "any_pair_rate": 1.0,
+      "graded_rate": 0.8,
+      "valid_close_rate": 0.749624060150376,
+      "stale_close_rate": 0.12180451127819548
+    },
+    {
+      "date": "2026-06-17",
+      "rows": 3707,
+      "offer_id_rate": 1.0,
+      "price_lock_rate": 1.0,
+      "same_book_pair_rate": 0.25842999730240085,
+      "cross_book_pair_rate": 0.1974642568114378,
+      "synthetic_pair_rate": 0.5441057458861613,
+      "true_pair_rate": 0.45589425411383866,
+      "any_pair_rate": 1.0,
+      "graded_rate": 0.9314809819260857,
+      "valid_close_rate": 0.8956029134070677,
+      "stale_close_rate": 0.03425950903695711
     },
     {
       "date": "2026-06-16",
@@ -146,9 +174,9 @@
       "synthetic_pair_rate": 0.5363108206245462,
       "true_pair_rate": 0.4636891793754539,
       "any_pair_rate": 1.0,
-      "graded_rate": 0.0,
+      "graded_rate": 0.9237472766884531,
       "valid_close_rate": 0.8594771241830066,
-      "stale_close_rate": 0.01815541031227306
+      "stale_close_rate": 0.017429193899782137
     },
     {
       "date": "2026-06-15",
@@ -162,7 +190,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9349565809637324,
       "valid_close_rate": 0.8889834837391453,
-      "stale_close_rate": 0.02928656563936659
+      "stale_close_rate": 0.026051421760599353
     },
     {
       "date": "2026-06-14",
@@ -176,7 +204,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.8546895640686922,
       "valid_close_rate": 0.8262879788639366,
-      "stale_close_rate": 0.03418097754293263
+      "stale_close_rate": 0.03236459709379128
     },
     {
       "date": "2026-06-13",
@@ -190,7 +218,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9127792128855797,
       "valid_close_rate": 0.8594438535177025,
-      "stale_close_rate": 0.012004254672542167
+      "stale_close_rate": 0.009724965810667072
     },
     {
       "date": "2026-06-12",
@@ -204,7 +232,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9235199262842663,
       "valid_close_rate": 0.8875835061045843,
-      "stale_close_rate": 0.025224602626123013
+      "stale_close_rate": 0.02453351762266759
     },
     {
       "date": "2026-06-11",
@@ -218,7 +246,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.7584014532243415,
       "valid_close_rate": 0.8533151680290645,
-      "stale_close_rate": 0.06721162579473206
+      "stale_close_rate": 0.06357856494096276
     },
     {
       "date": "2026-06-10",
@@ -232,7 +260,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.906108866175422,
       "valid_close_rate": 0.8554789636320418,
-      "stale_close_rate": 0.04540052293796054
+      "stale_close_rate": 0.04385547896363204
     },
     {
       "date": "2026-06-09",
@@ -246,7 +274,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.930855924459336,
       "valid_close_rate": 0.8684130368565337,
-      "stale_close_rate": 0.035333536399634484
+      "stale_close_rate": 0.03243984160828511
     },
     {
       "date": "2026-06-08",
@@ -260,7 +288,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9256060183895235,
       "valid_close_rate": 0.8617999442741711,
-      "stale_close_rate": 0.031485093340763444
+      "stale_close_rate": 0.02814154360546113
     },
     {
       "date": "2026-06-07",
@@ -274,7 +302,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.8944947094003987,
       "valid_close_rate": 0.8645913203496396,
-      "stale_close_rate": 0.00950774421101058
+      "stale_close_rate": 0.008740990645606503
     },
     {
       "date": "2026-06-06",
@@ -288,7 +316,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.8185006576063131,
       "valid_close_rate": 0.8805348531345901,
-      "stale_close_rate": 0.021701008329679965
+      "stale_close_rate": 0.01972818939061815
     },
     {
       "date": "2026-06-05",
@@ -302,7 +330,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9205851619644723,
       "valid_close_rate": 0.8681892819823854,
-      "stale_close_rate": 0.04179728317659352
+      "stale_close_rate": 0.036274070756829375
     },
     {
       "date": "2026-06-04",
@@ -316,7 +344,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9505962521294719,
       "valid_close_rate": 0.6984667802385008,
-      "stale_close_rate": 0.1367120954003407
+      "stale_close_rate": 0.13287904599659284
     },
     {
       "date": "2026-06-03",
@@ -358,7 +386,7 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9326923076923077,
       "valid_close_rate": 0.8798076923076923,
-      "stale_close_rate": 0.09615384615384616
+      "stale_close_rate": 0.09134615384615384
     },
     {
       "date": "2026-05-31",
@@ -372,68 +400,292 @@
       "any_pair_rate": 1.0,
       "graded_rate": 0.9205607476635514,
       "valid_close_rate": 0.8364485981308412,
-      "stale_close_rate": 0.14953271028037382
+      "stale_close_rate": 0.09813084112149532
     }
   ],
   "pairing_quality": [
     {
+      "date": "2026-06-19",
+      "market": "batter_total_bases",
+      "bookmaker_key": "fanduel",
+      "rows": 1716,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 192,
+      "synthetic_pairs": 1524,
+      "missing_pairs": 0,
+      "same_book_quality": 0,
+      "cross_book_quality": 192,
+      "synthetic_quality": 1524,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 1524
+    },
+    {
+      "date": "2026-06-19",
+      "market": "batter_hits",
+      "bookmaker_key": "draftkings",
+      "rows": 928,
+      "same_book_pairs": 928,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 928,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-19",
+      "market": "batter_hits",
+      "bookmaker_key": "fanduel",
+      "rows": 858,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 449,
+      "synthetic_pairs": 409,
+      "missing_pairs": 0,
+      "same_book_quality": 0,
+      "cross_book_quality": 449,
+      "synthetic_quality": 409,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 409
+    },
+    {
+      "date": "2026-06-19",
+      "market": "batter_home_runs",
+      "bookmaker_key": "fanduel",
+      "rows": 858,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 858,
+      "missing_pairs": 0,
+      "same_book_quality": 0,
+      "cross_book_quality": 0,
+      "synthetic_quality": 858,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 858
+    },
+    {
+      "date": "2026-06-19",
+      "market": "batter_total_bases",
+      "bookmaker_key": "draftkings",
+      "rows": 388,
+      "same_book_pairs": 388,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 388,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-19",
+      "market": "pitcher_strikeouts",
+      "bookmaker_key": "draftkings",
+      "rows": 100,
+      "same_book_pairs": 100,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 100,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-19",
+      "market": "pitcher_strikeouts",
+      "bookmaker_key": "fanduel",
+      "rows": 96,
+      "same_book_pairs": 96,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 96,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_total_bases",
+      "bookmaker_key": "fanduel",
+      "rows": 912,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 196,
+      "synthetic_pairs": 716,
+      "missing_pairs": 0,
+      "same_book_quality": 0,
+      "cross_book_quality": 196,
+      "synthetic_quality": 716,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 716
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_hits",
+      "bookmaker_key": "fanduel",
+      "rows": 520,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 318,
+      "synthetic_pairs": 202,
+      "missing_pairs": 0,
+      "same_book_quality": 0,
+      "cross_book_quality": 318,
+      "synthetic_quality": 202,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 202
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_home_runs",
+      "bookmaker_key": "fanduel",
+      "rows": 456,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 456,
+      "missing_pairs": 0,
+      "same_book_quality": 0,
+      "cross_book_quality": 0,
+      "synthetic_quality": 456,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 456
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_hits",
+      "bookmaker_key": "draftkings",
+      "rows": 450,
+      "same_book_pairs": 450,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 450,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_total_bases",
+      "bookmaker_key": "draftkings",
+      "rows": 220,
+      "same_book_pairs": 220,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 220,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-18",
+      "market": "pitcher_strikeouts",
+      "bookmaker_key": "draftkings",
+      "rows": 52,
+      "same_book_pairs": 52,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 52,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
+      "date": "2026-06-18",
+      "market": "pitcher_strikeouts",
+      "bookmaker_key": "fanduel",
+      "rows": 50,
+      "same_book_pairs": 50,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 50,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
+    },
+    {
       "date": "2026-06-17",
       "market": "batter_total_bases",
       "bookmaker_key": "fanduel",
-      "rows": 868,
+      "rows": 1328,
       "same_book_pairs": 0,
-      "cross_book_pairs": 107,
-      "synthetic_pairs": 761,
+      "cross_book_pairs": 271,
+      "synthetic_pairs": 1057,
       "missing_pairs": 0,
       "same_book_quality": 0,
-      "cross_book_quality": 107,
-      "synthetic_quality": 761,
+      "cross_book_quality": 271,
+      "synthetic_quality": 1057,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 761
+      "synthetic_prob": 1057
     },
     {
       "date": "2026-06-17",
       "market": "batter_hits",
       "bookmaker_key": "fanduel",
-      "rows": 463,
+      "rows": 756,
       "same_book_pairs": 0,
-      "cross_book_pairs": 207,
-      "synthetic_pairs": 256,
+      "cross_book_pairs": 461,
+      "synthetic_pairs": 295,
       "missing_pairs": 0,
       "same_book_quality": 0,
-      "cross_book_quality": 207,
-      "synthetic_quality": 256,
+      "cross_book_quality": 461,
+      "synthetic_quality": 295,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 256
+      "synthetic_prob": 295
     },
     {
       "date": "2026-06-17",
       "market": "batter_home_runs",
       "bookmaker_key": "fanduel",
-      "rows": 435,
+      "rows": 665,
       "same_book_pairs": 0,
       "cross_book_pairs": 0,
-      "synthetic_pairs": 435,
+      "synthetic_pairs": 665,
       "missing_pairs": 0,
       "same_book_quality": 0,
       "cross_book_quality": 0,
-      "synthetic_quality": 435,
+      "synthetic_quality": 665,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 435
+      "synthetic_prob": 665
     },
     {
       "date": "2026-06-17",
       "market": "batter_hits",
       "bookmaker_key": "draftkings",
-      "rows": 418,
-      "same_book_pairs": 418,
+      "rows": 630,
+      "same_book_pairs": 630,
       "cross_book_pairs": 0,
       "synthetic_pairs": 0,
       "missing_pairs": 0,
-      "same_book_quality": 418,
+      "same_book_quality": 630,
       "cross_book_quality": 0,
       "synthetic_quality": 0,
       "one_sided_quality": 0,
@@ -444,12 +696,12 @@
       "date": "2026-06-17",
       "market": "batter_total_bases",
       "bookmaker_key": "draftkings",
-      "rows": 218,
-      "same_book_pairs": 218,
+      "rows": 328,
+      "same_book_pairs": 328,
       "cross_book_pairs": 0,
       "synthetic_pairs": 0,
       "missing_pairs": 0,
-      "same_book_quality": 218,
+      "same_book_quality": 328,
       "cross_book_quality": 0,
       "synthetic_quality": 0,
       "one_sided_quality": 0,
@@ -2235,40 +2487,112 @@
   ],
   "fanduel_market_evidence": [
     {
-      "date": "2026-06-17",
+      "date": "2026-06-19",
       "market": "batter_total_bases",
-      "rows": 868,
-      "true_pair_rate": 0.12327188940092165,
-      "synthetic_rate": 0.8767281105990783,
-      "clean_market_evidence_rate": 0.12327188940092165,
+      "rows": 1716,
+      "true_pair_rate": 0.11188811188811189,
+      "synthetic_rate": 0.8881118881118881,
+      "clean_market_evidence_rate": 0.11188811188811189,
       "same_book_pairs": 0,
-      "cross_book_pairs": 107,
-      "synthetic_pairs": 761,
+      "cross_book_pairs": 192,
+      "synthetic_pairs": 1524,
       "action": "extract_true_opposite_side_or_demote"
     },
     {
-      "date": "2026-06-17",
+      "date": "2026-06-19",
       "market": "batter_home_runs",
-      "rows": 435,
+      "rows": 858,
       "true_pair_rate": 0.0,
       "synthetic_rate": 1.0,
       "clean_market_evidence_rate": 0.0,
       "same_book_pairs": 0,
       "cross_book_pairs": 0,
-      "synthetic_pairs": 435,
+      "synthetic_pairs": 858,
+      "action": "extract_true_opposite_side_or_demote"
+    },
+    {
+      "date": "2026-06-19",
+      "market": "batter_hits",
+      "rows": 858,
+      "true_pair_rate": 0.5233100233100233,
+      "synthetic_rate": 0.4766899766899767,
+      "clean_market_evidence_rate": 0.5233100233100233,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 449,
+      "synthetic_pairs": 409,
+      "action": "usable"
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_total_bases",
+      "rows": 912,
+      "true_pair_rate": 0.2149122807017544,
+      "synthetic_rate": 0.7850877192982456,
+      "clean_market_evidence_rate": 0.2149122807017544,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 196,
+      "synthetic_pairs": 716,
+      "action": "extract_true_opposite_side_or_demote"
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_home_runs",
+      "rows": 456,
+      "true_pair_rate": 0.0,
+      "synthetic_rate": 1.0,
+      "clean_market_evidence_rate": 0.0,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 456,
+      "action": "extract_true_opposite_side_or_demote"
+    },
+    {
+      "date": "2026-06-18",
+      "market": "batter_hits",
+      "rows": 520,
+      "true_pair_rate": 0.6115384615384616,
+      "synthetic_rate": 0.38846153846153847,
+      "clean_market_evidence_rate": 0.6115384615384616,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 318,
+      "synthetic_pairs": 202,
+      "action": "usable"
+    },
+    {
+      "date": "2026-06-17",
+      "market": "batter_total_bases",
+      "rows": 1328,
+      "true_pair_rate": 0.20406626506024098,
+      "synthetic_rate": 0.795933734939759,
+      "clean_market_evidence_rate": 0.20406626506024098,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 271,
+      "synthetic_pairs": 1057,
+      "action": "extract_true_opposite_side_or_demote"
+    },
+    {
+      "date": "2026-06-17",
+      "market": "batter_home_runs",
+      "rows": 665,
+      "true_pair_rate": 0.0,
+      "synthetic_rate": 1.0,
+      "clean_market_evidence_rate": 0.0,
+      "same_book_pairs": 0,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 665,
       "action": "extract_true_opposite_side_or_demote"
     },
     {
       "date": "2026-06-17",
       "market": "batter_hits",
-      "rows": 463,
-      "true_pair_rate": 0.4470842332613391,
-      "synthetic_rate": 0.5529157667386609,
-      "clean_market_evidence_rate": 0.4470842332613391,
+      "rows": 756,
+      "true_pair_rate": 0.6097883597883598,
+      "synthetic_rate": 0.39021164021164023,
+      "clean_market_evidence_rate": 0.6097883597883598,
       "same_book_pairs": 0,
-      "cross_book_pairs": 207,
-      "synthetic_pairs": 256,
-      "action": "extract_true_opposite_side_or_demote"
+      "cross_book_pairs": 461,
+      "synthetic_pairs": 295,
+      "action": "usable"
     },
     {
       "date": "2026-06-16",
@@ -2848,16 +3172,17 @@
     }
   ],
   "clv_status_counts": {
-    "valid_movement": 47758,
-    "true_no_movement": 19599,
-    "unknown": 15388
+    "valid_movement": 50880,
+    "true_no_movement": 20667,
+    "unknown": 20107
   },
   "clv_unknown_reason_counts": {
-    "none": 67357,
-    "close_outside_two_hour_window": 8562,
-    "stale_close_before_lock": 5900,
-    "fallback_other_book_only": 734,
-    "no_valid_close_snapshot": 192
+    "none": 71547,
+    "close_outside_two_hour_window": 12137,
+    "stale_close_before_lock": 6207,
+    "line_disappeared_at_close": 1309,
+    "fallback_other_book_only": 259,
+    "no_valid_close_snapshot": 195
   },
   "bad_examples": [
     {
@@ -3034,7 +3359,7 @@
       ],
       "pairing_note": "",
       "clv_status": "unknown",
-      "clv_unknown_reason": "stale_close_before_lock"
+      "clv_unknown_reason": "line_disappeared_at_close"
     },
     {
       "date": "2026-05-31",
@@ -3056,7 +3381,7 @@
       ],
       "pairing_note": "",
       "clv_status": "unknown",
-      "clv_unknown_reason": "stale_close_before_lock"
+      "clv_unknown_reason": "line_disappeared_at_close"
     },
     {
       "date": "2026-05-31",

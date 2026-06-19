@@ -311,6 +311,9 @@ class SelectorContext:
         self.bookability = _load_json(self.model_dir / "prop_bookability_model.json")
         self.trust = _load_json(self.model_dir / "prop_bucket_trust_scores.json")
         self.promotion = _load_json(self.model_dir / "prop_bucket_promotion_report.json")
+        self.tb_hr_line_gates = (
+            (self.distribution.get("tb_hr_line_production_gates") or {}).get("groups") or {}
+        )
 
         self.live_policy = self.walk_forward.get("live_policy") or {}
         self.residual_buckets = {
@@ -783,6 +786,19 @@ def score_prediction_row(
         and bucket_avg_clv is not None
         and bucket_avg_clv >= 0.0
     )
+    line_bucket_value = str(feature_row.get("line_bucket") or row.get("line_bucket") or "")
+    if not line_bucket_value and bucket_key.count("|") >= 5:
+        line_bucket_value = bucket_key.split("|")[3]
+    line_gate_key = "|".join([
+        stat,
+        side,
+        line_bucket_value or "unknown",
+    ])
+    line_production_gate = ctx.tb_hr_line_gates.get(line_gate_key) or {}
+    tb_hr_line_confirms = (
+        stat not in {"batter_total_bases", "batter_home_runs"}
+        or bool(line_production_gate.get("passes"))
+    )
 
     model_wins = (
         selected_prob is not None
@@ -804,6 +820,7 @@ def score_prediction_row(
         and bucket_confirms
         and opportunity_confirms
         and market_pair_confirms
+        and tb_hr_line_confirms
         and not tail_alt
         and not no_bet_decision
     )
@@ -831,6 +848,9 @@ def score_prediction_row(
         reasons.append("cross_book_market_pair")
     if synthetic_fanduel_evidence:
         reasons.append("fanduel_synthetic_market_evidence")
+    if not tb_hr_line_confirms:
+        reasons.append("tb_hr_line_production_gate_failed")
+        reasons.extend(str(value) for value in (line_production_gate.get("reasons") or []))
     if bucket_roi is not None and bucket_roi < 0:
         reasons.append("bucket_roi_negative")
     if bucket_clv_beat_rate is not None and bucket_clv_beat_rate < cfg.min_bucket_clv_beat_rate:
@@ -933,6 +953,7 @@ def score_prediction_row(
         "close_capture_prob": close_capture_prob,
         "bookability_source": bookability_source,
         "selector_prob_side": selected_prob,
+        "tb_hr_line_production_gate": bool(tb_hr_line_confirms),
         "selector_ev": selected_ev,
         "selector_score": score,
         "selector_tier": tier,

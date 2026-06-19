@@ -7,6 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from xml.etree import ElementTree
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from mlb_pipeline.crawler_oddsapi import _build_full_url as mlb_build_full_url
@@ -18,14 +20,38 @@ from mlb_pipeline.modeling.bankroll_ledger import (
     prop_bankroll_risk_slot,
 )
 from mlb_pipeline.modeling.game_line_clv import game_line_clv, resolve_valid_game_close
-from mlb_pipeline.modeling.predict_player_props import _cap_prop_db_rows
+from mlb_pipeline.modeling.predict_player_props import (
+    PredictConfig,
+    _cap_prop_db_rows,
+    _offer_line_data,
+    _print_discord,
+)
 from mlb_pipeline.modeling.prop_clean_slate import CleanSlateThresholds, clean_slate_qualifies
+from mlb_pipeline.modeling.prop_real_money_eligibility import PROP_REAL_MONEY_ELIGIBILITY_START_DATE
+from mlb_pipeline.modeling.train_hitter_player_game_outcome_models import (
+    _apply_tb_hr_tail_logit_offset,
+    _predict_hierarchical_event_probabilities,
+    add_leakage_safe_player_priors,
+    convolve_hitter_outcomes,
+    projected_pa_pmf,
+)
+from mlb_pipeline.modeling.train_prop_distribution_models import (
+    _add_offer_group_weights,
+    _apply_true_pair_hitter_line_calibrators,
+    _blend_tb_state_curve,
+    _empirical_bayes_component_multiplier,
+    _fit_walk_forward_calibrator,
+    _purge_player_game_overlap,
+    _tb_state_over_probability,
+)
+from mlb_pipeline.modeling.train_prop_opportunity_models import add_pitcher_history_features
 from mlb_pipeline.modeling.predict_today import _cap_game_bankroll_rows
 from mlb_pipeline.modeling.prop_offer_links import filter_prop_offers_for_game
 from mlb_pipeline.modeling.prop_snapshot_coverage_report import slate_qualifies
 from mlb_pipeline.modeling.update_outcomes import _resolve_game_close_for_bet
 from mlb_pipeline.parse_games import _status_from_game_obj
 from mlb_pipeline.parse_oddsapi import _event_matches_as_of_date as mlb_event_matches_as_of_date
+from mlb_pipeline.parse_oddsapi import _iter_prop_rows as mlb_iter_prop_rows
 from nba_pipeline.crawler_oddsapi import _build_full_url as nba_build_full_url
 from nba_pipeline.modeling.update_outcomes import (
     _over_hit as nba_over_hit,
@@ -580,6 +606,16 @@ def test_mlb_runners_return_nonzero_when_critical_steps_fail():
     assert "raise SystemExit(1)" in notify_text
 
 
+def test_mlb_runners_kill_subprocess_trees_on_timeout():
+    daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
+    helper_text = (ROOT / "src/mlb_pipeline/subprocess_utils.py").read_text(encoding="utf-8")
+    assert "run_subprocess_tree" in daily_text
+    assert "run_subprocess_tree" in notify_text
+    assert "taskkill" in helper_text
+    assert "/T" in helper_text
+
+
 def test_close_runner_updates_prop_snapshot_coverage_report():
     daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
     notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
@@ -595,6 +631,29 @@ def test_close_runner_updates_prop_snapshot_coverage_report():
     assert "FROM odds.mlb_player_prop_line_snapshots c" in clean_slate_text
 
 
+def test_real_money_close_quality_defaults_are_strict():
+    policy_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_bucket_reopen_policy.py").read_text(encoding="utf-8")
+    readiness_text = (ROOT / "src/mlb_pipeline/modeling/prop_real_money_readiness_report.py").read_text(encoding="utf-8")
+    thresholds = CleanSlateThresholds()
+    assert thresholds.min_valid_coverage == pytest.approx(0.90)
+    assert thresholds.max_stale_close_rate == pytest.approx(0.02)
+    assert "clean_slate_min_valid_coverage: float = 0.90" in policy_text
+    assert "clean_slate_max_stale_close_rate: float = 0.02" in policy_text
+    assert "min_valid_close_coverage: float = 0.90" in readiness_text
+    assert "max_stale_close_rate: float = 0.02" in readiness_text
+    assert "--min-valid-close-coverage" in readiness_text
+    assert "--max-stale-close-rate" in readiness_text
+
+
+def test_prop_close_resolver_distinguishes_line_disappearance():
+    snapshot_text = (ROOT / "src/mlb_pipeline/modeling/prop_offer_snapshots.py").read_text(encoding="utf-8")
+    bookability_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_bookability_model.py").read_text(encoding="utf-8")
+    assert "line_disappeared_at_close" in snapshot_text
+    assert "same_book_other_line_at_close" in snapshot_text
+    assert "AND line <> %s" in snapshot_text
+    assert '"line_disappeared_at_close"' in bookability_text
+
+
 def test_prop_clv_refresh_and_walk_forward_reports_are_scheduled():
     daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
     notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
@@ -608,8 +667,10 @@ def test_prop_clv_refresh_and_walk_forward_reports_are_scheduled():
     assert "mlb_pipeline.modeling.prop_shadow_selector" in notify_text
     assert "mlb_pipeline.modeling.prop_opportunity_feature_report" in daily_text
     assert "mlb_pipeline.modeling.prop_opportunity_feature_report" in notify_text
-    assert 'args=("--include-pending",)' in daily_text
-    assert 'args=("--include-pending",)' in notify_text
+    assert 'args=("--include-pending", "--ensure-schema")' in daily_text
+    assert 'args=("--include-pending", "--ensure-schema")' in notify_text
+    assert 'args=("--lookback-days", "3", "--include-pending", "--no-replace")' in daily_text
+    assert 'args=("--lookback-days", "3", "--include-pending", "--no-replace")' in notify_text
 
 
 def test_prop_offer_health_and_selector_sections_are_reported():
@@ -642,6 +703,83 @@ def test_prop_no_vig_pairing_uses_event_fallbacks():
     assert "synthetic_fanduel_over_only_complement" in training_text
     assert "synthetic_fanduel_over_only" in training_text
     assert "Synthetic Pair" in quality_text
+
+
+def test_fanduel_alternate_props_preserve_true_under_prices():
+    fetched_at = datetime(2026, 6, 17, 16, 0, tzinfo=timezone.utc)
+    event_payload = {
+        "id": "evt_fd_alt",
+        "commence_time": "2026-06-17T23:05:00Z",
+        "home_team": "New York Yankees",
+        "away_team": "Boston Red Sox",
+        "bookmakers": [
+            {
+                "key": "fanduel",
+                "markets": [
+                    {
+                        "key": "batter_total_bases_alternate",
+                        "outcomes": [
+                            {"name": "Over", "description": "Aaron Judge", "point": 1.5, "price": 120, "link": "over-link"},
+                            {"name": "Under", "description": "Aaron Judge", "point": 1.5, "price": -145, "link": "under-link"},
+                            {"name": "Over", "description": "Aaron Judge", "point": 2.5, "price": 240, "link": "over-alt"},
+                        ],
+                    }
+                ],
+            },
+            {
+                "key": "draftkings",
+                "markets": [
+                    {
+                        "key": "batter_total_bases_alternate",
+                        "outcomes": [
+                            {"name": "Over", "description": "Aaron Judge", "point": 1.5, "price": 115},
+                            {"name": "Under", "description": "Aaron Judge", "point": 1.5, "price": -135},
+                        ],
+                    }
+                ],
+            },
+        ],
+    }
+    rows = list(mlb_iter_prop_rows(date(2026, 6, 17), fetched_at, event_payload))
+    assert len(rows) == 2
+    main = [row for row in rows if float(row[10]) == 1.5][0]
+    assert main[4] == "fanduel"
+    assert main[9] == "batter_total_bases"
+    assert main[11] == 120
+    assert main[12] == -145
+    assert main[13] == "over-link"
+    assert main[14] == "under-link"
+
+
+def test_real_money_policy_excludes_synthetic_fanduel_market_evidence():
+    policy_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_bucket_reopen_policy.py").read_text(encoding="utf-8")
+    readiness_text = (ROOT / "src/mlb_pipeline/modeling/prop_real_money_readiness_report.py").read_text(encoding="utf-8")
+    selector_text = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
+    for text in (policy_text, readiness_text):
+        assert "clean_market_pair_flag::float" in text
+        assert "synthetic_fanduel_over_only" in text
+        assert "synthetic_fanduel_over_only_complement" in text
+        assert "synthetic_pair_flag::float" in text
+        assert "batter_hits','batter_total_bases','batter_home_runs" in text
+    assert "_is_fanduel_synthetic_hitter_evidence" in selector_text
+    assert "fanduel_synthetic_market_evidence" in selector_text
+
+
+def test_prop_real_money_kill_switch_is_wired_to_predictions_and_scheduler():
+    kill_text = (ROOT / "src/mlb_pipeline/modeling/prop_real_money_kill_switch.py").read_text(encoding="utf-8")
+    predict_text = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+    daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
+    assert "valid_close_coverage<" in kill_text
+    assert "stale_close_rate>" in kill_text
+    assert "no_open_prop_buckets" in kill_text
+    assert "artifact_stale" in kill_text
+    assert "load_prop_kill_switch_state" in predict_text
+    assert "_apply_prop_real_money_kill_switch(db_rows, cfg)" in predict_text
+    assert "minimum_acceptable_price_missing" in predict_text
+    assert "bet_link_missing" in predict_text
+    assert "mlb_pipeline.modeling.prop_real_money_kill_switch" in daily_text
+    assert "mlb_pipeline.modeling.prop_real_money_kill_switch" in notify_text
 
 
 def test_prop_opportunity_features_feed_training_and_betting_layers():
@@ -730,11 +868,16 @@ def test_prop_bootstrap_micro_and_ladder_artifacts_are_unified():
 def test_prop_selector_uses_distribution_opportunity_and_bucket_clv_gates():
     selector_text = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
     walk_forward_text = (ROOT / "src/mlb_pipeline/modeling/prop_walk_forward_accuracy_report.py").read_text(encoding="utf-8")
+    distribution_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_distribution_models.py").read_text(encoding="utf-8")
+    hitter_outcome_text = (ROOT / "src/mlb_pipeline/modeling/train_hitter_player_game_outcome_models.py").read_text(encoding="utf-8")
     assert "variant == \"distribution\"" in selector_text
     assert "_distribution_side_prob" in selector_text
     assert "_compound_tb_over_prob" in selector_text
     assert "_compound_tb_over_prob" in walk_forward_text
     assert "compound PA/single/double/triple/HR" in walk_forward_text
+    assert 'artifact["status"] = "loaded" if artifact["production_eligible"] else "diagnostic_candidate"' in distribution_text
+    assert '"production_eligible": bool(artifact.get("production_eligible"))' in distribution_text
+    assert "usable_for_distribution" in hitter_outcome_text
     assert "opportunity_not_confirming" in selector_text
     assert "bucket_history_not_confirming" in selector_text
     assert "bucket_clv_beat_low" in selector_text
@@ -752,7 +895,8 @@ def test_prop_bookability_avoids_clv_reason_leakage_and_reports_repair():
     assert "clv_unknown_reason" not in categorical_block
     assert "`clv_unknown_reason` is label-only" in bookability_text
     assert "selected_scoring_method" in bookability_text
-    assert "_bookability_empirical_score" in selector_text
+    assert "_bookability_empirical_components" in selector_text
+    assert "_bookability_score" in selector_text
     assert "bookability_model_usable" in selector_text
     assert "Prediction Gap Audit" in bookability_text
     assert "repair_hitter_tb_distribution" in repair_text
@@ -761,3 +905,323 @@ def test_prop_bookability_avoids_clv_reason_leakage_and_reports_repair():
     assert "mlb_pipeline.modeling.prop_bucket_repair_report" in notify_text
     assert "confirmed_lineup" in opportunity_text
     assert "low_pa_miss_rate" in opportunity_text
+
+
+def test_prop_promotion_uses_fixed_prospective_eligibility_cohort():
+    policy_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_bucket_reopen_policy.py").read_text(encoding="utf-8")
+    readiness_text = (ROOT / "src/mlb_pipeline/modeling/prop_real_money_readiness_report.py").read_text(encoding="utf-8")
+    assert PROP_REAL_MONEY_ELIGIBILITY_START_DATE == date(2026, 6, 19)
+    assert "legacy_audit_rows" in policy_text
+    assert 'legacy_df["game_date_et"] >= cfg.eligibility_start_date' in policy_text
+    assert "eligibility_start_date" in readiness_text
+    assert "legacy_close_quality" in readiness_text
+
+
+class _ConstantProbabilityModel:
+    def __init__(self, probability: float):
+        self.probability = probability
+
+    def predict_proba(self, values):
+        p = np.full(len(values), self.probability, dtype=float)
+        return np.column_stack([1.0 - p, p])
+
+
+def test_hierarchical_event_curve_is_coherent_and_normalized():
+    models = {
+        "hit": _ConstantProbabilityModel(0.25),
+        "walk_given_non_hit": _ConstantProbabilityModel(0.10),
+        "xbh_given_hit": _ConstantProbabilityModel(0.40),
+        "hr_given_xbh": _ConstantProbabilityModel(0.30),
+        "triple_given_non_hr_xbh": _ConstantProbabilityModel(0.10),
+    }
+    frame = pd.DataFrame({"projected_pa": [4.2, 3.8], "team_abbr": ["NYY", "LAD"]})
+    probs = _predict_hierarchical_event_probabilities(
+        models,
+        frame,
+        numeric_features=["projected_pa"],
+        categorical_features=["team_abbr"],
+    )
+    assert np.allclose(probs.sum(axis=1).to_numpy(), 1.0)
+    assert (probs >= 0.0).all().all()
+    assert (probs["p_double"] > probs["p_triple"]).all()
+
+
+def test_player_event_priors_are_empirical_bayes_and_date_shifted():
+    frame = pd.DataFrame(
+        {
+            "player_id": [42, 42, 42],
+            "game_date_et": [date(2026, 6, 1), date(2026, 6, 1), date(2026, 6, 2)],
+            "actual_pa": [4, 3, 4],
+            "actual_walks": [0, 0, 0],
+            "actual_singles": [2, 1, 0],
+            "actual_doubles": [0, 0, 0],
+            "actual_triples": [0, 0, 0],
+            "actual_home_runs": [0, 0, 0],
+        }
+    )
+    enhanced, state = add_leakage_safe_player_priors(frame)
+    first_day = enhanced.loc[pd.to_datetime(enhanced["game_date_et"]).dt.date == date(2026, 6, 1)]
+    next_day = enhanced.loc[pd.to_datetime(enhanced["game_date_et"]).dt.date == date(2026, 6, 2)]
+    assert first_day["player_prior_pa"].eq(0.0).all()
+    assert next_day["player_prior_pa"].eq(7.0).all()
+    assert next_day["player_prior_hit_rate"].iloc[0] > first_day["player_prior_hit_rate"].iloc[0]
+    assert state["42"]["player_prior_pa"] == 11.0
+
+
+def test_projected_pa_convolution_preserves_explicit_tb_probability_mass():
+    row = pd.Series({"confirmed_lineup_flag": 1, "lineup_slot": 3, "home_away": "home"})
+    pa_pmf = projected_pa_pmf(4.25, row, {"global": {"bias": 0.0, "sigma": 0.65}})
+    curve = convolve_hitter_outcomes(
+        {
+            "p_out": 0.66,
+            "p_walk": 0.08,
+            "p_single": 0.15,
+            "p_double": 0.06,
+            "p_triple": 0.01,
+            "p_hr": 0.04,
+        },
+        pa_pmf,
+    )
+    assert sum(pa_pmf.values()) == pytest.approx(1.0)
+    assert sum(curve["tb_pmf"].values()) == pytest.approx(1.0)
+    assert sum(curve["tb_states"].values()) == pytest.approx(1.0)
+    assert curve["tb_states"]["tb_4_plus_hr"] > 0.0
+    assert curve["tb_states"]["tb_4_plus_non_hr"] > 0.0
+
+
+def test_two_part_pa_distribution_preserves_low_pa_risk_mass():
+    row = pd.Series({
+        "lineup_slot": 7,
+        "is_home": True,
+        "pa_low_probability": 0.24,
+        "pa_normal_mean": 4.1,
+    })
+    uncertainty = {
+        "global": {"bias": 0.0, "sigma": 0.65, "low_pa_state_probs": {"0": 0.10, "1": 0.20, "2": 0.70}}
+    }
+    pmf = projected_pa_pmf(3.8, row, uncertainty)
+    assert sum(pmf.values()) == pytest.approx(1.0)
+    assert sum(pmf[n] for n in (0, 1, 2)) == pytest.approx(0.24)
+    assert sum(pmf[n] for n in range(3, 8)) == pytest.approx(0.76)
+
+
+def test_grouped_offer_weights_equalize_player_game_outcomes_and_purge_overlap():
+    frame = pd.DataFrame({
+        "game_slug": ["g1"] * 10 + ["g2"] * 2,
+        "player_id": [1] * 10 + [2] * 2,
+    })
+    weighted = _add_offer_group_weights(frame)
+    totals = weighted.groupby("player_game_group")["offer_group_weight"].sum()
+    assert totals.iloc[0] == pytest.approx(totals.iloc[1])
+
+    train = pd.DataFrame({"game_slug": ["g1", "g2"], "player_id": [1, 2]})
+    holdout = pd.DataFrame({"game_slug": ["g2", "g3"], "player_id": [2, 3]})
+    purged_train, _, purged = _purge_player_game_overlap(train, holdout)
+    assert purged == 1
+    assert set(purged_train["game_slug"]) == {"g1"}
+
+
+def test_walk_forward_calibrator_auto_disables_without_brier_gain():
+    rows = []
+    for day in range(10):
+        for player in range(20):
+            rows.append({
+                "game_date_et": date(2026, 5, 1) + timedelta(days=day),
+                "game_slug": f"g{day}",
+                "player_id": player,
+                "p_distribution_side": 0.5,
+                "target": (day + player) % 2,
+            })
+    rec = _fit_walk_forward_calibrator(_add_offer_group_weights(pd.DataFrame(rows)), "p_distribution_side")
+    assert rec["enabled"] is False
+    assert rec["reason"] == "no_temporal_brier_gain"
+
+
+def test_tb_state_residual_blend_preserves_probability_mass():
+    curve = convolve_hitter_outcomes(
+        {"p_out": 0.65, "p_walk": 0.08, "p_single": 0.16, "p_double": 0.06, "p_triple": 0.01, "p_hr": 0.04},
+        {4: 1.0},
+    )
+    row = pd.Series({
+        "p_tb_state_tb_0": 0.30,
+        "p_tb_state_tb_1": 0.22,
+        "p_tb_state_tb_2_3": 0.20,
+        "p_tb_state_tb_4_plus_hr": 0.25,
+        "p_tb_state_tb_4_plus_non_hr": 0.03,
+    })
+    blended = _blend_tb_state_curve(curve, row, 0.5)
+    assert sum(blended["tb_pmf"].values()) == pytest.approx(1.0)
+    assert sum(blended["tb_states"].values()) == pytest.approx(1.0)
+    assert blended["tb_states"]["tb_4_plus_hr"] > curve["tb_states"]["tb_4_plus_hr"]
+
+
+def test_tb_hr_tail_logit_repair_preserves_mass_and_only_lifts_tail():
+    probabilities = pd.DataFrame({
+        "tb_0": [0.45, 0.35],
+        "tb_1": [0.25, 0.25],
+        "tb_2_3": [0.20, 0.22],
+        "tb_4_plus_hr": [0.08, 0.14],
+        "tb_4_plus_non_hr": [0.02, 0.04],
+    })
+    repaired = _apply_tb_hr_tail_logit_offset(probabilities, 0.30)
+    assert np.allclose(repaired.sum(axis=1), 1.0)
+    assert (repaired["tb_4_plus_hr"] > probabilities["tb_4_plus_hr"]).all()
+    assert (repaired.drop(columns="tb_4_plus_hr").sum(axis=1) < probabilities.drop(columns="tb_4_plus_hr").sum(axis=1)).all()
+
+
+def test_direct_tb_state_pricing_uses_state_boundaries():
+    curve = {
+        "tb_states": {
+            "tb_0": 0.40,
+            "tb_1": 0.25,
+            "tb_2_3": 0.20,
+            "tb_4_plus_hr": 0.12,
+            "tb_4_plus_non_hr": 0.03,
+        },
+        "tb_pmf": {0: 0.40, 1: 0.25, 2: 0.12, 3: 0.08, 4: 0.15},
+    }
+    assert _tb_state_over_probability(0.5, curve) == pytest.approx(0.60)
+    assert _tb_state_over_probability(1.5, curve) == pytest.approx(0.35)
+    assert _tb_state_over_probability(2.5, curve) == pytest.approx(0.23)
+    assert _tb_state_over_probability(3.5, curve) == pytest.approx(0.15)
+
+
+def test_line_calibration_applies_only_to_true_pair_exact_line():
+    frame = pd.DataFrame({
+        "market": ["batter_total_bases", "batter_total_bases"],
+        "side": ["over", "over"],
+        "market_line": [1.5, 1.5],
+        "true_pair_flag": [1.0, 0.0],
+        "synthetic_pair_flag": [0.0, 1.0],
+        "market_prob_source": ["paired_no_vig", "synthetic_fanduel_over_only"],
+        "p_distribution_side": [0.30, 0.30],
+    })
+    calibrators = {
+        "overall_holdout_enabled": True,
+        "groups": {
+            "batter_total_bases|over|TB 1.5": {
+                "enabled": True,
+                "holdout_enabled": True,
+                "probability_col": "p_distribution_side",
+                "model": {"method": "isotonic", "x_thresholds": [0.0, 1.0], "y_thresholds": [0.1, 0.9]},
+            }
+        },
+    }
+    calibrated = _apply_true_pair_hitter_line_calibrators(frame, frame["p_distribution_side"], calibrators)
+    assert calibrated.iloc[0] == pytest.approx(0.34)
+    assert calibrated.iloc[1] == pytest.approx(0.30)
+
+
+def test_tb_component_empirical_bayes_can_repair_supported_double_bias():
+    supported = _empirical_bayes_component_multiplier(820.0, 360.0, 20000.0, shrink_exposure=700.0)
+    sparse = _empirical_bayes_component_multiplier(2.0, 1.0, 10.0, shrink_exposure=700.0)
+    assert supported > 1.45
+    assert sparse < 1.10
+
+
+def test_tb_hr_real_candidates_require_true_pair_line_production_gate():
+    distribution_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_distribution_models.py").read_text(encoding="utf-8")
+    selector_text = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
+    assert "holdout_true_pair_non_synthetic_only" in distribution_text
+    assert "tb_hr_line_production_gates" in distribution_text
+    assert "tb_hr_line_confirms" in selector_text
+    assert "tb_hr_line_production_gate_failed" in selector_text
+
+
+def test_discord_formatter_receives_exact_bucket_reopen_policy():
+    source = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    formatter = next(
+        node for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "_print_discord"
+    )
+    assert "bucket_reopen_policy" in [arg.arg for arg in formatter.args.args]
+    calls = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "_print_discord"
+    ]
+    assert calls
+    assert all("bucket_reopen_policy" in {kw.arg for kw in call.keywords} for call in calls)
+
+
+def test_discord_formatter_handles_empty_bankroll_path(monkeypatch, capsys):
+    import mlb_pipeline.modeling.predict_player_props as props_module
+
+    class _Context:
+        def __enter__(self):
+            return object()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setenv("DISCORD_FORMAT", "1")
+    monkeypatch.setattr(props_module, "format_record_summary", lambda **_kwargs: "")
+    monkeypatch.setattr(props_module.psycopg2, "connect", lambda *_args, **_kwargs: _Context())
+    monkeypatch.setattr(props_module, "locked_bankroll_state", lambda *_args, **_kwargs: (0.0, set(), set()))
+    result = _print_discord(
+        [],
+        [],
+        {},
+        {},
+        PredictConfig(et_date=date(2026, 6, 18)),
+        db_rows=[],
+        bucket_reopen_policy={},
+    )
+    output = capsys.readouterr().out
+    assert result == []
+    assert "No bankroll-qualified player props today" in output
+    assert "Top 10 Paper Strikeouts" in output
+    assert "Top 10 Paper Total Bases" in output
+    assert "Top 10 Paper Hits" in output
+    assert "Top 10 Paper Home Runs" in output
+    assert "LOTTERY / RESEARCH" not in output
+    assert "ALT-LINE LOTTERY / RESEARCH" not in output
+    assert "NO-BET SUMMARY" in output
+
+
+def test_clv_v2_live_offer_features_use_consensus_and_exact_open_price():
+    offers = [
+        {
+            "id": 1, "side": "over", "line": 5.5, "price": -105,
+            "bookmaker_key": "draftkings", "open_price": 110,
+            "open_line": 5.5, "open_exact_line": True,
+        },
+        {"id": 2, "side": "over", "line": 5.5, "price": -115, "bookmaker_key": "fanduel"},
+        {"id": 3, "side": "under", "line": 5.5, "price": -115, "bookmaker_key": "draftkings"},
+    ]
+    data = _offer_line_data(offers[0], offers)
+    assert data["consensus_book_count"] == 2.0
+    assert data["lock_same_book_pair_available"] == 1.0
+    assert data["open_to_lock_prob_move"] > 0.0
+    assert data["open_to_lock_line_move_side"] == pytest.approx(0.0)
+
+
+def test_pitcher_history_features_never_use_current_start_outcome():
+    frame = pd.DataFrame({
+        "player_id": [7, 7, 7],
+        "game_slug": ["a", "b", "c"],
+        "game_date_et": [date(2026, 5, 1), date(2026, 5, 7), date(2026, 5, 13)],
+        "team_abbr": ["SEA", "SEA", "SEA"],
+        "actual_bf": [18.0, 24.0, 30.0],
+        "actual_pitch_count_proxy": [72.0, 96.0, 120.0],
+        "actual_ip": [4.0, 6.0, 8.0],
+    })
+    enriched = add_pitcher_history_features(frame).sort_values("game_date_et")
+    assert pd.isna(enriched.iloc[0]["last_bf"])
+    assert enriched.iloc[1]["last_bf"] == pytest.approx(18.0)
+    assert enriched.iloc[2]["recent_bf_mean_3"] == pytest.approx(21.0)
+    assert enriched.iloc[2]["days_rest"] == pytest.approx(6.0)
+
+
+def test_head_ablation_runs_before_hitter_model_training():
+    source = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    assert source.index("Hitter event feature ablation report") < source.index("Train hitter player-game outcome models")
+
+
+def test_clv_v2_is_true_pair_only_and_has_movement_features():
+    source = (ROOT / "src/mlb_pipeline/modeling/train_prop_market_residual_models.py").read_text(encoding="utf-8")
+    assert "open_to_lock_prob_move" in source
+    assert "consensus_price_dispersion" in source
+    assert "book_lead_lag_prob" in source
+    assert "COALESCE(e.true_pair_flag::float" in source
+    assert "COALESCE(e.synthetic_pair_flag::float" in source

@@ -24,6 +24,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import psycopg2
+from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -52,6 +53,14 @@ NUMERIC_FEATURES = [
     "park_run_factor",
     "park_hr_factor",
     "park_babip_factor",
+    "temperature_f",
+    "wind_speed_mph",
+    "wind_sin",
+    "wind_cos",
+    "precip_prob_pct",
+    "is_dome",
+    "is_day_game",
+    "weather_pregame_flag",
     "own_lineup_xwoba_avg",
     "own_lineup_xslg_avg",
     "own_lineup_barrel_avg",
@@ -171,6 +180,12 @@ NUMERIC_FEATURES = [
     "platoon_advantage_flag",
     "batter_hand_known_flag",
     "opp_sp_hand_known_flag",
+    "player_prior_pa",
+    "player_prior_hit_rate",
+    "player_prior_xbh_given_hit",
+    "player_prior_hr_given_xbh",
+    "player_prior_triple_given_non_hr_xbh",
+    "player_prior_walk_given_non_hit",
 ]
 
 CATEGORICAL_FEATURES = [
@@ -192,6 +207,13 @@ RATE_TARGETS = {
 }
 
 EVENT_CLASSES = ["out", "walk", "single", "double", "triple", "hr"]
+TB_STATE_NAMES = ["tb_0", "tb_1", "tb_2_3", "tb_4_plus_hr", "tb_4_plus_non_hr"]
+_TB_STATE_HIERARCHICAL_HEADS = (
+    "tb_positive",
+    "tb_2_plus_given_positive",
+    "tb_4_plus_given_2_plus",
+    "tb_hr_given_4_plus",
+)
 
 _LINEUP_PA_PRIORS = {
     1: 4.65,
@@ -227,6 +249,7 @@ class HitterOutcomeModelConfig:
     min_holdout_rows: int = 200
     min_prop_holdout_rows: int = 100
     rebuild_player_game_if_empty: bool = True
+    fit_independent_boosted_candidate: bool = False
     report_file: str | None = None
 
 
@@ -267,6 +290,18 @@ def _query_df(conn, sql: str, params: dict[str, Any]) -> pd.DataFrame:
         rows = cur.fetchall()
         columns = [desc[0] for desc in cur.description]
     return pd.DataFrame(rows, columns=columns)
+
+
+def _load_head_feature_policy(model_dir: Path) -> dict[str, Any]:
+    path = model_dir / "hitter_event_feature_ablation.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    policy = payload.get("pruning_policy") or {}
+    return policy if policy.get("status") == "ready" else {}
 
 
 def _load(cfg: HitterOutcomeModelConfig) -> pd.DataFrame:
@@ -323,6 +358,11 @@ def _coalesce_column(df: pd.DataFrame, name: str, aliases: tuple[str, ...], defa
     return out
 
 
+def _numeric_column(df: pd.DataFrame, name: str, default: float = np.nan) -> pd.Series:
+    values = df[name] if name in df else pd.Series(default, index=df.index, dtype="float64")
+    return pd.to_numeric(values, errors="coerce")
+
+
 def prepare_hitter_outcome_features(
     df: pd.DataFrame,
     numeric_features: list[str] | None = None,
@@ -369,9 +409,9 @@ def prepare_hitter_outcome_features(
         if "confirmed_starter" in out:
             out["confirmed_starter_num"] = out["confirmed_starter"].fillna(False).astype(bool).astype(float)
         else:
-            slot = pd.to_numeric(out.get("lineup_slot"), errors="coerce")
+            slot = _numeric_column(out, "lineup_slot")
             out["confirmed_starter_num"] = slot.between(1, 9).astype(float)
-    slot = pd.to_numeric(out.get("lineup_slot"), errors="coerce")
+    slot = _numeric_column(out, "lineup_slot")
     if "lineup_confirmed_flag" not in out:
         source = out.get("lineup_source", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str)
         out["lineup_confirmed_flag"] = source.str.contains("lineup|raw_lineups", case=False, regex=True).astype(float)
@@ -379,24 +419,26 @@ def prepare_hitter_outcome_features(
         source = out.get("lineup_source", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str)
         out["lineup_boxscore_proxy_flag"] = source.str.contains("boxscore", case=False, regex=False).astype(float)
     if "lineup_slot_x_team_implied_runs" not in out:
-        team_runs = pd.to_numeric(out.get("team_implied_runs"), errors="coerce")
+        team_runs = _numeric_column(out, "team_implied_runs")
         out["lineup_slot_x_team_implied_runs"] = slot * team_runs
     if "starter_status_source" not in out:
         src = out.get("lineup_source")
         out["starter_status_source"] = np.where(
-            pd.to_numeric(out.get("lineup_slot"), errors="coerce").between(1, 9),
+            _numeric_column(out, "lineup_slot").between(1, 9),
             src.fillna("confirmed_or_projected_lineup") if isinstance(src, pd.Series) else "confirmed_or_projected_lineup",
             "unknown",
         )
+    if "weather_pregame_flag" not in out:
+        out["weather_pregame_flag"] = _numeric_column(out, "temperature_f").notna().astype(float)
 
     slot_i = slot.round().where(slot.between(1, 9)).astype("Int64")
     slot_prior = slot_i.map(_LINEUP_PA_PRIORS).astype("float64").fillna(4.05)
     low_pa_prior = slot_i.map(_LINEUP_LOW_PA_PRIORS).astype("float64").fillna(0.14)
-    projected_pa = pd.to_numeric(out.get("projected_pa"), errors="coerce")
-    team_runs = pd.to_numeric(out.get("team_implied_runs"), errors="coerce")
-    opp_runs = pd.to_numeric(out.get("opponent_implied_runs"), errors="coerce")
-    total = pd.to_numeric(out.get("game_total_line"), errors="coerce")
-    is_home = pd.to_numeric(out.get("is_home"), errors="coerce").fillna(0.0).clip(0.0, 1.0)
+    projected_pa = _numeric_column(out, "projected_pa")
+    team_runs = _numeric_column(out, "team_implied_runs")
+    opp_runs = _numeric_column(out, "opponent_implied_runs")
+    total = _numeric_column(out, "game_total_line")
+    is_home = _numeric_column(out, "is_home", 0.0).fillna(0.0).clip(0.0, 1.0)
     run_diff = team_runs - opp_runs
     abs_diff = run_diff.abs()
     favorite = (run_diff > 0.15).astype(float)
@@ -520,13 +562,92 @@ def _regression_pipeline(
     ])
 
 
+def _boosted_rate_pipeline(
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> Pipeline:
+    return Pipeline([
+        ("features", _preprocessor(numeric_features, categorical_features)),
+        ("model", LGBMRegressor(
+            objective="cross_entropy",
+            n_estimators=220,
+            learning_rate=0.035,
+            num_leaves=15,
+            max_depth=6,
+            min_child_samples=90,
+            subsample=0.85,
+            colsample_bytree=0.80,
+            reg_alpha=0.15,
+            reg_lambda=1.25,
+            random_state=42,
+            n_jobs=-1,
+            verbosity=-1,
+        )),
+    ])
+
+
+def _boosted_binary_pipeline(
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> Pipeline:
+    return Pipeline([
+        ("features", _preprocessor(numeric_features, categorical_features)),
+        ("model", LGBMClassifier(
+            objective="binary",
+            n_estimators=260,
+            learning_rate=0.03,
+            num_leaves=15,
+            max_depth=6,
+            min_child_samples=90,
+            subsample=0.85,
+            colsample_bytree=0.80,
+            reg_alpha=0.20,
+            reg_lambda=1.50,
+            random_state=42,
+            n_jobs=-1,
+            verbosity=-1,
+        )),
+    ])
+
+
+def _boosted_count_pipeline(
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> Pipeline:
+    return Pipeline([
+        ("features", _preprocessor(numeric_features, categorical_features)),
+        ("model", LGBMRegressor(
+            objective="regression_l1",
+            n_estimators=220,
+            learning_rate=0.035,
+            num_leaves=15,
+            max_depth=6,
+            min_child_samples=90,
+            subsample=0.85,
+            colsample_bytree=0.80,
+            reg_alpha=0.15,
+            reg_lambda=1.25,
+            random_state=43,
+            n_jobs=-1,
+            verbosity=-1,
+        )),
+    ])
+
+
 def _classifier_pipeline(
     numeric_features: list[str] | None = None,
     categorical_features: list[str] | None = None,
 ) -> Pipeline:
     return Pipeline([
         ("features", _preprocessor(numeric_features, categorical_features)),
-        ("model", LogisticRegression(max_iter=1000, C=0.35)),
+        ("model", LogisticRegression(
+            max_iter=600,
+            C=0.35,
+            solver="saga",
+            tol=1e-3,
+            random_state=42,
+            n_jobs=-1,
+        )),
     ])
 
 
@@ -633,6 +754,113 @@ def _event_count_matrix(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def _player_key(value: Any) -> str:
+    if value is None or (isinstance(value, float) and not math.isfinite(value)):
+        return ""
+    try:
+        return str(int(value))
+    except (TypeError, ValueError):
+        return str(value).strip()
+
+
+def _prior_rate(numerator: pd.Series, denominator: pd.Series, mean: float, strength: float) -> pd.Series:
+    return ((numerator + mean * strength) / (denominator + strength)).clip(lower=1e-5, upper=1.0 - 1e-5)
+
+
+def add_leakage_safe_player_priors(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, dict[str, float]]]:
+    """Add empirical-Bayes player rates using only dates before each game."""
+    out = df.copy()
+    if out.empty or "player_id" not in out or "game_date_et" not in out:
+        for name, default in _PLAYER_PRIOR_DEFAULTS.items():
+            out[name] = default
+        return out, {}
+
+    counts = _event_count_matrix(out)
+    daily = pd.DataFrame({
+        "player_key": out["player_id"].map(_player_key),
+        "game_date_et": pd.to_datetime(out["game_date_et"]).dt.date,
+        "pa": pd.to_numeric(out["actual_pa"], errors="coerce").fillna(0.0).clip(lower=0.0),
+        "hits": counts[["single", "double", "triple", "hr"]].sum(axis=1),
+        "xbh": counts[["double", "triple", "hr"]].sum(axis=1),
+        "non_hr_xbh": counts[["double", "triple"]].sum(axis=1),
+        "hr": counts["hr"],
+        "triple": counts["triple"],
+        "walk": counts["walk"],
+    })
+    daily = daily.groupby(["player_key", "game_date_et"], as_index=False).sum(numeric_only=True)
+    daily = daily.sort_values(["player_key", "game_date_et"]).reset_index(drop=True)
+    cumulative_cols = ["pa", "hits", "xbh", "non_hr_xbh", "hr", "triple", "walk"]
+    for col in cumulative_cols:
+        daily[f"prior_{col}"] = daily.groupby("player_key", sort=False)[col].cumsum() - daily[col]
+
+    strengths = _PLAYER_PRIOR_STRENGTHS
+    defaults = _PLAYER_PRIOR_DEFAULTS
+    daily["player_prior_pa"] = daily["prior_pa"]
+    daily["player_prior_hit_rate"] = _prior_rate(
+        daily["prior_hits"], daily["prior_pa"], defaults["player_prior_hit_rate"], strengths["hit"]
+    )
+    daily["player_prior_xbh_given_hit"] = _prior_rate(
+        daily["prior_xbh"], daily["prior_hits"], defaults["player_prior_xbh_given_hit"], strengths["xbh"]
+    )
+    daily["player_prior_hr_given_xbh"] = _prior_rate(
+        daily["prior_hr"], daily["prior_xbh"], defaults["player_prior_hr_given_xbh"], strengths["hr"]
+    )
+    daily["player_prior_triple_given_non_hr_xbh"] = _prior_rate(
+        daily["prior_triple"],
+        daily["prior_non_hr_xbh"],
+        defaults["player_prior_triple_given_non_hr_xbh"],
+        strengths["triple"],
+    )
+    prior_non_hit = (daily["prior_pa"] - daily["prior_hits"]).clip(lower=0.0)
+    daily["player_prior_walk_given_non_hit"] = _prior_rate(
+        daily["prior_walk"], prior_non_hit, defaults["player_prior_walk_given_non_hit"], strengths["walk"]
+    )
+
+    prior_cols = list(_PLAYER_PRIOR_DEFAULTS)
+    join = daily[["player_key", "game_date_et", *prior_cols]]
+    out["_player_key"] = out["player_id"].map(_player_key)
+    out["_game_date_key"] = pd.to_datetime(out["game_date_et"]).dt.date
+    out = out.merge(
+        join,
+        how="left",
+        left_on=["_player_key", "_game_date_key"],
+        right_on=["player_key", "game_date_et"],
+        suffixes=("", "_prior"),
+    )
+    out = out.drop(columns=["_player_key", "_game_date_key", "player_key", "game_date_et_prior"], errors="ignore")
+    for name, default in defaults.items():
+        out[name] = pd.to_numeric(out.get(name), errors="coerce").fillna(default)
+
+    totals = daily.groupby("player_key", as_index=False)[cumulative_cols].sum(numeric_only=True)
+    state: dict[str, dict[str, float]] = {}
+    for _, row in totals.iterrows():
+        key = str(row["player_key"])
+        pa = float(row["pa"])
+        hits = float(row["hits"])
+        xbh = float(row["xbh"])
+        non_hr_xbh = float(row["non_hr_xbh"])
+        non_hit = max(0.0, pa - hits)
+        state[key] = {
+            "player_prior_pa": pa,
+            "player_prior_hit_rate": float((hits + defaults["player_prior_hit_rate"] * strengths["hit"]) / (pa + strengths["hit"])),
+            "player_prior_xbh_given_hit": float((xbh + defaults["player_prior_xbh_given_hit"] * strengths["xbh"]) / (hits + strengths["xbh"])),
+            "player_prior_hr_given_xbh": float((float(row["hr"]) + defaults["player_prior_hr_given_xbh"] * strengths["hr"]) / (xbh + strengths["hr"])),
+            "player_prior_triple_given_non_hr_xbh": float((float(row["triple"]) + defaults["player_prior_triple_given_non_hr_xbh"] * strengths["triple"]) / (non_hr_xbh + strengths["triple"])),
+            "player_prior_walk_given_non_hit": float((float(row["walk"]) + defaults["player_prior_walk_given_non_hit"] * strengths["walk"]) / (non_hit + strengths["walk"])),
+        }
+    return out, state
+
+
+def apply_player_prior_state(df: pd.DataFrame, state: dict[str, dict[str, float]] | None) -> pd.DataFrame:
+    out = df.copy()
+    state = state or {}
+    player_ids = out.get("player_id", pd.Series(index=out.index, dtype=object))
+    keys = player_ids.map(_player_key)
+    for name, default in _PLAYER_PRIOR_DEFAULTS.items():
+        out[name] = [float((state.get(key) or {}).get(name, default)) for key in keys]
+    return out
+
+
 def _build_event_training_examples(
     df: pd.DataFrame,
     numeric_features: list[str] | None = None,
@@ -694,7 +922,7 @@ def _fit_boosted_event_binary_models(
         y_bin = (y_event == cls).astype(int)
         if len(np.unique(y_bin)) < 2:
             continue
-        model = _boosted_classifier_pipeline(numeric_features, categorical_features)
+        model = _classifier_pipeline(numeric_features, categorical_features)
         model.fit(X_event[feature_cols], y_bin, model__sample_weight=w_event)
         models[cls] = model
     return models
@@ -722,6 +950,658 @@ def _predict_boosted_event_probabilities(
     fallback = 1.0 / float(len(EVENT_CLASSES))
     probs = probs.div(row_sum, axis=0).fillna(fallback)
     return probs
+
+
+_HIERARCHICAL_EVENT_HEADS = {
+    "hit": (("single", "double", "triple", "hr"), ("out", "walk")),
+    "walk_given_non_hit": (("walk",), ("out",)),
+    "xbh_given_hit": (("double", "triple", "hr"), ("single",)),
+    "hr_given_xbh": (("hr",), ("double", "triple")),
+    "triple_given_non_hr_xbh": (("triple",), ("double",)),
+}
+
+_PLAYER_PRIOR_DEFAULTS = {
+    "player_prior_pa": 0.0,
+    "player_prior_hit_rate": 0.225,
+    "player_prior_xbh_given_hit": 0.35,
+    "player_prior_hr_given_xbh": 0.42,
+    "player_prior_triple_given_non_hr_xbh": 0.08,
+    "player_prior_walk_given_non_hit": 0.11,
+}
+
+_PLAYER_PRIOR_STRENGTHS = {
+    "hit": 80.0,
+    "xbh": 35.0,
+    "hr": 20.0,
+    "triple": 20.0,
+    "walk": 100.0,
+}
+
+
+def _weighted_binary_examples(
+    df: pd.DataFrame,
+    positive_classes: tuple[str, ...],
+    negative_classes: tuple[str, ...],
+    numeric_features: list[str],
+    categorical_features: list[str],
+) -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+    features = prepare_hitter_outcome_features(df, numeric_features, categorical_features)
+    counts = _event_count_matrix(df)
+    positive = counts[list(positive_classes)].sum(axis=1)
+    negative = counts[list(negative_classes)].sum(axis=1)
+    parts: list[pd.DataFrame] = []
+    labels: list[int] = []
+    weights: list[float] = []
+    for label, event_weight in ((1, positive), (0, negative)):
+        mask = event_weight > 0
+        if not mask.any():
+            continue
+        parts.append(features.loc[mask].copy())
+        labels.extend([label] * int(mask.sum()))
+        weights.extend(event_weight.loc[mask].to_numpy(dtype=float).tolist())
+    if not parts:
+        return pd.DataFrame(columns=features.columns), np.asarray([], dtype=int), np.asarray([], dtype=float)
+    return pd.concat(parts, ignore_index=True), np.asarray(labels, dtype=int), np.asarray(weights, dtype=float)
+
+
+def _fit_hierarchical_event_models(
+    df: pd.DataFrame,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+    head_numeric_features: dict[str, list[str]] | None = None,
+) -> dict[str, Pipeline]:
+    numeric_features = list(numeric_features or NUMERIC_FEATURES)
+    categorical_features = list(categorical_features or CATEGORICAL_FEATURES)
+    counts = _event_count_matrix(df)
+    models: dict[str, Pipeline] = {}
+    for head, (positive, negative) in _HIERARCHICAL_EVENT_HEADS.items():
+        head_numeric = list((head_numeric_features or {}).get(head) or numeric_features)
+        features = prepare_hitter_outcome_features(df, head_numeric, categorical_features)
+        feature_cols = head_numeric + categorical_features
+        positive_count = counts[list(positive)].sum(axis=1)
+        negative_count = counts[list(negative)].sum(axis=1)
+        denominator = positive_count + negative_count
+        mask = denominator > 0
+        if (
+            int(mask.sum()) < 100
+            or float(positive_count.loc[mask].sum()) < 25.0
+            or float(negative_count.loc[mask].sum()) < 25.0
+        ):
+            continue
+        target = (positive_count.loc[mask] / denominator.loc[mask]).clip(lower=0.0, upper=1.0)
+        model = _boosted_rate_pipeline(
+            numeric_features=head_numeric,
+            categorical_features=categorical_features,
+        )
+        model.fit(
+            features.loc[mask, feature_cols],
+            target,
+            model__sample_weight=denominator.loc[mask].to_numpy(dtype=float),
+        )
+        models[head] = model
+    return models
+
+
+def _predict_hierarchical_event_probabilities(
+    models: dict[str, Pipeline],
+    df: pd.DataFrame,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+    player_prior_state: dict[str, dict[str, float]] | None = None,
+) -> pd.DataFrame:
+    numeric_features = list(numeric_features or NUMERIC_FEATURES)
+    categorical_features = list(categorical_features or CATEGORICAL_FEATURES)
+    source = apply_player_prior_state(df, player_prior_state) if player_prior_state is not None else df
+    features = prepare_hitter_outcome_features(source, numeric_features, categorical_features)
+    X = features[numeric_features + categorical_features]
+
+    def predict(head: str, fallback: float) -> np.ndarray:
+        model = models.get(head)
+        if model is None:
+            return np.full(len(df), fallback, dtype=float)
+        if hasattr(model, "predict_proba"):
+            values = model.predict_proba(X)[:, 1]
+        else:
+            values = model.predict(X)
+        return np.clip(values, 1e-6, 1.0 - 1e-6)
+
+    p_hit = predict("hit", 0.225)
+    p_walk_non_hit = predict("walk_given_non_hit", 0.11)
+    p_xbh_hit = predict("xbh_given_hit", 0.35)
+    p_hr_xbh = predict("hr_given_xbh", 0.42)
+    p_triple_non_hr_xbh = predict("triple_given_non_hr_xbh", 0.08)
+
+    p_non_hit = 1.0 - p_hit
+    p_walk = p_non_hit * p_walk_non_hit
+    p_out = p_non_hit - p_walk
+    p_single = p_hit * (1.0 - p_xbh_hit)
+    p_xbh = p_hit * p_xbh_hit
+    p_hr = p_xbh * p_hr_xbh
+    p_non_hr_xbh = p_xbh - p_hr
+    p_triple = p_non_hr_xbh * p_triple_non_hr_xbh
+    p_double = p_non_hr_xbh - p_triple
+    probs = pd.DataFrame(
+        {
+            "p_out": p_out,
+            "p_walk": p_walk,
+            "p_single": p_single,
+            "p_double": p_double,
+            "p_triple": p_triple,
+            "p_hr": p_hr,
+        },
+        index=df.index,
+    )
+    row_sum = probs.sum(axis=1).replace(0.0, np.nan)
+    return probs.div(row_sum, axis=0).fillna(1.0 / float(len(EVENT_CLASSES)))
+
+
+def _pa_uncertainty_key(row: pd.Series) -> str:
+    slot = pd.to_numeric(pd.Series([row.get("lineup_slot")]), errors="coerce").iloc[0]
+    if pd.isna(slot):
+        slot_group = "unknown"
+    elif float(slot) <= 3:
+        slot_group = "top"
+    elif float(slot) <= 6:
+        slot_group = "middle"
+    else:
+        slot_group = "bottom"
+    home = "home" if bool(row.get("is_home")) else "away"
+    return f"{slot_group}|{home}"
+
+
+def _fit_pa_uncertainty(train: pd.DataFrame, holdout_days: int) -> dict[str, Any]:
+    dates = sorted(set(train["game_date_et"]))
+    if len(dates) < 20:
+        return {"status": "insufficient_dates"}
+    cutoff = max(dates) - timedelta(days=max(14, min(holdout_days, 28)))
+    fit = train.loc[train["game_date_et"] < cutoff].copy()
+    calibration = train.loc[train["game_date_et"] >= cutoff].copy()
+    if len(fit) < 1000 or len(calibration) < 300:
+        return {"status": "insufficient_rows"}
+    model = _boosted_count_pipeline()
+    normal_fit = fit.loc[pd.to_numeric(fit["actual_pa"], errors="coerce") >= 3].copy()
+    normal_calibration = calibration.loc[pd.to_numeric(calibration["actual_pa"], errors="coerce") >= 3].copy()
+    if len(normal_fit) < 1000 or len(normal_calibration) < 200:
+        return {"status": "insufficient_normal_pa_rows"}
+    model.fit(
+        prepare_hitter_outcome_features(normal_fit)[NUMERIC_FEATURES + CATEGORICAL_FEATURES],
+        normal_fit["actual_pa"],
+    )
+    pred = np.clip(
+        model.predict(prepare_hitter_outcome_features(normal_calibration)[NUMERIC_FEATURES + CATEGORICAL_FEATURES]),
+        3.0,
+        7.0,
+    )
+    residual = pd.to_numeric(normal_calibration["actual_pa"], errors="coerce").to_numpy(dtype=float) - pred
+    work = normal_calibration.copy()
+    work["_residual"] = residual
+    work["_pa_group"] = work.apply(_pa_uncertainty_key, axis=1)
+
+    low_calibration = calibration.loc[pd.to_numeric(calibration["actual_pa"], errors="coerce") <= 2].copy()
+
+    def low_state_probs(frame: pd.DataFrame) -> dict[str, float]:
+        values = pd.to_numeric(frame.get("actual_pa"), errors="coerce").dropna().round().clip(0, 2)
+        counts = values.value_counts().to_dict()
+        total = float(len(values))
+        prior = {0: 0.05, 1: 0.20, 2: 0.75}
+        strength = 20.0
+        return {
+            str(n): float((float(counts.get(n, 0.0)) + prior[n] * strength) / (total + strength))
+            for n in range(3)
+        }
+
+    def summarize(values: pd.Series) -> dict[str, float]:
+        arr = pd.to_numeric(values, errors="coerce").dropna().to_numpy(dtype=float)
+        sigma = float(np.std(arr, ddof=1)) if len(arr) > 1 else 0.75
+        return {
+            "rows": int(len(arr)),
+            "bias": float(np.mean(arr)) if len(arr) else 0.0,
+            "sigma": max(0.45, min(1.75, sigma)),
+        }
+
+    global_rec = summarize(work["_residual"])
+    global_rec["low_pa_state_probs"] = low_state_probs(low_calibration)
+    groups = {
+        str(key): summarize(group["_residual"])
+        for key, group in work.groupby("_pa_group")
+        if len(group) >= 100
+    }
+    calibration_groups = calibration.assign(_pa_group=calibration.apply(_pa_uncertainty_key, axis=1))
+    for key, rec in groups.items():
+        low_group = calibration_groups.loc[
+            (calibration_groups["_pa_group"] == key)
+            & (pd.to_numeric(calibration_groups["actual_pa"], errors="coerce") <= 2)
+        ]
+        rec["low_pa_state_probs"] = low_state_probs(low_group)
+    return {
+        "status": "trained",
+        "method": "two_part_low_pa_plus_conditional_normal_pa",
+        "calibration_start": str(cutoff),
+        "global": global_rec,
+        "groups": groups,
+    }
+
+
+def projected_pa_pmf(mean_pa: float, row: pd.Series, uncertainty: dict[str, Any] | None) -> dict[int, float]:
+    uncertainty = uncertainty or {}
+    rec = (uncertainty.get("groups") or {}).get(_pa_uncertainty_key(row)) or uncertainty.get("global") or {}
+    low_prob = next(
+        (
+            float(row.get(name))
+            for name in ("pa_low_probability", "p_event_low_pa", "opp_model_low_pa")
+            if pd.notna(row.get(name))
+        ),
+        None,
+    )
+    normal_mean = next(
+        (
+            float(row.get(name))
+            for name in ("pa_normal_mean", "p_event_normal_pa", "opp_model_normal_pa")
+            if pd.notna(row.get(name))
+        ),
+        None,
+    )
+    mean = max(0.0, min(7.0, float(normal_mean if normal_mean is not None else mean_pa) + float(rec.get("bias") or 0.0)))
+    sigma = max(0.35, float(rec.get("sigma") or 0.80))
+
+    def cdf(value: float) -> float:
+        return 0.5 * (1.0 + math.erf((value - mean) / (sigma * math.sqrt(2.0))))
+
+    normal_weights: dict[int, float] = {}
+    normal_start = 3 if low_prob is not None else 0
+    for n in range(normal_start, 8):
+        lower = -math.inf if n == normal_start else n - 0.5
+        upper = math.inf if n == 7 else n + 0.5
+        lo = 0.0 if not math.isfinite(lower) else cdf(lower)
+        hi = 1.0 if not math.isfinite(upper) else cdf(upper)
+        normal_weights[n] = max(0.0, hi - lo)
+    normal_total = sum(normal_weights.values()) or 1.0
+    normal_weights = {n: value / normal_total for n, value in normal_weights.items()}
+    if low_prob is None:
+        return normal_weights
+    low_prob = max(1e-5, min(1.0 - 1e-5, low_prob))
+    low_states = rec.get("low_pa_state_probs") or {"0": 0.05, "1": 0.20, "2": 0.75}
+    low_total = sum(max(0.0, float(low_states.get(str(n), 0.0))) for n in range(3)) or 1.0
+    weights = {
+        n: low_prob * max(0.0, float(low_states.get(str(n), 0.0))) / low_total
+        for n in range(3)
+    }
+    weights.update({n: (1.0 - low_prob) * value for n, value in normal_weights.items()})
+    total = sum(weights.values()) or 1.0
+    return {n: value / total for n, value in weights.items()}
+
+
+def convolve_hitter_outcomes(event_probs: dict[str, float], pa_pmf: dict[int, float]) -> dict[str, Any]:
+    p_out = max(0.0, float(event_probs.get("p_out", 0.0)))
+    p_walk = max(0.0, float(event_probs.get("p_walk", 0.0)))
+    p_single = max(0.0, float(event_probs.get("p_single", 0.0)))
+    p_double = max(0.0, float(event_probs.get("p_double", 0.0)))
+    p_triple = max(0.0, float(event_probs.get("p_triple", 0.0)))
+    p_hr = max(0.0, float(event_probs.get("p_hr", 0.0)))
+    total = p_out + p_walk + p_single + p_double + p_triple + p_hr
+    if total <= 0:
+        return {}
+    outcomes = [
+        (0, False, p_out / total),
+        (0, False, p_walk / total),
+        (1, False, p_single / total),
+        (2, False, p_double / total),
+        (3, False, p_triple / total),
+        (4, True, p_hr / total),
+    ]
+    p_hit = (p_single + p_double + p_triple + p_hr) / total
+    p_hr_norm = p_hr / total
+    tb_joint: dict[tuple[int, bool], float] = {}
+    hits_pmf: dict[int, float] = {}
+    hr_pmf: dict[int, float] = {}
+    for n, pa_weight in pa_pmf.items():
+        if pa_weight <= 0:
+            continue
+        dp: dict[tuple[int, bool], float] = {(0, False): 1.0}
+        for _ in range(int(n)):
+            nxt: dict[tuple[int, bool], float] = {}
+            for (tb, had_hr), base in dp.items():
+                for bases, is_hr, probability in outcomes:
+                    key = (tb + bases, had_hr or is_hr)
+                    nxt[key] = nxt.get(key, 0.0) + base * probability
+            dp = nxt
+        for key, probability in dp.items():
+            tb_joint[key] = tb_joint.get(key, 0.0) + pa_weight * probability
+        for count in range(int(n) + 1):
+            hits_pmf[count] = hits_pmf.get(count, 0.0) + pa_weight * math.comb(int(n), count) * (p_hit ** count) * ((1.0 - p_hit) ** (int(n) - count))
+            hr_pmf[count] = hr_pmf.get(count, 0.0) + pa_weight * math.comb(int(n), count) * (p_hr_norm ** count) * ((1.0 - p_hr_norm) ** (int(n) - count))
+
+    tb_pmf: dict[int, float] = {}
+    states = {"tb_0": 0.0, "tb_1": 0.0, "tb_2_3": 0.0, "tb_4_plus_hr": 0.0, "tb_4_plus_non_hr": 0.0}
+    for (tb, had_hr), probability in tb_joint.items():
+        tb_pmf[tb] = tb_pmf.get(tb, 0.0) + probability
+        if tb == 0:
+            states["tb_0"] += probability
+        elif tb == 1:
+            states["tb_1"] += probability
+        elif tb <= 3:
+            states["tb_2_3"] += probability
+        elif had_hr:
+            states["tb_4_plus_hr"] += probability
+        else:
+            states["tb_4_plus_non_hr"] += probability
+    return {"tb_pmf": tb_pmf, "tb_joint": tb_joint, "tb_states": states, "hits_pmf": hits_pmf, "hr_pmf": hr_pmf}
+
+
+def _tb_state_metrics(df: pd.DataFrame, probs: pd.DataFrame, pa_pred: np.ndarray, pa_uncertainty: dict[str, Any]) -> dict[str, Any]:
+    state_names = ["tb_0", "tb_1", "tb_2_3", "tb_4_plus_hr", "tb_4_plus_non_hr"]
+    predicted: list[list[float]] = []
+    actual: list[int] = []
+    for pos, (_, row) in enumerate(df.iterrows()):
+        event = {f"p_{cls}": float(probs.iloc[pos][f"p_{cls}"]) for cls in EVENT_CLASSES}
+        curve = convolve_hitter_outcomes(event, projected_pa_pmf(float(pa_pred[pos]), row, pa_uncertainty))
+        states = curve.get("tb_states") or {}
+        if not states:
+            continue
+        tb = float(row.get("actual_total_bases") or 0.0)
+        hr = float(row.get("actual_home_runs") or 0.0)
+        label = "tb_0" if tb <= 0 else "tb_1" if tb <= 1 else "tb_2_3" if tb < 4 else "tb_4_plus_hr" if hr > 0 else "tb_4_plus_non_hr"
+        predicted.append([max(1e-9, float(states.get(name, 0.0))) for name in state_names])
+        actual.append(state_names.index(label))
+    if not predicted:
+        return {"rows": 0}
+    p = np.asarray(predicted, dtype=float)
+    p = p / p.sum(axis=1, keepdims=True)
+    y = np.asarray(actual, dtype=int)
+    one_hot = np.eye(len(state_names))[y]
+    return {
+        "rows": int(len(y)),
+        "multiclass_brier": float(np.mean(np.sum((p - one_hot) ** 2, axis=1))),
+        "log_loss": float(-np.mean(np.log(np.clip(p[np.arange(len(y)), y], 1e-9, 1.0)))),
+        "states": state_names,
+        "predicted_rates": {name: float(p[:, i].mean()) for i, name in enumerate(state_names)},
+        "actual_rates": {name: float((y == i).mean()) for i, name in enumerate(state_names)},
+    }
+
+
+def _tb_state_labels(df: pd.DataFrame) -> pd.Series:
+    tb = pd.to_numeric(df.get("actual_total_bases"), errors="coerce").fillna(0.0)
+    hr = pd.to_numeric(df.get("actual_home_runs"), errors="coerce").fillna(0.0)
+    labels = np.where(
+        tb <= 0,
+        "tb_0",
+        np.where(
+            tb <= 1,
+            "tb_1",
+            np.where(tb < 4, "tb_2_3", np.where(hr > 0, "tb_4_plus_hr", "tb_4_plus_non_hr")),
+        ),
+    )
+    return pd.Series(labels, index=df.index, dtype="object")
+
+
+def _fit_tb_state_models(
+    df: pd.DataFrame,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> dict[str, Pipeline]:
+    numeric_features = list(numeric_features or NUMERIC_FEATURES)
+    categorical_features = list(categorical_features or CATEGORICAL_FEATURES)
+    features = prepare_hitter_outcome_features(df, numeric_features, categorical_features)
+    labels = _tb_state_labels(df)
+    models: dict[str, Pipeline] = {}
+    for state in TB_STATE_NAMES:
+        target = (labels == state).astype(int)
+        positives = int(target.sum())
+        negatives = int(len(target) - positives)
+        if positives < 25 or negatives < 25:
+            continue
+        model = _boosted_binary_pipeline(numeric_features, categorical_features)
+        model.fit(features[numeric_features + categorical_features], target)
+        models[state] = model
+    return models
+
+
+def _predict_tb_state_models(
+    models: dict[str, Pipeline],
+    df: pd.DataFrame,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> pd.DataFrame:
+    numeric_features = list(numeric_features or NUMERIC_FEATURES)
+    categorical_features = list(categorical_features or CATEGORICAL_FEATURES)
+    features = prepare_hitter_outcome_features(df, numeric_features, categorical_features)
+    X = features[numeric_features + categorical_features]
+    probs = pd.DataFrame(0.0, index=df.index, columns=TB_STATE_NAMES)
+    for state, model in models.items():
+        if state not in probs:
+            continue
+        probs[state] = np.clip(model.predict_proba(X)[:, 1], 1e-8, 1.0 - 1e-8)
+    row_sum = probs.sum(axis=1).replace(0.0, np.nan)
+    return probs.div(row_sum, axis=0).fillna(1.0 / float(len(TB_STATE_NAMES)))
+
+
+def _fit_hierarchical_tb_state_models(
+    df: pd.DataFrame,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> dict[str, Pipeline]:
+    """Fit a probability tree that preserves the rare HR-driven 4+ tail."""
+    numeric_features = list(numeric_features or NUMERIC_FEATURES)
+    categorical_features = list(categorical_features or CATEGORICAL_FEATURES)
+    labels = _tb_state_labels(df)
+    features = prepare_hitter_outcome_features(df, numeric_features, categorical_features)
+    feature_cols = numeric_features + categorical_features
+    specs = {
+        "tb_positive": (
+            labels.isin(["tb_1", "tb_2_3", "tb_4_plus_hr", "tb_4_plus_non_hr"]),
+            pd.Series(True, index=df.index),
+        ),
+        "tb_2_plus_given_positive": (
+            labels.isin(["tb_2_3", "tb_4_plus_hr", "tb_4_plus_non_hr"]),
+            labels.isin(["tb_1", "tb_2_3", "tb_4_plus_hr", "tb_4_plus_non_hr"]),
+        ),
+        "tb_4_plus_given_2_plus": (
+            labels.isin(["tb_4_plus_hr", "tb_4_plus_non_hr"]),
+            labels.isin(["tb_2_3", "tb_4_plus_hr", "tb_4_plus_non_hr"]),
+        ),
+        "tb_hr_given_4_plus": (
+            labels.eq("tb_4_plus_hr"),
+            labels.isin(["tb_4_plus_hr", "tb_4_plus_non_hr"]),
+        ),
+    }
+    models: dict[str, Pipeline] = {}
+    for head, (target, eligible) in specs.items():
+        y = target.loc[eligible].astype(int)
+        if len(y) < 100 or int(y.sum()) < 25 or int((1 - y).sum()) < 25:
+            continue
+        model = _boosted_binary_pipeline(numeric_features, categorical_features)
+        model.fit(features.loc[eligible, feature_cols], y)
+        models[head] = model
+    return models
+
+
+def _predict_hierarchical_tb_state_models(
+    models: dict[str, Pipeline],
+    df: pd.DataFrame,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> pd.DataFrame:
+    numeric_features = list(numeric_features or NUMERIC_FEATURES)
+    categorical_features = list(categorical_features or CATEGORICAL_FEATURES)
+    features = prepare_hitter_outcome_features(df, numeric_features, categorical_features)
+    X = features[numeric_features + categorical_features]
+
+    def predict(head: str, fallback: float) -> np.ndarray:
+        model = models.get(head)
+        if model is None:
+            return np.full(len(df), fallback, dtype=float)
+        return np.clip(model.predict_proba(X)[:, 1], 1e-6, 1.0 - 1e-6)
+
+    p_positive = predict("tb_positive", 0.56)
+    p_2_plus_positive = predict("tb_2_plus_given_positive", 0.43)
+    p_4_plus_2_plus = predict("tb_4_plus_given_2_plus", 0.43)
+    p_hr_4_plus = predict("tb_hr_given_4_plus", 0.82)
+    p_0 = 1.0 - p_positive
+    p_1 = p_positive * (1.0 - p_2_plus_positive)
+    p_2_3 = p_positive * p_2_plus_positive * (1.0 - p_4_plus_2_plus)
+    p_4_plus = p_positive * p_2_plus_positive * p_4_plus_2_plus
+    probs = pd.DataFrame({
+        "tb_0": p_0,
+        "tb_1": p_1,
+        "tb_2_3": p_2_3,
+        "tb_4_plus_hr": p_4_plus * p_hr_4_plus,
+        "tb_4_plus_non_hr": p_4_plus * (1.0 - p_hr_4_plus),
+    }, index=df.index)
+    return probs.div(probs.sum(axis=1).replace(0.0, np.nan), axis=0).fillna(1.0 / len(TB_STATE_NAMES))
+
+
+def _fit_tb_hr_tail_logit_offset(labels: pd.Series, probs: pd.DataFrame) -> float:
+    """Fit a shrunk intercept-only calibration for the rare HR-driven tail."""
+    target_rate = float((labels == "tb_4_plus_hr").mean())
+    raw = np.clip(probs["tb_4_plus_hr"].to_numpy(dtype=float), 1e-6, 1.0 - 1e-6)
+    logits = np.log(raw / (1.0 - raw))
+    lo, hi = -2.0, 2.0
+    for _ in range(50):
+        mid = (lo + hi) / 2.0
+        mean = float(np.mean(1.0 / (1.0 + np.exp(-np.clip(logits + mid, -30.0, 30.0)))))
+        if mean < target_rate:
+            lo = mid
+        else:
+            hi = mid
+    offset = (lo + hi) / 2.0
+    shrink = float(len(labels) / (len(labels) + 1000.0))
+    return float(np.clip(offset * shrink, -1.0, 1.0))
+
+
+def _apply_tb_hr_tail_logit_offset(probs: pd.DataFrame, offset: float) -> pd.DataFrame:
+    if abs(float(offset)) <= 1e-12 or probs.empty:
+        return probs.copy()
+    out = probs.copy()
+    raw = np.clip(out["tb_4_plus_hr"].to_numpy(dtype=float), 1e-6, 1.0 - 1e-6)
+    logits = np.log(raw / (1.0 - raw))
+    repaired = 1.0 / (1.0 + np.exp(-np.clip(logits + float(offset), -30.0, 30.0)))
+    other_cols = [name for name in TB_STATE_NAMES if name != "tb_4_plus_hr"]
+    other_total = out[other_cols].sum(axis=1).to_numpy(dtype=float)
+    scale = np.divide(1.0 - repaired, other_total, out=np.ones(len(out)), where=other_total > 1e-12)
+    out.loc[:, other_cols] = out[other_cols].mul(scale, axis=0)
+    out["tb_4_plus_hr"] = repaired
+    return out.div(out.sum(axis=1).replace(0.0, np.nan), axis=0).fillna(1.0 / len(TB_STATE_NAMES))
+
+
+def _convolution_tb_state_frame(
+    df: pd.DataFrame,
+    event_probs: pd.DataFrame,
+    pa_pred: np.ndarray,
+    pa_uncertainty: dict[str, Any],
+    low_pa_prob: np.ndarray | None = None,
+    normal_pa_pred: np.ndarray | None = None,
+) -> pd.DataFrame:
+    rows: list[dict[str, float]] = []
+    for pos, (_, row) in enumerate(df.iterrows()):
+        row_for_curve = row.copy()
+        if low_pa_prob is not None:
+            row_for_curve["pa_low_probability"] = float(low_pa_prob[pos])
+        if normal_pa_pred is not None:
+            row_for_curve["pa_normal_mean"] = float(normal_pa_pred[pos])
+        event = {f"p_{cls}": float(event_probs.iloc[pos][f"p_{cls}"]) for cls in EVENT_CLASSES}
+        curve = convolve_hitter_outcomes(
+            event,
+            projected_pa_pmf(float(pa_pred[pos]), row_for_curve, pa_uncertainty),
+        )
+        states = curve.get("tb_states") or {}
+        rows.append({state: float(states.get(state, 0.0)) for state in TB_STATE_NAMES})
+    return pd.DataFrame(rows, index=df.index, columns=TB_STATE_NAMES)
+
+
+def _tb_state_multiclass_metrics(labels: pd.Series, probs: pd.DataFrame) -> dict[str, Any]:
+    y = labels.map({name: i for i, name in enumerate(TB_STATE_NAMES)}).astype(int).to_numpy()
+    p = probs[TB_STATE_NAMES].to_numpy(dtype=float)
+    p = np.clip(p, 1e-9, 1.0)
+    p /= p.sum(axis=1, keepdims=True)
+    one_hot = np.eye(len(TB_STATE_NAMES))[y]
+    hr_tail_target = (labels == "tb_4_plus_hr").astype(int).to_numpy()
+    hr_tail_prob = p[:, TB_STATE_NAMES.index("tb_4_plus_hr")]
+    return {
+        "rows": int(len(y)),
+        "multiclass_brier": float(np.mean(np.sum((p - one_hot) ** 2, axis=1))),
+        "log_loss": float(-np.mean(np.log(p[np.arange(len(y)), y]))),
+        "predicted_rates": {name: float(p[:, i].mean()) for i, name in enumerate(TB_STATE_NAMES)},
+        "actual_rates": {name: float((y == i).mean()) for i, name in enumerate(TB_STATE_NAMES)},
+        "hr_driven_4_plus": {
+            "actual_rate": float(hr_tail_target.mean()),
+            "avg_probability": float(hr_tail_prob.mean()),
+            "calibration_error": float(hr_tail_prob.mean() - hr_tail_target.mean()),
+            "brier": float(np.mean((hr_tail_target - hr_tail_prob) ** 2)),
+        },
+    }
+
+
+def _select_tb_state_blend(
+    df: pd.DataFrame,
+    base_probs: pd.DataFrame,
+    direct_candidates: dict[str, pd.DataFrame],
+) -> dict[str, Any]:
+    dates = sorted(pd.to_datetime(df["game_date_et"]).dt.date.unique())
+    if len(dates) < 4 or len(df) < 200:
+        return {"enabled": False, "reason": "insufficient_walk_forward_rows", "alpha": 0.0}
+    validation_start = dates[max(1, len(dates) // 2)]
+    tune_mask = pd.to_datetime(df["game_date_et"]).dt.date < validation_start
+    validation_mask = ~tune_mask
+    if int(tune_mask.sum()) < 80 or int(validation_mask.sum()) < 80:
+        return {"enabled": False, "reason": "insufficient_walk_forward_rows", "alpha": 0.0}
+    labels = _tb_state_labels(df)
+    candidates: list[dict[str, Any]] = []
+    for candidate_name, direct_probs in direct_candidates.items():
+        for alpha in (0.25, 0.5, 0.75, 1.0):
+            blended = (1.0 - alpha) * base_probs.loc[tune_mask] + alpha * direct_probs.loc[tune_mask]
+            metrics = _tb_state_multiclass_metrics(labels.loc[tune_mask], blended)
+            candidates.append({
+                "candidate": candidate_name,
+                "alpha": alpha,
+                "tune_brier": float(metrics["multiclass_brier"]),
+                "tune_hr_tail_brier": float((metrics.get("hr_driven_4_plus") or {}).get("brier")),
+                "tune_joint_loss": float(
+                    metrics["multiclass_brier"] + (metrics.get("hr_driven_4_plus") or {}).get("brier")
+                ),
+            })
+    base_tune = _tb_state_multiclass_metrics(labels.loc[tune_mask], base_probs.loc[tune_mask])
+    candidates.append({
+        "candidate": "convolution",
+        "alpha": 0.0,
+        "tune_brier": float(base_tune["multiclass_brier"]),
+        "tune_hr_tail_brier": float((base_tune.get("hr_driven_4_plus") or {}).get("brier")),
+        "tune_joint_loss": float(
+            base_tune["multiclass_brier"] + (base_tune.get("hr_driven_4_plus") or {}).get("brier")
+        ),
+    })
+    best = min(candidates, key=lambda rec: rec["tune_joint_loss"])
+    alpha = float(best["alpha"])
+    candidate_name = str(best["candidate"])
+    base_metrics = _tb_state_multiclass_metrics(labels.loc[validation_mask], base_probs.loc[validation_mask])
+    selected_direct = direct_candidates.get(candidate_name, base_probs)
+    blend_metrics = _tb_state_multiclass_metrics(
+        labels.loc[validation_mask],
+        (1.0 - alpha) * base_probs.loc[validation_mask] + alpha * selected_direct.loc[validation_mask],
+    )
+    gain = float(base_metrics["multiclass_brier"] - blend_metrics["multiclass_brier"])
+    base_hr_brier = float((base_metrics.get("hr_driven_4_plus") or {}).get("brier"))
+    blend_hr_brier = float((blend_metrics.get("hr_driven_4_plus") or {}).get("brier"))
+    hr_tail_gain = base_hr_brier - blend_hr_brier
+    aggregate_win = gain >= 0.0005 and hr_tail_gain >= -0.0001
+    tail_repair = gain >= -0.0001 and hr_tail_gain >= 0.0001
+    enabled = bool(alpha > 0.0 and (aggregate_win or tail_repair))
+    return {
+        "enabled": enabled,
+        "reason": (
+            "validation_aggregate_and_tail_confirmed" if enabled and aggregate_win
+            else "validation_hr_tail_repair_without_material_aggregate_regression" if enabled
+            else "no_joint_validation_gain"
+        ),
+        "selected_candidate": candidate_name if enabled else "convolution",
+        "alpha": alpha if enabled else 0.0,
+        "tune_end": str(dates[max(0, len(dates) // 2 - 1)]),
+        "validation_start": str(validation_start),
+        "candidates": candidates,
+        "base_validation": base_metrics,
+        "blended_validation": blend_metrics,
+        "validation_brier_gain": gain,
+        "validation_hr_tail_brier_gain": hr_tail_gain,
+    }
 
 
 def _weighted_multiclass_brier(counts: pd.DataFrame, probs: pd.DataFrame) -> float | None:
@@ -875,6 +1755,12 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
         _write_outputs(payload, cfg, models=None)
         return payload
 
+    df, player_prior_state = add_leakage_safe_player_priors(df)
+    payload["player_prior_summary"] = {
+        "method": "date_shifted_empirical_bayes",
+        "players": int(len(player_prior_state)),
+        "features": list(_PLAYER_PRIOR_DEFAULTS),
+    }
     train, holdout = _split(df, cfg.holdout_days)
     payload["train_rows"] = int(len(train))
     payload["holdout_rows"] = int(len(holdout))
@@ -885,18 +1771,138 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
         _write_outputs(payload, cfg, models=None)
         return payload
 
-    models: dict[str, Any] = {}
+    models: dict[str, Any] = {"player_prior_state": player_prior_state}
     metrics: dict[str, Any] = {}
+    feature_policy = _load_head_feature_policy(cfg.model_dir)
+    head_numeric_features = {
+        str(head): [name for name in features if name in NUMERIC_FEATURES]
+        for head, features in (feature_policy.get("numeric_features_by_head") or {}).items()
+    }
+    pa_numeric_features = list(head_numeric_features.get("pa") or NUMERIC_FEATURES)
+    head_categorical_features = [
+        name for name in (feature_policy.get("categorical_features") or CATEGORICAL_FEATURES)
+        if name in CATEGORICAL_FEATURES
+    ]
+    payload["head_feature_policy"] = {
+        "status": "applied" if feature_policy else "default_full_features",
+        "generated_at_utc": feature_policy.get("generated_at_utc") if feature_policy else None,
+        "heads": sorted(head_numeric_features),
+        "categorical_features": head_categorical_features,
+    }
     train_features = prepare_hitter_outcome_features(train)
     holdout_features = prepare_hitter_outcome_features(holdout)
 
-    pa_model = _regression_pipeline(alpha=10.0)
-    pa_model.fit(train_features[NUMERIC_FEATURES + CATEGORICAL_FEATURES], train["actual_pa"])
-    pa_pred = np.clip(pa_model.predict(holdout_features[NUMERIC_FEATURES + CATEGORICAL_FEATURES]), 0.0, 6.5)
+    pa_model = _regression_pipeline(
+        alpha=10.0,
+        numeric_features=pa_numeric_features,
+        categorical_features=head_categorical_features,
+    )
+    pa_model.fit(train_features[pa_numeric_features + head_categorical_features], train["actual_pa"])
+    pa_ridge_pred = np.clip(pa_model.predict(holdout_features[pa_numeric_features + head_categorical_features]), 0.0, 6.5)
+    pa_boosted_model = _boosted_count_pipeline(pa_numeric_features, head_categorical_features)
+    pa_boosted_model.fit(
+        train_features[pa_numeric_features + head_categorical_features],
+        train["actual_pa"],
+    )
+    pa_boosted_pred = np.clip(
+        pa_boosted_model.predict(holdout_features[pa_numeric_features + head_categorical_features]),
+        0.0,
+        7.0,
+    )
+    pa_boosted_use = bool(
+        mean_absolute_error(holdout["actual_pa"], pa_boosted_pred)
+        < mean_absolute_error(holdout["actual_pa"], pa_ridge_pred) - 0.002
+    )
+    pa_single_pred = pa_boosted_pred if pa_boosted_use else pa_ridge_pred
+    selected_pa_model = pa_boosted_model if pa_boosted_use else pa_model
+    pa_uncertainty = _fit_pa_uncertainty(train, cfg.holdout_days)
+    models["pa_uncertainty"] = pa_uncertainty
+    metrics["pa_uncertainty"] = pa_uncertainty
+
+    low_target_train = (pd.to_numeric(train["actual_pa"], errors="coerce") <= 2).astype(int)
+    low_target_holdout = (pd.to_numeric(holdout["actual_pa"], errors="coerce") <= 2).astype(int)
+    pa_low_model = _boosted_binary_pipeline(pa_numeric_features, head_categorical_features)
+    pa_low_model.fit(train_features[pa_numeric_features + head_categorical_features], low_target_train)
+    pa_low_prob = np.clip(
+        pa_low_model.predict_proba(holdout_features[pa_numeric_features + head_categorical_features])[:, 1],
+        1e-5,
+        1.0 - 1e-5,
+    )
+    normal_train_mask = pd.to_numeric(train["actual_pa"], errors="coerce") >= 3
+    normal_holdout_mask = pd.to_numeric(holdout["actual_pa"], errors="coerce") >= 3
+    pa_normal_model = _boosted_count_pipeline(pa_numeric_features, head_categorical_features)
+    pa_normal_model.fit(
+        train_features.loc[normal_train_mask, pa_numeric_features + head_categorical_features],
+        train.loc[normal_train_mask, "actual_pa"],
+    )
+    pa_normal_pred = np.clip(
+        pa_normal_model.predict(holdout_features[pa_numeric_features + head_categorical_features]),
+        3.0,
+        7.0,
+    )
+    low_states = ((pa_uncertainty.get("global") or {}).get("low_pa_state_probs") or {"0": 0.05, "1": 0.20, "2": 0.75})
+    low_total = sum(float(low_states.get(str(n), 0.0)) for n in range(3)) or 1.0
+    low_pa_mean = sum(n * float(low_states.get(str(n), 0.0)) for n in range(3)) / low_total
+    pa_two_part_pred = np.clip(pa_low_prob * low_pa_mean + (1.0 - pa_low_prob) * pa_normal_pred, 0.0, 7.0)
+    single_mae = float(mean_absolute_error(holdout["actual_pa"], pa_single_pred))
+    two_part_mae = float(mean_absolute_error(holdout["actual_pa"], pa_two_part_pred))
+    low_base_prob = float(low_target_train.mean())
+    low_model_brier = float(brier_score_loss(low_target_holdout, pa_low_prob))
+    low_base_brier = float(brier_score_loss(low_target_holdout, np.full(len(holdout), low_base_prob)))
+    lineup_source = holdout.get("lineup_source", pd.Series("unknown", index=holdout.index)).fillna("unknown").astype(str).str.lower()
+    leakage_safe_low_pa_mask = ~lineup_source.str.contains("boxscore|postgame|actual", regex=True)
+    safe_low_pa_rows = int(leakage_safe_low_pa_mask.sum())
+    if safe_low_pa_rows >= 200 and low_target_holdout.loc[leakage_safe_low_pa_mask].nunique() >= 2:
+        safe_low_brier = float(brier_score_loss(
+            low_target_holdout.loc[leakage_safe_low_pa_mask],
+            pa_low_prob[leakage_safe_low_pa_mask.to_numpy()],
+        ))
+        safe_low_base_brier = float(brier_score_loss(
+            low_target_holdout.loc[leakage_safe_low_pa_mask],
+            np.full(safe_low_pa_rows, low_base_prob),
+        ))
+    else:
+        safe_low_brier = None
+        safe_low_base_brier = None
+    pa_two_part_use = bool(
+        two_part_mae < single_mae
+        and safe_low_brier is not None
+        and safe_low_base_brier is not None
+        and safe_low_brier < safe_low_base_brier
+    )
+    pa_pred = pa_two_part_pred if pa_two_part_use else pa_single_pred
+    holdout["pa_low_probability"] = pa_low_prob
+    holdout["pa_normal_mean"] = pa_normal_pred
     slot_pa_pred = _slot_prior(train, holdout, "actual_pa")
     projected_pa_mask = holdout["projected_pa"].notna()
     metrics["pa_model"] = {
         "model": _count_metrics(holdout["actual_pa"], pa_pred),
+        "single_mean_model": _count_metrics(holdout["actual_pa"], pa_single_pred),
+        "ridge_model": _count_metrics(holdout["actual_pa"], pa_ridge_pred),
+        "boosted_model": _count_metrics(holdout["actual_pa"], pa_boosted_pred),
+        "single_mean_selected": "boosted_lgbm" if pa_boosted_use else "ridge",
+        "two_part_model": _count_metrics(holdout["actual_pa"], pa_two_part_pred),
+        "two_part": {
+            "enabled": pa_two_part_use,
+            "low_pa_rows": int(low_target_holdout.sum()),
+            "low_pa_rate": float(low_target_holdout.mean()),
+            "low_pa_model_brier": low_model_brier,
+            "low_pa_baseline_brier": low_base_brier,
+            "leakage_safe_low_pa_rows": safe_low_pa_rows,
+            "leakage_safe_low_pa_brier": safe_low_brier,
+            "leakage_safe_low_pa_baseline_brier": safe_low_base_brier,
+            "activation_reason": (
+                "leakage_safe_holdout_gain" if pa_two_part_use
+                else "insufficient_pregame_low_pa_rows" if safe_low_pa_rows < 200
+                else "no_leakage_safe_brier_gain"
+            ),
+            "normal_pa_rows": int(normal_holdout_mask.sum()),
+            "normal_pa_mae": float(mean_absolute_error(
+                holdout.loc[normal_holdout_mask, "actual_pa"],
+                pa_normal_pred[normal_holdout_mask.to_numpy()],
+            )) if normal_holdout_mask.any() else None,
+            "low_pa_conditional_mean": low_pa_mean,
+        },
         "slot_prior": _count_metrics(holdout["actual_pa"], slot_pa_pred),
         "existing_projected_pa": (
             _count_metrics(holdout.loc[projected_pa_mask, "actual_pa"], holdout.loc[projected_pa_mask, "projected_pa"])
@@ -904,7 +1910,12 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
             else {"rows": 0}
         ),
     }
-    models["pa_model"] = pa_model
+    models["pa_model"] = selected_pa_model
+    models["pa_ridge_model"] = pa_model
+    models["pa_boosted_model"] = pa_boosted_model
+    models["pa_low_model"] = pa_low_model
+    models["pa_normal_model"] = pa_normal_model
+    models["pa_two_part_use"] = pa_two_part_use
 
     rate_train = train[train["actual_pa"] > 0].copy()
     rate_holdout = holdout[holdout["actual_pa"] > 0].copy()
@@ -958,69 +1969,185 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
 
     event_train = train[train["actual_pa"] > 0].copy()
     event_holdout = holdout[holdout["actual_pa"] > 0].copy()
-    X_event, y_event, w_event = _build_event_training_examples(event_train)
-    event_metrics: dict[str, Any] = {"train_event_rows": int(len(y_event)), "holdout_rows": int(len(event_holdout))}
-    if len(y_event) > 0 and len(np.unique(y_event)) >= 4 and len(event_holdout) > 0:
-        event_model = _classifier_pipeline()
-        event_model.fit(X_event[NUMERIC_FEATURES + CATEGORICAL_FEATURES], y_event, model__sample_weight=w_event)
-        event_probs = _predict_event_probabilities(event_model, event_holdout)
+    train_event_rows = int(_event_count_matrix(event_train).sum(axis=1).sum())
+    event_metrics: dict[str, Any] = {
+        "train_player_games": int(len(event_train)),
+        "train_event_rows": train_event_rows,
+        "holdout_rows": int(len(event_holdout)),
+    }
+    if len(event_train) > 0 and len(event_holdout) > 0:
         event_pa_pred = pd.Series(pa_pred, index=holdout.index).loc[event_holdout.index].to_numpy(dtype=float)
-        linear_metrics = _event_projection_metrics(event_holdout, event_probs, event_pa_pred)
-        event_metrics.update({
-            "active_event_model": "linear_multinomial",
-            "classes": list(map(str, event_model.classes_)),
-            "linear_multinomial": linear_metrics,
-            **linear_metrics,
-        })
-        models["event_outcome_model"] = event_model
+        event_low_pa_prob = pd.Series(pa_low_prob, index=holdout.index).loc[event_holdout.index].to_numpy(dtype=float)
+        event_normal_pa_pred = pd.Series(pa_normal_pred, index=holdout.index).loc[event_holdout.index].to_numpy(dtype=float)
+        active_event_probs: pd.DataFrame | None = None
         try:
-            boosted_models = _fit_boosted_event_binary_models(X_event, y_event, w_event)
-        except Exception as exc:
-            event_metrics["boosted_binary_error"] = str(exc)
-            boosted_models = {}
-        if len(boosted_models) >= 4:
-            boosted_probs = _predict_boosted_event_probabilities(boosted_models, event_holdout)
-            boosted_metrics = _event_projection_metrics(event_holdout, boosted_probs, event_pa_pred)
-            event_metrics["boosted_binary"] = {
-                "classes": sorted(boosted_models.keys()),
-                **boosted_metrics,
-            }
-            linear_loss = linear_metrics.get("weighted_event_log_loss")
-            boosted_loss = boosted_metrics.get("weighted_event_log_loss")
-            linear_brier = linear_metrics.get("weighted_event_brier")
-            boosted_brier = boosted_metrics.get("weighted_event_brier")
-            linear_score = _event_model_composite(linear_metrics)
-            boosted_score = _event_model_composite(boosted_metrics)
-            use_boosted = (
-                boosted_score is not None
-                and (
-                    linear_score is None
-                    or float(boosted_score) <= float(linear_score)
-                    or (
-                        boosted_brier is not None
-                        and linear_brier is not None
-                        and float(boosted_brier) <= float(linear_brier) + 0.002
-                        and boosted_loss is not None
-                        and (linear_loss is None or float(boosted_loss) <= float(linear_loss) + 0.015)
-                    )
-                )
+            hierarchical_models = _fit_hierarchical_event_models(
+                event_train,
+                categorical_features=head_categorical_features,
+                head_numeric_features={
+                    head: features for head, features in head_numeric_features.items()
+                    if head in _HIERARCHICAL_EVENT_HEADS
+                },
             )
-            event_metrics["model_selection"] = {
-                "linear_composite": linear_score,
-                "boosted_composite": boosted_score,
-                "linear_brier": linear_brier,
-                "boosted_brier": boosted_brier,
-                "linear_log_loss": linear_loss,
-                "boosted_log_loss": boosted_loss,
-                "selected": "boosted_binary_calibrated" if use_boosted else "linear_multinomial",
+        except Exception as exc:
+            event_metrics["hierarchical_conditional_error"] = str(exc)
+            hierarchical_models = {}
+        if len(hierarchical_models) == len(_HIERARCHICAL_EVENT_HEADS):
+            hierarchical_probs = _predict_hierarchical_event_probabilities(
+                hierarchical_models,
+                event_holdout,
+                categorical_features=head_categorical_features,
+            )
+            hierarchical_metrics = _event_projection_metrics(
+                event_holdout,
+                hierarchical_probs,
+                event_pa_pred,
+            )
+            event_metrics["hierarchical_conditional"] = {
+                "heads": sorted(hierarchical_models.keys()),
+                **hierarchical_metrics,
             }
-            models["event_binary_models"] = boosted_models
-            if use_boosted:
-                event_metrics.update({
-                    "active_event_model": "boosted_binary_calibrated",
+            hierarchical_score = _event_model_composite(hierarchical_metrics)
+            event_metrics["model_selection"] = {
+                "hierarchical_composite": hierarchical_score,
+                "hierarchical_brier": hierarchical_metrics.get("weighted_event_brier"),
+                "hierarchical_log_loss": hierarchical_metrics.get("weighted_event_log_loss"),
+                "selected": "hierarchical_conditional_lgbm",
+            }
+            models["event_hierarchical_models"] = hierarchical_models
+            event_metrics.update({
+                "active_event_model": "hierarchical_conditional_lgbm",
+                "classes": list(EVENT_CLASSES),
+                **hierarchical_metrics,
+            })
+            active_event_probs = hierarchical_probs
+            event_metrics["tb_state_distribution"] = _tb_state_metrics(
+                event_holdout,
+                hierarchical_probs,
+                event_pa_pred,
+                pa_uncertainty,
+            )
+        else:
+            event_metrics["status"] = "insufficient_hierarchical_heads"
+
+        if cfg.fit_independent_boosted_candidate:
+            X_event, y_event, w_event = _build_event_training_examples(event_train)
+            try:
+                boosted_models = _fit_boosted_event_binary_models(X_event, y_event, w_event)
+            except Exception as exc:
+                event_metrics["boosted_binary_error"] = str(exc)
+                boosted_models = {}
+            if len(boosted_models) >= 4:
+                boosted_probs = _predict_boosted_event_probabilities(boosted_models, event_holdout)
+                boosted_metrics = _event_projection_metrics(event_holdout, boosted_probs, event_pa_pred)
+                event_metrics["boosted_binary_benchmark"] = {
                     "classes": sorted(boosted_models.keys()),
                     **boosted_metrics,
-                })
+                }
+                event_metrics["model_selection"]["boosted_composite"] = _event_model_composite(boosted_metrics)
+                models["event_binary_models"] = boosted_models
+
+        if active_event_probs is not None:
+            try:
+                tb_state_models = _fit_tb_state_models(
+                    event_train,
+                    pa_numeric_features,
+                    head_categorical_features,
+                )
+                hierarchical_tb_models = _fit_hierarchical_tb_state_models(
+                    event_train,
+                    pa_numeric_features,
+                    head_categorical_features,
+                )
+                direct_candidates: dict[str, pd.DataFrame] = {}
+                model_candidates: dict[str, dict[str, Pipeline]] = {}
+                candidate_tail_offsets: dict[str, float] = {}
+                production_tail_offsets: dict[str, float] = {}
+                holdout_state_labels = _tb_state_labels(event_holdout)
+                holdout_dates = sorted(pd.to_datetime(event_holdout["game_date_et"]).dt.date.unique())
+                tail_calibration_start = holdout_dates[max(1, len(holdout_dates) // 2)]
+                tail_calibration_mask = (
+                    pd.to_datetime(event_holdout["game_date_et"]).dt.date < tail_calibration_start
+                )
+                if len(tb_state_models) == len(TB_STATE_NAMES):
+                    one_vs_rest_raw = _predict_tb_state_models(
+                        tb_state_models,
+                        event_holdout,
+                        pa_numeric_features,
+                        head_categorical_features,
+                    )
+                    one_vs_rest_offset = _fit_tb_hr_tail_logit_offset(
+                        holdout_state_labels.loc[tail_calibration_mask],
+                        one_vs_rest_raw.loc[tail_calibration_mask],
+                    )
+                    direct_candidates["one_vs_rest"] = _apply_tb_hr_tail_logit_offset(
+                        one_vs_rest_raw, one_vs_rest_offset
+                    )
+                    candidate_tail_offsets["one_vs_rest"] = one_vs_rest_offset
+                    production_tail_offsets["one_vs_rest"] = _fit_tb_hr_tail_logit_offset(
+                        holdout_state_labels, one_vs_rest_raw
+                    )
+                    model_candidates["one_vs_rest"] = tb_state_models
+                if len(hierarchical_tb_models) == len(_TB_STATE_HIERARCHICAL_HEADS):
+                    hierarchical_raw = _predict_hierarchical_tb_state_models(
+                        hierarchical_tb_models,
+                        event_holdout,
+                        pa_numeric_features,
+                        head_categorical_features,
+                    )
+                    hierarchical_offset = _fit_tb_hr_tail_logit_offset(
+                        holdout_state_labels.loc[tail_calibration_mask],
+                        hierarchical_raw.loc[tail_calibration_mask],
+                    )
+                    direct_candidates["hierarchical_hr_tail"] = _apply_tb_hr_tail_logit_offset(
+                        hierarchical_raw, hierarchical_offset
+                    )
+                    candidate_tail_offsets["hierarchical_hr_tail"] = hierarchical_offset
+                    production_tail_offsets["hierarchical_hr_tail"] = _fit_tb_hr_tail_logit_offset(
+                        holdout_state_labels, hierarchical_raw
+                    )
+                    model_candidates["hierarchical_hr_tail"] = hierarchical_tb_models
+                if direct_candidates:
+                    base_state_probs = _convolution_tb_state_frame(
+                        event_holdout,
+                        active_event_probs,
+                        event_pa_pred,
+                        pa_uncertainty,
+                        event_low_pa_prob if pa_two_part_use else None,
+                        event_normal_pa_pred if pa_two_part_use else None,
+                    )
+                    blend_policy = _select_tb_state_blend(event_holdout, base_state_probs, direct_candidates)
+                    candidate_metrics = {
+                        name: _tb_state_multiclass_metrics(_tb_state_labels(event_holdout), probabilities)
+                        for name, probabilities in direct_candidates.items()
+                    }
+                    selected_candidate = str(blend_policy.get("selected_candidate") or "convolution")
+                    event_metrics["tb_state_residual"] = {
+                        "method": "gated_direct_state_candidates_with_hr_tail_hierarchy",
+                        "states": list(TB_STATE_NAMES),
+                        "base_holdout": _tb_state_multiclass_metrics(_tb_state_labels(event_holdout), base_state_probs),
+                        "candidate_holdout": candidate_metrics,
+                        "candidate_hr_tail_logit_offsets": candidate_tail_offsets,
+                        "production_hr_tail_logit_offsets": production_tail_offsets,
+                        "tail_calibration_end": str(holdout_dates[max(0, len(holdout_dates) // 2 - 1)]),
+                        **blend_policy,
+                    }
+                    if selected_candidate in model_candidates:
+                        models["tb_state_models"] = model_candidates[selected_candidate]
+                        models["tb_state_model_kind"] = selected_candidate
+                        models["tb_state_hr_tail_logit_offset"] = float(
+                            production_tail_offsets.get(selected_candidate, 0.0)
+                        )
+                    models["tb_state_blend_alpha"] = float(blend_policy.get("alpha") or 0.0)
+                else:
+                    event_metrics["tb_state_residual"] = {
+                        "enabled": False,
+                        "reason": "insufficient_tb_state_heads",
+                        "trained_one_vs_rest_heads": sorted(tb_state_models),
+                        "trained_hierarchical_heads": sorted(hierarchical_tb_models),
+                    }
+            except Exception as exc:
+                event_metrics["tb_state_residual"] = {"enabled": False, "reason": "training_error", "error": str(exc)}
     else:
         event_metrics["status"] = "insufficient_event_classes"
     metrics["direct_event_model"] = event_metrics
@@ -1029,7 +2156,7 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
     hr_holdout = holdout[holdout["actual_pa"] > 0].copy()
     hr_train["hr_any"] = (hr_train["actual_home_runs"] > 0).astype(int)
     hr_holdout["hr_any"] = (hr_holdout["actual_home_runs"] > 0).astype(int)
-    hr_any_model = _classifier_pipeline()
+    hr_any_model = _boosted_binary_pipeline()
     hr_any_model.fit(
         prepare_hitter_outcome_features(hr_train)[NUMERIC_FEATURES + CATEGORICAL_FEATURES],
         hr_train["hr_any"],
@@ -1105,13 +2232,33 @@ def _recommend(metrics: dict[str, Any], holdout_rows: int, cfg: HitterOutcomeMod
         direct.get("home_runs", {}),
         metrics.get("structured_counts", {}).get("home_runs", {}),
     )
+    event_hits_gain_vs_prior = _gain(
+        direct.get("hits", {}),
+        metrics.get("structured_counts", {}).get("slot_prior_hits", {}),
+    )
+    event_tb_gain_vs_prior = _gain(
+        direct.get("total_bases", {}),
+        metrics.get("structured_counts", {}).get("slot_prior_total_bases", {}),
+    )
     try:
         hr_any_gain = float(hr_any.get("prior_brier")) - float(hr_any.get("model_brier"))
     except Exception:
         hr_any_gain = None
+    passes_basic_gate = bool(
+        holdout_rows >= cfg.min_holdout_rows
+        and pa_gain is not None and pa_gain > 0.01
+        and event_hits_gain_vs_prior is not None and event_hits_gain_vs_prior > 0.005
+        and event_tb_gain_vs_prior is not None and event_tb_gain_vs_prior > 0.005
+        and event_tb_gain is not None and event_tb_gain > 0.0
+        and hr_any_gain is not None and hr_any_gain > 0.0005
+    )
     return {
-        "production_status": "diagnostic_only",
-        "reason": "Require repeated holdout gains before replacing prop projections.",
+        "production_status": "usable_for_distribution" if passes_basic_gate else "diagnostic_only",
+        "reason": (
+            "Holdout gates passed; event curves may feed distribution pricing."
+            if passes_basic_gate
+            else "Require repeated holdout gains before replacing prop projections."
+        ),
         "holdout_rows": holdout_rows,
         "pa_mae_gain_vs_slot_prior": pa_gain,
         "hits_mae_gain_vs_slot_rate_prior": hits_gain,
@@ -1120,15 +2267,10 @@ def _recommend(metrics: dict[str, Any], holdout_rows: int, cfg: HitterOutcomeMod
         "direct_event_hits_mae_gain_vs_independent_rates": event_hits_gain,
         "direct_event_tb_mae_gain_vs_independent_rates": event_tb_gain,
         "direct_event_hr_mae_gain_vs_independent_rates": event_hr_gain,
+        "direct_event_hits_mae_gain_vs_slot_prior": event_hits_gain_vs_prior,
+        "direct_event_tb_mae_gain_vs_slot_prior": event_tb_gain_vs_prior,
         "hr_any_brier_gain_vs_prior": hr_any_gain,
-        "passes_basic_gate": bool(
-            holdout_rows >= cfg.min_holdout_rows
-            and pa_gain is not None and pa_gain > 0.01
-            and hits_gain is not None and hits_gain > 0.005
-            and tb_gain is not None and tb_gain > 0.005
-            and event_tb_gain is not None and event_tb_gain > 0.0
-            and hr_any_gain is not None and hr_any_gain > 0.0005
-        ),
+        "passes_basic_gate": passes_basic_gate,
     }
 
 
@@ -1146,6 +2288,9 @@ def _write_outputs(payload: dict[str, Any], cfg: HitterOutcomeModelConfig, model
                 "active_event_model": ((payload.get("metrics") or {}).get("direct_event_model") or {}).get("active_event_model"),
                 "trained_at_utc": payload.get("generated_at_utc"),
                 "recommendation": payload.get("recommendation"),
+                "metrics": payload.get("metrics") or {},
+                "player_prior_state": models.get("player_prior_state") or {},
+                "pa_uncertainty": models.get("pa_uncertainty") or {},
             },
             cfg.model_dir / "hitter_player_game_outcome_models.joblib",
         )
@@ -1188,6 +2333,8 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         f"- Hits MAE gain vs slot-rate prior: {num(rec.get('hits_mae_gain_vs_slot_rate_prior'))}",
         f"- TB MAE gain vs slot-rate prior: {num(rec.get('tb_mae_gain_vs_slot_rate_prior'))}",
         f"- HR MAE gain vs slot-rate prior: {num(rec.get('hr_mae_gain_vs_slot_rate_prior'))}",
+        f"- Direct event hits MAE gain vs slot prior: {num(rec.get('direct_event_hits_mae_gain_vs_slot_prior'))}",
+        f"- Direct event TB MAE gain vs slot prior: {num(rec.get('direct_event_tb_mae_gain_vs_slot_prior'))}",
         f"- Direct event TB MAE gain vs independent rates: {num(rec.get('direct_event_tb_mae_gain_vs_independent_rates'))}",
         f"- HR-any Brier gain vs prior: {num(rec.get('hr_any_brier_gain_vs_prior'), 5)}",
         "",
@@ -1234,12 +2381,27 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         "| Model | Rows | MAE | RMSE | Bias |",
         "|---|---:|---:|---:|---:|",
     ])
-    for label, key in [("PA model", "model"), ("Slot prior", "slot_prior"), ("Existing projected PA", "existing_projected_pa")]:
+    for label, key in [
+        ("Selected PA model", "model"),
+        ("Single-mean PA", "single_mean_model"),
+        ("Two-part PA", "two_part_model"),
+        ("Slot prior", "slot_prior"),
+        ("Existing projected PA", "existing_projected_pa"),
+    ]:
         row = pa.get(key, {})
         lines.append(
             f"| {label} | {row.get('rows', 0)} | {num(row.get('mae'))} | "
             f"{num(row.get('rmse'))} | {num(row.get('bias'))} |"
         )
+    two_part = pa.get("two_part", {})
+    lines.extend([
+        "",
+        f"- Two-part PA enabled: {two_part.get('enabled', False)}",
+        f"- Low-PA Brier: {num(two_part.get('low_pa_model_brier'), 5)} vs baseline {num(two_part.get('low_pa_baseline_brier'), 5)}",
+        f"- Leakage-safe pregame low-PA rows: {two_part.get('leakage_safe_low_pa_rows', 0)}",
+        f"- Activation reason: {two_part.get('activation_reason', '-')}",
+        f"- Conditional normal-play PA MAE: {num(two_part.get('normal_pa_mae'))}",
+    ])
     lines.extend([
         "",
         "## Structured Counts",
@@ -1268,6 +2430,9 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         f"- Weighted event Brier: {num(direct.get('weighted_event_brier'), 5)}",
         f"- Weighted event log loss: {num(direct.get('weighted_event_log_loss'), 5)}",
         f"- Classes: {', '.join(map(str, direct.get('classes', []))) if direct.get('classes') else '-'}",
+        f"- TB-state residual enabled: {(direct.get('tb_state_residual') or {}).get('enabled', False)}",
+        f"- TB-state blend alpha: {num((direct.get('tb_state_residual') or {}).get('alpha'))}",
+        f"- TB-state validation Brier gain: {num((direct.get('tb_state_residual') or {}).get('validation_brier_gain'), 5)}",
         "",
         "| Target | Rows | Direct Event MAE | Independent Rate MAE | Direct Bias |",
         "|---|---:|---:|---:|---:|",
@@ -1281,7 +2446,8 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         )
     boosted = direct.get("boosted_binary") or {}
     linear = direct.get("linear_multinomial") or {}
-    if boosted or linear:
+    hierarchical = direct.get("hierarchical_conditional") or {}
+    if boosted or linear or hierarchical:
         lines.extend([
             "",
             "## Event Model Candidates",
@@ -1292,10 +2458,19 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
             "|---|---:|---:|---:|---:|---:|---:|",
         ])
         selection = direct.get("model_selection") or {}
-        for label, row in [("linear_multinomial", linear), ("boosted_binary_calibrated", boosted)]:
+        for label, row in [
+            ("linear_multinomial", linear),
+            ("boosted_binary_calibrated", boosted),
+            ("hierarchical_conditional_lgbm", hierarchical),
+        ]:
             if not row:
                 continue
-            composite = selection.get("linear_composite") if label == "linear_multinomial" else selection.get("boosted_composite")
+            composite_key = {
+                "linear_multinomial": "linear_composite",
+                "boosted_binary_calibrated": "boosted_composite",
+                "hierarchical_conditional_lgbm": "hierarchical_composite",
+            }[label]
+            composite = selection.get(composite_key)
             lines.append(
                 f"| {label} | {num(row.get('weighted_event_brier'), 5)} | "
                 f"{num(row.get('weighted_event_log_loss'), 5)} | {num(composite, 5)} | "
@@ -1361,6 +2536,7 @@ def main() -> None:
     parser.add_argument("--holdout-days", type=int, default=28)
     parser.add_argument("--min-train-rows", type=int, default=1000)
     parser.add_argument("--min-holdout-rows", type=int, default=200)
+    parser.add_argument("--fit-independent-boosted", action="store_true")
     parser.add_argument("--report-file")
     args = parser.parse_args()
 
@@ -1370,6 +2546,7 @@ def main() -> None:
         holdout_days=args.holdout_days,
         min_train_rows=args.min_train_rows,
         min_holdout_rows=args.min_holdout_rows,
+        fit_independent_boosted_candidate=args.fit_independent_boosted,
         report_file=args.report_file,
     )
     print(json.dumps(train_hitter_player_game_outcomes(cfg), indent=2, default=_json_default))

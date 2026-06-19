@@ -16,6 +16,10 @@ import psycopg2
 import psycopg2.extras
 
 from .prop_market_training import ensure_prop_market_training_schema
+from .prop_real_money_eligibility import (
+    PROP_REAL_MONEY_ELIGIBILITY_START_DATE,
+    parse_eligibility_start_date,
+)
 from .side_recalibration import prop_line_bucket, prop_line_surface, price_bucket
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
@@ -27,6 +31,7 @@ _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 class PromotionConfig:
     pg_dsn: str = _PG_DSN
     lookback_days: int = 365
+    eligibility_start_date: date = PROP_REAL_MONEY_ELIGIBILITY_START_DATE
     min_rows: int = 150
     min_clv_rows: int = 30
     min_roi: float = 0.0
@@ -325,13 +330,15 @@ def _bucket_summary(key: str, group: pd.DataFrame, cfg: PromotionConfig) -> dict
     }
 
 
-def _load_ladder_policy() -> dict[str, dict[str, Any]]:
+def _load_ladder_policy(eligibility_start_date: date) -> dict[str, dict[str, Any]]:
     path = _MODEL_DIR / "prop_bucket_reopen_policy.json"
     if not path.exists():
         return {}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
+        return {}
+    if str(payload.get("eligibility_start_date") or "") != eligibility_start_date.isoformat():
         return {}
     return {
         str(key): dict(record or {})
@@ -340,8 +347,11 @@ def _load_ladder_policy() -> dict[str, dict[str, Any]]:
 
 
 def build_payload(cfg: PromotionConfig) -> dict[str, Any]:
-    df = _load(cfg)
-    ladder_policy = _load_ladder_policy()
+    legacy_df = _load(cfg)
+    df = legacy_df.loc[
+        legacy_df["game_date_et"] >= cfg.eligibility_start_date
+    ].copy() if not legacy_df.empty else legacy_df.copy()
+    ladder_policy = _load_ladder_policy(cfg.eligibility_start_date)
     rows: list[dict[str, Any]] = []
     if not df.empty:
         for key, group in df.groupby("bucket_key", dropna=False):
@@ -395,8 +405,10 @@ def build_payload(cfg: PromotionConfig) -> dict[str, Any]:
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "promotion_scope": "exact_bucket_only",
+        "eligibility_start_date": cfg.eligibility_start_date.isoformat(),
         "lookback_days": cfg.lookback_days,
         "rows": int(len(df)),
+        "legacy_audit_rows": int(len(legacy_df)),
         "bucket_count": len(rows),
         "promotable_count": sum(1 for r in rows if r["status"] == "promotable"),
         "thresholds": {
@@ -478,7 +490,9 @@ def build_report(cfg: PromotionConfig) -> str:
         "",
         f"Generated: {payload['generated_at_utc']}",
         f"Lookback days: {payload['lookback_days']}",
-        f"Training rows: {payload['rows']}",
+        f"Eligibility start: {payload['eligibility_start_date']}",
+        f"Eligible training rows: {payload['rows']}",
+        f"Legacy audit rows: {payload['legacy_audit_rows']}",
         f"Exact buckets: {payload['bucket_count']}",
         f"Promotable buckets: {payload['promotable_count']}",
         "Scope: exact bucket only (market | side | line surface | line bucket | price bucket | book).",
@@ -571,6 +585,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Report exact MLB prop buckets closest to bankroll promotion")
     parser.add_argument("--pg-dsn", default=_PG_DSN)
     parser.add_argument("--lookback-days", type=int, default=365)
+    parser.add_argument(
+        "--eligibility-start-date",
+        default=PROP_REAL_MONEY_ELIGIBILITY_START_DATE.isoformat(),
+    )
     parser.add_argument("--min-rows", type=int, default=150)
     parser.add_argument("--min-clv-rows", type=int, default=30)
     parser.add_argument("--min-roi", type=float, default=0.0)
@@ -589,6 +607,7 @@ def main() -> None:
     cfg = PromotionConfig(
         pg_dsn=args.pg_dsn,
         lookback_days=args.lookback_days,
+        eligibility_start_date=parse_eligibility_start_date(args.eligibility_start_date),
         min_rows=args.min_rows,
         min_clv_rows=args.min_clv_rows,
         min_roi=args.min_roi,

@@ -58,6 +58,14 @@ CREATE TABLE IF NOT EXISTS features.mlb_hitter_player_game_training (
     park_run_factor NUMERIC,
     park_hr_factor NUMERIC,
     park_babip_factor NUMERIC,
+    temperature_f NUMERIC,
+    wind_speed_mph NUMERIC,
+    wind_sin NUMERIC,
+    wind_cos NUMERIC,
+    precip_prob_pct NUMERIC,
+    is_dome NUMERIC,
+    is_day_game NUMERIC,
+    weather_pregame_flag NUMERIC,
     own_lineup_xwoba_avg NUMERIC,
     own_lineup_xslg_avg NUMERIC,
     own_lineup_barrel_avg NUMERIC,
@@ -188,6 +196,14 @@ ALTER TABLE features.mlb_hitter_player_game_training
     ADD COLUMN IF NOT EXISTS park_run_factor NUMERIC,
     ADD COLUMN IF NOT EXISTS park_hr_factor NUMERIC,
     ADD COLUMN IF NOT EXISTS park_babip_factor NUMERIC,
+    ADD COLUMN IF NOT EXISTS temperature_f NUMERIC,
+    ADD COLUMN IF NOT EXISTS wind_speed_mph NUMERIC,
+    ADD COLUMN IF NOT EXISTS wind_sin NUMERIC,
+    ADD COLUMN IF NOT EXISTS wind_cos NUMERIC,
+    ADD COLUMN IF NOT EXISTS precip_prob_pct NUMERIC,
+    ADD COLUMN IF NOT EXISTS is_dome NUMERIC,
+    ADD COLUMN IF NOT EXISTS is_day_game NUMERIC,
+    ADD COLUMN IF NOT EXISTS weather_pregame_flag NUMERIC,
     ADD COLUMN IF NOT EXISTS own_lineup_xwoba_avg NUMERIC,
     ADD COLUMN IF NOT EXISTS own_lineup_xslg_avg NUMERIC,
     ADD COLUMN IF NOT EXISTS own_lineup_barrel_avg NUMERIC,
@@ -325,6 +341,18 @@ WITH base AS (
         gf.park_run_factor,
         gf.park_hr_factor,
         pbf.park_babip_avg AS park_babip_factor,
+        wx.temperature_f,
+        CASE WHEN v.roof_type = 'dome' THEN 0.0 ELSE wx.wind_speed_mph::float END AS wind_speed_mph,
+        CASE WHEN v.roof_type = 'dome' THEN 0.0 ELSE SIN(RADIANS(wx.wind_direction_deg::float)) END AS wind_sin,
+        CASE WHEN v.roof_type = 'dome' THEN 0.0 ELSE COS(RADIANS(wx.wind_direction_deg::float)) END AS wind_cos,
+        wx.precip_prob_pct::float AS precip_prob_pct,
+        CASE WHEN v.roof_type = 'dome' THEN 1.0 ELSE 0.0 END AS is_dome,
+        CASE
+            WHEN v.roof_type = 'dome' THEN 0.0
+            WHEN EXTRACT(HOUR FROM g.start_ts_utc AT TIME ZONE 'America/New_York') < 17 THEN 1.0
+            ELSE 0.0
+        END AS is_day_game,
+        CASE WHEN wx.game_slug IS NOT NULL THEN 1.0 ELSE 0.0 END AS weather_pregame_flag,
         lq_own.lineup_xwoba_avg AS own_lineup_xwoba_avg,
         lq_own.lineup_xslg_avg AS own_lineup_xslg_avg,
         lq_own.lineup_barrel_avg AS own_lineup_barrel_avg,
@@ -441,6 +469,10 @@ WITH base AS (
         bps.source_fetched_at_utc AS source_updated_at
     FROM raw.mlb_boxscore_player_stats bps
     LEFT JOIN raw.mlb_games g ON g.game_slug = bps.game_slug
+    LEFT JOIN raw.mlb_venues v ON v.venue_id = g.venue_id
+    LEFT JOIN raw.mlb_weather wx
+      ON wx.game_slug = bps.game_slug
+     AND wx.fetched_at_utc <= g.start_ts_utc
     LEFT JOIN raw.mlb_player_gamelogs gl
       ON gl.game_slug = bps.game_slug
      AND gl.player_id = bps.player_id
@@ -656,6 +688,8 @@ INSERT INTO features.mlb_hitter_player_game_training (
     confirmed_starter, starter_status_source, primary_position, batter_hand,
     opp_sp_id, opp_sp_hand, opp_sp_hand_l, team_implied_runs, opponent_implied_runs,
     game_total_line, venue_id, park_run_factor, park_hr_factor, park_babip_factor,
+    temperature_f, wind_speed_mph, wind_sin, wind_cos, precip_prob_pct,
+    is_dome, is_day_game, weather_pregame_flag,
     own_lineup_xwoba_avg, own_lineup_xslg_avg, own_lineup_barrel_avg,
     own_lineup_hard_hit_avg, own_lineup_k_pct_cv, own_lineup_pct_lhb,
     lineup_confirmed_flag, confirmed_team_lineup_slots, team_lineup_confirmed_flag,
@@ -700,6 +734,8 @@ SELECT
     b.confirmed_starter, b.starter_status_source, b.primary_position, b.batter_hand,
     b.opp_sp_id, b.opp_sp_hand, b.opp_sp_hand_l, b.team_implied_runs, b.opponent_implied_runs,
     b.game_total_line, b.venue_id, b.park_run_factor, b.park_hr_factor, b.park_babip_factor,
+    b.temperature_f, b.wind_speed_mph, b.wind_sin, b.wind_cos, b.precip_prob_pct,
+    b.is_dome, b.is_day_game, b.weather_pregame_flag,
     b.own_lineup_xwoba_avg, b.own_lineup_xslg_avg, b.own_lineup_barrel_avg,
     b.own_lineup_hard_hit_avg, b.own_lineup_k_pct_cv, b.own_lineup_pct_lhb,
     b.lineup_confirmed_flag, b.confirmed_team_lineup_slots, b.team_lineup_confirmed_flag,
@@ -768,6 +804,14 @@ ON CONFLICT (game_slug, player_id) DO UPDATE SET
     park_run_factor = EXCLUDED.park_run_factor,
     park_hr_factor = EXCLUDED.park_hr_factor,
     park_babip_factor = EXCLUDED.park_babip_factor,
+    temperature_f = EXCLUDED.temperature_f,
+    wind_speed_mph = EXCLUDED.wind_speed_mph,
+    wind_sin = EXCLUDED.wind_sin,
+    wind_cos = EXCLUDED.wind_cos,
+    precip_prob_pct = EXCLUDED.precip_prob_pct,
+    is_dome = EXCLUDED.is_dome,
+    is_day_game = EXCLUDED.is_day_game,
+    weather_pregame_flag = EXCLUDED.weather_pregame_flag,
     own_lineup_xwoba_avg = EXCLUDED.own_lineup_xwoba_avg,
     own_lineup_xslg_avg = EXCLUDED.own_lineup_xslg_avg,
     own_lineup_barrel_avg = EXCLUDED.own_lineup_barrel_avg,

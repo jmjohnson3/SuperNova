@@ -26,13 +26,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import subprocess
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+
+from mlb_pipeline.subprocess_utils import run_subprocess_tree
 
 log = logging.getLogger("mlb_pipeline.run_daily_and_notify")
 
@@ -107,7 +108,8 @@ STEPS: list[Step] = [
     Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
          critical=False, post_output=True),
     Step("Shadow-Lock Prop Predictions", "mlb_pipeline.modeling.shadow_lock_prop_predictions",
-         args=("--phase", "morning"), critical=False, post_output=False, timeout_s=120),
+         args=("--phase", "morning"), critical=True, post_output=False, timeout_s=120,
+         fail_task_on_error=True),
     Step("Prop Snapshot Coverage", "mlb_pipeline.modeling.prop_snapshot_coverage_report",
          critical=False, post_output=False, timeout_s=120),
     Step("Offer-Level Prop Audit", "mlb_pipeline.modeling.offer_level_prop_audit_report",
@@ -116,6 +118,8 @@ STEPS: list[Step] = [
     Step("Prop Real-Money Readiness", "mlb_pipeline.modeling.prop_real_money_readiness_report",
          args=("--lookback-days", "90", "--top-n", "25"),
          critical=False, post_output=False, timeout_s=120),
+    Step("Prop Real-Money Kill Switch", "mlb_pipeline.modeling.prop_real_money_kill_switch",
+         critical=False, post_output=False, timeout_s=60, fail_task_on_error=True),
     Step("Prop Bucket Promotion", "mlb_pipeline.modeling.prop_bucket_promotion_report",
          args=("--lookback-days", "365", "--top-n", "25"),
          critical=False, post_output=False, timeout_s=120),
@@ -141,12 +145,13 @@ STEPS: list[Step] = [
     Step("Train Prop Market Side Priors", "mlb_pipeline.modeling.train_prop_market_side_priors",
          critical=False, post_output=False, timeout_s=600),
     Step("Build Prop Market Training Table", "mlb_pipeline.modeling.build_prop_market_training_table",
-         args=("--include-pending",), critical=False, post_output=False, fail_task_on_error=True),
+         args=("--include-pending", "--ensure-schema"), critical=False, post_output=False,
+         timeout_s=1800, fail_task_on_error=True),
     Step("Build Hitter Player-Game Training Table", "mlb_pipeline.modeling.build_hitter_player_game_training_table",
          critical=False, post_output=False, timeout_s=600),
-    Step("Train Hitter Player-Game Outcome Models", "mlb_pipeline.modeling.train_hitter_player_game_outcome_models",
-         critical=False, post_output=False, timeout_s=900),
     Step("Hitter Event Feature Ablation", "mlb_pipeline.modeling.hitter_event_feature_ablation_report",
+         critical=False, post_output=False, timeout_s=900),
+    Step("Train Hitter Player-Game Outcome Models", "mlb_pipeline.modeling.train_hitter_player_game_outcome_models",
          critical=False, post_output=False, timeout_s=900),
     Step("Train Prop Side Recalibrators", "mlb_pipeline.modeling.train_prop_side_recalibrators",
          critical=False, post_output=False),
@@ -182,7 +187,7 @@ STEPS: list[Step] = [
 # Steps run before day and evening slates to refresh injuries + odds before first pitch.
 PRE_GAME_STEPS: list[Step] = [
     Step("Re-crawl Injuries (force)", "mlb_pipeline.crawler",
-         args=("--force-meta",), critical=False, post_output=False, timeout_s=120),
+         args=("--force-meta",), critical=False, post_output=False, timeout_s=300),
     Step("Re-crawl Game Odds", "mlb_pipeline.crawler_oddsapi",
          args=("--skip-props",),
          critical=False, post_output=False, timeout_s=600),
@@ -190,7 +195,7 @@ PRE_GAME_STEPS: list[Step] = [
          args=("--skip-live", "--force-props"),
          critical=True, post_output=False, timeout_s=600),
     Step("Re-parse Meta (injuries)",  "mlb_pipeline.parse_meta",
-         critical=False, post_output=False, timeout_s=60),
+         critical=False, post_output=False, timeout_s=300),
     Step("Re-parse Game Odds + Morning-Lock Prop Close Snapshot", "mlb_pipeline.parse_oddsapi",
          args=("--prop-snapshot-role", "close"),
          critical=True,  post_output=False, timeout_s=300),
@@ -199,18 +204,18 @@ PRE_GAME_STEPS: list[Step] = [
     Step("Player Props (pre-game)",   "mlb_pipeline.modeling.predict_player_props",
          critical=True,  post_output=True,  timeout_s=900),
     Step("Shadow-Lock Props (pre-game)", "mlb_pipeline.modeling.shadow_lock_prop_predictions",
-         critical=False, post_output=False, timeout_s=120),
+         critical=True, post_output=False, timeout_s=120, fail_task_on_error=True),
     Step("Re-crawl Post-Lock Closing Prop Odds", "mlb_pipeline.crawler_oddsapi",
          args=("--skip-live", "--force-props"),
-         critical=False, post_output=False, timeout_s=600),
+         critical=True, post_output=False, timeout_s=600, fail_task_on_error=True),
     Step("Capture Post-Lock Prop Close Snapshot", "mlb_pipeline.parse_oddsapi",
          args=("--prop-snapshot-role", "close"),
-         critical=False, post_output=False, timeout_s=300),
+         critical=True, post_output=False, timeout_s=300, fail_task_on_error=True),
     Step("Refresh Prop Replay CLV", "mlb_pipeline.modeling.refresh_prop_replay_clv",
-         critical=False, post_output=False, timeout_s=300),
+         critical=True, post_output=False, timeout_s=300, fail_task_on_error=True),
     Step("Build Prop Market Training Table", "mlb_pipeline.modeling.build_prop_market_training_table",
-         args=("--lookback-days", "14", "--include-pending"),
-         critical=False, post_output=False, timeout_s=600, fail_task_on_error=True),
+         args=("--lookback-days", "3", "--include-pending", "--no-replace"),
+         critical=False, post_output=False, timeout_s=600),
     Step("Prop Walk-Forward Accuracy", "mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
          args=("--no-refresh-clv",),
          critical=False, post_output=False, timeout_s=600),
@@ -244,21 +249,16 @@ def run_module(mod: str, args: tuple[str, ...], timeout_s: int) -> tuple[int, st
     env["PYTHONIOENCODING"] = "utf-8"
     env["DISCORD_FORMAT"] = "1"
 
-    try:
-        p = subprocess.run(
-            [sys.executable, "-m", mod, *args],
-            text=True,
-            encoding="utf-8",
-            capture_output=True,
-            check=False,
-            cwd=str(_repo_root()),
-            env=env,
-            timeout=timeout_s,
-        )
-        return p.returncode, p.stdout or "", p.stderr or ""
-    except subprocess.TimeoutExpired:
+    rc, stdout, stderr, _secs = run_subprocess_tree(
+        [sys.executable, "-m", mod, *args],
+        timeout_s=timeout_s,
+        cwd=str(_repo_root()),
+        env=env,
+        encoding="utf-8",
+    )
+    if rc == 124:
         log.error("[%s] timed out after %ds", mod, timeout_s)
-        return 124, "", f"Timed out after {timeout_s}s"
+    return rc, stdout, stderr
 
 
 # ---------------------------------------------------------------------------
@@ -275,6 +275,7 @@ async def _post(content: str) -> None:
             try:
                 r = await client.post(MLB_DISCORD_WEBHOOK_URL, json={"content": content})
                 if r.status_code in (200, 204):
+                    log.info("Discord post succeeded (%d)", r.status_code)
                     return
                 if r.status_code == 429 and attempt < 3:
                     retry_after = float(r.json().get("retry_after", 1.5))
@@ -414,6 +415,7 @@ async def main() -> None:
                         "mlb_pipeline.modeling.shadow_lock_prop_predictions",
                         "mlb_pipeline.modeling.offer_level_prop_audit_report",
                         "mlb_pipeline.modeling.prop_real_money_readiness_report",
+                        "mlb_pipeline.modeling.prop_real_money_kill_switch",
                         "mlb_pipeline.modeling.prop_bucket_promotion_report",
                         "mlb_pipeline.modeling.prop_snapshot_coverage_report",
                         "mlb_pipeline.modeling.prop_slate_postmortem_report",
@@ -435,6 +437,7 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     if args.pre_game:
         lock_phase = args.lock_phase or ("day_pregame" if now_et.hour < 14 else "evening_pregame")

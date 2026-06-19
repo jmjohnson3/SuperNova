@@ -2,20 +2,20 @@
 
 ## Summary
 
-- **Re-crawl closing game odds (Odds API)**: OK (rc=0, 6.3s)
-- **Re-crawl closing prop odds (Odds API)**: OK (rc=0, 26.6s)
-- **Re-parse closing odds into odds.mlb_game_lines**: OK (rc=0, 19.3s)
-- **Refresh prop replay CLV**: OK (rc=0, 8.0s)
-- **Build prop market training table**: OK (rc=0, 270.6s)
-- **Prop walk-forward accuracy report**: OK (rc=0, 165.6s)
-- **Prop shadow selector report**: OK (rc=0, 83.0s)
-- **Prop miss diagnostic report**: OK (rc=0, 30.0s)
-- **Prop bucket repair report**: OK (rc=0, 10.6s)
-- **TB prop repair report**: OK (rc=0, 8.3s)
-- **Prop target quality report**: OK (rc=0, 14.5s)
-- **Grade outcomes + ledgers**: OK (rc=0, 6.2s)
-- **Prop snapshot coverage report**: OK (rc=0, 62.0s)
-- **Grade shadow prop replay**: OK (rc=0, 15.3s)
+- **Re-crawl closing game odds (Odds API)**: OK (rc=0, 4.8s)
+- **Re-crawl closing prop odds (Odds API)**: OK (rc=0, 6.8s)
+- **Re-parse closing odds into odds.mlb_game_lines**: OK (rc=0, 8.0s)
+- **Refresh prop replay CLV**: OK (rc=0, 16.2s)
+- **Build prop market training table**: OK (rc=0, 62.4s)
+- **Prop walk-forward accuracy report**: OK (rc=0, 145.4s)
+- **Prop shadow selector report**: OK (rc=0, 94.4s)
+- **Prop miss diagnostic report**: OK (rc=0, 18.7s)
+- **Prop bucket repair report**: OK (rc=0, 8.5s)
+- **TB prop repair report**: OK (rc=0, 6.6s)
+- **Prop target quality report**: OK (rc=0, 14.0s)
+- **Grade outcomes + ledgers**: OK (rc=0, 5.5s)
+- **Prop snapshot coverage report**: OK (rc=0, 23.8s)
+- **Grade shadow prop replay**: OK (rc=0, 3.9s)
 
 ## Outputs (tails)
 
@@ -25,12 +25,12 @@
 
 **stderr (tail)**
 ```
-2026-06-17 11:45:10,236 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-06-18. Catching up from 2026-06-19 to 2026-06-16
-2026-06-17 11:45:10,250 | INFO | mlb_pipeline.crawler_oddsapi | Fetching live odds for ET date=2026-06-17 window=2026-06-17T04:00:00Z..2026-06-18T04:00:00Z
-2026-06-17 11:45:11,019 | INFO | mlb_pipeline.crawler_oddsapi | Live 2026-06-17 | events=15 | credits_remaining=77964
-2026-06-17 11:45:11,294 | INFO | mlb_pipeline.crawler_oddsapi | Fetching live odds for ET date=2026-06-18 window=2026-06-18T04:00:00Z..2026-06-19T04:00:00Z
-2026-06-17 11:45:11,839 | INFO | mlb_pipeline.crawler_oddsapi | Live 2026-06-18 | events=8 | credits_remaining=77962
-2026-06-17 11:45:11,851 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=2 skipped=0 credits_remaining=77962
+2026-06-17 21:45:06,208 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-06-18. Catching up from 2026-06-19 to 2026-06-16
+2026-06-17 21:45:06,208 | INFO | mlb_pipeline.crawler_oddsapi | Fetching live odds for ET date=2026-06-17 window=2026-06-17T04:00:00Z..2026-06-18T04:00:00Z
+2026-06-17 21:45:07,248 | INFO | mlb_pipeline.crawler_oddsapi | Live 2026-06-17 | events=2 | credits_remaining=77355
+2026-06-17 21:45:07,508 | INFO | mlb_pipeline.crawler_oddsapi | Fetching live odds for ET date=2026-06-18 window=2026-06-18T04:00:00Z..2026-06-19T04:00:00Z
+2026-06-17 21:45:08,148 | INFO | mlb_pipeline.crawler_oddsapi | Live 2026-06-18 | events=9 | credits_remaining=77353
+2026-06-17 21:45:08,269 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=2 skipped=0 credits_remaining=77353
 ```
 
 ### Re-crawl closing prop odds (Odds API)
@@ -39,33 +39,12 @@
 
 **stderr (tail)**
 ```
-2026-06-17 11:45:15,811 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-06-18. Catching up from 2026-06-19 to 2026-06-16
-2026-06-17 11:45:17,169 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 15 events (game_date=2026-06-17, as_of=2026-06-17)
-2026-06-17 11:45:17,779 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=93a412d9ba2735490b741d924fea7ef1 (New York Mets@Cincinnati Reds) | credits=77956
-2026-06-17 11:45:18,773 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=bab3782d628eabfc050d79656a55fa50 (Kansas City Royals@Washington Nationals) | credits=77950
-2026-06-17 11:45:19,669 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=70301ecea46dd4e6c12d0c003013a4ee (Miami Marlins@Philadelphia Phillies) | credits=77944
-2026-06-17 11:45:20,628 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=aca8c666c9ae92e799b0fc96c3672aab (San Francisco Giants@Atlanta Braves) | credits=77941
-2026-06-17 11:45:21,520 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=db80e9d6153bc82e7a3612d55fd10ece (Detroit Tigers@Houston Astros) | credits=77935
-2026-06-17 11:45:22,402 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=c8afc0ecd9f70b910f3f7ffbf71274e4 (San Diego Padres@St. Louis Cardinals) | credits=77929
-2026-06-17 11:45:23,305 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=a75cee44d2cbdcedb356612df99cd692 (Tampa Bay Rays@Los Angeles Dodgers) | credits=77923
-2026-06-17 11:45:24,171 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=44a3fa0a32ffae8dd220f1a4d54ae239 (Los Angeles Angels@Arizona Diamondbacks) | credits=77917
-2026-06-17 11:45:24,989 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=1b3b5ac473b471165355ca855853dbb2 (Toronto Blue Jays@Boston Red Sox) | credits=77911
-2026-06-17 11:45:25,890 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=9cfb18a4e0091ae6c9ccb03c48deb277 (Chicago White Sox@New York Yankees) | credits=77905
-2026-06-17 11:45:26,781 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=a834545628bda1d53eb52e89728b336f (San Francisco Giants@Atlanta Braves) | credits=77899
-2026-06-17 11:45:27,668 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=4d8279537f3ea7c4d1d53160da26d2c6 (Cleveland Guardians@Milwaukee Brewers) | credits=77893
-2026-06-17 11:45:28,555 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=3c667b5e84c7e18c7697c0f83852679a (Colorado Rockies@Chicago Cubs) | credits=77887
-2026-06-17 11:45:29,845 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=ab9ae62c321b17a5d765118cc9bb3fbf (Pittsburgh Pirates@Athletics) | credits=77881
-2026-06-17 11:45:30,705 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=1d049adfd45ba69776089a9846e60034 (Baltimore Orioles@Seattle Mariners) | credits=77875
-2026-06-17 11:45:31,532 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 8 events (game_date=2026-06-18, as_of=2026-06-17)
-2026-06-17 11:45:32,382 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=10b797abe19952451af8a428ab530deb (Toronto Blue Jays@Boston Red Sox) | credits=77875
-2026-06-17 11:45:33,229 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=872e319f5c105d18457014bc855cdc85 (Cleveland Guardians@Milwaukee Brewers) | credits=77875
-2026-06-17 11:45:34,115 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=bb47b41c0a375d2df45331898a1e7ec1 (Minnesota Twins@Texas Rangers) | credits=77875
-2026-06-17 11:45:34,927 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=cad6df1fc1aadca9fdbb359d7d43e40f (Baltimore Orioles@Seattle Mariners) | credits=77875
-2026-06-17 11:45:35,756 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=7fc018ccf3790baea15d29b581f9d0ce (New York Mets@Philadelphia Phillies) | credits=77875
-2026-06-17 11:45:36,547 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=adfa73cc70f5a62d6d0bb903eaa0f24b (Chicago White Sox@New York Yankees) | credits=77875
-2026-06-17 11:45:37,355 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=e92122c8f905eb41a57faabf21daf468 (San Francisco Giants@Atlanta Braves) | credits=77875
-2026-06-17 11:45:38,155 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=13234b203ca4ea57ec2f1381b3e6a046 (St. Louis Cardinals@Kansas City Royals) | credits=77875
-2026-06-17 11:45:38,406 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=0 skipped=0 credits_remaining=77875
+2026-06-17 21:45:10,709 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-06-18. Catching up from 2026-06-19 to 2026-06-16
+2026-06-17 21:45:11,349 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 2 events (game_date=2026-06-17, as_of=2026-06-17)
+2026-06-17 21:45:12,325 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=ab9ae62c321b17a5d765118cc9bb3fbf (Pittsburgh Pirates@Athletics) | credits=77348
+2026-06-17 21:45:13,329 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-06-17 event=1d049adfd45ba69776089a9846e60034 (Baltimore Orioles@Seattle Mariners) | credits=77345
+2026-06-17 21:45:14,972 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 9 events (game_date=2026-06-18, as_of=2026-06-17)
+2026-06-17 21:45:15,072 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=0 skipped=0 credits_remaining=77345
 ```
 
 ### Re-parse closing odds into odds.mlb_game_lines
@@ -74,14 +53,14 @@
 
 **stderr (tail)**
 ```
-2026-06-17 11:45:42,522 | INFO | mlb_pipeline.parse_oddsapi | Upserted 1447 rows into odds.mlb_game_lines (live odds).
-2026-06-17 11:45:42,538 | INFO | mlb_pipeline.parse_oddsapi | Incremental historical MLB game odds: since 2026-06-17
-2026-06-17 11:45:42,539 | WARNING | mlb_pipeline.parse_oddsapi | No mlb_odds_historical snapshots found (as_of_date=None).
-2026-06-17 11:45:42,539 | INFO | mlb_pipeline.parse_oddsapi | Only assigning close prop snapshots to raw payloads fetched since 2026-06-17T17:15:42.539656+00:00.
-2026-06-17 11:45:42,670 | INFO | mlb_pipeline.parse_oddsapi | Incremental MLB prop odds: since 2026-06-16
-2026-06-17 11:45:57,756 | INFO | mlb_pipeline.parse_oddsapi | Upserted 2569 rows into odds.mlb_player_prop_lines.
-2026-06-17 11:45:57,756 | INFO | mlb_pipeline.parse_oddsapi | Processed 2569 immutable close prop snapshot observations for odds.mlb_player_prop_line_snapshots.
-2026-06-17 11:45:57,756 | INFO | mlb_pipeline.parse_oddsapi | Done.
+2026-06-17 21:45:19,012 | INFO | mlb_pipeline.parse_oddsapi | Upserted 1432 rows into odds.mlb_game_lines (live odds).
+2026-06-17 21:45:19,032 | INFO | mlb_pipeline.parse_oddsapi | Incremental historical MLB game odds: since 2026-06-17
+2026-06-17 21:45:19,032 | WARNING | mlb_pipeline.parse_oddsapi | No mlb_odds_historical snapshots found (as_of_date=None).
+2026-06-17 21:45:19,032 | INFO | mlb_pipeline.parse_oddsapi | Only assigning close prop snapshots to raw payloads fetched since 2026-06-18T03:15:19.032249+00:00.
+2026-06-17 21:45:19,171 | INFO | mlb_pipeline.parse_oddsapi | Incremental MLB prop odds: since 2026-06-16
+2026-06-17 21:45:23,052 | INFO | mlb_pipeline.parse_oddsapi | Upserted 184 rows into odds.mlb_player_prop_lines.
+2026-06-17 21:45:23,052 | INFO | mlb_pipeline.parse_oddsapi | Processed 184 immutable close prop snapshot observations for odds.mlb_player_prop_line_snapshots.
+2026-06-17 21:45:23,052 | INFO | mlb_pipeline.parse_oddsapi | Done.
 ```
 
 ### Refresh prop replay CLV
@@ -91,7 +70,7 @@
 **stdout (tail)**
 ```
 {
-  "refreshed_rows": 2402,
+  "refreshed_rows": 3707,
   "run_ids": "all",
   "date_from": "2026-06-17",
   "date_to": "2026-06-17",
@@ -107,9 +86,9 @@
 **stdout (tail)**
 ```
 {
-  "deleted": 82088,
-  "replay_rows": 82088,
-  "examples": 82088
+  "deleted": 0,
+  "replay_rows": 17842,
+  "examples": 17842
 }
 ```
 
@@ -121,9 +100,9 @@
 ```
 {
   "status": "ready",
-  "rows": 83646,
+  "rows": 84951,
   "graded_rows": 65898,
-  "valid_clv_rows": 67357,
+  "valid_clv_rows": 69553,
   "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_walk_forward_accuracy_latest.md",
   "json_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\mlb_pipeline\\modeling\\models\\player_props\\prop_walk_forward_accuracy_report.json"
 }
@@ -137,7 +116,7 @@
 ```
 {
   "status": "ok",
-  "active_rows": 2402,
+  "active_rows": 1305,
   "real_candidate_rows": 0,
   "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_shadow_selector_latest.md"
 }
@@ -187,7 +166,7 @@ TB repair report status=ok rows=25882
 ```
 {
   "status": "ready",
-  "rows": 82745,
+  "rows": 84050,
   "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_target_quality_latest.md"
 }
 ```
@@ -205,16 +184,16 @@ MLB Price CLV Run Line: 28 bets  avg=+0.57%
 
 **stderr (tail)**
 ```
-2026-06-17 11:55:52,202 | INFO | mlb_pipeline.modeling.update_outcomes | No final MLB games found for 33 pending predictions.
-2026-06-17 11:55:52,202 | INFO | mlb_pipeline.modeling.update_outcomes | Updated 0 MLB game outcome rows
-2026-06-17 11:55:52,260 | INFO | mlb_pipeline.modeling.update_outcomes | backfill_clv: nothing to update.
-2026-06-17 11:55:53,540 | INFO | mlb_pipeline.modeling.update_outcomes | update_prop_outcomes: updated 0 prop rows
-2026-06-17 11:55:53,559 | INFO | mlb_pipeline.modeling.update_outcomes | Updated 0 MLB prop outcome rows
-2026-06-17 11:55:53,683 | INFO | mlb_pipeline.modeling.bankroll_ledger | Graded 0 game bankroll ledger rows
-2026-06-17 11:55:53,684 | INFO | mlb_pipeline.modeling.update_outcomes | Graded 0 MLB bankroll ledger rows
-2026-06-17 11:55:53,812 | INFO | mlb_pipeline.modeling.model_pick_ledger | Graded 0 game model-pick ledger rows
-2026-06-17 11:55:54,641 | INFO | mlb_pipeline.modeling.model_pick_ledger | Graded 0 prop model-pick ledger rows
-2026-06-17 11:55:54,649 | INFO | mlb_pipeline.modeling.update_outcomes | Graded 0 MLB model-pick ledger rows
+2026-06-17 21:51:32,101 | INFO | mlb_pipeline.modeling.update_outcomes | No final MLB games found for 33 pending predictions.
+2026-06-17 21:51:32,101 | INFO | mlb_pipeline.modeling.update_outcomes | Updated 0 MLB game outcome rows
+2026-06-17 21:51:32,101 | INFO | mlb_pipeline.modeling.update_outcomes | backfill_clv: nothing to update.
+2026-06-17 21:51:33,581 | INFO | mlb_pipeline.modeling.update_outcomes | update_prop_outcomes: updated 0 prop rows
+2026-06-17 21:51:33,601 | INFO | mlb_pipeline.modeling.update_outcomes | Updated 0 MLB prop outcome rows
+2026-06-17 21:51:33,703 | INFO | mlb_pipeline.modeling.bankroll_ledger | Graded 0 game bankroll ledger rows
+2026-06-17 21:51:33,703 | INFO | mlb_pipeline.modeling.update_outcomes | Graded 0 MLB bankroll ledger rows
+2026-06-17 21:51:33,859 | INFO | mlb_pipeline.modeling.model_pick_ledger | Graded 0 game model-pick ledger rows
+2026-06-17 21:51:34,703 | INFO | mlb_pipeline.modeling.model_pick_ledger | Graded 0 prop model-pick ledger rows
+2026-06-17 21:51:34,721 | INFO | mlb_pipeline.modeling.update_outcomes | Graded 0 MLB model-pick ledger rows
 ```
 
 ### Prop snapshot coverage report
@@ -225,7 +204,7 @@ MLB Price CLV Run Line: 28 bets  avg=+0.57%
 ```
 # MLB Prop Snapshot Coverage
 
-Generated: 2026-06-17T13:56:56-04:00
+Generated: 2026-06-17T23:51:58-04:00
 Range: 2026-06-04 to 2026-06-17
 
 ## Collection Status
@@ -242,7 +221,7 @@ Range: 2026-06-04 to 2026-06-17
 
 | Date | Clean | Offers | Open | Locks | Side Locks | Close Obs | Valid Side Locks | Coverage | Missing Lock | Stale Close | Lock Phases | Close Times | Reasons |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| 2026-06-17 | yes | 2924 | 0 | 2402 | 2402 | 17744 | 1132 | 47.1% | 0.0% | 2.2% | 1 | 7 |  |
+| 2026-06-17 | yes | 3761 | 0 | 3707 | 3707 | 31248 | 3328 | 89.8% | 0.0% | 3.4% | 2 | 18 |  |
 | 2026-06-16 | yes | 4276 | 2600 | 8262 | 8262 | 38949 | 7125 | 86.2% | 0.0% | 1.8% | 3 | 17 |  |
 | 2026-06-15 | yes | 2927 | 1891 | 5873 | 5873 | 28077 | 5221 | 88.9% | 0.0% | 2.9% | 3 | 18 |  |
 | 2026-06-14 | yes | 4648 | 2741 | 6056 | 6056 | 24201 | 5004 | 82.6% | 0.0% | 3.4% | 3 | 16 |  |

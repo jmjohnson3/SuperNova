@@ -21,6 +21,10 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from .prop_real_money_eligibility import (
+    PROP_REAL_MONEY_ELIGIBILITY_START_DATE,
+    parse_eligibility_start_date,
+)
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
 _ET = ZoneInfo("America/New_York")
@@ -34,12 +38,15 @@ class ReadinessConfig:
     pg_dsn: str = _PG_DSN
     report_date: date | None = None
     lookback_days: int = 365
+    eligibility_start_date: date = PROP_REAL_MONEY_ELIGIBILITY_START_DATE
     min_bankroll_rows: int = 150
     min_paper_rows: int = 50
     min_clv_rows: int = 30
     min_roi: float = 0.0
     min_clv_beat_rate: float = 0.55
     min_avg_clv_price: float = 0.0
+    min_valid_close_coverage: float = 0.90
+    max_stale_close_rate: float = 0.02
     max_abs_calibration_error: float = 0.05
     max_player_share: float = 0.12
     max_team_share: float = 0.25
@@ -116,13 +123,38 @@ SELECT
     END AS beat_clv_line,
     COALESCE(clv_valid, false) AS clv_valid,
     clv_status,
-    clv_unknown_reason
+    clv_unknown_reason,
+    COALESCE(pair_quality, 'unknown') AS pair_quality,
+    COALESCE(paired_price_source, 'unknown') AS paired_price_source,
+    COALESCE(market_prob_source, 'unknown') AS market_prob_source,
+    COALESCE(clean_market_pair_flag::float, 0.0) AS clean_market_pair_flag,
+    COALESCE(true_pair_flag::float, 0.0) AS true_pair_flag,
+    COALESCE(synthetic_pair_flag::float, 0.0) AS synthetic_pair_flag
 FROM features.mlb_prop_market_training_examples
 WHERE game_date_et >= %(cutoff)s
   AND market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
   AND side IN ('over','under')
   AND market_line IS NOT NULL
   AND won IS NOT NULL
+  AND COALESCE(
+        clean_market_pair_flag::float,
+        CASE
+            WHEN pair_quality IN ('same_book', 'cross_book')
+             AND COALESCE(market_prob_source, '') NOT IN ('raw_implied', 'synthetic_fanduel_over_only')
+            THEN 1.0
+            ELSE 0.0
+        END
+      ) = 1.0
+  AND NOT (
+        LOWER(COALESCE(bookmaker_key, '')) = 'fanduel'
+    AND market IN ('batter_hits','batter_total_bases','batter_home_runs')
+    AND (
+          COALESCE(pair_quality, '') = 'synthetic'
+       OR COALESCE(market_prob_source, '') = 'synthetic_fanduel_over_only'
+       OR COALESCE(paired_price_source, '') = 'synthetic_fanduel_over_only_complement'
+       OR COALESCE(synthetic_pair_flag::float, 0.0) >= 0.5
+    )
+  )
 """
 
 
@@ -235,7 +267,11 @@ def _load(cfg: ReadinessConfig) -> tuple[pd.DataFrame, pd.DataFrame]:
         active = _decorate(active, active_rows=True)
     if not hist.empty:
         hist["game_date_et"] = pd.to_datetime(hist["game_date_et"]).dt.date
-        for col in ["line", "price", "model_prob_side", "ev", "won", "profit_units", "clv_price", "beat_clv_price", "clv_line", "beat_clv_line"]:
+        for col in [
+            "line", "price", "model_prob_side", "ev", "won", "profit_units",
+            "clv_price", "beat_clv_price", "clv_line", "beat_clv_line",
+            "clean_market_pair_flag", "true_pair_flag", "synthetic_pair_flag",
+        ]:
             hist[col] = pd.to_numeric(hist[col], errors="coerce")
         hist["push"] = hist["push"].fillna(False).astype(bool)
         hist = _decorate(hist)
@@ -268,6 +304,16 @@ def _bucket_summary(group: pd.DataFrame, cfg: ReadinessConfig) -> dict[str, Any]
     valid_clv = group["clv_valid"].fillna(False).astype(bool)
     clv_price = pd.to_numeric(group.loc[valid_clv, "clv_price"], errors="coerce").dropna()
     clv_beat = pd.to_numeric(group.loc[valid_clv, "beat_clv_price"], errors="coerce").dropna()
+    valid_close_coverage = float(valid_clv.mean()) if len(group) else None
+    unknown_reasons = Counter(str(v) for v in group.loc[~valid_clv, "clv_unknown_reason"].dropna() if str(v))
+    stale_close_rate = (
+        float((group["clv_unknown_reason"] == "stale_close_before_lock").mean())
+        if len(group) else None
+    )
+    line_disappeared_rate = (
+        float((group["clv_unknown_reason"] == "line_disappeared_at_close").mean())
+        if len(group) else None
+    )
     max_player_share = _share(group, "player_id")
     max_team_share = _share(group, "team_abbr")
     max_day_share = _share(group, "game_date_et")
@@ -276,6 +322,10 @@ def _bucket_summary(group: pd.DataFrame, cfg: ReadinessConfig) -> dict[str, Any]
         reasons.append("sample_too_small")
     if len(clv_price) < cfg.min_clv_rows:
         reasons.append("no_clv_history")
+    if valid_close_coverage is None or valid_close_coverage < cfg.min_valid_close_coverage:
+        reasons.append("valid_close_coverage_low")
+    if stale_close_rate is None or stale_close_rate > cfg.max_stale_close_rate:
+        reasons.append("stale_close_high")
     if roi is None or roi <= cfg.min_roi:
         reasons.append("roi_not_positive")
     if clv_beat.empty or float(clv_beat.mean()) < cfg.min_clv_beat_rate:
@@ -303,6 +353,8 @@ def _bucket_summary(group: pd.DataFrame, cfg: ReadinessConfig) -> dict[str, Any]
     score = 100
     score -= 30 if "sample_too_small" in reasons else 0
     score -= 25 if "no_clv_history" in reasons else 0
+    score -= 25 if "valid_close_coverage_low" in reasons else 0
+    score -= 20 if "stale_close_high" in reasons else 0
     score -= 20 if "roi_not_positive" in reasons else 0
     score -= 20 if "clv_beat_rate_low" in reasons else 0
     score -= 15 if "calibration_not_ready" in reasons else 0
@@ -321,6 +373,12 @@ def _bucket_summary(group: pd.DataFrame, cfg: ReadinessConfig) -> dict[str, Any]
         "avg_clv_price": float(clv_price.mean()) if not clv_price.empty else None,
         "clv_price_rows": int(len(clv_price)),
         "clv_price_beat_rate": float(clv_beat.mean()) if not clv_beat.empty else None,
+        "valid_close_coverage": valid_close_coverage,
+        "stale_close_rate": stale_close_rate,
+        "line_disappeared_rate": line_disappeared_rate,
+        "clv_unknown_counts": dict(unknown_reasons.most_common()),
+        "samples_needed": max(0, cfg.min_bankroll_rows - int(len(settled))),
+        "clv_rows_needed": max(0, cfg.min_clv_rows - int(len(clv_price))),
         "unique_players": int(group["player_id"].dropna().nunique()),
         "unique_teams": int(group["team_abbr"].dropna().nunique()),
         "unique_dates": int(group["game_date_et"].dropna().nunique()),
@@ -334,13 +392,15 @@ def _bucket_summary(group: pd.DataFrame, cfg: ReadinessConfig) -> dict[str, Any]
     }
 
 
-def _load_reopen_policy(model_dir: Path) -> dict[str, dict[str, Any]]:
+def _load_reopen_policy(model_dir: Path, eligibility_start_date: date) -> dict[str, dict[str, Any]]:
     path = Path(model_dir) / "prop_bucket_reopen_policy.json"
     if not path.exists():
         return {}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
+        return {}
+    if str(payload.get("eligibility_start_date") or "") != eligibility_start_date.isoformat():
         return {}
     out: dict[str, dict[str, Any]] = {}
     for key, rec in (payload.get("ladder_buckets") or {}).items():
@@ -351,7 +411,7 @@ def _load_reopen_policy(model_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _apply_ladder_policy(scores: dict[str, dict[str, Any]], cfg: ReadinessConfig) -> None:
-    policy = _load_reopen_policy(cfg.model_dir)
+    policy = _load_reopen_policy(cfg.model_dir, cfg.eligibility_start_date)
     for key, rec in scores.items():
         ladder = policy.get(str(key)) or {}
         ladder_tier = str(ladder.get("ladder_tier") or "watch")
@@ -363,8 +423,11 @@ def _apply_ladder_policy(scores: dict[str, dict[str, Any]], cfg: ReadinessConfig
         rec["bootstrap_micro_eligible"] = bool(ladder.get("bootstrap_micro_eligible"))
         rec["bootstrap_micro_reasons"] = list(ladder.get("bootstrap_micro_reasons") or [])
         rec["raw_readiness_status"] = rec.get("status", "closed")
-        if ladder_tier in _OPEN_LADDER_TIERS:
+        if ladder_tier in _OPEN_LADDER_TIERS and rec["raw_readiness_status"] == "bankroll":
             rec["status"] = ladder_tier
+        elif ladder_tier in _OPEN_LADDER_TIERS:
+            rec["status"] = "paper"
+            rec.setdefault("reasons", []).append("ladder_open_but_exact_bucket_quality_failed")
         elif rec.get("status") == "bankroll":
             rec["status"] = "paper"
             rec.setdefault("reasons", []).append("bucket_not_reopened")
@@ -383,6 +446,28 @@ def _trust_scores(hist: pd.DataFrame, cfg: ReadinessConfig) -> dict[str, dict[st
         rec.update(_bucket_summary(group, cfg))
         scores[key] = rec
     return scores
+
+
+def _close_quality_summary(hist: pd.DataFrame) -> dict[str, Any]:
+    if hist.empty or "clv_valid" not in hist.columns:
+        return {
+            "rows": 0,
+            "valid_close_coverage": None,
+            "stale_close_rate": None,
+            "line_disappeared_rate": None,
+            "unknown_counts": {},
+        }
+    valid = hist["clv_valid"].fillna(False).astype(bool)
+    unknown = hist.loc[~valid, "clv_unknown_reason"].dropna().astype(str)
+    return {
+        "rows": int(len(hist)),
+        "valid_close_rows": int(valid.sum()),
+        "valid_close_coverage": float(valid.mean()) if len(hist) else None,
+        "stale_close_rate": float((hist["clv_unknown_reason"] == "stale_close_before_lock").mean()) if len(hist) else None,
+        "line_disappeared_rate": float((hist["clv_unknown_reason"] == "line_disappeared_at_close").mean()) if len(hist) else None,
+        "missing_lock_rate": float((hist["clv_unknown_reason"] == "missing_lock_snapshot").mean()) if len(hist) else None,
+        "unknown_counts": dict(Counter(unknown).most_common(10)),
+    }
 
 
 def _split_reasons(text: Any) -> list[str]:
@@ -440,7 +525,10 @@ def _table(rows: list[dict[str, Any]], cols: list[tuple[str, str]]) -> str:
 
 def build_payload(cfg: ReadinessConfig) -> dict[str, Any]:
     report_date = cfg.report_date or datetime.now(_ET).date()
-    active, hist = _load(ReadinessConfig(**{**cfg.__dict__, "report_date": report_date}))
+    active, legacy_hist = _load(ReadinessConfig(**{**cfg.__dict__, "report_date": report_date}))
+    hist = legacy_hist.loc[
+        legacy_hist["game_date_et"] >= cfg.eligibility_start_date
+    ].copy() if not legacy_hist.empty else legacy_hist.copy()
     scores = _trust_scores(hist, cfg)
     _apply_ladder_policy(scores, cfg)
     active_rows = []
@@ -470,42 +558,76 @@ def build_payload(cfg: ReadinessConfig) -> dict[str, Any]:
 
     score_rows = list(scores.values())
     score_rows.sort(key=lambda r: (-int(r.get("trust_score") or 0), -int(r.get("graded") or 0), str(r.get("key"))))
+    open_rows = [row for row in score_rows if row.get("status") in _OPEN_LADDER_TIERS]
+    blocked_rows = [row for row in score_rows if row.get("status") not in _OPEN_LADDER_TIERS]
+
+    def _bucket_display(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "key": row["key"],
+            "status": row["status"],
+            "ladder": row.get("ladder_tier", "watch"),
+            "source": row.get("promotion_source", "closed"),
+            "score": row["trust_score"],
+            "graded": row["graded"],
+            "need_rows": row.get("samples_needed"),
+            "need_clv": row.get("clv_rows_needed"),
+            "roi": _fmt_pct(row.get("roi"), signed=True),
+            "brier": _fmt_num(row.get("brier"), 3),
+            "cal_error": _fmt_pct(row.get("calibration_error"), signed=True),
+            "valid_close": _fmt_pct(row.get("valid_close_coverage")),
+            "stale_close": _fmt_pct(row.get("stale_close_rate")),
+            "clv_rows": row.get("clv_price_rows"),
+            "clv_beat": _fmt_pct(row.get("clv_price_beat_rate")),
+            "avg_clv": _fmt_pct(row.get("avg_clv_price"), signed=True),
+            "reasons": "; ".join(row.get("reasons") or []),
+        }
+
     payload = {
         "generated_at_utc": datetime.now(ZoneInfo("UTC")).isoformat(timespec="seconds"),
         "report_date": str(report_date),
         "lookback_days": cfg.lookback_days,
+        "eligibility_start_date": cfg.eligibility_start_date.isoformat(),
+        "eligibility_rule": "promotion_evidence_only_on_or_after_fixed_start_date",
         "active_rows": int(len(active)),
         "active_positive_ev_rows": int(len(positive_ev)),
         "active_bankroll_rows": (
             0 if active.empty else int(active["bankroll_candidate"].fillna(False).astype(bool).sum())
         ),
         "history_rows": int(len(hist)),
+        "eligible_history_rows": int(len(hist)),
+        "legacy_audit_rows": int(len(legacy_hist)),
+        "legacy_close_quality": _close_quality_summary(legacy_hist),
+        "close_quality": _close_quality_summary(hist),
         "bucket_scores": scores,
         "reason_counts": dict(reason_counter.most_common()),
         "top_active_rows": active_rows[: cfg.top_n],
-        "top_bucket_rows": [
-            {
-                "key": row["key"],
-                "status": row["status"],
-                "ladder": row.get("ladder_tier", "watch"),
-                "source": row.get("promotion_source", "closed"),
-                "score": row["trust_score"],
-                "graded": row["graded"],
-                "roi": _fmt_pct(row.get("roi"), signed=True),
-                "brier": _fmt_num(row.get("brier"), 3),
-                "cal_error": _fmt_pct(row.get("calibration_error"), signed=True),
-                "clv_rows": row.get("clv_price_rows"),
-                "clv_beat": _fmt_pct(row.get("clv_price_beat_rate")),
-                "reasons": "; ".join(row.get("reasons") or []),
-            }
-            for row in score_rows[: cfg.top_n]
-        ],
+        "open_bucket_rows": [_bucket_display(row) for row in open_rows[: cfg.top_n]],
+        "blocked_bucket_rows": [_bucket_display(row) for row in blocked_rows[: cfg.top_n]],
+        "top_bucket_rows": [_bucket_display(row) for row in score_rows[: cfg.top_n]],
     }
     return payload
 
 
 def build_report(cfg: ReadinessConfig) -> str:
     payload = build_payload(cfg)
+    close_quality = payload.get("close_quality") or {}
+    bucket_cols = [
+        ("Bucket", "key"),
+        ("Status", "status"),
+        ("Ladder", "ladder"),
+        ("Source", "source"),
+        ("Score", "score"),
+        ("Graded", "graded"),
+        ("Need Rows", "need_rows"),
+        ("Need CLV", "need_clv"),
+        ("ROI", "roi"),
+        ("Cal Err", "cal_error"),
+        ("Valid Close", "valid_close"),
+        ("Stale", "stale_close"),
+        ("CLV Beat", "clv_beat"),
+        ("Avg CLV", "avg_clv"),
+        ("Reasons", "reasons"),
+    ]
     lines = [
         "# MLB Prop Real-Money Readiness",
         "",
@@ -513,7 +635,17 @@ def build_report(cfg: ReadinessConfig) -> str:
         f"Active offer rows: {payload['active_rows']}",
         f"Positive-EV active rows: {payload['active_positive_ev_rows']}",
         f"Bankroll rows: {payload['active_bankroll_rows']}",
-        f"History rows: {payload['history_rows']}",
+        f"Eligibility start: {payload['eligibility_start_date']}",
+        f"Eligible history rows: {payload['eligible_history_rows']}",
+        f"Legacy audit rows: {payload['legacy_audit_rows']}",
+        "",
+        "## Close Quality",
+        "",
+        f"- Valid close coverage: {_fmt_pct(close_quality.get('valid_close_coverage'))}",
+        f"- Stale close rate: {_fmt_pct(close_quality.get('stale_close_rate'))}",
+        f"- Line disappeared rate: {_fmt_pct(close_quality.get('line_disappeared_rate'))}",
+        f"- Missing lock rate: {_fmt_pct(close_quality.get('missing_lock_rate'))}",
+        f"- Unknown reasons: {', '.join(f'{k} {v}' for k, v in (close_quality.get('unknown_counts') or {}).items()) or 'none'}",
         "",
         "## No-Bet Reasons",
         "",
@@ -542,25 +674,17 @@ def build_report(cfg: ReadinessConfig) -> str:
             ],
         ),
         "",
+        "## Open Buckets",
+        "",
+        _table(payload["open_bucket_rows"], bucket_cols),
+        "",
+        "## Blocked Buckets",
+        "",
+        _table(payload["blocked_bucket_rows"], bucket_cols),
+        "",
         "## Top Bucket Trust Scores",
         "",
-        _table(
-            payload["top_bucket_rows"],
-            [
-                ("Bucket", "key"),
-                ("Status", "status"),
-                ("Ladder", "ladder"),
-                ("Source", "source"),
-                ("Score", "score"),
-                ("Graded", "graded"),
-                ("ROI", "roi"),
-                ("Brier", "brier"),
-                ("Cal Err", "cal_error"),
-                ("CLV Rows", "clv_rows"),
-                ("CLV Beat", "clv_beat"),
-                ("Reasons", "reasons"),
-            ],
-        ),
+        _table(payload["top_bucket_rows"], bucket_cols),
         "",
     ]
     return "\n".join(lines)
@@ -571,10 +695,16 @@ def main() -> None:
     parser.add_argument("--pg-dsn", default=_PG_DSN)
     parser.add_argument("--date", default=None)
     parser.add_argument("--lookback-days", type=int, default=365)
+    parser.add_argument(
+        "--eligibility-start-date",
+        default=PROP_REAL_MONEY_ELIGIBILITY_START_DATE.isoformat(),
+    )
     parser.add_argument("--min-bankroll-rows", type=int, default=150)
     parser.add_argument("--min-paper-rows", type=int, default=50)
     parser.add_argument("--min-clv-rows", type=int, default=30)
     parser.add_argument("--min-ev", type=float, default=0.02)
+    parser.add_argument("--min-valid-close-coverage", type=float, default=0.90)
+    parser.add_argument("--max-stale-close-rate", type=float, default=0.02)
     parser.add_argument("--top-n", type=int, default=30)
     parser.add_argument("--model-dir", default=str(_MODEL_DIR))
     parser.add_argument("--json-out", default="prop_bucket_trust_scores.json")
@@ -584,10 +714,13 @@ def main() -> None:
         pg_dsn=args.pg_dsn,
         report_date=date.fromisoformat(args.date) if args.date else None,
         lookback_days=args.lookback_days,
+        eligibility_start_date=parse_eligibility_start_date(args.eligibility_start_date),
         min_bankroll_rows=args.min_bankroll_rows,
         min_paper_rows=args.min_paper_rows,
         min_clv_rows=args.min_clv_rows,
         min_ev=args.min_ev,
+        min_valid_close_coverage=args.min_valid_close_coverage,
+        max_stale_close_rate=args.max_stale_close_rate,
         top_n=args.top_n,
         model_dir=Path(args.model_dir),
         json_out=args.json_out,

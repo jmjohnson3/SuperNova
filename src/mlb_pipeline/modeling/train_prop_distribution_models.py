@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from sklearn.linear_model import LogisticRegression
+from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss, log_loss
 try:
     import joblib
@@ -32,10 +33,18 @@ except Exception:  # pragma: no cover - optional runtime dependency
 from .prop_replay import ev_per_unit
 from .prop_market_training import ensure_prop_market_training_schema
 from .train_hitter_player_game_outcome_models import (
+    apply_player_prior_state,
     CATEGORICAL_FEATURES as HITTER_OUTCOME_CATEGORICAL,
+    convolve_hitter_outcomes,
     EVENT_CLASSES,
+    TB_STATE_NAMES,
     NUMERIC_FEATURES as HITTER_OUTCOME_NUMERIC,
+    _apply_tb_hr_tail_logit_offset,
+    _pa_uncertainty_key,
+    _predict_hierarchical_tb_state_models,
+    _predict_hierarchical_event_probabilities,
     prepare_hitter_outcome_features,
+    projected_pa_pmf,
 )
 from .train_prop_opportunity_models import (
     HITTER_CATEGORICAL,
@@ -43,6 +52,7 @@ from .train_prop_opportunity_models import (
     PITCHER_CATEGORICAL,
     PITCHER_NUMERIC,
     add_hitter_pa_v2_features,
+    add_pitcher_history_features,
     _score_linear as _score_opportunity_linear,
 )
 
@@ -148,6 +158,14 @@ SELECT
     h.park_run_factor::float AS park_run_factor,
     h.park_hr_factor::float AS park_hr_factor,
     h.park_babip_factor::float AS park_babip_factor,
+    h.temperature_f::float AS temperature_f,
+    h.wind_speed_mph::float AS wind_speed_mph,
+    h.wind_sin::float AS wind_sin,
+    h.wind_cos::float AS wind_cos,
+    h.precip_prob_pct::float AS precip_prob_pct,
+    h.is_dome::float AS is_dome,
+    h.is_day_game::float AS is_day_game,
+    h.weather_pregame_flag::float AS weather_pregame_flag,
     h.own_lineup_xwoba_avg::float AS own_lineup_xwoba_avg,
     h.own_lineup_xslg_avg::float AS own_lineup_xslg_avg,
     h.own_lineup_barrel_avg::float AS own_lineup_barrel_avg,
@@ -485,11 +503,31 @@ def _expected_hitter_counts(row: pd.Series) -> dict[str, float | None]:
 
 
 def _shrunk_multiplier(actual_sum: float, expected_sum: float, exposure: float, shrink_exposure: float = 350.0) -> float:
+    return _empirical_bayes_component_multiplier(
+        actual_sum,
+        expected_sum,
+        exposure,
+        shrink_exposure=shrink_exposure,
+    )
+
+
+def _empirical_bayes_component_multiplier(
+    actual_sum: float,
+    expected_sum: float,
+    exposure: float,
+    *,
+    prior_events: float = 25.0,
+    shrink_exposure: float = 500.0,
+) -> float:
+    """Shrink a component correction while allowing well-supported large bias."""
     if expected_sum <= 1e-9 or exposure <= 0:
         return 1.0
-    raw = _clamp(actual_sum / expected_sum, 0.45, 1.75)
-    weight = exposure / (exposure + shrink_exposure)
-    return _clamp(1.0 + (raw - 1.0) * weight, 0.60, 1.45)
+    posterior_ratio = (max(0.0, actual_sum) + prior_events) / (expected_sum + prior_events)
+    exposure_weight = exposure / (exposure + shrink_exposure)
+    shrunk = math.exp(exposure_weight * math.log(max(1e-6, posterior_ratio)))
+    support = expected_sum / (expected_sum + 50.0)
+    upper = 1.0 + 2.0 * support
+    return _clamp(shrunk, 1.0 / upper, upper)
 
 
 def _empty_outcome_accumulator() -> dict[str, float]:
@@ -781,10 +819,18 @@ def _finalize_tb_structure_accumulator(acc: dict[str, float], *, min_rows: int =
     if rows < min_rows:
         return None
     pa = float(acc.get("pa") or 0.0)
-    single_mult = _shrunk_multiplier(acc["actual_singles"], acc["pred_singles"], pa, shrink_exposure=550.0)
-    double_mult = _shrunk_multiplier(acc["actual_doubles"], acc["pred_doubles"], pa, shrink_exposure=700.0)
-    triple_mult = _shrunk_multiplier(acc["actual_triples"], acc["pred_triples"], pa, shrink_exposure=1400.0)
-    hr_mult = _shrunk_multiplier(acc["actual_hr"], acc["pred_hr"], pa, shrink_exposure=900.0)
+    single_mult = _empirical_bayes_component_multiplier(
+        acc["actual_singles"], acc["pred_singles"], pa, shrink_exposure=550.0
+    )
+    double_mult = _empirical_bayes_component_multiplier(
+        acc["actual_doubles"], acc["pred_doubles"], pa, shrink_exposure=700.0
+    )
+    triple_mult = _empirical_bayes_component_multiplier(
+        acc["actual_triples"], acc["pred_triples"], pa, prior_events=35.0, shrink_exposure=1400.0
+    )
+    hr_mult = _empirical_bayes_component_multiplier(
+        acc["actual_hr"], acc["pred_hr"], pa, shrink_exposure=900.0
+    )
     return {
         "rows": rows,
         "pa": pa,
@@ -792,7 +838,9 @@ def _finalize_tb_structure_accumulator(acc: dict[str, float], *, min_rows: int =
         "double_multiplier": double_mult,
         "triple_multiplier": triple_mult,
         "hr_multiplier": hr_mult,
-        "tb_multiplier": _shrunk_multiplier(acc["actual_tb"], acc["pred_tb"], pa, shrink_exposure=550.0),
+        "tb_multiplier": _empirical_bayes_component_multiplier(
+            acc["actual_tb"], acc["pred_tb"], pa, shrink_exposure=550.0
+        ),
         "actual_zero_tb_rate": acc["actual_zero_tb"] / rows if rows else None,
         "pred_zero_tb_rate": acc["pred_zero_tb"] / rows if rows else None,
         "actual_single_per_pa": acc["actual_singles"] / pa if pa > 0 else None,
@@ -1090,6 +1138,10 @@ def _direct_event_components(
     }
 
 
+def _pmf_over(line: float, pmf: dict[int, float]) -> float:
+    return _clamp(sum(float(probability) for count, probability in pmf.items() if float(count) > float(line)), 0.0, 1.0)
+
+
 def _compound_tb_over(
     line: float,
     pa: float,
@@ -1160,6 +1212,18 @@ def _load_opportunity_models(cfg: DistributionConfig) -> dict[str, Any]:
         return {}
 
 
+def _load_opportunity_runtime(cfg: DistributionConfig) -> dict[str, Any]:
+    if joblib is None:
+        return {}
+    path = cfg.model_dir / "prop_opportunity_models.joblib"
+    if not path.exists():
+        return {}
+    try:
+        return joblib.load(path)
+    except Exception:
+        return {}
+
+
 def _score_opportunity(df: pd.DataFrame, cfg: DistributionConfig) -> pd.DataFrame:
     payload = _load_opportunity_models(cfg)
     models = payload.get("models") or {}
@@ -1181,12 +1245,55 @@ def _score_opportunity(df: pd.DataFrame, cfg: DistributionConfig) -> pd.DataFram
             out.loc[hitter_mask, "opp_model_low_pa"] = np.clip(_score_opportunity_linear(hitter_rows, rec), 1e-6, 1 - 1e-6)
     if pitcher_mask.any():
         pitcher_rows = out.loc[pitcher_mask]
+        joint = models.get("pitcher_joint_opportunity") or {}
+        runtime = _load_opportunity_runtime(cfg)
+        if joint.get("use_for_distribution") and runtime.get("use_for_distribution"):
+            try:
+                keys = ["game_slug", "player_id"]
+                unique = pitcher_rows.drop_duplicates(keys).copy()
+                if pd.to_numeric(unique.get("actual_bf"), errors="coerce").notna().any():
+                    unique = add_pitcher_history_features(unique)
+                else:
+                    unique = add_pitcher_history_features(
+                        unique,
+                        prior_state=runtime.get("player_history_state") or {},
+                    )
+                history_cols = list(runtime.get("numeric_features") or [])
+                lookup = unique[keys + [c for c in history_cols if c in unique.columns]].drop_duplicates(keys)
+                source = pitcher_rows.reset_index(names="_source_index").merge(lookup, on=keys, how="left", suffixes=("", "_history"))
+                source = source.set_index("_source_index")
+                for col in history_cols:
+                    history_col = f"{col}_history"
+                    if history_col in source:
+                        source[col] = pd.to_numeric(source[history_col], errors="coerce").combine_first(
+                            pd.to_numeric(source.get(col), errors="coerce")
+                        )
+                feature_cols = history_cols + list(runtime.get("categorical_features") or [])
+                target_map = {
+                    "opp_model_bf": ("bf", 40.0),
+                    "opp_model_pitch_count": ("pitch_count", 130.0),
+                    "opp_model_ip": ("innings", 9.0),
+                }
+                for out_col, (target, hi) in target_map.items():
+                    target_runtime = ((runtime.get("models") or {}).get(target) or {})
+                    model = target_runtime.get("mean")
+                    if model is not None:
+                        baseline = pd.to_numeric(
+                            source.get(target_runtime.get("baseline_feature")), errors="coerce"
+                        )
+                        out.loc[source.index, out_col] = np.clip(
+                            baseline + model.predict(source[feature_cols]), 0.0, hi
+                        )
+            except Exception:
+                pass
         for out_col, model_key, hi in (
             ("opp_model_bf", "pitcher_bf", 40.0),
             ("opp_model_ip", "pitcher_ip", 9.0),
             ("opp_model_pitch_count", "pitcher_pitch_count_proxy", 130.0),
         ):
             rec = models.get(model_key) or {}
+            if out.loc[pitcher_mask, out_col].notna().any():
+                continue
             if rec.get("status") == "trained" and rec.get("use_for_distribution"):
                 out.loc[pitcher_mask, out_col] = np.clip(_score_opportunity_linear(pitcher_rows, rec), 0.0, hi)
     return out
@@ -1203,8 +1310,15 @@ def _load_hitter_event_artifact(cfg: DistributionConfig) -> dict[str, Any]:
     except Exception:
         return {}
     models = artifact.get("models") or {}
-    if models.get("event_outcome_model") is None and not models.get("event_binary_models"):
+    if (
+        models.get("event_outcome_model") is None
+        and not models.get("event_binary_models")
+        and not models.get("event_hierarchical_models")
+    ):
         return {}
+    recommendation = artifact.get("recommendation") or {}
+    artifact["production_eligible"] = bool(recommendation.get("passes_basic_gate"))
+    artifact["status"] = "loaded" if artifact["production_eligible"] else "diagnostic_candidate"
     return artifact
 
 
@@ -1213,13 +1327,29 @@ def _event_model_metadata(artifact: dict[str, Any]) -> dict[str, Any]:
         return {"status": "missing"}
     models = (artifact.get("models") or {})
     active = artifact.get("active_event_model") or "linear_multinomial"
-    model = models.get("event_binary_models") if active == "boosted_binary_calibrated" else models.get("event_outcome_model")
+    if active == "hierarchical_conditional_lgbm":
+        model = models.get("event_hierarchical_models")
+    elif active == "boosted_binary_calibrated":
+        model = models.get("event_binary_models")
+    else:
+        model = models.get("event_outcome_model")
     return {
         "status": "loaded" if model is not None else "missing",
         "method": active,
         "trained_at_utc": artifact.get("trained_at_utc"),
         "event_classes": list(artifact.get("event_classes") or EVENT_CLASSES),
         "recommendation": artifact.get("recommendation") or {},
+        "production_eligible": bool(artifact.get("production_eligible")),
+        "pa_uncertainty": artifact.get("pa_uncertainty") or {},
+        "player_prior_players": len(artifact.get("player_prior_state") or {}),
+        "tb_state_distribution": (
+            ((artifact.get("metrics") or {}).get("direct_event_model") or {}).get("tb_state_distribution") or {}
+        ),
+        "tb_state_residual": (
+            ((artifact.get("metrics") or {}).get("direct_event_model") or {}).get("tb_state_residual") or {}
+        ),
+        "tb_state_model_kind": str(models.get("tb_state_model_kind") or "convolution"),
+        "two_part_pa": ((artifact.get("metrics") or {}).get("pa_model") or {}).get("two_part") or {},
     }
 
 
@@ -1227,12 +1357,24 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
     out = df.copy()
     for cls in EVENT_CLASSES:
         out[f"p_event_{cls}"] = np.nan
+    out["p_event_hr_any"] = np.nan
+    out["p_event_low_pa"] = np.nan
+    out["p_event_normal_pa"] = np.nan
+    for state in TB_STATE_NAMES:
+        out[f"p_tb_state_{state}"] = np.nan
     artifact = (outcome_calibrators or {}).get("event_model") if isinstance(outcome_calibrators, dict) else None
     models = ((artifact or {}).get("models") or {})
     active = (artifact or {}).get("active_event_model") or "linear_multinomial"
     model = models.get("event_outcome_model")
     binary_models = models.get("event_binary_models") or {}
-    if model is None and not binary_models:
+    hierarchical_models = models.get("event_hierarchical_models") or {}
+    hr_any_model = models.get("hr_any_model")
+    pa_low_model = models.get("pa_low_model")
+    pa_normal_model = models.get("pa_normal_model")
+    use_two_part_pa = bool(models.get("pa_two_part_use") and pa_low_model is not None and pa_normal_model is not None)
+    tb_state_models = models.get("tb_state_models") or {}
+    tb_state_model_kind = str(models.get("tb_state_model_kind") or "one_vs_rest")
+    if model is None and not binary_models and not hierarchical_models:
         return out
     hitter_mask = out["market"].isin(["batter_hits", "batter_total_bases", "batter_home_runs"])
     if not hitter_mask.any():
@@ -1244,10 +1386,64 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
         opp_pa = pd.to_numeric(source["opp_model_pa"], errors="coerce")
         source["projected_pa"] = pd.to_numeric(source.get("projected_pa"), errors="coerce").where(opp_pa.isna(), opp_pa)
     try:
+        source = apply_player_prior_state(source, (artifact or {}).get("player_prior_state") or {})
         features = prepare_hitter_outcome_features(source, numeric, categorical)
+        X = features[numeric + categorical]
+
+        if use_two_part_pa:
+            low_prob = np.clip(pa_low_model.predict_proba(X)[:, 1], 1e-5, 1.0 - 1e-5)
+            normal_pa = np.clip(pa_normal_model.predict(X), 3.0, 7.0)
+            out.loc[source.index, "p_event_low_pa"] = low_prob
+            out.loc[source.index, "p_event_normal_pa"] = normal_pa
+            out.loc[source.index, "opp_model_low_pa"] = low_prob
+            out.loc[source.index, "opp_model_normal_pa"] = normal_pa
+            low_states = ((((artifact or {}).get("pa_uncertainty") or {}).get("global") or {}).get("low_pa_state_probs")) or {"0": 0.05, "1": 0.20, "2": 0.75}
+            low_total = sum(float(low_states.get(str(n), 0.0)) for n in range(3)) or 1.0
+            low_mean = sum(n * float(low_states.get(str(n), 0.0)) for n in range(3)) / low_total
+            out.loc[source.index, "opp_model_pa"] = low_prob * low_mean + (1.0 - low_prob) * normal_pa
+
+        expected_tb_heads = 4 if tb_state_model_kind == "hierarchical_hr_tail" else len(TB_STATE_NAMES)
+        if len(tb_state_models) == expected_tb_heads:
+            if tb_state_model_kind == "hierarchical_hr_tail":
+                state_probs = _predict_hierarchical_tb_state_models(
+                    tb_state_models,
+                    source,
+                    numeric,
+                    categorical,
+                )
+            else:
+                state_probs = pd.DataFrame(0.0, index=source.index, columns=TB_STATE_NAMES)
+                for state, state_model in tb_state_models.items():
+                    state_probs[state] = np.clip(state_model.predict_proba(X)[:, 1], 1e-8, 1.0 - 1e-8)
+                state_probs = state_probs.div(state_probs.sum(axis=1).replace(0.0, np.nan), axis=0).fillna(1.0 / len(TB_STATE_NAMES))
+            state_probs = _apply_tb_hr_tail_logit_offset(
+                state_probs,
+                float(models.get("tb_state_hr_tail_logit_offset") or 0.0),
+            )
+            for state in TB_STATE_NAMES:
+                out.loc[source.index, f"p_tb_state_{state}"] = state_probs[state]
+
+        def score_hr_any() -> None:
+            if hr_any_model is None:
+                return
+            try:
+                out.loc[source.index, "p_event_hr_any"] = np.clip(hr_any_model.predict_proba(X)[:, 1], 1e-6, 1.0 - 1e-6)
+            except Exception:
+                return
+
+        if active == "hierarchical_conditional_lgbm" and hierarchical_models:
+            hierarchical = _predict_hierarchical_event_probabilities(
+                hierarchical_models,
+                source,
+                numeric,
+                categorical,
+            )
+            for cls in EVENT_CLASSES:
+                out.loc[hierarchical.index, f"p_event_{cls}"] = hierarchical[f"p_{cls}"]
+            score_hr_any()
+            return out
         if active == "boosted_binary_calibrated" and binary_models:
             raw_probs = pd.DataFrame(0.0, index=source.index, columns=[f"p_event_{cls}" for cls in EVENT_CLASSES])
-            X = features[numeric + categorical]
             for cls, cls_model in binary_models.items():
                 if cls in EVENT_CLASSES:
                     raw_probs[f"p_event_{cls}"] = cls_model.predict_proba(X)[:, 1]
@@ -1255,6 +1451,7 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
             probs = raw_probs.div(row_sum, axis=0).fillna(1.0 / float(len(EVENT_CLASSES)))
             for col in probs.columns:
                 out.loc[probs.index, col] = probs[col]
+            score_hr_any()
             return out
         raw = model.predict_proba(features[numeric + categorical])
     except Exception:
@@ -1267,6 +1464,11 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
     probs = probs.div(row_sum, axis=0).fillna(np.nan)
     for col in probs.columns:
         out.loc[probs.index, col] = probs[col]
+    if hr_any_model is not None:
+        try:
+            out.loc[source.index, "p_event_hr_any"] = np.clip(hr_any_model.predict_proba(features[numeric + categorical])[:, 1], 1e-6, 1.0 - 1e-6)
+        except Exception:
+            pass
     return out
 
 
@@ -1299,12 +1501,92 @@ def _opp_adjusted_mean(row: pd.Series, base_mean: float) -> float:
     return base_mean
 
 
-def _distribution_over(row: pd.Series, distribution_calibrators: dict[str, Any] | None = None) -> float | None:
+def _tb_state_name(total_bases: int, had_hr: bool) -> str:
+    if total_bases <= 0:
+        return "tb_0"
+    if total_bases == 1:
+        return "tb_1"
+    if total_bases <= 3:
+        return "tb_2_3"
+    return "tb_4_plus_hr" if had_hr else "tb_4_plus_non_hr"
+
+
+def _blend_tb_state_curve(curve: dict[str, Any], row: pd.Series, alpha: float) -> dict[str, Any]:
+    if alpha <= 0.0 or not curve.get("tb_joint"):
+        return curve
+    direct = np.asarray([_safe_float(row.get(f"p_tb_state_{state}")) for state in TB_STATE_NAMES], dtype=object)
+    if any(value is None for value in direct):
+        return curve
+    direct_f = np.asarray(direct, dtype=float)
+    direct_total = float(direct_f.sum())
+    if direct_total <= 0:
+        return curve
+    direct_f /= direct_total
+    base_states = curve.get("tb_states") or {}
+    base = np.asarray([float(base_states.get(state, 0.0)) for state in TB_STATE_NAMES], dtype=float)
+    base_total = float(base.sum())
+    if base_total <= 0:
+        return curve
+    base /= base_total
+    desired = (1.0 - alpha) * base + alpha * direct_f
+    desired /= desired.sum()
+    factors = {
+        state: (float(desired[i]) / float(base[i])) if base[i] > 1e-12 else 0.0
+        for i, state in enumerate(TB_STATE_NAMES)
+    }
+    joint = {
+        (int(tb), bool(had_hr)): float(probability) * factors[_tb_state_name(int(tb), bool(had_hr))]
+        for (tb, had_hr), probability in curve["tb_joint"].items()
+    }
+    total = sum(joint.values()) or 1.0
+    joint = {key: value / total for key, value in joint.items()}
+    tb_pmf: dict[int, float] = {}
+    states = {state: 0.0 for state in TB_STATE_NAMES}
+    for (tb, had_hr), probability in joint.items():
+        tb_pmf[tb] = tb_pmf.get(tb, 0.0) + probability
+        states[_tb_state_name(tb, had_hr)] += probability
+    out = dict(curve)
+    out.update({"tb_joint": joint, "tb_pmf": tb_pmf, "tb_states": states})
+    return out
+
+
+def _tb_state_over_probability(line: float, curve: dict[str, Any]) -> float:
+    """Price state-aligned TB lines directly; preserve the conditional PMF within broad states."""
+    states = curve.get("tb_states") or {}
+    if abs(line - 0.5) <= 1e-9:
+        return _clamp(1.0 - float(states.get("tb_0", 0.0)), 1e-6, 1.0 - 1e-6)
+    if abs(line - 1.5) <= 1e-9:
+        return _clamp(
+            float(states.get("tb_2_3", 0.0))
+            + float(states.get("tb_4_plus_hr", 0.0))
+            + float(states.get("tb_4_plus_non_hr", 0.0)),
+            1e-6,
+            1.0 - 1e-6,
+        )
+    if abs(line - 3.5) <= 1e-9:
+        return _clamp(
+            float(states.get("tb_4_plus_hr", 0.0)) + float(states.get("tb_4_plus_non_hr", 0.0)),
+            1e-6,
+            1.0 - 1e-6,
+        )
+    return _pmf_over(line, curve.get("tb_pmf") or {})
+
+
+def _distribution_over(
+    row: pd.Series,
+    distribution_calibrators: dict[str, Any] | None = None,
+    event_curve_cache: dict[tuple[Any, ...], dict[str, Any]] | None = None,
+) -> float | None:
     outcome_calibrators = distribution_calibrators
     tb_structure = None
+    event_artifact: dict[str, Any] = {}
+    pa_uncertainty: dict[str, Any] = {}
     if distribution_calibrators and "outcome" in distribution_calibrators:
         outcome_calibrators = distribution_calibrators.get("outcome")
         tb_structure = distribution_calibrators.get("tb_structure")
+        event_artifact = distribution_calibrators.get("event_model") or {}
+        pa_uncertainty = event_artifact.get("pa_uncertainty") or {}
+    tb_state_alpha = float((((event_artifact.get("models") or {}).get("tb_state_blend_alpha")) or 0.0))
     market = str(row.get("market") or "")
     line = row.get("market_line")
     pred = row.get("pred_count")
@@ -1315,22 +1597,39 @@ def _distribution_over(row: pd.Series, distribution_calibrators: dict[str, Any] 
     pred = max(1e-6, float(pred))
     pred = _opp_adjusted_mean(row, pred)
     line_f = float(line)
+
+    def event_curve(pa_value: float) -> dict[str, Any]:
+        event_probs = _direct_event_probs(row, pa_value)
+        if event_probs is None:
+            return {}
+        cache_key = (
+            row.get("game_slug"),
+            row.get("player_id"),
+            round(pa_value, 5),
+            *[round(float(event_probs.get(f"p_{cls}") or 0.0), 7) for cls in EVENT_CLASSES],
+            _pa_uncertainty_key(row),
+            round(tb_state_alpha, 4),
+            *[round(float(row.get(f"p_tb_state_{state}") or 0.0), 7) for state in TB_STATE_NAMES],
+        )
+        if event_curve_cache is not None and cache_key in event_curve_cache:
+            return event_curve_cache[cache_key]
+        curve = convolve_hitter_outcomes(
+            event_probs,
+            projected_pa_pmf(pa_value, row, pa_uncertainty),
+        )
+        curve = _blend_tb_state_curve(curve, row, tb_state_alpha)
+        if event_curve_cache is not None:
+            event_curve_cache[cache_key] = curve
+        return curve
+
     if market == "batter_hits":
         pa = _hitter_pa_for_distribution(row)
         if pa is not None and float(pa) >= 1.0:
             counts = _expected_hitter_counts(row)
             counts["hits"] = pred
-            event_probs = _direct_event_probs(row, float(pa))
-            if event_probs is not None:
-                components = _direct_event_components(
-                    float(pa),
-                    event_probs,
-                    expected_hits=_safe_float(counts.get("hits")),
-                    expected_tb=_safe_float(counts.get("tb")),
-                    expected_hr=_safe_float(counts.get("hr")),
-                )
-                probs = _component_probs_from_counts(components, event_probs["p_walk"])
-                return _binom_over(line_f, int(probs["pa_events"]), probs["p_hit"])
+            curve = event_curve(float(pa))
+            if curve:
+                return _pmf_over(line_f, curve["hits_pmf"])
             counts = _apply_hitter_outcome_calibrator(row, counts, outcome_calibrators)
             return _hitter_hits_over(
                 line_f,
@@ -1346,17 +1645,9 @@ def _distribution_over(row: pd.Series, distribution_calibrators: dict[str, Any] 
             pa_f = float(pa)
             counts = _expected_hitter_counts(row)
             counts["tb"] = pred
-            event_probs = _direct_event_probs(row, pa_f)
-            if event_probs is not None:
-                components = _direct_event_components(
-                    pa_f,
-                    event_probs,
-                    expected_hits=_safe_float(counts.get("hits")),
-                    expected_tb=_safe_float(counts.get("tb")),
-                    expected_hr=_safe_float(counts.get("hr")),
-                )
-                probs = _component_probs_from_counts(components, event_probs["p_walk"])
-                return _compound_tb_over_from_probs(line_f, probs)
+            curve = event_curve(pa_f)
+            if curve:
+                return _tb_state_over_probability(line_f, curve)
             counts = _apply_hitter_outcome_calibrator(row, counts, outcome_calibrators)
             return _compound_tb_over(
                 line_f,
@@ -1371,19 +1662,14 @@ def _distribution_over(row: pd.Series, distribution_calibrators: dict[str, Any] 
     if market == "batter_home_runs":
         pa = _hitter_pa_for_distribution(row)
         if pa is not None and float(pa) >= 1.0:
+            hr_any = _safe_float(row.get("p_event_hr_any"))
+            if line_f <= 0.5 and hr_any is not None:
+                return _clamp(hr_any, 1e-6, 1.0 - 1e-6)
             counts = _expected_hitter_counts(row)
             counts["hr"] = pred
-            event_probs = _direct_event_probs(row, float(pa))
-            if event_probs is not None:
-                components = _direct_event_components(
-                    float(pa),
-                    event_probs,
-                    expected_hits=_safe_float(counts.get("hits")),
-                    expected_tb=_safe_float(counts.get("tb")),
-                    expected_hr=_safe_float(counts.get("hr")),
-                )
-                probs = _component_probs_from_counts(components, event_probs["p_walk"])
-                return _binom_over(line_f, int(probs["pa_events"]), probs["p_hr"])
+            curve = event_curve(float(pa))
+            if curve:
+                return _pmf_over(line_f, curve["hr_pmf"])
             counts = _apply_hitter_outcome_calibrator(row, counts, outcome_calibrators)
             return _hitter_hr_over(
                 line_f,
@@ -1396,17 +1682,68 @@ def _distribution_over(row: pd.Series, distribution_calibrators: dict[str, Any] 
     return _poisson_over(line_f, pred)
 
 
+def _player_game_group_key(df: pd.DataFrame) -> pd.Series:
+    game = df.get("game_slug", pd.Series("unknown_game", index=df.index)).fillna("unknown_game").astype(str)
+    player = df.get("player_id", pd.Series("unknown_player", index=df.index)).fillna("unknown_player").astype(str)
+    return game + "|" + player
+
+
+def _add_offer_group_weights(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if out.empty:
+        out["offer_group_weight"] = pd.Series(dtype="float64")
+        out["player_game_group"] = pd.Series(dtype="object")
+        return out
+    out["player_game_group"] = _player_game_group_key(out)
+    counts = out.groupby("player_game_group")["player_game_group"].transform("size").clip(lower=1)
+    raw = 1.0 / counts.astype(float)
+    out["offer_group_weight"] = raw * (float(len(raw)) / float(raw.sum()))
+    return out
+
+
+def _purge_player_game_overlap(train: pd.DataFrame, holdout: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, int]:
+    if train.empty or holdout.empty:
+        return train, holdout, 0
+    holdout_keys = set(_player_game_group_key(holdout))
+    train_keys = _player_game_group_key(train)
+    keep = ~train_keys.isin(holdout_keys)
+    return train.loc[keep].copy(), holdout.copy(), int((~keep).sum())
+
+
 def _split(df: pd.DataFrame, cfg: DistributionConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
     split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
     train = df.loc[df["game_date_et"] < split].copy()
     holdout = df.loc[df["game_date_et"] >= split].copy()
     if len(train) >= cfg.min_train_rows and len(holdout) >= cfg.min_holdout_rows:
-        return train, holdout, f"last_{cfg.holdout_days}_days"
+        train, holdout, purged = _purge_player_game_overlap(train, holdout)
+        return _add_offer_group_weights(train), _add_offer_group_weights(holdout), f"last_{cfg.holdout_days}_days_purged_{purged}"
     dates = sorted(df["game_date_et"].unique())
     if len(dates) > 1:
         holdout_date = dates[-1]
-        return df.loc[df["game_date_et"] < holdout_date].copy(), df.loc[df["game_date_et"] >= holdout_date].copy(), "last_available_date"
-    return train, holdout, f"last_{cfg.holdout_days}_days"
+        train = df.loc[df["game_date_et"] < holdout_date].copy()
+        holdout = df.loc[df["game_date_et"] >= holdout_date].copy()
+        train, holdout, purged = _purge_player_game_overlap(train, holdout)
+        return _add_offer_group_weights(train), _add_offer_group_weights(holdout), f"last_available_date_purged_{purged}"
+    train, holdout, purged = _purge_player_game_overlap(train, holdout)
+    return _add_offer_group_weights(train), _add_offer_group_weights(holdout), f"last_{cfg.holdout_days}_days_purged_{purged}"
+
+
+def _weighted_mean(values: pd.Series, weights: pd.Series | None = None) -> float:
+    numeric = pd.to_numeric(values, errors="coerce")
+    if weights is None:
+        return float(numeric.mean())
+    weight_values = pd.to_numeric(weights, errors="coerce").fillna(1.0)
+    mask = numeric.notna() & weight_values.notna() & (weight_values > 0)
+    if not mask.any():
+        return float(numeric.mean())
+    return float(np.average(numeric.loc[mask], weights=weight_values.loc[mask]))
+
+
+def _weighted_brier(y: pd.Series, p: pd.Series, weights: pd.Series | None = None) -> float:
+    target = pd.to_numeric(y, errors="coerce")
+    probability = pd.to_numeric(p, errors="coerce").clip(1e-6, 1.0 - 1e-6)
+    loss = (target - probability) ** 2
+    return _weighted_mean(loss, weights)
 
 
 def _empirical_rates(train: pd.DataFrame) -> dict[str, float]:
@@ -1421,7 +1758,9 @@ def _empirical_rates(train: pd.DataFrame) -> dict[str, float]:
             if len(group) < 20:
                 continue
             key = key if isinstance(key, tuple) else (key,)
-            rates["|".join([*cols, *[str(v) for v in key]])] = float(group["target"].mean())
+            rates["|".join([*cols, *[str(v) for v in key]])] = _weighted_mean(
+                group["target"], group.get("offer_group_weight")
+            )
     return rates
 
 
@@ -1446,7 +1785,8 @@ def _score_distribution_base(
 ) -> pd.DataFrame:
     out = _score_opportunity(df, cfg)
     out = _score_hitter_event_model(out, outcome_calibrators)
-    p_over = [_distribution_over(row, outcome_calibrators) for _, row in out.iterrows()]
+    event_curve_cache: dict[tuple[Any, ...], dict[str, Any]] = {}
+    p_over = [_distribution_over(row, outcome_calibrators, event_curve_cache) for _, row in out.iterrows()]
     out["p_distribution_over"] = pd.Series(p_over, index=out.index, dtype="float64")
     out["p_distribution_side"] = np.where(
         out["side"].astype(str) == "over",
@@ -1470,83 +1810,330 @@ def _prob_bin(prob: Any) -> str | None:
     return f"{lo:.1f}-{hi:.1f}"
 
 
+_CALIBRATION_GROUP_SPECS = (
+    ["market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"],
+    ["market", "side", "line_surface", "line_bucket", "price_bucket"],
+    ["market", "side", "line_surface", "line_bucket"],
+    ["market", "side", "line_bucket"],
+    ["market", "side", "line_surface"],
+    ["market", "side"],
+)
+
+
+def _beta_features(probabilities: pd.Series | np.ndarray) -> np.ndarray:
+    p = np.clip(np.asarray(probabilities, dtype=float), 1e-6, 1.0 - 1e-6)
+    return np.column_stack([np.log(p), np.log1p(-p)])
+
+
+def _fit_serialized_calibrator(frame: pd.DataFrame, method: str, probability_col: str) -> dict[str, Any] | None:
+    work = frame.dropna(subset=[probability_col, "target"]).copy()
+    if len(work) < 80 or work["target"].nunique() < 2:
+        return None
+    p = pd.to_numeric(work[probability_col], errors="coerce").clip(1e-6, 1.0 - 1e-6)
+    y = work["target"].astype(int)
+    weights = pd.to_numeric(
+        work.get("offer_group_weight", pd.Series(1.0, index=work.index)), errors="coerce"
+    ).fillna(1.0)
+    if method == "beta":
+        model = LogisticRegression(max_iter=1500, C=1.0)
+        model.fit(_beta_features(p), y, sample_weight=weights)
+        return {
+            "method": "beta",
+            "intercept": float(model.intercept_[0]),
+            "coef": [float(value) for value in model.coef_[0]],
+        }
+    if method == "isotonic":
+        model = IsotonicRegression(y_min=1e-6, y_max=1.0 - 1e-6, out_of_bounds="clip")
+        model.fit(p.to_numpy(dtype=float), y.to_numpy(dtype=float), sample_weight=weights.to_numpy(dtype=float))
+        return {
+            "method": "isotonic",
+            "x_thresholds": [float(value) for value in model.X_thresholds_],
+            "y_thresholds": [float(value) for value in model.y_thresholds_],
+        }
+    return None
+
+
+def _apply_serialized_calibrator(probabilities: pd.Series | np.ndarray, model: dict[str, Any]) -> np.ndarray:
+    p = np.clip(np.asarray(probabilities, dtype=float), 1e-6, 1.0 - 1e-6)
+    if model.get("method") == "beta":
+        coef = np.asarray(model.get("coef") or [0.0, 0.0], dtype=float)
+        z = float(model.get("intercept") or 0.0) + _beta_features(p).dot(coef)
+        return np.clip(1.0 / (1.0 + np.exp(-np.clip(z, -35.0, 35.0))), 1e-6, 1.0 - 1e-6)
+    if model.get("method") == "isotonic":
+        x = np.asarray(model.get("x_thresholds") or [], dtype=float)
+        y = np.asarray(model.get("y_thresholds") or [], dtype=float)
+        if len(x) >= 2 and len(x) == len(y):
+            return np.clip(np.interp(p, x, y, left=y[0], right=y[-1]), 1e-6, 1.0 - 1e-6)
+    return p
+
+
+def _fit_walk_forward_calibrator(
+    frame: pd.DataFrame,
+    probability_col: str,
+    *,
+    min_rows: int = 120,
+    min_gain: float = 0.0001,
+) -> dict[str, Any]:
+    work = frame.dropna(subset=[probability_col, "target", "game_date_et"]).copy()
+    dates = sorted(pd.to_datetime(work["game_date_et"]).dt.date.unique())
+    if len(work) < min_rows or len(dates) < 4:
+        return {"enabled": False, "reason": "insufficient_walk_forward_rows", "rows": int(len(work)), "dates": len(dates)}
+    validation_start = dates[max(1, int(len(dates) * 0.75))]
+    fit = work.loc[pd.to_datetime(work["game_date_et"]).dt.date < validation_start].copy()
+    validation = work.loc[pd.to_datetime(work["game_date_et"]).dt.date >= validation_start].copy()
+    fit, validation, purged = _purge_player_game_overlap(fit, validation)
+    fit = _add_offer_group_weights(fit)
+    validation = _add_offer_group_weights(validation)
+    if len(fit) < 80 or len(validation) < 30 or fit["target"].nunique() < 2 or validation["target"].nunique() < 2:
+        return {
+            "enabled": False,
+            "reason": "insufficient_temporal_validation_rows",
+            "rows": int(len(work)),
+            "fit_rows": int(len(fit)),
+            "validation_rows": int(len(validation)),
+            "purged_rows": purged,
+        }
+    raw_brier = _weighted_brier(validation["target"], validation[probability_col], validation["offer_group_weight"])
+    candidates: list[dict[str, Any]] = []
+    fitted: dict[str, dict[str, Any]] = {}
+    for method in ("beta", "isotonic"):
+        try:
+            model = _fit_serialized_calibrator(fit, method, probability_col)
+            if not model:
+                continue
+            calibrated = _apply_serialized_calibrator(validation[probability_col], model)
+            brier = _weighted_brier(
+                validation["target"], pd.Series(calibrated, index=validation.index), validation["offer_group_weight"]
+            )
+            candidates.append({"method": method, "validation_brier": brier, "brier_gain": raw_brier - brier})
+            fitted[method] = model
+        except Exception as exc:
+            candidates.append({"method": method, "error": str(exc)})
+    usable = [rec for rec in candidates if rec.get("validation_brier") is not None]
+    if not usable:
+        return {"enabled": False, "reason": "calibrator_fit_failed", "rows": int(len(work)), "candidates": candidates}
+    best = min(usable, key=lambda rec: rec["validation_brier"])
+    enabled = bool(float(best["brier_gain"]) >= min_gain)
+    production_model = _fit_serialized_calibrator(_add_offer_group_weights(work), str(best["method"]), probability_col) if enabled else None
+    return {
+        "enabled": enabled,
+        "reason": "temporal_brier_improved" if enabled else "no_temporal_brier_gain",
+        "method": best["method"] if enabled else "raw",
+        "model": production_model,
+        "rows": int(len(work)),
+        "player_games": int(_player_game_group_key(work).nunique()),
+        "dates": len(dates),
+        "fit_rows": int(len(fit)),
+        "validation_rows": int(len(validation)),
+        "validation_start": str(validation_start),
+        "purged_rows": purged,
+        "raw_validation_brier": raw_brier,
+        "calibrated_validation_brier": float(best["validation_brier"]),
+        "validation_brier_gain": float(best["brier_gain"]),
+        "candidates": candidates,
+    }
+
+
 def _fit_distribution_calibrators(scored_train: pd.DataFrame) -> dict[str, Any]:
     work = scored_train.dropna(subset=["p_distribution_side", "target"]).copy()
     if work.empty:
         return {}
-    work["prob_bin"] = work["p_distribution_side"].map(_prob_bin)
-    global_rate = float(work["target"].astype(float).mean())
+    hitter_mask = work["market"].isin(["batter_hits", "batter_total_bases", "batter_home_runs"])
+    work = work.loc[~hitter_mask | _true_pair_hitter_mask(work)].copy()
+    if work.empty:
+        return {}
     calibrators: dict[str, Any] = {
-        "global_rate": global_rate,
-        "min_bin_rows": 20,
-        "shrink_rows": 20,
+        "method": "walk_forward_beta_or_isotonic",
+        "auto_disable_on_holdout_regression": True,
         "groups": {},
     }
-    group_specs = (
-        ["market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"],
-        ["market", "side", "line_surface", "line_bucket", "price_bucket"],
-        ["market", "side", "line_surface", "line_bucket"],
-        ["market", "side", "line_bucket"],
-        ["market", "side", "line_surface"],
-        ["market", "side"],
-    )
-    for cols in group_specs:
+    for cols in _CALIBRATION_GROUP_SPECS:
         for key, group in work.groupby(cols, dropna=False):
             key = key if isinstance(key, tuple) else (key,)
             group_key = "|".join([*cols, *[str(v) for v in key]])
-            bins: dict[str, Any] = {}
-            for bin_key, bin_group in group.groupby("prob_bin", dropna=True):
-                rows = int(len(bin_group))
-                if rows < 20:
-                    continue
-                raw_prob = float(bin_group["p_distribution_side"].mean())
-                win_rate = float(bin_group["target"].astype(float).mean())
-                calibrated = ((win_rate * rows) + (global_rate * 20.0)) / (rows + 20.0)
-                bins[str(bin_key)] = {
-                    "rows": rows,
-                    "avg_prob": raw_prob,
-                    "win_rate": win_rate,
-                    "calibrated_prob": max(1e-6, min(1.0 - 1e-6, calibrated)),
-                }
-            if bins:
-                calibrators["groups"][group_key] = {
-                    "columns": cols,
-                    "key_values": [str(v) for v in key],
-                    "rows": int(len(group)),
-                    "bins": bins,
-                }
+            rec = _fit_walk_forward_calibrator(group, "p_distribution_side")
+            rec.update({"columns": cols, "key_values": [str(v) for v in key]})
+            calibrators["groups"][group_key] = rec
     return calibrators
 
 
 def _apply_distribution_calibrators(df: pd.DataFrame, calibrators: dict[str, Any]) -> pd.Series:
-    if not calibrators:
+    if not calibrators or calibrators.get("overall_holdout_enabled") is False:
         return pd.to_numeric(df.get("p_distribution_side"), errors="coerce")
     groups = calibrators.get("groups") or {}
-    global_rate = calibrators.get("global_rate")
     values = []
     for _, row in df.iterrows():
         p = row.get("p_distribution_side")
-        bin_key = _prob_bin(p)
         calibrated = None
-        if bin_key:
-            for cols in (
-                ["market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"],
-                ["market", "side", "line_surface", "line_bucket", "price_bucket"],
-                ["market", "side", "line_surface", "line_bucket"],
-                ["market", "side", "line_bucket"],
-                ["market", "side", "line_surface"],
-                ["market", "side"],
-            ):
+        if pd.notna(p):
+            for cols in _CALIBRATION_GROUP_SPECS:
                 group_key = "|".join([*cols, *[str(row.get(col) or "unknown") for col in cols]])
                 rec = groups.get(group_key) or {}
-                bin_rec = (rec.get("bins") or {}).get(bin_key)
-                if bin_rec:
-                    calibrated = bin_rec.get("calibrated_prob")
+                if rec.get("enabled") and rec.get("holdout_enabled") is not False and rec.get("model"):
+                    calibrated = float(_apply_serialized_calibrator([p], rec["model"])[0])
                     break
         if calibrated is None:
-            calibrated = p if pd.notna(p) else global_rate
+            calibrated = p
         values.append(calibrated)
     return pd.Series(values, index=df.index, dtype="float64").clip(1e-6, 1 - 1e-6)
+
+
+def _gate_distribution_calibrators(calibrators: dict[str, Any], holdout: pd.DataFrame) -> dict[str, Any]:
+    groups = calibrators.get("groups") or {}
+    for rec in groups.values():
+        if not rec.get("enabled") or not rec.get("model"):
+            rec["holdout_enabled"] = False
+            continue
+        mask = pd.Series(True, index=holdout.index)
+        for col, value in zip(rec.get("columns") or [], rec.get("key_values") or []):
+            mask &= holdout.get(col, pd.Series("unknown", index=holdout.index)).fillna("unknown").astype(str) == str(value)
+        group = holdout.loc[mask].dropna(subset=["p_distribution_side", "target"])
+        if len(group) < 30:
+            rec.update({"holdout_enabled": False, "holdout_reason": "insufficient_rows", "holdout_rows": int(len(group))})
+            continue
+        candidate = pd.Series(
+            _apply_serialized_calibrator(group["p_distribution_side"], rec["model"]), index=group.index
+        )
+        raw_brier = _weighted_brier(group["target"], group["p_distribution_side"], group.get("offer_group_weight"))
+        candidate_brier = _weighted_brier(group["target"], candidate, group.get("offer_group_weight"))
+        gain = raw_brier - candidate_brier
+        rec.update({
+            "holdout_enabled": bool(gain > 0.0),
+            "holdout_reason": "brier_improved" if gain > 0.0 else "brier_regressed",
+            "holdout_rows": int(len(group)),
+            "holdout_player_games": int(_player_game_group_key(group).nunique()),
+            "raw_holdout_brier": raw_brier,
+            "calibrated_holdout_brier": candidate_brier,
+            "holdout_brier_gain": gain,
+        })
+    candidate_all = _apply_distribution_calibrators(holdout, calibrators)
+    valid = holdout["target"].notna() & holdout["p_distribution_side"].notna() & candidate_all.notna()
+    if valid.any():
+        raw = _weighted_brier(
+            holdout.loc[valid, "target"], holdout.loc[valid, "p_distribution_side"], holdout.loc[valid].get("offer_group_weight")
+        )
+        calibrated = _weighted_brier(
+            holdout.loc[valid, "target"], candidate_all.loc[valid], holdout.loc[valid].get("offer_group_weight")
+        )
+        calibrators["overall_holdout_enabled"] = bool(calibrated < raw)
+        calibrators["raw_holdout_brier"] = raw
+        calibrators["calibrated_holdout_brier"] = calibrated
+        calibrators["overall_holdout_brier_gain"] = raw - calibrated
+    else:
+        calibrators["overall_holdout_enabled"] = False
+    return calibrators
+
+
+def _hitter_line_calibration_key(row: pd.Series) -> str | None:
+    market = str(row.get("market") or "")
+    line = _safe_float(row.get("market_line"))
+    if line is None:
+        return None
+    if market == "batter_total_bases":
+        surface = f"TB {line:.1f}"
+    elif market == "batter_home_runs":
+        surface = f"HR {line:.1f}"
+    else:
+        return None
+    return "|".join([market, str(row.get("side") or "unknown"), surface])
+
+
+def _true_pair_hitter_mask(df: pd.DataFrame) -> pd.Series:
+    true_pair = pd.to_numeric(df.get("true_pair_flag", pd.Series(0.0, index=df.index)), errors="coerce").fillna(0.0) > 0.5
+    synthetic = pd.to_numeric(df.get("synthetic_pair_flag", pd.Series(0.0, index=df.index)), errors="coerce").fillna(0.0) > 0.5
+    source = df.get("market_prob_source", pd.Series("", index=df.index)).fillna("").astype(str)
+    return true_pair & ~synthetic & ~source.isin(["raw_implied", "synthetic_fanduel_over_only"])
+
+
+def _fit_true_pair_hitter_line_calibrators(
+    scored_train: pd.DataFrame,
+    probability_col: str = "p_distribution_side",
+) -> dict[str, Any]:
+    mask = _true_pair_hitter_mask(scored_train)
+    work = scored_train.loc[mask].dropna(subset=[probability_col, "target"]).copy()
+    work = work.loc[work["market"].isin(["batter_total_bases", "batter_home_runs"])]
+    work["event_line_key"] = work.apply(_hitter_line_calibration_key, axis=1)
+    groups: dict[str, Any] = {}
+    for key, group in work.dropna(subset=["event_line_key"]).groupby("event_line_key"):
+        rec = _fit_walk_forward_calibrator(group, probability_col, min_rows=80)
+        rec["event_line_key"] = str(key)
+        rec["probability_col"] = probability_col
+        groups[str(key)] = rec
+    return {
+        "status": "trained" if groups else "insufficient_true_pair_rows",
+        "evidence": "temporal_train_true_pair_non_synthetic_only",
+        "method": "walk_forward_beta_or_isotonic",
+        "groups": groups,
+    }
+
+
+def _apply_true_pair_hitter_line_calibrators(
+    df: pd.DataFrame,
+    base: pd.Series,
+    calibrators: dict[str, Any],
+) -> pd.Series:
+    values = pd.to_numeric(base, errors="coerce").copy()
+    groups = calibrators.get("groups") or {}
+    if calibrators.get("overall_holdout_enabled") is False:
+        return values
+    if not groups:
+        return values
+    true_pair_mask = _true_pair_hitter_mask(df)
+    for idx, row in df.iterrows():
+        if not bool(true_pair_mask.loc[idx]):
+            continue
+        key = _hitter_line_calibration_key(row)
+        rec = groups.get(str(key)) or {}
+        raw_probability = row.get(rec.get("probability_col") or "p_distribution_side")
+        if rec.get("enabled") and rec.get("holdout_enabled") is not False and rec.get("model") and pd.notna(raw_probability):
+            values.loc[idx] = float(_apply_serialized_calibrator([raw_probability], rec["model"])[0])
+    return values.clip(1e-6, 1.0 - 1e-6)
+
+
+def _gate_true_pair_hitter_line_calibrators(
+    calibrators: dict[str, Any],
+    holdout: pd.DataFrame,
+    probability_col: str = "p_distribution_side",
+    baseline_col: str | None = None,
+) -> dict[str, Any]:
+    true_pairs = holdout.loc[_true_pair_hitter_mask(holdout)].copy()
+    true_pairs["event_line_key"] = true_pairs.apply(_hitter_line_calibration_key, axis=1)
+    for key, rec in (calibrators.get("groups") or {}).items():
+        if not rec.get("enabled") or not rec.get("model"):
+            rec["holdout_enabled"] = False
+            continue
+        required = [probability_col, "target", *([baseline_col] if baseline_col else [])]
+        group = true_pairs.loc[true_pairs["event_line_key"] == key].dropna(subset=required)
+        if len(group) < 30:
+            rec.update({"holdout_enabled": False, "holdout_reason": "insufficient_rows", "holdout_rows": int(len(group))})
+            continue
+        candidate = pd.Series(
+            _apply_serialized_calibrator(group[probability_col], rec["model"]), index=group.index
+        )
+        baseline_probability = group[baseline_col] if baseline_col else group[probability_col]
+        raw_brier = _weighted_brier(group["target"], baseline_probability, group.get("offer_group_weight"))
+        candidate_brier = _weighted_brier(group["target"], candidate, group.get("offer_group_weight"))
+        gain = raw_brier - candidate_brier
+        actual_rate = _weighted_mean(group["target"], group.get("offer_group_weight"))
+        raw_mean = _weighted_mean(baseline_probability, group.get("offer_group_weight"))
+        calibrated_mean = _weighted_mean(candidate, group.get("offer_group_weight"))
+        rec.update({
+            "holdout_enabled": bool(gain > 0.0),
+            "holdout_reason": "brier_improved" if gain > 0.0 else "brier_regressed",
+            "holdout_rows": int(len(group)),
+            "raw_holdout_brier": raw_brier,
+            "calibrated_holdout_brier": candidate_brier,
+            "holdout_brier_gain": gain,
+            "raw_holdout_calibration_error": actual_rate - raw_mean,
+            "calibrated_holdout_calibration_error": actual_rate - calibrated_mean,
+        })
+    calibrators["overall_holdout_enabled"] = any(
+        bool(rec.get("holdout_enabled")) for rec in (calibrators.get("groups") or {}).values()
+    )
+    calibrators["enabled_groups"] = sorted(
+        key for key, rec in (calibrators.get("groups") or {}).items() if rec.get("holdout_enabled")
+    )
+    return calibrators
 
 
 def _prepare_side_line_matrix(df: pd.DataFrame, *, state: dict[str, Any] | None = None) -> tuple[np.ndarray, dict[str, Any]]:
@@ -1618,7 +2205,10 @@ def _fit_one_side_line_model(
     X_train, state = _prepare_side_line_matrix(tr)
     y_train = tr[target_col].astype(int).to_numpy()
     model = LogisticRegression(max_iter=2500, C=0.55)
-    model.fit(X_train, y_train)
+    fit_weights = pd.to_numeric(
+        tr.get("offer_group_weight", pd.Series(1.0, index=tr.index)), errors="coerce"
+    ).fillna(1.0)
+    model.fit(X_train, y_train, sample_weight=fit_weights)
     X_hold, _ = _prepare_side_line_matrix(ho, state=state)
     p = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
     y = ho[target_col].astype(int)
@@ -1644,10 +2234,10 @@ def _fit_one_side_line_model(
         "actual_rate_holdout": float(y.mean()),
         "avg_model_holdout": float(np.mean(p)),
         "avg_baseline_holdout": float(baseline.mean()),
-        "brier_model_holdout": float(brier_score_loss(y, p)),
-        "brier_baseline_holdout": float(brier_score_loss(y, baseline)),
-        "log_loss_model_holdout": float(log_loss(y, p, labels=[0, 1])),
-        "log_loss_baseline_holdout": float(log_loss(y, baseline, labels=[0, 1])),
+        "brier_model_holdout": _weighted_brier(y, pd.Series(p, index=ho.index), ho.get("offer_group_weight")),
+        "brier_baseline_holdout": _weighted_brier(y, baseline, ho.get("offer_group_weight")),
+        "log_loss_model_holdout": float(log_loss(y, p, labels=[0, 1], sample_weight=ho.get("offer_group_weight"))),
+        "log_loss_baseline_holdout": float(log_loss(y, baseline, labels=[0, 1], sample_weight=ho.get("offer_group_weight"))),
         "intercept": float(model.intercept_[0]),
         "coef": coef,
         **state,
@@ -1704,6 +2294,9 @@ def _outcome_policy(uncalibrated: pd.DataFrame, learned: pd.DataFrame, *, min_ga
     for market in markets:
         base = uncalibrated.loc[uncalibrated["market"] == market]
         cand = learned.loc[learned["market"] == market]
+        true_pair_index = cand.index[_true_pair_hitter_mask(cand)]
+        base = base.loc[base.index.intersection(true_pair_index)]
+        cand = cand.loc[true_pair_index]
         base_brier = _brier_for(base, "p_distribution_side")
         learned_brier = _brier_for(cand, "p_distribution_side")
         use_learned = (
@@ -1737,6 +2330,7 @@ def _outcome_bucket_policy(
         return {"min_rows": min_rows, "min_gain": min_gain, "buckets": {}}
     rows: dict[str, Any] = {}
     work = learned.loc[learned["market"] == "batter_total_bases"].copy()
+    work = work.loc[_true_pair_hitter_mask(work)]
     for key, group in work.groupby(cols, dropna=False):
         key = key if isinstance(key, tuple) else (key,)
         if len(group) < min_rows:
@@ -1800,16 +2394,53 @@ def _score_probabilities(train: pd.DataFrame, holdout: pd.DataFrame, cfg: Distri
     outcome_gate = _outcome_policy(holdout_uncalibrated, holdout_learned)
     outcome_gate["bucket_policy"] = _outcome_bucket_policy(scored_train_uncalibrated, scored_train_learned)
     scored_train = _apply_outcome_policy(scored_train_uncalibrated, scored_train_learned, outcome_gate)
+    out = _apply_outcome_policy(holdout_uncalibrated, holdout_learned, outcome_gate)
     probability_calibrators = _fit_distribution_calibrators(scored_train)
-    scored_train["p_distribution_calibrated"] = _apply_distribution_calibrators(scored_train, probability_calibrators)
+    probability_calibrators = _gate_distribution_calibrators(probability_calibrators, out)
+    train_generic = _apply_distribution_calibrators(scored_train, probability_calibrators)
+    holdout_generic = _apply_distribution_calibrators(out, probability_calibrators)
+    generic_enabled = bool(probability_calibrators.get("overall_holdout_enabled"))
+    train_line_input = scored_train.copy()
+    holdout_line_input = out.copy()
+    train_line_input["p_line_calibration_base"] = train_generic if generic_enabled else scored_train["p_distribution_side"]
+    holdout_line_input["p_line_calibration_base"] = holdout_generic if generic_enabled else out["p_distribution_side"]
+    line_calibrators = _fit_true_pair_hitter_line_calibrators(
+        train_line_input,
+        probability_col="p_distribution_side",
+    )
+    line_calibrators = _gate_true_pair_hitter_line_calibrators(
+        line_calibrators,
+        holdout_line_input,
+        probability_col="p_distribution_side",
+        baseline_col="p_line_calibration_base",
+    )
+    train_base = train_line_input["p_line_calibration_base"]
+    holdout_base = holdout_line_input["p_line_calibration_base"]
+    train_combined = _apply_true_pair_hitter_line_calibrators(train_line_input, train_base, line_calibrators)
+    holdout_combined = _apply_true_pair_hitter_line_calibrators(holdout_line_input, holdout_base, line_calibrators)
+    valid = out["target"].notna() & out["p_distribution_side"].notna()
+    weights = out.loc[valid].get("offer_group_weight")
+    calibration_scores = {
+        "raw": _weighted_brier(out.loc[valid, "target"], out.loc[valid, "p_distribution_side"], weights),
+        "generic": _weighted_brier(out.loc[valid, "target"], holdout_generic.loc[valid], weights),
+        "generic_plus_line": _weighted_brier(out.loc[valid, "target"], holdout_combined.loc[valid], weights),
+    } if valid.any() else {}
+    line_enabled = bool(line_calibrators.get("overall_holdout_enabled"))
+    selected_calibration = (
+        "generic_plus_line" if line_enabled
+        else "generic" if generic_enabled
+        else "raw"
+    )
+    scored_train["p_distribution_calibrated"] = train_combined if line_enabled else train_base
+    out["p_distribution_calibrated"] = holdout_combined if line_enabled else holdout_base
+    probability_calibrators["system_holdout_selection"] = selected_calibration
+    probability_calibrators["system_holdout_brier"] = calibration_scores
     train_empirical = [_empirical_lookup(row, rates) for _, row in scored_train.iterrows()]
     scored_train["p_empirical_bucket"] = pd.Series(train_empirical, index=scored_train.index, dtype="float64")
     scored_train["p_distribution_blend"] = (
         0.70 * scored_train["p_distribution_calibrated"].fillna(scored_train["p_distribution_side"]).astype(float)
         + 0.30 * scored_train["p_empirical_bucket"].fillna(scored_train["model_prob_side"]).astype(float)
     ).clip(1e-6, 1 - 1e-6)
-    out = _apply_outcome_policy(holdout_uncalibrated, holdout_learned, outcome_gate)
-    out["p_distribution_calibrated"] = _apply_distribution_calibrators(out, probability_calibrators)
     empirical = [_empirical_lookup(row, rates) for _, row in out.iterrows()]
     out["p_empirical_bucket"] = pd.Series(empirical, index=out.index, dtype="float64")
     out["p_distribution_blend"] = (
@@ -1825,6 +2456,7 @@ def _score_probabilities(train: pd.DataFrame, holdout: pd.DataFrame, cfg: Distri
         "event_model": _event_model_metadata(hitter_event_artifact),
         "outcome_policy": outcome_gate,
         "probability": probability_calibrators,
+        "true_pair_hitter_line_calibration": line_calibrators,
         "side_line_models": side_line_models,
     }
 
@@ -1842,6 +2474,10 @@ def _bucket_model_selection(df: pd.DataFrame, cfg: DistributionConfig) -> list[d
     group_cols = ["market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"]
     for key, group in df.groupby(group_cols, dropna=False):
         key = key if isinstance(key, tuple) else (key,)
+        if str(key[0]) in {"batter_hits", "batter_total_bases", "batter_home_runs"}:
+            group = group.loc[_true_pair_hitter_mask(group)]
+            if group.empty:
+                continue
         summaries = {}
         best_name = None
         best_brier = None
@@ -1902,13 +2538,15 @@ def _forecast(df: pd.DataFrame, col: str) -> dict[str, Any]:
         return {"rows": 0, "brier": None}
     p = work[col].astype(float).clip(1e-6, 1 - 1e-6)
     y = work["target"].astype(int)
+    weights = work.get("offer_group_weight")
     return {
         "rows": int(len(work)),
-        "actual_rate": float(y.mean()),
-        "avg_prob": float(p.mean()),
-        "calibration_error": float(y.mean() - p.mean()),
-        "brier": float(brier_score_loss(y, p)),
-        "log_loss": float(log_loss(y, p, labels=[0, 1])) if y.nunique() == 2 else None,
+        "effective_player_games": int(work.get("player_game_group", _player_game_group_key(work)).nunique()),
+        "actual_rate": _weighted_mean(y, weights),
+        "avg_prob": _weighted_mean(p, weights),
+        "calibration_error": float(_weighted_mean(y, weights) - _weighted_mean(p, weights)),
+        "brier": _weighted_brier(y, p, weights),
+        "log_loss": float(log_loss(y, p, labels=[0, 1], sample_weight=weights)) if y.nunique() == 2 else None,
     }
 
 
@@ -1919,12 +2557,75 @@ def _selection(df: pd.DataFrame, col: str, cfg: DistributionConfig) -> dict[str,
     if selected.empty:
         return {"selected_rows": 0, "roi": None, "clv_beat_rate": None}
     clv = selected.dropna(subset=["beat_clv_price"])
+    selected_weights = selected.get("offer_group_weight")
+    clv_weights = clv.get("offer_group_weight")
     return {
         "selected_rows": int(len(selected)),
-        "roi": _mean(selected["profit_units"]),
-        "win_rate": _mean(selected["target"]),
-        "clv_beat_rate": _mean(clv["beat_clv_price"]) if not clv.empty else None,
-        "avg_clv_price": _mean(clv["clv_price"]) if not clv.empty else None,
+        "selected_player_games": int(selected.get("player_game_group", _player_game_group_key(selected)).nunique()),
+        "roi": _weighted_mean(selected["profit_units"], selected_weights),
+        "win_rate": _weighted_mean(selected["target"], selected_weights),
+        "clv_beat_rate": _weighted_mean(clv["beat_clv_price"], clv_weights) if not clv.empty else None,
+        "avg_clv_price": _weighted_mean(clv["clv_price"], clv_weights) if not clv.empty else None,
+    }
+
+
+def _tb_hr_line_production_gates(df: pd.DataFrame, cfg: DistributionConfig) -> dict[str, Any]:
+    """Evaluate real-money evidence only on non-synthetic paired offers."""
+    if df.empty:
+        return {"status": "no_rows", "groups": {}}
+    true_pair = pd.to_numeric(
+        df.get("true_pair_flag", pd.Series(0.0, index=df.index)), errors="coerce"
+    ).fillna(0.0) >= 0.5
+    synthetic = pd.to_numeric(
+        df.get("synthetic_pair_flag", pd.Series(0.0, index=df.index)), errors="coerce"
+    ).fillna(0.0) >= 0.5
+    work = df.loc[
+        df["market"].isin(["batter_total_bases", "batter_home_runs"])
+        & true_pair
+        & ~synthetic
+    ].copy()
+    groups: dict[str, Any] = {}
+    for values, group in work.groupby(["market", "side", "line_bucket"], dropna=False):
+        values = values if isinstance(values, tuple) else (values,)
+        key = "|".join(str(v) for v in values)
+        baseline = _forecast(group, "model_prob_side")
+        candidate = _forecast(group, "p_distribution_calibrated")
+        selected = _selection(group, "p_distribution_calibrated", cfg)
+        gain = None
+        if baseline.get("brier") is not None and candidate.get("brier") is not None:
+            gain = float(baseline["brier"]) - float(candidate["brier"])
+        reasons: list[str] = []
+        if int(candidate.get("rows") or 0) < 80:
+            reasons.append("rows<80")
+        if gain is None or gain <= 0.001:
+            reasons.append("brier_gain<=0.001")
+        cal = candidate.get("calibration_error")
+        if cal is None or abs(float(cal)) > 0.05:
+            reasons.append("abs_calibration_error>0.05")
+        if int(selected.get("selected_rows") or 0) < 30:
+            reasons.append("selected_rows<30")
+        clv_beat = selected.get("clv_beat_rate")
+        if clv_beat is None or float(clv_beat) < 0.55:
+            reasons.append("clv_beat_rate<0.55")
+        avg_clv = selected.get("avg_clv_price")
+        if avg_clv is None or float(avg_clv) <= 0.0:
+            reasons.append("avg_clv_price<=0")
+        groups[key] = {
+            "rows": int(len(group)),
+            "model_brier": baseline.get("brier"),
+            "distribution_brier": candidate.get("brier"),
+            "brier_gain": gain,
+            "calibration_error": cal,
+            "selected_rows": selected.get("selected_rows"),
+            "clv_beat_rate": clv_beat,
+            "avg_clv_price": avg_clv,
+            "passes": not reasons,
+            "reasons": reasons,
+        }
+    return {
+        "status": "ready" if groups else "no_true_pair_rows",
+        "evidence": "holdout_true_pair_non_synthetic_only",
+        "groups": groups,
     }
 
 
@@ -2013,6 +2714,23 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
             f"{_fmt_pct((blend.get('selection') or {}).get('roi'))} | "
             f"{_fmt_pct((side_line.get('selection') or {}).get('roi'))} |"
         )
+    line_gates = (payload.get("tb_hr_line_production_gates") or {}).get("groups") or {}
+    lines.extend([
+        "",
+        "## TB/HR True-Pair Production Gates",
+        "",
+        "These gates use holdout rows with true, non-synthetic paired prices only.",
+        "",
+        "| Market / Side / Line | Rows | Brier Gain | Cal Err | Selected | CLV Beat | Avg CLV | Pass | Reasons |",
+        "|---|---:|---:|---:|---:|---:|---:|---|---|",
+    ])
+    for key, rec in sorted(line_gates.items()):
+        lines.append(
+            f"| {key.replace('|', ' / ')} | {rec.get('rows', 0)} | {_fmt_num(rec.get('brier_gain'))} | "
+            f"{_fmt_pct(rec.get('calibration_error'))} | {rec.get('selected_rows', 0)} | "
+            f"{_fmt_pct(rec.get('clv_beat_rate'))} | {_fmt_pct(rec.get('avg_clv_price'))} | "
+            f"{bool(rec.get('passes'))} | {', '.join(rec.get('reasons') or []) or '-'} |"
+        )
     outcome_groups = (((payload.get("distribution_calibrators") or {}).get("outcome") or {}).get("groups") or {})
     lines.extend([
         "",
@@ -2032,6 +2750,8 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
         )
     event_meta = ((payload.get("distribution_calibrators") or {}).get("event_model") or {})
     event_rec = event_meta.get("recommendation") or {}
+    tb_state = event_meta.get("tb_state_distribution") or {}
+    tb_state_repair = event_meta.get("tb_state_residual") or {}
     lines.extend([
         "",
         "## Direct Hitter Event Model",
@@ -2041,8 +2761,39 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
         f"- Trained UTC: {event_meta.get('trained_at_utc', '-')}",
         f"- Classes: {', '.join(map(str, event_meta.get('event_classes') or [])) or '-'}",
         f"- Production gate: {event_rec.get('passes_basic_gate', False)}",
+        f"- Production eligible artifact: {event_meta.get('production_eligible', False)}",
+        f"- Leakage-safe player priors: {event_meta.get('player_prior_players', 0)} players",
+        f"- PA uncertainty groups: {len((event_meta.get('pa_uncertainty') or {}).get('groups') or {})}",
         f"- Direct event TB MAE gain vs independent rates: {_fmt_num(event_rec.get('direct_event_tb_mae_gain_vs_independent_rates'))}",
+        f"- Explicit TB-state rows: {tb_state.get('rows', 0)}",
+        f"- Explicit TB-state Brier: {_fmt_num(tb_state.get('multiclass_brier'))}",
+        f"- Explicit TB-state log loss: {_fmt_num(tb_state.get('log_loss'))}",
+        f"- Direct-state selected candidate: {tb_state_repair.get('selected_candidate', 'convolution')}",
+        f"- Direct-state blend alpha: {_fmt_num(tb_state_repair.get('alpha'))}",
+        f"- HR-driven 4+ tail Brier gain: {_fmt_num(tb_state_repair.get('validation_hr_tail_brier_gain'), 6)}",
     ])
+    line_calibration = (
+        (payload.get("distribution_calibrators") or {}).get("true_pair_hitter_line_calibration") or {}
+    )
+    lines.extend([
+        "",
+        "## True-Pair Hitter Line Calibration",
+        "",
+        f"- Status: {line_calibration.get('status', 'missing')}",
+        f"- Evidence: {line_calibration.get('evidence', '-')}",
+        f"- Calibrated line/side groups: {len(line_calibration.get('groups') or {})}",
+        f"- Enabled line/side groups: {len(line_calibration.get('enabled_groups') or [])}",
+        "- Synthetic and one-sided FanDuel prices are display-only and cannot train these calibrators.",
+    ])
+    for key, rec in sorted((line_calibration.get("groups") or {}).items()):
+        lines.append(
+            f"- `{key}`: {rec.get('rows', 0)} rows, method={rec.get('method', 'raw')}, "
+            f"internal_gain={_fmt_num(rec.get('validation_brier_gain'))}, "
+            f"holdout_gain={_fmt_num(rec.get('holdout_brier_gain'))}, "
+            f"cal_before={_fmt_pct(rec.get('raw_holdout_calibration_error'))}, "
+            f"cal_after={_fmt_pct(rec.get('calibrated_holdout_calibration_error'))}, "
+            f"enabled={rec.get('holdout_enabled', False)}"
+        )
     side_line_models = ((payload.get("distribution_calibrators") or {}).get("side_line_models") or {})
     lines.extend([
         "",
@@ -2125,13 +2876,15 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
         "",
         "## Line-Bucket Probability Calibration",
         "",
-        "| Group | Rows | Columns | Calibrated Bins |",
-        "|---|---:|---|---:|",
+        "| Group | Rows | Columns | Method | Internal Gain | Holdout Gain | Enabled |",
+        "|---|---:|---|---|---:|---:|---|",
     ])
     for key, rec in line_bucket_groups[:40]:
         lines.append(
             f"| {str(key).replace('|', ' / ')} | {rec.get('rows', 0)} | "
-            f"{', '.join(map(str, rec.get('columns') or []))} | {len(rec.get('bins') or {})} |"
+            f"{', '.join(map(str, rec.get('columns') or []))} | {rec.get('method', 'raw')} | "
+            f"{_fmt_num(rec.get('validation_brier_gain'))} | {_fmt_num(rec.get('holdout_brier_gain'))} | "
+            f"{rec.get('holdout_enabled', False)} |"
         )
     lines.extend([
         "",
@@ -2172,6 +2925,13 @@ def train(cfg: DistributionConfig) -> dict[str, Any]:
     payload["split_strategy"] = split
     payload["train_rows"] = int(len(train_df))
     payload["holdout_rows"] = int(len(holdout_df))
+    payload["grouped_walk_forward"] = {
+        "weighting": "inverse_offer_rows_per_player_game_normalized_to_mean_one",
+        "purge_key": "game_slug|player_id",
+        "strict_date_split": True,
+        "train_player_games": int(train_df.get("player_game_group", pd.Series(dtype=object)).nunique()),
+        "holdout_player_games": int(holdout_df.get("player_game_group", pd.Series(dtype=object)).nunique()),
+    }
     if len(train_df) < cfg.min_train_rows or len(holdout_df) < cfg.min_holdout_rows:
         payload["status"] = "insufficient_rows"
         payload["report_path"] = _write_report(payload, cfg)
@@ -2181,13 +2941,21 @@ def train(cfg: DistributionConfig) -> dict[str, Any]:
     payload["overall"] = _summaries(scored, cfg)
     payload["market"] = _group_summaries(scored, cfg, ["market"])
     payload["market_side"] = _group_summaries(scored, cfg, ["market", "side"])
+    production_mask = ~scored["market"].isin(["batter_hits", "batter_total_bases", "batter_home_runs"]) | _true_pair_hitter_mask(scored)
+    payload["true_pair_production_evaluation"] = {
+        "evidence": "all hitter markets use true-pair non-synthetic holdout only",
+        "rows": int(production_mask.sum()),
+        "overall": _summaries(scored.loc[production_mask], cfg),
+        "market_side": _group_summaries(scored.loc[production_mask], cfg, ["market", "side"]),
+    }
+    payload["tb_hr_line_production_gates"] = _tb_hr_line_production_gates(scored, cfg)
     payload["bucket_model_selection"] = _bucket_model_selection(scored, cfg)
     payload["distribution_calibrators"] = calibrators
     payload["models"] = {
         "pitcher_strikeouts": {"distribution": "poisson_from_opportunity_adjusted_k_mean"},
-        "batter_hits": {"distribution": "projection_anchored_direct_event_per_pa_hit_probability"},
-        "batter_total_bases": {"distribution": "projection_anchored_direct_event_per_pa_single_double_triple_hr_compound"},
-        "batter_home_runs": {"distribution": "projection_anchored_direct_event_per_pa_hr_probability"},
+        "batter_hits": {"distribution": "nonlinear_event_curve_mixed_over_projected_pa_distribution"},
+        "batter_total_bases": {"distribution": "explicit_0_1_2_3_4plus_hr_nonhr_states_from_nonlinear_event_curve"},
+        "batter_home_runs": {"distribution": "separate_rare_event_head_with_pa_mixture"},
     }
     payload["status"] = "ready"
     payload["report_path"] = _write_report(payload, cfg)

@@ -21,13 +21,18 @@ from .train_hitter_player_game_outcome_models import (
     CATEGORICAL_FEATURES,
     EVENT_CLASSES,
     HitterOutcomeModelConfig,
+    NUMERIC_FEATURES,
+    _HIERARCHICAL_EVENT_HEADS,
     _build_event_training_examples,
+    _boosted_count_pipeline,
     _count_metrics,
     _event_count_matrix,
     _event_projection_metrics,
     _event_model_composite,
     _fit_boosted_event_binary_models,
+    _fit_hierarchical_event_models,
     _predict_boosted_event_probabilities,
+    _predict_hierarchical_event_probabilities,
     _classifier_pipeline,
     _load,
     _regression_pipeline,
@@ -194,6 +199,22 @@ FEATURE_GROUPS: list[tuple[str, list[str]]] = [
     ]),
 ]
 
+_HEAD_LABELS = {
+    "hit": "hit",
+    "xbh_given_hit": "XBH given hit",
+    "hr_given_xbh": "HR given XBH",
+    "triple_given_non_hr_xbh": "double/triple split",
+    "pa": "PA",
+}
+_ABLATION_HEADS = tuple(name for name in _HEAD_LABELS if name != "pa")
+_NON_REMOVABLE_GROUPS = {"baseline"}
+_DIAGNOSTIC_ONLY_GROUPS = {"+market"}
+_KNOWN_POSTGAME_PROXY_NUMERIC = {"confirmed_starter_num", "lineup_boxscore_proxy_flag"}
+_SAFE_CATEGORICAL_FEATURES = [
+    name for name in CATEGORICAL_FEATURES
+    if name not in {"lineup_source", "starter_status_source", "primary_position"}
+]
+
 
 @dataclass(frozen=True)
 class FeatureAblationConfig:
@@ -229,6 +250,179 @@ def _weighted_multiclass_brier(counts: pd.DataFrame, probs: pd.DataFrame) -> flo
         w = pd.to_numeric(counts[cls], errors="coerce").fillna(0.0).to_numpy(dtype=float)
         loss += float(np.sum(w * (p_sq - 2.0 * p_mat[:, i] + 1.0)))
     return loss / total
+
+
+def _conditional_probability(probs: pd.DataFrame, head: str) -> np.ndarray:
+    p_hit = probs[["p_single", "p_double", "p_triple", "p_hr"]].sum(axis=1).to_numpy(dtype=float)
+    p_xbh = probs[["p_double", "p_triple", "p_hr"]].sum(axis=1).to_numpy(dtype=float)
+    p_non_hr_xbh = probs[["p_double", "p_triple"]].sum(axis=1).to_numpy(dtype=float)
+    if head == "hit":
+        return p_hit
+    if head == "xbh_given_hit":
+        return np.divide(p_xbh, p_hit, out=np.full(len(probs), 0.35), where=p_hit > 1e-9)
+    if head == "hr_given_xbh":
+        return np.divide(
+            probs["p_hr"].to_numpy(dtype=float), p_xbh,
+            out=np.full(len(probs), 0.42), where=p_xbh > 1e-9,
+        )
+    if head == "triple_given_non_hr_xbh":
+        return np.divide(
+            probs["p_triple"].to_numpy(dtype=float), p_non_hr_xbh,
+            out=np.full(len(probs), 0.08), where=p_non_hr_xbh > 1e-9,
+        )
+    raise KeyError(head)
+
+
+def _weighted_head_metrics(df: pd.DataFrame, head: str, probability: np.ndarray) -> dict[str, Any]:
+    positive, negative = _HIERARCHICAL_EVENT_HEADS[head]
+    counts = _event_count_matrix(df)
+    pos = counts[list(positive)].sum(axis=1).to_numpy(dtype=float)
+    neg = counts[list(negative)].sum(axis=1).to_numpy(dtype=float)
+    total = pos + neg
+    mask = total > 0
+    if not mask.any():
+        return {"rows": 0}
+    p = np.clip(np.asarray(probability, dtype=float)[mask], 1e-6, 1.0 - 1e-6)
+    pos = pos[mask]
+    neg = neg[mask]
+    total = total[mask]
+    weight_sum = float(total.sum())
+    brier = float(np.sum(pos * (1.0 - p) ** 2 + neg * p ** 2) / weight_sum)
+    logloss = float(-np.sum(pos * np.log(p) + neg * np.log(1.0 - p)) / weight_sum)
+    actual_rate = float(pos.sum() / weight_sum)
+    return {
+        "rows": int(mask.sum()),
+        "events": int(round(weight_sum)),
+        "actual_rate": actual_rate,
+        "avg_probability": float(np.average(p, weights=total)),
+        "calibration_error": float(np.average(p, weights=total) - actual_rate),
+        "brier": brier,
+        "log_loss": logloss,
+    }
+
+
+def _evaluate_head_feature_set(
+    train: pd.DataFrame,
+    holdout: pd.DataFrame,
+    numeric_features: list[str],
+) -> dict[str, Any]:
+    event_train = train.loc[pd.to_numeric(train["actual_pa"], errors="coerce") > 0].copy()
+    event_holdout = holdout.loc[pd.to_numeric(holdout["actual_pa"], errors="coerce") > 0].copy()
+    models = _fit_hierarchical_event_models(
+        event_train,
+        numeric_features=numeric_features,
+        categorical_features=_SAFE_CATEGORICAL_FEATURES,
+    )
+    probs = _predict_hierarchical_event_probabilities(
+        models,
+        event_holdout,
+        numeric_features=numeric_features,
+        categorical_features=_SAFE_CATEGORICAL_FEATURES,
+    )
+    result: dict[str, Any] = {
+        head: _weighted_head_metrics(event_holdout, head, _conditional_probability(probs, head))
+        for head in _ABLATION_HEADS
+    }
+    train_features = prepare_hitter_outcome_features(train, numeric_features, _SAFE_CATEGORICAL_FEATURES)
+    holdout_features = prepare_hitter_outcome_features(holdout, numeric_features, _SAFE_CATEGORICAL_FEATURES)
+    pa_model = _boosted_count_pipeline(numeric_features, _SAFE_CATEGORICAL_FEATURES)
+    feature_cols = numeric_features + _SAFE_CATEGORICAL_FEATURES
+    pa_model.fit(train_features[feature_cols], pd.to_numeric(train["actual_pa"], errors="coerce"))
+    pa_pred = np.clip(pa_model.predict(holdout_features[feature_cols]), 0.0, 7.0)
+    result["pa"] = _count_metrics(holdout["actual_pa"], pa_pred)
+    result["trained_heads"] = sorted(models)
+    return result
+
+
+def _feature_groups_by_name() -> dict[str, list[str]]:
+    groups: dict[str, list[str]] = {}
+    running = list(BASELINE_NUMERIC)
+    groups["baseline"] = running
+    for label, additions in FEATURE_GROUPS[1:]:
+        groups[label] = list(additions)
+    return groups
+
+
+def _head_specific_ablation(
+    train: pd.DataFrame,
+    holdout: pd.DataFrame,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    groups = _feature_groups_by_name()
+    production = set(NUMERIC_FEATURES)
+    full_numeric = list(dict.fromkeys(
+        feature
+        for label, features in groups.items()
+        if label not in _DIAGNOSTIC_ONLY_GROUPS
+        for feature in features
+        if feature in production and feature not in _KNOWN_POSTGAME_PROXY_NUMERIC
+    ))
+    full_numeric = [
+        name for name in full_numeric
+        if name in train.columns and pd.to_numeric(train[name], errors="coerce").notna().any()
+    ]
+    full_metrics = _evaluate_head_feature_set(train, holdout, full_numeric)
+    variants: dict[str, Any] = {"full": {"numeric_features": full_numeric, "metrics": full_metrics}}
+    for label, features in groups.items():
+        if label in _NON_REMOVABLE_GROUPS or label in _DIAGNOSTIC_ONLY_GROUPS:
+            continue
+        removed = sorted(set(features).intersection(full_numeric))
+        if not removed:
+            continue
+        numeric = [name for name in full_numeric if name not in set(removed)]
+        variants[f"without_{label.lstrip('+')}"] = {
+            "removed_group": label,
+            "removed_features": removed,
+            "numeric_features": numeric,
+            "metrics": _evaluate_head_feature_set(train, holdout, numeric),
+        }
+
+    recommendations: dict[str, Any] = {}
+    numeric_by_head: dict[str, list[str]] = {}
+    brier_tolerance = 0.0001
+    pa_tolerance = 0.002
+    for head in _HEAD_LABELS:
+        metric_name = "mae" if head == "pa" else "brier"
+        full_value = ((full_metrics.get(head) or {}).get(metric_name))
+        removed_groups: list[str] = []
+        comparisons: list[dict[str, Any]] = []
+        for key, rec in variants.items():
+            if key == "full":
+                continue
+            value = (((rec.get("metrics") or {}).get(head) or {}).get(metric_name))
+            gain = float(full_value) - float(value) if full_value is not None and value is not None else None
+            hurts = bool(gain is not None and gain > (pa_tolerance if head == "pa" else brier_tolerance))
+            if hurts:
+                removed_groups.append(str(rec["removed_group"]))
+            comparisons.append({
+                "feature_group": rec.get("removed_group"),
+                "full_metric": full_value,
+                "without_group_metric": value,
+                "gain_when_removed": gain,
+                "remove_for_head": hurts,
+            })
+        removed_features = {
+            feature
+            for label in removed_groups
+            for feature in groups.get(label, [])
+        }
+        numeric_by_head[head] = [name for name in full_numeric if name not in removed_features]
+        recommendations[head] = {
+            "label": _HEAD_LABELS[head],
+            "metric": metric_name,
+            "full_metric": full_value,
+            "removed_groups": removed_groups,
+            "comparisons": comparisons,
+        }
+    policy = {
+        "status": "ready",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "method": "date_holdout_leave_one_feature_family_out",
+        "categorical_features": _SAFE_CATEGORICAL_FEATURES,
+        "excluded_postgame_proxy_numeric": sorted(_KNOWN_POSTGAME_PROXY_NUMERIC),
+        "numeric_features_by_head": numeric_by_head,
+        "recommendations": recommendations,
+    }
+    return variants, policy
 
 
 def _evaluate(
@@ -335,45 +529,11 @@ def build_report(cfg: FeatureAblationConfig) -> dict[str, Any]:
         payload["status"] = "insufficient_rows"
         _write_outputs(payload, cfg)
         return payload
-    numeric: list[str] = []
-    previous: dict[str, Any] | None = None
-    for label, additions in FEATURE_GROUPS:
-        if label == "baseline":
-            numeric = list(BASELINE_NUMERIC)
-        else:
-            numeric = list(dict.fromkeys([*numeric, *additions]))
-        usable_numeric = [
-            col for col in numeric
-            if col in train.columns and pd.to_numeric(train[col], errors="coerce").notna().any()
-        ]
-        dropped_numeric = [col for col in numeric if col not in usable_numeric]
-        rec = {
-            "feature_set": label,
-            "numeric_features": list(usable_numeric),
-            "dropped_all_null_numeric_features": dropped_numeric,
-            "metrics": _evaluate(
-                train,
-                holdout,
-                usable_numeric,
-                CATEGORICAL_FEATURES,
-                evaluate_boosted=label in {"+opportunity_v3", "+market"},
-            ),
-        }
-        if previous:
-            cur_pa = ((rec["metrics"].get("pa") or {}).get("mae"))
-            prev_pa = (((previous.get("metrics") or {}).get("pa") or {}).get("mae"))
-            cur_brier = (((rec["metrics"].get("event") or {}).get("weighted_event_brier")))
-            prev_brier = ((((previous.get("metrics") or {}).get("event") or {}).get("weighted_event_brier")))
-            rec["delta_vs_previous"] = {
-                "pa_mae_gain": (float(prev_pa) - float(cur_pa)) if prev_pa is not None and cur_pa is not None else None,
-                "event_brier_gain": (
-                    float(prev_brier) - float(cur_brier)
-                    if prev_brier is not None and cur_brier is not None
-                    else None
-                ),
-            }
-        payload["ablation"].append(rec)
-        previous = rec
+    variants, policy = _head_specific_ablation(train, holdout)
+    payload["method"] = "head_specific_date_holdout_leave_one_feature_family_out"
+    payload["head_ablation"] = variants
+    payload["pruning_policy"] = policy
+    payload["ablation"] = []
     _write_outputs(payload, cfg)
     return payload
 
@@ -401,24 +561,31 @@ def _write_outputs(payload: dict[str, Any], cfg: FeatureAblationConfig) -> None:
         f"Rows: {payload.get('rows', 0)} | Train: {payload.get('train_rows', 0)} | Holdout: {payload.get('holdout_rows', 0)}",
         f"Status: {payload.get('status')}",
         "",
-        "The `+market` row is diagnostic context only; bankroll gating should still rely on locked offer-level reports.",
+        "Each row removes one feature family from the full LightGBM head. Positive gain means that family hurt the true date holdout.",
         "",
-        "| Feature Set | Event Model | PA MAE | Event Brier | Event Log Loss | Hits MAE | TB MAE | HR MAE | PA Gain | Brier Gain |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Variant | Hit Brier | XBH Brier | HR Brier | 2B/3B Brier | PA MAE |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
-    for rec in payload.get("ablation", []):
+    for name, rec in (payload.get("head_ablation") or {}).items():
         metrics = rec.get("metrics") or {}
-        pa = metrics.get("pa") or {}
-        event = metrics.get("event") or {}
-        delta = rec.get("delta_vs_previous") or {}
         lines.append(
-            f"| {rec.get('feature_set')} | {event.get('active_event_model', '-')} | {_fmt(pa.get('mae'), 3)} | "
-            f"{_fmt(event.get('weighted_event_brier'), 5)} | {_fmt(event.get('weighted_event_log_loss'), 5)} | "
-            f"{_fmt((event.get('hits') or {}).get('mae'), 3)} | "
-            f"{_fmt((event.get('total_bases') or {}).get('mae'), 3)} | "
-            f"{_fmt((event.get('home_runs') or {}).get('mae'), 3)} | "
-            f"{_fmt(delta.get('pa_mae_gain'), 4)} | {_fmt(delta.get('event_brier_gain'), 5)} |"
+            f"| {name} | {_fmt((metrics.get('hit') or {}).get('brier'), 5)} | "
+            f"{_fmt((metrics.get('xbh_given_hit') or {}).get('brier'), 5)} | "
+            f"{_fmt((metrics.get('hr_given_xbh') or {}).get('brier'), 5)} | "
+            f"{_fmt((metrics.get('triple_given_non_hr_xbh') or {}).get('brier'), 5)} | "
+            f"{_fmt((metrics.get('pa') or {}).get('mae'), 3)} |"
         )
+    lines.extend(["", "## Pruning Policy", "", "| Head | Removed Feature Groups | Full Metric |", "|---|---|---:|"])
+    recommendations = ((payload.get("pruning_policy") or {}).get("recommendations") or {})
+    for head, rec in recommendations.items():
+        lines.append(
+            f"| {rec.get('label', head)} | {', '.join(rec.get('removed_groups') or []) or 'none'} | "
+            f"{_fmt(rec.get('full_metric'), 5)} |"
+        )
+    lines.extend([
+        "",
+        "Known postgame proxy fields are excluded from this policy. Market fields remain diagnostic-only and cannot enter the player projection heads.",
+    ])
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

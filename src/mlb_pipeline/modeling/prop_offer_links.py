@@ -262,14 +262,35 @@ def load_prop_offer_rows(
     params = {"game_date": game_date, "bookmakers": list(books)}
     sql = """
         SELECT
-            id, source_row_id, as_of_date, bookmaker_key, player_name, player_name_norm, stat,
-            side, line::float AS line, price::float AS price, link,
-            is_linkable, fetched_at_utc, updated_at_utc, event_id, commence_time_utc,
-            home_team, away_team
-        FROM features.mlb_prop_offer_links
-        WHERE as_of_date = %(game_date)s
-          AND bookmaker_key = ANY(%(bookmakers)s)
-        ORDER BY player_name_norm, stat, line, side, bookmaker_key
+            o.id, o.source_row_id, o.as_of_date, o.bookmaker_key, o.player_name, o.player_name_norm, o.stat,
+            o.side, o.line::float AS line, o.price::float AS price, o.link,
+            o.is_linkable, o.fetched_at_utc, o.updated_at_utc, o.event_id, o.commence_time_utc,
+            o.home_team, o.away_team,
+            opening.open_price::float AS open_price,
+            opening.open_line::float AS open_line,
+            opening.open_exact_line,
+            opening.open_snapshot_at_utc
+        FROM features.mlb_prop_offer_links o
+        LEFT JOIN LATERAL (
+            SELECT
+                CASE WHEN o.side = 'over' THEN s.over_price ELSE s.under_price END AS open_price,
+                s.line AS open_line,
+                (s.line = o.line) AS open_exact_line,
+                s.snapshot_at_utc AS open_snapshot_at_utc
+            FROM odds.mlb_player_prop_line_snapshots s
+            WHERE s.snapshot_role = 'open'
+              AND s.as_of_date = o.as_of_date
+              AND COALESCE(s.event_id, '') = COALESCE(o.event_id, '')
+              AND s.player_name_norm = o.player_name_norm
+              AND s.stat = o.stat
+              AND LOWER(s.bookmaker_key) = LOWER(o.bookmaker_key)
+              AND s.snapshot_at_utc <= COALESCE(o.fetched_at_utc, o.updated_at_utc, NOW())
+            ORDER BY CASE WHEN s.line = o.line THEN 0 ELSE 1 END, s.snapshot_at_utc DESC, s.id DESC
+            LIMIT 1
+        ) opening ON TRUE
+        WHERE o.as_of_date = %(game_date)s
+          AND o.bookmaker_key = ANY(%(bookmakers)s)
+        ORDER BY o.player_name_norm, o.stat, o.line, o.side, o.bookmaker_key
     """
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(sql, params)

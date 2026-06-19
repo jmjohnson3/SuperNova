@@ -69,6 +69,29 @@ _NUMERIC = [
     "true_pair_flag",
     "minutes_to_first_pitch_at_lock",
     "lock_price_age_minutes",
+    "open_price_implied",
+    "lock_price_implied",
+    "open_to_lock_prob_move",
+    "open_to_lock_line_move_side",
+    "consensus_prob_at_lock",
+    "consensus_price_dispersion",
+    "consensus_book_count",
+    "book_lead_lag_prob",
+    "best_consensus_prob",
+    "worst_consensus_prob",
+    "lock_offer_available",
+    "lock_same_book_pair_available",
+]
+
+_CLV_V1_NUMERIC = [
+    name for name in _NUMERIC
+    if name not in {
+        "open_price_implied", "lock_price_implied", "open_to_lock_prob_move",
+        "open_to_lock_line_move_side", "consensus_prob_at_lock",
+        "consensus_price_dispersion", "consensus_book_count", "book_lead_lag_prob",
+        "best_consensus_prob", "worst_consensus_prob", "lock_offer_available",
+        "lock_same_book_pair_available",
+    }
 ]
 
 _CATEGORICAL = [
@@ -113,6 +136,43 @@ class MarketResidualConfig:
 
 
 SQL = """
+WITH lock_prices AS (
+    SELECT
+        s.id,
+        s.run_id,
+        s.as_of_date,
+        s.event_id,
+        s.player_name_norm,
+        s.stat,
+        s.selected_side,
+        s.line,
+        s.bookmaker_key,
+        s.snapshot_at_utc,
+        CASE WHEN s.selected_side = 'over' THEN s.over_price ELSE s.under_price END::float AS side_price,
+        CASE
+            WHEN (CASE WHEN s.selected_side = 'over' THEN s.over_price ELSE s.under_price END) > 0
+            THEN 100.0 / ((CASE WHEN s.selected_side = 'over' THEN s.over_price ELSE s.under_price END) + 100.0)
+            WHEN (CASE WHEN s.selected_side = 'over' THEN s.over_price ELSE s.under_price END) < 0
+            THEN -(CASE WHEN s.selected_side = 'over' THEN s.over_price ELSE s.under_price END)
+                 / (-(CASE WHEN s.selected_side = 'over' THEN s.over_price ELSE s.under_price END) + 100.0)
+            ELSE NULL
+        END AS side_implied,
+        CASE WHEN s.over_price IS NOT NULL AND s.under_price IS NOT NULL THEN 1.0 ELSE 0.0 END AS same_book_pair_available
+    FROM odds.mlb_player_prop_line_snapshots s
+    WHERE s.snapshot_role = 'lock'
+),
+lock_consensus AS (
+    SELECT
+        run_id, as_of_date, event_id, player_name_norm, stat, selected_side, line,
+        AVG(side_implied) AS consensus_prob,
+        STDDEV_POP(side_implied) AS price_dispersion,
+        COUNT(DISTINCT bookmaker_key)::float AS book_count,
+        MIN(side_implied) AS best_prob,
+        MAX(side_implied) AS worst_prob
+    FROM lock_prices
+    WHERE side_implied IS NOT NULL
+    GROUP BY run_id, as_of_date, event_id, player_name_norm, stat, selected_side, line
+)
 SELECT
     e.id,
     e.replay_id,
@@ -143,6 +203,22 @@ SELECT
     COALESCE(e.edge_type, 'unknown') AS edge_type,
     e.minutes_to_first_pitch_at_lock::float AS minutes_to_first_pitch_at_lock,
     e.lock_price_age_minutes::float AS lock_price_age_minutes,
+    open_snap.open_implied::float AS open_price_implied,
+    lock_row.side_implied::float AS lock_price_implied,
+    (lock_row.side_implied - open_snap.open_implied)::float AS open_to_lock_prob_move,
+    CASE
+        WHEN e.side = 'over' THEN (open_snap.open_line - e.market_line)::float
+        WHEN e.side = 'under' THEN (e.market_line - open_snap.open_line)::float
+        ELSE NULL
+    END AS open_to_lock_line_move_side,
+    consensus.consensus_prob::float AS consensus_prob_at_lock,
+    consensus.price_dispersion::float AS consensus_price_dispersion,
+    consensus.book_count::float AS consensus_book_count,
+    (lock_row.side_implied - consensus.consensus_prob)::float AS book_lead_lag_prob,
+    consensus.best_prob::float AS best_consensus_prob,
+    consensus.worst_prob::float AS worst_consensus_prob,
+    CASE WHEN lock_row.id IS NOT NULL AND lock_row.side_price IS NOT NULL THEN 1.0 ELSE 0.0 END AS lock_offer_available,
+    COALESCE(lock_row.same_book_pair_available, 0.0)::float AS lock_same_book_pair_available,
     e.market_line::float AS market_line,
     e.market_price::float AS market_price,
     ABS(e.market_price::float) AS abs_price,
@@ -185,6 +261,38 @@ SELECT
     e.clv_price::float AS clv_price,
     CASE WHEN e.beat_clv_price IS TRUE THEN 1 WHEN e.beat_clv_price IS FALSE THEN 0 ELSE NULL END AS beat_clv_price
 FROM features.mlb_prop_market_training_examples e
+LEFT JOIN lock_prices lock_row ON lock_row.id = e.lock_snapshot_id
+LEFT JOIN lock_consensus consensus
+  ON consensus.run_id IS NOT DISTINCT FROM lock_row.run_id
+ AND consensus.as_of_date = lock_row.as_of_date
+ AND consensus.event_id IS NOT DISTINCT FROM lock_row.event_id
+ AND consensus.player_name_norm = lock_row.player_name_norm
+ AND consensus.stat = lock_row.stat
+ AND consensus.selected_side = lock_row.selected_side
+ AND consensus.line = lock_row.line
+LEFT JOIN LATERAL (
+    SELECT
+        os.line::float AS open_line,
+        CASE
+            WHEN e.side = 'over' AND os.over_price > 0 THEN 100.0 / (os.over_price + 100.0)
+            WHEN e.side = 'over' AND os.over_price < 0 THEN -os.over_price / (-os.over_price + 100.0)
+            WHEN e.side = 'under' AND os.under_price > 0 THEN 100.0 / (os.under_price + 100.0)
+            WHEN e.side = 'under' AND os.under_price < 0 THEN -os.under_price / (-os.under_price + 100.0)
+            ELSE NULL
+        END::float AS open_implied
+    FROM odds.mlb_player_prop_line_snapshots os
+    WHERE os.snapshot_role = 'open'
+      AND os.as_of_date = e.game_date_et
+      AND os.event_id IS NOT DISTINCT FROM lock_row.event_id
+      AND os.player_name_norm = e.player_name_norm
+      AND os.stat = e.market
+      AND os.bookmaker_key = e.bookmaker_key
+      AND os.snapshot_at_utc <= lock_row.snapshot_at_utc
+    ORDER BY
+        CASE WHEN os.line = e.market_line THEN 0 ELSE 1 END,
+        os.snapshot_at_utc DESC
+    LIMIT 1
+) open_snap ON TRUE
 WHERE e.game_date_et >= %(cutoff)s
   AND e.market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
   AND e.side IN ('over','under')
@@ -201,6 +309,8 @@ WHERE e.game_date_et >= %(cutoff)s
             ELSE 0.0
         END
       ) = 1.0
+  AND COALESCE(e.true_pair_flag::float, 0.0) >= 0.5
+  AND COALESCE(e.synthetic_pair_flag::float, 0.0) < 0.5
   AND NOT (
         LOWER(COALESCE(e.bookmaker_key, '')) = 'fanduel'
     AND e.market IN ('batter_hits','batter_total_bases','batter_home_runs')
@@ -258,7 +368,17 @@ def _load(cfg: MarketResidualConfig) -> pd.DataFrame:
     return df
 
 
-def _prepare(df: pd.DataFrame, *, means=None, scales=None, cats=None):
+def _prepare(
+    df: pd.DataFrame,
+    *,
+    means=None,
+    scales=None,
+    cats=None,
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+):
+    numeric_features = list(numeric_features or _NUMERIC)
+    categorical_features = list(categorical_features or _CATEGORICAL)
     means = dict(means or {})
     scales = dict(scales or {})
     cats = {k: list(v) for k, v in (cats or {}).items()}
@@ -266,7 +386,7 @@ def _prepare(df: pd.DataFrame, *, means=None, scales=None, cats=None):
     names = []
     out_means = {}
     out_scales = {}
-    for name in _NUMERIC:
+    for name in numeric_features:
         s = pd.to_numeric(df.get(name), errors="coerce")
         mean = float(means.get(name, s.mean() if not s.dropna().empty else 0.0))
         filled = s.fillna(mean)
@@ -278,7 +398,7 @@ def _prepare(df: pd.DataFrame, *, means=None, scales=None, cats=None):
         out_means[name] = mean
         out_scales[name] = scale
     out_cats = {}
-    for name in _CATEGORICAL:
+    for name in categorical_features:
         values = cats.get(name)
         if values is None:
             values = sorted(str(v) for v in df[name].fillna("unknown").unique())
@@ -288,6 +408,42 @@ def _prepare(df: pd.DataFrame, *, means=None, scales=None, cats=None):
             parts.append((series == value).astype(float).to_numpy().reshape(-1, 1))
             names.append(f"{name}={value}")
     return np.hstack(parts) if parts else np.zeros((len(df), 0)), names, out_means, out_scales, out_cats
+
+
+def _fit_logistic_record(
+    train: pd.DataFrame,
+    holdout: pd.DataFrame,
+    target: str,
+    numeric_features: list[str],
+    categorical_features: list[str],
+    method: str,
+) -> tuple[dict[str, Any], np.ndarray]:
+    X_train, names, means, scales, cats = _prepare(
+        train,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+    )
+    model = LogisticRegression(max_iter=3000, solver="lbfgs")
+    model.fit(X_train, train[target].astype(int).to_numpy())
+    X_hold, _, _, _, _ = _prepare(
+        holdout,
+        means=means,
+        scales=scales,
+        cats=cats,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+    )
+    probability = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1.0 - 1e-6)
+    return {
+        "method": method,
+        "intercept": float(model.intercept_[0]),
+        "coef": {name: float(value) for name, value in zip(names, model.coef_[0]) if abs(float(value)) > 1e-12},
+        "numeric_means": means,
+        "numeric_scales": scales,
+        "categorical_values": cats,
+        "numeric_features": numeric_features,
+        "categorical_features": categorical_features,
+    }, probability
 
 
 def _split(df: pd.DataFrame, cfg: MarketResidualConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
@@ -533,6 +689,27 @@ def _write_report(payload: dict[str, Any], cfg: MarketResidualConfig) -> str:
                 f"{_fmt_num(f.get('auc'))} | {clv_target.get('status')} |"
             ),
         ])
+        comparisons = clv_target.get("variant_comparison") or {}
+        if comparisons:
+            lines.extend([
+                "",
+                "| CLV Variant | Rows | Brier | AUC | Cal Err | Selected |",
+                "|---|---:|---:|---:|---:|---|",
+            ])
+            for variant, rec in comparisons.items():
+                lines.append(
+                    f"| {variant} | {rec.get('rows', 0)} | {_fmt_num(rec.get('brier'))} | "
+                    f"{_fmt_num(rec.get('auc'))} | {_fmt_pct(rec.get('calibration_error'))} | "
+                    f"{variant == clv_target.get('selected_variant')} |"
+                )
+            coverage = clv_target.get("feature_coverage") or {}
+            lines.extend([
+                "",
+                "CLV v2 features are trained only from true, non-synthetic paired offers.",
+                f"Open-to-lock coverage: {_fmt_pct(coverage.get('open_to_lock_prob_move'))}; "
+                f"consensus coverage: {_fmt_pct(coverage.get('consensus_prob_at_lock'))}; "
+                f"true multi-book consensus: {_fmt_pct(coverage.get('consensus_multibook_rate'))}.",
+            ])
     lines.extend([
         "",
         "## Exact Bucket Model Selection",
@@ -614,30 +791,55 @@ def train(cfg: MarketResidualConfig) -> dict[str, Any]:
         and len(clv_holdout) >= max(30, cfg.min_holdout_rows // 2)
         and clv_train["beat_clv_price"].nunique() == 2
     ):
-        X_clv_train, clv_names, clv_means, clv_scales, clv_cats = _prepare(clv_train)
-        y_clv_train = clv_train["beat_clv_price"].astype(int).to_numpy()
-        clv_model = LogisticRegression(max_iter=3000, solver="lbfgs")
-        clv_model.fit(X_clv_train, y_clv_train)
-        X_clv_hold, _, _, _, _ = _prepare(clv_holdout, means=clv_means, scales=clv_scales, cats=clv_cats)
         clv_holdout = clv_holdout.copy()
-        clv_holdout["p_clv_beat"] = np.clip(clv_model.predict_proba(X_clv_hold)[:, 1], 1e-6, 1 - 1e-6)
+        v1_record, v1_probability = _fit_logistic_record(
+            clv_train, clv_holdout, "beat_clv_price", _CLV_V1_NUMERIC, _CATEGORICAL, "clv_beat_logistic_v1"
+        )
+        v2_record, v2_probability = _fit_logistic_record(
+            clv_train, clv_holdout, "beat_clv_price", _NUMERIC, _CATEGORICAL, "clv_beat_logistic_v2"
+        )
+        clv_holdout["p_clv_v1"] = v1_probability
+        clv_holdout["p_clv_v2"] = v2_probability
+        v1_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v1", "beat_clv_price")
+        v2_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v2", "beat_clv_price")
+        v1_brier = v1_metrics.get("brier")
+        v2_brier = v2_metrics.get("brier")
+        v1_auc = v1_metrics.get("auc")
+        v2_auc = v2_metrics.get("auc")
+        use_v2 = bool(
+            v1_brier is not None and v2_brier is not None and v2_brier < v1_brier
+            and (v1_auc is None or v2_auc is None or v2_auc >= v1_auc)
+        )
+        selected_variant = "clv_v2" if use_v2 else "clv_v1"
+        selected_record = v2_record if use_v2 else v1_record
+        clv_holdout["p_clv_beat"] = v2_probability if use_v2 else v1_probability
+        coverage = {
+            feature: float(clv_train[feature].notna().mean()) if feature in clv_train else 0.0
+            for feature in [
+                "open_to_lock_prob_move", "open_to_lock_line_move_side", "consensus_prob_at_lock",
+                "consensus_price_dispersion", "book_lead_lag_prob", "lock_offer_available",
+            ]
+        }
+        coverage["consensus_multibook_rate"] = float(
+            (pd.to_numeric(clv_train["consensus_book_count"], errors="coerce") >= 2).mean()
+        )
+        coverage["consensus_nonzero_dispersion_rate"] = float(
+            (pd.to_numeric(clv_train["consensus_price_dispersion"], errors="coerce") > 0).mean()
+        )
         payload["clv_target"] = {
             "target": "beat_clv_price",
             "train_rows": int(len(clv_train)),
             "holdout_rows": int(len(clv_holdout)),
             "status": "ready",
+            "evidence": "true_pair_non_synthetic_only",
+            "selected_variant": selected_variant,
+            "variant_comparison": {"clv_v1": v1_metrics, "clv_v2": v2_metrics},
+            "feature_coverage": coverage,
             "holdout": _binary_forecast_summary(clv_holdout, "p_clv_beat", "beat_clv_price"),
         }
-        payload["models"]["clv_beat"] = {
-            "method": "clv_beat_logistic",
-            "intercept": float(clv_model.intercept_[0]),
-            "coef": {name: float(value) for name, value in zip(clv_names, clv_model.coef_[0]) if abs(float(value)) > 1e-12},
-            "numeric_means": clv_means,
-            "numeric_scales": clv_scales,
-            "categorical_values": clv_cats,
-            "numeric_features": _NUMERIC,
-            "categorical_features": _CATEGORICAL,
-        }
+        selected_record["selected_by_holdout"] = selected_variant
+        selected_record["true_pair_only"] = True
+        payload["models"]["clv_beat"] = selected_record
     payload["status"] = "ready"
     payload["report_path"] = _write_report(payload, cfg)
     (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")

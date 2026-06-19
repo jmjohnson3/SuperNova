@@ -20,6 +20,10 @@ import psycopg2
 from .prop_clean_slate import CleanSlateThresholds, clean_date_set, load_clean_slate_rows
 from .prop_market_history import ensure_prop_market_history_schema
 from .prop_market_training import ensure_prop_market_training_schema
+from .prop_real_money_eligibility import (
+    PROP_REAL_MONEY_ELIGIBILITY_START_DATE,
+    parse_eligibility_start_date,
+)
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
 _PG_DSN = "postgresql://josh:password@localhost:5432/nba"
@@ -34,6 +38,7 @@ class PropBucketReopenConfig:
     out_file: str = "prop_bucket_reopen_policy.json"
     lookback_days: int = 365
     holdout_days: int = 28
+    eligibility_start_date: date = PROP_REAL_MONEY_ELIGIBILITY_START_DATE
     min_total_rows: int = 150
     min_train_rows: int = 150
     min_holdout_rows: int = 40
@@ -51,9 +56,9 @@ class PropBucketReopenConfig:
     min_clean_unique_dates: int = 5
     clean_slate_min_side_locks: int = 100
     clean_slate_min_valid_side_locks: int = 100
-    clean_slate_min_valid_coverage: float = 0.25
+    clean_slate_min_valid_coverage: float = 0.90
     clean_slate_max_missing_lock_rate: float = 0.02
-    clean_slate_max_stale_close_rate: float = 0.05
+    clean_slate_max_stale_close_rate: float = 0.02
     max_player_share: float = 0.12
     max_team_share: float = 0.25
     max_game_date_share: float = 0.35
@@ -130,14 +135,36 @@ SELECT
         WHEN clv_valid IS TRUE AND beat_clv_line IS TRUE THEN 1
         WHEN clv_valid IS TRUE AND beat_clv_line IS FALSE THEN 0
         ELSE NULL
-    END AS beat_clv_line
+    END AS beat_clv_line,
+    COALESCE(clv_valid, false) AS clv_valid,
+    clv_unknown_reason
 FROM features.mlb_prop_market_training_examples
 WHERE game_date_et >= %(cutoff)s
   AND market = ANY(%(markets)s)
   AND model_prob_side IS NOT NULL
+  AND market_prob_side IS NOT NULL
   AND market_line IS NOT NULL
   AND won IS NOT NULL
   AND model_prob_side BETWEEN 0.0 AND 1.0
+  AND COALESCE(
+        clean_market_pair_flag::float,
+        CASE
+            WHEN pair_quality IN ('same_book', 'cross_book')
+             AND COALESCE(market_prob_source, '') NOT IN ('raw_implied', 'synthetic_fanduel_over_only')
+            THEN 1.0
+            ELSE 0.0
+        END
+      ) = 1.0
+  AND NOT (
+        LOWER(COALESCE(bookmaker_key, '')) = 'fanduel'
+    AND market IN ('batter_hits','batter_total_bases','batter_home_runs')
+    AND (
+          COALESCE(pair_quality, '') = 'synthetic'
+       OR COALESCE(market_prob_source, '') = 'synthetic_fanduel_over_only'
+       OR COALESCE(paired_price_source, '') = 'synthetic_fanduel_over_only_complement'
+       OR COALESCE(synthetic_pair_flag::float, 0.0) >= 0.5
+    )
+  )
 """
 
 HISTORY_SQL = """
@@ -250,8 +277,13 @@ def _load_history(cfg: PropBucketReopenConfig) -> pd.DataFrame:
 
 
 def _load_clean_dates(cfg: PropBucketReopenConfig, *, date_to: date | None = None) -> tuple[set[date], list[dict]]:
-    cutoff = datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days)
+    cutoff = max(
+        datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days),
+        cfg.eligibility_start_date,
+    )
     end_date = date_to or datetime.now(timezone.utc).date()
+    if end_date < cutoff:
+        return set(), []
     thresholds = CleanSlateThresholds(
         min_side_locks=cfg.clean_slate_min_side_locks,
         min_valid_side_locks=cfg.clean_slate_min_valid_side_locks,
@@ -315,6 +347,8 @@ def _summary(rows: pd.DataFrame) -> dict:
             "clv_line_beat_rate": None,
             "clv_price_rows": 0,
             "clv_line_rows": 0,
+            "valid_close_coverage": None,
+            "stale_close_rate": None,
             "unique_players": 0,
             "unique_teams": 0,
             "unique_dates": 0,
@@ -328,6 +362,7 @@ def _summary(rows: pd.DataFrame) -> dict:
     priced = rows["profit_units"].notna()
     clv_price = rows["beat_clv_price"].notna()
     clv_line = rows["beat_clv_line"].notna()
+    valid_close = rows["clv_valid"].fillna(False).astype(bool)
     units = _sum(rows.loc[priced, "profit_units"])
     row_count = int(len(rows))
     priced_rows = int(priced.sum())
@@ -355,6 +390,10 @@ def _summary(rows: pd.DataFrame) -> dict:
         "clv_line_beat_rate": _mean(rows.loc[clv_line, "beat_clv_line"]) if clv_line.any() else None,
         "clv_price_rows": int(clv_price.sum()),
         "clv_line_rows": int(clv_line.sum()),
+        "valid_close_coverage": float(valid_close.mean()) if row_count else None,
+        "stale_close_rate": float(
+            (rows["clv_unknown_reason"] == "stale_close_before_lock").mean()
+        ) if row_count else None,
         "unique_players": _nunique(rows, "player_id"),
         "unique_teams": _nunique(rows, "team_abbr"),
         "unique_dates": _nunique(rows, "game_date_et"),
@@ -439,6 +478,10 @@ def _policy_reasons(train: dict, holdout: dict, cfg: PropBucketReopenConfig) -> 
         reasons.append(f"avg_clv_price<{cfg.min_avg_clv_price:.3f}")
     if holdout["clv_price_rows"] < cfg.min_clv_price_rows:
         reasons.append(f"clv_price_rows<{cfg.min_clv_price_rows}")
+    if _lt(holdout["valid_close_coverage"], cfg.clean_slate_min_valid_coverage):
+        reasons.append(f"valid_close_coverage<{cfg.clean_slate_min_valid_coverage:.2f}")
+    if _gt(holdout["stale_close_rate"], cfg.clean_slate_max_stale_close_rate):
+        reasons.append(f"stale_close_rate>{cfg.clean_slate_max_stale_close_rate:.2f}")
     if _lt(holdout["clv_beat_rate"], cfg.min_clv_beat_rate):
         reasons.append(f"clv_beat_rate<{cfg.min_clv_beat_rate:.2f}")
     if _gt_abs(holdout["calibration_error"], cfg.max_abs_calibration_error):
@@ -482,6 +525,10 @@ def _bootstrap_micro_reasons(
         reasons.append(f"bootstrap_avg_clv_price<{cfg.bootstrap_min_avg_clv_price:.3f}")
     if summary["clv_price_rows"] < cfg.bootstrap_min_clv_price_rows:
         reasons.append(f"bootstrap_clv_price_rows<{cfg.bootstrap_min_clv_price_rows}")
+    if _lt(summary["valid_close_coverage"], cfg.clean_slate_min_valid_coverage):
+        reasons.append(f"bootstrap_valid_close_coverage<{cfg.clean_slate_min_valid_coverage:.2f}")
+    if _gt(summary["stale_close_rate"], cfg.clean_slate_max_stale_close_rate):
+        reasons.append(f"bootstrap_stale_close_rate>{cfg.clean_slate_max_stale_close_rate:.2f}")
     if _lt(summary["clv_beat_rate"], cfg.bootstrap_min_clv_beat_rate):
         reasons.append(f"bootstrap_clv_beat_rate<{cfg.bootstrap_min_clv_beat_rate:.2f}")
     if _gt_abs(summary["calibration_error"], cfg.bootstrap_max_abs_calibration_error):
@@ -565,12 +612,14 @@ def _graduate_one_rung(previous: str, desired: str) -> str:
     return _LADDER_TIERS[min(_LADDER_RANK[previous] + 1, _LADDER_RANK[desired])]
 
 
-def _load_previous_ladder(path: Path) -> dict[str, dict]:
+def _load_previous_ladder(path: Path, eligibility_start_date: date) -> dict[str, dict]:
     if not path.exists():
         return {}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
+        return {}
+    if str(payload.get("eligibility_start_date") or "") != eligibility_start_date.isoformat():
         return {}
     out: dict[str, dict] = {}
     for key, record in (payload.get("ladder_buckets") or {}).items():
@@ -632,18 +681,23 @@ def _history_index(history_df: pd.DataFrame) -> dict[tuple[str, str], dict]:
 def train(cfg: PropBucketReopenConfig) -> dict:
     cfg.model_dir.mkdir(parents=True, exist_ok=True)
     output_path = cfg.model_dir / cfg.out_file
-    previous_ladder = _load_previous_ladder(output_path)
-    df = _load(cfg)
+    previous_ladder = _load_previous_ladder(output_path, cfg.eligibility_start_date)
+    legacy_df = _load(cfg)
     history_df = _load_history(cfg)
-    evidence_date_to = max(df["game_date_et"]) if not df.empty else None
+    evidence_date_to = max(legacy_df["game_date_et"]) if not legacy_df.empty else datetime.now(timezone.utc).date()
     clean_dates, clean_slate_rows = _load_clean_dates(cfg, date_to=evidence_date_to)
-    if not df.empty:
-        df["clean_slate"] = df["game_date_et"].isin(clean_dates)
+    if not legacy_df.empty:
+        legacy_df["clean_slate"] = legacy_df["game_date_et"].isin(clean_dates)
+    df = legacy_df.loc[
+        legacy_df["game_date_et"] >= cfg.eligibility_start_date
+    ].copy() if not legacy_df.empty else legacy_df.copy()
     history_by_level = _history_index(history_df)
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source": "features.mlb_prop_market_training_examples",
         "promotion_scope": "exact_bucket_only",
+        "eligibility_start_date": cfg.eligibility_start_date.isoformat(),
+        "eligibility_rule": "promotion_evidence_only_on_or_after_fixed_start_date",
         "lookback_days": cfg.lookback_days,
         "holdout_days": cfg.holdout_days,
         "thresholds": {
@@ -709,6 +763,9 @@ def train(cfg: PropBucketReopenConfig) -> dict:
             "bootstrap_max_game_date_share": cfg.bootstrap_max_game_date_share,
         },
         "rows": int(len(df)),
+        "eligible_rows": int(len(df)),
+        "legacy_audit_rows": int(len(legacy_df)),
+        "legacy_audit_summary": _summary(legacy_df) if not legacy_df.empty else _summary(pd.DataFrame()),
         "history_rows": int(len(history_df)),
         "clean_slate_count": len(clean_dates),
         "clean_slate_rows": clean_slate_rows,
@@ -866,6 +923,8 @@ def train(cfg: PropBucketReopenConfig) -> dict:
                         "holdout_avg_clv_price": holdout_summary["avg_clv_price"],
                         "holdout_clv_beat_rate": holdout_summary["clv_beat_rate"],
                         "holdout_clv_price_rows": holdout_summary["clv_price_rows"],
+                        "holdout_valid_close_coverage": holdout_summary["valid_close_coverage"],
+                        "holdout_stale_close_rate": holdout_summary["stale_close_rate"],
                         "holdout_unique_players": holdout_summary["unique_players"],
                         "holdout_unique_teams": holdout_summary["unique_teams"],
                         "holdout_unique_dates": holdout_summary["unique_dates"],
@@ -883,6 +942,8 @@ def train(cfg: PropBucketReopenConfig) -> dict:
                         "bootstrap_avg_clv_price": all_summary["avg_clv_price"],
                         "bootstrap_clv_beat_rate": all_summary["clv_beat_rate"],
                         "bootstrap_clv_price_rows": all_summary["clv_price_rows"],
+                        "bootstrap_valid_close_coverage": all_summary["valid_close_coverage"],
+                        "bootstrap_stale_close_rate": all_summary["stale_close_rate"],
                         "bootstrap_unique_players": all_summary["unique_players"],
                         "bootstrap_unique_teams": all_summary["unique_teams"],
                         "bootstrap_unique_dates": all_summary["unique_dates"],
@@ -922,6 +983,11 @@ def main() -> None:
     parser.add_argument("--out-file", default="prop_bucket_reopen_policy.json")
     parser.add_argument("--lookback-days", type=int, default=365)
     parser.add_argument("--holdout-days", type=int, default=28)
+    parser.add_argument(
+        "--eligibility-start-date",
+        default=PROP_REAL_MONEY_ELIGIBILITY_START_DATE.isoformat(),
+        help="Fixed first slate allowed to count toward real-money promotion.",
+    )
     parser.add_argument("--min-total-rows", type=int, default=150)
     parser.add_argument("--min-train-rows", type=int, default=150)
     parser.add_argument("--min-holdout-rows", type=int, default=40)
@@ -939,9 +1005,9 @@ def main() -> None:
     parser.add_argument("--min-clean-unique-dates", type=int, default=5)
     parser.add_argument("--clean-slate-min-side-locks", type=int, default=100)
     parser.add_argument("--clean-slate-min-valid-side-locks", type=int, default=100)
-    parser.add_argument("--clean-slate-min-valid-coverage", type=float, default=0.25)
+    parser.add_argument("--clean-slate-min-valid-coverage", type=float, default=0.90)
     parser.add_argument("--clean-slate-max-missing-lock-rate", type=float, default=0.02)
-    parser.add_argument("--clean-slate-max-stale-close-rate", type=float, default=0.05)
+    parser.add_argument("--clean-slate-max-stale-close-rate", type=float, default=0.02)
     parser.add_argument("--max-player-share", type=float, default=0.12)
     parser.add_argument("--max-team-share", type=float, default=0.25)
     parser.add_argument("--max-game-date-share", type=float, default=0.35)
@@ -989,6 +1055,7 @@ def main() -> None:
         out_file=args.out_file,
         lookback_days=args.lookback_days,
         holdout_days=args.holdout_days,
+        eligibility_start_date=parse_eligibility_start_date(args.eligibility_start_date),
         min_total_rows=args.min_total_rows,
         min_train_rows=args.min_train_rows,
         min_holdout_rows=args.min_holdout_rows,

@@ -521,6 +521,38 @@ def resolve_valid_prop_close(
               AND as_of_date = %s
               AND player_name_norm = %s
               AND stat = %s
+              AND bookmaker_key = %s
+              AND event_id = %s
+              AND snapshot_at_utc > %s
+              AND snapshot_at_utc BETWEEN %s AND %s
+              AND line <> %s
+            ORDER BY snapshot_at_utc DESC, id DESC
+            """,
+            (
+                game_date, player_norm, stat, book, event_id,
+                lock_at, earliest_valid, commence, line,
+            ),
+        )
+        same_book_other_line = next(
+            (dict(candidate) for candidate in cur.fetchall() if _side_price(dict(candidate), side) is not None),
+            None,
+        )
+    if same_book_other_line:
+        return {
+            **unknown,
+            "unknown_reason": "line_disappeared_at_close",
+            "match_method": "same_book_other_line_at_close",
+        }
+
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT *
+            FROM odds.mlb_player_prop_line_snapshots
+            WHERE snapshot_role = 'close'
+              AND as_of_date = %s
+              AND player_name_norm = %s
+              AND stat = %s
               AND bookmaker_key <> %s
               AND line = %s
               AND event_id = %s

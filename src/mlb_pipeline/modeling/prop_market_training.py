@@ -46,6 +46,7 @@ class PropMarketTrainingConfig:
     include_pending: bool = False
     require_lock: bool = True
     replace: bool = True
+    ensure_schema: bool = False
 
 
 def _clean_float(value: Any) -> float | None:
@@ -404,6 +405,61 @@ def _market_training_has_required_columns(conn) -> bool:
         )
         existing = {str(row[0]) for row in cur.fetchall()}
     return required.issubset(existing)
+
+
+def _table_has_columns(conn, schema: str, table: str, columns: set[str]) -> bool:
+    if not _table_exists(conn, schema, table):
+        return False
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = %s
+              AND table_name = %s
+            """,
+            (schema, table),
+        )
+        existing = {str(row[0]) for row in cur.fetchall()}
+    return columns.issubset(existing)
+
+
+def prepare_prop_market_training_dependencies(conn) -> None:
+    """Create/upgrade tables and compatibility views used by the trainer.
+
+    This is intentionally opt-in for scheduler safety.  Live pregame/close
+    jobs should not perform DDL while trying to publish or capture odds.
+    """
+    ensure_prop_replay_schema(conn)
+    ensure_prop_market_training_schema(conn)
+    ensure_game_training_features(conn)
+    ensure_prop_offer_links_schema(conn)
+    _ensure_lineup_name_columns(conn)
+    _ensure_boxscore_player_stats_compat(conn)
+
+
+def verify_prop_market_training_dependencies(conn) -> list[str]:
+    """Return missing dependencies without creating or altering anything."""
+    missing: list[str] = []
+    if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
+        missing.append("features.mlb_prop_market_training_examples")
+    elif not _market_training_has_required_columns(conn):
+        missing.append("features.mlb_prop_market_training_examples required columns")
+    if not _table_exists(conn, "bets", "mlb_prop_prediction_replay"):
+        missing.append("bets.mlb_prop_prediction_replay")
+    if not _table_exists(conn, "features", "mlb_prop_offer_links"):
+        missing.append("features.mlb_prop_offer_links")
+    if not _relation_exists(conn, "features.mlb_game_training_features"):
+        missing.append("features.mlb_game_training_features")
+    if not _table_exists(conn, "raw", "mlb_games"):
+        missing.append("raw.mlb_games")
+    if not _table_exists(conn, "raw", "mlb_player_gamelogs"):
+        missing.append("raw.mlb_player_gamelogs")
+    if not _table_exists(conn, "raw", "mlb_boxscore_player_stats"):
+        missing.append("raw.mlb_boxscore_player_stats")
+    if not _table_has_columns(conn, "raw", "mlb_lineups", {"player_name_norm"}):
+        missing.append("raw.mlb_lineups.player_name_norm")
+    return missing
 
 
 def _relation_exists(conn, name: str) -> bool:
@@ -1291,12 +1347,17 @@ def _delete_existing(conn, cfg: PropMarketTrainingConfig) -> int:
 
 def refresh_prop_market_training_examples(cfg: PropMarketTrainingConfig) -> dict[str, int]:
     with psycopg2.connect(cfg.pg_dsn) as conn:
-        ensure_prop_replay_schema(conn)
-        ensure_prop_market_training_schema(conn)
-        ensure_game_training_features(conn)
-        ensure_prop_offer_links_schema(conn)
-        _ensure_lineup_name_columns(conn)
-        _ensure_boxscore_player_stats_compat(conn)
+        if cfg.ensure_schema:
+            prepare_prop_market_training_dependencies(conn)
+        else:
+            missing = verify_prop_market_training_dependencies(conn)
+            if missing:
+                raise RuntimeError(
+                    "Prop market training dependencies are not ready: "
+                    + ", ".join(missing)
+                    + ". Run `python -m mlb_pipeline.modeling.build_prop_market_training_table --ensure-schema` "
+                    + "from a non-live maintenance window."
+                )
         deleted = _delete_existing(conn, cfg) if cfg.replace else 0
         if not _table_exists(conn, "bets", "mlb_prop_prediction_replay"):
             return {"deleted": deleted, "replay_rows": 0, "examples": 0}
