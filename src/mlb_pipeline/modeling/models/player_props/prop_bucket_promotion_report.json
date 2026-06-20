@@ -1,10 +1,10 @@
 {
-  "generated_at_utc": "2026-06-19T13:52:05Z",
+  "generated_at_utc": "2026-06-19T23:39:12Z",
   "promotion_scope": "exact_bucket_only",
   "eligibility_start_date": "2026-06-19",
   "lookback_days": 365,
   "rows": 0,
-  "legacy_audit_rows": 76157,
+  "legacy_audit_rows": 78285,
   "bucket_count": 0,
   "promotable_count": 0,
   "thresholds": {

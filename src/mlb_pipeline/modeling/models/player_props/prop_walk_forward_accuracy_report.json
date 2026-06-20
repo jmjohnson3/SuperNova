@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-19T19:51:32+00:00",
+  "generated_at_utc": "2026-06-20T00:52:58+00:00",
   "status": "ready",
   "source": "bets.mlb_prop_prediction_replay",
   "lookback_days": 365,
@@ -8,17 +8,17 @@
   "min_live_policy_rows": 150,
   "min_live_policy_dates": 3,
   "min_live_policy_brier_gain": 0.001,
-  "rows": 92555,
+  "rows": 95540,
   "graded_rows": 79111,
-  "pending_rows": 13444,
+  "pending_rows": 16429,
   "date_min": "2026-05-31",
   "date_max": "2026-06-19",
   "unique_dates": 20,
   "clv": {
-    "valid_clv_rows": 71853,
-    "clv_coverage": 0.7763275890011344,
-    "avg_clv_price": 0.06037354042280767,
-    "clv_price_beat_rate": 0.3737909342685761,
+    "valid_clv_rows": 78474,
+    "clv_coverage": 0.8213732468076198,
+    "avg_clv_price": 0.05012743074139205,
+    "clv_price_beat_rate": 0.3704666513749777,
     "avg_clv_line": 0.0,
     "clv_line_beat_rate": 0.0
   },
@@ -95,7 +95,7 @@
   "market_side": [
     {
       "key": "batter_total_bases|over",
-      "rows": 33149,
+      "rows": 34156,
       "graded": 28100,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -171,17 +171,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 26135,
-        "clv_coverage": 0.7884099067845184,
-        "avg_clv_price": 0.13233747847713795,
-        "clv_price_beat_rate": 0.38542184809642244,
+        "valid_clv_rows": 28598,
+        "clv_coverage": 0.8372760276378967,
+        "avg_clv_price": 0.1201035037415204,
+        "clv_price_beat_rate": 0.3814602419749633,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over",
-      "rows": 29376,
+      "rows": 30422,
       "graded": 25267,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -257,17 +257,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 22974,
-        "clv_coverage": 0.7820669934640523,
-        "avg_clv_price": 0.12173369896404632,
-        "clv_price_beat_rate": 0.39409767563332465,
+        "valid_clv_rows": 24982,
+        "clv_coverage": 0.8211820393136546,
+        "avg_clv_price": 0.10406572732367304,
+        "clv_price_beat_rate": 0.38719878312384914,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over",
-      "rows": 14724,
+      "rows": 15168,
       "graded": 12407,
       "unique_dates": 19,
       "best_variant": "walk_forward_blend",
@@ -343,17 +343,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 11592,
-        "clv_coverage": 0.7872860635696821,
-        "avg_clv_price": 0.04855244996549344,
-        "clv_price_beat_rate": 0.3435127674258109,
+        "valid_clv_rows": 12698,
+        "clv_coverage": 0.8371571729957806,
+        "avg_clv_price": 0.046716018270593795,
+        "clv_price_beat_rate": 0.342416128524177,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under",
-      "rows": 8003,
+      "rows": 8258,
       "graded": 6765,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -429,17 +429,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5850,
-        "clv_coverage": 0.7309758840434837,
-        "avg_clv_price": -0.2540273504273504,
-        "clv_price_beat_rate": 0.32495726495726496,
+        "valid_clv_rows": 6409,
+        "clv_coverage": 0.7760959069992734,
+        "avg_clv_price": -0.2468871898892183,
+        "clv_price_beat_rate": 0.3310968949914183,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under",
-      "rows": 4151,
+      "rows": 4270,
       "graded": 3690,
       "unique_dates": 20,
       "best_variant": "market_no_vig",
@@ -515,17 +515,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3069,
-        "clv_coverage": 0.739339918092026,
-        "avg_clv_price": -0.342593678722711,
-        "clv_price_beat_rate": 0.3088954056695992,
+        "valid_clv_rows": 3320,
+        "clv_coverage": 0.7775175644028103,
+        "avg_clv_price": -0.3562048192771084,
+        "clv_price_beat_rate": 0.3072289156626506,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over",
-      "rows": 1515,
+      "rows": 1572,
       "graded": 1386,
       "unique_dates": 18,
       "best_variant": "market_no_vig",
@@ -601,17 +601,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1121,
-        "clv_coverage": 0.73993399339934,
-        "avg_clv_price": -0.3156289027653881,
-        "clv_price_beat_rate": 0.35325602140945583,
+        "valid_clv_rows": 1238,
+        "clv_coverage": 0.787531806615776,
+        "avg_clv_price": -0.2919063004846526,
+        "clv_price_beat_rate": 0.36187399030694667,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under",
-      "rows": 1490,
+      "rows": 1547,
       "graded": 1361,
       "unique_dates": 18,
       "best_variant": "market_no_vig",
@@ -687,10 +687,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1112,
-        "clv_coverage": 0.7463087248322148,
-        "avg_clv_price": 0.3697392086330935,
-        "clv_price_beat_rate": 0.45323741007194246,
+        "valid_clv_rows": 1229,
+        "clv_coverage": 0.7944408532643826,
+        "avg_clv_price": 0.3517412530512612,
+        "clv_price_beat_rate": 0.44914564686737185,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -785,7 +785,7 @@
   "line_surface": [
     {
       "key": "batter_hits|over|common",
-      "rows": 22494,
+      "rows": 23193,
       "graded": 18965,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -861,17 +861,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 17363,
-        "clv_coverage": 0.7718947274828843,
-        "avg_clv_price": 0.1492282439670564,
-        "clv_price_beat_rate": 0.40983700973334103,
+        "valid_clv_rows": 19028,
+        "clv_coverage": 0.820419954296555,
+        "avg_clv_price": 0.12682047508934202,
+        "clv_price_beat_rate": 0.40330039941139373,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common",
-      "rows": 18505,
+      "rows": 19068,
       "graded": 15764,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -947,17 +947,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 14559,
-        "clv_coverage": 0.7867603350445825,
-        "avg_clv_price": 0.16855896696201664,
-        "clv_price_beat_rate": 0.40840717082217187,
+        "valid_clv_rows": 15916,
+        "clv_coverage": 0.8346968743444514,
+        "avg_clv_price": 0.1506697662729329,
+        "clv_price_beat_rate": 0.40311636089469716,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|alt_tail",
-      "rows": 14644,
+      "rows": 15088,
       "graded": 12336,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -1033,17 +1033,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 11576,
-        "clv_coverage": 0.7904944004370391,
-        "avg_clv_price": 0.08678213545266068,
-        "clv_price_beat_rate": 0.3565134761575674,
+        "valid_clv_rows": 12682,
+        "clv_coverage": 0.8405355249204666,
+        "avg_clv_price": 0.0817426273458445,
+        "clv_price_beat_rate": 0.3542816590443148,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common",
-      "rows": 8003,
+      "rows": 8258,
       "graded": 6765,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -1119,19 +1119,19 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5850,
-        "clv_coverage": 0.7309758840434837,
-        "avg_clv_price": -0.2540273504273504,
-        "clv_price_beat_rate": 0.32495726495726496,
+        "valid_clv_rows": 6409,
+        "clv_coverage": 0.7760959069992734,
+        "avg_clv_price": -0.2468871898892183,
+        "clv_price_beat_rate": 0.3310968949914183,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|alt_tail",
-      "rows": 6882,
+      "rows": 7229,
       "graded": 6302,
-      "unique_dates": 16,
+      "unique_dates": 17,
       "best_variant": "model_only",
       "blend_model_weight": 0.6,
       "variants": {
@@ -1205,17 +1205,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5611,
-        "clv_coverage": 0.8153153153153153,
-        "avg_clv_price": 0.036653003029762966,
-        "clv_price_beat_rate": 0.34539297807877384,
+        "valid_clv_rows": 5954,
+        "clv_coverage": 0.823627057684327,
+        "avg_clv_price": 0.031345314074571716,
+        "clv_price_beat_rate": 0.3357406785354384,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over|common",
-      "rows": 7394,
+      "rows": 7616,
       "graded": 6231,
       "unique_dates": 19,
       "best_variant": "market_no_vig",
@@ -1291,17 +1291,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5819,
-        "clv_coverage": 0.7869894509061401,
-        "avg_clv_price": 0.07616772641347311,
-        "clv_price_beat_rate": 0.3572778827977316,
+        "valid_clv_rows": 6372,
+        "clv_coverage": 0.8366596638655462,
+        "avg_clv_price": 0.07531701192718142,
+        "clv_price_beat_rate": 0.35703075957313246,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over|alt_tail",
-      "rows": 7330,
+      "rows": 7552,
       "graded": 6176,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -1377,17 +1377,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5773,
-        "clv_coverage": 0.7875852660300137,
-        "avg_clv_price": 0.020717131474103583,
-        "clv_price_beat_rate": 0.3296379698596917,
+        "valid_clv_rows": 6326,
+        "clv_coverage": 0.8376588983050848,
+        "avg_clv_price": 0.017907050268732218,
+        "clv_price_beat_rate": 0.3276952260512172,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common",
-      "rows": 4151,
+      "rows": 4270,
       "graded": 3690,
       "unique_dates": 20,
       "best_variant": "market_no_vig",
@@ -1463,17 +1463,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3069,
-        "clv_coverage": 0.739339918092026,
-        "avg_clv_price": -0.342593678722711,
-        "clv_price_beat_rate": 0.3088954056695992,
+        "valid_clv_rows": 3320,
+        "clv_coverage": 0.7775175644028103,
+        "avg_clv_price": -0.3562048192771084,
+        "clv_price_beat_rate": 0.3072289156626506,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common",
-      "rows": 1515,
+      "rows": 1572,
       "graded": 1386,
       "unique_dates": 18,
       "best_variant": "market_no_vig",
@@ -1549,17 +1549,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1121,
-        "clv_coverage": 0.73993399339934,
-        "avg_clv_price": -0.3156289027653881,
-        "clv_price_beat_rate": 0.35325602140945583,
+        "valid_clv_rows": 1238,
+        "clv_coverage": 0.787531806615776,
+        "avg_clv_price": -0.2919063004846526,
+        "clv_price_beat_rate": 0.36187399030694667,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common",
-      "rows": 1490,
+      "rows": 1547,
       "graded": 1361,
       "unique_dates": 18,
       "best_variant": "market_no_vig",
@@ -1635,10 +1635,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1112,
-        "clv_coverage": 0.7463087248322148,
-        "avg_clv_price": 0.3697392086330935,
-        "clv_price_beat_rate": 0.45323741007194246,
+        "valid_clv_rows": 1229,
+        "clv_coverage": 0.7944408532643826,
+        "avg_clv_price": 0.3517412530512612,
+        "clv_price_beat_rate": 0.44914564686737185,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -1733,7 +1733,7 @@
   "exact_bucket": [
     {
       "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel",
-      "rows": 10081,
+      "rows": 10394,
       "graded": 8304,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -1809,19 +1809,19 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 7697,
-        "clv_coverage": 0.7635155242535463,
-        "avg_clv_price": 0.05558269455632065,
-        "clv_price_beat_rate": 0.323242821878654,
+        "valid_clv_rows": 8450,
+        "clv_coverage": 0.8129690205888013,
+        "avg_clv_price": 0.05099171597633137,
+        "clv_price_beat_rate": 0.3217751479289941,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel",
-      "rows": 6863,
+      "rows": 7209,
       "graded": 6283,
-      "unique_dates": 16,
+      "unique_dates": 17,
       "best_variant": "model_only",
       "blend_model_weight": 0.7,
       "variants": {
@@ -1895,17 +1895,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5592,
-        "clv_coverage": 0.8148040215649133,
-        "avg_clv_price": 0.03684191702432046,
-        "clv_price_beat_rate": 0.3445994277539342,
+        "valid_clv_rows": 5934,
+        "clv_coverage": 0.8231377444860591,
+        "avg_clv_price": 0.031511627906976744,
+        "clv_price_beat_rate": 0.3350185372430064,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel",
-      "rows": 7330,
+      "rows": 7552,
       "graded": 6176,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -1981,17 +1981,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 5773,
-        "clv_coverage": 0.7875852660300137,
-        "avg_clv_price": 0.020717131474103583,
-        "clv_price_beat_rate": 0.3296379698596917,
+        "valid_clv_rows": 6326,
+        "clv_coverage": 0.8376588983050848,
+        "avg_clv_price": 0.017907050268732218,
+        "clv_price_beat_rate": 0.3276952260512172,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over|common|HR 0.5|plus_500_plus|fanduel",
-      "rows": 4892,
+      "rows": 5044,
       "graded": 4014,
       "unique_dates": 19,
       "best_variant": "market_no_vig",
@@ -2067,17 +2067,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3673,
-        "clv_coverage": 0.7508176614881439,
-        "avg_clv_price": 0.04111080860332154,
-        "clv_price_beat_rate": 0.349033487612306,
+        "valid_clv_rows": 4032,
+        "clv_coverage": 0.7993655828707376,
+        "avg_clv_price": 0.05057539682539682,
+        "clv_price_beat_rate": 0.3521825396825397,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|heavy_lay|fanduel",
-      "rows": 4549,
+      "rows": 4670,
       "graded": 3986,
       "unique_dates": 18,
       "best_variant": "model_only",
@@ -2153,17 +2153,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3757,
-        "clv_coverage": 0.8258958012750055,
-        "avg_clv_price": 0.048171413361724764,
-        "clv_price_beat_rate": 0.37290391269630024,
+        "valid_clv_rows": 4079,
+        "clv_coverage": 0.8734475374732334,
+        "avg_clv_price": 0.02946800686442754,
+        "clv_price_beat_rate": 0.3677371904878647,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel",
-      "rows": 4387,
+      "rows": 4517,
       "graded": 3633,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -2239,17 +2239,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3351,
-        "clv_coverage": 0.7638477319352632,
-        "avg_clv_price": 0.09474485228290062,
-        "clv_price_beat_rate": 0.39838854073410923,
+        "valid_clv_rows": 3667,
+        "clv_coverage": 0.8118220057560328,
+        "avg_clv_price": 0.07243250613580585,
+        "clv_price_beat_rate": 0.39241887101172623,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel",
-      "rows": 4072,
+      "rows": 4187,
       "graded": 3586,
       "unique_dates": 17,
       "best_variant": "walk_forward_blend",
@@ -2325,17 +2325,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3446,
-        "clv_coverage": 0.8462671905697446,
-        "avg_clv_price": 0.1092658154381892,
-        "clv_price_beat_rate": 0.4204875217643645,
+        "valid_clv_rows": 3760,
+        "clv_coverage": 0.8980176737520899,
+        "avg_clv_price": 0.11098138297872341,
+        "clv_price_beat_rate": 0.41888297872340424,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 1.5|plus_250_499|fanduel",
-      "rows": 4321,
+      "rows": 4450,
       "graded": 3565,
       "unique_dates": 17,
       "best_variant": "model_only",
@@ -2411,17 +2411,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3308,
-        "clv_coverage": 0.7655635269613515,
-        "avg_clv_price": 0.18850967351874243,
-        "clv_price_beat_rate": 0.440447400241838,
+        "valid_clv_rows": 3632,
+        "clv_coverage": 0.8161797752808989,
+        "avg_clv_price": 0.14699614537444933,
+        "clv_price_beat_rate": 0.42951541850220265,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|heavy_lay|draftkings",
-      "rows": 3608,
+      "rows": 3707,
       "graded": 3155,
       "unique_dates": 18,
       "best_variant": "market_no_vig",
@@ -2497,17 +2497,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2700,
-        "clv_coverage": 0.7483370288248337,
-        "avg_clv_price": 0.03774074074074072,
-        "clv_price_beat_rate": 0.3988888888888889,
+        "valid_clv_rows": 2911,
+        "clv_coverage": 0.7852711087132452,
+        "avg_clv_price": 0.03341806939196153,
+        "clv_price_beat_rate": 0.39470972174510477,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel",
-      "rows": 3405,
+      "rows": 3498,
       "graded": 2984,
       "unique_dates": 19,
       "best_variant": "model_only",
@@ -2583,17 +2583,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2812,
-        "clv_coverage": 0.8258443465491924,
-        "avg_clv_price": 0.11930654338549075,
-        "clv_price_beat_rate": 0.38513513513513514,
+        "valid_clv_rows": 3056,
+        "clv_coverage": 0.873642081189251,
+        "avg_clv_price": 0.10167212041884818,
+        "clv_price_beat_rate": 0.3818717277486911,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 0.5|plus_100_149|draftkings",
-      "rows": 3342,
+      "rows": 3445,
       "graded": 2747,
       "unique_dates": 20,
       "best_variant": "walk_forward_blend",
@@ -2669,17 +2669,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2517,
-        "clv_coverage": 0.7531418312387792,
-        "avg_clv_price": -0.3462653953118792,
-        "clv_price_beat_rate": 0.30512514898688914,
+        "valid_clv_rows": 2777,
+        "clv_coverage": 0.8060957910014513,
+        "avg_clv_price": -0.3298919697515304,
+        "clv_price_beat_rate": 0.3150882247029168,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings",
-      "rows": 3024,
+      "rows": 3113,
       "graded": 2680,
       "unique_dates": 20,
       "best_variant": "market_no_vig",
@@ -2755,17 +2755,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2341,
-        "clv_coverage": 0.7741402116402116,
-        "avg_clv_price": 0.3810807347287484,
-        "clv_price_beat_rate": 0.4626228107646305,
+        "valid_clv_rows": 2537,
+        "clv_coverage": 0.8149694828140058,
+        "avg_clv_price": 0.40340559716200236,
+        "clv_price_beat_rate": 0.4659046117461569,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 0.5|plus_150_249|draftkings",
-      "rows": 2806,
+      "rows": 2880,
       "graded": 2477,
       "unique_dates": 19,
       "best_variant": "distribution",
@@ -2841,17 +2841,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1994,
-        "clv_coverage": 0.7106200997861725,
-        "avg_clv_price": 0.03825977933801404,
-        "clv_price_beat_rate": 0.36258776328986964,
+        "valid_clv_rows": 2143,
+        "clv_coverage": 0.7440972222222222,
+        "avg_clv_price": 0.05001866542230518,
+        "clv_price_beat_rate": 0.3691087260849277,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 1.5|plus_150_249|fanduel",
-      "rows": 2441,
+      "rows": 2507,
       "graded": 2171,
       "unique_dates": 17,
       "best_variant": "model_only",
@@ -2927,17 +2927,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2073,
-        "clv_coverage": 0.849242113887751,
-        "avg_clv_price": 0.03371924746743851,
-        "clv_price_beat_rate": 0.3704775687409551,
+        "valid_clv_rows": 2249,
+        "clv_coverage": 0.8970881531711209,
+        "avg_clv_price": 0.00718986216096044,
+        "clv_price_beat_rate": 0.365051133837261,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over|common|HR 0.5|plus_250_499|fanduel",
-      "rows": 2380,
+      "rows": 2447,
       "graded": 2111,
       "unique_dates": 19,
       "best_variant": "market_no_vig",
@@ -3013,17 +3013,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2043,
-        "clv_coverage": 0.8584033613445378,
-        "avg_clv_price": 0.10181106216348507,
-        "clv_price_beat_rate": 0.36612824278022515,
+        "valid_clv_rows": 2231,
+        "clv_coverage": 0.911728647323253,
+        "avg_clv_price": 0.08596145226355895,
+        "clv_price_beat_rate": 0.3612729717615419,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel",
-      "rows": 2656,
+      "rows": 2740,
       "graded": 2069,
       "unique_dates": 20,
       "best_variant": "model_only",
@@ -3099,17 +3099,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1888,
-        "clv_coverage": 0.7108433734939759,
-        "avg_clv_price": 0.2262023305084746,
-        "clv_price_beat_rate": 0.4173728813559322,
+        "valid_clv_rows": 2088,
+        "clv_coverage": 0.762043795620438,
+        "avg_clv_price": 0.14767241379310347,
+        "clv_price_beat_rate": 0.40229885057471265,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel",
-      "rows": 2146,
+      "rows": 2205,
       "graded": 1935,
       "unique_dates": 17,
       "best_variant": "model_only",
@@ -3185,17 +3185,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1873,
-        "clv_coverage": 0.8727865796831314,
-        "avg_clv_price": 0.1180672717565403,
-        "clv_price_beat_rate": 0.396155899626268,
+        "valid_clv_rows": 2033,
+        "clv_coverage": 0.9219954648526077,
+        "avg_clv_price": 0.123659616330546,
+        "clv_price_beat_rate": 0.3954746679783571,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings",
-      "rows": 1727,
+      "rows": 1765,
       "graded": 1540,
       "unique_dates": 20,
       "best_variant": "model_only",
@@ -3271,17 +3271,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1358,
-        "clv_coverage": 0.7863346844238563,
-        "avg_clv_price": -0.3284462444771723,
-        "clv_price_beat_rate": 0.3026509572901325,
+        "valid_clv_rows": 1456,
+        "clv_coverage": 0.8249291784702549,
+        "avg_clv_price": -0.3167239010989011,
+        "clv_price_beat_rate": 0.3090659340659341,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|lay_150_180|fanduel",
-      "rows": 1829,
+      "rows": 1887,
       "graded": 1479,
       "unique_dates": 17,
       "best_variant": "model_only",
@@ -3357,17 +3357,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1371,
-        "clv_coverage": 0.7495899398578458,
-        "avg_clv_price": 0.10846097738876735,
-        "clv_price_beat_rate": 0.4113785557986871,
+        "valid_clv_rows": 1516,
+        "clv_coverage": 0.8033916269210387,
+        "avg_clv_price": 0.06777044854881267,
+        "clv_price_beat_rate": 0.40435356200527706,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|lay_150_180|draftkings",
-      "rows": 1575,
+      "rows": 1626,
       "graded": 1303,
       "unique_dates": 18,
       "best_variant": "walk_forward_blend",
@@ -3443,17 +3443,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 1174,
-        "clv_coverage": 0.7453968253968254,
-        "avg_clv_price": 0.20089437819420786,
-        "clv_price_beat_rate": 0.4352640545144804,
+        "valid_clv_rows": 1312,
+        "clv_coverage": 0.8068880688806888,
+        "avg_clv_price": 0.2014939024390244,
+        "clv_price_beat_rate": 0.42835365853658536,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 1.5|heavy_lay|draftkings",
-      "rows": 1047,
+      "rows": 1093,
       "graded": 936,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -3529,17 +3529,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 787,
-        "clv_coverage": 0.7516714422158548,
-        "avg_clv_price": -0.4623506988564168,
-        "clv_price_beat_rate": 0.3341804320203304,
+        "valid_clv_rows": 856,
+        "clv_coverage": 0.7831655992680695,
+        "avg_clv_price": -0.4859929906542056,
+        "clv_price_beat_rate": 0.3247663551401869,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 1.5|plus_150_249|draftkings",
-      "rows": 963,
+      "rows": 1008,
       "graded": 860,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -3615,17 +3615,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 715,
-        "clv_coverage": 0.7424714434060229,
-        "avg_clv_price": 0.45872727272727276,
-        "clv_price_beat_rate": 0.46293706293706294,
+        "valid_clv_rows": 783,
+        "clv_coverage": 0.7767857142857143,
+        "avg_clv_price": 0.4844699872286079,
+        "clv_price_beat_rate": 0.46871008939974457,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings",
-      "rows": 980,
+      "rows": 1020,
       "graded": 850,
       "unique_dates": 20,
       "best_variant": "model_only",
@@ -3701,17 +3701,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 573,
-        "clv_coverage": 0.5846938775510204,
-        "avg_clv_price": -0.6194938917975568,
-        "clv_price_beat_rate": 0.23734729493891799,
+        "valid_clv_rows": 625,
+        "clv_coverage": 0.6127450980392157,
+        "avg_clv_price": -0.643792,
+        "clv_price_beat_rate": 0.224,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|fair_lay|fanduel",
-      "rows": 826,
+      "rows": 848,
       "graded": 746,
       "unique_dates": 17,
       "best_variant": "walk_forward_blend",
@@ -3787,17 +3787,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 728,
-        "clv_coverage": 0.8813559322033898,
-        "avg_clv_price": -0.08361263736263737,
-        "clv_price_beat_rate": 0.32554945054945056,
+        "valid_clv_rows": 786,
+        "clv_coverage": 0.9268867924528302,
+        "avg_clv_price": -0.06358778625954199,
+        "clv_price_beat_rate": 0.3282442748091603,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|lay_130_149|draftkings",
-      "rows": 905,
+      "rows": 935,
       "graded": 702,
       "unique_dates": 18,
       "best_variant": "walk_forward_blend",
@@ -3873,17 +3873,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 647,
-        "clv_coverage": 0.7149171270718232,
-        "avg_clv_price": 0.6504636785162288,
-        "clv_price_beat_rate": 0.47913446676970634,
+        "valid_clv_rows": 713,
+        "clv_coverage": 0.7625668449197861,
+        "avg_clv_price": 0.5794670406732118,
+        "clv_price_beat_rate": 0.46143057503506313,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings",
-      "rows": 759,
+      "rows": 777,
       "graded": 684,
       "unique_dates": 19,
       "best_variant": "market_no_vig",
@@ -3959,17 +3959,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 632,
-        "clv_coverage": 0.8326745718050066,
-        "avg_clv_price": -0.2790506329113924,
-        "clv_price_beat_rate": 0.34177215189873417,
+        "valid_clv_rows": 683,
+        "clv_coverage": 0.879021879021879,
+        "avg_clv_price": -0.3521669106881406,
+        "clv_price_beat_rate": 0.3294289897510981,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|lay_130_149|fanduel",
-      "rows": 658,
+      "rows": 684,
       "graded": 506,
       "unique_dates": 18,
       "best_variant": "model_only",
@@ -4045,17 +4045,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 466,
-        "clv_coverage": 0.7082066869300911,
-        "avg_clv_price": 0.17010729613733908,
-        "clv_price_beat_rate": 0.40987124463519314,
+        "valid_clv_rows": 520,
+        "clv_coverage": 0.7602339181286549,
+        "avg_clv_price": 0.059115384615384604,
+        "clv_price_beat_rate": 0.38846153846153847,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|fair_lay|draftkings",
-      "rows": 517,
+      "rows": 537,
       "graded": 474,
       "unique_dates": 18,
       "best_variant": "walk_forward_blend",
@@ -4131,17 +4131,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 455,
-        "clv_coverage": 0.8800773694390716,
-        "avg_clv_price": 0.03276923076923073,
-        "clv_price_beat_rate": 0.4043956043956044,
+        "valid_clv_rows": 499,
+        "clv_coverage": 0.9292364990689013,
+        "avg_clv_price": 0.05336673346693386,
+        "clv_price_beat_rate": 0.40080160320641284,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 0.5|fair_lay|draftkings",
-      "rows": 644,
+      "rows": 667,
       "graded": 470,
       "unique_dates": 20,
       "best_variant": "market_no_vig",
@@ -4217,17 +4217,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 430,
-        "clv_coverage": 0.6677018633540373,
-        "avg_clv_price": -0.6886046511627908,
-        "clv_price_beat_rate": 0.24186046511627907,
+        "valid_clv_rows": 488,
+        "clv_coverage": 0.7316341829085458,
+        "avg_clv_price": -0.6840983606557378,
+        "clv_price_beat_rate": 0.25614754098360654,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common|TB 1.5|fair_lay|draftkings",
-      "rows": 490,
+      "rows": 509,
       "graded": 451,
       "unique_dates": 19,
       "best_variant": "market_no_vig",
@@ -4303,17 +4303,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 423,
-        "clv_coverage": 0.863265306122449,
-        "avg_clv_price": -0.12446808510638299,
-        "clv_price_beat_rate": 0.3806146572104019,
+        "valid_clv_rows": 464,
+        "clv_coverage": 0.9115913555992141,
+        "avg_clv_price": -0.13728448275862074,
+        "clv_price_beat_rate": 0.3793103448275862,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|alt_tail|TB 2.5+|plus_150_249|fanduel",
-      "rows": 454,
+      "rows": 470,
       "graded": 415,
       "unique_dates": 17,
       "best_variant": "model_only",
@@ -4389,17 +4389,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 402,
-        "clv_coverage": 0.8854625550660793,
-        "avg_clv_price": 0.42273631840796033,
-        "clv_price_beat_rate": 0.43283582089552236,
+        "valid_clv_rows": 441,
+        "clv_coverage": 0.9382978723404255,
+        "avg_clv_price": 0.35870748299319727,
+        "clv_price_beat_rate": 0.41496598639455784,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|fair_lay|draftkings",
-      "rows": 565,
+      "rows": 586,
       "graded": 403,
       "unique_dates": 20,
       "best_variant": "market_no_vig",
@@ -4475,17 +4475,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 367,
-        "clv_coverage": 0.6495575221238938,
-        "avg_clv_price": 0.7066757493188012,
-        "clv_price_beat_rate": 0.4904632152588556,
+        "valid_clv_rows": 426,
+        "clv_coverage": 0.726962457337884,
+        "avg_clv_price": 0.67981220657277,
+        "clv_price_beat_rate": 0.4859154929577465,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 2.5+|plus_500_plus|fanduel",
-      "rows": 556,
+      "rows": 582,
       "graded": 393,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -4561,17 +4561,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 363,
-        "clv_coverage": 0.6528776978417267,
-        "avg_clv_price": 0.2205785123966942,
-        "clv_price_beat_rate": 0.371900826446281,
+        "valid_clv_rows": 422,
+        "clv_coverage": 0.7250859106529209,
+        "avg_clv_price": 0.18533175355450238,
+        "clv_price_beat_rate": 0.35545023696682465,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 1.5|plus_500_plus|fanduel",
-      "rows": 408,
+      "rows": 431,
       "graded": 291,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -4647,17 +4647,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 272,
-        "clv_coverage": 0.6666666666666666,
-        "avg_clv_price": 0.24823529411764705,
-        "clv_price_beat_rate": 0.39705882352941174,
+        "valid_clv_rows": 316,
+        "clv_coverage": 0.7331786542923434,
+        "avg_clv_price": 0.23800632911392403,
+        "clv_price_beat_rate": 0.38924050632911394,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|draftkings",
-      "rows": 263,
+      "rows": 271,
       "graded": 241,
       "unique_dates": 18,
       "best_variant": "model_only",
@@ -4733,17 +4733,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 175,
-        "clv_coverage": 0.6653992395437263,
-        "avg_clv_price": 0.67,
-        "clv_price_beat_rate": 0.5085714285714286,
+        "valid_clv_rows": 186,
+        "clv_coverage": 0.6863468634686347,
+        "avg_clv_price": 0.6057526881720431,
+        "clv_price_beat_rate": 0.5,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|fanduel",
-      "rows": 224,
+      "rows": 227,
       "graded": 209,
       "unique_dates": 15,
       "best_variant": "market_no_vig",
@@ -4819,17 +4819,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 176,
-        "clv_coverage": 0.7857142857142857,
-        "avg_clv_price": 0.014829545454545462,
-        "clv_price_beat_rate": 0.2784090909090909,
+        "valid_clv_rows": 182,
+        "clv_coverage": 0.801762114537445,
+        "avg_clv_price": -0.014725274725274714,
+        "clv_price_beat_rate": 0.27472527472527475,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel",
-      "rows": 216,
+      "rows": 227,
       "graded": 192,
       "unique_dates": 17,
       "best_variant": "distribution",
@@ -4905,17 +4905,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 180,
-        "clv_coverage": 0.8333333333333334,
-        "avg_clv_price": 0.17172222222222225,
-        "clv_price_beat_rate": 0.46111111111111114,
+        "valid_clv_rows": 207,
+        "clv_coverage": 0.9118942731277533,
+        "avg_clv_price": 0.04623188405797102,
+        "clv_price_beat_rate": 0.41545893719806765,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 2.5+|plus_100_149|fanduel",
-      "rows": 210,
+      "rows": 217,
       "graded": 186,
       "unique_dates": 17,
       "best_variant": "walk_forward_blend",
@@ -4991,17 +4991,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 180,
-        "clv_coverage": 0.8571428571428571,
-        "avg_clv_price": 0.5038333333333334,
-        "clv_price_beat_rate": 0.46111111111111114,
+        "valid_clv_rows": 198,
+        "clv_coverage": 0.9124423963133641,
+        "avg_clv_price": 0.3825252525252525,
+        "clv_price_beat_rate": 0.43434343434343436,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|fair_lay|fanduel",
-      "rows": 263,
+      "rows": 277,
       "graded": 182,
       "unique_dates": 17,
       "best_variant": "model_only",
@@ -5077,17 +5077,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 173,
-        "clv_coverage": 0.6577946768060836,
-        "avg_clv_price": 0.12988439306358376,
-        "clv_price_beat_rate": 0.4046242774566474,
+        "valid_clv_rows": 201,
+        "clv_coverage": 0.7256317689530686,
+        "avg_clv_price": 0.1871144278606965,
+        "clv_price_beat_rate": 0.4228855721393035,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|draftkings",
-      "rows": 165,
+      "rows": 172,
       "graded": 154,
       "unique_dates": 18,
       "best_variant": "model_only",
@@ -5163,17 +5163,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 99,
-        "clv_coverage": 0.6,
-        "avg_clv_price": 1.266060606060606,
-        "clv_price_beat_rate": 0.5858585858585859,
+        "valid_clv_rows": 114,
+        "clv_coverage": 0.6627906976744186,
+        "avg_clv_price": 1.2601754385964914,
+        "clv_price_beat_rate": 0.5789473684210527,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 1.5|plus_100_149|draftkings",
-      "rows": 156,
+      "rows": 160,
       "graded": 140,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -5249,17 +5249,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 129,
-        "clv_coverage": 0.8269230769230769,
-        "avg_clv_price": 0.32697674418604655,
-        "clv_price_beat_rate": 0.5426356589147286,
+        "valid_clv_rows": 138,
+        "clv_coverage": 0.8625,
+        "avg_clv_price": 0.2981159420289855,
+        "clv_price_beat_rate": 0.5289855072463768,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|draftkings",
-      "rows": 147,
+      "rows": 150,
       "graded": 138,
       "unique_dates": 17,
       "best_variant": "distribution",
@@ -5335,17 +5335,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 126,
-        "clv_coverage": 0.8571428571428571,
-        "avg_clv_price": 0.8776984126984128,
-        "clv_price_beat_rate": 0.5238095238095238,
+        "valid_clv_rows": 131,
+        "clv_coverage": 0.8733333333333333,
+        "avg_clv_price": 0.7732824427480917,
+        "clv_price_beat_rate": 0.5114503816793893,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 1.5|plus_100_149|fanduel",
-      "rows": 148,
+      "rows": 152,
       "graded": 137,
       "unique_dates": 16,
       "best_variant": "distribution",
@@ -5421,17 +5421,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 131,
-        "clv_coverage": 0.8851351351351351,
-        "avg_clv_price": -0.3844274809160305,
-        "clv_price_beat_rate": 0.32061068702290074,
+        "valid_clv_rows": 140,
+        "clv_coverage": 0.9210526315789473,
+        "avg_clv_price": -0.3769285714285715,
+        "clv_price_beat_rate": 0.30714285714285716,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|draftkings",
-      "rows": 146,
+      "rows": 149,
       "graded": 137,
       "unique_dates": 16,
       "best_variant": "model_only",
@@ -5507,10 +5507,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 126,
-        "clv_coverage": 0.863013698630137,
-        "avg_clv_price": -0.8144444444444445,
-        "clv_price_beat_rate": 0.4444444444444444,
+        "valid_clv_rows": 131,
+        "clv_coverage": 0.8791946308724832,
+        "avg_clv_price": -0.713206106870229,
+        "clv_price_beat_rate": 0.4580152671755725,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -5603,7 +5603,7 @@
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings",
-      "rows": 143,
+      "rows": 148,
       "graded": 120,
       "unique_dates": 17,
       "best_variant": "distribution",
@@ -5679,17 +5679,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 68,
-        "clv_coverage": 0.4755244755244755,
-        "avg_clv_price": 0.9519117647058822,
-        "clv_price_beat_rate": 0.5588235294117647,
+        "valid_clv_rows": 69,
+        "clv_coverage": 0.46621621621621623,
+        "avg_clv_price": 0.9381159420289854,
+        "clv_price_beat_rate": 0.5507246376811594,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|fanduel",
-      "rows": 129,
+      "rows": 132,
       "graded": 120,
       "unique_dates": 15,
       "best_variant": "distribution",
@@ -5765,17 +5765,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 115,
-        "clv_coverage": 0.8914728682170543,
-        "avg_clv_price": 0.5134782608695653,
-        "clv_price_beat_rate": 0.3739130434782609,
+        "valid_clv_rows": 119,
+        "clv_coverage": 0.9015151515151515,
+        "avg_clv_price": 0.4821008403361345,
+        "clv_price_beat_rate": 0.3697478991596639,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|fanduel",
-      "rows": 125,
+      "rows": 129,
       "graded": 117,
       "unique_dates": 14,
       "best_variant": "market_no_vig",
@@ -5851,17 +5851,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 113,
-        "clv_coverage": 0.904,
-        "avg_clv_price": -0.5584070796460177,
-        "clv_price_beat_rate": 0.23893805309734514,
+        "valid_clv_rows": 118,
+        "clv_coverage": 0.9147286821705426,
+        "avg_clv_price": -0.5175423728813558,
+        "clv_price_beat_rate": 0.2542372881355932,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|fanduel",
-      "rows": 131,
+      "rows": 139,
       "graded": 115,
       "unique_dates": 14,
       "best_variant": "model_only",
@@ -5937,17 +5937,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 104,
-        "clv_coverage": 0.7938931297709924,
-        "avg_clv_price": 0.17567307692307693,
-        "clv_price_beat_rate": 0.36538461538461536,
+        "valid_clv_rows": 126,
+        "clv_coverage": 0.9064748201438849,
+        "avg_clv_price": 0.2978571428571429,
+        "clv_price_beat_rate": 0.373015873015873,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|draftkings",
-      "rows": 119,
+      "rows": 123,
       "graded": 109,
       "unique_dates": 15,
       "best_variant": "market_no_vig",
@@ -6023,17 +6023,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 73,
-        "clv_coverage": 0.6134453781512605,
-        "avg_clv_price": -1.2476712328767126,
-        "clv_price_beat_rate": 0.3287671232876712,
+        "valid_clv_rows": 78,
+        "clv_coverage": 0.6341463414634146,
+        "avg_clv_price": -1.3196153846153846,
+        "clv_price_beat_rate": 0.3076923076923077,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|draftkings",
-      "rows": 120,
+      "rows": 124,
       "graded": 108,
       "unique_dates": 18,
       "best_variant": "distribution",
@@ -6109,19 +6109,19 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 91,
-        "clv_coverage": 0.7583333333333333,
-        "avg_clv_price": -0.2294505494505495,
-        "clv_price_beat_rate": 0.4835164835164835,
+        "valid_clv_rows": 97,
+        "clv_coverage": 0.782258064516129,
+        "avg_clv_price": -0.04711340206185568,
+        "clv_price_beat_rate": 0.5051546391752577,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|fanduel",
-      "rows": 109,
+      "rows": 110,
       "graded": 104,
-      "unique_dates": 14,
+      "unique_dates": 15,
       "best_variant": "walk_forward_blend",
       "blend_model_weight": 0.4,
       "variants": {
@@ -6195,17 +6195,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 80,
-        "clv_coverage": 0.7339449541284404,
-        "avg_clv_price": -0.09675000000000003,
-        "clv_price_beat_rate": 0.25,
+        "valid_clv_rows": 81,
+        "clv_coverage": 0.7363636363636363,
+        "avg_clv_price": -0.10950617283950619,
+        "clv_price_beat_rate": 0.24691358024691357,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_home_runs|over|common|HR 0.5|plus_150_249|fanduel",
-      "rows": 119,
+      "rows": 122,
       "graded": 103,
       "unique_dates": 15,
       "best_variant": "market_no_vig",
@@ -6281,17 +6281,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 100,
-        "clv_coverage": 0.8403361344537815,
-        "avg_clv_price": 0.8256,
-        "clv_price_beat_rate": 0.47,
+        "valid_clv_rows": 106,
+        "clv_coverage": 0.8688524590163934,
+        "avg_clv_price": 0.7788679245283019,
+        "clv_price_beat_rate": 0.44339622641509435,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|lay_150_180|fanduel",
-      "rows": 111,
+      "rows": 113,
       "graded": 101,
       "unique_dates": 15,
       "best_variant": "model_only",
@@ -6367,17 +6367,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 99,
-        "clv_coverage": 0.8918918918918919,
-        "avg_clv_price": 0.08797979797979802,
-        "clv_price_beat_rate": 0.4444444444444444,
+        "valid_clv_rows": 106,
+        "clv_coverage": 0.9380530973451328,
+        "avg_clv_price": 0.08707547169811325,
+        "clv_price_beat_rate": 0.4339622641509434,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|fanduel",
-      "rows": 103,
+      "rows": 105,
       "graded": 94,
       "unique_dates": 14,
       "best_variant": "distribution",
@@ -6453,17 +6453,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 86,
-        "clv_coverage": 0.8349514563106796,
-        "avg_clv_price": 0.28941860465116276,
-        "clv_price_beat_rate": 0.45348837209302323,
+        "valid_clv_rows": 91,
+        "clv_coverage": 0.8666666666666667,
+        "avg_clv_price": 0.34296703296703296,
+        "clv_price_beat_rate": 0.4725274725274725,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|plus_250_499|fanduel",
-      "rows": 107,
+      "rows": 117,
       "graded": 76,
       "unique_dates": 16,
       "best_variant": "model_only",
@@ -6539,17 +6539,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 67,
-        "clv_coverage": 0.6261682242990654,
-        "avg_clv_price": 0.45149253731343286,
-        "clv_price_beat_rate": 0.4626865671641791,
+        "valid_clv_rows": 84,
+        "clv_coverage": 0.717948717948718,
+        "avg_clv_price": 0.3791666666666667,
+        "clv_price_beat_rate": 0.4523809523809524,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|draftkings",
-      "rows": 80,
+      "rows": 85,
       "graded": 76,
       "unique_dates": 15,
       "best_variant": "distribution",
@@ -6625,17 +6625,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 57,
-        "clv_coverage": 0.7125,
-        "avg_clv_price": -1.2010526315789476,
-        "clv_price_beat_rate": 0.3333333333333333,
+        "valid_clv_rows": 65,
+        "clv_coverage": 0.7647058823529411,
+        "avg_clv_price": -1.0206153846153847,
+        "clv_price_beat_rate": 0.36923076923076925,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|lay_130_149|draftkings",
-      "rows": 83,
+      "rows": 85,
       "graded": 74,
       "unique_dates": 18,
       "best_variant": "walk_forward_blend",
@@ -6711,17 +6711,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 62,
-        "clv_coverage": 0.7469879518072289,
-        "avg_clv_price": -0.05322580645161287,
-        "clv_price_beat_rate": 0.5483870967741935,
+        "valid_clv_rows": 66,
+        "clv_coverage": 0.7764705882352941,
+        "avg_clv_price": -0.16121212121212117,
+        "clv_price_beat_rate": 0.5151515151515151,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common|TB 1.5|plus_100_149|draftkings",
-      "rows": 80,
+      "rows": 83,
       "graded": 66,
       "unique_dates": 17,
       "best_variant": "distribution",
@@ -6797,17 +6797,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 48,
-        "clv_coverage": 0.6,
-        "avg_clv_price": -0.023541666666666655,
-        "clv_price_beat_rate": 0.3333333333333333,
+        "valid_clv_rows": 54,
+        "clv_coverage": 0.6506024096385542,
+        "avg_clv_price": 0.1587037037037037,
+        "clv_price_beat_rate": 0.37037037037037035,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings",
-      "rows": 71,
+      "rows": 76,
       "graded": 64,
       "unique_dates": 15,
       "best_variant": "distribution",
@@ -6883,17 +6883,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 43,
-        "clv_coverage": 0.6056338028169014,
-        "avg_clv_price": 1.9653488372093024,
-        "clv_price_beat_rate": 0.6976744186046512,
+        "valid_clv_rows": 52,
+        "clv_coverage": 0.6842105263157895,
+        "avg_clv_price": 1.6863461538461537,
+        "clv_price_beat_rate": 0.6923076923076923,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings",
-      "rows": 68,
+      "rows": 72,
       "graded": 63,
       "unique_dates": 17,
       "best_variant": "market_no_vig",
@@ -6970,7 +6970,7 @@
       },
       "clv": {
         "valid_clv_rows": 44,
-        "clv_coverage": 0.6470588235294118,
+        "clv_coverage": 0.6111111111111112,
         "avg_clv_price": 0.4004545454545454,
         "clv_price_beat_rate": 0.4318181818181818,
         "avg_clv_line": 0.0,
@@ -7065,7 +7065,7 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings",
-      "rows": 68,
+      "rows": 70,
       "graded": 61,
       "unique_dates": 14,
       "best_variant": "model_only",
@@ -7141,17 +7141,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 31,
-        "clv_coverage": 0.45588235294117646,
-        "avg_clv_price": -1.8406451612903227,
-        "clv_price_beat_rate": 0.16129032258064516,
+        "valid_clv_rows": 38,
+        "clv_coverage": 0.5428571428571428,
+        "avg_clv_price": -2.0326315789473686,
+        "clv_price_beat_rate": 0.15789473684210525,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|fanduel",
-      "rows": 62,
+      "rows": 66,
       "graded": 57,
       "unique_dates": 14,
       "best_variant": "distribution",
@@ -7227,17 +7227,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 52,
-        "clv_coverage": 0.8387096774193549,
-        "avg_clv_price": -0.00826923076923078,
-        "clv_price_beat_rate": 0.38461538461538464,
+        "valid_clv_rows": 61,
+        "clv_coverage": 0.9242424242424242,
+        "avg_clv_price": 0.1742622950819672,
+        "clv_price_beat_rate": 0.45901639344262296,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel",
-      "rows": 62,
+      "rows": 65,
       "graded": 56,
       "unique_dates": 13,
       "best_variant": "market_no_vig",
@@ -7313,17 +7313,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 50,
-        "clv_coverage": 0.8064516129032258,
-        "avg_clv_price": 0.4232,
-        "clv_price_beat_rate": 0.34,
+        "valid_clv_rows": 59,
+        "clv_coverage": 0.9076923076923077,
+        "avg_clv_price": 0.3628813559322034,
+        "clv_price_beat_rate": 0.3389830508474576,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|fanduel",
-      "rows": 62,
+      "rows": 65,
       "graded": 51,
       "unique_dates": 12,
       "best_variant": "model_only",
@@ -7399,17 +7399,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 44,
-        "clv_coverage": 0.7096774193548387,
-        "avg_clv_price": -0.36886363636363645,
-        "clv_price_beat_rate": 0.29545454545454547,
+        "valid_clv_rows": 56,
+        "clv_coverage": 0.8615384615384616,
+        "avg_clv_price": -0.7292857142857143,
+        "clv_price_beat_rate": 0.30357142857142855,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|plus_100_149|draftkings",
-      "rows": 59,
+      "rows": 64,
       "graded": 49,
       "unique_dates": 12,
       "best_variant": "market_no_vig",
@@ -7485,17 +7485,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 44,
-        "clv_coverage": 0.7457627118644068,
-        "avg_clv_price": 1.04,
-        "clv_price_beat_rate": 0.5681818181818182,
+        "valid_clv_rows": 52,
+        "clv_coverage": 0.8125,
+        "avg_clv_price": 0.9259615384615384,
+        "clv_price_beat_rate": 0.5384615384615384,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 1.5|lay_150_180|draftkings",
-      "rows": 53,
+      "rows": 55,
       "graded": 48,
       "unique_dates": 10,
       "best_variant": "distribution",
@@ -7571,17 +7571,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 42,
-        "clv_coverage": 0.7924528301886793,
-        "avg_clv_price": 0.24714285714285708,
-        "clv_price_beat_rate": 0.38095238095238093,
+        "valid_clv_rows": 46,
+        "clv_coverage": 0.8363636363636363,
+        "avg_clv_price": 0.22630434782608688,
+        "clv_price_beat_rate": 0.3695652173913043,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel",
-      "rows": 51,
+      "rows": 52,
       "graded": 48,
       "unique_dates": 15,
       "best_variant": "market_no_vig",
@@ -7657,17 +7657,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 43,
-        "clv_coverage": 0.8431372549019608,
-        "avg_clv_price": -1.0369767441860465,
-        "clv_price_beat_rate": 0.13953488372093023,
+        "valid_clv_rows": 44,
+        "clv_coverage": 0.8461538461538461,
+        "avg_clv_price": -0.9797727272727272,
+        "clv_price_beat_rate": 0.1590909090909091,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 0.5|lay_130_149|draftkings",
-      "rows": 60,
+      "rows": 64,
       "graded": 46,
       "unique_dates": 14,
       "best_variant": "market_no_vig",
@@ -7743,17 +7743,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 42,
-        "clv_coverage": 0.7,
-        "avg_clv_price": -0.8047619047619049,
-        "clv_price_beat_rate": 0.2619047619047619,
+        "valid_clv_rows": 51,
+        "clv_coverage": 0.796875,
+        "avg_clv_price": -0.5870588235294116,
+        "clv_price_beat_rate": 0.27450980392156865,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|lay_150_180|draftkings",
-      "rows": 50,
+      "rows": 54,
       "graded": 44,
       "unique_dates": 13,
       "best_variant": "distribution",
@@ -7829,17 +7829,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 27,
-        "clv_coverage": 0.54,
-        "avg_clv_price": -2.138148148148148,
-        "clv_price_beat_rate": 0.18518518518518517,
+        "valid_clv_rows": 34,
+        "clv_coverage": 0.6296296296296297,
+        "avg_clv_price": -2.046470588235294,
+        "clv_price_beat_rate": 0.14705882352941177,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|plus_100_149|draftkings",
-      "rows": 41,
+      "rows": 43,
       "graded": 39,
       "unique_dates": 15,
       "best_variant": "walk_forward_blend",
@@ -7915,17 +7915,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 27,
-        "clv_coverage": 0.6585365853658537,
-        "avg_clv_price": 0.4818518518518519,
-        "clv_price_beat_rate": 0.4444444444444444,
+        "valid_clv_rows": 31,
+        "clv_coverage": 0.7209302325581395,
+        "avg_clv_price": 0.5306451612903227,
+        "clv_price_beat_rate": 0.45161290322580644,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_130_149|draftkings",
-      "rows": 40,
+      "rows": 41,
       "graded": 38,
       "unique_dates": 14,
       "best_variant": "market_no_vig",
@@ -8002,7 +8002,7 @@
       },
       "clv": {
         "valid_clv_rows": 30,
-        "clv_coverage": 0.75,
+        "clv_coverage": 0.7317073170731707,
         "avg_clv_price": -0.04299999999999999,
         "clv_price_beat_rate": 0.6,
         "avg_clv_line": 0.0,
@@ -8011,7 +8011,7 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|fair_lay|draftkings",
-      "rows": 41,
+      "rows": 42,
       "graded": 37,
       "unique_dates": 15,
       "best_variant": "model_only",
@@ -8087,17 +8087,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 32,
-        "clv_coverage": 0.7804878048780488,
-        "avg_clv_price": -1.2434374999999998,
-        "clv_price_beat_rate": 0.25,
+        "valid_clv_rows": 37,
+        "clv_coverage": 0.8809523809523809,
+        "avg_clv_price": -1.2929729729729726,
+        "clv_price_beat_rate": 0.24324324324324326,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K <4.5|fair_lay|draftkings",
-      "rows": 38,
+      "rows": 39,
       "graded": 34,
       "unique_dates": 14,
       "best_variant": "model_only",
@@ -8173,17 +8173,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 31,
-        "clv_coverage": 0.8157894736842105,
-        "avg_clv_price": 1.1403225806451611,
-        "clv_price_beat_rate": 0.6451612903225806,
+        "valid_clv_rows": 36,
+        "clv_coverage": 0.9230769230769231,
+        "avg_clv_price": 1.1958333333333335,
+        "clv_price_beat_rate": 0.6388888888888888,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|plus_100_149|fanduel",
-      "rows": 35,
+      "rows": 37,
       "graded": 31,
       "unique_dates": 12,
       "best_variant": "model_only",
@@ -8259,10 +8259,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 26,
-        "clv_coverage": 0.7428571428571429,
-        "avg_clv_price": 0.3461538461538462,
-        "clv_price_beat_rate": 0.3076923076923077,
+        "valid_clv_rows": 32,
+        "clv_coverage": 0.8648648648648649,
+        "avg_clv_price": 0.4940625,
+        "clv_price_beat_rate": 0.34375,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -8441,7 +8441,7 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|fair_lay|fanduel",
-      "rows": 30,
+      "rows": 31,
       "graded": 28,
       "unique_dates": 11,
       "best_variant": "market_no_vig",
@@ -8517,17 +8517,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 27,
-        "clv_coverage": 0.9,
-        "avg_clv_price": -1.4811111111111115,
-        "clv_price_beat_rate": 0.2222222222222222,
+        "valid_clv_rows": 30,
+        "clv_coverage": 0.967741935483871,
+        "avg_clv_price": -1.288666666666667,
+        "clv_price_beat_rate": 0.26666666666666666,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 2.5+|plus_100_149|draftkings",
-      "rows": 32,
+      "rows": 33,
       "graded": 27,
       "unique_dates": 8,
       "best_variant": "market_no_vig",
@@ -8603,17 +8603,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 24,
-        "clv_coverage": 0.75,
-        "avg_clv_price": 0.7679166666666667,
-        "clv_price_beat_rate": 0.75,
+        "valid_clv_rows": 27,
+        "clv_coverage": 0.8181818181818182,
+        "avg_clv_price": 0.7825925925925927,
+        "clv_price_beat_rate": 0.7407407407407407,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|lay_150_180|fanduel",
-      "rows": 30,
+      "rows": 31,
       "graded": 26,
       "unique_dates": 11,
       "best_variant": "market_no_vig",
@@ -8689,10 +8689,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 22,
-        "clv_coverage": 0.7333333333333333,
-        "avg_clv_price": -0.59,
-        "clv_price_beat_rate": 0.45454545454545453,
+        "valid_clv_rows": 27,
+        "clv_coverage": 0.8709677419354839,
+        "avg_clv_price": -0.5733333333333333,
+        "clv_price_beat_rate": 0.37037037037037035,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -8785,7 +8785,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K <4.5|fair_lay|fanduel",
-      "rows": 26,
+      "rows": 27,
       "graded": 24,
       "unique_dates": 10,
       "best_variant": "model_only",
@@ -8861,17 +8861,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 23,
-        "clv_coverage": 0.8846153846153846,
-        "avg_clv_price": 0.7247826086956523,
-        "clv_price_beat_rate": 0.391304347826087,
+        "valid_clv_rows": 26,
+        "clv_coverage": 0.9629629629629629,
+        "avg_clv_price": 0.6423076923076921,
+        "clv_price_beat_rate": 0.38461538461538464,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|common|H 0.5|plus_100_149|fanduel",
-      "rows": 30,
+      "rows": 33,
       "graded": 23,
       "unique_dates": 9,
       "best_variant": "market_no_vig",
@@ -8947,17 +8947,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 23,
-        "clv_coverage": 0.7666666666666667,
-        "avg_clv_price": 1.2934782608695652,
-        "clv_price_beat_rate": 0.43478260869565216,
+        "valid_clv_rows": 27,
+        "clv_coverage": 0.8181818181818182,
+        "avg_clv_price": 1.147037037037037,
+        "clv_price_beat_rate": 0.4074074074074074,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|lay_130_149|fanduel",
-      "rows": 24,
+      "rows": 26,
       "graded": 22,
       "unique_dates": 10,
       "best_variant": "distribution",
@@ -9033,10 +9033,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 20,
-        "clv_coverage": 0.8333333333333334,
-        "avg_clv_price": 0.38150000000000006,
-        "clv_price_beat_rate": 0.45,
+        "valid_clv_rows": 24,
+        "clv_coverage": 0.9230769230769231,
+        "avg_clv_price": 0.5029166666666667,
+        "clv_price_beat_rate": 0.5,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -9129,7 +9129,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|draftkings",
-      "rows": 26,
+      "rows": 27,
       "graded": 22,
       "unique_dates": 10,
       "best_variant": "market_no_vig",
@@ -9205,10 +9205,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 14,
-        "clv_coverage": 0.5384615384615384,
-        "avg_clv_price": 0.39285714285714285,
-        "clv_price_beat_rate": 0.5,
+        "valid_clv_rows": 17,
+        "clv_coverage": 0.6296296296296297,
+        "avg_clv_price": 0.348235294117647,
+        "clv_price_beat_rate": 0.5294117647058824,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -9301,7 +9301,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|fanduel",
-      "rows": 23,
+      "rows": 24,
       "graded": 21,
       "unique_dates": 9,
       "best_variant": "distribution",
@@ -9377,19 +9377,19 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 20,
-        "clv_coverage": 0.8695652173913043,
-        "avg_clv_price": 0.9329999999999998,
-        "clv_price_beat_rate": 0.65,
+        "valid_clv_rows": 23,
+        "clv_coverage": 0.9583333333333334,
+        "avg_clv_price": 0.7604347826086956,
+        "clv_price_beat_rate": 0.6086956521739131,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|over|alt_tail|H 2.5+|plus_250_499|fanduel",
-      "rows": 19,
+      "rows": 20,
       "graded": 19,
-      "unique_dates": 4,
+      "unique_dates": 5,
       "best_variant": "market_no_vig",
       "blend_model_weight": 0.0,
       "variants": {
@@ -9463,17 +9463,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 19,
+        "valid_clv_rows": 20,
         "clv_coverage": 1.0,
-        "avg_clv_price": -0.01894736842105266,
-        "clv_price_beat_rate": 0.5789473684210527,
+        "avg_clv_price": -0.018000000000000026,
+        "clv_price_beat_rate": 0.55,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K <4.5|lay_130_149|draftkings",
-      "rows": 20,
+      "rows": 21,
       "graded": 19,
       "unique_dates": 9,
       "best_variant": "market_no_vig",
@@ -9549,17 +9549,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 16,
-        "clv_coverage": 0.8,
-        "avg_clv_price": -1.3575000000000002,
-        "clv_price_beat_rate": 0.3125,
+        "valid_clv_rows": 18,
+        "clv_coverage": 0.8571428571428571,
+        "avg_clv_price": -0.6966666666666668,
+        "clv_price_beat_rate": 0.3888888888888889,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_150_180|fanduel",
-      "rows": 21,
+      "rows": 22,
       "graded": 19,
       "unique_dates": 11,
       "best_variant": "market_no_vig",
@@ -9636,7 +9636,7 @@
       },
       "clv": {
         "valid_clv_rows": 15,
-        "clv_coverage": 0.7142857142857143,
+        "clv_coverage": 0.6818181818181818,
         "avg_clv_price": 0.5406666666666667,
         "clv_price_beat_rate": 0.6,
         "avg_clv_line": 0.0,
@@ -9645,7 +9645,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|draftkings",
-      "rows": 20,
+      "rows": 21,
       "graded": 18,
       "unique_dates": 9,
       "best_variant": "distribution",
@@ -9721,10 +9721,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 16,
-        "clv_coverage": 0.8,
-        "avg_clv_price": 0.37687499999999996,
-        "clv_price_beat_rate": 0.5,
+        "valid_clv_rows": 19,
+        "clv_coverage": 0.9047619047619048,
+        "avg_clv_price": -0.0705263157894737,
+        "clv_price_beat_rate": 0.42105263157894735,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -9817,7 +9817,7 @@
     },
     {
       "key": "batter_hits|under|common|H 1.5|lay_130_149|draftkings",
-      "rows": 20,
+      "rows": 21,
       "graded": 16,
       "unique_dates": 7,
       "best_variant": "walk_forward_blend",
@@ -9893,17 +9893,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 15,
-        "clv_coverage": 0.75,
-        "avg_clv_price": -0.32866666666666666,
-        "clv_price_beat_rate": 0.3333333333333333,
+        "valid_clv_rows": 19,
+        "clv_coverage": 0.9047619047619048,
+        "avg_clv_price": -0.037894736842105245,
+        "clv_price_beat_rate": 0.47368421052631576,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|draftkings",
-      "rows": 18,
+      "rows": 19,
       "graded": 16,
       "unique_dates": 8,
       "best_variant": "distribution",
@@ -9979,17 +9979,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 14,
-        "clv_coverage": 0.7777777777777778,
-        "avg_clv_price": -0.3307142857142856,
-        "clv_price_beat_rate": 0.42857142857142855,
+        "valid_clv_rows": 17,
+        "clv_coverage": 0.8947368421052632,
+        "avg_clv_price": 0.14941176470588244,
+        "clv_price_beat_rate": 0.5294117647058824,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|fanduel",
-      "rows": 19,
+      "rows": 20,
       "graded": 16,
       "unique_dates": 9,
       "best_variant": "walk_forward_blend",
@@ -10065,17 +10065,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 15,
-        "clv_coverage": 0.7894736842105263,
-        "avg_clv_price": -0.4946666666666666,
-        "clv_price_beat_rate": 0.3333333333333333,
+        "valid_clv_rows": 19,
+        "clv_coverage": 0.95,
+        "avg_clv_price": -0.14421052631578948,
+        "clv_price_beat_rate": 0.3684210526315789,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|fanduel",
-      "rows": 20,
+      "rows": 21,
       "graded": 16,
       "unique_dates": 7,
       "best_variant": "model_only",
@@ -10151,17 +10151,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 13,
-        "clv_coverage": 0.65,
-        "avg_clv_price": -2.0584615384615383,
-        "clv_price_beat_rate": 0.0,
+        "valid_clv_rows": 16,
+        "clv_coverage": 0.7619047619047619,
+        "avg_clv_price": -1.935625,
+        "clv_price_beat_rate": 0.0625,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_hits|under|common|H 0.5|lay_150_180|draftkings",
-      "rows": 20,
+      "rows": 22,
       "graded": 15,
       "unique_dates": 7,
       "best_variant": "model_only",
@@ -10237,17 +10237,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 13,
-        "clv_coverage": 0.65,
-        "avg_clv_price": -0.9323076923076924,
-        "clv_price_beat_rate": 0.23076923076923078,
+        "valid_clv_rows": 19,
+        "clv_coverage": 0.8636363636363636,
+        "avg_clv_price": -0.68,
+        "clv_price_beat_rate": 0.2631578947368421,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 6.5-8.0|lay_150_180|draftkings",
-      "rows": 18,
+      "rows": 21,
       "graded": 15,
       "unique_dates": 9,
       "best_variant": "market_no_vig",
@@ -10324,7 +10324,7 @@
       },
       "clv": {
         "valid_clv_rows": 9,
-        "clv_coverage": 0.5,
+        "clv_coverage": 0.42857142857142855,
         "avg_clv_price": -1.1411111111111112,
         "clv_price_beat_rate": 0.3333333333333333,
         "avg_clv_line": 0.0,
@@ -10409,17 +10409,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 12,
-        "clv_coverage": 0.75,
-        "avg_clv_price": 0.3741666666666667,
-        "clv_price_beat_rate": 0.3333333333333333,
+        "valid_clv_rows": 13,
+        "clv_coverage": 0.8125,
+        "avg_clv_price": 0.14153846153846156,
+        "clv_price_beat_rate": 0.3076923076923077,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|over|common|TB 1.5|lay_150_180|draftkings",
-      "rows": 17,
+      "rows": 19,
       "graded": 12,
       "unique_dates": 6,
       "best_variant": "market_no_vig",
@@ -10495,10 +10495,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 7,
-        "clv_coverage": 0.4117647058823529,
-        "avg_clv_price": -0.9914285714285714,
-        "clv_price_beat_rate": 0.2857142857142857,
+        "valid_clv_rows": 10,
+        "clv_coverage": 0.5263157894736842,
+        "avg_clv_price": -1.1070000000000002,
+        "clv_price_beat_rate": 0.2,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -10591,7 +10591,7 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K 6.5-8.0|lay_150_180|draftkings",
-      "rows": 13,
+      "rows": 14,
       "graded": 11,
       "unique_dates": 6,
       "best_variant": "market_no_vig",
@@ -10667,9 +10667,9 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2,
-        "clv_coverage": 0.15384615384615385,
-        "avg_clv_price": -0.395,
+        "valid_clv_rows": 5,
+        "clv_coverage": 0.35714285714285715,
+        "avg_clv_price": -0.28200000000000003,
         "clv_price_beat_rate": 0.0,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
@@ -10677,7 +10677,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K <4.5|lay_130_149|fanduel",
-      "rows": 14,
+      "rows": 16,
       "graded": 11,
       "unique_dates": 6,
       "best_variant": "model_only",
@@ -10753,10 +10753,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 10,
-        "clv_coverage": 0.7142857142857143,
-        "avg_clv_price": 0.531,
-        "clv_price_beat_rate": 0.6,
+        "valid_clv_rows": 15,
+        "clv_coverage": 0.9375,
+        "avg_clv_price": 0.358,
+        "clv_price_beat_rate": 0.4666666666666667,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -10849,9 +10849,9 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K 6.5-8.0|lay_130_149|fanduel",
-      "rows": 12,
+      "rows": 13,
       "graded": 10,
-      "unique_dates": 6,
+      "unique_dates": 7,
       "best_variant": "distribution",
       "blend_model_weight": 0.0,
       "variants": {
@@ -10925,10 +10925,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 11,
-        "clv_coverage": 0.9166666666666666,
-        "avg_clv_price": 1.6454545454545453,
-        "clv_price_beat_rate": 0.7272727272727273,
+        "valid_clv_rows": 12,
+        "clv_coverage": 0.9230769230769231,
+        "avg_clv_price": 1.4516666666666664,
+        "clv_price_beat_rate": 0.6666666666666666,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -11193,7 +11193,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K <4.5|lay_130_149|draftkings",
-      "rows": 10,
+      "rows": 12,
       "graded": 8,
       "unique_dates": 7,
       "best_variant": "distribution",
@@ -11269,17 +11269,17 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 7,
-        "clv_coverage": 0.7,
-        "avg_clv_price": -0.1471428571428571,
-        "clv_price_beat_rate": 0.42857142857142855,
+        "valid_clv_rows": 11,
+        "clv_coverage": 0.9166666666666666,
+        "avg_clv_price": -0.41181818181818175,
+        "clv_price_beat_rate": 0.36363636363636365,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "batter_total_bases|under|common|TB 2.5+|lay_150_180|draftkings",
-      "rows": 9,
+      "rows": 10,
       "graded": 5,
       "unique_dates": 5,
       "best_variant": "market_no_vig",
@@ -11355,10 +11355,10 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3,
-        "clv_coverage": 0.3333333333333333,
-        "avg_clv_price": -2.64,
-        "clv_price_beat_rate": 0.0,
+        "valid_clv_rows": 6,
+        "clv_coverage": 0.6,
+        "avg_clv_price": -1.8433333333333335,
+        "clv_price_beat_rate": 0.16666666666666666,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
@@ -11709,9 +11709,9 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K 8.5+|fair_lay|draftkings",
-      "rows": 3,
+      "rows": 4,
       "graded": 3,
-      "unique_dates": 1,
+      "unique_dates": 2,
       "best_variant": "distribution",
       "blend_model_weight": 1.0,
       "variants": {
@@ -11785,9 +11785,9 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3,
+        "valid_clv_rows": 4,
         "clv_coverage": 1.0,
-        "avg_clv_price": 1.406666666666667,
+        "avg_clv_price": 1.5275,
         "clv_price_beat_rate": 1.0,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
@@ -11795,9 +11795,9 @@
     },
     {
       "key": "pitcher_strikeouts|over|common|K 8.5+|fair_lay|fanduel",
-      "rows": 3,
+      "rows": 4,
       "graded": 3,
-      "unique_dates": 1,
+      "unique_dates": 2,
       "best_variant": "distribution",
       "blend_model_weight": 1.0,
       "variants": {
@@ -11871,19 +11871,19 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3,
+        "valid_clv_rows": 4,
         "clv_coverage": 1.0,
-        "avg_clv_price": 0.64,
-        "clv_price_beat_rate": 1.0,
+        "avg_clv_price": 0.355,
+        "clv_price_beat_rate": 0.75,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
       }
     },
     {
       "key": "pitcher_strikeouts|under|common|K 8.5+|fair_lay|draftkings",
-      "rows": 3,
+      "rows": 4,
       "graded": 3,
-      "unique_dates": 1,
+      "unique_dates": 2,
       "best_variant": "distribution",
       "blend_model_weight": 1.0,
       "variants": {
@@ -11957,9 +11957,9 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 3,
+        "valid_clv_rows": 4,
         "clv_coverage": 1.0,
-        "avg_clv_price": -1.3100000000000003,
+        "avg_clv_price": -1.4450000000000003,
         "clv_price_beat_rate": 0.0,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
@@ -12215,12 +12215,12 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 0,
-        "clv_coverage": 0.0,
-        "avg_clv_price": null,
-        "clv_price_beat_rate": null,
-        "avg_clv_line": null,
-        "clv_line_beat_rate": null
+        "valid_clv_rows": 2,
+        "clv_coverage": 0.5,
+        "avg_clv_price": 3.24,
+        "clv_price_beat_rate": 1.0,
+        "avg_clv_line": 0.0,
+        "clv_line_beat_rate": 0.0
       }
     },
     {
@@ -12301,9 +12301,9 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 2,
-        "clv_coverage": 0.5,
-        "avg_clv_price": -1.27,
+        "valid_clv_rows": 4,
+        "clv_coverage": 1.0,
+        "avg_clv_price": -0.635,
         "clv_price_beat_rate": 0.0,
         "avg_clv_line": 0.0,
         "clv_line_beat_rate": 0.0
@@ -12473,12 +12473,12 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 0,
-        "clv_coverage": 0.0,
-        "avg_clv_price": null,
-        "clv_price_beat_rate": null,
-        "avg_clv_line": null,
-        "clv_line_beat_rate": null
+        "valid_clv_rows": 2,
+        "clv_coverage": 0.5,
+        "avg_clv_price": -3.19,
+        "clv_price_beat_rate": 0.0,
+        "avg_clv_line": 0.0,
+        "clv_line_beat_rate": 0.0
       }
     },
     {
@@ -13171,7 +13171,7 @@
     },
     {
       "key": "pitcher_strikeouts|under|common|K 8.5+|lay_130_149|fanduel",
-      "rows": 2,
+      "rows": 3,
       "graded": 0,
       "unique_dates": 1,
       "best_variant": "none",
@@ -13247,159 +13247,159 @@
         }
       },
       "clv": {
-        "valid_clv_rows": 0,
-        "clv_coverage": 0.0,
-        "avg_clv_price": null,
-        "clv_price_beat_rate": null,
-        "avg_clv_line": null,
-        "clv_line_beat_rate": null
+        "valid_clv_rows": 3,
+        "clv_coverage": 1.0,
+        "avg_clv_price": 0.12333333333333334,
+        "clv_price_beat_rate": 0.3333333333333333,
+        "avg_clv_line": 0.0,
+        "clv_line_beat_rate": 0.0
       }
     }
   ],
   "opportunity": [
     {
       "key": "batter_hits|batter_pa_under_3_8",
-      "rows": 14387,
+      "rows": 14894,
       "graded": 11628,
-      "avg_projected_pa": 3.322245970513504,
+      "avg_projected_pa": 3.3205868827545344,
       "avg_projected_bf": null,
       "model_brier": 0.1826011488648168,
       "market_brier": 0.18248874749339125,
       "model_roi": -0.22049647806004619,
-      "valid_clv_rows": 10380
+      "valid_clv_rows": 11359
     },
     {
       "key": "batter_total_bases|batter_pa_3_8_to_4_2",
-      "rows": 13271,
+      "rows": 13661,
       "graded": 11580,
-      "avg_projected_pa": 4.024773913282692,
+      "avg_projected_pa": 4.02504685450297,
       "avg_projected_bf": null,
       "model_brier": 0.17809969470811757,
       "market_brier": 0.17770387602910165,
       "model_roi": -0.15009411101718792,
-      "valid_clv_rows": 10517
+      "valid_clv_rows": 11423
     },
     {
       "key": "batter_hits|batter_pa_3_8_to_4_2",
-      "rows": 13096,
+      "rows": 13527,
       "graded": 11531,
-      "avg_projected_pa": 4.019436626717476,
+      "avg_projected_pa": 4.019680509645025,
       "avg_projected_bf": null,
       "model_brier": 0.18186316490591287,
       "market_brier": 0.18180666635638376,
       "model_roi": 0.048961981063364884,
-      "valid_clv_rows": 10281
+      "valid_clv_rows": 11142
     },
     {
       "key": "batter_total_bases|batter_pa_under_3_8",
-      "rows": 12876,
+      "rows": 13288,
       "graded": 10262,
-      "avg_projected_pa": 3.3293373422683765,
+      "avg_projected_pa": 3.3279224362833637,
       "avg_projected_bf": null,
       "model_brier": 0.14671787989475793,
       "market_brier": 0.146236585146948,
       "model_roi": -0.15058761061946904,
-      "valid_clv_rows": 9275
+      "valid_clv_rows": 10193
     },
     {
       "key": "batter_total_bases|batter_pa_4_3_plus",
-      "rows": 11153,
+      "rows": 11477,
       "graded": 9948,
-      "avg_projected_pa": 4.48777010669775,
+      "avg_projected_pa": 4.488080508843774,
       "avg_projected_bf": null,
       "model_brier": 0.1928837635203064,
       "market_brier": 0.1939879950239838,
       "model_roi": -0.10749104303993796,
-      "valid_clv_rows": 9412
+      "valid_clv_rows": 10302
     },
     {
       "key": "batter_hits|batter_pa_4_3_plus",
-      "rows": 9896,
+      "rows": 10259,
       "graded": 8873,
-      "avg_projected_pa": 4.4834276475343575,
+      "avg_projected_pa": 4.484101764304513,
       "avg_projected_bf": null,
       "model_brier": 0.17651655561704394,
       "market_brier": 0.17686364089022774,
       "model_roi": 0.11885583482944348,
-      "valid_clv_rows": 8163
+      "valid_clv_rows": 8890
     },
     {
       "key": "batter_home_runs|batter_pa_under_3_8",
-      "rows": 5836,
+      "rows": 6020,
       "graded": 4617,
-      "avg_projected_pa": 3.3218540911909655,
+      "avg_projected_pa": 3.3204309708379482,
       "avg_projected_bf": null,
       "model_brier": 0.050450988676629845,
       "market_brier": 0.049431245092303074,
       "model_roi": -0.14375757575757575,
-      "valid_clv_rows": 4195
+      "valid_clv_rows": 4617
     },
     {
       "key": "batter_home_runs|batter_pa_3_8_to_4_2",
-      "rows": 5142,
+      "rows": 5290,
       "graded": 4461,
-      "avg_projected_pa": 4.019495687552864,
+      "avg_projected_pa": 4.019660785549254,
       "avg_projected_bf": null,
       "model_brier": 0.06787505391392064,
       "market_brier": 0.06677668160955298,
       "model_roi": -0.09986376021798361,
-      "valid_clv_rows": 4093
+      "valid_clv_rows": 4459
     },
     {
       "key": "batter_home_runs|batter_pa_4_3_plus",
-      "rows": 3893,
+      "rows": 4005,
       "graded": 3464,
-      "avg_projected_pa": 4.486334446442332,
+      "avg_projected_pa": 4.486616729088639,
       "avg_projected_bf": null,
       "model_brier": 0.0796105971391455,
       "market_brier": 0.07813094306666628,
       "model_roi": -0.427,
-      "valid_clv_rows": 3304
+      "valid_clv_rows": 3622
     },
     {
       "key": "pitcher_strikeouts|pitcher_bf_20_to_23",
-      "rows": 1702,
+      "rows": 1786,
       "graded": 1514,
       "avg_projected_pa": null,
-      "avg_projected_bf": 22.246807677242458,
+      "avg_projected_bf": 22.25826801045166,
       "model_brier": 0.24976867582562748,
       "market_brier": 0.24930606379003797,
       "model_roi": 0.012687909319899241,
-      "valid_clv_rows": 1270
+      "valid_clv_rows": 1432
     },
     {
       "key": "pitcher_strikeouts|pitcher_bf_24_plus",
-      "rows": 1114,
+      "rows": 1140,
       "graded": 1052,
       "avg_projected_pa": null,
-      "avg_projected_bf": 25.194254937163375,
+      "avg_projected_bf": 25.184912280701756,
       "model_brier": 0.251650144581749,
       "market_brier": 0.24768599705307004,
       "model_roi": -0.05601936507936507,
-      "valid_clv_rows": 830
+      "valid_clv_rows": 890
     },
     {
       "key": "pitcher_strikeouts|pitcher_bf_under_20",
-      "rows": 189,
+      "rows": 193,
       "graded": 181,
       "avg_projected_pa": null,
-      "avg_projected_bf": 18.57601410934744,
+      "avg_projected_bf": 18.555785837651122,
       "model_brier": 0.2312988201657459,
       "market_brier": 0.2180389878544427,
       "model_roi": -0.31405,
-      "valid_clv_rows": 133
+      "valid_clv_rows": 145
     }
   ],
   "clv_unknown_reasons": {
-    "close_outside_two_hour_window": 11867,
-    "stale_close_before_lock": 6183,
-    "line_disappeared_at_close": 1309,
+    "close_outside_two_hour_window": 7927,
+    "stale_close_before_lock": 6303,
+    "line_disappeared_at_close": 1476,
     "missing_lock_snapshot": 901,
-    "fallback_other_book_only": 259,
-    "no_valid_close_snapshot": 183
+    "fallback_other_book_only": 285,
+    "no_valid_close_snapshot": 174
   },
   "live_policy": {
-    "generated_at_utc": "2026-06-19T19:51:32+00:00",
+    "generated_at_utc": "2026-06-20T00:52:58+00:00",
     "min_rows": 150,
     "min_dates": 3,
     "min_brier_gain": 0.001,

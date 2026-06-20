@@ -1,6 +1,6 @@
 # MLB Prop Real-Money Kill Switch
 
-Generated: 2026-06-19T13:51:41+00:00
+Generated: 2026-06-19T23:39:03+00:00
 Status: disabled
 Open buckets: 0
 Selector real candidates: 0
@@ -28,9 +28,9 @@ Selector real candidates: 0
 | Artifact | Status | Age Hours |
 | --- | --- | --- |
 | readiness | fresh | 0.0 |
-| reopen_policy | fresh | 21.9 |
-| shadow_selector | fresh | 9.0 |
-| distribution | fresh | 8.4 |
-| opportunity | fresh | 7.0 |
-| hitter_outcome | fresh | 2.6 |
-| target_quality | fresh | 8.9 |
+| reopen_policy | fresh | 31.7 |
+| shadow_selector | fresh | 0.7 |
+| distribution | fresh | 7.5 |
+| opportunity | fresh | 16.8 |
+| hitter_outcome | fresh | 7.6 |
+| target_quality | fresh | 0.7 |

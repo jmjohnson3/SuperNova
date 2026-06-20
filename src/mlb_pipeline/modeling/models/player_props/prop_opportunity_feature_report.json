@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-19T14:57:25Z",
+  "generated_at_utc": "2026-06-19T23:40:33Z",
   "source": "features.mlb_prop_market_training_examples",
   "lookback_days": 30,
   "holdout_days": 28,

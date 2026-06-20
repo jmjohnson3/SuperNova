@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-06-19T13:51:41+00:00",
+  "generated_at_utc": "2026-06-19T23:39:03+00:00",
   "status": "disabled",
   "active": true,
   "blockers": [
@@ -33,50 +33,50 @@
     "readiness": {
       "file": "prop_bucket_trust_scores.json",
       "exists": true,
-      "generated_at_utc": "2026-06-19T13:51:31+00:00",
-      "age_hours": 0.003009201944444444,
+      "generated_at_utc": "2026-06-19T23:38:56+00:00",
+      "age_hours": 0.001687003888888889,
       "status": "fresh"
     },
     "reopen_policy": {
       "file": "prop_bucket_reopen_policy.json",
       "exists": true,
       "generated_at_utc": "2026-06-18T15:59:56Z",
-      "age_hours": 21.86273982861111,
+      "age_hours": 31.65168700388889,
       "status": "fresh"
     },
     "shadow_selector": {
       "file": "prop_shadow_selector_report.json",
       "exists": true,
-      "generated_at_utc": "2026-06-19T04:52:11+00:00",
-      "age_hours": 8.991906495277778,
+      "generated_at_utc": "2026-06-19T22:55:54+00:00",
+      "age_hours": 0.7189167261111111,
       "status": "fresh"
     },
     "distribution": {
       "file": "prop_distribution_models.json",
       "exists": true,
-      "generated_at_utc": "2026-06-19T05:27:07Z",
-      "age_hours": 8.409684273055555,
+      "generated_at_utc": "2026-06-19T16:09:52Z",
+      "age_hours": 7.4861408925,
       "status": "fresh"
     },
     "opportunity": {
       "file": "prop_opportunity_models.json",
       "exists": true,
       "generated_at_utc": "2026-06-19T06:52:56Z",
-      "age_hours": 6.979408728055556,
+      "age_hours": 16.76859122861111,
       "status": "fresh"
     },
     "hitter_outcome": {
       "file": "hitter_player_game_outcome_models.json",
       "exists": true,
-      "generated_at_utc": "2026-06-19T11:17:54.889236+00:00",
-      "age_hours": 2.563056203888889,
+      "generated_at_utc": "2026-06-19T16:03:19.672390+00:00",
+      "age_hours": 7.595430287777778,
       "status": "fresh"
     },
     "target_quality": {
       "file": "prop_target_quality_report.json",
       "exists": true,
-      "generated_at_utc": "2026-06-19T04:55:25Z",
-      "age_hours": 8.938025998611112,
+      "generated_at_utc": "2026-06-19T22:57:23Z",
+      "age_hours": 0.6945309511111111,
       "status": "fresh"
     }
   }

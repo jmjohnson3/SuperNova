@@ -1,6 +1,6 @@
 # MLB Prop Opportunity Feature Report
 
-- Generated UTC: 2026-06-19T14:57:25Z
+- Generated UTC: 2026-06-19T23:40:33Z
 - Source: features.mlb_prop_market_training_examples
 - Date range: 2026-05-31 to 2026-06-18
 - Rows: 78285

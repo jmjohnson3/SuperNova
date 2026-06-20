@@ -1,6 +1,6 @@
 # MLB TB Prop Repair Report
 
-Generated: 2026-06-19T19:02:22.921818+00:00
+Generated: 2026-06-20T00:59:24.330456+00:00
 Rows: 31530 | Dates: 2026-05-31 to 2026-06-18
 
 ## Top Repair Targets

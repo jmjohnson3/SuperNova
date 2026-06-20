@@ -1,13 +1,13 @@
 # MLB Prop Snapshot Coverage
 
-Generated: 2026-06-19T15:03:10-04:00
+Generated: 2026-06-19T21:00:22-04:00
 Range: 2026-06-06 to 2026-06-19
 
 ## Collection Status
 
 **TARGET MET**
 
-- Clean shadow slates: 11 / 10
+- Clean shadow slates: 12 / 10
 - Additional clean slates needed: 0
 - A clean slate needs at least 100 side locks, 100 valid exact side closes, and 25.0% valid-close coverage.
 - Missing-lock rate must be <= 2.0%; stale-close-before-lock rate must be <= 5.0%.
@@ -17,7 +17,7 @@ Range: 2026-06-06 to 2026-06-19
 
 | Date | Clean | Offers | Open | Locks | Side Locks | Close Obs | Valid Side Locks | Coverage | Missing Lock | Stale Close | Lock Phases | Close Times | Reasons |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| 2026-06-19 | no | 2979 | 2261 | 4944 | 4944 | 16299 | 306 | 6.2% | 0.0% | 1.3% | 2 | 7 | valid_clv_coverage<0.25 |
+| 2026-06-19 | yes | 3654 | 2261 | 7929 | 7929 | 33391 | 6958 | 87.8% | 0.0% | 2.3% | 3 | 14 |  |
 | 2026-06-18 | no | 2569 | 1592 | 2660 | 2660 | 14372 | 1994 | 75.0% | 0.0% | 12.2% | 2 | 15 | stale_close_rate>0.05 |
 | 2026-06-17 | yes | 4267 | 380 | 3707 | 3707 | 31248 | 3328 | 89.8% | 0.0% | 3.4% | 2 | 18 |  |
 | 2026-06-16 | yes | 4276 | 2600 | 8262 | 8262 | 38949 | 7125 | 86.2% | 0.0% | 1.7% | 3 | 17 |  |

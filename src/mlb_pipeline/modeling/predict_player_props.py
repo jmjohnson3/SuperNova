@@ -5454,6 +5454,106 @@ def _print_discord(
                 )
             _print_no_bet_summary(no_bet_rows)
 
+            # ── Projection Leaderboards ──────────────────────────────────────────
+            # Top 10 Strikeouts (by highest projection)
+            k_proj_rows = sorted(
+                [r for r in all_pitcher_rows if r.get("pred_strikeouts") is not None],
+                key=lambda r: r["pred_strikeouts"], reverse=True,
+            )
+            if k_proj_rows:
+                print("")
+                print("**Top 10 Strikeout Projections Today**")
+                for i, r in enumerate(k_proj_rows[:10], start=1):
+                    _name = r.get("player_name", f"id={r['player_id']}")
+                    _team = r.get("team_abbr", "?")
+                    _opp = r.get("opponent_abbr", "?")
+                    _pred_k = r["pred_strikeouts"]
+                    _ld = prop_lines.get((_normalize_name(_name), "pitcher_strikeouts"))
+                    if _ld and _ld.get("line") is not None:
+                        _lnk = _ld.get("over_link")
+                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_k:.1f} · O{_ld['line']:.1f}{_link_str}")
+                    else:
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_k:.1f}")
+
+            # Top 2 Total Bases (by highest projection)
+            tb_proj_rows = sorted(
+                [r for r in all_batter_rows if r.get("pred_total_bases") is not None],
+                key=lambda r: r["pred_total_bases"], reverse=True,
+            )
+            if tb_proj_rows:
+                print("")
+                print("**Top 2 Total Bases Projections Today**")
+                for i, r in enumerate(tb_proj_rows[:2], start=1):
+                    _name = r.get("player_name", f"id={r['player_id']}")
+                    _team = r.get("team_abbr", "?")
+                    _opp = r.get("opponent_abbr", "?")
+                    _pred_tb = r["pred_total_bases"]
+                    _ld = prop_lines.get((_normalize_name(_name), "batter_total_bases"))
+                    if _ld and _ld.get("line") is not None:
+                        _lnk = _ld.get("over_link")
+                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_tb:.2f} · O{_ld['line']:.1f}{_link_str}")
+                    else:
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_tb:.2f}")
+
+            # Top 2 Hits (by highest projection)
+            h_proj_rows = sorted(
+                [r for r in all_batter_rows if r.get("pred_hits") is not None],
+                key=lambda r: r["pred_hits"], reverse=True,
+            )
+            if h_proj_rows:
+                print("")
+                print("**Top 2 Hits Projections Today**")
+                for i, r in enumerate(h_proj_rows[:2], start=1):
+                    _name = r.get("player_name", f"id={r['player_id']}")
+                    _team = r.get("team_abbr", "?")
+                    _opp = r.get("opponent_abbr", "?")
+                    _pred_h = r["pred_hits"]
+                    _ld = prop_lines.get((_normalize_name(_name), "batter_hits"))
+                    if _ld and _ld.get("line") is not None:
+                        _lnk = _ld.get("over_link")
+                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_h:.2f} · O{_ld['line']:.1f}{_link_str}")
+                    else:
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_h:.2f}")
+
+            # Top 2 Home Runs (by highest projection)
+            hr_proj_rows = sorted(
+                [r for r in all_batter_rows if r.get("pred_home_runs") is not None],
+                key=lambda r: r["pred_home_runs"], reverse=True,
+            )
+            if hr_proj_rows:
+                print("")
+                print("**Top 2 Home Run Projections Today**")
+                for i, r in enumerate(hr_proj_rows[:2], start=1):
+                    _name = r.get("player_name", f"id={r['player_id']}")
+                    _team = r.get("team_abbr", "?")
+                    _opp = r.get("opponent_abbr", "?")
+                    _pred_hr = r["pred_home_runs"]
+                    _ld = prop_lines.get((_normalize_name(_name), "batter_home_runs"))
+                    if _ld and _ld.get("line") is not None:
+                        _lnk = _ld.get("over_link")
+                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_hr:.3f} · O{_ld['line']:.1f}{_link_str}")
+                    else:
+                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_hr:.3f}")
+
+            # ── Lottery picks ────────────────────────────────────────────────────
+            if cfg.lottery_mode:
+                _legs = lottery_legs if lottery_legs is not None else _collect_lottery_parlay_links(
+                    all_pitcher_rows, all_batter_rows, prop_lines, cfg,
+                    all_alt_lines=all_alt_lines,
+                )
+                if _legs:
+                    lottery_url = build_fd_parlay_url([c["link"] for c in _legs[:25]])
+                    if lottery_url:
+                        print("")
+                        print(f"• Lottery Parlay ({cfg.lottery_legs} legs, +{cfg.lottery_min_american}–+{cfg.lottery_max_american}): [FD]({lottery_url})")
+                else:
+                    print("")
+                    print("• Lottery Parlay: no qualifying lottery legs today")
+
             print("")
             return []
 

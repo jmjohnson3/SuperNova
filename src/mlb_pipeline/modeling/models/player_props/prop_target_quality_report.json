@@ -1,122 +1,122 @@
 {
-  "generated_at_utc": "2026-06-19T19:02:32Z",
+  "generated_at_utc": "2026-06-20T00:59:33Z",
   "source": "features.mlb_prop_market_training_examples",
-  "rows": 91654,
+  "rows": 94639,
   "date_min": "2026-05-31",
   "date_max": "2026-06-19",
   "status": "ready",
   "coverage": [
     {
       "field": "bookmaker_key",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "market_line",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "market_price",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "prop_offer_id",
-      "present": 90997,
+      "present": 93982,
       "missing": 657,
-      "coverage": 0.9928317367490781
+      "coverage": 0.9930578302813851
     },
     {
       "field": "lock_snapshot_id",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "source_created_at",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "actual_value",
       "present": 78285,
-      "missing": 13369,
-      "coverage": 0.8541362079123661
+      "missing": 16354,
+      "coverage": 0.827195976288845
     },
     {
       "field": "won",
       "present": 78285,
-      "missing": 13369,
-      "coverage": 0.8541362079123661
+      "missing": 16354,
+      "coverage": 0.827195976288845
     },
     {
       "field": "paired_price",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "paired_bookmaker_key",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "paired_price_source",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "pair_quality",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "no_vig_market_prob",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "market_prob_source",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     },
     {
       "field": "closing_line",
-      "present": 71853,
-      "missing": 19801,
-      "coverage": 0.7839592380037969
+      "present": 78474,
+      "missing": 16165,
+      "coverage": 0.8291930388106383
     },
     {
       "field": "closing_price",
-      "present": 71853,
-      "missing": 19801,
-      "coverage": 0.7839592380037969
+      "present": 78474,
+      "missing": 16165,
+      "coverage": 0.8291930388106383
     },
     {
       "field": "closing_snapshot_id",
-      "present": 71853,
-      "missing": 19801,
-      "coverage": 0.7839592380037969
+      "present": 78474,
+      "missing": 16165,
+      "coverage": 0.8291930388106383
     },
     {
       "field": "closing_fetched_at_utc",
-      "present": 71853,
-      "missing": 19801,
-      "coverage": 0.7839592380037969
+      "present": 78474,
+      "missing": 16165,
+      "coverage": 0.8291930388106383
     },
     {
       "field": "clv_valid",
-      "present": 91654,
+      "present": 94639,
       "missing": 0,
       "coverage": 1.0
     }
@@ -124,17 +124,17 @@
   "date_quality": [
     {
       "date": "2026-06-19",
-      "rows": 4944,
+      "rows": 7929,
       "offer_id_rate": 1.0,
       "price_lock_rate": 1.0,
-      "same_book_pair_rate": 0.3058252427184466,
-      "cross_book_pair_rate": 0.13389967637540454,
-      "synthetic_pair_rate": 0.5602750809061489,
-      "true_pair_rate": 0.43972491909385114,
+      "same_book_pair_rate": 0.2994072392483289,
+      "cross_book_pair_rate": 0.1341909446336234,
+      "synthetic_pair_rate": 0.5664018161180476,
+      "true_pair_rate": 0.4335981838819523,
       "any_pair_rate": 1.0,
       "graded_rate": 0.0,
-      "valid_close_rate": 0.061893203883495146,
-      "stale_close_rate": 0.013349514563106795
+      "valid_close_rate": 0.8736284525160802,
+      "stale_close_rate": 0.02345819144911086
     },
     {
       "date": "2026-06-18",
@@ -408,76 +408,76 @@
       "date": "2026-06-19",
       "market": "batter_total_bases",
       "bookmaker_key": "fanduel",
-      "rows": 1716,
+      "rows": 2604,
       "same_book_pairs": 0,
-      "cross_book_pairs": 207,
-      "synthetic_pairs": 1509,
+      "cross_book_pairs": 339,
+      "synthetic_pairs": 2265,
       "missing_pairs": 0,
       "same_book_quality": 0,
-      "cross_book_quality": 207,
-      "synthetic_quality": 1509,
+      "cross_book_quality": 339,
+      "synthetic_quality": 2265,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 1509
-    },
-    {
-      "date": "2026-06-19",
-      "market": "batter_hits",
-      "bookmaker_key": "draftkings",
-      "rows": 928,
-      "same_book_pairs": 928,
-      "cross_book_pairs": 0,
-      "synthetic_pairs": 0,
-      "missing_pairs": 0,
-      "same_book_quality": 928,
-      "cross_book_quality": 0,
-      "synthetic_quality": 0,
-      "one_sided_quality": 0,
-      "raw_implied": 0,
-      "synthetic_prob": 0
+      "synthetic_prob": 2265
     },
     {
       "date": "2026-06-19",
       "market": "batter_hits",
       "bookmaker_key": "fanduel",
-      "rows": 858,
+      "rows": 1649,
       "same_book_pairs": 0,
-      "cross_book_pairs": 455,
-      "synthetic_pairs": 403,
+      "cross_book_pairs": 725,
+      "synthetic_pairs": 924,
       "missing_pairs": 0,
       "same_book_quality": 0,
-      "cross_book_quality": 455,
-      "synthetic_quality": 403,
+      "cross_book_quality": 725,
+      "synthetic_quality": 924,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 403
+      "synthetic_prob": 924
+    },
+    {
+      "date": "2026-06-19",
+      "market": "batter_hits",
+      "bookmaker_key": "draftkings",
+      "rows": 1438,
+      "same_book_pairs": 1438,
+      "cross_book_pairs": 0,
+      "synthetic_pairs": 0,
+      "missing_pairs": 0,
+      "same_book_quality": 1438,
+      "cross_book_quality": 0,
+      "synthetic_quality": 0,
+      "one_sided_quality": 0,
+      "raw_implied": 0,
+      "synthetic_prob": 0
     },
     {
       "date": "2026-06-19",
       "market": "batter_home_runs",
       "bookmaker_key": "fanduel",
-      "rows": 858,
+      "rows": 1302,
       "same_book_pairs": 0,
       "cross_book_pairs": 0,
-      "synthetic_pairs": 858,
+      "synthetic_pairs": 1302,
       "missing_pairs": 0,
       "same_book_quality": 0,
       "cross_book_quality": 0,
-      "synthetic_quality": 858,
+      "synthetic_quality": 1302,
       "one_sided_quality": 0,
       "raw_implied": 0,
-      "synthetic_prob": 858
+      "synthetic_prob": 1302
     },
     {
       "date": "2026-06-19",
       "market": "batter_total_bases",
       "bookmaker_key": "draftkings",
-      "rows": 388,
-      "same_book_pairs": 388,
+      "rows": 626,
+      "same_book_pairs": 626,
       "cross_book_pairs": 0,
       "synthetic_pairs": 0,
       "missing_pairs": 0,
-      "same_book_quality": 388,
+      "same_book_quality": 626,
       "cross_book_quality": 0,
       "synthetic_quality": 0,
       "one_sided_quality": 0,
@@ -488,12 +488,12 @@
       "date": "2026-06-19",
       "market": "pitcher_strikeouts",
       "bookmaker_key": "draftkings",
-      "rows": 100,
-      "same_book_pairs": 100,
+      "rows": 166,
+      "same_book_pairs": 166,
       "cross_book_pairs": 0,
       "synthetic_pairs": 0,
       "missing_pairs": 0,
-      "same_book_quality": 100,
+      "same_book_quality": 166,
       "cross_book_quality": 0,
       "synthetic_quality": 0,
       "one_sided_quality": 0,
@@ -504,12 +504,12 @@
       "date": "2026-06-19",
       "market": "pitcher_strikeouts",
       "bookmaker_key": "fanduel",
-      "rows": 96,
-      "same_book_pairs": 96,
+      "rows": 144,
+      "same_book_pairs": 144,
       "cross_book_pairs": 0,
       "synthetic_pairs": 0,
       "missing_pairs": 0,
-      "same_book_quality": 96,
+      "same_book_quality": 144,
       "cross_book_quality": 0,
       "synthetic_quality": 0,
       "one_sided_quality": 0,
@@ -2489,38 +2489,38 @@
     {
       "date": "2026-06-19",
       "market": "batter_total_bases",
-      "rows": 1716,
-      "true_pair_rate": 0.12062937062937062,
-      "synthetic_rate": 0.8793706293706294,
-      "clean_market_evidence_rate": 0.12062937062937062,
+      "rows": 2604,
+      "true_pair_rate": 0.13018433179723501,
+      "synthetic_rate": 0.869815668202765,
+      "clean_market_evidence_rate": 0.13018433179723501,
       "same_book_pairs": 0,
-      "cross_book_pairs": 207,
-      "synthetic_pairs": 1509,
+      "cross_book_pairs": 339,
+      "synthetic_pairs": 2265,
       "action": "extract_true_opposite_side_or_demote"
     },
     {
       "date": "2026-06-19",
       "market": "batter_home_runs",
-      "rows": 858,
+      "rows": 1302,
       "true_pair_rate": 0.0,
       "synthetic_rate": 1.0,
       "clean_market_evidence_rate": 0.0,
       "same_book_pairs": 0,
       "cross_book_pairs": 0,
-      "synthetic_pairs": 858,
+      "synthetic_pairs": 1302,
       "action": "extract_true_opposite_side_or_demote"
     },
     {
       "date": "2026-06-19",
       "market": "batter_hits",
-      "rows": 858,
-      "true_pair_rate": 0.5303030303030303,
-      "synthetic_rate": 0.4696969696969697,
-      "clean_market_evidence_rate": 0.5303030303030303,
+      "rows": 1649,
+      "true_pair_rate": 0.43966040024257125,
+      "synthetic_rate": 0.5603395997574288,
+      "clean_market_evidence_rate": 0.43966040024257125,
       "same_book_pairs": 0,
-      "cross_book_pairs": 455,
-      "synthetic_pairs": 403,
-      "action": "usable"
+      "cross_book_pairs": 725,
+      "synthetic_pairs": 924,
+      "action": "extract_true_opposite_side_or_demote"
     },
     {
       "date": "2026-06-18",
@@ -3172,17 +3172,17 @@
     }
   ],
   "clv_status_counts": {
-    "valid_movement": 51125,
-    "true_no_movement": 20728,
-    "unknown": 19801
+    "valid_movement": 55777,
+    "true_no_movement": 22697,
+    "unknown": 16165
   },
   "clv_unknown_reason_counts": {
-    "none": 71853,
-    "close_outside_two_hour_window": 11863,
-    "stale_close_before_lock": 6183,
-    "line_disappeared_at_close": 1309,
-    "fallback_other_book_only": 259,
-    "no_valid_close_snapshot": 187
+    "none": 78474,
+    "close_outside_two_hour_window": 7927,
+    "stale_close_before_lock": 6303,
+    "line_disappeared_at_close": 1476,
+    "fallback_other_book_only": 285,
+    "no_valid_close_snapshot": 174
   },
   "bad_examples": [
     {
