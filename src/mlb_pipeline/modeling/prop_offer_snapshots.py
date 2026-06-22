@@ -408,7 +408,7 @@ def resolve_valid_prop_close(
     conn,
     row: dict[str, Any],
     *,
-    max_hours_before_start: float = 2.0,
+    max_hours_before_start: float = 4.0,
 ) -> dict[str, Any]:
     """Resolve a close only when it is a valid same-offer pregame observation."""
     unknown = {

@@ -369,6 +369,9 @@ SELECT
     sp_babip.sp_babip_starts_10,
     -- SP K%% last 2 starts (item 9)
     sp_k_last2.sp_k_pct_last2,
+    -- BF estimated rolling avg: 5 and 10 starts (K opportunity volume context)
+    sp_bf.bf_est_avg_5,
+    sp_bf.bf_est_avg_10,
     -- Opposing team DER (MLB032) — defensive quality
     opp_der.team_der_20  AS opp_team_der_20,
     opp_der.team_der_career AS opp_team_der_career,
@@ -586,6 +589,31 @@ LEFT JOIN LATERAL (
         LIMIT 2
     ) g2k
 ) sp_k_last2 ON TRUE
+-- BF estimated rolling avg (5 and 10 starts): pitcher workload / opportunity volume
+LEFT JOIN LATERAL (
+    SELECT
+        AVG(CASE WHEN rn <= 5  THEN bf_est END) AS bf_est_avg_5,
+        AVG(CASE WHEN rn <= 10 THEN bf_est END) AS bf_est_avg_10
+    FROM (
+        SELECT
+            GREATEST(
+                ROUND(COALESCE(pgl2.innings_pitched, 0) * 3)
+                + COALESCE(pgl2.hits_allowed, 0)
+                + COALESCE(pgl2.walks_allowed, 0),
+                1
+            ) AS bf_est,
+            ROW_NUMBER() OVER (ORDER BY g2.game_date_et DESC, g2.game_slug DESC) AS rn
+        FROM raw.mlb_player_gamelogs pgl2
+        JOIN raw.mlb_games g2 ON g2.game_slug = pgl2.game_slug
+        WHERE pgl2.player_id      = ts.player_id
+          AND pgl2.is_starter     = TRUE
+          AND pgl2.innings_pitched >= 1.0
+          AND g2.status           = 'final'
+          AND g2.game_date_et     < %(game_date)s
+        ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+        LIMIT 10
+    ) recent
+) sp_bf ON TRUE
 -- Opposing team DER (MLB032) — defensive quality of opposing lineup's fielders
 LEFT JOIN LATERAL (
     SELECT team_der_20, team_der_career
@@ -4500,7 +4528,8 @@ def _collect_top_hr_parlay_links(
     """
     rows = [r for r in all_batter_rows
             if r.get("pred_home_runs") is not None
-            and float(r.get("pred_home_runs") or 0.0) >= min_pred]
+            and float(r.get("pred_home_runs") or 0.0) >= min_pred
+            and float(r.get("projected_pa") or 0.0) >= 4.3]
     rows.sort(key=lambda r: float(r.get("pred_home_runs") or 0.0), reverse=True)
     links: List[str] = []
     seen_links: set[str] = set()
@@ -4918,6 +4947,7 @@ def _print_discord(
             min_p_over=0.55,
             min_edge_vs_market=0.03, over_price_key=None,
             max_batting_order=None,
+            min_projected_pa=None,
             require_confirmed_sp=False,
             sp_k_ceiling=None, sp_k_lookup=None,
             skip_clf=False,
@@ -4946,6 +4976,12 @@ def _print_discord(
                 if max_batting_order is not None:
                     eff_order = r.get("effective_batting_order")
                     if eff_order is not None and eff_order > max_batting_order:
+                        continue
+
+                # ── Projected PA floor ───────────────────────────────────────
+                if min_projected_pa is not None:
+                    pa = r.get("projected_pa")
+                    if pa is None or float(pa) < min_projected_pa:
                         continue
 
                 # ── SP confirmation gate ─────────────────────────────────────
@@ -5602,6 +5638,7 @@ def _print_discord(
             min_p_over=0.63,
             min_edge_vs_market=0, over_price_key="market_hits_over_price",
             max_batting_order=7,
+            min_projected_pa=4.0,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
@@ -5625,6 +5662,7 @@ def _print_discord(
             min_pred=2.0, min_p_over=0.45,
             min_edge_vs_market=0, over_price_key="market_tb_over_price",
             max_batting_order=7,
+            min_projected_pa=4.0,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
@@ -5646,7 +5684,8 @@ def _print_discord(
         hr_top_rows_d = sorted(
             [r for r in all_batter_rows
              if r.get("pred_home_runs") is not None
-             and float(r.get("pred_home_runs") or 0.0) >= 0.15],
+             and float(r.get("pred_home_runs") or 0.0) >= 0.15
+             and float(r.get("projected_pa") or 0.0) >= 4.3],
             key=lambda r: r["pred_home_runs"], reverse=True,
         )
         for r in hr_top_rows_d[:10]:
@@ -5760,6 +5799,7 @@ def _print_discord(
             min_p_over=0.63,
             min_edge_vs_market=0, over_price_key="market_hits_over_price",
             max_batting_order=7,
+            min_projected_pa=4.0,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
@@ -5791,6 +5831,7 @@ def _print_discord(
             min_pred=2.0, min_p_over=0.45,
             min_edge_vs_market=0, over_price_key="market_tb_over_price",
             max_batting_order=7,
+            min_projected_pa=4.0,
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
@@ -5825,7 +5866,8 @@ def _print_discord(
         hr_top_rows_d = sorted(
             [r for r in all_batter_rows
              if r.get("pred_home_runs") is not None
-             and float(r.get("pred_home_runs") or 0.0) >= 0.15],
+             and float(r.get("pred_home_runs") or 0.0) >= 0.15
+             and float(r.get("projected_pa") or 0.0) >= 4.3],
             key=lambda r: r["pred_home_runs"], reverse=True,
         )
         _HR_PARLAY_LEGS = 4

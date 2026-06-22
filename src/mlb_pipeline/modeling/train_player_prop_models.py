@@ -233,6 +233,9 @@ SELECT
     sp_babip.sp_babip_starts_10,
     -- SP K% last 2 starts (item 9)
     sp_k_last2.sp_k_pct_last2,
+    -- BF estimated rolling avg: 5 and 10 starts (K opportunity volume context)
+    sp_bf.bf_est_avg_5,
+    sp_bf.bf_est_avg_10,
     -- Opposing team DER (MLB032)
     opp_der.team_der_20  AS opp_team_der_20,
     opp_der.team_der_career AS opp_team_der_career,
@@ -391,6 +394,31 @@ LEFT JOIN LATERAL (
         LIMIT 2
     ) g2k
 ) sp_k_last2 ON TRUE
+-- BF estimated rolling avg (5 and 10 starts): pitcher workload / opportunity volume
+LEFT JOIN LATERAL (
+    SELECT
+        AVG(CASE WHEN rn <= 5  THEN bf_est END) AS bf_est_avg_5,
+        AVG(CASE WHEN rn <= 10 THEN bf_est END) AS bf_est_avg_10
+    FROM (
+        SELECT
+            GREATEST(
+                ROUND(COALESCE(pgl2.innings_pitched, 0) * 3)
+                + COALESCE(pgl2.hits_allowed, 0)
+                + COALESCE(pgl2.walks_allowed, 0),
+                1
+            ) AS bf_est,
+            ROW_NUMBER() OVER (ORDER BY g2.game_date_et DESC, g2.game_slug DESC) AS rn
+        FROM raw.mlb_player_gamelogs pgl2
+        JOIN raw.mlb_games g2 ON g2.game_slug = pgl2.game_slug
+        WHERE pgl2.player_id      = p.player_id
+          AND pgl2.is_starter     = TRUE
+          AND pgl2.innings_pitched >= 1.0
+          AND g2.status           = 'final'
+          AND g2.game_date_et     < g.game_date_et
+        ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+        LIMIT 10
+    ) recent
+) sp_bf ON TRUE
 -- Opposing team DER (MLB032)
 LEFT JOIN features.mlb_team_der_rolling_mat opp_der
     ON opp_der.team_abbr = CASE

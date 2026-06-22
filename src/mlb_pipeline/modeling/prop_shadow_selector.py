@@ -39,8 +39,8 @@ class ShadowSelectorConfig:
     min_close_capture_prob: float = 0.60
     min_line_available_prob: float = 0.60
     min_bucket_clv_beat_rate: float = 0.55
-    min_hitter_projected_pa: float = 3.2
-    min_pitcher_projected_bf: float = 16.0
+    min_hitter_projected_pa: float = 4.0
+    min_pitcher_projected_bf: float = 20.0
     top_n: int = 40
 
 
