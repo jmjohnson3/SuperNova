@@ -473,6 +473,17 @@ def build_prop_line_map(offer_rows: list[dict[str, Any]]) -> dict[tuple[str, str
         if paired:
             over, under = paired
             pairing_mode = "same_book"
+            # When DK provides the same-book pair (FD lacks an under for TB/HR),
+            # prefer FD's over_link for betting while keeping DK prices for no-vig probability.
+            if (over or {}).get("bookmaker_key") == "draftkings":
+                fd_over = _best_offer(
+                    [o for o in offers if str(o.get("bookmaker_key") or "").lower() == "fanduel"],
+                    side="over", line=line, preferred_books=("fanduel",),
+                )
+                if fd_over and fd_over.get("link"):
+                    over = dict(over)
+                    over["link"] = fd_over["link"]
+                    over["link_bookmaker_key"] = "fanduel"
         else:
             over = _best_offer(offers, side="over", line=line, preferred_books=("fanduel", "draftkings"))
             under = _best_offer(offers, side="under", line=line, preferred_books=("draftkings", "fanduel"))
@@ -486,7 +497,7 @@ def build_prop_line_map(offer_rows: list[dict[str, Any]]) -> dict[tuple[str, str
             "under_price": (under or {}).get("price"),
             "over_link": (over or {}).get("link"),
             "under_link": (under or {}).get("link"),
-            "over_bookmaker_key": (over or {}).get("bookmaker_key"),
+            "over_bookmaker_key": (over or {}).get("link_bookmaker_key") or (over or {}).get("bookmaker_key"),
             "under_bookmaker_key": (under or {}).get("bookmaker_key"),
             "under_link_book": (under or {}).get("bookmaker_key"),
             "over_offer_id": (over or {}).get("id"),
