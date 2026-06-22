@@ -5320,6 +5320,20 @@ def _print_discord(
                 )
             print(f"- Display pool: {total} rows; clean pair {clean_pair_s}; synthetic {synthetic_s}; CLV model coverage {clv_s}")
 
+        def _print_watch_item(item: Dict) -> None:
+            """Compact single-line format for watchlist entries."""
+            market = item.get("market", "?")
+            side = item.get("side", "O")
+            line = _as_float(item.get("line"))
+            pred_val = item.get("pred_val")
+            pred_fmt = item.get("pred_fmt", "{:.2f}")
+            pred_s = pred_fmt.format(pred_val) if pred_val is not None else "?"
+            line_s = f" O{line:.1f}" if line is not None else ""
+            link = item.get("link")
+            book = item.get("book") or _book_label(link)
+            link_s = f" [Bet {book}](<{link}>)" if link else ""
+            print(f"- {item['name']} ({item['team']} vs {item['opp']}) {market}{line_s} → {pred_s}{link_s}")
+
         def _print_paper_sections(
             rows: List[Dict],
             *,
@@ -5327,6 +5341,7 @@ def _print_discord(
             title: str = "PAPER PLAYER PROPS",
             include_empty_stats: bool = True,
             heading_kind: str = "Paper",
+            compact: bool = False,
         ) -> None:
             configured_limit = int(cfg.discord_paper_limit or 10)
             per_section_limit = min(max(configured_limit, 1), 10)
@@ -5344,6 +5359,8 @@ def _print_discord(
                 stat_rows = [item for item in rows if item.get("stat_key") == stat_key]
                 stat_rows.sort(key=_pick_score, reverse=True)
                 shown = stat_rows[:per_section_limit]
+                if not shown and not include_empty_stats:
+                    continue
                 print("")
                 print(f"**Top {per_section_limit} {heading_kind} {label}**")
                 if not shown:
@@ -5353,7 +5370,10 @@ def _print_discord(
                 printed_section = True
                 total_shown += len(shown)
                 for item in shown:
-                    _print_prop_item(item, include_link=cfg.discord_show_paper_links)
+                    if compact:
+                        _print_watch_item(item)
+                    else:
+                        _print_prop_item(item, include_link=cfg.discord_show_paper_links)
             if not printed_section and not include_empty_stats:
                 print("- No qualifying player props to show")
             elif total_shown < len(rows):
@@ -5437,23 +5457,6 @@ def _print_discord(
                     f"vs daily cap {cap:.2%} (over by {combined_exposure - cap:.2%})"
                 )
 
-            source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
-            _print_paper_sections(
-                paper_rows,
-                source_label=source_label,
-                title="PAPER PLAYER PROPS",
-                include_empty_stats=True,
-            )
-            if watch_rows:
-                _print_paper_sections(
-                    watch_rows,
-                    source_label="watch model picks",
-                    title="WATCHLIST - NOT SELECTOR APPROVED",
-                    include_empty_stats=False,
-                    heading_kind="Watch",
-                )
-            _print_no_bet_summary(no_bet_rows)
-
             # ── Projection Leaderboards ──────────────────────────────────────────
             # Top 10 Strikeouts (by highest projection)
             k_proj_rows = sorted(
@@ -5476,15 +5479,15 @@ def _print_discord(
                     else:
                         print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_k:.1f}")
 
-            # Top 2 Total Bases (by highest projection)
+            # Top 10 Total Bases (by highest projection) — bullet format avoids Discord link-merge
             tb_proj_rows = sorted(
                 [r for r in all_batter_rows if r.get("pred_total_bases") is not None],
                 key=lambda r: r["pred_total_bases"], reverse=True,
             )
             if tb_proj_rows:
                 print("")
-                print("**Top 2 Total Bases Projections Today**")
-                for i, r in enumerate(tb_proj_rows[:2], start=1):
+                print("**Top 10 Total Bases Projections Today**")
+                for r in tb_proj_rows[:10]:
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
                     _opp = r.get("opponent_abbr", "?")
@@ -5493,19 +5496,19 @@ def _print_discord(
                     if _ld and _ld.get("line") is not None:
                         _lnk = _ld.get("over_link")
                         _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
-                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_tb:.2f} · O{_ld['line']:.1f}{_link_str}")
+                        print(f"- {_name} ({_team} vs {_opp}) — {_pred_tb:.2f} · O{_ld['line']:.1f}{_link_str}")
                     else:
-                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_tb:.2f}")
+                        print(f"- {_name} ({_team} vs {_opp}) — {_pred_tb:.2f}")
 
-            # Top 2 Hits (by highest projection)
+            # Top 10 Hits (by highest projection) — bullet format
             h_proj_rows = sorted(
                 [r for r in all_batter_rows if r.get("pred_hits") is not None],
                 key=lambda r: r["pred_hits"], reverse=True,
             )
             if h_proj_rows:
                 print("")
-                print("**Top 2 Hits Projections Today**")
-                for i, r in enumerate(h_proj_rows[:2], start=1):
+                print("**Top 10 Hits Projections Today**")
+                for r in h_proj_rows[:10]:
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
                     _opp = r.get("opponent_abbr", "?")
@@ -5514,19 +5517,19 @@ def _print_discord(
                     if _ld and _ld.get("line") is not None:
                         _lnk = _ld.get("over_link")
                         _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
-                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_h:.2f} · O{_ld['line']:.1f}{_link_str}")
+                        print(f"- {_name} ({_team} vs {_opp}) — {_pred_h:.2f} · O{_ld['line']:.1f}{_link_str}")
                     else:
-                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_h:.2f}")
+                        print(f"- {_name} ({_team} vs {_opp}) — {_pred_h:.2f}")
 
-            # Top 2 Home Runs (by highest projection)
+            # Top 10 Home Runs (by highest projection) — bullet format
             hr_proj_rows = sorted(
                 [r for r in all_batter_rows if r.get("pred_home_runs") is not None],
                 key=lambda r: r["pred_home_runs"], reverse=True,
             )
             if hr_proj_rows:
                 print("")
-                print("**Top 2 Home Run Projections Today**")
-                for i, r in enumerate(hr_proj_rows[:2], start=1):
+                print("**Top 10 Home Run Projections Today**")
+                for r in hr_proj_rows[:10]:
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
                     _opp = r.get("opponent_abbr", "?")
@@ -5535,9 +5538,9 @@ def _print_discord(
                     if _ld and _ld.get("line") is not None:
                         _lnk = _ld.get("over_link")
                         _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
-                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_hr:.3f} · O{_ld['line']:.1f}{_link_str}")
+                        print(f"- {_name} ({_team} vs {_opp}) — {_pred_hr:.3f} · O{_ld['line']:.1f}{_link_str}")
                     else:
-                        print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_hr:.3f}")
+                        print(f"- {_name} ({_team} vs {_opp}) — {_pred_hr:.3f}")
 
             # ── Lottery picks ────────────────────────────────────────────────────
             if cfg.lottery_mode:
@@ -5553,6 +5556,24 @@ def _print_discord(
                 else:
                     print("")
                     print("• Lottery Parlay: no qualifying lottery legs today")
+
+            source_label = "priced props" if cfg.discord_include_all_priced_props else "model picks"
+            if paper_rows:
+                _print_paper_sections(
+                    paper_rows,
+                    source_label=source_label,
+                    title="PAPER PLAYER PROPS",
+                    include_empty_stats=False,
+                )
+            if watch_rows:
+                _print_paper_sections(
+                    watch_rows,
+                    source_label="watch model picks",
+                    title="WATCHLIST - NOT SELECTOR APPROVED",
+                    include_empty_stats=False,
+                    heading_kind="Watch",
+                    compact=True,
+                )
 
             print("")
             return []
