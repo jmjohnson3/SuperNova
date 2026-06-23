@@ -197,6 +197,17 @@ def upsert_lineups(conn, rows: list[dict]) -> int:
     if not rows:
         return 0
 
+    # Deduplicate within the batch on PK (game_slug, team_abbr, player_id).
+    # Multiple payloads for the same game (e.g. crawled twice) or same player
+    # appearing in overlapping API responses would otherwise trigger the
+    # "ON CONFLICT DO UPDATE cannot affect row a second time" error.
+    # Keep last occurrence — caller sorts payloads oldest-first so latest wins.
+    dedup: dict[tuple, dict] = {}
+    for r in rows:
+        key = (r["game_slug"], r["team_abbr"], int(r["player_id"]))
+        dedup[key] = r
+    rows = list(dedup.values())
+
     sql = """
     INSERT INTO raw.mlb_lineups (
         game_slug, team_abbr, player_id, player_name, player_name_norm,

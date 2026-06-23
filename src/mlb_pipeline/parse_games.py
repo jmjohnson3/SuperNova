@@ -191,7 +191,16 @@ def parse_games_payload(
             )
         )
 
-    return rows
+    # Deduplicate within the payload on game_slug — doubleheaders between the same
+    # pair of teams on the same date produce identical slugs.  Keep first occurrence
+    # (consistent with crawler.extract_game_slugs_from_games_payload).
+    seen: set[str] = set()
+    deduped: list[GameRow] = []
+    for row in rows:
+        if row.game_slug not in seen:
+            seen.add(row.game_slug)
+            deduped.append(row)
+    return deduped
 
 
 # ---------------------------------------------------------------------------

@@ -455,6 +455,13 @@ def upsert_injuries(conn) -> int:
         log.info("No injury records extracted from payload.")
         return 0
 
+    # Deduplicate within the batch on player_id — a player traded mid-season may
+    # appear in multiple team rosters within the same payload.
+    dedup: dict[int, dict] = {}
+    for r in rows:
+        dedup[int(r["player_id"])] = r
+    rows = list(dedup.values())
+
     sql = """
     INSERT INTO raw.mlb_injuries (
       player_id, mlb_player_id, first_name, last_name, primary_position, jersey_number,
