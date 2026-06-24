@@ -1,8 +1,8 @@
 {
-  "generated_at_utc": "2026-06-18T07:12:24Z",
+  "generated_at_utc": "2026-06-24T08:11:57Z",
   "lookback_days": 365,
   "holdout_days": 28,
-  "rows": 65072,
+  "rows": 102734,
   "calibrators": {},
   "backtest": [],
   "status": "no_calibrators"

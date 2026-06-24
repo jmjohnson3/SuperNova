@@ -1,20 +1,18 @@
 # MLB Prop Real-Money Kill Switch
 
-Generated: 2026-06-19T23:39:03+00:00
+Generated: 2026-06-24T14:23:58+00:00
 Status: disabled
 Open buckets: 0
 Selector real candidates: 0
 
 ## Close Quality
 
-- Valid close coverage: -
-- Stale close rate: -
+- Valid close coverage: 94.0%
+- Stale close rate: 0.9%
 
 ## Blockers
 
 - no_open_prop_buckets
-- stale_close_rate>0.02
-- valid_close_coverage<0.90
 
 ## Warnings
 
@@ -28,9 +26,9 @@ Selector real candidates: 0
 | Artifact | Status | Age Hours |
 | --- | --- | --- |
 | readiness | fresh | 0.0 |
-| reopen_policy | fresh | 31.7 |
-| shadow_selector | fresh | 0.7 |
-| distribution | fresh | 7.5 |
-| opportunity | fresh | 16.8 |
-| hitter_outcome | fresh | 7.6 |
-| target_quality | fresh | 0.7 |
+| reopen_policy | fresh | 5.9 |
+| shadow_selector | fresh | 5.7 |
+| distribution | fresh | 6.1 |
+| opportunity | fresh | 6.2 |
+| hitter_outcome | fresh | 6.3 |
+| target_quality | fresh | 5.7 |

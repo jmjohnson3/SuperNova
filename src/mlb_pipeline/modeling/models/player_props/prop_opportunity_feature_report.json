@@ -1,76 +1,77 @@
 {
-  "generated_at_utc": "2026-06-19T23:40:33Z",
+  "generated_at_utc": "2026-06-24T14:27:13Z",
   "source": "features.mlb_prop_market_training_examples",
   "lookback_days": 30,
   "holdout_days": 28,
-  "rows": 78285,
+  "rows": 102734,
   "date_min": "2026-05-31",
-  "date_max": "2026-06-18",
-  "unique_dates": 19,
+  "date_max": "2026-06-22",
+  "unique_dates": 23,
   "overall": {
     "key": "overall",
-    "rows": 78285,
-    "train_rows": 76157,
-    "holdout_rows": 2128,
+    "rows": 102734,
+    "train_rows": 96107,
+    "holdout_rows": 6627,
     "split_method": "last_available_date",
     "coverage": {
-      "projected_pa_rate": 0.9656000510953567,
-      "projected_bf_rate": 0.03439994890464329,
-      "pitch_count_rate": 0.03439994890464329,
-      "batting_order_rate": 0.9658044325221945
+      "projected_pa_rate": 0.9633130219790916,
+      "projected_bf_rate": 0.03668697802090837,
+      "pitch_count_rate": 0.03668697802090837,
+      "batting_order_rate": 0.9635855705024626
     },
     "baseline": {
       "forecast": {
         "status": "ready",
-        "rows": 2128,
-        "actual_rate": 0.3073308270676692,
-        "avg_prob": 0.31225768250054786,
-        "calibration_error": -0.004926855432878685,
-        "brier": 0.1625856954455752,
-        "log_loss": 0.4820756580725954
+        "rows": 6627,
+        "actual_rate": 0.2669382827825562,
+        "avg_prob": 0.2939355972943175,
+        "calibration_error": -0.026997314511761294,
+        "brier": 0.14090189240330292,
+        "log_loss": 0.4271243990673883
       },
       "selection": {
-        "picks": 522,
-        "roi": 0.24812030651340997,
-        "win_rate": 0.5363984674329502,
-        "avg_ev": 0.19831112157001995,
-        "avg_clv_price": 0.7625260960334029,
-        "clv_beat_rate": 0.49269311064718163
+        "picks": 1419,
+        "roi": 0.004764270613107817,
+        "win_rate": 0.4813248766737139,
+        "avg_ev": 0.15457892496288003,
+        "avg_clv_price": -0.08829268292682925,
+        "clv_beat_rate": 0.3307926829268293
       }
     },
     "opportunity": {
       "forecast": {
         "status": "ready",
-        "rows": 2128,
-        "actual_rate": 0.3073308270676692,
-        "avg_prob": 0.3113251107239613,
-        "calibration_error": -0.003994283656292119,
-        "brier": 0.16187604027609587,
-        "log_loss": 0.4802518680085234
+        "rows": 6627,
+        "actual_rate": 0.2669382827825562,
+        "avg_prob": 0.2905177010625591,
+        "calibration_error": -0.023579418280002873,
+        "brier": 0.14121273488759065,
+        "log_loss": 0.42739750105326985
       },
       "selection": {
-        "picks": 539,
-        "roi": 0.2675964749536179,
-        "win_rate": 0.5287569573283859,
-        "avg_ev": 0.2017236550355751,
-        "avg_clv_price": 0.7805811623246492,
-        "clv_beat_rate": 0.48897795591182364
+        "picks": 1394,
+        "roi": -0.0022982065997130493,
+        "win_rate": 0.4770444763271162,
+        "avg_ev": 0.1604577448892569,
+        "avg_clv_price": -0.08665369649805447,
+        "clv_beat_rate": 0.3237354085603113
       }
     },
     "decision": "keep_baseline",
     "reasons": [
       "brier_not_improved",
+      "roi_worse",
       "clv_beat_worse"
     ],
-    "brier_gain": 0.0007096551694793229
+    "brier_gain": -0.00031084248428772665
   },
   "market": [
     {
       "market": "batter_total_bases",
       "key": "batter_total_bases",
-      "rows": 31530,
-      "train_rows": 30634,
-      "holdout_rows": 896,
+      "rows": 41682,
+      "train_rows": 38944,
+      "holdout_rows": 2738,
       "split_method": "last_available_date",
       "coverage": {
         "projected_pa_rate": 1.0,
@@ -81,54 +82,55 @@
       "baseline": {
         "forecast": {
           "status": "ready",
-          "rows": 896,
-          "actual_rate": 0.28236607142857145,
-          "avg_prob": 0.27994981794102414,
-          "calibration_error": 0.002416253487547315,
-          "brier": 0.16777513328299976,
-          "log_loss": 0.49983870630556104
+          "rows": 2738,
+          "actual_rate": 0.22425127830533237,
+          "avg_prob": 0.2589086636181001,
+          "calibration_error": -0.03465738531276774,
+          "brier": 0.13968202121448928,
+          "log_loss": 0.4307292652694044
         },
         "selection": {
-          "picks": 189,
-          "roi": 0.33704021164021164,
-          "win_rate": 0.4656084656084656,
-          "avg_ev": 0.28291767359035225,
-          "avg_clv_price": 1.4799453551912567,
-          "clv_beat_rate": 0.5792349726775956
+          "picks": 467,
+          "roi": -0.011899571734475367,
+          "win_rate": 0.37259100642398285,
+          "avg_ev": 0.21365546651668882,
+          "avg_clv_price": 0.07850917431192661,
+          "clv_beat_rate": 0.3646788990825688
         }
       },
       "opportunity": {
         "forecast": {
           "status": "ready",
-          "rows": 896,
-          "actual_rate": 0.28236607142857145,
-          "avg_prob": 0.2796762334342685,
-          "calibration_error": 0.002689837994302946,
-          "brier": 0.16521775333210512,
-          "log_loss": 0.4940425815955502
+          "rows": 2738,
+          "actual_rate": 0.22425127830533237,
+          "avg_prob": 0.2571607193512093,
+          "calibration_error": -0.03290944104587695,
+          "brier": 0.14083104773383215,
+          "log_loss": 0.4329345252370368
         },
         "selection": {
-          "picks": 202,
-          "roi": 0.505510396039604,
-          "win_rate": 0.5099009900990099,
-          "avg_ev": 0.2833622126436992,
-          "avg_clv_price": 1.3400518134715025,
-          "clv_beat_rate": 0.5544041450777202
+          "picks": 493,
+          "roi": 0.028108113590263696,
+          "win_rate": 0.39148073022312374,
+          "avg_ev": 0.22345514021913293,
+          "avg_clv_price": -0.02676148796498905,
+          "clv_beat_rate": 0.3347921225382932
         }
       },
       "decision": "keep_baseline",
       "reasons": [
+        "brier_not_improved",
         "avg_clv_worse",
         "clv_beat_worse"
       ],
-      "brier_gain": 0.0025573799508946393
+      "brier_gain": -0.0011490265193428717
     },
     {
       "market": "batter_hits",
       "key": "batter_hits",
-      "rows": 31687,
-      "train_rows": 30907,
-      "holdout_rows": 780,
+      "rows": 40838,
+      "train_rows": 38312,
+      "holdout_rows": 2526,
       "split_method": "last_available_date",
       "coverage": {
         "projected_pa_rate": 1.0,
@@ -139,163 +141,166 @@
       "baseline": {
         "forecast": {
           "status": "ready",
-          "rows": 780,
-          "actual_rate": 0.4217948717948718,
-          "avg_prob": 0.43309079387105004,
-          "calibration_error": -0.011295922076178244,
-          "brier": 0.19328284593820313,
-          "log_loss": 0.5612866670379633
+          "rows": 2526,
+          "actual_rate": 0.38638163103721296,
+          "avg_prob": 0.398137635200337,
+          "calibration_error": -0.011756004163124056,
+          "brier": 0.17313370306382095,
+          "log_loss": 0.5103936515801991
         },
         "selection": {
-          "picks": 265,
-          "roi": 0.10064113207547166,
-          "win_rate": 0.5773584905660377,
-          "avg_ev": 0.19233723759762392,
-          "avg_clv_price": 0.2852966101694916,
-          "clv_beat_rate": 0.4322033898305085
+          "picks": 743,
+          "roi": 0.06226877523553162,
+          "win_rate": 0.5598923283983849,
+          "avg_ev": 0.17447948973994018,
+          "avg_clv_price": -0.23691197691197693,
+          "clv_beat_rate": 0.3189033189033189
         }
       },
       "opportunity": {
         "forecast": {
           "status": "ready",
-          "rows": 780,
-          "actual_rate": 0.4217948717948718,
-          "avg_prob": 0.4322232408113335,
-          "calibration_error": -0.010428369016461714,
-          "brier": 0.19312678684868537,
-          "log_loss": 0.5608243061702081
+          "rows": 2526,
+          "actual_rate": 0.38638163103721296,
+          "avg_prob": 0.3965742261908678,
+          "calibration_error": -0.010192595153654838,
+          "brier": 0.1731675783076644,
+          "log_loss": 0.5102215634792868
         },
         "selection": {
-          "picks": 256,
-          "roi": 0.11600078124999999,
-          "win_rate": 0.5859375,
-          "avg_ev": 0.20175786109935084,
-          "avg_clv_price": 0.30676855895196514,
-          "clv_beat_rate": 0.44541484716157204
+          "picks": 730,
+          "roi": 0.04492438356164384,
+          "win_rate": 0.5534246575342465,
+          "avg_ev": 0.17401065136262336,
+          "avg_clv_price": -0.29044052863436126,
+          "clv_beat_rate": 0.3142437591776799
+        }
+      },
+      "decision": "keep_baseline",
+      "reasons": [
+        "brier_not_improved",
+        "roi_worse",
+        "avg_clv_worse",
+        "clv_beat_worse"
+      ],
+      "brier_gain": -3.3875243843461966e-05
+    },
+    {
+      "market": "batter_home_runs",
+      "key": "batter_home_runs",
+      "rows": 16445,
+      "train_rows": 15356,
+      "holdout_rows": 1089,
+      "split_method": "last_available_date",
+      "coverage": {
+        "projected_pa_rate": 1.0,
+        "projected_bf_rate": 0.0,
+        "pitch_count_rate": 0.0,
+        "batting_order_rate": 1.0
+      },
+      "baseline": {
+        "forecast": {
+          "status": "ready",
+          "rows": 1089,
+          "actual_rate": 0.03856749311294766,
+          "avg_prob": 0.08062373528442095,
+          "calibration_error": -0.04205624217147329,
+          "brier": 0.03665320097870632,
+          "log_loss": 0.14486751523336705
+        },
+        "selection": {
+          "picks": 155,
+          "roi": -0.3470967741935484,
+          "win_rate": 0.14193548387096774,
+          "avg_ev": 0.3684661386753343,
+          "avg_clv_price": -0.10489795918367348,
+          "clv_beat_rate": 0.2925170068027211
+        }
+      },
+      "opportunity": {
+        "forecast": {
+          "status": "ready",
+          "rows": 1089,
+          "actual_rate": 0.03856749311294766,
+          "avg_prob": 0.07881797503316859,
+          "calibration_error": -0.04025048192022093,
+          "brier": 0.03684521519383865,
+          "log_loss": 0.14458767080107204
+        },
+        "selection": {
+          "picks": 195,
+          "roi": -0.47692307692307695,
+          "win_rate": 0.11282051282051282,
+          "avg_ev": 0.4235425821881003,
+          "avg_clv_price": -0.10963350785340314,
+          "clv_beat_rate": 0.2670157068062827
+        }
+      },
+      "decision": "keep_baseline",
+      "reasons": [
+        "brier_not_improved",
+        "roi_worse",
+        "avg_clv_worse",
+        "clv_beat_worse"
+      ],
+      "brier_gain": -0.00019201421513232592
+    },
+    {
+      "market": "pitcher_strikeouts",
+      "key": "pitcher_strikeouts",
+      "rows": 3769,
+      "train_rows": 3495,
+      "holdout_rows": 274,
+      "split_method": "last_available_date",
+      "coverage": {
+        "projected_pa_rate": 0.0,
+        "projected_bf_rate": 1.0,
+        "pitch_count_rate": 1.0,
+        "batting_order_rate": 0.007429026266914301
+      },
+      "baseline": {
+        "forecast": {
+          "status": "ready",
+          "rows": 274,
+          "actual_rate": 0.5,
+          "avg_prob": 0.5018891798258188,
+          "calibration_error": -0.0018891798258188208,
+          "brier": 0.2600500455658733,
+          "log_loss": 0.7134576112599649
+        },
+        "selection": {
+          "picks": 36,
+          "roi": -0.38186666666666663,
+          "win_rate": 0.3611111111111111,
+          "avg_ev": 0.040506348847834585,
+          "avg_clv_price": -0.3284615384615384,
+          "clv_beat_rate": 0.23076923076923078
+        }
+      },
+      "opportunity": {
+        "forecast": {
+          "status": "ready",
+          "rows": 274,
+          "actual_rate": 0.5,
+          "avg_prob": 0.5029027150691141,
+          "calibration_error": -0.0029027150691141035,
+          "brier": 0.2600691782975926,
+          "log_loss": 0.7135091031476236
+        },
+        "selection": {
+          "picks": 30,
+          "roi": -0.20002999999999999,
+          "win_rate": 0.4666666666666667,
+          "avg_ev": 0.043126348637608,
+          "avg_clv_price": -0.2758333333333333,
+          "clv_beat_rate": 0.2916666666666667
         }
       },
       "decision": "keep_baseline",
       "reasons": [
         "brier_not_improved"
       ],
-      "brier_gain": 0.00015605908951776826
-    },
-    {
-      "market": "batter_home_runs",
-      "key": "batter_home_runs",
-      "rows": 12375,
-      "train_rows": 12017,
-      "holdout_rows": 358,
-      "split_method": "last_available_date",
-      "coverage": {
-        "projected_pa_rate": 1.0,
-        "projected_bf_rate": 0.0,
-        "pitch_count_rate": 0.0,
-        "batting_order_rate": 1.0
-      },
-      "baseline": {
-        "forecast": {
-          "status": "ready",
-          "rows": 358,
-          "actual_rate": 0.06983240223463687,
-          "avg_prob": 0.08262418510304051,
-          "calibration_error": -0.012791782868403642,
-          "brier": 0.054912280977513495,
-          "log_loss": 0.19275441442460486
-        },
-        "selection": {
-          "picks": 52,
-          "roi": 1.1471153846153848,
-          "win_rate": 0.28846153846153844,
-          "avg_ev": 0.36074663204326174,
-          "avg_clv_price": 0.6938,
-          "clv_beat_rate": 0.5
-        }
-      },
-      "opportunity": {
-        "forecast": {
-          "status": "ready",
-          "rows": 358,
-          "actual_rate": 0.06983240223463687,
-          "avg_prob": 0.0804766504208032,
-          "calibration_error": -0.010644248186166327,
-          "brier": 0.052780937837598206,
-          "log_loss": 0.18647401533688174
-        },
-        "selection": {
-          "picks": 71,
-          "roi": 0.7035211267605634,
-          "win_rate": 0.23943661971830985,
-          "avg_ev": 0.327152768975498,
-          "avg_clv_price": 0.43478260869565216,
-          "clv_beat_rate": 0.4492753623188406
-        }
-      },
-      "decision": "keep_baseline",
-      "reasons": [
-        "roi_worse",
-        "avg_clv_worse",
-        "clv_beat_worse"
-      ],
-      "brier_gain": 0.0021313431399152885
-    },
-    {
-      "market": "pitcher_strikeouts",
-      "key": "pitcher_strikeouts",
-      "rows": 2693,
-      "train_rows": 2599,
-      "holdout_rows": 94,
-      "split_method": "last_available_date",
-      "coverage": {
-        "projected_pa_rate": 0.0,
-        "projected_bf_rate": 1.0,
-        "pitch_count_rate": 1.0,
-        "batting_order_rate": 0.005941329372447085
-      },
-      "baseline": {
-        "forecast": {
-          "status": "ready",
-          "rows": 94,
-          "actual_rate": 0.5,
-          "avg_prob": 0.5022585685289597,
-          "calibration_error": -0.00225856852895967,
-          "brier": 0.2664927352691268,
-          "log_loss": 0.7264722960596668
-        },
-        "selection": {
-          "picks": 7,
-          "roi": -1.0,
-          "win_rate": 0.0,
-          "avg_ev": 0.05137084084324411,
-          "avg_clv_price": 4.456666666666666,
-          "clv_beat_rate": 1.0
-        }
-      },
-      "opportunity": {
-        "forecast": {
-          "status": "ready",
-          "rows": 94,
-          "actual_rate": 0.5,
-          "avg_prob": 0.5014619457862822,
-          "calibration_error": -0.001461945786282226,
-          "brier": 0.2666801971346185,
-          "log_loss": 0.7268612392885466
-        },
-        "selection": {
-          "picks": 9,
-          "roi": -0.7878777777777777,
-          "win_rate": 0.1111111111111111,
-          "avg_ev": 0.04804094587822112,
-          "avg_clv_price": 4.7212499999999995,
-          "clv_beat_rate": 1.0
-        }
-      },
-      "decision": "keep_baseline",
-      "reasons": [
-        "brier_not_improved",
-        "selected_rows_too_small"
-      ],
-      "brier_gain": -0.0001874618654916782
+      "brier_gain": -1.9132731719273544e-05
     }
   ],
   "market_side": [
@@ -303,9 +308,9 @@
       "market": "batter_total_bases",
       "side": "over",
       "key": "batter_total_bases|over",
-      "rows": 28052,
-      "train_rows": 27246,
-      "holdout_rows": 806,
+      "rows": 37202,
+      "train_rows": 34741,
+      "holdout_rows": 2461,
       "split_method": "last_available_date",
       "coverage": {
         "projected_pa_rate": 1.0,
@@ -316,174 +321,57 @@
       "baseline": {
         "forecast": {
           "status": "ready",
-          "rows": 806,
-          "actual_rate": 0.2456575682382134,
-          "avg_prob": 0.24312084392241592,
-          "calibration_error": 0.0025367243157974617,
-          "brier": 0.15990522629452994,
-          "log_loss": 0.48086333889805954
+          "rows": 2461,
+          "actual_rate": 0.18447785453067858,
+          "avg_prob": 0.22517173030322055,
+          "calibration_error": -0.040693875772541965,
+          "brier": 0.1259847322942423,
+          "log_loss": 0.39816752063314054
         },
         "selection": {
-          "picks": 168,
-          "roi": 0.4315333333333334,
-          "win_rate": 0.4523809523809524,
-          "avg_ev": 0.32223334649238033,
-          "avg_clv_price": 1.756073619631902,
-          "clv_beat_rate": 0.6257668711656442
+          "picks": 434,
+          "roi": -0.012009447004608298,
+          "win_rate": 0.3548387096774194,
+          "avg_ev": 0.2367780531068718,
+          "avg_clv_price": 0.10943765281173595,
+          "clv_beat_rate": 0.3740831295843521
         }
       },
       "opportunity": {
         "forecast": {
           "status": "ready",
-          "rows": 806,
-          "actual_rate": 0.2456575682382134,
-          "avg_prob": 0.24245513107838507,
-          "calibration_error": 0.0032024371598283197,
-          "brier": 0.154158604183123,
-          "log_loss": 0.4673340743449412
+          "rows": 2461,
+          "actual_rate": 0.18447785453067858,
+          "avg_prob": 0.22219775448415116,
+          "calibration_error": -0.03771989995347258,
+          "brier": 0.12840796624135226,
+          "log_loss": 0.40311735635238316
         },
         "selection": {
-          "picks": 188,
-          "roi": 0.6391329787234044,
-          "win_rate": 0.5,
-          "avg_ev": 0.3165746569983955,
-          "avg_clv_price": 1.4436666666666667,
-          "clv_beat_rate": 0.5555555555555556
-        }
-      },
-      "decision": "keep_baseline",
-      "reasons": [
-        "avg_clv_worse",
-        "clv_beat_worse"
-      ],
-      "brier_gain": 0.005746622111406946
-    },
-    {
-      "market": "batter_hits",
-      "side": "over",
-      "key": "batter_hits|over",
-      "rows": 25128,
-      "train_rows": 24527,
-      "holdout_rows": 601,
-      "split_method": "last_available_date",
-      "coverage": {
-        "projected_pa_rate": 1.0,
-        "projected_bf_rate": 0.0,
-        "pitch_count_rate": 0.0,
-        "batting_order_rate": 1.0
-      },
-      "baseline": {
-        "forecast": {
-          "status": "ready",
-          "rows": 601,
-          "actual_rate": 0.40931780366056575,
-          "avg_prob": 0.4361774336073133,
-          "calibration_error": -0.026859629946747565,
-          "brier": 0.17871282106807915,
-          "log_loss": 0.5275584117921986
-        },
-        "selection": {
-          "picks": 222,
-          "roi": 0.10228648648648649,
-          "win_rate": 0.5900900900900901,
-          "avg_ev": 0.2288416670391099,
-          "avg_clv_price": 0.6314141414141414,
-          "clv_beat_rate": 0.5202020202020202
-        }
-      },
-      "opportunity": {
-        "forecast": {
-          "status": "ready",
-          "rows": 601,
-          "actual_rate": 0.40931780366056575,
-          "avg_prob": 0.432723247246173,
-          "calibration_error": -0.023405443585607255,
-          "brier": 0.17782414926545415,
-          "log_loss": 0.5250835878268673
-        },
-        "selection": {
-          "picks": 206,
-          "roi": 0.1786888349514563,
-          "win_rate": 0.6116504854368932,
-          "avg_ev": 0.25844483241269295,
-          "avg_clv_price": 0.6595698924731184,
-          "clv_beat_rate": 0.510752688172043
+          "picks": 474,
+          "roi": -0.020155274261603375,
+          "win_rate": 0.3227848101265823,
+          "avg_ev": 0.2522782944407364,
+          "avg_clv_price": -0.08345982142857143,
+          "clv_beat_rate": 0.3169642857142857
         }
       },
       "decision": "keep_baseline",
       "reasons": [
         "brier_not_improved",
-        "clv_beat_worse"
-      ],
-      "brier_gain": 0.0008886718026250018
-    },
-    {
-      "market": "batter_home_runs",
-      "side": "over",
-      "key": "batter_home_runs|over",
-      "rows": 12375,
-      "train_rows": 12017,
-      "holdout_rows": 358,
-      "split_method": "last_available_date",
-      "coverage": {
-        "projected_pa_rate": 1.0,
-        "projected_bf_rate": 0.0,
-        "pitch_count_rate": 0.0,
-        "batting_order_rate": 1.0
-      },
-      "baseline": {
-        "forecast": {
-          "status": "ready",
-          "rows": 358,
-          "actual_rate": 0.06983240223463687,
-          "avg_prob": 0.08262418510304051,
-          "calibration_error": -0.012791782868403642,
-          "brier": 0.054912280977513495,
-          "log_loss": 0.19275441442460486
-        },
-        "selection": {
-          "picks": 52,
-          "roi": 1.1471153846153848,
-          "win_rate": 0.28846153846153844,
-          "avg_ev": 0.36074663204326174,
-          "avg_clv_price": 0.6938,
-          "clv_beat_rate": 0.5
-        }
-      },
-      "opportunity": {
-        "forecast": {
-          "status": "ready",
-          "rows": 358,
-          "actual_rate": 0.06983240223463687,
-          "avg_prob": 0.0804766504208032,
-          "calibration_error": -0.010644248186166327,
-          "brier": 0.052780937837598206,
-          "log_loss": 0.18647401533688174
-        },
-        "selection": {
-          "picks": 71,
-          "roi": 0.7035211267605634,
-          "win_rate": 0.23943661971830985,
-          "avg_ev": 0.327152768975498,
-          "avg_clv_price": 0.43478260869565216,
-          "clv_beat_rate": 0.4492753623188406
-        }
-      },
-      "decision": "keep_baseline",
-      "reasons": [
         "roi_worse",
         "avg_clv_worse",
         "clv_beat_worse"
       ],
-      "brier_gain": 0.0021313431399152885
+      "brier_gain": -0.002423233947109943
     },
     {
       "market": "batter_hits",
-      "side": "under",
-      "key": "batter_hits|under",
-      "rows": 6559,
-      "train_rows": 6380,
-      "holdout_rows": 179,
+      "side": "over",
+      "key": "batter_hits|over",
+      "rows": 32138,
+      "train_rows": 30173,
+      "holdout_rows": 1965,
       "split_method": "last_available_date",
       "coverage": {
         "projected_pa_rate": 1.0,
@@ -494,54 +382,54 @@
       "baseline": {
         "forecast": {
           "status": "ready",
-          "rows": 179,
-          "actual_rate": 0.46368715083798884,
-          "avg_prob": 0.41614602550757607,
-          "calibration_error": 0.04754112533041277,
-          "brier": 0.23806640266391207,
-          "log_loss": 0.6681744932445582
+          "rows": 1965,
+          "actual_rate": 0.3603053435114504,
+          "avg_prob": 0.3777164518590097,
+          "calibration_error": -0.017411108347559323,
+          "brier": 0.15274319808424727,
+          "log_loss": 0.46050006880935135
         },
         "selection": {
-          "picks": 17,
-          "roi": 0.233,
-          "win_rate": 0.5882352941176471,
-          "avg_ev": 0.08818628722366807,
-          "avg_clv_price": -1.033125,
-          "clv_beat_rate": 0.1875
+          "picks": 525,
+          "roi": 0.11177580952380954,
+          "win_rate": 0.6,
+          "avg_ev": 0.20622309411948694,
+          "avg_clv_price": -0.24154471544715447,
+          "clv_beat_rate": 0.29878048780487804
         }
       },
       "opportunity": {
         "forecast": {
           "status": "ready",
-          "rows": 179,
-          "actual_rate": 0.46368715083798884,
-          "avg_prob": 0.4182116296478736,
-          "calibration_error": 0.04547552119011522,
-          "brier": 0.2375586434296211,
-          "log_loss": 0.6668567333549045
+          "rows": 1965,
+          "actual_rate": 0.3603053435114504,
+          "avg_prob": 0.3731870198785401,
+          "calibration_error": -0.0128816763670897,
+          "brier": 0.15226598987366252,
+          "log_loss": 0.45874430924568366
         },
         "selection": {
-          "picks": 41,
-          "roi": 0.24228536585365848,
-          "win_rate": 0.5609756097560976,
-          "avg_ev": 0.11668416463318049,
-          "avg_clv_price": -0.10971428571428571,
-          "clv_beat_rate": 0.37142857142857144
+          "picks": 508,
+          "roi": 0.1498484251968504,
+          "win_rate": 0.6161417322834646,
+          "avg_ev": 0.21879455988352164,
+          "avg_clv_price": -0.15399577167019024,
+          "clv_beat_rate": 0.3361522198731501
         }
       },
       "decision": "keep_baseline",
       "reasons": [
         "brier_not_improved"
       ],
-      "brier_gain": 0.000507759234290972
+      "brier_gain": 0.0004772082105847508
     },
     {
-      "market": "batter_total_bases",
-      "side": "under",
-      "key": "batter_total_bases|under",
-      "rows": 3478,
-      "train_rows": 3388,
-      "holdout_rows": 90,
+      "market": "batter_home_runs",
+      "side": "over",
+      "key": "batter_home_runs|over",
+      "rows": 16445,
+      "train_rows": 15356,
+      "holdout_rows": 1089,
       "split_method": "last_available_date",
       "coverage": {
         "projected_pa_rate": 1.0,
@@ -552,154 +440,216 @@
       "baseline": {
         "forecast": {
           "status": "ready",
-          "rows": 90,
-          "actual_rate": 0.6111111111111112,
-          "avg_prob": 0.5995195003320485,
-          "calibration_error": 0.011591610779062678,
-          "brier": 0.24041328117927901,
-          "log_loss": 0.6740105028640438
+          "rows": 1089,
+          "actual_rate": 0.03856749311294766,
+          "avg_prob": 0.08062373528442095,
+          "calibration_error": -0.04205624217147329,
+          "brier": 0.03665320097870632,
+          "log_loss": 0.14486751523336705
         },
         "selection": {
-          "picks": 13,
-          "roi": 0.13322307692307692,
-          "win_rate": 0.6923076923076923,
-          "avg_ev": 0.07558781603328213,
-          "avg_clv_price": -0.8863636363636364,
-          "clv_beat_rate": 0.18181818181818182
+          "picks": 155,
+          "roi": -0.3470967741935484,
+          "win_rate": 0.14193548387096774,
+          "avg_ev": 0.3684661386753343,
+          "avg_clv_price": -0.10489795918367348,
+          "clv_beat_rate": 0.2925170068027211
         }
       },
       "opportunity": {
         "forecast": {
           "status": "ready",
-          "rows": 90,
-          "actual_rate": 0.6111111111111112,
-          "avg_prob": 0.6078616346842711,
-          "calibration_error": 0.0032494764268400367,
-          "brier": 0.23258765306167659,
-          "log_loss": 0.6560635010907346
+          "rows": 1089,
+          "actual_rate": 0.03856749311294766,
+          "avg_prob": 0.07881797503316859,
+          "calibration_error": -0.04025048192022093,
+          "brier": 0.03684521519383865,
+          "log_loss": 0.14458767080107204
         },
         "selection": {
-          "picks": 30,
-          "roi": 0.13783333333333336,
-          "win_rate": 0.7,
-          "avg_ev": 0.11888177761707312,
-          "avg_clv_price": -0.803913043478261,
-          "clv_beat_rate": 0.21739130434782608
-        }
-      },
-      "decision": "opportunity_helped",
-      "reasons": [],
-      "brier_gain": 0.007825628117602429
-    },
-    {
-      "market": "pitcher_strikeouts",
-      "side": "over",
-      "key": "pitcher_strikeouts|over",
-      "rows": 1353,
-      "train_rows": 1306,
-      "holdout_rows": 47,
-      "split_method": "last_available_date",
-      "coverage": {
-        "projected_pa_rate": 0.0,
-        "projected_bf_rate": 1.0,
-        "pitch_count_rate": 1.0,
-        "batting_order_rate": 0.005912786400591279
-      },
-      "baseline": {
-        "forecast": {
-          "status": "ready",
-          "rows": 47,
-          "actual_rate": 0.6808510638297872,
-          "avg_prob": 0.40902919779210567,
-          "calibration_error": 0.27182186603768155,
-          "brier": 0.2945907957688895,
-          "log_loss": 0.7853405527237232
-        },
-        "selection": {
-          "picks": 0,
-          "roi": null,
-          "win_rate": null,
-          "avg_ev": null,
-          "avg_clv_price": null,
-          "clv_beat_rate": null
-        }
-      },
-      "opportunity": {
-        "forecast": {
-          "status": "ready",
-          "rows": 47,
-          "actual_rate": 0.6808510638297872,
-          "avg_prob": 0.41051775577361976,
-          "calibration_error": 0.27033330805616745,
-          "brier": 0.2997550380590195,
-          "log_loss": 0.7945589293007445
-        },
-        "selection": {
-          "picks": 5,
-          "roi": -1.0,
-          "win_rate": 0.0,
-          "avg_ev": 0.07533731120425066,
-          "avg_clv_price": -1.6760000000000002,
-          "clv_beat_rate": 0.0
+          "picks": 195,
+          "roi": -0.47692307692307695,
+          "win_rate": 0.11282051282051282,
+          "avg_ev": 0.4235425821881003,
+          "avg_clv_price": -0.10963350785340314,
+          "clv_beat_rate": 0.2670157068062827
         }
       },
       "decision": "keep_baseline",
       "reasons": [
         "brier_not_improved",
-        "selected_rows_too_small"
+        "roi_worse",
+        "avg_clv_worse",
+        "clv_beat_worse"
       ],
-      "brier_gain": -0.005164242290129961
+      "brier_gain": -0.00019201421513232592
     },
     {
-      "market": "pitcher_strikeouts",
+      "market": "batter_hits",
       "side": "under",
-      "key": "pitcher_strikeouts|under",
-      "rows": 1340,
-      "train_rows": 1293,
-      "holdout_rows": 47,
+      "key": "batter_hits|under",
+      "rows": 8700,
+      "train_rows": 8139,
+      "holdout_rows": 561,
       "split_method": "last_available_date",
       "coverage": {
-        "projected_pa_rate": 0.0,
-        "projected_bf_rate": 1.0,
-        "pitch_count_rate": 1.0,
-        "batting_order_rate": 0.005970149253731343
+        "projected_pa_rate": 1.0,
+        "projected_bf_rate": 0.0,
+        "pitch_count_rate": 0.0,
+        "batting_order_rate": 1.0
       },
       "baseline": {
         "forecast": {
           "status": "ready",
-          "rows": 47,
-          "actual_rate": 0.3191489361702128,
-          "avg_prob": 0.6093711077253684,
-          "calibration_error": -0.2902221715551556,
-          "brier": 0.30412901924461655,
-          "log_loss": 0.8060545822503408
+          "rows": 561,
+          "actual_rate": 0.47771836007130125,
+          "avg_prob": 0.4304424321130752,
+          "calibration_error": 0.04727592795822605,
+          "brier": 0.2342100382334737,
+          "log_loss": 0.6608719084640624
         },
         "selection": {
-          "picks": 39,
-          "roi": -0.510353846153846,
-          "win_rate": 0.28205128205128205,
-          "avg_ev": 0.1148628121060182,
-          "avg_clv_price": 1.3687096774193546,
-          "clv_beat_rate": 0.6129032258064516
+          "picks": 30,
+          "roi": 0.33970666666666666,
+          "win_rate": 0.8333333333333334,
+          "avg_ev": 0.11587037603549374,
+          "avg_clv_price": -1.2666666666666666,
+          "clv_beat_rate": 0.20833333333333334
         }
       },
       "opportunity": {
         "forecast": {
           "status": "ready",
-          "rows": 47,
-          "actual_rate": 0.3191489361702128,
-          "avg_prob": 0.6097732802755669,
-          "calibration_error": -0.2906243441053541,
-          "brier": 0.304892742963711,
-          "log_loss": 0.8068670093668113
+          "rows": 561,
+          "actual_rate": 0.47771836007130125,
+          "avg_prob": 0.43962691337929233,
+          "calibration_error": 0.03809144669200892,
+          "brier": 0.23263678582798056,
+          "log_loss": 0.6577074695610733
         },
         "selection": {
-          "picks": 37,
-          "roi": -0.49120540540540536,
-          "win_rate": 0.2972972972972973,
-          "avg_ev": 0.15675705586451533,
-          "avg_clv_price": 0.9714285714285714,
-          "clv_beat_rate": 0.6071428571428571
+          "picks": 119,
+          "roi": 0.016145378151260492,
+          "win_rate": 0.5126050420168067,
+          "avg_ev": 0.08009983119035048,
+          "avg_clv_price": 0.6080180180180181,
+          "clv_beat_rate": 0.5315315315315315
+        }
+      },
+      "decision": "keep_baseline",
+      "reasons": [
+        "roi_worse"
+      ],
+      "brier_gain": 0.0015732524054931363
+    },
+    {
+      "market": "batter_total_bases",
+      "side": "under",
+      "key": "batter_total_bases|under",
+      "rows": 4480,
+      "train_rows": 4203,
+      "holdout_rows": 277,
+      "split_method": "last_available_date",
+      "coverage": {
+        "projected_pa_rate": 1.0,
+        "projected_bf_rate": 0.0,
+        "pitch_count_rate": 0.0,
+        "batting_order_rate": 1.0
+      },
+      "baseline": {
+        "forecast": {
+          "status": "ready",
+          "rows": 277,
+          "actual_rate": 0.5776173285198556,
+          "avg_prob": 0.5404778777079767,
+          "calibration_error": 0.03713945081187886,
+          "brier": 0.2546885841875059,
+          "log_loss": 0.7033342513254927
+        },
+        "selection": {
+          "picks": 5,
+          "roi": 0.86912,
+          "win_rate": 1.0,
+          "avg_ev": 0.07257364328182687,
+          "avg_clv_price": 0.0,
+          "clv_beat_rate": 0.0
+        }
+      },
+      "opportunity": {
+        "forecast": {
+          "status": "ready",
+          "rows": 277,
+          "actual_rate": 0.5776173285198556,
+          "avg_prob": 0.5607020757483182,
+          "calibration_error": 0.01691525277153738,
+          "brier": 0.2741979258300293,
+          "log_loss": 0.7446724044927481
+        },
+        "selection": {
+          "picks": 63,
+          "roi": -0.296920634920635,
+          "win_rate": 0.42857142857142855,
+          "avg_ev": 0.11240604009274259,
+          "avg_clv_price": 0.032407407407407406,
+          "clv_beat_rate": 0.37037037037037035
+        }
+      },
+      "decision": "keep_baseline",
+      "reasons": [
+        "brier_not_improved"
+      ],
+      "brier_gain": -0.01950934164252338
+    },
+    {
+      "market": "pitcher_strikeouts",
+      "side": "over",
+      "key": "pitcher_strikeouts|over",
+      "rows": 1891,
+      "train_rows": 1754,
+      "holdout_rows": 137,
+      "split_method": "last_available_date",
+      "coverage": {
+        "projected_pa_rate": 0.0,
+        "projected_bf_rate": 1.0,
+        "pitch_count_rate": 1.0,
+        "batting_order_rate": 0.007403490216816499
+      },
+      "baseline": {
+        "forecast": {
+          "status": "ready",
+          "rows": 137,
+          "actual_rate": 0.5912408759124088,
+          "avg_prob": 0.5129695752337491,
+          "calibration_error": 0.07827130067865973,
+          "brier": 0.2768271310002095,
+          "log_loss": 0.7476450327145798
+        },
+        "selection": {
+          "picks": 43,
+          "roi": -0.2774023255813953,
+          "win_rate": 0.3953488372093023,
+          "avg_ev": 0.13084536827649615,
+          "avg_clv_price": -0.0030000000000000248,
+          "clv_beat_rate": 0.3
+        }
+      },
+      "opportunity": {
+        "forecast": {
+          "status": "ready",
+          "rows": 137,
+          "actual_rate": 0.5912408759124088,
+          "avg_prob": 0.5253521395855097,
+          "calibration_error": 0.06588873632689907,
+          "brier": 0.2962154539747236,
+          "log_loss": 0.7952478891375807
+        },
+        "selection": {
+          "picks": 59,
+          "roi": 0.018677966101694903,
+          "win_rate": 0.5254237288135594,
+          "avg_ev": 0.21910213933493383,
+          "avg_clv_price": -0.26371428571428573,
+          "clv_beat_rate": 0.2571428571428571
         }
       },
       "decision": "keep_baseline",
@@ -708,272 +658,332 @@
         "avg_clv_worse",
         "clv_beat_worse"
       ],
-      "brier_gain": -0.0007637237190944446
+      "brier_gain": -0.019388322974514094
+    },
+    {
+      "market": "pitcher_strikeouts",
+      "side": "under",
+      "key": "pitcher_strikeouts|under",
+      "rows": 1878,
+      "train_rows": 1741,
+      "holdout_rows": 137,
+      "split_method": "last_available_date",
+      "coverage": {
+        "projected_pa_rate": 0.0,
+        "projected_bf_rate": 1.0,
+        "pitch_count_rate": 1.0,
+        "batting_order_rate": 0.007454739084132056
+      },
+      "baseline": {
+        "forecast": {
+          "status": "ready",
+          "rows": 137,
+          "actual_rate": 0.40875912408759124,
+          "avg_prob": 0.4930201947302015,
+          "calibration_error": -0.08426107064261024,
+          "brier": 0.2779872707570082,
+          "log_loss": 0.7510689324247906
+        },
+        "selection": {
+          "picks": 34,
+          "roi": -0.4611617647058824,
+          "win_rate": 0.3235294117647059,
+          "avg_ev": 0.09224641983068614,
+          "avg_clv_price": -0.027142857142857118,
+          "clv_beat_rate": 0.6428571428571429
+        }
+      },
+      "opportunity": {
+        "forecast": {
+          "status": "ready",
+          "rows": 137,
+          "actual_rate": 0.40875912408759124,
+          "avg_prob": 0.4838033209974379,
+          "calibration_error": -0.07504419690984665,
+          "brier": 0.3013447380941049,
+          "log_loss": 0.8108421550588324
+        },
+        "selection": {
+          "picks": 52,
+          "roi": -0.4289884615384615,
+          "win_rate": 0.3269230769230769,
+          "avg_ev": 0.13236286473631198,
+          "avg_clv_price": -0.6875,
+          "clv_beat_rate": 0.3333333333333333
+        }
+      },
+      "decision": "keep_baseline",
+      "reasons": [
+        "brier_not_improved",
+        "avg_clv_worse",
+        "clv_beat_worse"
+      ],
+      "brier_gain": -0.023357467337096705
     }
   ],
   "projection_accuracy": [
     {
       "key": "hitters|all|pa",
       "label": "Hitters PA",
-      "rows": 75592,
+      "rows": 98965,
       "coverage": 1.0,
-      "mae": 0.6932655698007851,
-      "rmse": 0.9094675220920566,
-      "bias": -0.13220555799135544,
-      "pred_avg": 3.9148364570366896,
-      "actual_avg": 4.047042015028046
+      "mae": 0.6875624298794105,
+      "rmse": 0.9101483193163069,
+      "bias": -0.10282435108131065,
+      "pred_avg": 3.912605346286446,
+      "actual_avg": 4.015429697367757
     },
     {
       "key": "pitcher_strikeouts|pitch_count",
       "label": "Pitch Count Proxy",
-      "rows": 2693,
+      "rows": 3769,
       "coverage": 1.0,
-      "mae": 11.490241366505757,
-      "rmse": 15.273491841742473,
-      "bias": 1.0621215496967449,
-      "pred_avg": 89.04598712711969,
-      "actual_avg": 87.98386557742295
+      "mae": 11.404335367471479,
+      "rmse": 15.397766319318297,
+      "bias": 0.5921924471566286,
+      "pred_avg": 88.94810913593349,
+      "actual_avg": 88.35591668877687
     },
     {
       "key": "pitcher_strikeouts|bf",
       "label": "Pitcher BF",
-      "rows": 2693,
+      "rows": 3769,
       "coverage": 1.0,
-      "mae": 2.9844782770144818,
-      "rmse": 3.967140738114928,
-      "bias": 0.2758757271939596,
-      "pred_avg": 23.128827825225894,
-      "actual_avg": 22.852952098031935
+      "mae": 2.962165030512072,
+      "rmse": 3.9994198231995584,
+      "bias": 0.1538162200406827,
+      "pred_avg": 23.10340497037234,
+      "actual_avg": 22.949588750331653
     },
     {
       "key": "batter_hits|pa",
       "label": "batter_hits PA",
-      "rows": 31687,
+      "rows": 40838,
       "coverage": 1.0,
-      "mae": 0.6985220768018129,
-      "rmse": 0.9157035258401597,
-      "bias": -0.13819116647405852,
-      "pred_avg": 3.8947245402826556,
-      "actual_avg": 4.0329157067567145
+      "mae": 0.6913780504774187,
+      "rmse": 0.9135982332788991,
+      "bias": -0.10996626624595676,
+      "pred_avg": 3.8932905044088257,
+      "actual_avg": 4.003256770654782
     },
     {
       "key": "batter_home_runs|pa",
       "label": "batter_home_runs PA",
-      "rows": 12375,
+      "rows": 16445,
       "coverage": 1.0,
-      "mae": 0.6949641814975149,
-      "rmse": 0.9100351962268117,
-      "bias": -0.12627346480679816,
-      "pred_avg": 3.8908578483245155,
-      "actual_avg": 4.017131313131313
+      "mae": 0.6910437871307437,
+      "rmse": 0.9135112188294009,
+      "bias": -0.09613869222564878,
+      "pred_avg": 3.8879902223380487,
+      "actual_avg": 3.9841289145636973
     },
     {
       "key": "batter_total_bases|pa",
       "label": "batter_total_bases PA",
-      "rows": 31530,
+      "rows": 41682,
       "coverage": 1.0,
-      "mae": 0.6873162118214449,
-      "rmse": 0.9029326309288287,
-      "bias": -0.12851839266206538,
-      "pred_avg": 3.9444597234178587,
-      "actual_avg": 4.072978116079923
+      "mae": 0.6824505534344314,
+      "rmse": 0.9054203426885101,
+      "bias": -0.0984647744867984,
+      "pred_avg": 3.9412406139302636,
+      "actual_avg": 4.039705388417063
     }
   ],
   "hitter_opportunity_breakdowns": [
     {
       "level": "batting_order",
-      "bucket": "order_3_5",
-      "rows": 27594,
+      "bucket": "order_6_9",
+      "rows": 36275,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 4.002014384309448,
-      "avg_actual_pa": 4.17938682322244,
-      "pa_mae": 0.6271803681729752,
-      "pa_bias": -0.17737243891299126,
-      "actual_low_pa_rate": 0.02982532434587229,
-      "low_pa_miss_rate": 0.015873015873015872,
-      "roi": -0.1334993911719939,
-      "clv_beat_rate": 0.3885517077234321
+      "avg_projected_pa": 3.5454305623926574,
+      "avg_actual_pa": 3.5766230186078567,
+      "pa_mae": 0.7833721461936486,
+      "pa_bias": -0.031192456215199175,
+      "actual_low_pa_rate": 0.1268090971743625,
+      "low_pa_miss_rate": 0.03327360441075121,
+      "roi": -0.21909084217780841,
+      "clv_beat_rate": 0.33435995574559696
     },
     {
       "level": "batting_order",
-      "bucket": "order_6_9",
-      "rows": 27557,
+      "bucket": "order_3_5",
+      "rows": 36039,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.5448460650968188,
-      "avg_actual_pa": 3.610988133686541,
-      "pa_mae": 0.7668193084348689,
-      "pa_bias": -0.06614206858972256,
-      "actual_low_pa_rate": 0.11819138512900533,
-      "low_pa_miss_rate": 0.027542911057081686,
-      "roi": -0.20431790107776607,
-      "clv_beat_rate": 0.34120605086352584
+      "avg_projected_pa": 4.002949163978882,
+      "avg_actual_pa": 4.166292072477039,
+      "pa_mae": 0.6021175692823075,
+      "pa_bias": -0.16334290849815705,
+      "actual_low_pa_rate": 0.03046699408973612,
+      "low_pa_miss_rate": 0.014928272149615694,
+      "roi": -0.15478394239573795,
+      "clv_beat_rate": 0.37921165988080485
     },
     {
       "level": "batting_order",
       "bucket": "order_1_2",
-      "rows": 20441,
+      "rows": 26651,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 4.295944891336506,
-      "avg_actual_pa": 4.456239909984834,
-      "pa_mae": 0.6833166768003616,
-      "pa_bias": -0.1602950186483282,
-      "actual_low_pa_rate": 0.03316863167164033,
-      "low_pa_miss_rate": 0.01966635683185754,
-      "roi": -0.08963013061983269,
-      "clv_beat_rate": 0.39958147770563934
+      "avg_projected_pa": 4.290203351611929,
+      "avg_actual_pa": 4.4086901054369445,
+      "pa_mae": 0.6726980672573708,
+      "pa_bias": -0.11848675382501507,
+      "actual_low_pa_rate": 0.03286931072004803,
+      "low_pa_miss_rate": 0.020487036133728567,
+      "roi": -0.06336555851562795,
+      "clv_beat_rate": 0.38973603535454077
     },
     {
       "level": "confirmed_lineup",
       "bucket": "confirmed_lineup",
-      "rows": 75592,
+      "rows": 98965,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.9148364570366896,
-      "avg_actual_pa": 4.047042015028046,
-      "pa_mae": 0.6932655698007851,
-      "pa_bias": -0.13220555799135544,
-      "actual_low_pa_rate": 0.06294316858926871,
-      "low_pa_miss_rate": 0.021153032066885385,
-      "roi": -0.14745343554873533,
-      "clv_beat_rate": 0.37470450908129854
-    },
-    {
-      "level": "market_confirmed_lineup",
-      "bucket": "batter_hits|confirmed_lineup",
-      "rows": 31687,
-      "projected_pa_coverage": 1.0,
-      "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.8947245402826556,
-      "avg_actual_pa": 4.0329157067567145,
-      "pa_mae": 0.6985220768018129,
-      "pa_bias": -0.13819116647405852,
-      "actual_low_pa_rate": 0.06491621169564805,
-      "low_pa_miss_rate": 0.021049641808943732,
-      "roi": -0.10636948590904788,
-      "clv_beat_rate": 0.381899393810486
+      "avg_projected_pa": 3.912605346286446,
+      "avg_actual_pa": 4.015429697367757,
+      "pa_mae": 0.6875624298794105,
+      "pa_bias": -0.10282435108131065,
+      "actual_low_pa_rate": 0.06642752488253423,
+      "low_pa_miss_rate": 0.023149598342848483,
+      "roi": -0.15373651593997878,
+      "clv_beat_rate": 0.36584679948947585
     },
     {
       "level": "market_confirmed_lineup",
       "bucket": "batter_total_bases|confirmed_lineup",
-      "rows": 31530,
+      "rows": 41682,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.9444597234178587,
-      "avg_actual_pa": 4.072978116079923,
-      "pa_mae": 0.6873162118214449,
-      "pa_bias": -0.12851839266206538,
-      "actual_low_pa_rate": 0.059720900729464,
-      "low_pa_miss_rate": 0.02131303520456708,
-      "roi": -0.15166921027592767,
-      "clv_beat_rate": 0.37925604507121113
+      "avg_projected_pa": 3.9412406139302636,
+      "avg_actual_pa": 4.039705388417063,
+      "pa_mae": 0.6824505534344314,
+      "pa_bias": -0.0984647744867984,
+      "actual_low_pa_rate": 0.06345664795355309,
+      "low_pa_miss_rate": 0.023463365481502806,
+      "roi": -0.16273089103210017,
+      "clv_beat_rate": 0.3694303296478819
+    },
+    {
+      "level": "market_confirmed_lineup",
+      "bucket": "batter_hits|confirmed_lineup",
+      "rows": 40838,
+      "projected_pa_coverage": 1.0,
+      "actual_pa_coverage": 1.0,
+      "avg_projected_pa": 3.8932905044088257,
+      "avg_actual_pa": 4.003256770654782,
+      "pa_mae": 0.6913780504774187,
+      "pa_bias": -0.10996626624595676,
+      "actual_low_pa_rate": 0.06782898281012782,
+      "low_pa_miss_rate": 0.02274842058866742,
+      "roi": -0.10488014349380478,
+      "clv_beat_rate": 0.37250900996396014
     },
     {
       "level": "market_confirmed_lineup",
       "bucket": "batter_home_runs|confirmed_lineup",
-      "rows": 12375,
+      "rows": 16445,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.8908578483245155,
-      "avg_actual_pa": 4.017131313131313,
-      "pa_mae": 0.6949641814975149,
-      "pa_bias": -0.12627346480679816,
-      "actual_low_pa_rate": 0.0661010101010101,
-      "low_pa_miss_rate": 0.02101010101010101,
-      "roi": -0.24191030303030306,
-      "clv_beat_rate": 0.3452875187704266
+      "avg_projected_pa": 3.8879902223380487,
+      "avg_actual_pa": 3.9841289145636973,
+      "pa_mae": 0.6910437871307437,
+      "pa_bias": -0.09613869222564878,
+      "actual_low_pa_rate": 0.0704773487382183,
+      "low_pa_miss_rate": 0.023350562480997265,
+      "roi": -0.252264518090605,
+      "clv_beat_rate": 0.34066216650594666
     },
     {
       "level": "pinch_hit_risk",
       "bucket": "pinch_low",
-      "rows": 48035,
+      "rows": 62690,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 4.1270947110324645,
-      "avg_actual_pa": 4.297199958363693,
-      "pa_mae": 0.6510688304328359,
-      "pa_bias": -0.17010524733122842,
-      "actual_low_pa_rate": 0.031248048298115956,
-      "low_pa_miss_rate": 0.017487248881024254,
-      "roi": -0.11483109607577809,
-      "clv_beat_rate": 0.3932399762806185
+      "avg_projected_pa": 4.125067705287038,
+      "avg_actual_pa": 4.269341202743659,
+      "pa_mae": 0.632123006378071,
+      "pa_bias": -0.1442734974566208,
+      "actual_low_pa_rate": 0.031488275642048175,
+      "low_pa_miss_rate": 0.017291434040516827,
+      "roi": -0.1159198277237199,
+      "clv_beat_rate": 0.38369117622138244
     },
     {
       "level": "pinch_hit_risk",
       "bucket": "pinch_medium",
-      "rows": 27557,
+      "rows": 36275,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.5448460650968188,
-      "avg_actual_pa": 3.610988133686541,
-      "pa_mae": 0.7668193084348689,
-      "pa_bias": -0.06614206858972256,
-      "actual_low_pa_rate": 0.11819138512900533,
-      "low_pa_miss_rate": 0.027542911057081686,
-      "roi": -0.20431790107776607,
-      "clv_beat_rate": 0.34120605086352584
+      "avg_projected_pa": 3.5454305623926574,
+      "avg_actual_pa": 3.5766230186078567,
+      "pa_mae": 0.7833721461936486,
+      "pa_bias": -0.031192456215199175,
+      "actual_low_pa_rate": 0.1268090971743625,
+      "low_pa_miss_rate": 0.03327360441075121,
+      "roi": -0.21909084217780841,
+      "clv_beat_rate": 0.33435995574559696
     },
     {
       "level": "projected_pa",
       "bucket": "projected_pa_3_8_to_4_3",
-      "rows": 33343,
+      "rows": 43787,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 4.072803398919075,
-      "avg_actual_pa": 4.177248597906607,
-      "pa_mae": 0.5999923474573327,
-      "pa_bias": -0.1044451989875318,
-      "actual_low_pa_rate": 0.040398284497495725,
-      "low_pa_miss_rate": 0.040398284497495725,
-      "roi": -0.10335957472333024,
-      "clv_beat_rate": 0.3771013627772804
+      "avg_projected_pa": 4.077029702952351,
+      "avg_actual_pa": 4.140498321419599,
+      "pa_mae": 0.5879922775513933,
+      "pa_bias": -0.06346861846724831,
+      "actual_low_pa_rate": 0.04268390161463448,
+      "low_pa_miss_rate": 0.04268390161463448,
+      "roi": -0.12337463859136273,
+      "clv_beat_rate": 0.3664881966415186
     },
     {
       "level": "projected_pa",
       "bucket": "projected_pa_3_2_to_3_7",
-      "rows": 19011,
+      "rows": 24796,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 3.4897247249503835,
-      "avg_actual_pa": 3.6891273473252326,
-      "pa_mae": 0.7900371589380584,
-      "pa_bias": -0.19940262237484896,
-      "actual_low_pa_rate": 0.10541265583083478,
+      "avg_projected_pa": 3.4856088379590155,
+      "avg_actual_pa": 3.6884981448620744,
+      "pa_mae": 0.781870587806021,
+      "pa_bias": -0.20288930690305906,
+      "actual_low_pa_rate": 0.10485562187449589,
       "low_pa_miss_rate": 0.0,
-      "roi": -0.22156981221398137,
-      "clv_beat_rate": 0.3531390808050466
+      "roi": -0.19823978464268432,
+      "clv_beat_rate": 0.3474911876060751
     },
     {
       "level": "projected_pa",
       "bucket": "projected_pa_4_4_plus",
-      "rows": 15989,
+      "rows": 20704,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 4.553549315154169,
-      "avg_actual_pa": 4.427418850459691,
-      "pa_mae": 0.6276752767527675,
-      "pa_bias": 0.1261304646944775,
-      "actual_low_pa_rate": 0.01576083557445744,
-      "low_pa_miss_rate": 0.01576083557445744,
-      "roi": -0.18937582087685287,
-      "clv_beat_rate": 0.3998781890776206
+      "avg_projected_pa": 4.552574381761978,
+      "avg_actual_pa": 4.392098145285935,
+      "pa_mae": 0.6357080757341577,
+      "pa_bias": 0.16047623647604334,
+      "actual_low_pa_rate": 0.02038253477588872,
+      "low_pa_miss_rate": 0.02038253477588872,
+      "roi": -0.15199202569551776,
+      "clv_beat_rate": 0.39278587874136606
     },
     {
       "level": "projected_pa",
       "bucket": "projected_pa_under_3_2",
-      "rows": 7249,
+      "rows": 9678,
       "projected_pa_coverage": 1.0,
       "actual_pa_coverage": 1.0,
-      "avg_projected_pa": 2.8943270774075023,
-      "avg_actual_pa": 3.5477996965098635,
-      "pa_mae": 1.0131728076341127,
-      "pa_bias": -0.6534726191023611,
-      "actual_low_pa_rate": 0.15933232169954475,
+      "avg_projected_pa": 2.8936176633634787,
+      "avg_actual_pa": 3.481401115933044,
+      "pa_mae": 1.0073605001689316,
+      "pa_bias": -0.5877834525695653,
+      "actual_low_pa_rate": 0.17389956602603843,
       "low_pa_miss_rate": 0.0,
-      "roi": -0.06342779693750862,
-      "clv_beat_rate": 0.3616304014710389
+      "roi": -0.18081549907005579,
+      "clv_beat_rate": 0.3510180995475113
     }
   ],
   "status": "ready"

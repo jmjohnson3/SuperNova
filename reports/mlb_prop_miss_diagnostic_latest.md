@@ -1,125 +1,125 @@
 # MLB Prop Miss Diagnostic
 
-Generated UTC: 2026-06-20T00:58:27Z
-Rows: 78285
-Date range: 2026-05-31 to 2026-06-18
-Unique dates: 19
+Generated UTC: 2026-06-24T15:09:57Z
+Rows: 106333
+Date range: 2026-05-31 to 2026-06-23
+Unique dates: 24
 
 ## Miss Reason Counts
 
 | Reason | Misses |
 |---|---:|
-| weak_market_bucket | 55462 |
-| bad_bucket_roi | 53106 |
-| model_worse_than_market_price | 25768 |
-| lost_clv | 16361 |
-| bad_player_rate_projection | 11906 |
-| bad_player_projection | 7963 |
-| bad_opportunity_projection | 7699 |
-| bad_clv_bookability | 5708 |
-| bad_side_probability | 4514 |
-| large_projection_error | 2158 |
-| bad_calibration_bucket | 1762 |
-| bad_line_price_edge | 601 |
-| bad_distribution_pricing | 300 |
+| weak_market_bucket | 75217 |
+| bad_bucket_roi | 73986 |
+| model_worse_than_market_price | 33425 |
+| lost_clv | 23201 |
+| bad_player_rate_projection | 16318 |
+| bad_player_projection | 11535 |
+| bad_opportunity_projection | 10555 |
+| bad_side_probability | 6239 |
+| bad_clv_bookability | 5379 |
+| large_projection_error | 2973 |
+| bad_calibration_bucket | 1657 |
+| bad_line_price_edge | 785 |
+| bad_distribution_pricing | 415 |
 
 ## Miss Reasons By Market/Side
 
 | Reason | Market/Side | Misses |
 |---|---|---:|
-| weak_market_bucket | batter_total_bases|over | 21451 |
-| bad_bucket_roi | batter_total_bases|over | 21363 |
-| weak_market_bucket | batter_hits|over | 16166 |
-| bad_bucket_roi | batter_hits|over | 16145 |
-| weak_market_bucket | batter_home_runs|over | 11444 |
-| bad_bucket_roi | batter_home_runs|over | 9703 |
-| bad_player_rate_projection | batter_total_bases|over | 8783 |
-| model_worse_than_market_price | batter_hits|over | 8696 |
-| model_worse_than_market_price | batter_total_bases|over | 8110 |
-| model_worse_than_market_price | batter_home_runs|over | 6632 |
-| lost_clv | batter_total_bases|over | 6200 |
-| lost_clv | batter_hits|over | 4567 |
-| bad_player_projection | batter_hits|over | 4473 |
-| weak_market_bucket | batter_hits|under | 3646 |
-| bad_bucket_roi | batter_hits|under | 3610 |
-| bad_side_probability | batter_hits|over | 3240 |
-| lost_clv | batter_home_runs|over | 3175 |
-| bad_opportunity_projection | batter_total_bases|over | 2905 |
-| bad_opportunity_projection | batter_hits|over | 2337 |
-| bad_clv_bookability | batter_total_bases|over | 2014 |
-| bad_clv_bookability | batter_hits|over | 1859 |
-| bad_player_projection | batter_total_bases|over | 1748 |
-| bad_player_rate_projection | batter_hits|over | 1635 |
-| bad_opportunity_projection | batter_home_runs|over | 1571 |
-| large_projection_error | batter_total_bases|over | 1556 |
-| weak_market_bucket | batter_total_bases|under | 1420 |
-| bad_bucket_roi | batter_total_bases|under | 1384 |
-| lost_clv | batter_hits|under | 1365 |
-| model_worse_than_market_price | batter_hits|under | 1274 |
-| bad_clv_bookability | batter_home_runs|over | 1007 |
-| bad_side_probability | batter_total_bases|under | 910 |
-| bad_player_rate_projection | batter_hits|under | 834 |
-| bad_calibration_bucket | batter_hits|over | 833 |
-| bad_player_projection | batter_total_bases|under | 758 |
-| weak_market_bucket | pitcher_strikeouts|over | 705 |
-| weak_market_bucket | pitcher_strikeouts|under | 630 |
-| bad_bucket_roi | pitcher_strikeouts|over | 614 |
-| lost_clv | batter_total_bases|under | 598 |
-| bad_opportunity_projection | batter_hits|under | 451 |
-| bad_clv_bookability | batter_hits|under | 417 |
+| weak_market_bucket | batter_total_bases|over | 29594 |
+| bad_bucket_roi | batter_total_bases|over | 29470 |
+| weak_market_bucket | batter_hits|over | 20916 |
+| bad_bucket_roi | batter_hits|over | 20910 |
+| weak_market_bucket | batter_home_runs|over | 15817 |
+| bad_bucket_roi | batter_home_runs|over | 15724 |
+| bad_player_rate_projection | batter_total_bases|over | 11998 |
+| model_worse_than_market_price | batter_hits|over | 10542 |
+| model_worse_than_market_price | batter_total_bases|over | 9789 |
+| model_worse_than_market_price | batter_home_runs|over | 9244 |
+| lost_clv | batter_total_bases|over | 9028 |
+| lost_clv | batter_hits|over | 6241 |
+| bad_player_projection | batter_hits|over | 6220 |
+| weak_market_bucket | batter_hits|under | 5009 |
+| bad_bucket_roi | batter_hits|under | 4582 |
+| bad_side_probability | batter_hits|over | 4546 |
+| lost_clv | batter_home_runs|over | 4510 |
+| bad_opportunity_projection | batter_total_bases|over | 4081 |
+| bad_player_projection | batter_total_bases|over | 3162 |
+| bad_opportunity_projection | batter_hits|over | 3007 |
+| bad_opportunity_projection | batter_home_runs|over | 2223 |
+| model_worse_than_market_price | batter_hits|under | 2220 |
+| bad_player_rate_projection | batter_hits|over | 2163 |
+| large_projection_error | batter_total_bases|over | 2157 |
+| weak_market_bucket | batter_total_bases|under | 1932 |
+| lost_clv | batter_hits|under | 1913 |
+| bad_clv_bookability | batter_total_bases|over | 1888 |
+| bad_bucket_roi | batter_total_bases|under | 1875 |
+| bad_clv_bookability | batter_hits|over | 1678 |
+| bad_side_probability | batter_total_bases|under | 1159 |
+| bad_player_rate_projection | batter_hits|under | 1117 |
+| weak_market_bucket | pitcher_strikeouts|under | 986 |
+| weak_market_bucket | pitcher_strikeouts|over | 963 |
+| bad_clv_bookability | batter_home_runs|over | 916 |
+| bad_calibration_bucket | batter_hits|over | 916 |
+| bad_bucket_roi | pitcher_strikeouts|under | 845 |
+| lost_clv | batter_total_bases|under | 835 |
+| bad_player_projection | batter_total_bases|under | 813 |
+| model_worse_than_market_price | batter_total_bases|under | 668 |
+| bad_opportunity_projection | batter_hits|under | 637 |
 
 ## Projection vs Betting Accuracy by Market/Side
 
 | Bucket | Rows | Win | Avg Prob | Brier | ROI | MAE | RMSE | CLV Rows | CLV Beat | Avg CLV |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| batter_total_bases|over | 28052 | 23.5% | 25.8% | 0.163 | -16.7% | 1.403 | 1.868 | 25551 | 38.8% | +0.14 |
-| batter_hits|over | 25128 | 35.7% | 37.1% | 0.166 | -12.1% | 0.699 | 0.892 | 22488 | 39.7% | +0.13 |
-| batter_home_runs|over | 12375 | 7.5% | 7.1% | 0.064 | -24.2% | 0.259 | 0.386 | 11321 | 34.5% | +0.05 |
-| batter_hits|under | 6559 | 44.4% | 44.7% | 0.233 | -4.9% | 0.696 | 0.890 | 5721 | 32.2% | -0.26 |
-| batter_total_bases|under | 3478 | 59.2% | 60.0% | 0.241 | -3.0% | 1.476 | 1.958 | 3026 | 30.6% | -0.35 |
-| pitcher_strikeouts|over | 1353 | 47.9% | 49.7% | 0.250 | -7.7% | 1.783 | 2.189 | 1097 | 35.0% | -0.33 |
-| pitcher_strikeouts|under | 1340 | 53.0% | 50.3% | 0.250 | -1.8% | 1.772 | 2.178 | 1088 | 45.8% | +0.39 |
+| batter_total_bases|over | 38529 | 23.2% | 26.3% | 0.162 | -18.0% | 1.408 | 1.859 | 36206 | 37.3% | +0.09 |
+| batter_hits|over | 33222 | 37.0% | 38.6% | 0.172 | -12.2% | 0.701 | 0.892 | 30788 | 38.0% | +0.08 |
+| batter_home_runs|over | 17038 | 7.2% | 6.8% | 0.061 | -26.2% | 0.260 | 0.380 | 16080 | 33.7% | +0.04 |
+| batter_hits|under | 9004 | 44.4% | 44.1% | 0.232 | -5.4% | 0.700 | 0.892 | 8164 | 32.7% | -0.25 |
+| batter_total_bases|under | 4619 | 58.2% | 59.3% | 0.243 | -4.5% | 1.483 | 1.954 | 4203 | 31.1% | -0.33 |
+| pitcher_strikeouts|over | 1967 | 51.0% | 49.8% | 0.247 | -2.6% | 1.842 | 2.301 | 1646 | 37.3% | -0.17 |
+| pitcher_strikeouts|under | 1954 | 49.5% | 50.2% | 0.247 | -8.0% | 1.836 | 2.294 | 1637 | 43.4% | +0.22 |
 
 ## Weak Exact Buckets
 
 | Bucket | Rows | Win | Avg Prob | Brier | ROI | MAE | RMSE | CLV Rows | CLV Beat | Avg CLV |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | batter_total_bases|over|common|TB 2.5+|lay_130_149|fanduel | 4 | 0.0% | 47.3% | - | -100.0% | 0.753 | 0.964 | 4 | 0.0% | -0.91 |
+| pitcher_strikeouts|over|common|K 8.5+|plus_100_149|draftkings | 4 | 0.0% | 49.7% | - | -100.0% | 1.202 | 1.435 | 2 | 100.0% | +3.24 |
+| pitcher_strikeouts|over|common|K 8.5+|plus_100_149|fanduel | 4 | 0.0% | 49.9% | - | -100.0% | 1.202 | 1.435 | 4 | 0.0% | -0.64 |
 | batter_home_runs|over|common|HR 0.5|plus_100_149|fanduel | 3 | 0.0% | 21.6% | - | -100.0% | 0.289 | 0.289 | 3 | 66.7% | +0.55 |
-| pitcher_strikeouts|under|common|K 8.5+|fair_lay|draftkings | 3 | 0.0% | 47.7% | - | -100.0% | 5.560 | 5.560 | 3 | 0.0% | -1.31 |
 | pitcher_strikeouts|under|common|K 8.5+|fair_lay|fanduel | 3 | 0.0% | 47.7% | - | -100.0% | 5.560 | 5.560 | 3 | 0.0% | -1.00 |
-| pitcher_strikeouts|over|common|K 8.5+|plus_100_149|draftkings | 2 | 0.0% | 53.0% | - | -100.0% | 0.423 | 0.447 | 0 | - | - |
-| pitcher_strikeouts|over|common|K 8.5+|plus_100_149|fanduel | 2 | 0.0% | 53.0% | - | -100.0% | 0.423 | 0.447 | 2 | 0.0% | -1.27 |
 | batter_hits|under|common|H 0.5|heavy_lay|draftkings | 1 | 0.0% | 59.6% | - | -100.0% | 0.370 | 0.370 | 1 | 100.0% | +0.12 |
 | batter_total_bases|over|alt_tail|TB 2.5+|fair_lay|fanduel | 1 | 0.0% | 45.0% | - | -100.0% | 0.485 | 0.485 | 1 | 0.0% | -1.22 |
 | batter_total_bases|over|common|TB 2.5+|lay_130_149|draftkings | 1 | 0.0% | 45.0% | - | -100.0% | 0.367 | 0.367 | 1 | 0.0% | -1.92 |
-| batter_hits|over|common|H 0.5|plus_100_149|draftkings | 49 | 24.5% | 47.7% | 0.236 | -48.4% | 0.709 | 0.792 | 42 | 59.5% | +1.14 |
-| pitcher_strikeouts|under|common|K <4.5|heavy_lay|fanduel | 3 | 33.3% | 50.0% | 0.240 | -48.4% | 1.234 | 1.387 | 2 | 0.0% | +0.00 |
-| batter_hits|over|common|H 0.5|plus_100_149|fanduel | 23 | 26.1% | 47.9% | 0.236 | -46.7% | 0.661 | 0.697 | 22 | 45.5% | +1.41 |
-| pitcher_strikeouts|under|common|K <4.5|fair_lay|draftkings | 32 | 31.2% | 49.6% | 0.241 | -41.5% | 2.055 | 2.388 | 31 | 64.5% | +1.14 |
-| batter_hits|over|common|H 1.5|plus_100_149|fanduel | 137 | 25.5% | 43.3% | 0.228 | -40.9% | 0.732 | 0.884 | 131 | 32.1% | -0.38 |
-| pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel | 56 | 28.6% | 48.8% | 0.238 | -39.0% | 1.133 | 1.502 | 50 | 34.0% | +0.42 |
-| batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel | 6176 | 1.0% | 1.3% | 0.010 | -39.0% | 0.259 | 0.387 | 5638 | 33.2% | +0.02 |
-| pitcher_strikeouts|under|common|K <4.5|fair_lay|fanduel | 24 | 33.3% | 49.2% | 0.249 | -38.3% | 2.126 | 2.418 | 23 | 39.1% | +0.72 |
-| batter_hits|over|common|H 1.5|plus_100_149|draftkings | 140 | 26.4% | 41.0% | 0.223 | -38.2% | 0.751 | 0.962 | 129 | 54.3% | +0.33 |
-| batter_hits|over|common|H 1.5|plus_500_plus|fanduel | 291 | 10.0% | 15.7% | 0.093 | -36.1% | 0.632 | 0.730 | 262 | 40.5% | +0.29 |
-| batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings | 120 | 27.5% | 36.0% | 0.208 | -30.5% | 1.149 | 1.443 | 68 | 55.9% | +0.95 |
-| pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings | 59 | 35.6% | 49.0% | 0.267 | -24.8% | 2.221 | 2.544 | 44 | 43.2% | +0.40 |
-| batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel | 8304 | 8.3% | 11.3% | 0.076 | -24.2% | 1.317 | 1.748 | 7505 | 32.5% | +0.06 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|fanduel | 57 | 43.9% | 51.0% | 0.250 | -23.9% | 1.808 | 2.209 | 52 | 38.5% | -0.01 |
-| batter_total_bases|over|common|TB 2.5+|plus_500_plus|fanduel | 393 | 12.0% | 15.6% | 0.108 | -23.2% | 1.090 | 1.434 | 347 | 37.5% | +0.27 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|heavy_lay|fanduel | 1 | 0.0% | 60.4% | - | -100.0% | 3.740 | 3.740 | 0 | - | - |
+| pitcher_strikeouts|under|common|K 8.5+|fair_lay|draftkings | 4 | 25.0% | 48.9% | 0.227 | -55.0% | 4.665 | 4.916 | 4 | 0.0% | -1.45 |
+| pitcher_strikeouts|over|common|K 6.5-8.0|lay_150_180|fanduel | 7 | 28.6% | 55.3% | 0.289 | -53.0% | 1.542 | 2.032 | 3 | 100.0% | +1.62 |
+| pitcher_strikeouts|under|common|K <4.5|heavy_lay|fanduel | 3 | 33.3% | 50.0% | 0.240 | -48.4% | 1.234 | 1.387 | 3 | 0.0% | -0.08 |
+| batter_hits|over|common|H 1.5|plus_100_149|fanduel | 189 | 24.9% | 43.7% | 0.233 | -42.6% | 0.696 | 0.843 | 188 | 29.3% | -0.36 |
+| batter_hits|over|common|H 1.5|plus_100_149|draftkings | 199 | 25.1% | 41.6% | 0.223 | -41.0% | 0.714 | 0.905 | 196 | 48.0% | +0.15 |
+| pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel | 106 | 28.3% | 46.3% | 0.231 | -39.4% | 1.363 | 1.738 | 98 | 35.7% | +0.27 |
+| batter_home_runs|over|alt_tail|HR 1.5+|plus_500_plus|fanduel | 8505 | 1.0% | 1.5% | 0.010 | -39.0% | 0.261 | 0.381 | 8020 | 32.5% | +0.02 |
+| batter_hits|over|common|H 0.5|plus_100_149|draftkings | 72 | 29.2% | 49.1% | 0.247 | -38.4% | 0.641 | 0.717 | 66 | 63.6% | +1.55 |
+| pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|fanduel | 36 | 36.1% | 49.9% | 0.252 | -33.0% | 1.886 | 2.204 | 35 | 48.6% | +0.13 |
+| batter_hits|over|common|H 1.5|plus_500_plus|fanduel | 449 | 10.5% | 16.1% | 0.097 | -31.6% | 0.635 | 0.747 | 413 | 37.0% | +0.19 |
+| batter_hits|over|common|H 0.5|plus_100_149|fanduel | 30 | 33.3% | 48.3% | 0.258 | -31.0% | 0.671 | 0.714 | 29 | 41.4% | +1.07 |
+| pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel | 66 | 33.3% | 48.0% | 0.250 | -29.1% | 2.015 | 2.434 | 58 | 20.7% | -0.61 |
+| pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings | 94 | 34.0% | 47.1% | 0.254 | -27.5% | 2.017 | 2.518 | 67 | 41.8% | +0.28 |
+| batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel | 11505 | 8.0% | 11.8% | 0.075 | -26.7% | 1.326 | 1.745 | 10744 | 31.7% | +0.04 |
+| pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings | 119 | 33.6% | 45.9% | 0.238 | -26.6% | 1.443 | 1.828 | 95 | 56.8% | +0.91 |
+| pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|fanduel | 26 | 34.6% | 46.0% | 0.241 | -24.9% | 2.417 | 3.137 | 19 | 5.3% | -1.87 |
+| pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|draftkings | 31 | 35.5% | 45.9% | 0.238 | -23.5% | 2.498 | 3.231 | 22 | 50.0% | -0.13 |
 | batter_total_bases|over|common|TB 2.5+|fair_lay|draftkings | 10 | 40.0% | 43.8% | 0.275 | -22.7% | 1.600 | 1.761 | 10 | 70.0% | +0.17 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings | 60 | 48.3% | 53.1% | 0.241 | -21.1% | 1.887 | 2.326 | 31 | 16.1% | -1.84 |
-| pitcher_strikeouts|under|common|K <4.5|lay_130_149|fanduel | 11 | 45.5% | 48.8% | 0.242 | -20.8% | 2.167 | 2.467 | 10 | 60.0% | +0.53 |
-| pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel | 48 | 37.5% | 49.5% | 0.262 | -20.0% | 2.231 | 2.536 | 43 | 14.0% | -1.04 |
-| pitcher_strikeouts|under|common|K 6.5-8.0|plus_100_149|fanduel | 16 | 37.5% | 46.9% | 0.241 | -19.9% | 2.436 | 2.753 | 11 | 0.0% | -2.02 |
-| batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel | 192 | 46.4% | 48.3% | 0.252 | -19.7% | 1.762 | 2.312 | 180 | 46.1% | +0.17 |
+| pitcher_strikeouts|under|common|K <4.5|lay_130_149|draftkings | 20 | 45.0% | 52.7% | 0.259 | -22.0% | 2.440 | 2.848 | 18 | 44.4% | -0.09 |
+| pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|draftkings | 31 | 41.9% | 49.5% | 0.250 | -21.2% | 1.998 | 2.431 | 29 | 34.5% | -0.41 |
+| batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel | 2919 | 28.7% | 33.0% | 0.206 | -20.3% | 1.223 | 1.600 | 2679 | 39.7% | +0.14 |
 
 ## Recent Losing Examples
 
 | Date | Player | Bet | Price | Pred | Actual | PA | BF | Model | Market | CLV Reason | Labels |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
-| 2026-05-31 | Matt McLain | batter_hits over 0.5 draftkings | -115.0 | 0.584 | 0.000 | 4.2->1.0 | -->- | 55.5% | 50.1% | stale_close_before_lock | bad_bucket_roi, bad_calibration_bucket, bad_clv_bookability, bad_opportunity_projection, bad_player_projection, weak_market_bucket |
+| 2026-05-31 | Matt McLain | batter_hits over 0.5 draftkings | -115.0 | 0.584 | 0.000 | 4.2->1.0 | -->- | 55.5% | 50.1% | stale_close_before_lock | bad_bucket_roi, bad_clv_bookability, bad_opportunity_projection, bad_player_projection, weak_market_bucket |
 | 2026-05-31 | Alec Bohm | batter_hits under 0.5 draftkings | 149.0 | 0.782 | 1.000 | 3.9->4.0 | -->- | 40.2% | 37.6% | nan | bad_bucket_roi, weak_market_bucket |
 | 2026-05-31 | Alec Burleson | batter_hits under 0.5 draftkings | 190.0 | 1.112 | 1.000 | 4.0->4.0 | -->- | 34.9% | 32.3% | nan | bad_bucket_roi, weak_market_bucket |
 | 2026-05-31 | Anthony Volpe | batter_hits under 0.5 draftkings | 163.0 | 1.105 | 2.000 | 4.1->4.0 | -->- | 39.9% | 36.3% | nan | bad_bucket_roi, weak_market_bucket |

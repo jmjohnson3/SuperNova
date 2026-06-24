@@ -1,29 +1,29 @@
 # MLB Hitter Player-Game Outcome Models
 
-Generated: 2026-06-19T16:03:19.672390+00:00
-Rows: 51213 | Train: 43473 | Holdout: 7740
-Holdout: 2026-05-21 to 2026-06-17
+Generated: 2026-06-24T08:05:33.150921+00:00
+Rows: 51119 | Train: 43360 | Holdout: 7759
+Holdout: 2026-05-26 to 2026-06-22
 Status: ok
 
 ## Recommendation
 
 - Production status: diagnostic_only
 - Passes basic gate: False
-- PA MAE gain vs slot prior: 0.256
-- Hits MAE gain vs slot-rate prior: 0.009
-- TB MAE gain vs slot-rate prior: -0.005
-- HR MAE gain vs slot-rate prior: 0.007
-- Direct event hits MAE gain vs slot prior: 0.004
-- Direct event TB MAE gain vs slot prior: -0.025
+- PA MAE gain vs slot prior: 0.258
+- Hits MAE gain vs slot-rate prior: 0.010
+- TB MAE gain vs slot-rate prior: -0.006
+- HR MAE gain vs slot-rate prior: 0.005
+- Direct event hits MAE gain vs slot prior: 0.006
+- Direct event TB MAE gain vs slot prior: -0.026
 - Direct event TB MAE gain vs independent rates: -0.020
-- HR-any Brier gain vs prior: 0.00328
+- HR-any Brier gain vs prior: 0.00350
 
 ## Feature Coverage
 
 | Feature | Coverage |
 |---|---:|
-| park_run_factor | 80.5% |
-| park_hr_factor | 80.5% |
+| park_run_factor | 80.7% |
+| park_hr_factor | 80.7% |
 | park_babip_factor | 100.0% |
 | own_lineup_xwoba_avg | 100.0% |
 | own_lineup_barrel_avg | 100.0% |
@@ -40,56 +40,56 @@ Status: ok
 | batter_sc_xslg | 88.2% |
 | batter_sprint_speed | 86.9% |
 | batter_disc_whiff_pct | 85.5% |
-| opp_sp_sc_barrel_rate | 86.5% |
-| opp_sp_sc_xwoba | 86.5% |
-| opp_sp_fb_pct | 68.0% |
-| opp_sp_fb_xwoba | 68.0% |
-| opp_sp_sl_pct | 35.8% |
-| opp_sp_ch_pct | 36.3% |
-| opp_sp_fastball_family_pct | 78.2% |
-| opp_sp_pitch_diversity | 79.0% |
+| opp_sp_sc_barrel_rate | 86.8% |
+| opp_sp_sc_xwoba | 86.8% |
+| opp_sp_fb_pct | 68.3% |
+| opp_sp_fb_xwoba | 68.3% |
+| opp_sp_sl_pct | 36.0% |
+| opp_sp_ch_pct | 36.4% |
+| opp_sp_fastball_family_pct | 78.4% |
+| opp_sp_pitch_diversity | 79.2% |
 
 ## Opportunity
 
 | Model | Rows | MAE | RMSE | Bias |
 |---|---:|---:|---:|---:|
-| Selected PA model | 7740 | 0.688 | 1.007 | -0.077 |
-| Single-mean PA | 7740 | 0.688 | 1.007 | -0.077 |
-| Two-part PA | 7740 | 0.745 | 0.979 | 0.042 |
-| Slot prior | 7740 | 0.945 | 1.291 | -0.022 |
-| Existing projected PA | 7663 | 0.889 | 1.182 | -0.030 |
+| Selected PA model | 7759 | 0.703 | 1.022 | -0.083 |
+| Single-mean PA | 7759 | 0.703 | 1.022 | -0.083 |
+| Two-part PA | 7759 | 0.763 | 0.999 | 0.025 |
+| Slot prior | 7759 | 0.961 | 1.307 | -0.030 |
+| Existing projected PA | 7686 | 0.900 | 1.201 | -0.046 |
 
 - Two-part PA enabled: False
-- Low-PA Brier: 0.08604 vs baseline 0.15230
+- Low-PA Brier: 0.09302 vs baseline 0.15573
 - Leakage-safe pregame low-PA rows: 0
 - Activation reason: insufficient_pregame_low_pa_rows
-- Conditional normal-play PA MAE: 0.451
+- Conditional normal-play PA MAE: 0.455
 
 ## Structured Counts
 
 | Target | Model Rows | Model MAE | Prior MAE | Model Bias |
 |---|---:|---:|---:|---:|
-| Hits | 7437 | 0.672 | 0.680 | 0.042 |
-| Total bases | 7437 | 1.278 | 1.273 | 0.101 |
-| Home runs | 7437 | 0.201 | 0.208 | 0.017 |
+| Hits | 7442 | 0.674 | 0.684 | 0.060 |
+| Total bases | 7442 | 1.288 | 1.282 | 0.133 |
+| Home runs | 7442 | 0.206 | 0.210 | 0.021 |
 
 ## Direct Per-PA Event Model
 
 - Active event curve: hierarchical_conditional_lgbm
-- Train event rows: 155952
-- Holdout player-games: 7437
-- Weighted event Brier: 0.48563
-- Weighted event log loss: 0.99947
+- Train event rows: 155242
+- Holdout player-games: 7442
+- Weighted event Brier: 0.48853
+- Weighted event log loss: 1.00542
 - Classes: out, walk, single, double, triple, hr
-- TB-state residual enabled: True
-- TB-state blend alpha: 0.250
-- TB-state validation Brier gain: 0.00010
+- TB-state residual enabled: False
+- TB-state blend alpha: 0.000
+- TB-state validation Brier gain: 0.00000
 
 | Target | Rows | Direct Event MAE | Independent Rate MAE | Direct Bias |
 |---|---:|---:|---:|---:|
-| Hits | 7437 | 0.676 | 0.672 | 0.011 |
-| Total bases | 7437 | 1.299 | 1.278 | 0.060 |
-| Home runs | 7437 | 0.204 | 0.201 | 0.016 |
+| Hits | 7442 | 0.678 | 0.674 | 0.028 |
+| Total bases | 7442 | 1.308 | 1.288 | 0.092 |
+| Home runs | 7442 | 0.208 | 0.206 | 0.020 |
 
 ## Event Model Candidates
 
@@ -97,28 +97,28 @@ Status: ok
 
 | Candidate | Brier | Log Loss | Composite | Hits MAE | TB MAE | HR MAE |
 |---|---:|---:|---:|---:|---:|---:|
-| hierarchical_conditional_lgbm | 0.48563 | 0.99947 | 2.27896 | 0.676 | 1.299 | 0.204 |
+| hierarchical_conditional_lgbm | 0.48853 | 1.00542 | 2.29324 | 0.678 | 1.308 | 0.208 |
 
 | Event | Actual / PA | Predicted Prob | Bias / PA |
 |---|---:|---:|---:|
-| out | 0.6930 | 0.6976 | -0.0045 |
-| walk | 0.0862 | 0.0901 | -0.0039 |
-| single | 0.1419 | 0.1393 | 0.0027 |
-| double | 0.0411 | 0.0416 | -0.0004 |
-| triple | 0.0039 | 0.0031 | 0.0008 |
-| hr | 0.0338 | 0.0284 | 0.0054 |
+| out | 0.6903 | 0.6989 | -0.0086 |
+| walk | 0.0847 | 0.0890 | -0.0043 |
+| single | 0.1442 | 0.1392 | 0.0051 |
+| double | 0.0418 | 0.0413 | 0.0005 |
+| triple | 0.0040 | 0.0029 | 0.0010 |
+| hr | 0.0350 | 0.0287 | 0.0064 |
 
 ## HR Rare Event
 
-- Rows: 7437
-- Model Brier: 0.10063
-- Prior Brier: 0.10391
+- Rows: 7442
+- Model Brier: 0.10344
+- Prior Brier: 0.10694
 - AUC: 0.667
 
 ## Existing Prop Projection Holdout
 
 | Target | Rows | MAE | RMSE | Bias |
 |---|---:|---:|---:|---:|
-| Hits | 3346 | 0.693 | 0.882 | 0.035 |
-| Total bases | 3176 | 1.381 | 1.841 | 0.133 |
-| Home runs | 3006 | 0.253 | 0.380 | -0.007 |
+| Hits | 4305 | 0.695 | 0.882 | 0.016 |
+| Total bases | 4130 | 1.386 | 1.830 | 0.067 |
+| Home runs | 3959 | 0.255 | 0.376 | -0.020 |

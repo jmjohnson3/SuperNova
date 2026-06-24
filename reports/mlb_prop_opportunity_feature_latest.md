@@ -1,10 +1,10 @@
 # MLB Prop Opportunity Feature Report
 
-- Generated UTC: 2026-06-19T23:40:33Z
+- Generated UTC: 2026-06-24T14:27:13Z
 - Source: features.mlb_prop_market_training_examples
-- Date range: 2026-05-31 to 2026-06-18
-- Rows: 78285
-- Unique dates: 19
+- Date range: 2026-05-31 to 2026-06-22
+- Rows: 102734
+- Unique dates: 23
 - Holdout days: 28
 - Minimum Brier gain: 0.001
 
@@ -14,12 +14,12 @@ This is a holdout diagnostic. It does not reopen bankroll buckets by itself.
 
 | Metric | Rows | Coverage | MAE | RMSE | Bias | Pred Avg | Actual Avg |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Hitters PA | 75592 | 100.0% | 0.693 | 0.909 | -0.132 | 3.915 | 4.047 |
-| Pitch Count Proxy | 2693 | 100.0% | 11.490 | 15.273 | +1.062 | 89.046 | 87.984 |
-| Pitcher BF | 2693 | 100.0% | 2.984 | 3.967 | +0.276 | 23.129 | 22.853 |
-| batter_hits PA | 31687 | 100.0% | 0.699 | 0.916 | -0.138 | 3.895 | 4.033 |
-| batter_home_runs PA | 12375 | 100.0% | 0.695 | 0.910 | -0.126 | 3.891 | 4.017 |
-| batter_total_bases PA | 31530 | 100.0% | 0.687 | 0.903 | -0.129 | 3.944 | 4.073 |
+| Hitters PA | 98965 | 100.0% | 0.688 | 0.910 | -0.103 | 3.913 | 4.015 |
+| Pitch Count Proxy | 3769 | 100.0% | 11.404 | 15.398 | +0.592 | 88.948 | 88.356 |
+| Pitcher BF | 3769 | 100.0% | 2.962 | 3.999 | +0.154 | 23.103 | 22.950 |
+| batter_hits PA | 40838 | 100.0% | 0.691 | 0.914 | -0.110 | 3.893 | 4.003 |
+| batter_home_runs PA | 16445 | 100.0% | 0.691 | 0.914 | -0.096 | 3.888 | 3.984 |
+| batter_total_bases PA | 41682 | 100.0% | 0.682 | 0.905 | -0.098 | 3.941 | 4.040 |
 
 ## Hitter Opportunity Breakdowns
 
@@ -27,46 +27,46 @@ These rows isolate confirmed lineup, batting-order, projected-PA, and pinch-hit 
 
 | Level | Bucket | Rows | PA Cov | PA MAE | PA Bias | Avg PA | Actual PA | Low-PA | Low-PA Miss | ROI | CLV Beat |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| batting_order | order_3_5 | 27594 | 100.0% | 0.627 | -0.177 | 4.00 | 4.18 | 3.0% | 1.6% | -13.3% | 38.9% |
-| batting_order | order_6_9 | 27557 | 100.0% | 0.767 | -0.066 | 3.54 | 3.61 | 11.8% | 2.8% | -20.4% | 34.1% |
-| batting_order | order_1_2 | 20441 | 100.0% | 0.683 | -0.160 | 4.30 | 4.46 | 3.3% | 2.0% | -9.0% | 40.0% |
-| confirmed_lineup | confirmed_lineup | 75592 | 100.0% | 0.693 | -0.132 | 3.91 | 4.05 | 6.3% | 2.1% | -14.7% | 37.5% |
-| market_confirmed_lineup | batter_hits|confirmed_lineup | 31687 | 100.0% | 0.699 | -0.138 | 3.89 | 4.03 | 6.5% | 2.1% | -10.6% | 38.2% |
-| market_confirmed_lineup | batter_total_bases|confirmed_lineup | 31530 | 100.0% | 0.687 | -0.129 | 3.94 | 4.07 | 6.0% | 2.1% | -15.2% | 37.9% |
-| market_confirmed_lineup | batter_home_runs|confirmed_lineup | 12375 | 100.0% | 0.695 | -0.126 | 3.89 | 4.02 | 6.6% | 2.1% | -24.2% | 34.5% |
-| pinch_hit_risk | pinch_low | 48035 | 100.0% | 0.651 | -0.170 | 4.13 | 4.30 | 3.1% | 1.7% | -11.5% | 39.3% |
-| pinch_hit_risk | pinch_medium | 27557 | 100.0% | 0.767 | -0.066 | 3.54 | 3.61 | 11.8% | 2.8% | -20.4% | 34.1% |
-| projected_pa | projected_pa_3_8_to_4_3 | 33343 | 100.0% | 0.600 | -0.104 | 4.07 | 4.18 | 4.0% | 4.0% | -10.3% | 37.7% |
-| projected_pa | projected_pa_3_2_to_3_7 | 19011 | 100.0% | 0.790 | -0.199 | 3.49 | 3.69 | 10.5% | 0.0% | -22.2% | 35.3% |
-| projected_pa | projected_pa_4_4_plus | 15989 | 100.0% | 0.628 | +0.126 | 4.55 | 4.43 | 1.6% | 1.6% | -18.9% | 40.0% |
-| projected_pa | projected_pa_under_3_2 | 7249 | 100.0% | 1.013 | -0.653 | 2.89 | 3.55 | 15.9% | 0.0% | -6.3% | 36.2% |
+| batting_order | order_6_9 | 36275 | 100.0% | 0.783 | -0.031 | 3.55 | 3.58 | 12.7% | 3.3% | -21.9% | 33.4% |
+| batting_order | order_3_5 | 36039 | 100.0% | 0.602 | -0.163 | 4.00 | 4.17 | 3.0% | 1.5% | -15.5% | 37.9% |
+| batting_order | order_1_2 | 26651 | 100.0% | 0.673 | -0.118 | 4.29 | 4.41 | 3.3% | 2.0% | -6.3% | 39.0% |
+| confirmed_lineup | confirmed_lineup | 98965 | 100.0% | 0.688 | -0.103 | 3.91 | 4.02 | 6.6% | 2.3% | -15.4% | 36.6% |
+| market_confirmed_lineup | batter_total_bases|confirmed_lineup | 41682 | 100.0% | 0.682 | -0.098 | 3.94 | 4.04 | 6.3% | 2.3% | -16.3% | 36.9% |
+| market_confirmed_lineup | batter_hits|confirmed_lineup | 40838 | 100.0% | 0.691 | -0.110 | 3.89 | 4.00 | 6.8% | 2.3% | -10.5% | 37.3% |
+| market_confirmed_lineup | batter_home_runs|confirmed_lineup | 16445 | 100.0% | 0.691 | -0.096 | 3.89 | 3.98 | 7.0% | 2.3% | -25.2% | 34.1% |
+| pinch_hit_risk | pinch_low | 62690 | 100.0% | 0.632 | -0.144 | 4.13 | 4.27 | 3.1% | 1.7% | -11.6% | 38.4% |
+| pinch_hit_risk | pinch_medium | 36275 | 100.0% | 0.783 | -0.031 | 3.55 | 3.58 | 12.7% | 3.3% | -21.9% | 33.4% |
+| projected_pa | projected_pa_3_8_to_4_3 | 43787 | 100.0% | 0.588 | -0.063 | 4.08 | 4.14 | 4.3% | 4.3% | -12.3% | 36.6% |
+| projected_pa | projected_pa_3_2_to_3_7 | 24796 | 100.0% | 0.782 | -0.203 | 3.49 | 3.69 | 10.5% | 0.0% | -19.8% | 34.7% |
+| projected_pa | projected_pa_4_4_plus | 20704 | 100.0% | 0.636 | +0.160 | 4.55 | 4.39 | 2.0% | 2.0% | -15.2% | 39.3% |
+| projected_pa | projected_pa_under_3_2 | 9678 | 100.0% | 1.007 | -0.588 | 2.89 | 3.48 | 17.4% | 0.0% | -18.1% | 35.1% |
 
 ## Overall
 
 | Bucket | Rows | Train | Holdout | Decision | Brier Gain | Base Brier | Opp Brier | Base ROI | Opp ROI | Base CLV | Opp CLV | PA Cov | BF Cov | Reasons |
 |---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| overall | 78285 | 76157 | 2128 | keep_baseline | +0.001 | 0.163 | 0.162 | +24.8% | +26.8% | +0.76 | +0.78 | 96.6% | 3.4% | brier_not_improved; clv_beat_worse |
+| overall | 102734 | 96107 | 6627 | keep_baseline | -0.000 | 0.141 | 0.141 | +0.5% | -0.2% | -0.09 | -0.09 | 96.3% | 3.7% | brier_not_improved; roi_worse; clv_beat_worse |
 
 ## Market
 
 | Bucket | Rows | Train | Holdout | Decision | Brier Gain | Base Brier | Opp Brier | Base ROI | Opp ROI | Base CLV | Opp CLV | PA Cov | BF Cov | Reasons |
 |---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| batter_total_bases | 31530 | 30634 | 896 | keep_baseline | +0.003 | 0.168 | 0.165 | +33.7% | +50.6% | +1.48 | +1.34 | 100.0% | 0.0% | avg_clv_worse; clv_beat_worse |
-| batter_hits | 31687 | 30907 | 780 | keep_baseline | +0.000 | 0.193 | 0.193 | +10.1% | +11.6% | +0.29 | +0.31 | 100.0% | 0.0% | brier_not_improved |
-| batter_home_runs | 12375 | 12017 | 358 | keep_baseline | +0.002 | 0.055 | 0.053 | +114.7% | +70.4% | +0.69 | +0.43 | 100.0% | 0.0% | roi_worse; avg_clv_worse; clv_beat_worse |
-| pitcher_strikeouts | 2693 | 2599 | 94 | keep_baseline | -0.000 | 0.266 | 0.267 | -100.0% | -78.8% | +4.46 | +4.72 | 0.0% | 100.0% | brier_not_improved; selected_rows_too_small |
+| batter_total_bases | 41682 | 38944 | 2738 | keep_baseline | -0.001 | 0.140 | 0.141 | -1.2% | +2.8% | +0.08 | -0.03 | 100.0% | 0.0% | brier_not_improved; avg_clv_worse; clv_beat_worse |
+| batter_hits | 40838 | 38312 | 2526 | keep_baseline | -0.000 | 0.173 | 0.173 | +6.2% | +4.5% | -0.24 | -0.29 | 100.0% | 0.0% | brier_not_improved; roi_worse; avg_clv_worse; clv_beat_worse |
+| batter_home_runs | 16445 | 15356 | 1089 | keep_baseline | -0.000 | 0.037 | 0.037 | -34.7% | -47.7% | -0.10 | -0.11 | 100.0% | 0.0% | brier_not_improved; roi_worse; avg_clv_worse; clv_beat_worse |
+| pitcher_strikeouts | 3769 | 3495 | 274 | keep_baseline | -0.000 | 0.260 | 0.260 | -38.2% | -20.0% | -0.33 | -0.28 | 0.0% | 100.0% | brier_not_improved |
 
 ## Market And Side
 
 | Bucket | Rows | Train | Holdout | Decision | Brier Gain | Base Brier | Opp Brier | Base ROI | Opp ROI | Base CLV | Opp CLV | PA Cov | BF Cov | Reasons |
 |---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| batter_total_bases|over | 28052 | 27246 | 806 | keep_baseline | +0.006 | 0.160 | 0.154 | +43.2% | +63.9% | +1.76 | +1.44 | 100.0% | 0.0% | avg_clv_worse; clv_beat_worse |
-| batter_hits|over | 25128 | 24527 | 601 | keep_baseline | +0.001 | 0.179 | 0.178 | +10.2% | +17.9% | +0.63 | +0.66 | 100.0% | 0.0% | brier_not_improved; clv_beat_worse |
-| batter_home_runs|over | 12375 | 12017 | 358 | keep_baseline | +0.002 | 0.055 | 0.053 | +114.7% | +70.4% | +0.69 | +0.43 | 100.0% | 0.0% | roi_worse; avg_clv_worse; clv_beat_worse |
-| batter_hits|under | 6559 | 6380 | 179 | keep_baseline | +0.001 | 0.238 | 0.238 | +23.3% | +24.2% | -1.03 | -0.11 | 100.0% | 0.0% | brier_not_improved |
-| batter_total_bases|under | 3478 | 3388 | 90 | opportunity_helped | +0.008 | 0.240 | 0.233 | +13.3% | +13.8% | -0.89 | -0.80 | 100.0% | 0.0% |  |
-| pitcher_strikeouts|over | 1353 | 1306 | 47 | keep_baseline | -0.005 | 0.295 | 0.300 | - | -100.0% | - | -1.68 | 0.0% | 100.0% | brier_not_improved; selected_rows_too_small |
-| pitcher_strikeouts|under | 1340 | 1293 | 47 | keep_baseline | -0.001 | 0.304 | 0.305 | -51.0% | -49.1% | +1.37 | +0.97 | 0.0% | 100.0% | brier_not_improved; avg_clv_worse; clv_beat_worse |
+| batter_total_bases|over | 37202 | 34741 | 2461 | keep_baseline | -0.002 | 0.126 | 0.128 | -1.2% | -2.0% | +0.11 | -0.08 | 100.0% | 0.0% | brier_not_improved; roi_worse; avg_clv_worse; clv_beat_worse |
+| batter_hits|over | 32138 | 30173 | 1965 | keep_baseline | +0.000 | 0.153 | 0.152 | +11.2% | +15.0% | -0.24 | -0.15 | 100.0% | 0.0% | brier_not_improved |
+| batter_home_runs|over | 16445 | 15356 | 1089 | keep_baseline | -0.000 | 0.037 | 0.037 | -34.7% | -47.7% | -0.10 | -0.11 | 100.0% | 0.0% | brier_not_improved; roi_worse; avg_clv_worse; clv_beat_worse |
+| batter_hits|under | 8700 | 8139 | 561 | keep_baseline | +0.002 | 0.234 | 0.233 | +34.0% | +1.6% | -1.27 | +0.61 | 100.0% | 0.0% | roi_worse |
+| batter_total_bases|under | 4480 | 4203 | 277 | keep_baseline | -0.020 | 0.255 | 0.274 | +86.9% | -29.7% | +0.00 | +0.03 | 100.0% | 0.0% | brier_not_improved |
+| pitcher_strikeouts|over | 1891 | 1754 | 137 | keep_baseline | -0.019 | 0.277 | 0.296 | -27.7% | +1.9% | -0.00 | -0.26 | 0.0% | 100.0% | brier_not_improved; avg_clv_worse; clv_beat_worse |
+| pitcher_strikeouts|under | 1878 | 1741 | 137 | keep_baseline | -0.023 | 0.278 | 0.301 | -46.1% | -42.9% | -0.03 | -0.69 | 0.0% | 100.0% | brier_not_improved; avg_clv_worse; clv_beat_worse |
 
 ## Rule
 

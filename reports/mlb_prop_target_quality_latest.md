@@ -1,71 +1,76 @@
 # MLB Prop Target Quality
 
-Generated UTC: 2026-06-20T00:59:33Z
-Rows: 94639
-Date range: 2026-05-31 to 2026-06-19
+Generated UTC: 2026-06-24T15:11:28Z
+Rows: 120581
+Date range: 2026-05-31 to 2026-06-24
 
 ## Required Field Coverage
 
 | Field | Present | Missing | Coverage |
 |---|---:|---:|---:|
-| bookmaker_key | 94639 | 0 | 100.0% |
-| market_line | 94639 | 0 | 100.0% |
-| market_price | 94639 | 0 | 100.0% |
-| prop_offer_id | 93982 | 657 | 99.3% |
-| lock_snapshot_id | 94639 | 0 | 100.0% |
-| source_created_at | 94639 | 0 | 100.0% |
-| actual_value | 78285 | 16354 | 82.7% |
-| won | 78285 | 16354 | 82.7% |
-| paired_price | 94639 | 0 | 100.0% |
-| paired_bookmaker_key | 94639 | 0 | 100.0% |
-| paired_price_source | 94639 | 0 | 100.0% |
-| pair_quality | 94639 | 0 | 100.0% |
-| no_vig_market_prob | 94639 | 0 | 100.0% |
-| market_prob_source | 94639 | 0 | 100.0% |
-| closing_line | 78474 | 16165 | 82.9% |
-| closing_price | 78474 | 16165 | 82.9% |
-| closing_snapshot_id | 78474 | 16165 | 82.9% |
-| closing_fetched_at_utc | 78474 | 16165 | 82.9% |
-| clv_valid | 94639 | 0 | 100.0% |
+| bookmaker_key | 120581 | 0 | 100.0% |
+| market_line | 120581 | 0 | 100.0% |
+| market_price | 120581 | 0 | 100.0% |
+| prop_offer_id | 119924 | 657 | 99.5% |
+| lock_snapshot_id | 120581 | 0 | 100.0% |
+| source_created_at | 120581 | 0 | 100.0% |
+| actual_value | 106333 | 14248 | 88.2% |
+| won | 106333 | 14248 | 88.2% |
+| paired_price | 120581 | 0 | 100.0% |
+| paired_bookmaker_key | 120581 | 0 | 100.0% |
+| paired_price_source | 120581 | 0 | 100.0% |
+| pair_quality | 120581 | 0 | 100.0% |
+| no_vig_market_prob | 120581 | 0 | 100.0% |
+| market_prob_source | 120581 | 0 | 100.0% |
+| closing_line | 104823 | 15758 | 86.9% |
+| closing_price | 104823 | 15758 | 86.9% |
+| closing_snapshot_id | 104823 | 15758 | 86.9% |
+| closing_fetched_at_utc | 104823 | 15758 | 86.9% |
+| clv_valid | 120581 | 0 | 100.0% |
 
 ## CLV / Close Status
 
 | Status | Rows |
 |---|---:|
-| valid_movement | 55777 |
-| true_no_movement | 22697 |
-| unknown | 16165 |
+| valid_movement | 72984 |
+| true_no_movement | 31839 |
+| unknown | 15758 |
 
 ## CLV Unknown Reasons
 
 | Reason | Rows |
 |---|---:|
-| none | 78474 |
-| close_outside_two_hour_window | 7927 |
-| stale_close_before_lock | 6303 |
-| line_disappeared_at_close | 1476 |
-| fallback_other_book_only | 285 |
-| no_valid_close_snapshot | 174 |
+| none | 104823 |
+| stale_close_before_lock | 7233 |
+| close_outside_two_hour_window | 6581 |
+| line_disappeared_at_close | 1408 |
+| fallback_other_book_only | 294 |
+| no_valid_close_snapshot | 242 |
 
 ## Quality By Date
 
 | Date | Rows | Offer ID | Price+Lock | True Pair | Same-Book Pair | Cross-Book Pair | Synthetic Pair | Any Pair | Graded | Valid Close | Stale Close |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2026-06-19 | 7929 | 100.0% | 100.0% | 43.4% | 29.9% | 13.4% | 56.6% | 100.0% | 0.0% | 87.4% | 2.3% |
-| 2026-06-18 | 2660 | 100.0% | 100.0% | 48.3% | 29.0% | 19.3% | 51.7% | 100.0% | 80.0% | 75.0% | 12.2% |
-| 2026-06-17 | 3707 | 100.0% | 100.0% | 45.6% | 25.8% | 19.7% | 54.4% | 100.0% | 93.1% | 89.6% | 3.4% |
-| 2026-06-16 | 8262 | 100.0% | 100.0% | 46.4% | 29.2% | 17.2% | 53.6% | 100.0% | 92.4% | 85.9% | 1.7% |
-| 2026-06-15 | 5873 | 100.0% | 100.0% | 47.7% | 29.9% | 17.8% | 52.3% | 100.0% | 93.5% | 88.9% | 2.6% |
-| 2026-06-14 | 6056 | 100.0% | 100.0% | 49.8% | 31.0% | 18.8% | 50.2% | 100.0% | 85.5% | 82.6% | 3.2% |
-| 2026-06-13 | 6581 | 100.0% | 100.0% | 49.1% | 30.4% | 18.7% | 50.9% | 100.0% | 91.3% | 85.9% | 1.0% |
-| 2026-06-12 | 8682 | 100.0% | 100.0% | 48.7% | 30.6% | 18.1% | 51.3% | 100.0% | 92.4% | 88.8% | 2.5% |
-| 2026-06-11 | 2202 | 100.0% | 100.0% | 49.4% | 31.9% | 17.5% | 50.6% | 100.0% | 75.8% | 85.3% | 6.4% |
-| 2026-06-10 | 8414 | 100.0% | 100.0% | 44.2% | 27.3% | 16.9% | 55.8% | 100.0% | 90.6% | 85.5% | 4.4% |
-| 2026-06-09 | 6566 | 100.0% | 100.0% | 41.6% | 25.9% | 15.7% | 58.4% | 100.0% | 93.1% | 86.8% | 3.2% |
-| 2026-06-08 | 3589 | 100.0% | 100.0% | 41.3% | 26.0% | 15.3% | 58.7% | 100.0% | 92.6% | 86.2% | 2.8% |
-| 2026-06-07 | 6521 | 100.0% | 100.0% | 40.1% | 23.9% | 16.1% | 59.9% | 100.0% | 89.4% | 86.5% | 0.9% |
-| 2026-06-06 | 4562 | 100.0% | 100.0% | 41.6% | 25.6% | 16.0% | 58.4% | 100.0% | 81.9% | 88.1% | 2.0% |
-| 2026-06-05 | 6699 | 100.0% | 100.0% | 42.3% | 26.3% | 16.0% | 57.7% | 100.0% | 92.1% | 86.8% | 3.6% |
+| 2026-06-24 | 2446 | 100.0% | 100.0% | 42.2% | 29.7% | 12.6% | 57.8% | 100.0% | 0.0% | 12.0% | 3.5% |
+| 2026-06-23 | 4119 | 100.0% | 100.0% | 45.0% | 28.5% | 16.5% | 55.0% | 100.0% | 87.4% | 78.2% | 5.4% |
+| 2026-06-22 | 7540 | 100.0% | 100.0% | 46.8% | 29.0% | 17.7% | 53.2% | 100.0% | 87.9% | 90.4% | 3.5% |
+| 2026-06-21 | 5500 | 100.0% | 100.0% | 48.5% | 29.3% | 19.2% | 51.5% | 100.0% | 87.1% | 93.7% | 3.9% |
+| 2026-06-20 | 6337 | 100.0% | 100.0% | 48.2% | 30.7% | 17.6% | 51.8% | 100.0% | 89.8% | 88.6% | 2.8% |
+| 2026-06-19 | 7929 | 100.0% | 100.0% | 48.8% | 29.9% | 18.8% | 51.2% | 100.0% | 92.6% | 91.7% | 2.3% |
+| 2026-06-18 | 2660 | 100.0% | 100.0% | 48.3% | 29.0% | 19.3% | 51.7% | 100.0% | 80.0% | 77.4% | 12.2% |
+| 2026-06-17 | 3707 | 100.0% | 100.0% | 45.6% | 25.8% | 19.7% | 54.4% | 100.0% | 93.1% | 93.9% | 3.4% |
+| 2026-06-16 | 8262 | 100.0% | 100.0% | 46.4% | 29.2% | 17.2% | 53.6% | 100.0% | 92.4% | 94.0% | 1.7% |
+| 2026-06-15 | 5873 | 100.0% | 100.0% | 47.7% | 29.9% | 17.8% | 52.3% | 100.0% | 93.5% | 92.3% | 2.6% |
+| 2026-06-14 | 6056 | 100.0% | 100.0% | 49.8% | 31.0% | 18.8% | 50.2% | 100.0% | 85.5% | 94.0% | 3.1% |
+| 2026-06-13 | 6581 | 100.0% | 100.0% | 49.1% | 30.4% | 18.7% | 50.9% | 100.0% | 91.3% | 92.4% | 1.0% |
+| 2026-06-12 | 8682 | 100.0% | 100.0% | 48.7% | 30.6% | 18.1% | 51.3% | 100.0% | 92.4% | 92.0% | 2.5% |
+| 2026-06-11 | 2202 | 100.0% | 100.0% | 49.4% | 31.9% | 17.5% | 50.6% | 100.0% | 75.8% | 88.6% | 6.1% |
+| 2026-06-10 | 8414 | 100.0% | 100.0% | 44.2% | 27.3% | 16.9% | 55.8% | 100.0% | 90.6% | 93.0% | 4.2% |
+| 2026-06-09 | 6566 | 100.0% | 100.0% | 41.6% | 25.9% | 15.7% | 58.4% | 100.0% | 93.1% | 90.6% | 3.2% |
+| 2026-06-08 | 3589 | 100.0% | 100.0% | 41.3% | 26.0% | 15.3% | 58.7% | 100.0% | 92.6% | 91.3% | 2.8% |
+| 2026-06-07 | 6521 | 100.0% | 100.0% | 40.1% | 23.9% | 16.1% | 59.9% | 100.0% | 89.4% | 97.9% | 0.9% |
+| 2026-06-06 | 4562 | 100.0% | 100.0% | 41.6% | 25.6% | 16.0% | 58.4% | 100.0% | 81.9% | 93.9% | 1.9% |
+| 2026-06-05 | 6699 | 100.0% | 100.0% | 42.3% | 26.3% | 16.0% | 57.7% | 100.0% | 92.1% | 91.0% | 3.6% |
 | 2026-06-04 | 2348 | 100.0% | 100.0% | 43.0% | 26.2% | 16.7% | 57.0% | 100.0% | 95.1% | 69.8% | 13.3% |
 | 2026-06-03 | 3331 | 100.0% | 100.0% | 36.2% | 25.3% | 10.9% | 63.8% | 100.0% | 92.5% | 0.0% | 100.0% |
 | 2026-06-02 | 235 | 0.0% | 100.0% | 90.2% | 89.8% | 0.4% | 9.8% | 100.0% | 91.1% | 85.1% | 0.0% |
@@ -76,8 +81,43 @@ Date range: 2026-05-31 to 2026-06-19
 
 | Date | Market | Book | Rows | Same-Book Pairs | Cross-Book Pairs | Synthetic Pairs | Missing Pairs | Same-Book Quality | Cross-Book Quality | Synthetic Quality | One-Sided Quality | Raw-Implied Prob | Synthetic Prob |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2026-06-19 | batter_total_bases | fanduel | 2604 | 0 | 339 | 2265 | 0 | 0 | 339 | 2265 | 0 | 0 | 2265 |
-| 2026-06-19 | batter_hits | fanduel | 1649 | 0 | 725 | 924 | 0 | 0 | 725 | 924 | 0 | 0 | 924 |
+| 2026-06-24 | batter_total_bases | fanduel | 860 | 0 | 96 | 764 | 0 | 0 | 96 | 764 | 0 | 0 | 764 |
+| 2026-06-24 | batter_hits | draftkings | 432 | 432 | 0 | 0 | 0 | 432 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-24 | batter_hits | fanduel | 430 | 0 | 211 | 219 | 0 | 0 | 211 | 219 | 0 | 0 | 219 |
+| 2026-06-24 | batter_home_runs | fanduel | 430 | 0 | 0 | 430 | 0 | 0 | 0 | 430 | 0 | 0 | 430 |
+| 2026-06-24 | batter_total_bases | draftkings | 194 | 194 | 0 | 0 | 0 | 194 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-24 | pitcher_strikeouts | draftkings | 54 | 54 | 0 | 0 | 0 | 54 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-24 | pitcher_strikeouts | fanduel | 46 | 46 | 0 | 0 | 0 | 46 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-23 | batter_total_bases | fanduel | 1380 | 0 | 226 | 1154 | 0 | 0 | 226 | 1154 | 0 | 0 | 1154 |
+| 2026-06-23 | batter_hits | fanduel | 876 | 0 | 452 | 424 | 0 | 0 | 452 | 424 | 0 | 0 | 424 |
+| 2026-06-23 | batter_hits | draftkings | 710 | 710 | 0 | 0 | 0 | 710 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-23 | batter_home_runs | fanduel | 689 | 0 | 0 | 689 | 0 | 0 | 0 | 689 | 0 | 0 | 689 |
+| 2026-06-23 | batter_total_bases | draftkings | 312 | 312 | 0 | 0 | 0 | 312 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-23 | pitcher_strikeouts | draftkings | 80 | 80 | 0 | 0 | 0 | 80 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-23 | pitcher_strikeouts | fanduel | 72 | 72 | 0 | 0 | 0 | 72 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-22 | batter_total_bases | fanduel | 2508 | 0 | 464 | 2044 | 0 | 0 | 464 | 2044 | 0 | 0 | 2044 |
+| 2026-06-22 | batter_hits | fanduel | 1591 | 0 | 872 | 719 | 0 | 0 | 872 | 719 | 0 | 0 | 719 |
+| 2026-06-22 | batter_hits | draftkings | 1288 | 1288 | 0 | 0 | 0 | 1288 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-22 | batter_home_runs | fanduel | 1251 | 0 | 0 | 1251 | 0 | 0 | 0 | 1251 | 0 | 0 | 1251 |
+| 2026-06-22 | batter_total_bases | draftkings | 616 | 616 | 0 | 0 | 0 | 616 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-22 | pitcher_strikeouts | draftkings | 152 | 152 | 0 | 0 | 0 | 152 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-22 | pitcher_strikeouts | fanduel | 134 | 134 | 0 | 0 | 0 | 134 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-21 | batter_total_bases | fanduel | 1916 | 0 | 379 | 1537 | 0 | 0 | 379 | 1537 | 0 | 0 | 1537 |
+| 2026-06-21 | batter_hits | fanduel | 1015 | 0 | 678 | 337 | 0 | 0 | 678 | 337 | 0 | 0 | 337 |
+| 2026-06-21 | batter_hits | draftkings | 960 | 960 | 0 | 0 | 0 | 960 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-21 | batter_home_runs | fanduel | 957 | 0 | 0 | 957 | 0 | 0 | 0 | 957 | 0 | 0 | 957 |
+| 2026-06-21 | batter_total_bases | draftkings | 424 | 424 | 0 | 0 | 0 | 424 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-21 | pitcher_strikeouts | draftkings | 118 | 118 | 0 | 0 | 0 | 118 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-21 | pitcher_strikeouts | fanduel | 110 | 110 | 0 | 0 | 0 | 110 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-20 | batter_total_bases | fanduel | 2156 | 0 | 386 | 1770 | 0 | 0 | 386 | 1770 | 0 | 0 | 1770 |
+| 2026-06-20 | batter_hits | fanduel | 1159 | 0 | 727 | 432 | 0 | 0 | 727 | 432 | 0 | 0 | 432 |
+| 2026-06-20 | batter_hits | draftkings | 1138 | 1138 | 0 | 0 | 0 | 1138 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-20 | batter_home_runs | fanduel | 1078 | 0 | 0 | 1078 | 0 | 0 | 0 | 1078 | 0 | 0 | 1078 |
+| 2026-06-20 | batter_total_bases | draftkings | 512 | 512 | 0 | 0 | 0 | 512 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-20 | pitcher_strikeouts | draftkings | 160 | 160 | 0 | 0 | 0 | 160 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-20 | pitcher_strikeouts | fanduel | 134 | 134 | 0 | 0 | 0 | 134 | 0 | 0 | 0 | 0 | 0 |
+| 2026-06-19 | batter_total_bases | fanduel | 2604 | 0 | 536 | 2068 | 0 | 0 | 536 | 2068 | 0 | 0 | 2068 |
+| 2026-06-19 | batter_hits | fanduel | 1649 | 0 | 957 | 692 | 0 | 0 | 957 | 692 | 0 | 0 | 692 |
 | 2026-06-19 | batter_hits | draftkings | 1438 | 1438 | 0 | 0 | 0 | 1438 | 0 | 0 | 0 | 0 | 0 |
 | 2026-06-19 | batter_home_runs | fanduel | 1302 | 0 | 0 | 1302 | 0 | 0 | 0 | 1302 | 0 | 0 | 1302 |
 | 2026-06-19 | batter_total_bases | draftkings | 626 | 626 | 0 | 0 | 0 | 626 | 0 | 0 | 0 | 0 | 0 |
@@ -121,49 +161,29 @@ Date range: 2026-05-31 to 2026-06-19
 | 2026-06-13 | batter_hits | draftkings | 1152 | 1152 | 0 | 0 | 0 | 1152 | 0 | 0 | 0 | 0 | 0 |
 | 2026-06-13 | batter_home_runs | fanduel | 1128 | 0 | 0 | 1128 | 0 | 0 | 0 | 1128 | 0 | 0 | 1128 |
 | 2026-06-13 | batter_total_bases | draftkings | 604 | 604 | 0 | 0 | 0 | 604 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-13 | pitcher_strikeouts | draftkings | 136 | 136 | 0 | 0 | 0 | 136 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-13 | pitcher_strikeouts | fanduel | 108 | 108 | 0 | 0 | 0 | 108 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-12 | batter_total_bases | fanduel | 2900 | 0 | 586 | 2314 | 0 | 0 | 586 | 2314 | 0 | 0 | 2314 |
-| 2026-06-12 | batter_hits | fanduel | 1674 | 0 | 988 | 686 | 0 | 0 | 988 | 686 | 0 | 0 | 686 |
-| 2026-06-12 | batter_hits | draftkings | 1508 | 1508 | 0 | 0 | 0 | 1508 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-12 | batter_home_runs | fanduel | 1450 | 0 | 0 | 1450 | 0 | 0 | 0 | 1450 | 0 | 0 | 1450 |
-| 2026-06-12 | batter_total_bases | draftkings | 802 | 802 | 0 | 0 | 0 | 802 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-12 | pitcher_strikeouts | draftkings | 180 | 180 | 0 | 0 | 0 | 180 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-12 | pitcher_strikeouts | fanduel | 168 | 168 | 0 | 0 | 0 | 168 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-11 | batter_total_bases | fanduel | 720 | 0 | 142 | 578 | 0 | 0 | 142 | 578 | 0 | 0 | 578 |
-| 2026-06-11 | batter_hits | fanduel | 420 | 0 | 244 | 176 | 0 | 0 | 244 | 176 | 0 | 0 | 176 |
-| 2026-06-11 | batter_hits | draftkings | 394 | 394 | 0 | 0 | 0 | 394 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-11 | batter_home_runs | fanduel | 360 | 0 | 0 | 360 | 0 | 0 | 0 | 360 | 0 | 0 | 360 |
-| 2026-06-11 | batter_total_bases | draftkings | 216 | 216 | 0 | 0 | 0 | 216 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-11 | pitcher_strikeouts | draftkings | 46 | 46 | 0 | 0 | 0 | 46 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-11 | pitcher_strikeouts | fanduel | 46 | 46 | 0 | 0 | 0 | 46 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-10 | batter_total_bases | fanduel | 2500 | 0 | 503 | 1997 | 0 | 0 | 503 | 1997 | 0 | 0 | 1997 |
-| 2026-06-10 | batter_hits | fanduel | 2366 | 0 | 922 | 1444 | 0 | 0 | 922 | 1444 | 0 | 0 | 1444 |
-| 2026-06-10 | batter_hits | draftkings | 1326 | 1326 | 0 | 0 | 0 | 1326 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-10 | batter_home_runs | fanduel | 1250 | 0 | 0 | 1250 | 0 | 0 | 0 | 1250 | 0 | 0 | 1250 |
-| 2026-06-10 | batter_total_bases | draftkings | 716 | 716 | 0 | 0 | 0 | 716 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-10 | pitcher_strikeouts | draftkings | 132 | 132 | 0 | 0 | 0 | 132 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-10 | pitcher_strikeouts | fanduel | 124 | 124 | 0 | 0 | 0 | 124 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-09 | batter_total_bases | fanduel | 1960 | 0 | 364 | 1596 | 0 | 0 | 364 | 1596 | 0 | 0 | 1596 |
-| 2026-06-09 | batter_hits | fanduel | 1924 | 0 | 668 | 1256 | 0 | 0 | 668 | 1256 | 0 | 0 | 1256 |
-| 2026-06-09 | batter_hits | draftkings | 998 | 998 | 0 | 0 | 0 | 998 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-09 | batter_home_runs | fanduel | 980 | 0 | 0 | 980 | 0 | 0 | 0 | 980 | 0 | 0 | 980 |
-| 2026-06-09 | batter_total_bases | draftkings | 478 | 478 | 0 | 0 | 0 | 478 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-09 | pitcher_strikeouts | draftkings | 118 | 118 | 0 | 0 | 0 | 118 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-09 | pitcher_strikeouts | fanduel | 108 | 108 | 0 | 0 | 0 | 108 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-08 | batter_total_bases | fanduel | 1068 | 0 | 191 | 877 | 0 | 0 | 191 | 877 | 0 | 0 | 877 |
-| 2026-06-08 | batter_hits | fanduel | 1055 | 0 | 359 | 696 | 0 | 0 | 359 | 696 | 0 | 0 | 696 |
-| 2026-06-08 | batter_hits | draftkings | 546 | 546 | 0 | 0 | 0 | 546 | 0 | 0 | 0 | 0 | 0 |
-| 2026-06-08 | batter_home_runs | fanduel | 534 | 0 | 0 | 534 | 0 | 0 | 0 | 534 | 0 | 0 | 534 |
-| 2026-06-08 | batter_total_bases | draftkings | 262 | 262 | 0 | 0 | 0 | 262 | 0 | 0 | 0 | 0 | 0 |
 
 ## FanDuel Hitter Market Evidence
 
 | Date | Market | Rows | True Pair | Synthetic | Clean Evidence | Same-Book | Cross-Book | Synthetic Rows | Action |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| 2026-06-19 | batter_total_bases | 2604 | 13.0% | 87.0% | 13.0% | 0 | 339 | 2265 | extract_true_opposite_side_or_demote |
+| 2026-06-24 | batter_total_bases | 860 | 11.2% | 88.8% | 11.2% | 0 | 96 | 764 | extract_true_opposite_side_or_demote |
+| 2026-06-24 | batter_home_runs | 430 | 0.0% | 100.0% | 0.0% | 0 | 0 | 430 | extract_true_opposite_side_or_demote |
+| 2026-06-24 | batter_hits | 430 | 49.1% | 50.9% | 49.1% | 0 | 211 | 219 | extract_true_opposite_side_or_demote |
+| 2026-06-23 | batter_total_bases | 1380 | 16.4% | 83.6% | 16.4% | 0 | 226 | 1154 | extract_true_opposite_side_or_demote |
+| 2026-06-23 | batter_home_runs | 689 | 0.0% | 100.0% | 0.0% | 0 | 0 | 689 | extract_true_opposite_side_or_demote |
+| 2026-06-23 | batter_hits | 876 | 51.6% | 48.4% | 51.6% | 0 | 452 | 424 | usable |
+| 2026-06-22 | batter_total_bases | 2508 | 18.5% | 81.5% | 18.5% | 0 | 464 | 2044 | extract_true_opposite_side_or_demote |
+| 2026-06-22 | batter_home_runs | 1251 | 0.0% | 100.0% | 0.0% | 0 | 0 | 1251 | extract_true_opposite_side_or_demote |
+| 2026-06-22 | batter_hits | 1591 | 54.8% | 45.2% | 54.8% | 0 | 872 | 719 | usable |
+| 2026-06-21 | batter_total_bases | 1916 | 19.8% | 80.2% | 19.8% | 0 | 379 | 1537 | extract_true_opposite_side_or_demote |
+| 2026-06-21 | batter_home_runs | 957 | 0.0% | 100.0% | 0.0% | 0 | 0 | 957 | extract_true_opposite_side_or_demote |
+| 2026-06-21 | batter_hits | 1015 | 66.8% | 33.2% | 66.8% | 0 | 678 | 337 | usable |
+| 2026-06-20 | batter_total_bases | 2156 | 17.9% | 82.1% | 17.9% | 0 | 386 | 1770 | extract_true_opposite_side_or_demote |
+| 2026-06-20 | batter_home_runs | 1078 | 0.0% | 100.0% | 0.0% | 0 | 0 | 1078 | extract_true_opposite_side_or_demote |
+| 2026-06-20 | batter_hits | 1159 | 62.7% | 37.3% | 62.7% | 0 | 727 | 432 | usable |
+| 2026-06-19 | batter_total_bases | 2604 | 20.6% | 79.4% | 20.6% | 0 | 536 | 2068 | extract_true_opposite_side_or_demote |
 | 2026-06-19 | batter_home_runs | 1302 | 0.0% | 100.0% | 0.0% | 0 | 0 | 1302 | extract_true_opposite_side_or_demote |
-| 2026-06-19 | batter_hits | 1649 | 44.0% | 56.0% | 44.0% | 0 | 725 | 924 | extract_true_opposite_side_or_demote |
+| 2026-06-19 | batter_hits | 1649 | 58.0% | 42.0% | 58.0% | 0 | 957 | 692 | usable |
 | 2026-06-18 | batter_total_bases | 912 | 21.5% | 78.5% | 21.5% | 0 | 196 | 716 | extract_true_opposite_side_or_demote |
 | 2026-06-18 | batter_home_runs | 456 | 0.0% | 100.0% | 0.0% | 0 | 0 | 456 | extract_true_opposite_side_or_demote |
 | 2026-06-18 | batter_hits | 520 | 61.2% | 38.8% | 61.2% | 0 | 318 | 202 | usable |
@@ -206,18 +226,6 @@ Date range: 2026-05-31 to 2026-06-19
 | 2026-06-05 | batter_total_bases | 1980 | 18.8% | 81.2% | 18.8% | 0 | 372 | 1608 | extract_true_opposite_side_or_demote |
 | 2026-06-05 | batter_home_runs | 1004 | 0.0% | 100.0% | 0.0% | 0 | 0 | 1004 | extract_true_opposite_side_or_demote |
 | 2026-06-05 | batter_hits | 1953 | 35.7% | 64.3% | 35.7% | 0 | 698 | 1255 | extract_true_opposite_side_or_demote |
-| 2026-06-04 | batter_total_bases | 696 | 20.7% | 79.3% | 20.7% | 0 | 144 | 552 | extract_true_opposite_side_or_demote |
-| 2026-06-04 | batter_home_runs | 348 | 0.0% | 100.0% | 0.0% | 0 | 0 | 348 | extract_true_opposite_side_or_demote |
-| 2026-06-04 | batter_hits | 688 | 36.2% | 63.8% | 36.2% | 0 | 249 | 439 | extract_true_opposite_side_or_demote |
-| 2026-06-03 | batter_total_bases | 1008 | 11.3% | 88.7% | 11.3% | 0 | 114 | 894 | extract_true_opposite_side_or_demote |
-| 2026-06-03 | batter_home_runs | 503 | 0.0% | 100.0% | 0.0% | 0 | 0 | 503 | extract_true_opposite_side_or_demote |
-| 2026-06-03 | batter_hits | 978 | 25.6% | 74.4% | 25.6% | 0 | 250 | 728 | extract_true_opposite_side_or_demote |
-| 2026-06-02 | batter_total_bases | 4 | 25.0% | 75.0% | 25.0% | 0 | 1 | 3 | extract_true_opposite_side_or_demote |
-| 2026-06-02 | batter_home_runs | 20 | 0.0% | 100.0% | 0.0% | 0 | 0 | 20 | extract_true_opposite_side_or_demote |
-| 2026-06-01 | batter_total_bases | 10 | 40.0% | 60.0% | 40.0% | 0 | 4 | 6 | extract_true_opposite_side_or_demote |
-| 2026-06-01 | batter_hits | 4 | 50.0% | 50.0% | 50.0% | 0 | 2 | 2 | usable |
-| 2026-05-31 | batter_total_bases | 2 | 0.0% | 100.0% | 0.0% | 0 | 0 | 2 | extract_true_opposite_side_or_demote |
-| 2026-05-31 | batter_home_runs | 15 | 0.0% | 100.0% | 0.0% | 0 | 0 | 15 | extract_true_opposite_side_or_demote |
 
 ## Problem Examples
 

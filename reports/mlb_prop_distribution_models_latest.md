@@ -1,29 +1,29 @@
 # MLB Prop Distribution Models
 
-Generated UTC: 2026-06-19T16:09:52Z
-Rows: 78285
-Date range: 2026-05-31 to 2026-06-18
+Generated UTC: 2026-06-24T08:17:11Z
+Rows: 102734
+Date range: 2026-05-31 to 2026-06-22
 Status: ready
 
 ## Overall Holdout
 
 | Variant | Rows | Brier | Log Loss | Cal Err | Selected | ROI | CLV Beat |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| model_only | 2128 | 0.174 | 0.513 | -2.2% | 595 | -22.7% | 53.0% |
-| market_no_vig | 2128 | 0.168 | 0.498 | -0.8% | 178 | 64.4% | 61.7% |
-| distribution | 2128 | 0.177 | 0.516 | 1.4% | 364 | -32.1% | 47.4% |
-| distribution_calibrated | 2128 | 0.174 | 0.508 | 0.7% | 384 | -23.5% | 50.2% |
-| distribution_empirical_blend | 2128 | 0.174 | 0.509 | 0.2% | 367 | -32.6% | 51.4% |
-| event_side_line | 2128 | 0.197 | 0.593 | -6.5% | 1039 | -21.1% | 46.2% |
+| model_only | 6627 | 0.157 | 0.495 | -5.6% | 2148 | -57.1% | 30.6% |
+| market_no_vig | 6627 | 0.147 | 0.444 | -4.0% | 317 | 59.8% | 34.7% |
+| distribution | 6627 | 0.156 | 0.464 | -4.8% | 2087 | -39.8% | 32.9% |
+| distribution_calibrated | 6627 | 0.153 | 0.459 | -4.7% | 1826 | -43.9% | 32.4% |
+| distribution_empirical_blend | 6627 | 0.152 | 0.456 | -4.5% | 1661 | -49.8% | 33.3% |
+| event_side_line | 6627 | 0.167 | 0.512 | -9.1% | 3351 | -50.6% | 29.7% |
 
 ## Market Holdout
 
 | Market | Rows | Model Brier | Distribution Brier | Cal Dist Brier | Blend Brier | Side-Line Brier | Model ROI | Blend ROI | Side-Line ROI |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| batter_total_bases | 896 | 0.168 | 0.166 | 0.163 | 0.163 | 0.172 | -15.9% | 38.7% | -15.7% |
-| batter_hits | 780 | 0.209 | 0.202 | 0.201 | 0.203 | 0.203 | -12.1% | -13.8% | 17.3% |
-| batter_home_runs | 358 | 0.060 | 0.063 | 0.063 | 0.061 | 0.176 | -61.3% | -64.0% | -56.4% |
-| pitcher_strikeouts | 94 | 0.248 | 0.302 | 0.288 | 0.288 | 0.293 | - | -51.0% | -43.9% |
+| batter_total_bases | 2738 | 0.150 | 0.145 | 0.143 | 0.141 | 0.146 | -53.1% | -57.1% | -55.5% |
+| batter_hits | 2526 | 0.195 | 0.193 | 0.189 | 0.188 | 0.188 | -46.2% | -34.6% | -18.1% |
+| batter_home_runs | 1089 | 0.032 | 0.038 | 0.038 | 0.036 | 0.110 | -91.0% | -69.0% | -86.1% |
+| pitcher_strikeouts | 274 | 0.257 | 0.254 | 0.253 | 0.255 | 0.267 | - | 4.2% | -22.8% |
 
 ## TB/HR True-Pair Production Gates
 
@@ -31,48 +31,48 @@ These gates use holdout rows with true, non-synthetic paired prices only.
 
 | Market / Side / Line | Rows | Brier Gain | Cal Err | Selected | CLV Beat | Avg CLV | Pass | Reasons |
 |---|---:|---:|---:|---:|---:|---:|---|---|
-| batter_total_bases / over / TB 1.5 | 214 | 0.001 | 6.6% | 1 | 100.0% | 384.0% | False | brier_gain<=0.001, abs_calibration_error>0.05, selected_rows<30 |
-| batter_total_bases / over / TB 2.5+ | 52 | 0.025 | 18.7% | 32 | 41.7% | 97.9% | False | rows<80, abs_calibration_error>0.05, clv_beat_rate<0.55 |
-| batter_total_bases / under / TB 1.5 | 90 | 0.005 | -3.6% | 38 | 16.6% | -93.4% | False | clv_beat_rate<0.55, avg_clv_price<=0 |
+| batter_total_bases / over / TB 1.5 | 626 | 0.016 | -2.1% | 85 | 25.2% | 14.1% | False | clv_beat_rate<0.55 |
+| batter_total_bases / over / TB 2.5+ | 82 | 0.021 | 15.9% | 49 | 34.2% | -30.5% | False | abs_calibration_error>0.05, clv_beat_rate<0.55, avg_clv_price<=0 |
+| batter_total_bases / under / TB 1.5 | 277 | -0.011 | 2.1% | 50 | 46.8% | 16.8% | False | brier_gain<=0.001, clv_beat_rate<0.55 |
 
 ## Hitter Outcome Shrinkage
 
 | Group | Rows | PA | Hit Mult | TB Mult | HR Mult | XBH Mult | Actual H/PA | Pred H/PA | Actual TB/PA | Pred TB/PA | Actual HR/PA | Pred HR/PA |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| global | 5994 | 24081.0 | 1.038 | 1.083 | 0.952 | 1.705 | 0.223 | 0.215 | 0.385 | 0.355 | 0.038 | 0.040 |
-| power=power_high | 1562 | 6243.0 | 1.067 | 1.017 | 0.788 | 1.465 | 0.231 | 0.215 | 0.413 | 0.406 | 0.043 | 0.056 |
-| power=power_low | 1218 | 4790.0 | 0.974 | 1.033 | 0.880 | 1.819 | 0.220 | 0.227 | 0.329 | 0.318 | 0.020 | 0.023 |
-| power=power_mid | 3214 | 13048.0 | 1.047 | 1.133 | 1.103 | 1.656 | 0.221 | 0.211 | 0.393 | 0.345 | 0.042 | 0.038 |
-| slot=slot_bottom | 1682 | 5891.0 | 1.025 | 1.011 | 0.763 | 1.553 | 0.213 | 0.207 | 0.343 | 0.339 | 0.024 | 0.034 |
-| slot=slot_middle | 1266 | 4977.0 | 0.987 | 1.055 | 1.026 | 1.394 | 0.215 | 0.218 | 0.380 | 0.358 | 0.040 | 0.039 |
-| slot=slot_top | 3046 | 13213.0 | 1.061 | 1.119 | 1.004 | 1.791 | 0.232 | 0.218 | 0.406 | 0.362 | 0.043 | 0.042 |
-| slot_power=slot_bottom|power_high | 390 | 1387.0 | 1.060 | 0.945 | 0.758 | 1.126 | 0.221 | 0.204 | 0.363 | 0.392 | 0.029 | 0.050 |
-| slot_power=slot_bottom|power_low | 478 | 1704.0 | 1.036 | 1.066 | 0.881 | 1.536 | 0.228 | 0.218 | 0.329 | 0.303 | 0.016 | 0.021 |
-| slot_power=slot_bottom|power_mid | 814 | 2800.0 | 0.989 | 1.019 | 0.869 | 1.491 | 0.200 | 0.202 | 0.342 | 0.335 | 0.027 | 0.033 |
-| slot_power=slot_middle|power_high | 337 | 1323.0 | 1.015 | 0.994 | 0.881 | 1.214 | 0.231 | 0.226 | 0.419 | 0.422 | 0.045 | 0.058 |
-| slot_power=slot_middle|power_low | 305 | 1190.0 | 0.940 | 0.987 | 0.977 | 1.241 | 0.208 | 0.228 | 0.316 | 0.322 | 0.022 | 0.023 |
-| slot_power=slot_middle|power_mid | 624 | 2464.0 | 1.001 | 1.118 | 1.172 | 1.289 | 0.209 | 0.209 | 0.389 | 0.342 | 0.046 | 0.036 |
-| slot_power=slot_top|power_high | 835 | 3533.0 | 1.077 | 1.055 | 0.848 | 1.549 | 0.235 | 0.216 | 0.431 | 0.406 | 0.047 | 0.058 |
-| slot_power=slot_top|power_low | 435 | 1896.0 | 0.954 | 1.024 | 0.922 | 1.667 | 0.222 | 0.235 | 0.338 | 0.328 | 0.022 | 0.025 |
-| slot_power=slot_top|power_mid | 1776 | 7784.0 | 1.079 | 1.167 | 1.138 | 1.667 | 0.233 | 0.214 | 0.412 | 0.350 | 0.046 | 0.039 |
+| global | 7664 | 30682.0 | 1.066 | 1.096 | 0.938 | 1.720 | 0.227 | 0.213 | 0.390 | 0.355 | 0.037 | 0.040 |
+| power=power_high | 2241 | 8918.0 | 1.078 | 1.022 | 0.811 | 1.365 | 0.231 | 0.213 | 0.414 | 0.405 | 0.044 | 0.056 |
+| power=power_low | 1399 | 5471.0 | 1.010 | 1.069 | 0.865 | 1.972 | 0.226 | 0.224 | 0.336 | 0.313 | 0.019 | 0.023 |
+| power=power_mid | 4024 | 16293.0 | 1.076 | 1.148 | 1.072 | 1.761 | 0.225 | 0.208 | 0.394 | 0.342 | 0.040 | 0.037 |
+| slot=slot_bottom | 2169 | 7562.0 | 1.040 | 1.004 | 0.703 | 1.576 | 0.220 | 0.211 | 0.350 | 0.348 | 0.023 | 0.035 |
+| slot=slot_middle | 1615 | 6340.0 | 1.022 | 1.066 | 0.984 | 1.459 | 0.217 | 0.212 | 0.377 | 0.352 | 0.038 | 0.039 |
+| slot=slot_top | 3880 | 16780.0 | 1.091 | 1.144 | 1.021 | 1.802 | 0.234 | 0.214 | 0.413 | 0.360 | 0.044 | 0.043 |
+| slot_power=slot_bottom|power_high | 559 | 1965.0 | 1.034 | 0.914 | 0.712 | 1.111 | 0.217 | 0.208 | 0.358 | 0.399 | 0.029 | 0.051 |
+| slot_power=slot_bottom|power_low | 549 | 1947.0 | 1.074 | 1.096 | 0.823 | 1.699 | 0.240 | 0.219 | 0.342 | 0.306 | 0.014 | 0.021 |
+| slot_power=slot_bottom|power_mid | 1061 | 3650.0 | 1.013 | 1.016 | 0.803 | 1.533 | 0.210 | 0.207 | 0.350 | 0.344 | 0.025 | 0.034 |
+| slot_power=slot_middle|power_high | 474 | 1843.0 | 1.039 | 0.995 | 0.843 | 1.266 | 0.225 | 0.214 | 0.399 | 0.402 | 0.042 | 0.056 |
+| slot_power=slot_middle|power_low | 352 | 1357.0 | 0.968 | 1.032 | 1.003 | 1.338 | 0.214 | 0.224 | 0.329 | 0.316 | 0.023 | 0.023 |
+| slot_power=slot_middle|power_mid | 789 | 3140.0 | 1.035 | 1.119 | 1.126 | 1.338 | 0.214 | 0.206 | 0.384 | 0.338 | 0.042 | 0.036 |
+| slot_power=slot_top|power_high | 1208 | 5110.0 | 1.100 | 1.075 | 0.899 | 1.404 | 0.239 | 0.215 | 0.441 | 0.408 | 0.051 | 0.058 |
+| slot_power=slot_top|power_low | 498 | 2167.0 | 0.978 | 1.046 | 0.919 | 1.746 | 0.221 | 0.227 | 0.335 | 0.317 | 0.021 | 0.024 |
+| slot_power=slot_top|power_mid | 2174 | 9503.0 | 1.109 | 1.199 | 1.142 | 1.865 | 0.234 | 0.210 | 0.415 | 0.343 | 0.045 | 0.039 |
 
 ## Direct Hitter Event Model
 
 - Status: loaded
 - Method: hierarchical_conditional_lgbm
-- Trained UTC: 2026-06-19T16:03:19.672390+00:00
+- Trained UTC: 2026-06-24T08:05:33.150921+00:00
 - Classes: out, walk, single, double, triple, hr
 - Production gate: False
 - Production eligible artifact: False
-- Leakage-safe player priors: 778 players
+- Leakage-safe player priors: 783 players
 - PA uncertainty groups: 6
 - Direct event TB MAE gain vs independent rates: -0.020
-- Explicit TB-state rows: 7437
-- Explicit TB-state Brier: 0.690
-- Explicit TB-state log loss: 1.329
-- Direct-state selected candidate: hierarchical_hr_tail
-- Direct-state blend alpha: 0.250
-- HR-driven 4+ tail Brier gain: 0.000158
+- Explicit TB-state rows: 7442
+- Explicit TB-state Brier: 0.694
+- Explicit TB-state log loss: 1.338
+- Direct-state selected candidate: convolution
+- Direct-state blend alpha: 0.000
+- HR-driven 4+ tail Brier gain: 0.000084
 
 ## True-Pair Hitter Line Calibration
 
@@ -81,188 +81,189 @@ These gates use holdout rows with true, non-synthetic paired prices only.
 - Calibrated line/side groups: 6
 - Enabled line/side groups: 1
 - Synthetic and one-sided FanDuel prices are display-only and cannot train these calibrators.
-- `batter_total_bases|over|TB 1.5`: 7063 rows, method=raw, internal_gain=-0.000, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
-- `batter_total_bases|over|TB 2.5`: 584 rows, method=beta, internal_gain=0.028, holdout_gain=0.104, cal_before=41.7%, cal_after=26.2%, enabled=True
-- `batter_total_bases|over|TB 3.5`: 136 rows, method=beta, internal_gain=0.016, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
-- `batter_total_bases|over|TB 4.5`: 375 rows, method=beta, internal_gain=0.162, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
-- `batter_total_bases|under|TB 1.5`: 3350 rows, method=beta, internal_gain=0.001, holdout_gain=0.000, cal_before=-3.6%, cal_after=-3.6%, enabled=False
-- `batter_total_bases|under|TB 2.5`: 38 rows, method=raw, internal_gain=-, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
+- `batter_total_bases|over|TB 1.5`: 8929 rows, method=beta, internal_gain=0.003, holdout_gain=-0.001, cal_before=-2.1%, cal_after=-4.2%, enabled=False
+- `batter_total_bases|over|TB 2.5`: 804 rows, method=beta, internal_gain=0.048, holdout_gain=0.054, cal_before=33.4%, cal_after=20.9%, enabled=True
+- `batter_total_bases|over|TB 3.5`: 186 rows, method=isotonic, internal_gain=0.023, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
+- `batter_total_bases|over|TB 4.5`: 476 rows, method=beta, internal_gain=0.089, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
+- `batter_total_bases|under|TB 1.5`: 4157 rows, method=beta, internal_gain=0.004, holdout_gain=-0.002, cal_before=2.1%, cal_after=2.4%, enabled=False
+- `batter_total_bases|under|TB 2.5`: 46 rows, method=raw, internal_gain=-, holdout_gain=-, cal_before=-, cal_after=-, enabled=False
 
 ## Event-Curve Side/Line Models
 
 | Target | Status | Train | Holdout | Model Brier | Baseline Brier | Model Avg | Baseline Avg |
 |---|---|---:|---:|---:|---:|---:|---:|
-| win_probability | trained | 35270 | 1080 | 0.247 | 0.250 | 49.1% | 46.4% |
-| clv_beat_probability | trained | 31533 | 980 | 0.251 | 0.263 | 38.7% | 46.7% |
+| win_probability | trained | 45199 | 3172 | 0.236 | 0.243 | 49.2% | 48.2% |
+| clv_beat_probability | trained | 41893 | 2959 | 0.228 | 0.258 | 39.0% | 47.4% |
 
 ## TB Component Structure
 
 | Group | Rows | PA | 1B Mult | 2B Mult | 3B Mult | HR Mult | TB Mult | Actual 0 TB | Pred 0 TB | Actual 2B/PA | Pred 2B/PA | Actual HR/PA | Pred HR/PA |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| global | 6488 | 26026.0 | 0.927 | 2.180 | 0.710 | 0.953 | 1.068 | 38.4% | 38.9% | 0.040 | 0.018 | 0.037 | 0.039 |
-| pa=pa_high | 1932 | 8832.0 | 0.945 | 2.440 | 0.862 | 1.092 | 1.179 | 28.6% | 33.1% | 0.043 | 0.015 | 0.046 | 0.042 |
-| pa=pa_low | 903 | 2829.0 | 0.869 | 1.579 | 0.914 | 0.739 | 0.912 | 52.9% | 49.1% | 0.045 | 0.021 | 0.019 | 0.033 |
-| pa=pa_mid | 3653 | 14365.0 | 0.935 | 1.878 | 0.707 | 0.916 | 1.025 | 39.9% | 39.4% | 0.038 | 0.019 | 0.035 | 0.039 |
-| pa_power=pa_high|power_high | 504 | 2282.0 | 1.054 | 1.607 | 1.011 | 0.916 | 1.106 | 29.0% | 34.4% | 0.055 | 0.024 | 0.051 | 0.059 |
-| pa_power=pa_high|power_low | 312 | 1409.0 | 0.879 | 1.370 | 1.027 | 1.016 | 1.069 | 30.4% | 29.8% | 0.037 | 0.008 | 0.024 | 0.023 |
-| pa_power=pa_high|power_mid | 1116 | 5141.0 | 0.942 | 2.103 | 0.788 | 1.213 | 1.216 | 28.0% | 33.4% | 0.039 | 0.012 | 0.050 | 0.039 |
-| pa_power=pa_low|power_high | 211 | 660.0 | 1.088 | 1.025 | 0.960 | 0.894 | 0.919 | 46.9% | 48.4% | 0.044 | 0.040 | 0.032 | 0.053 |
-| pa_power=pa_low|power_low | 275 | 872.0 | 0.959 | 1.315 | 1.018 | 0.943 | 1.092 | 45.1% | 47.9% | 0.048 | 0.011 | 0.014 | 0.019 |
-| pa_power=pa_low|power_mid | 417 | 1297.0 | 0.742 | 1.361 | 0.952 | 0.807 | 0.836 | 61.2% | 50.2% | 0.042 | 0.019 | 0.017 | 0.033 |
-| pa_power=pa_mid|power_high | 1076 | 4219.0 | 1.089 | 1.318 | 0.835 | 0.752 | 0.931 | 40.7% | 40.3% | 0.046 | 0.032 | 0.037 | 0.055 |
-| pa_power=pa_mid|power_low | 779 | 3062.0 | 0.827 | 1.706 | 0.797 | 0.975 | 0.986 | 41.7% | 37.3% | 0.035 | 0.009 | 0.020 | 0.021 |
-| pa_power=pa_mid|power_mid | 1798 | 7084.0 | 0.932 | 1.893 | 0.865 | 1.082 | 1.109 | 38.7% | 39.8% | 0.035 | 0.015 | 0.040 | 0.037 |
-| power=power_high | 1791 | 7161.0 | 1.095 | 1.490 | 0.812 | 0.773 | 0.983 | 38.1% | 39.6% | 0.049 | 0.030 | 0.041 | 0.056 |
-| power=power_low | 1366 | 5343.0 | 0.838 | 1.979 | 0.873 | 0.962 | 1.040 | 39.8% | 37.7% | 0.038 | 0.009 | 0.020 | 0.021 |
-| power=power_mid | 3331 | 13522.0 | 0.906 | 2.297 | 0.746 | 1.112 | 1.128 | 37.9% | 39.0% | 0.037 | 0.014 | 0.042 | 0.037 |
-| slot=slot_bottom | 1826 | 6367.0 | 0.950 | 1.878 | 0.846 | 0.799 | 1.016 | 45.3% | 45.4% | 0.047 | 0.022 | 0.025 | 0.033 |
-| slot=slot_middle | 1367 | 5373.0 | 0.892 | 1.554 | 0.881 | 1.016 | 1.032 | 40.7% | 39.0% | 0.033 | 0.018 | 0.039 | 0.038 |
-| slot=slot_top | 3295 | 14286.0 | 0.938 | 2.308 | 0.718 | 0.998 | 1.099 | 33.5% | 35.2% | 0.040 | 0.016 | 0.042 | 0.042 |
-| slot_power=slot_bottom|power_high | 450 | 1577.0 | 1.182 | 1.121 | 0.938 | 0.802 | 0.945 | 44.7% | 45.7% | 0.051 | 0.041 | 0.030 | 0.050 |
-| slot_power=slot_bottom|power_low | 543 | 1923.0 | 0.931 | 1.545 | 0.940 | 0.925 | 1.069 | 42.2% | 43.5% | 0.042 | 0.010 | 0.016 | 0.019 |
-| slot_power=slot_bottom|power_mid | 833 | 2867.0 | 0.866 | 1.812 | 0.938 | 0.896 | 1.029 | 47.7% | 46.4% | 0.050 | 0.019 | 0.028 | 0.033 |
-| slot_power=slot_middle|power_high | 375 | 1472.0 | 1.023 | 1.166 | 0.976 | 0.883 | 0.966 | 38.9% | 38.6% | 0.043 | 0.031 | 0.043 | 0.057 |
-| slot_power=slot_middle|power_low | 340 | 1322.0 | 0.867 | 1.391 | 0.950 | 1.031 | 1.008 | 41.2% | 37.4% | 0.030 | 0.009 | 0.023 | 0.021 |
-| slot_power=slot_middle|power_mid | 652 | 2579.0 | 0.884 | 1.385 | 0.948 | 1.132 | 1.085 | 41.6% | 40.1% | 0.029 | 0.016 | 0.044 | 0.036 |
-| slot_power=slot_top|power_high | 966 | 4112.0 | 1.058 | 1.611 | 0.869 | 0.818 | 1.013 | 34.8% | 37.1% | 0.050 | 0.026 | 0.044 | 0.058 |
-| slot_power=slot_top|power_low | 483 | 2098.0 | 0.816 | 1.509 | 0.969 | 0.979 | 1.019 | 36.2% | 31.5% | 0.039 | 0.008 | 0.022 | 0.023 |
-| slot_power=slot_top|power_mid | 1846 | 8076.0 | 0.942 | 2.320 | 0.739 | 1.153 | 1.163 | 32.2% | 35.2% | 0.036 | 0.012 | 0.046 | 0.039 |
+| global | 8195 | 32756.0 | 0.961 | 2.295 | 0.671 | 0.942 | 1.086 | 38.0% | 39.1% | 0.042 | 0.018 | 0.037 | 0.039 |
+| pa=pa_high | 2148 | 9444.0 | 0.973 | 2.202 | 0.780 | 1.037 | 1.135 | 31.1% | 35.2% | 0.039 | 0.015 | 0.045 | 0.043 |
+| pa=pa_low | 1544 | 5360.0 | 0.984 | 1.746 | 0.789 | 0.833 | 1.013 | 45.8% | 43.5% | 0.046 | 0.022 | 0.029 | 0.037 |
+| pa=pa_mid | 4503 | 17952.0 | 0.950 | 2.261 | 0.733 | 0.928 | 1.077 | 38.7% | 39.5% | 0.043 | 0.017 | 0.035 | 0.038 |
+| pa_power=pa_high|power_high | 647 | 2779.0 | 1.118 | 1.295 | 0.898 | 0.940 | 1.061 | 31.8% | 36.6% | 0.043 | 0.029 | 0.054 | 0.059 |
+| pa_power=pa_high|power_low | 306 | 1336.0 | 0.891 | 1.329 | 0.947 | 0.972 | 1.011 | 30.7% | 32.3% | 0.034 | 0.007 | 0.021 | 0.023 |
+| pa_power=pa_high|power_mid | 1195 | 5329.0 | 0.948 | 2.043 | 0.872 | 1.126 | 1.192 | 30.7% | 35.2% | 0.038 | 0.010 | 0.046 | 0.040 |
+| pa_power=pa_low|power_high | 510 | 1802.0 | 1.057 | 1.154 | 0.920 | 0.770 | 0.890 | 44.5% | 39.9% | 0.042 | 0.032 | 0.033 | 0.056 |
+| pa_power=pa_low|power_low | 342 | 1183.0 | 1.015 | 1.395 | 1.016 | 0.915 | 1.133 | 43.6% | 45.6% | 0.046 | 0.010 | 0.012 | 0.017 |
+| pa_power=pa_low|power_mid | 692 | 2375.0 | 0.913 | 1.627 | 0.819 | 1.032 | 1.070 | 47.8% | 45.1% | 0.049 | 0.021 | 0.034 | 0.032 |
+| pa_power=pa_mid|power_high | 1335 | 5326.0 | 1.118 | 1.526 | 0.847 | 0.806 | 1.010 | 39.9% | 40.9% | 0.047 | 0.028 | 0.041 | 0.054 |
+| pa_power=pa_mid|power_low | 908 | 3539.0 | 0.831 | 1.757 | 0.845 | 0.994 | 1.059 | 40.1% | 37.4% | 0.044 | 0.009 | 0.021 | 0.021 |
+| pa_power=pa_mid|power_mid | 2260 | 9087.0 | 0.939 | 2.238 | 0.829 | 1.042 | 1.120 | 37.4% | 39.5% | 0.040 | 0.015 | 0.038 | 0.036 |
+| power=power_high | 2492 | 9907.0 | 1.121 | 1.487 | 0.748 | 0.799 | 0.999 | 38.7% | 39.6% | 0.045 | 0.029 | 0.043 | 0.055 |
+| power=power_low | 1556 | 6058.0 | 0.862 | 2.025 | 0.835 | 0.943 | 1.075 | 39.0% | 38.2% | 0.042 | 0.009 | 0.019 | 0.021 |
+| power=power_mid | 4147 | 16791.0 | 0.933 | 2.551 | 0.722 | 1.082 | 1.146 | 37.2% | 39.2% | 0.040 | 0.014 | 0.040 | 0.037 |
+| slot=slot_bottom | 2334 | 8101.0 | 0.974 | 1.993 | 0.774 | 0.734 | 1.007 | 44.5% | 44.6% | 0.051 | 0.023 | 0.023 | 0.034 |
+| slot=slot_middle | 1723 | 6765.0 | 0.936 | 1.720 | 0.848 | 0.981 | 1.048 | 40.2% | 39.7% | 0.035 | 0.017 | 0.037 | 0.038 |
+| slot=slot_top | 4138 | 17890.0 | 0.969 | 2.424 | 0.696 | 1.019 | 1.131 | 33.4% | 35.8% | 0.041 | 0.015 | 0.043 | 0.042 |
+| slot_power=slot_bottom|power_high | 633 | 2193.0 | 1.158 | 1.157 | 0.888 | 0.751 | 0.911 | 47.1% | 45.1% | 0.049 | 0.039 | 0.030 | 0.051 |
+| slot_power=slot_bottom|power_low | 618 | 2179.0 | 0.954 | 1.595 | 0.924 | 0.871 | 1.099 | 40.8% | 43.0% | 0.049 | 0.010 | 0.014 | 0.019 |
+| slot_power=slot_bottom|power_mid | 1083 | 3729.0 | 0.900 | 1.953 | 0.883 | 0.830 | 1.025 | 45.2% | 45.3% | 0.054 | 0.021 | 0.025 | 0.033 |
+| slot_power=slot_middle|power_high | 517 | 2013.0 | 1.056 | 1.268 | 0.942 | 0.849 | 0.969 | 39.8% | 40.0% | 0.041 | 0.026 | 0.041 | 0.055 |
+| slot_power=slot_middle|power_low | 387 | 1489.0 | 0.871 | 1.425 | 0.934 | 1.052 | 1.045 | 40.1% | 38.2% | 0.036 | 0.009 | 0.024 | 0.021 |
+| slot_power=slot_middle|power_mid | 819 | 3263.0 | 0.934 | 1.494 | 0.944 | 1.098 | 1.096 | 40.4% | 40.2% | 0.030 | 0.016 | 0.041 | 0.035 |
+| slot_power=slot_top|power_high | 1342 | 5701.0 | 1.103 | 1.560 | 0.840 | 0.875 | 1.051 | 34.4% | 36.9% | 0.045 | 0.026 | 0.049 | 0.057 |
+| slot_power=slot_top|power_low | 551 | 2390.0 | 0.836 | 1.528 | 0.948 | 0.974 | 1.042 | 36.3% | 32.8% | 0.040 | 0.008 | 0.021 | 0.023 |
+| slot_power=slot_top|power_mid | 2245 | 9799.0 | 0.954 | 2.385 | 0.722 | 1.156 | 1.196 | 32.2% | 35.9% | 0.039 | 0.011 | 0.045 | 0.038 |
 
 ## Hitter Outcome Policy
 
 | Market | Rows | Base Brier | Learned Brier | Gain | Decision |
 |---|---:|---:|---:|---:|---|
-| batter_hits | 630 | 0.249 | 0.240 | 0.010 | use_learned_outcome |
-| batter_total_bases | 356 | 0.246 | 0.245 | 0.001 | use_learned_outcome |
+| batter_hits | 1913 | 0.238 | 0.238 | -0.000 | use_baseline_curve |
+| batter_total_bases | 985 | 0.246 | 0.257 | -0.011 | use_baseline_curve |
 | batter_home_runs | 0 | - | - | - | use_baseline_curve |
 
 ## TB Event Model Bucket Policy
 
 | Bucket | Rows | Base Brier | Learned Brier | Gain | Decision |
 |---|---:|---:|---:|---:|---|
-| batter_total_bases / over / common / TB 2.5+ / plus_150_249 / fanduel | 223 | 0.277 | 0.264 | 0.013 | use_direct_event_curve |
-| batter_total_bases / over / common / TB 1.5 / lay_150_180 / fanduel | 98 | 0.263 | 0.252 | 0.010 | use_direct_event_curve |
-| batter_total_bases / over / common / TB 1.5 / fair_lay / fanduel | 719 | 0.260 | 0.251 | 0.009 | use_direct_event_curve |
-| batter_total_bases / under / common / TB 1.5 / lay_150_180 / draftkings | 1422 | 0.242 | 0.235 | 0.007 | use_direct_event_curve |
-| batter_total_bases / over / common / TB 1.5 / plus_100_149 / draftkings | 2580 | 0.242 | 0.237 | 0.006 | use_direct_event_curve |
-| batter_total_bases / under / common / TB 1.5 / fair_lay / draftkings | 427 | 0.259 | 0.254 | 0.005 | use_direct_event_curve |
-| batter_total_bases / under / common / TB 1.5 / heavy_lay / draftkings | 804 | 0.230 | 0.226 | 0.004 | use_direct_event_curve |
-| batter_total_bases / over / common / TB 1.5 / plus_100_149 / fanduel | 2376 | 0.240 | 0.236 | 0.004 | use_direct_event_curve |
-| batter_total_bases / over / common / TB 1.5 / plus_150_249 / draftkings | 118 | 0.205 | 0.203 | 0.002 | use_direct_event_curve |
-| batter_total_bases / over / common / TB 1.5 / fair_lay / draftkings | 456 | 0.256 | 0.254 | 0.001 | use_baseline_curve |
-| batter_total_bases / under / common / TB 1.5 / lay_130_149 / draftkings | 636 | 0.249 | 0.249 | 0.000 | use_baseline_curve |
-| batter_total_bases / over / common / TB 1.5 / plus_150_249 / fanduel | 418 | 0.224 | 0.225 | -0.000 | use_baseline_curve |
-| batter_total_bases / over / common / TB 1.5 / lay_130_149 / fanduel | 185 | 0.244 | 0.248 | -0.004 | use_baseline_curve |
-| batter_total_bases / over / alt_tail / TB 2.5+ / plus_500_plus / fanduel | 371 | 0.369 | 0.377 | -0.007 | use_baseline_curve |
-| batter_total_bases / over / common / TB 2.5+ / plus_250_499 / fanduel | 231 | 0.234 | 0.242 | -0.008 | use_baseline_curve |
-| batter_total_bases / over / alt_tail / TB 2.5+ / plus_250_499 / fanduel | 123 | 0.271 | 0.288 | -0.017 | use_baseline_curve |
+| batter_total_bases / over / common / TB 1.5 / fair_lay / fanduel | 914 | 0.264 | 0.257 | 0.007 | use_direct_event_curve |
+| batter_total_bases / under / common / TB 1.5 / heavy_lay / draftkings | 1016 | 0.237 | 0.233 | 0.005 | use_direct_event_curve |
+| batter_total_bases / under / common / TB 1.5 / fair_lay / draftkings | 521 | 0.260 | 0.256 | 0.004 | use_direct_event_curve |
+| batter_total_bases / over / common / TB 1.5 / plus_100_149 / draftkings | 3238 | 0.245 | 0.241 | 0.004 | use_direct_event_curve |
+| batter_total_bases / over / common / TB 1.5 / plus_150_249 / draftkings | 141 | 0.218 | 0.214 | 0.004 | use_direct_event_curve |
+| batter_total_bases / under / common / TB 1.5 / lay_150_180 / draftkings | 1766 | 0.242 | 0.239 | 0.003 | use_direct_event_curve |
+| batter_total_bases / over / common / TB 1.5 / plus_100_149 / fanduel | 2988 | 0.243 | 0.240 | 0.003 | use_direct_event_curve |
+| batter_total_bases / over / common / TB 2.5+ / plus_150_249 / fanduel | 297 | 0.286 | 0.285 | 0.001 | use_baseline_curve |
+| batter_total_bases / over / common / TB 1.5 / fair_lay / draftkings | 560 | 0.257 | 0.256 | 0.001 | use_baseline_curve |
+| batter_total_bases / under / common / TB 1.5 / lay_130_149 / draftkings | 775 | 0.252 | 0.253 | -0.000 | use_baseline_curve |
+| batter_total_bases / over / common / TB 1.5 / lay_130_149 / fanduel | 241 | 0.247 | 0.248 | -0.001 | use_baseline_curve |
+| batter_total_bases / over / common / TB 1.5 / lay_130_149 / draftkings | 87 | 0.251 | 0.253 | -0.001 | use_baseline_curve |
+| batter_total_bases / over / common / TB 1.5 / plus_150_249 / fanduel | 579 | 0.228 | 0.231 | -0.003 | use_baseline_curve |
+| batter_total_bases / over / common / TB 1.5 / lay_150_180 / fanduel | 125 | 0.258 | 0.263 | -0.005 | use_baseline_curve |
+| batter_total_bases / over / common / TB 2.5+ / plus_250_499 / fanduel | 339 | 0.257 | 0.270 | -0.013 | use_baseline_curve |
+| batter_total_bases / over / alt_tail / TB 2.5+ / plus_500_plus / fanduel | 481 | 0.364 | 0.377 | -0.013 | use_baseline_curve |
+| batter_total_bases / over / alt_tail / TB 2.5+ / plus_250_499 / fanduel | 161 | 0.298 | 0.321 | -0.023 | use_baseline_curve |
 
 ## Line-Bucket Probability Calibration
 
 | Group | Rows | Columns | Method | Internal Gain | Holdout Gain | Enabled |
 |---|---:|---|---|---:|---:|---|
-| market / side / line_bucket / batter_hits / over / H 0.5 | 10996 | market, side, line_bucket | beta | 0.001 | -0.000 | False |
-| market / side / line_surface / line_bucket / batter_hits / over / common / H 0.5 | 10996 | market, side, line_surface, line_bucket | beta | 0.001 | -0.000 | False |
-| market / side / line_bucket / batter_total_bases / over / TB 1.5 | 7063 | market, side, line_bucket | raw | -0.000 | - | False |
-| market / side / line_surface / line_bucket / batter_total_bases / over / common / TB 1.5 | 7063 | market, side, line_surface, line_bucket | raw | -0.000 | - | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 0.5 / heavy_lay | 6543 | market, side, line_surface, line_bucket, price_bucket | beta | 0.002 | -0.001 | False |
-| market / side / line_bucket / batter_hits / under / H 0.5 | 5391 | market, side, line_bucket | isotonic | 0.002 | -0.000 | False |
-| market / side / line_surface / line_bucket / batter_hits / under / common / H 0.5 | 5391 | market, side, line_surface, line_bucket | isotonic | 0.002 | -0.000 | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_total_bases / over / common / TB 1.5 / plus_100_149 | 4956 | market, side, line_surface, line_bucket, price_bucket | raw | -0.000 | - | False |
-| market / side / line_bucket / batter_hits / over / H 1.5 | 3572 | market, side, line_bucket | isotonic | 0.024 | -0.023 | False |
-| market / side / line_surface / line_bucket / batter_hits / over / common / H 1.5 | 3572 | market, side, line_surface, line_bucket | isotonic | 0.024 | -0.023 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / heavy_lay / fanduel | 3561 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.001 | 0.001 | True |
-| market / side / line_bucket / batter_total_bases / under / TB 1.5 | 3350 | market, side, line_bucket | beta | 0.001 | 0.002 | True |
-| market / side / line_surface / line_bucket / batter_total_bases / under / common / TB 1.5 | 3350 | market, side, line_surface, line_bucket | beta | 0.001 | 0.002 | True |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / heavy_lay / draftkings | 2982 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.003 | -0.001 | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 0.5 / lay_150_180 | 2663 | market, side, line_surface, line_bucket, price_bucket | beta | 0.003 | 0.004 | True |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / under / common / H 0.5 / plus_100_149 | 2609 | market, side, line_surface, line_bucket, price_bucket | beta | 0.001 | 0.003 | True |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / under / common / H 0.5 / plus_100_149 / draftkings | 2609 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.001 | 0.003 | True |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_total_bases / over / common / TB 1.5 / plus_100_149 / draftkings | 2580 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | raw | -0.001 | - | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_total_bases / over / common / TB 1.5 / plus_100_149 / fanduel | 2376 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | raw | -0.001 | - | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / under / common / H 0.5 / plus_150_249 | 2277 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.001 | -0.001 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / under / common / H 0.5 / plus_150_249 / draftkings | 2277 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.001 | -0.001 | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 1.5 / plus_150_249 | 2231 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.011 | -0.018 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / lay_150_180 / fanduel | 1433 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.003 | 0.008 | True |
-| market / side / line_surface / line_bucket / price_bucket / batter_total_bases / under / common / TB 1.5 / lay_150_180 | 1422 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.001 | -0.007 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_total_bases / under / common / TB 1.5 / lay_150_180 / draftkings | 1422 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.001 | -0.007 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 1.5 / plus_150_249 / fanduel | 1389 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.012 | -0.013 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / lay_150_180 / draftkings | 1230 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.007 | -0.018 | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_total_bases / over / common / TB 1.5 / fair_lay | 1175 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.005 | 0.000 | True |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 0.5 / lay_130_149 | 1162 | market, side, line_surface, line_bucket, price_bucket | beta | 0.006 | -0.009 | False |
-| market / side / line_bucket / batter_total_bases / over / TB 2.5+ | 1095 | market, side, line_bucket | beta | 0.069 | -0.066 | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 1.5 / plus_250_499 | 1001 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.058 | -0.028 | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 1.5 / plus_250_499 / fanduel | 1001 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.058 | -0.028 | False |
-| market / side / line_bucket / batter_hits / under / H 1.5 | 989 | market, side, line_bucket | isotonic | 0.005 | - | False |
-| market / side / line_surface / line_bucket / batter_hits / under / common / H 1.5 | 989 | market, side, line_surface, line_bucket | isotonic | 0.005 | - | False |
-| market / side / line_surface / line_bucket / price_bucket / batter_hits / under / common / H 1.5 / heavy_lay | 916 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.005 | - | False |
-| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / under / common / H 1.5 / heavy_lay / draftkings | 916 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.005 | - | False |
-| market / side / line_bucket / pitcher_strikeouts / over / K 4.5-6.0 | 891 | market, side, line_bucket | beta | 0.005 | 0.019 | True |
-| market / side / line_surface / line_bucket / pitcher_strikeouts / over / common / K 4.5-6.0 | 891 | market, side, line_surface, line_bucket | beta | 0.005 | 0.019 | True |
-| market / side / line_bucket / pitcher_strikeouts / under / K 4.5-6.0 | 888 | market, side, line_bucket | beta | 0.001 | 0.006 | True |
-| market / side / line_surface / line_bucket / pitcher_strikeouts / under / common / K 4.5-6.0 | 888 | market, side, line_surface, line_bucket | beta | 0.001 | 0.006 | True |
+| market / side / line_bucket / batter_hits / over / H 0.5 | 14128 | market, side, line_bucket | isotonic | 0.001 | 0.000 | True |
+| market / side / line_surface / line_bucket / batter_hits / over / common / H 0.5 | 14128 | market, side, line_surface, line_bucket | isotonic | 0.001 | 0.000 | True |
+| market / side / line_bucket / batter_total_bases / over / TB 1.5 | 8929 | market, side, line_bucket | beta | 0.003 | -0.004 | False |
+| market / side / line_surface / line_bucket / batter_total_bases / over / common / TB 1.5 | 8929 | market, side, line_surface, line_bucket | beta | 0.003 | -0.004 | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 0.5 / heavy_lay | 8294 | market, side, line_surface, line_bucket, price_bucket | raw | -0.001 | - | False |
+| market / side / line_bucket / batter_hits / under / H 0.5 | 6912 | market, side, line_bucket | beta | 0.001 | -0.001 | False |
+| market / side / line_surface / line_bucket / batter_hits / under / common / H 0.5 | 6912 | market, side, line_surface, line_bucket | beta | 0.001 | -0.001 | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_total_bases / over / common / TB 1.5 / plus_100_149 | 6226 | market, side, line_surface, line_bucket, price_bucket | beta | 0.004 | 0.002 | True |
+| market / side / line_bucket / batter_hits / over / H 1.5 | 4636 | market, side, line_bucket | isotonic | 0.027 | -0.030 | False |
+| market / side / line_surface / line_bucket / batter_hits / over / common / H 1.5 | 4636 | market, side, line_surface, line_bucket | isotonic | 0.027 | -0.030 | False |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / heavy_lay / fanduel | 4523 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | raw | -0.000 | - | False |
+| market / side / line_bucket / batter_total_bases / under / TB 1.5 | 4157 | market, side, line_bucket | beta | 0.004 | 0.003 | True |
+| market / side / line_surface / line_bucket / batter_total_bases / under / common / TB 1.5 | 4157 | market, side, line_surface, line_bucket | beta | 0.004 | 0.003 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / heavy_lay / draftkings | 3771 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | raw | -0.001 | - | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 0.5 / lay_150_180 | 3475 | market, side, line_surface, line_bucket, price_bucket | beta | 0.006 | 0.014 | True |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / under / common / H 0.5 / plus_100_149 | 3381 | market, side, line_surface, line_bucket, price_bucket | beta | 0.003 | 0.005 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / under / common / H 0.5 / plus_100_149 / draftkings | 3381 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.003 | 0.005 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_total_bases / over / common / TB 1.5 / plus_100_149 / draftkings | 3238 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.004 | 0.007 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_total_bases / over / common / TB 1.5 / plus_100_149 / fanduel | 2988 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.003 | -0.002 | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / under / common / H 0.5 / plus_150_249 | 2822 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.001 | -0.002 | False |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / under / common / H 0.5 / plus_150_249 / draftkings | 2822 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.001 | -0.002 | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 1.5 / plus_150_249 | 2797 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.007 | 0.002 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / lay_150_180 / fanduel | 1863 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.009 | 0.017 | True |
+| market / side / line_surface / line_bucket / price_bucket / batter_total_bases / under / common / TB 1.5 / lay_150_180 | 1766 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.007 | -0.007 | False |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_total_bases / under / common / TB 1.5 / lay_150_180 / draftkings | 1766 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | isotonic | 0.007 | -0.007 | False |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 1.5 / plus_150_249 / fanduel | 1747 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.008 | 0.003 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 0.5 / lay_150_180 / draftkings | 1612 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.006 | 0.012 | True |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 0.5 / lay_130_149 | 1474 | market, side, line_surface, line_bucket, price_bucket | beta | 0.001 | 0.004 | True |
+| market / side / line_surface / line_bucket / price_bucket / batter_total_bases / over / common / TB 1.5 / fair_lay | 1474 | market, side, line_surface, line_bucket, price_bucket | isotonic | 0.005 | -0.022 | False |
+| market / side / line_bucket / batter_total_bases / over / TB 2.5+ | 1466 | market, side, line_bucket | isotonic | 0.053 | -0.085 | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / over / common / H 1.5 / plus_250_499 | 1397 | market, side, line_surface, line_bucket, price_bucket | beta | 0.052 | -0.054 | False |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / over / common / H 1.5 / plus_250_499 / fanduel | 1397 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.052 | -0.054 | False |
+| market / side / line_bucket / batter_hits / under / H 1.5 | 1227 | market, side, line_bucket | beta | 0.005 | 0.025 | True |
+| market / side / line_surface / line_bucket / batter_hits / under / common / H 1.5 | 1227 | market, side, line_surface, line_bucket | beta | 0.005 | 0.025 | True |
+| market / side / line_bucket / pitcher_strikeouts / over / K 4.5-6.0 | 1141 | market, side, line_bucket | beta | 0.010 | 0.004 | True |
+| market / side / line_surface / line_bucket / pitcher_strikeouts / over / common / K 4.5-6.0 | 1141 | market, side, line_surface, line_bucket | beta | 0.010 | 0.004 | True |
+| market / side / line_bucket / pitcher_strikeouts / under / K 4.5-6.0 | 1138 | market, side, line_bucket | beta | 0.003 | -0.013 | False |
+| market / side / line_surface / line_bucket / pitcher_strikeouts / under / common / K 4.5-6.0 | 1138 | market, side, line_surface, line_bucket | beta | 0.003 | -0.013 | False |
+| market / side / line_surface / line_bucket / price_bucket / batter_hits / under / common / H 1.5 / heavy_lay | 1135 | market, side, line_surface, line_bucket, price_bucket | beta | 0.006 | 0.020 | True |
+| market / side / line_surface / line_bucket / price_bucket / bookmaker_key / batter_hits / under / common / H 1.5 / heavy_lay / draftkings | 1135 | market, side, line_surface, line_bucket, price_bucket, bookmaker_key | beta | 0.006 | 0.020 | True |
 
 ## Exact Bucket Model Selection
 
 | Bucket | Rows | Decision | Best | Best Brier | ROI | Model | Market | Distribution | Cal Dist | Blend | Side-Line |
 |---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| batter_hits|over|common|H 0.5|heavy_lay|fanduel | 116 | use_event_curve_side_line | event_side_line | 0.187 | 31.7% | 0.254 | 0.214 | 0.242 | 0.242 | 0.244 | 0.187 |
-| batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel | 81 | use_distribution_market_blend | distribution_blend | 0.240 | - | 0.244 | 0.247 | 0.241 | 0.241 | 0.240 | 0.256 |
-| batter_hits|under|common|H 0.5|plus_100_149|draftkings | 78 | use_distribution_market_blend | distribution_blend | 0.240 | 5.2% | 0.242 | 0.242 | 0.244 | 0.241 | 0.240 | 0.247 |
-| batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings | 75 | use_distribution_market_blend | distribution_blend | 0.243 | - | 0.245 | 0.246 | 0.246 | 0.246 | 0.243 | 0.256 |
-| batter_hits|under|common|H 0.5|plus_150_249|draftkings | 63 | use_distribution | distribution | 0.229 | 18.4% | 0.242 | 0.245 | 0.229 | 0.229 | 0.232 | 0.234 |
-| batter_hits|over|common|H 1.5|plus_250_499|fanduel | 48 | use_event_curve_side_line | event_side_line | 0.268 | 102.6% | 0.302 | 0.295 | 0.331 | 0.331 | 0.331 | 0.268 |
-| batter_hits|over|common|H 1.5|plus_150_249|fanduel | 45 | use_event_curve_side_line | event_side_line | 0.207 | 26.7% | 0.210 | 0.208 | 0.209 | 0.209 | 0.210 | 0.207 |
-| batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings | 37 | use_event_curve_side_line | event_side_line | 0.240 | 1.3% | 0.240 | 0.240 | 0.243 | 0.241 | 0.242 | 0.240 |
-| batter_hits|over|common|H 0.5|lay_150_180|fanduel | 36 | use_event_curve_side_line | event_side_line | 0.210 | 23.3% | 0.242 | 0.226 | 0.245 | 0.238 | 0.237 | 0.210 |
-| batter_hits|over|common|H 0.5|lay_150_180|draftkings | 31 | use_distribution_market_blend | distribution_blend | 0.248 | - | 0.254 | 0.252 | 0.249 | 0.249 | 0.248 | 0.259 |
-| batter_hits|over|common|H 0.5|heavy_lay|draftkings | 96 | no_bet_negative_roi | distribution | 0.236 | -41.5% | 0.240 | 0.241 | 0.236 | 0.236 | 0.236 | 0.243 |
-| batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings | 26 | no_bet_sample | event_side_line | 0.252 | 54.6% | 0.255 | 0.255 | 0.268 | 0.261 | 0.260 | 0.252 |
-| batter_total_bases|over|common|TB 1.5|fair_lay|fanduel | 24 | no_bet_sample | event_side_line | 0.213 | 46.5% | 0.248 | 0.243 | 0.238 | 0.221 | 0.227 | 0.213 |
-| batter_hits|under|common|H 1.5|heavy_lay|draftkings | 20 | no_bet_sample | event_side_line | 0.147 | 10.6% | 0.173 | 0.173 | 0.153 | 0.153 | 0.158 | 0.147 |
-| batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel | 20 | no_bet_sample | distribution_calibrated | 0.310 | 175.2% | 0.377 | 0.386 | 0.430 | 0.310 | 0.336 | 0.335 |
-| batter_hits|over|common|H 0.5|lay_130_149|draftkings | 19 | no_bet_sample | event_side_line | 0.224 | 69.1% | 0.238 | 0.238 | 0.227 | 0.227 | 0.230 | 0.224 |
-| batter_hits|over|common|H 1.5|plus_150_249|draftkings | 18 | no_bet_sample | distribution | 0.116 | - | 0.154 | 0.154 | 0.116 | 0.116 | 0.124 | 0.124 |
-| batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings | 16 | no_bet_sample | distribution | 0.186 | 38.5% | 0.229 | 0.229 | 0.186 | 0.191 | 0.205 | 0.202 |
-| batter_hits|over|common|H 0.5|lay_130_149|fanduel | 15 | no_bet_sample | event_side_line | 0.192 | 69.0% | 0.265 | 0.226 | 0.223 | 0.223 | 0.229 | 0.192 |
-| batter_hits|under|common|H 0.5|fair_lay|draftkings | 14 | no_bet_sample | distribution | 0.226 | 10.7% | 0.254 | 0.252 | 0.226 | 0.226 | 0.230 | 0.229 |
-| batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel | 14 | no_bet_sample | market_only | 0.090 | -19.4% | 0.092 | 0.090 | 0.092 | 0.092 | 0.093 | 0.164 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|fanduel | 14 | no_bet_sample | market_only | 0.247 | - | 0.247 | 0.247 | 0.263 | 0.254 | 0.251 | 0.251 |
-| batter_hits|over|common|H 0.5|fair_lay|draftkings | 12 | no_bet_sample | distribution | 0.239 | 89.5% | 0.253 | 0.257 | 0.239 | 0.239 | 0.241 | 0.261 |
-| batter_total_bases|over|common|TB 1.5|fair_lay|draftkings | 11 | no_bet_sample | distribution | 0.194 | - | 0.245 | 0.245 | 0.194 | 0.237 | 0.237 | 0.232 |
-| batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel | 11 | no_bet_sample | model_only | 0.233 | 160.0% | 0.233 | 0.242 | 0.258 | 0.238 | 0.239 | 0.254 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|draftkings | 11 | no_bet_sample | event_side_line | 0.242 | 13.5% | 0.253 | 0.253 | 0.269 | 0.259 | 0.254 | 0.242 |
-| batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel | 10 | no_bet_sample | distribution_calibrated | 0.267 | 57.7% | 0.275 | 0.290 | 0.324 | 0.267 | 0.274 | 0.316 |
-| batter_total_bases|under|common|TB 1.5|fair_lay|draftkings | 9 | no_bet_sample | distribution | 0.187 | 40.7% | 0.245 | 0.245 | 0.187 | 0.195 | 0.207 | 0.196 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|draftkings | 8 | no_bet_sample | model_only | 0.251 | - | 0.251 | 0.251 | 0.284 | 0.286 | 0.293 | 0.316 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|draftkings | 7 | no_bet_sample | market_only | 0.249 | - | 0.249 | 0.249 | 0.291 | 0.272 | 0.266 | 0.265 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|fanduel | 7 | no_bet_sample | market_only | 0.263 | - | 0.263 | 0.263 | 0.283 | 0.284 | 0.288 | 0.287 |
-| batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel | 6 | no_bet_sample | model_only | 0.170 | 58.2% | 0.170 | 0.221 | 0.189 | 0.189 | 0.192 | 0.315 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|fanduel | 6 | no_bet_sample | market_only | 0.242 | - | 0.242 | 0.242 | 0.281 | 0.271 | 0.268 | 0.263 |
-| batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel | 5 | no_bet_sample | distribution | 0.117 | - | 0.123 | 0.123 | 0.117 | 0.117 | 0.123 | 0.143 |
-| batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel | 5 | no_bet_sample | event_side_line | 0.204 | - | 0.216 | 0.228 | 0.242 | 0.242 | 0.242 | 0.204 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|draftkings | 5 | no_bet_sample | market_only | 0.255 | - | 0.255 | 0.255 | 0.300 | 0.271 | 0.271 | 0.288 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|draftkings | 5 | no_bet_sample | event_side_line | 0.236 | - | 0.244 | 0.244 | 0.243 | 0.245 | 0.247 | 0.236 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|fanduel | 5 | no_bet_sample | market_only | 0.245 | - | 0.245 | 0.245 | 0.273 | 0.258 | 0.254 | 0.249 |
-| batter_hits|over|common|H 1.5|plus_100_149|fanduel | 4 | no_bet_sample | model_only | 0.245 | 17.6% | 0.245 | 0.258 | 0.294 | 0.294 | 0.293 | 0.309 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|fanduel | 4 | no_bet_sample | market_only | 0.262 | - | 0.262 | 0.262 | 0.327 | 0.296 | 0.299 | 0.359 |
-| batter_hits|over|common|H 0.5|fair_lay|fanduel | 3 | no_bet_sample | distribution_blend | 0.256 | - | 0.257 | 0.271 | 0.263 | 0.263 | 0.256 | 0.326 |
-| batter_hits|under|common|H 0.5|lay_130_149|draftkings | 3 | no_bet_sample | distribution | 0.264 | - | 0.265 | 0.269 | 0.264 | 0.264 | 0.294 | 0.333 |
-| batter_total_bases|over|common|TB 1.5|lay_150_180|fanduel | 3 | no_bet_sample | market_only | 0.196 | - | 0.241 | 0.196 | 0.360 | 0.360 | 0.312 | 0.245 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings | 3 | no_bet_sample | market_only | 0.171 | - | 0.171 | 0.171 | 0.337 | 0.299 | 0.265 | 0.254 |
-| pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|fanduel | 3 | no_bet_sample | distribution_calibrated | 0.309 | - | 0.311 | 0.311 | 0.365 | 0.309 | 0.364 | 0.421 |
-| pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|draftkings | 3 | no_bet_sample | market_only | 0.171 | - | 0.171 | 0.171 | 0.337 | 0.348 | 0.346 | 0.339 |
-| batter_hits|over|common|H 1.5|plus_100_149|draftkings | 2 | no_bet_sample | model_only | 0.244 | 142.0% | 0.244 | 0.376 | 0.544 | 0.544 | 0.542 | 0.674 |
-| batter_total_bases|over|common|TB 1.5|lay_130_149|draftkings | 2 | no_bet_sample | event_side_line | 0.197 | - | 0.241 | 0.207 | 0.371 | 0.371 | 0.284 | 0.197 |
-| batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings | 2 | no_bet_sample | distribution_blend | 0.089 | - | 0.117 | 0.137 | 0.102 | 0.102 | 0.089 | 0.092 |
-| batter_total_bases|over|common|TB 2.5+|plus_100_149|fanduel | 2 | no_bet_sample | market_only | 0.349 | - | 0.363 | 0.349 | 0.538 | 0.390 | 0.379 | 0.387 |
-| batter_total_bases|under|common|TB 1.5|plus_100_149|draftkings | 2 | no_bet_sample | market_only | 0.207 | - | 0.207 | 0.207 | 0.371 | 0.332 | 0.347 | 0.495 |
-| pitcher_strikeouts|under|common|K 6.5-8.0|fair_lay|fanduel | 2 | no_bet_sample | model_only | 0.255 | - | 0.255 | 0.255 | 0.328 | 0.328 | 0.317 | 0.328 |
-| pitcher_strikeouts|under|common|K 6.5-8.0|lay_150_180|fanduel | 2 | no_bet_sample | model_only | 0.351 | - | 0.351 | 0.351 | 0.476 | 0.476 | 0.509 | 0.633 |
-| batter_hits|over|common|H 0.5|plus_100_149|draftkings | 1 | no_bet_sample | event_side_line | 0.137 | - | 0.243 | 0.193 | 0.213 | 0.213 | 0.168 | 0.137 |
-| batter_hits|under|common|H 0.5|lay_150_180|draftkings | 1 | no_bet_sample | market_only | 0.193 | - | 0.201 | 0.193 | 0.213 | 0.213 | 0.249 | 0.337 |
-| pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|fanduel | 1 | no_bet_sample | model_only | 0.168 | - | 0.168 | 0.168 | 0.414 | 0.335 | 0.305 | 0.285 |
-| pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|draftkings | 1 | no_bet_sample | model_only | 0.229 | - | 0.229 | 0.229 | 0.380 | 0.322 | 0.303 | 0.254 |
-| pitcher_strikeouts|over|common|K 6.5-8.0|fair_lay|fanduel | 1 | no_bet_sample | model_only | 0.231 | - | 0.231 | 0.231 | 0.380 | 0.322 | 0.303 | 0.254 |
-| pitcher_strikeouts|over|common|K 6.5-8.0|plus_100_149|draftkings | 1 | no_bet_sample | distribution_calibrated | 0.270 | - | 0.289 | 0.289 | 0.277 | 0.270 | 0.338 | 0.388 |
-| pitcher_strikeouts|over|common|K <4.5|lay_150_180|draftkings | 1 | no_bet_sample | market_only | 0.343 | - | 0.343 | 0.343 | 0.499 | 0.451 | 0.420 | 0.369 |
+| batter_hits|over|common|H 0.5|heavy_lay|fanduel | 318 | use_event_curve_side_line | event_side_line | 0.188 | 29.0% | 0.257 | 0.212 | 0.261 | 0.256 | 0.257 | 0.188 |
+| batter_hits|under|common|H 0.5|plus_100_149|draftkings | 244 | use_market_only | market_only | 0.258 | - | 0.264 | 0.258 | 0.267 | 0.262 | 0.260 | 0.267 |
+| batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings | 201 | keep_model_only | model_only | 0.246 | - | 0.246 | 0.246 | 0.257 | 0.250 | 0.248 | 0.257 |
+| batter_total_bases|over|common|TB 1.5|plus_100_149|fanduel | 186 | use_market_only | market_only | 0.237 | 94.0% | 0.243 | 0.237 | 0.253 | 0.247 | 0.245 | 0.240 |
+| batter_hits|under|common|H 0.5|plus_150_249|draftkings | 172 | use_distribution_market_blend | distribution_blend | 0.223 | 20.2% | 0.227 | 0.225 | 0.224 | 0.224 | 0.223 | 0.224 |
+| batter_hits|over|common|H 0.5|lay_150_180|fanduel | 141 | use_event_curve_side_line | event_side_line | 0.188 | 32.7% | 0.252 | 0.219 | 0.254 | 0.247 | 0.247 | 0.188 |
+| batter_hits|over|common|H 1.5|plus_150_249|fanduel | 131 | use_event_curve_side_line | event_side_line | 0.217 | 106.8% | 0.254 | 0.226 | 0.246 | 0.232 | 0.234 | 0.217 |
+| batter_hits|over|common|H 0.5|lay_150_180|draftkings | 118 | use_distribution_market_blend | distribution_blend | 0.257 | - | 0.265 | 0.259 | 0.269 | 0.258 | 0.257 | 0.265 |
+| batter_total_bases|under|common|TB 1.5|lay_150_180|draftkings | 114 | keep_model_only | model_only | 0.250 | - | 0.250 | 0.250 | 0.264 | 0.257 | 0.254 | 0.263 |
+| batter_hits|over|common|H 1.5|plus_250_499|fanduel | 99 | use_market_only | market_only | 0.208 | 56.8% | 0.221 | 0.208 | 0.225 | 0.225 | 0.221 | 0.216 |
+| batter_hits|over|common|H 1.5|plus_150_249|draftkings | 70 | use_distribution_market_blend | distribution_blend | 0.208 | - | 0.213 | 0.213 | 0.219 | 0.208 | 0.208 | 0.214 |
+| batter_total_bases|over|common|TB 1.5|fair_lay|fanduel | 69 | use_distribution_market_blend | distribution_blend | 0.236 | - | 0.262 | 0.241 | 0.237 | 0.237 | 0.236 | 0.244 |
+| batter_total_bases|under|common|TB 1.5|lay_130_149|draftkings | 57 | keep_model_only | model_only | 0.242 | - | 0.242 | 0.242 | 0.256 | 0.255 | 0.253 | 0.258 |
+| batter_total_bases|under|common|TB 1.5|heavy_lay|draftkings | 55 | keep_model_only | model_only | 0.243 | - | 0.243 | 0.243 | 0.260 | 0.253 | 0.249 | 0.248 |
+| batter_total_bases|over|common|TB 1.5|fair_lay|draftkings | 49 | use_event_curve_side_line | event_side_line | 0.241 | - | 0.246 | 0.246 | 0.265 | 0.265 | 0.256 | 0.241 |
+| batter_hits|over|common|H 0.5|lay_130_149|fanduel | 45 | use_event_curve_side_line | event_side_line | 0.219 | 23.3% | 0.224 | 0.236 | 0.231 | 0.230 | 0.234 | 0.219 |
+| batter_hits|over|common|H 0.5|fair_lay|draftkings | 39 | use_distribution | distribution | 0.226 | 35.8% | 0.249 | 0.249 | 0.226 | 0.231 | 0.235 | 0.239 |
+| batter_total_bases|under|common|TB 1.5|fair_lay|draftkings | 37 | keep_model_only | model_only | 0.249 | - | 0.249 | 0.249 | 0.261 | 0.260 | 0.256 | 0.254 |
+| batter_hits|over|common|H 0.5|heavy_lay|draftkings | 230 | no_bet_negative_roi | distribution_calibrated | 0.236 | -1.9% | 0.238 | 0.237 | 0.236 | 0.236 | 0.237 | 0.239 |
+| batter_hits|under|common|H 1.5|heavy_lay|draftkings | 85 | no_bet_no_edge | distribution_calibrated | 0.193 | 20.7% | 0.205 | 0.205 | 0.213 | 0.193 | 0.193 | 0.202 |
+| batter_hits|over|common|H 0.5|lay_130_149|draftkings | 74 | no_bet_no_edge | distribution_calibrated | 0.248 | - | 0.250 | 0.250 | 0.260 | 0.248 | 0.248 | 0.253 |
+| batter_total_bases|over|common|TB 1.5|plus_150_249|fanduel | 63 | no_bet_negative_roi | distribution | 0.177 | -34.3% | 0.190 | 0.181 | 0.177 | 0.177 | 0.177 | 0.180 |
+| batter_hits|under|common|H 0.5|fair_lay|draftkings | 45 | no_bet_negative_roi | distribution | 0.225 | -3.9% | 0.226 | 0.246 | 0.225 | 0.225 | 0.232 | 0.239 |
+| batter_total_bases|over|alt_tail|TB 2.5+|plus_500_plus|fanduel | 24 | no_bet_sample | event_side_line | 0.256 | 273.8% | 0.301 | 0.308 | 0.327 | 0.327 | 0.329 | 0.256 |
+| batter_hits|over|common|H 0.5|fair_lay|fanduel | 23 | no_bet_sample | event_side_line | 0.185 | 46.3% | 0.275 | 0.214 | 0.218 | 0.244 | 0.240 | 0.185 |
+| batter_hits|over|common|H 1.5|plus_100_149|draftkings | 23 | no_bet_sample | event_side_line | 0.099 | - | 0.175 | 0.175 | 0.183 | 0.183 | 0.158 | 0.099 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|fanduel | 23 | no_bet_sample | distribution_calibrated | 0.247 | 42.8% | 0.267 | 0.267 | 0.254 | 0.247 | 0.257 | 0.252 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|plus_100_149|draftkings | 22 | no_bet_sample | event_side_line | 0.233 | 49.7% | 0.282 | 0.282 | 0.265 | 0.251 | 0.241 | 0.233 |
+| batter_total_bases|over|common|TB 2.5+|plus_150_249|fanduel | 21 | no_bet_sample | model_only | 0.272 | 161.0% | 0.272 | 0.300 | 0.273 | 0.274 | 0.288 | 0.304 |
+| batter_total_bases|over|common|TB 2.5+|plus_250_499|fanduel | 19 | no_bet_sample | event_side_line | 0.237 | 151.5% | 0.373 | 0.328 | 0.379 | 0.277 | 0.300 | 0.237 |
+| batter_total_bases|over|common|TB 1.5|lay_150_180|fanduel | 17 | no_bet_sample | event_side_line | 0.217 | 62.6% | 0.569 | 0.242 | 0.311 | 0.311 | 0.295 | 0.217 |
+| batter_total_bases|over|alt_tail|TB 2.5+|plus_250_499|fanduel | 15 | no_bet_sample | distribution_blend | 0.038 | - | 0.049 | 0.066 | 0.039 | 0.039 | 0.038 | 0.224 |
+| batter_total_bases|over|common|TB 1.5|lay_130_149|draftkings | 15 | no_bet_sample | market_only | 0.256 | - | 0.509 | 0.256 | 0.295 | 0.295 | 0.290 | 0.283 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|draftkings | 15 | no_bet_sample | market_only | 0.211 | - | 0.211 | 0.211 | 0.228 | 0.228 | 0.238 | 0.238 |
+| batter_hits|over|common|H 1.5|plus_100_149|fanduel | 14 | no_bet_sample | event_side_line | 0.103 | - | 0.208 | 0.162 | 0.153 | 0.153 | 0.131 | 0.103 |
+| batter_total_bases|under|common|TB 1.5|plus_100_149|draftkings | 14 | no_bet_sample | event_side_line | 0.254 | -8.1% | 0.259 | 0.259 | 0.304 | 0.303 | 0.274 | 0.254 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|draftkings | 14 | no_bet_sample | distribution | 0.267 | -56.0% | 0.297 | 0.297 | 0.267 | 0.267 | 0.275 | 0.281 |
+| batter_total_bases|over|common|TB 1.5|lay_130_149|fanduel | 13 | no_bet_sample | event_side_line | 0.223 | - | 0.522 | 0.242 | 0.264 | 0.264 | 0.256 | 0.223 |
+| batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings | 12 | no_bet_sample | model_only | 0.251 | 83.6% | 0.251 | 0.264 | 0.298 | 0.298 | 0.297 | 0.288 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|plus_100_149|fanduel | 12 | no_bet_sample | model_only | 0.223 | - | 0.223 | 0.223 | 0.250 | 0.250 | 0.245 | 0.248 |
+| batter_hits|over|alt_tail|H 2.5+|plus_500_plus|fanduel | 11 | no_bet_sample | event_side_line | 0.145 | 158.0% | 0.168 | 0.149 | 0.168 | 0.168 | 0.168 | 0.145 |
+| pitcher_strikeouts|over|common|K <4.5|fair_lay|fanduel | 11 | no_bet_sample | market_only | 0.267 | - | 0.267 | 0.267 | 0.289 | 0.283 | 0.283 | 0.330 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|fanduel | 11 | no_bet_sample | distribution | 0.249 | - | 0.258 | 0.258 | 0.249 | 0.249 | 0.254 | 0.282 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|draftkings | 10 | no_bet_sample | distribution_calibrated | 0.249 | -1.9% | 0.264 | 0.264 | 0.251 | 0.249 | 0.249 | 0.291 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|draftkings | 10 | no_bet_sample | market_only | 0.197 | - | 0.197 | 0.197 | 0.231 | 0.237 | 0.217 | 0.233 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|fair_lay|draftkings | 10 | no_bet_sample | distribution | 0.251 | - | 0.264 | 0.264 | 0.251 | 0.251 | 0.256 | 0.298 |
+| pitcher_strikeouts|under|common|K <4.5|fair_lay|fanduel | 10 | no_bet_sample | market_only | 0.266 | - | 0.266 | 0.266 | 0.300 | 0.300 | 0.305 | 0.384 |
+| pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings | 10 | no_bet_sample | market_only | 0.268 | - | 0.268 | 0.268 | 0.269 | 0.269 | 0.281 | 0.281 |
+| batter_hits|over|common|H 1.5|plus_500_plus|fanduel | 9 | no_bet_sample | distribution_blend | 0.018 | -100.0% | 0.037 | 0.031 | 0.021 | 0.021 | 0.018 | 0.122 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|fanduel | 9 | no_bet_sample | distribution | 0.244 | - | 0.291 | 0.291 | 0.244 | 0.244 | 0.263 | 0.295 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|lay_150_180|fanduel | 9 | no_bet_sample | market_only | 0.237 | - | 0.237 | 0.237 | 0.265 | 0.265 | 0.258 | 0.263 |
+| pitcher_strikeouts|under|common|K 4.5-6.0|lay_130_149|draftkings | 8 | no_bet_sample | model_only | 0.260 | - | 0.260 | 0.260 | 0.262 | 0.262 | 0.263 | 0.276 |
+| pitcher_strikeouts|under|common|K <4.5|plus_100_149|fanduel | 8 | no_bet_sample | distribution | 0.223 | 72.6% | 0.254 | 0.254 | 0.223 | 0.223 | 0.249 | 0.254 |
+| batter_hits|over|common|H 0.5|plus_100_149|draftkings | 7 | no_bet_sample | event_side_line | 0.170 | - | 0.290 | 0.214 | 0.221 | 0.266 | 0.217 | 0.170 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|fair_lay|fanduel | 7 | no_bet_sample | distribution | 0.238 | 92.6% | 0.250 | 0.250 | 0.238 | 0.246 | 0.247 | 0.256 |
+| batter_hits|under|common|H 0.5|lay_130_149|draftkings | 6 | no_bet_sample | event_side_line | 0.157 | 70.7% | 0.293 | 0.218 | 0.221 | 0.221 | 0.207 | 0.157 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|lay_150_180|fanduel | 6 | no_bet_sample | market_only | 0.208 | - | 0.208 | 0.208 | 0.238 | 0.239 | 0.224 | 0.236 |
+| pitcher_strikeouts|over|common|K <4.5|lay_130_149|fanduel | 6 | no_bet_sample | distribution | 0.234 | -26.5% | 0.270 | 0.270 | 0.234 | 0.253 | 0.275 | 0.308 |
+| batter_hits|under|common|H 1.5|lay_150_180|draftkings | 5 | no_bet_sample | event_side_line | 0.032 | 56.8% | 0.187 | 0.163 | 0.144 | 0.088 | 0.073 | 0.032 |
+| pitcher_strikeouts|over|common|K 4.5-6.0|lay_130_149|draftkings | 5 | no_bet_sample | distribution | 0.220 | -19.7% | 0.241 | 0.241 | 0.220 | 0.237 | 0.239 | 0.234 |

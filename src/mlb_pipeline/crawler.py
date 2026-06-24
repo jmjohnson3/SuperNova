@@ -132,6 +132,7 @@ def build_url_venues(season: Season) -> str:
 
 # ---------- DB helpers ----------
 
+
 def already_fetched(
     conn,
     *,
