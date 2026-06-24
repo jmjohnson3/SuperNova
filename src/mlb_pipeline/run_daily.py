@@ -533,7 +533,7 @@ def main() -> None:
             steps.append(Step(
                 name="Compute Elo ratings",
                 module="mlb_pipeline.compute_elo",
-                timeout_s=300,
+                timeout_s=600,
                 critical=False,
             ))
 
@@ -574,7 +574,7 @@ def main() -> None:
                 name="Shadow-lock prop predictions",
                 module="mlb_pipeline.modeling.shadow_lock_prop_predictions",
                 args=("--phase", "morning"),
-                timeout_s=120,
+                timeout_s=300,
                 critical=False,
             ))
 
@@ -591,7 +591,7 @@ def main() -> None:
             steps.append(Step(
                 name="Train player prop models",
                 module="mlb_pipeline.modeling.train_player_prop_models",
-                timeout_s=10800,
+                timeout_s=21600,
                 critical=False,
                 parallel=True,
             ))
@@ -752,7 +752,7 @@ def main() -> None:
         steps.append(Step(
             name="Prop walk-forward accuracy report",
             module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
-            timeout_s=600,
+            timeout_s=1200,
             critical=False,
         ))
         steps.append(Step(
