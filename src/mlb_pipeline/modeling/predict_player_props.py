@@ -257,6 +257,8 @@ SELECT
     ob.hr_avg_10        AS opp_hr_avg_10,
     ob.iso_avg_10       AS opp_iso_avg_10,
     ob.slg_avg_10       AS opp_slg_avg_10,
+    -- Opp team K rate in recent games vs same-hand SP as today's pitcher (Gap A)
+    opp_k_hand.opp_k_pct_vs_same_hand_10,
     -- Park factors
     bf.run_factor       AS park_run_factor,
     bf.hr_factor        AS park_hr_factor,
@@ -376,7 +378,10 @@ SELECT
     opp_der.team_der_20  AS opp_team_der_20,
     opp_der.team_der_career AS opp_team_der_career,
     -- Market strikeout prop line (FanDuel; today's game)
-    mkt_k.market_k_line
+    mkt_k.market_k_line,
+    -- K line movement open → close (Gap B: sharp money signal)
+    mkt_k.open_k_line,
+    mkt_k.market_k_line - mkt_k.open_k_line AS k_line_move
 FROM today_starters ts
 -- Most recent rolling stats
 LEFT JOIN LATERAL (
@@ -541,7 +546,7 @@ LEFT JOIN LATERAL (
 ) opp_mom ON TRUE
 -- Market strikeout prop line (FanDuel; highest available line = market ceiling for this SP)
 LEFT JOIN LATERAL (
-    SELECT MAX(pl.line) AS market_k_line
+    SELECT MAX(pl.line) AS market_k_line, MIN(pl.open_line) AS open_k_line
     FROM odds.mlb_player_prop_lines pl
     CROSS JOIN LATERAL (
         SELECT LOWER(REGEXP_REPLACE(
@@ -623,6 +628,22 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) opp_der ON TRUE
+-- Gap A: Opp team K rate in their most recent game vs same-hand SP as today's pitcher
+LEFT JOIN LATERAL (
+    SELECT ob2.k_pct_avg_10 AS opp_k_pct_vs_same_hand_10
+    FROM features.mlb_team_batting_rolling_mat ob2
+    JOIN raw.mlb_games g2 ON g2.game_slug = ob2.game_slug
+    JOIN raw.mlb_starting_pitchers sp2
+        ON sp2.game_slug = g2.game_slug
+        AND sp2.team_abbr != ob2.team_abbr
+    JOIN raw.mlb_player_handedness ph2 ON ph2.player_id = sp2.player_id
+    WHERE ob2.team_abbr = ts.opponent_abbr
+      AND g2.status = 'final'
+      AND g2.game_date_et < %(game_date)s
+      AND ph2.pitch_hand = ph.pitch_hand
+    ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+    LIMIT 1
+) opp_k_hand ON TRUE
 -- Injury exclusion (Feature 12): skip OUT/DOUBTFUL pitchers
 -- Join on mlb_player_id (extracted from MSF image URL) which matches gamelog player_id
 LEFT JOIN raw.mlb_injuries inj_p ON inj_p.mlb_player_id = ts.player_id
@@ -915,11 +936,19 @@ SELECT
     -- Opposing team DER (MLB032) — defensive quality of opponent's fielders
     opp_def_der.team_der_20  AS opp_team_def_der_20,
     opp_def_der.team_der_career AS opp_team_def_der_career,
+    -- Own team K rate rolling (Gap A: team-level K context)
+    own_tb.k_pct_avg_10                                          AS opp_team_k_pct_avg_10,
+    -- Own team K rate in recent games vs same-hand SP as today's opp SP (Gap A)
+    opp_k_hand.opp_k_pct_vs_same_hand_10,
     -- Market over_price on canonical batter lines (FanDuel; today's game)
     -- American odds: -200 = 67%% implied prob; -130 = 57%%; -170 = 63%%; etc.
     mkt_props.market_hits_over_price,
     mkt_props.market_tb_over_price,
     mkt_props.market_hr_over_price,
+    -- Prop line movement open → close (Gap B: sharp money signal)
+    mkt_props.market_hits_line - mkt_props.open_hits_line        AS hits_line_move,
+    mkt_props.market_tb_line   - mkt_props.open_tb_line         AS tb_line_move,
+    mkt_props.market_hr_line   - mkt_props.open_hr_line         AS hr_line_move,
     -- Opposing SP confirmation status (for leaderboard quality gate)
     sp.source                             AS opp_sp_source
 FROM teams_today tt
@@ -1226,7 +1255,14 @@ LEFT JOIN LATERAL (
     SELECT
         MAX(CASE WHEN pl.stat = 'batter_hits'        AND pl.line = 0.5 THEN pl.over_price END) AS market_hits_over_price,
         MAX(CASE WHEN pl.stat = 'batter_total_bases'  AND pl.line = 1.5 THEN pl.over_price END) AS market_tb_over_price,
-        MAX(CASE WHEN pl.stat = 'batter_home_runs'    AND pl.line = 0.5 THEN pl.over_price END) AS market_hr_over_price
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'    AND pl.line = 0.5 THEN pl.over_price END) AS market_hr_over_price,
+        -- Gap B: line movement (open → close); NULL when no same-day change
+        MAX(CASE WHEN pl.stat = 'batter_hits'        THEN pl.line      END) AS market_hits_line,
+        MAX(CASE WHEN pl.stat = 'batter_hits'        THEN pl.open_line END) AS open_hits_line,
+        MAX(CASE WHEN pl.stat = 'batter_total_bases' THEN pl.line      END) AS market_tb_line,
+        MAX(CASE WHEN pl.stat = 'batter_total_bases' THEN pl.open_line END) AS open_tb_line,
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'   THEN pl.line      END) AS market_hr_line,
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'   THEN pl.open_line END) AS open_hr_line
     FROM odds.mlb_player_prop_lines pl
     CROSS JOIN LATERAL (
         SELECT LOWER(REGEXP_REPLACE(
@@ -1258,6 +1294,31 @@ LEFT JOIN LATERAL (
     ORDER BY game_date_et DESC
     LIMIT 1
 ) opp_def_der ON TRUE
+-- Gap A: Own team batting rolling (team-level K context; batter's team = "opp" from SP's view)
+LEFT JOIN LATERAL (
+    SELECT k_pct_avg_10
+    FROM features.mlb_team_batting_rolling_mat
+    WHERE team_abbr    = tt.team_abbr
+      AND game_date_et < %(game_date)s
+    ORDER BY game_date_et DESC
+    LIMIT 1
+) own_tb ON TRUE
+-- Gap A: Own team K rate in most recent game vs same-hand SP as today's opp SP
+LEFT JOIN LATERAL (
+    SELECT ob2.k_pct_avg_10 AS opp_k_pct_vs_same_hand_10
+    FROM features.mlb_team_batting_rolling_mat ob2
+    JOIN raw.mlb_games g2 ON g2.game_slug = ob2.game_slug
+    JOIN raw.mlb_starting_pitchers sp2
+        ON sp2.game_slug = g2.game_slug
+        AND sp2.team_abbr != ob2.team_abbr
+    JOIN raw.mlb_player_handedness ph2 ON ph2.player_id = sp2.player_id
+    WHERE ob2.team_abbr = tt.team_abbr
+      AND g2.status = 'final'
+      AND g2.game_date_et < %(game_date)s
+      AND ph2.pitch_hand = opp_ph.pitch_hand
+    ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+    LIMIT 1
+) opp_k_hand ON TRUE
 -- Injury exclusion (Feature 12): skip OUT/DOUBTFUL batters
 -- Join on mlb_player_id (extracted from MSF image URL) which matches gamelog player_id
 LEFT JOIN raw.mlb_injuries inj_b ON inj_b.mlb_player_id = rp.player_id

@@ -120,6 +120,8 @@ SELECT
     ob.hr_avg_10       AS opp_hr_avg_10,
     ob.iso_avg_10      AS opp_iso_avg_10,
     ob.slg_avg_10      AS opp_slg_avg_10,
+    -- Opp team K rate in recent games vs same-hand SP as today's pitcher (Gap A)
+    opp_k_hand.opp_k_pct_vs_same_hand_10,
     -- Opponent lineup K-rate variance (distribution of K-proneness across the lineup)
     lq_opp.lineup_k_pct_std                  AS opp_lineup_k_pct_std,
     lq_opp.lineup_k_pct_cv                   AS opp_lineup_k_pct_cv,
@@ -241,6 +243,9 @@ SELECT
     opp_der.team_der_career AS opp_team_der_career,
     -- Market strikeout prop line (FanDuel; NULL pre-2025 → median-imputed in features.py)
     mkt_k.market_k_line,
+    -- K line movement open → close (Gap B: sharp money signal; NULL when no line move)
+    mkt_k.open_k_line,
+    mkt_k.market_k_line - mkt_k.open_k_line AS k_line_move,
     -- Target
     pgl.strikeouts_pitcher AS strikeouts
 FROM features.mlb_pitcher_rolling_mat p
@@ -425,9 +430,27 @@ LEFT JOIN features.mlb_team_der_rolling_mat opp_der
         WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
         ELSE g.home_team_abbr END
     AND opp_der.game_slug = p.game_slug
+-- Gap A: Opp team K rate in their most recent game vs same-hand SP as today's pitcher
+LEFT JOIN LATERAL (
+    SELECT ob2.k_pct_avg_10 AS opp_k_pct_vs_same_hand_10
+    FROM features.mlb_team_batting_rolling_mat ob2
+    JOIN raw.mlb_games g2 ON g2.game_slug = ob2.game_slug
+    JOIN raw.mlb_starting_pitchers sp2
+        ON sp2.game_slug = g2.game_slug
+        AND sp2.team_abbr != ob2.team_abbr
+    JOIN raw.mlb_player_handedness ph2 ON ph2.player_id = sp2.player_id
+    WHERE ob2.team_abbr = CASE
+              WHEN p.team_abbr = g.home_team_abbr THEN g.away_team_abbr
+              ELSE g.home_team_abbr END
+      AND g2.status = 'final'
+      AND g2.game_date_et < g.game_date_et
+      AND ph2.pitch_hand = ph.pitch_hand
+    ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+    LIMIT 1
+) opp_k_hand ON TRUE
 -- Market strikeout prop line (FanDuel; highest available line = market ceiling for this SP)
 LEFT JOIN LATERAL (
-    SELECT MAX(pl.line) AS market_k_line
+    SELECT MAX(pl.line) AS market_k_line, MIN(pl.open_line) AS open_k_line
     FROM odds.mlb_player_prop_lines pl
     CROSS JOIN LATERAL (
         SELECT LOWER(REGEXP_REPLACE(
@@ -706,11 +729,19 @@ SELECT
     -- Opposing team DER (MLB032) — defensive quality of opponent's fielders
     opp_def_der.team_der_20  AS opp_team_def_der_20,
     opp_def_der.team_der_career AS opp_team_def_der_career,
+    -- Own team K rate rolling (from SP's perspective = "opponent team"; missing until now) (Gap A)
+    own_tb.k_pct_avg_10                                          AS opp_team_k_pct_avg_10,
+    -- Own team K rate in recent games vs same-hand SP as today's opp SP (Gap A)
+    opp_k_hand.opp_k_pct_vs_same_hand_10,
     -- Market over_price on canonical lines (FanDuel; NULL pre-2025 → imputed in features.py)
     -- over_price in American odds: -200 = 67% implied hit prob; -130 = 57%; etc.
     mkt_props.market_hits_over_price,
     mkt_props.market_tb_over_price,
     mkt_props.market_hr_over_price,
+    -- Prop line movement open → close (Gap B: sharp money signal; 0 when no move)
+    mkt_props.market_hits_line - mkt_props.open_hits_line        AS hits_line_move,
+    mkt_props.market_tb_line   - mkt_props.open_tb_line         AS tb_line_move,
+    mkt_props.market_hr_line   - mkt_props.open_hr_line         AS hr_line_move,
     -- Targets
     gl.hits        AS hits,
     gl.total_bases AS total_bases,
@@ -921,6 +952,26 @@ LEFT JOIN features.mlb_team_der_rolling_mat opp_def_der
         WHEN b.team_abbr = g.home_team_abbr THEN g.away_team_abbr
         ELSE g.home_team_abbr END
     AND opp_def_der.game_slug = b.game_slug
+-- Gap A: Own team batting rolling (team-level K context; batter's team = "opp" from SP's view)
+LEFT JOIN features.mlb_team_batting_rolling_mat own_tb
+    ON own_tb.game_slug  = b.game_slug
+    AND own_tb.team_abbr = b.team_abbr
+-- Gap A: Own team K rate in most recent game vs same-hand SP as today's opp SP
+LEFT JOIN LATERAL (
+    SELECT ob2.k_pct_avg_10 AS opp_k_pct_vs_same_hand_10
+    FROM features.mlb_team_batting_rolling_mat ob2
+    JOIN raw.mlb_games g2 ON g2.game_slug = ob2.game_slug
+    JOIN raw.mlb_starting_pitchers sp2
+        ON sp2.game_slug = g2.game_slug
+        AND sp2.team_abbr != b.team_abbr
+    JOIN raw.mlb_player_handedness ph2 ON ph2.player_id = sp2.player_id
+    WHERE ob2.team_abbr = b.team_abbr
+      AND g2.status = 'final'
+      AND g2.game_date_et < g.game_date_et
+      AND ph2.pitch_hand = opp_ph.pitch_hand
+    ORDER BY g2.game_date_et DESC, g2.game_slug DESC
+    LIMIT 1
+) opp_k_hand ON TRUE
 -- Market over_price on canonical batter lines (FanDuel; game-specific hit probability signal)
 -- over_price on 0.5 hits line: -130=57%, -180=64%, -260=72% implied hit probability
 -- over_price on 1.5 TB line:  similar encoding for 2+ total bases probability
@@ -928,7 +979,14 @@ LEFT JOIN LATERAL (
     SELECT
         MAX(CASE WHEN pl.stat = 'batter_hits'        AND pl.line = 0.5 THEN pl.over_price END) AS market_hits_over_price,
         MAX(CASE WHEN pl.stat = 'batter_total_bases'  AND pl.line = 1.5 THEN pl.over_price END) AS market_tb_over_price,
-        MAX(CASE WHEN pl.stat = 'batter_home_runs'    AND pl.line = 0.5 THEN pl.over_price END) AS market_hr_over_price
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'    AND pl.line = 0.5 THEN pl.over_price END) AS market_hr_over_price,
+        -- Gap B: line movement (open → close); NULL when no same-day change
+        MAX(CASE WHEN pl.stat = 'batter_hits'        THEN pl.line      END) AS market_hits_line,
+        MAX(CASE WHEN pl.stat = 'batter_hits'        THEN pl.open_line END) AS open_hits_line,
+        MAX(CASE WHEN pl.stat = 'batter_total_bases' THEN pl.line      END) AS market_tb_line,
+        MAX(CASE WHEN pl.stat = 'batter_total_bases' THEN pl.open_line END) AS open_tb_line,
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'   THEN pl.line      END) AS market_hr_line,
+        MAX(CASE WHEN pl.stat = 'batter_home_runs'   THEN pl.open_line END) AS open_hr_line
     FROM odds.mlb_player_prop_lines pl
     CROSS JOIN LATERAL (
         SELECT LOWER(REGEXP_REPLACE(
