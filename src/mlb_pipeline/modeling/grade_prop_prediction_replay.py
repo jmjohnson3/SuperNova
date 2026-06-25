@@ -8,9 +8,7 @@ import psycopg2
 
 from .prop_replay import grade_prop_replay
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 def main() -> None:
     parser = argparse.ArgumentParser(description="Grade pending MLB prop prediction replay rows")
     parser.add_argument("--pg-dsn", default=_PG_DSN)

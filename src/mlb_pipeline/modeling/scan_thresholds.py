@@ -26,8 +26,7 @@ import psycopg2.extras
 log = logging.getLogger("mlb_pipeline.modeling.scan_thresholds")
 
 _ET = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN
 _CURRENT_RL_THRESHOLD = 1.5
 _CURRENT_TOT_THRESHOLD = 2.0
 

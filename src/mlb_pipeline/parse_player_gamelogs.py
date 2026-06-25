@@ -34,8 +34,7 @@ from mlb_pipeline.crawler import _norm_abbr
 
 log = logging.getLogger("mlb_pipeline.parse_player_gamelogs")
 
-DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN as DSN
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -20,7 +20,7 @@ import psycopg2.extras
 from .prop_replay import american_to_prob, ev_per_unit, no_vig_probs
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MARKETS = ("pitcher_strikeouts", "batter_hits", "batter_total_bases", "batter_home_runs")
 _BOOKMAKERS = ("fanduel", "draftkings")
 

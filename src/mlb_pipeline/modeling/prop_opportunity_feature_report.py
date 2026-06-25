@@ -28,7 +28,7 @@ from .prop_market_training import PropMarketTrainingConfig, refresh_prop_market_
 from .prop_replay import ev_per_unit
 from .side_recalibration import prop_line_surface
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 

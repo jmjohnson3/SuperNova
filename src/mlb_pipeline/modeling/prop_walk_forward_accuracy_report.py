@@ -21,7 +21,7 @@ import psycopg2.extras
 from .prop_replay import american_to_prob, ev_per_unit, refresh_prop_replay_clv
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 

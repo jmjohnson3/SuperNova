@@ -11,6 +11,7 @@ from psycopg2.extras import RealDictCursor, execute_values
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from mlb_pipeline.crawler import _norm_abbr
+from mlb_pipeline.db import PG_DSN
 
 log = logging.getLogger("mlb_pipeline.parse_games")
 
@@ -416,9 +417,7 @@ def main() -> None:
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
-    dsn = "postgresql://josh:password@localhost:5432/nba"
-
-    conn = psycopg2.connect(dsn)
+    conn = psycopg2.connect(PG_DSN)
     conn.autocommit = False
     try:
         n = build_raw_mlb_games(conn)

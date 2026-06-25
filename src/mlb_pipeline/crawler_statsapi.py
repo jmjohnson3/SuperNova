@@ -35,7 +35,7 @@ from mlb_pipeline.team_abbr import norm_statsapi as _norm
 
 log = logging.getLogger("mlb_pipeline.crawler_statsapi")
 
-DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as DSN
 BASE_URL = "https://statsapi.mlb.com/api/v1"
 ET = ZoneInfo("America/New_York")
 REQUEST_SLEEP = 0.15  # seconds between requests

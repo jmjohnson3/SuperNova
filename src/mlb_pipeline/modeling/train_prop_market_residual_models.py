@@ -23,7 +23,7 @@ from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 from .prop_market_training import ensure_prop_market_training_schema
 from .prop_replay import ev_per_unit
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 

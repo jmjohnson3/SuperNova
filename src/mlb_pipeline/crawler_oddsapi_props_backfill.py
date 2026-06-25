@@ -55,7 +55,7 @@ _PROP_MARKETS = (
     "batter_walks,batter_walks_alternate"
 )
 
-_PG_DSN  = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _API_KEY  = os.getenv("ODDS_API_KEY", "")
 _SPORT    = "baseball_mlb"
 

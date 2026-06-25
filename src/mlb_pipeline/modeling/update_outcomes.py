@@ -24,8 +24,7 @@ from .prop_offer_snapshots import (
 log = logging.getLogger("mlb_pipeline.modeling.update_outcomes")
 
 _ET = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN
 def _american_to_prob(price: float) -> float:
     """Convert American odds price to raw implied probability (no vig removal)."""
     if price >= 100:

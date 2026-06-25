@@ -22,9 +22,7 @@ import psycopg2.extras
 from .side_recalibration import price_bucket, prop_line_bucket
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 @dataclass(frozen=True)
 class OfferAuditConfig:
     dsn: str = _PG_DSN

@@ -22,7 +22,7 @@ import psycopg2.extras
 from .predict_player_props import _ensure_schema
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 # Markets where UNDER side is not realistically bettable for this workflow.
 _UNDER_UNBETTABLE_STATS = {"batter_home_runs", "batter_walks"}
 

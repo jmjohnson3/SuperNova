@@ -14,7 +14,7 @@ from mlb_pipeline.parse_oddsapi import main as parse_game_odds
 
 log = logging.getLogger("mlb_pipeline.parse_all")
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _SQL_DIR = Path(__file__).resolve().parents[2] / "sql"
 
 _MLB_SQL_VIEWS = [

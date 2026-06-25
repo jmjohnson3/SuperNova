@@ -30,7 +30,7 @@ log = logging.getLogger("mlb_pipeline.modeling.train_game_models")
 
 @dataclass(frozen=True)
 class TrainConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
 
     # Minimum number of market rows required to train residual models
     min_market_rows: int = 15

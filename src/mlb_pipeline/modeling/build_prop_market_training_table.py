@@ -7,9 +7,7 @@ from datetime import date
 
 from .prop_market_training import PropMarketTrainingConfig, refresh_prop_market_training_examples
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 def _parse_date(value: str | None) -> date | None:
     return date.fromisoformat(value) if value else None
 

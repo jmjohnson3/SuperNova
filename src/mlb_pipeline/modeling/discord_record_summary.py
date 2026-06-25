@@ -10,9 +10,7 @@ import psycopg2
 import psycopg2.extras
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 @dataclass(frozen=True)
 class RecordSummaryConfig:
     pg_dsn: str = _PG_DSN

@@ -17,9 +17,7 @@ import psycopg2.extras
 log = logging.getLogger("mlb_pipeline.modeling.paper_trading_report")
 
 _ET = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN
 def _roi(wins: int, n: int) -> float:
     """ROI at standard -110 juice."""
     if n == 0:

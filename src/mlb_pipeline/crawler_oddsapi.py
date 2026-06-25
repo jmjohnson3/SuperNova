@@ -24,7 +24,7 @@ _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{ev
 
 @dataclass(frozen=True)
 class OddsCrawlerConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     oddsapi_key: str = os.getenv("ODDS_API_KEY", "")
     sport: str = "baseball_mlb"
     regions: str = "us"

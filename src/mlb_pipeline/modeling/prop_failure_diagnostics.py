@@ -18,9 +18,7 @@ import psycopg2
 from .prop_replay import ensure_prop_replay_schema
 from .side_recalibration import price_bucket
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 @dataclass(frozen=True)
 class DiagnosticConfig:
     pg_dsn: str = _PG_DSN

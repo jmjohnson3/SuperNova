@@ -35,8 +35,7 @@ from psycopg2.extras import execute_values
 log = logging.getLogger("mlb_pipeline.crawler_statcast")
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 # Baseball Savant leaderboard CSV endpoints
 _BASE = "https://baseballsavant.mlb.com/leaderboard"
 

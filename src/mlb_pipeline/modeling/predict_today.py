@@ -51,7 +51,7 @@ _BREAKEVEN_PROB = 0.524
 
 @dataclass(frozen=True)
 class PredictConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None

@@ -218,7 +218,7 @@ _SAFE_CATEGORICAL_FEATURES = [
 
 @dataclass(frozen=True)
 class FeatureAblationConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     model_dir: Path = _MODEL_DIR
     report_file: str = "mlb_hitter_event_feature_ablation_latest.md"
     out_file: str = "hitter_event_feature_ablation.json"

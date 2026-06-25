@@ -9,9 +9,7 @@ import psycopg2
 
 from .prop_offer_links import DEFAULT_BOOKMAKERS, refresh_prop_offer_links
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 def main() -> None:
     parser = argparse.ArgumentParser(description="Normalize MLB prop offer links into side-level rows")
     parser.add_argument("--pg-dsn", default=_PG_DSN)

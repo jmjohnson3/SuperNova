@@ -30,9 +30,7 @@ from .prop_replay import (
     grade_prop_replay,
 )
 
-_PG_DSN = os.getenv("PG_DSN", "postgresql://josh:password@localhost:5432/nba")
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 @dataclass
 class ReplaySummary:
     run_id: str

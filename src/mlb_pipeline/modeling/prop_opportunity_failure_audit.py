@@ -24,7 +24,7 @@ from typing import Any
 import pandas as pd
 import psycopg2
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 _HITTER_MARKETS = ("batter_hits", "batter_total_bases", "batter_home_runs")

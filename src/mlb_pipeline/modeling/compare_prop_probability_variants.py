@@ -28,7 +28,7 @@ from .prop_betting_layer import apply_prop_market_side_prior
 from .prop_replay import ev_per_unit
 from .side_recalibration import clean_float, logit, prop_line_surface, sigmoid
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 

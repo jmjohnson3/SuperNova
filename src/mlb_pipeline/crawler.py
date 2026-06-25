@@ -55,7 +55,7 @@ class Season:
 @dataclass(frozen=True)
 class CrawlerConfig:
     api_key: str = "4359aa1b-cc29-4647-a3e5-7314e2"
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
 
     # "incremental window" behavior:
     # - we start at (last_seen_games_by_date - lookback_days)
@@ -123,7 +123,9 @@ def build_url_standings(season: Season) -> str:
     )
 
 
+
 def build_url_venues(season: Season) -> str:
+
     return (
         f"https://api.mysportsfeeds.com/v2.1/pull/{season.league}"
         f"/{season.season_slug}/venues.json"

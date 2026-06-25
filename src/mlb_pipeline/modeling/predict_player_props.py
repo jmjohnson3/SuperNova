@@ -91,7 +91,7 @@ from .side_recalibration import (
 log = logging.getLogger("mlb_pipeline.modeling.predict_player_props")
 _ET = ZoneInfo("America/New_York")
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _SQL_DIR = Path(__file__).resolve().parents[3] / "sql"
 _BREAKEVEN_PROB = 0.524  # P(win) needed to break even at -110 juice

@@ -19,9 +19,7 @@ import psycopg2
 
 from .prop_replay import ensure_prop_replay_schema, grade_prop_replay, snapshot_prop_predictions
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 def _date_range(start: date, end: date):
     d = start
     while d <= end:

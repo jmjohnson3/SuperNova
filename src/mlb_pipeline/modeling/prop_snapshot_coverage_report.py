@@ -14,9 +14,7 @@ from .prop_clean_slate import CleanSlateThresholds, load_clean_slate_rows
 from .prop_offer_snapshots import ensure_prop_offer_snapshot_schema
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = os.getenv("PG_DSN", "postgresql://josh:password@localhost:5432/nba")
-
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _COVERAGE_SQL = """
 WITH dates AS (
     SELECT generate_series(%s::date, %s::date, interval '1 day')::date AS slate_date

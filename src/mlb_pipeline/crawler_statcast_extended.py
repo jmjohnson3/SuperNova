@@ -46,8 +46,7 @@ from psycopg2.extras import execute_values
 log = logging.getLogger("mlb_pipeline.crawler_statcast_extended")
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _BASE = "https://baseballsavant.mlb.com"
 
 # Same EV/barrel endpoint as the base crawler — spray cols are in the same CSV

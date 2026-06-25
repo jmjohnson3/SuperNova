@@ -36,7 +36,7 @@ from .modeling.prop_offer_snapshots import (
 
 log = logging.getLogger("mlb_pipeline.parse_oddsapi")
 
-DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as DSN
 _ET = ZoneInfo("America/New_York")
 
 # ---------------------------------------------------------------------------

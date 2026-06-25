@@ -28,7 +28,7 @@ from .prop_real_money_eligibility import (
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _OPEN_LADDER_TIERS = {"micro", "starter", "bankroll"}
 

@@ -22,8 +22,7 @@ import requests
 
 log = logging.getLogger("mlb_pipeline.crawler_statcast_velocity")
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 # Pitch types to fetch: 4-seam fastball + sinker
 _PITCH_TYPES = ["FF", "SI"]
 

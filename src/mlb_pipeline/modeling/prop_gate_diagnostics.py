@@ -18,7 +18,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _THRESHOLDS_FILE = _MODEL_DIR / "prop_thresholds.json"
 _BREAKEVEN_PROB = 0.524

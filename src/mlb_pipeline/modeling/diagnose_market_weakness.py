@@ -18,9 +18,7 @@ from typing import Iterable
 import psycopg2
 import psycopg2.extras
 
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
-
+from mlb_pipeline.db import PG_DSN
 def _american_profit(price) -> float:
     if price is None:
         return 100.0 / 110.0

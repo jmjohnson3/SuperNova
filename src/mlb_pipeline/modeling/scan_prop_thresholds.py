@@ -26,8 +26,7 @@ from .predict_player_props import _ensure_schema
 log = logging.getLogger("mlb_pipeline.modeling.scan_prop_thresholds")
 
 _ET    = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN
 # Per-stat scan config: threshold range + current live value
 # Ranges chosen to match realistic edge magnitudes for each stat unit.
 _STAT_CONFIGS: dict[str, dict] = {

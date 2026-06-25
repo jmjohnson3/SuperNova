@@ -25,7 +25,7 @@ from .side_recalibration import calibration_key, game_total_line_bucket, logit, 
 
 log = logging.getLogger("mlb_pipeline.modeling.train_game_total_side_recalibrators")
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models"
 
 

@@ -23,7 +23,7 @@ from xgboost import XGBClassifier
 
 log = logging.getLogger("mlb_pipeline.modeling.train_model_pick_calibrators")
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "model_pick_calibrators"
 
 

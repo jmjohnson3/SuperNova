@@ -29,8 +29,7 @@ from psycopg2.extras import execute_values
 log = logging.getLogger("mlb_pipeline.crawler_weather")
 
 ET = ZoneInfo("America/New_York")
-DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN as DSN
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 

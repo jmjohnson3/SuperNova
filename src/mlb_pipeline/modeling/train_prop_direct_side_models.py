@@ -23,7 +23,7 @@ from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
 from .side_recalibration import prop_line_surface
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 
 _NUMERIC_FEATURES = [

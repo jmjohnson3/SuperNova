@@ -31,8 +31,7 @@ from PIL import Image, ImageDraw, ImageFont
 log = logging.getLogger("mlb_pipeline.modeling.generate_cards")
 
 _ET = ZoneInfo("America/New_York")
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
-
+from mlb_pipeline.db import PG_DSN as _PG_DSN
 # ─────────────────────────────────────────────────────────────────────────────
 # Color palette  (GitHub-dark inspired)
 # ─────────────────────────────────────────────────────────────────────────────
