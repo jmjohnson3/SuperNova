@@ -409,15 +409,17 @@ SELECT
     -- ---- Group E: Series context (appended last — column reordering forbidden) ----
     -- Game number within the current home series between these two teams.
     -- 1 = opener, 2 = middle game, 3+ = series finale. Captures bullpen depth effects.
+    -- Uses strict < on game_date_et (final games only) + 1 so training and inference
+    -- are computed identically; avoids counting today's scheduled/in-progress games.
     (
         SELECT COUNT(*)
         FROM raw.mlb_games g2
         WHERE g2.home_team_abbr = g.home_team_abbr
           AND g2.away_team_abbr = g.away_team_abbr
-          AND g2.game_date_et  <= g.game_date_et
+          AND g2.game_date_et  < g.game_date_et
           AND g2.game_date_et  >= g.game_date_et - INTERVAL '4 days'
-          AND g2.status IN ('final', 'scheduled', 'in_progress')
-    )::INTEGER                                       AS series_game_number,
+          AND g2.status = 'final'
+    )::INTEGER + 1                                   AS series_game_number,
 
     -- ---- Group F: SP k_pct_10 (individual SP last 10 starts K%) ----
     -- Enables K% trend (5v10) calculation in features.py.
@@ -1129,10 +1131,10 @@ SELECT
         FROM raw.mlb_games g2
         WHERE g2.home_team_abbr = g.home_team_abbr
           AND g2.away_team_abbr = g.away_team_abbr
-          AND g2.game_date_et  <= g.game_date_et
+          AND g2.game_date_et  < g.game_date_et
           AND g2.game_date_et  >= g.game_date_et - INTERVAL '4 days'
-          AND g2.status IN ('final', 'scheduled', 'in_progress')
-    )::INTEGER                                       AS series_game_number,
+          AND g2.status = 'final'
+    )::INTEGER + 1                                   AS series_game_number,
 
     -- ---- Group F: SP k_pct_10 ----
     hsp.k_pct_10                                     AS home_sp_k_pct_10,

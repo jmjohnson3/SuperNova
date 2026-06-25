@@ -1225,3 +1225,29 @@ def test_clv_v2_is_true_pair_only_and_has_movement_features():
     assert "book_lead_lag_prob" in source
     assert "COALESCE(e.true_pair_flag::float" in source
     assert "COALESCE(e.synthetic_pair_flag::float" in source
+
+
+def test_run_daily_step_names_are_unique():
+    import re
+    daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    # Scope to the normal full daily run block only (the `else:` branch that starts
+    # after the pre_game and close conditional branches).  Pre-game and close paths
+    # intentionally reuse step names that also appear in the main flow, so checking
+    # the whole file would produce false positives.
+    main_start = daily_text.index("# ── Normal full daily run")
+    main_text = daily_text[main_start:]
+    names = re.findall(r'name="([^"]+)"', main_text)
+    duplicates = [n for n in set(names) if names.count(n) > 1]
+    assert not duplicates, f"Duplicate step names in normal daily flow of run_daily.py: {duplicates}"
+
+
+def test_series_game_number_uses_strict_lt_boundary():
+    sql = (ROOT / "sql/MLB006_mlb_game_features.sql").read_text(encoding="utf-8")
+    # Must use strict < so training and inference compute series position identically.
+    # Inclusive <= would count today's scheduled/in-progress games in the training view,
+    # creating a training/inference inconsistency.
+    assert "AND g2.game_date_et  < g.game_date_et" in sql
+    # Only final games should count toward prior-series position
+    assert "g2.status IN ('final', 'scheduled', 'in_progress')" not in sql
+    # The + 1 offset must be present (prior completed games + today = series position)
+    assert ")::INTEGER + 1                                   AS series_game_number" in sql

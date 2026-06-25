@@ -342,7 +342,7 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         "home_games_vs_lhp", "home_games_vs_rhp",
         "away_games_vs_lhp", "away_games_vs_rhp",
         # Raw batting-vs-hand split columns (derived platoon features replace them)
-        "home_sp_pitch_hand_l", "away_sp_pitch_hand_l",
+        "home_sp_pitch_hand_L", "away_sp_pitch_hand_L",
         "home_team_avg_vs_lhp", "home_team_avg_vs_rhp",
         "home_team_obp_vs_lhp", "home_team_obp_vs_rhp",
         "home_team_slg_vs_lhp", "home_team_slg_vs_rhp",

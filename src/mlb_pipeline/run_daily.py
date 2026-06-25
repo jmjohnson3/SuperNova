@@ -787,13 +787,6 @@ def main() -> None:
             critical=False,
         ))
         steps.append(Step(
-            name="Prop opportunity feature report",
-            module="mlb_pipeline.modeling.prop_opportunity_feature_report",
-            args=("--lookback-days", "30"),
-            timeout_s=600,
-            critical=False,
-        ))
-        steps.append(Step(
             name="Prop snapshot coverage report",
             module="mlb_pipeline.modeling.prop_snapshot_coverage_report",
             timeout_s=120,
