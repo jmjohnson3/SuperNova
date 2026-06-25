@@ -387,6 +387,14 @@ def make_xy_raw(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, pd.Series, p
         # PROXY LEAKAGE: always 1.0 in training (completed games), median-imputed at inference.
         # Top-2 features by importance but detect train-vs-predict time, not real signal.
         "home_lineup_completeness", "away_lineup_completeness",
+        # SQL-only intermediate columns — computed in MLB006 for derived features but carry
+        # no independent signal once the derived columns (series_sp_same_hand etc.) are present.
+        "series_game_number",
+        "home_sp_venue_starts", "away_sp_venue_starts",
+        # Rolling-stat sources: after derivations (bullpen_load_diff, h2h_game_momentum) are
+        # computed in features.py these raw inputs add collinearity without new signal.
+        "h2h_games_ytd",
+        "home_bullpen_ip_last_7", "away_bullpen_ip_last_7",
     ]
     X = X.drop(columns=[c for c in _prune_zero_importance if c in X.columns])
 
@@ -717,6 +725,14 @@ def main() -> None:
     with psycopg2.connect(cfg.pg_dsn) as conn:
         df = load_training_frame(conn)
         log.info("Loaded %d rows from mlb_game_training_features", len(df))
+
+        actual_days = int((df["game_date_et"].max() - df["game_date_et"].min()).days) + 1
+        if actual_days < cfg.min_train_days:
+            log.warning(
+                "Training data spans only %d days but min_train_days=%d. "
+                "Walk-forward CV will produce 0 folds; only the final model will be fit.",
+                actual_days, cfg.min_train_days,
+            )
 
         # Build RAW X (NaNs preserved) once
         X_raw, y_run_diff, y_total, y_f5 = make_xy_raw(df)

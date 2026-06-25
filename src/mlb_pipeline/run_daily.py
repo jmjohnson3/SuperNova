@@ -381,6 +381,7 @@ def main() -> None:
         ]
     elif args.close_only:
         # ── Evening closing-line run ─────────────────────────────────────────
+        extra_env["DISCORD_FORMAT"] = "1"
         # Re-crawl live odds so game lines and prop lines get a late-day snapshot.
         # Prop CLV only accepts immutable close-role snapshots that were captured
         # after the prediction lock and within two hours of first pitch.
@@ -517,6 +518,13 @@ def main() -> None:
                 name="Crawl extended Statcast features",
                 module="mlb_pipeline.crawler_statcast_extended",
                 timeout_s=600,
+                critical=False,
+                parallel=True,
+            ))
+            steps.append(Step(
+                name="Crawl weather (Open-Meteo)",
+                module="mlb_pipeline.crawler_weather",
+                timeout_s=300,
                 critical=False,
                 parallel=True,
             ))
@@ -796,6 +804,13 @@ def main() -> None:
             name="Prop slate post-mortem report",
             module="mlb_pipeline.modeling.prop_slate_postmortem_report",
             args=("--top-n", "25"),
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Real-money gate audit report",
+            module="mlb_pipeline.modeling.real_money_audit_report",
+            args=("--days", "60"),
             timeout_s=120,
             critical=False,
         ))
