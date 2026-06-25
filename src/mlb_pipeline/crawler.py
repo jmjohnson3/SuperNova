@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from nba_pipeline.fetcher import MySportsFeedsClient, NoContentYetError, RateLimitedError, BadPayloadError
 from nba_pipeline.raw_store import save_api_response
+from mlb_pipeline.db import PG_DSN
 
 log = logging.getLogger("mlb_pipeline.crawler")
 

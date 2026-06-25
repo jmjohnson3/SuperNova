@@ -1251,3 +1251,36 @@ def test_series_game_number_uses_strict_lt_boundary():
     assert "g2.status IN ('final', 'scheduled', 'in_progress')" not in sql
     # The + 1 offset must be present (prior completed games + today = series position)
     assert ")::INTEGER + 1                                   AS series_game_number" in sql
+
+
+def test_batter_ab_floor_gate_present_in_both_train_and_predict():
+    """Regression: batter AB floor (ab_avg_10 >= 2.5, n_games_prev_10 >= 3) must exist in
+    both training and inference SQL so the model never scores batters it never trained on.
+    Lower values cause OVER TB predictions at 0.5 lines to hit only ~46% (below breakeven)."""
+    train_src = (ROOT / "src/mlb_pipeline/modeling/train_player_prop_models.py").read_text(encoding="utf-8")
+    pred_src  = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+
+    # Training SQL must hard-code the floor
+    assert "AND b.ab_avg_10 >= 2.5" in train_src, "Training SQL missing ab_avg_10 >= 2.5 gate"
+    assert "AND b.n_games_prev_10 >= 3" in train_src, "Training SQL missing n_games_prev_10 >= 3 gate"
+
+    # Inference SQL must parametrize the floor (applied via PredictConfig.min_ab_avg_10)
+    assert "br.ab_avg_10 >= %(min_ab_avg_10)s" in pred_src, "Prediction SQL missing ab_avg_10 gate"
+    assert "br.n_games_prev_10 >= %(min_n_games)s" in pred_src, "Prediction SQL missing n_games_prev_10 gate"
+
+    # Default threshold must match training value so they stay in sync
+    assert "min_ab_avg_10: float = 2.5" in pred_src, "PredictConfig.min_ab_avg_10 default ≠ 2.5"
+    assert "min_n_games: int = 3" in pred_src, "PredictConfig.min_n_games default ≠ 3"
+
+
+def test_crawler_weather_is_scheduled_in_crawl_block():
+    """Regression: crawler_weather must be wired into the run_daily crawl block so
+    game-time temperature and wind features are refreshed on every daily run."""
+    source = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    # Must appear after the normal crawl block header and before the parse block
+    crawl_start = source.index("# ── Normal full daily run")
+    parse_start = source.index("if not args.skip_parse:", crawl_start)
+    crawl_block = source[crawl_start:parse_start]
+    assert "mlb_pipeline.crawler_weather" in crawl_block, (
+        "crawler_weather not found in the normal daily crawl block of run_daily.py"
+    )

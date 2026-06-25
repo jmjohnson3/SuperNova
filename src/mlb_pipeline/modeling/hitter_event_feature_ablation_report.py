@@ -40,6 +40,8 @@ from .train_hitter_player_game_outcome_models import (
     prepare_hitter_outcome_features,
 )
 
+from mlb_pipeline.db import PG_DSN
+
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 

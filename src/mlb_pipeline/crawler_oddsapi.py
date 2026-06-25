@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo
 import hashlib, json, logging, os, time
 import psycopg2, requests
 
+from mlb_pipeline.db import PG_DSN
+
 log = logging.getLogger("mlb_pipeline.crawler_oddsapi")
 
 _ET = ZoneInfo("America/New_York")

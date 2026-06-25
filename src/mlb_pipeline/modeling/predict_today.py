@@ -12,6 +12,8 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 import psycopg2
+
+from mlb_pipeline.db import PG_DSN
 from pandas.api.types import is_bool_dtype, is_datetime64_any_dtype, is_numeric_dtype
 from xgboost import XGBClassifier, XGBRegressor
 

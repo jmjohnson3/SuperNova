@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from .features import add_game_derived_features
+from mlb_pipeline.db import PG_DSN
 
 import numpy as np
 import pandas as pd

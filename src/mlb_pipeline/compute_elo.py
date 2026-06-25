@@ -28,6 +28,8 @@ from dataclasses import dataclass
 import pandas as pd
 import psycopg2
 
+from mlb_pipeline.db import PG_DSN
+
 log = logging.getLogger("mlb_pipeline.compute_elo")
 
 INIT_ELO: float = 1500.0
