@@ -192,7 +192,7 @@ async def main() -> None:
     context_year = str(run_date.year)
     context_args = ("--seasons", context_year)
     steps = [
-        Step("NFL Schema", "nfl_pipeline.schema", timeout_s=90),
+        Step("NFL Schema", "nfl_pipeline.schema", timeout_s=180),
         Step("NFL Results Refresh", "nfl_pipeline.import_nflverse", args=context_args, timeout_s=600),
         Step("NFL Context Import", "nfl_pipeline.import_context", args=context_args, critical=False, timeout_s=600),
         Step("NFL Usage Context Import", "nfl_pipeline.import_usage_context", args=context_args, critical=False, timeout_s=1200),

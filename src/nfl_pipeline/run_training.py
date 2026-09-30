@@ -46,7 +46,7 @@ def run_training(*, season: str | None = None, skip_context: bool = False) -> di
     season = season or str(datetime.now().year)
     context_args = ("--seasons", season)
     steps = [
-        Step("NFL Schema", "nfl_pipeline.schema", timeout_s=90),
+        Step("NFL Schema", "nfl_pipeline.schema", timeout_s=180),
         Step("NFL Results/History", "nfl_pipeline.import_nflverse", args=("--seasons",f"{int(season)-1}-{season}"), timeout_s=1200),
         Step("NFL Context Import", "nfl_pipeline.import_context", args=context_args, timeout_s=600),
         Step("NFL Usage Context Import", "nfl_pipeline.import_usage_context", args=context_args, timeout_s=1800),
