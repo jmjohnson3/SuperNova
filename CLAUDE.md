@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SuperNovaBets is a sports betting prediction pipeline with two leagues:
+SuperNovaBets is a sports betting prediction pipeline with three leagues:
 - **`src/nba_pipeline/`** — NBA spread/total/player-prop predictions (production)
 - **`src/mlb_pipeline/`** — MLB run line/total/player-prop predictions (new 2026-03-27)
+- **`src/nfl_pipeline/`** — NFL player-prop forecasts, game models and a gated cash trial (see [NFL Pipeline](#nfl-pipeline))
 
 Both pipelines share the same PostgreSQL database (`nba` db), the same `raw.api_responses` table, and the NBA `fetcher.py` / `raw_store.py` utilities (the MLB pipeline imports them directly).
 
@@ -186,6 +187,60 @@ MLB: `src/mlb_pipeline/modeling/models/`
 
 ### Notifications
 `run_daily_and_notify.py` posts to Discord after the NBA pipeline completes. Webhook URL via `DISCORD_WEBHOOK_URL` env var. `DISCORD_FORMAT=1` env var switches predict scripts to compact Discord output.
+
+## NFL Pipeline
+
+`src/nfl_pipeline/` is a separate, evidence-gated pipeline. Design decisions live in
+`docs/nfl_*.md` (read the relevant one before changing a model or policy); generated
+evidence lives in `reports/nfl_*_latest.{md,json}`.
+
+### Running
+```powershell
+.\.venv\Scripts\python.exe -m nfl_pipeline.run_daily_and_notify [--date D] [--skip-crawl] [--skip-train] [--skip-predict]
+.\.venv\Scripts\python.exe -m nfl_pipeline.run_pregame [--dry-run]         # game-aware pregame refresh
+.\.venv\Scripts\python.exe -m nfl_pipeline.run_close_and_grade [--date D] [--force-crawl]
+.\.venv\Scripts\python.exe -m nfl_pipeline.run_training [--season S] [--skip-context]
+.\.venv\Scripts\python.exe -m pytest src/nfl_pipeline -q --disable-warnings
+```
+
+Scheduled via Windows Task Scheduler (`scripts/tasks/NFL-*.xml`, installed by
+`scripts/switch_to_nfl_tasks.ps1`, which swaps out the MLB tasks):
+| Task | Schedule | Runs |
+|---|---|---|
+| NFL-Daily | daily 7:30 | `nfl_daily.bat` → `run_daily_and_notify` |
+| NFL-PrimeTime-Refresh | every 10 min | `nfl_daily.bat --game-aware` → `run_pregame` |
+| NFL-Close | every 10 min from 7:00 | `nfl_close.bat` → `run_close_and_grade` |
+| NFL-Training | Tuesday 3:00 | `nfl_training.bat` → `run_training` |
+
+Batch files take jobs through `scripts/run_with_nfl_mutex.ps1` so operational runs never
+overlap, log to `logs/nfl_*_YYYYMMDD.log`, and read API keys from HKCU environment
+(`ODDS_API_KEY`, `SPORTSGAMEODDS_API_KEY`, `THERUNDOWN_API_KEY`, `NFL_DISCORD_WEBHOOK_URL`;
+provider order via `NFL_ODDS_PROVIDER_ORDER`).
+
+### Production is pinned
+- `modeling/models/active_release.json` / `production_freeze.json` pin the production
+  release (currently `nfl-20260918T143342Z`, feature contract `nfl-asof-v2`) by sha256.
+  `integrity.py` enforces it; `NFL_MODEL_RELEASE_ID` overrides.
+- New models are **challengers**: they are trained into timestamped dirs under
+  `modeling/models/<experiment>/` and evaluated against production with walk-forward
+  folds and archived-offer replays. Promotion is a manual decision recorded in a doc.
+- Never rewrite historical locks/forecasts or reconstruct missing legacy inputs; exclude
+  and count them instead. Proxy-line results are not betting-edge evidence.
+
+### Flow and cash policy
+Fresh FanDuel quote → frozen forecast (`forecast_store` / `forecast_outputs`) → immutable
+ledger → pinned challenger capture → fixed research selection → `cash_readiness` →
+reservation (`cash_execution`) → Discord → exact close → settled result → evidence refresh.
+- Only the registered FanDuel receiving trial (`models/cash_trial/registration.json`) can
+  become cash-eligible; everything else is research. No automated wager placement.
+- Risk limits: $1 flat, ≤5 recommendations/day, ≤$20 per NFL week, sticky global pause at
+  $30 cumulative confirmed loss. Reviews are at 50/100/200 settled decisions, ≥3 weeks.
+- `docs/nfl_cash_readiness.md` holds the full gate list.
+
+### Model artifacts (NFL)
+`.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`
+are gitignored (several exceed GitHub's 100 MB limit). Pointer, registration, manifest and
+summary JSON files are tracked. A fresh clone must retrain or copy artifacts before predicting.
 
 ## Key Gotchas
 
