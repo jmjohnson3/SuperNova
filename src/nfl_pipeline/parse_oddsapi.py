@@ -15,7 +15,7 @@ import psycopg2.extras
 
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.markets import STAT_BY_MARKET, normalize_name, normalize_team
-from nfl_pipeline.schema import ensure_schema
+from nfl_pipeline.schema import GAME_LINE_CHANGED, PROP_LINE_CHANGED, ensure_schema
 
 log = logging.getLogger("nfl_pipeline.parse_oddsapi")
 _ET = ZoneInfo("America/New_York")
@@ -346,7 +346,7 @@ def parse_props(cfg: ParseConfig) -> dict[str, Any]:
             with conn.cursor() as cur:
                 psycopg2.extras.execute_values(
                     cur,
-                    """
+                    f"""
                     INSERT INTO odds.nfl_player_prop_lines (
                         provider, as_of_date, fetched_at_utc, snapshot_role, event_id, commence_time_utc,
                         bookmaker_key, bookmaker_title, home_team, away_team,
@@ -368,6 +368,7 @@ def parse_props(cfg: ParseConfig) -> dict[str, Any]:
                         over_link = EXCLUDED.over_link,
                         under_link = EXCLUDED.under_link,
                         updated_at_utc = NOW()
+                    WHERE {PROP_LINE_CHANGED}
                     """,
                     rows,
                     page_size=1000,
@@ -377,7 +378,7 @@ def parse_props(cfg: ParseConfig) -> dict[str, Any]:
             with conn.cursor() as cur:
                 psycopg2.extras.execute_values(
                     cur,
-                    """
+                    f"""
                     INSERT INTO odds.nfl_game_lines (
                         provider, as_of_date, fetched_at_utc, snapshot_role, event_id, commence_time_utc,
                         bookmaker_key, bookmaker_title, home_team, away_team,
@@ -409,6 +410,7 @@ def parse_props(cfg: ParseConfig) -> dict[str, Any]:
                         total_over_link = EXCLUDED.total_over_link,
                         total_under_link = EXCLUDED.total_under_link,
                         updated_at_utc = NOW()
+                    WHERE {GAME_LINE_CHANGED}
                     """,
                     game_rows,
                     page_size=1000,

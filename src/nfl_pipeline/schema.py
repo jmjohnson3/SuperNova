@@ -1002,6 +1002,25 @@ INSERT INTO raw.nfl_schema_versions(version) VALUES('20260917_integrity_v2') ON 
 """
 
 
+def changed_where(table: str, cols: tuple[str, ...]) -> str:
+    """ON CONFLICT ... DO UPDATE ... WHERE clause that skips no-op rewrites."""
+    return (f"({', '.join(f'{table}.{c}' for c in cols)}) "
+            f"IS DISTINCT FROM ({', '.join(f'EXCLUDED.{c}' for c in cols)})")
+
+
+PROP_LINE_CHANGED = changed_where("odds.nfl_player_prop_lines", (
+    "snapshot_role", "commence_time_utc", "bookmaker_title", "home_team", "away_team",
+    "player_name", "stat", "over_price", "under_price", "over_link", "under_link",
+))
+GAME_LINE_CHANGED = changed_where("odds.nfl_game_lines", (
+    "snapshot_role", "commence_time_utc", "bookmaker_title", "home_team", "away_team",
+    "home_team_abbr", "away_team_abbr",
+    "spread_home_points", "spread_home_price", "spread_away_points", "spread_away_price",
+    "total_points", "total_over_price", "total_under_price",
+    "spread_home_link", "spread_away_link", "total_over_link", "total_under_link",
+))
+
+
 def ensure_schema(conn) -> None:
     with conn.cursor() as cur:
         cur.execute("SELECT to_regclass('raw.nfl_schema_versions')")

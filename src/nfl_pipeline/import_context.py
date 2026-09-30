@@ -16,7 +16,24 @@ import psycopg2.extras
 
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.markets import normalize_name, normalize_team
-from nfl_pipeline.schema import ensure_schema
+from nfl_pipeline.schema import changed_where, ensure_schema
+
+ROSTER_CHANGED = changed_where("raw.nfl_rosters", (
+    "player_name", "player_name_norm", "position", "depth_chart_position", "jersey_number",
+    "roster_status", "status_description_abbr", "years_exp", "height", "weight",
+    "birth_date", "college", "espn_id", "sportradar_id", "pfr_id",
+    "source", "source_url", "raw_json",
+))
+DEPTH_CHANGED = changed_where("raw.nfl_depth_charts", (
+    "week", "game_type", "snapshot_ts_utc", "team_abbr", "player_id",
+    "player_name", "player_name_norm", "espn_id", "pos_grp", "pos_name",
+    "pos_abb", "pos_slot", "pos_rank", "source", "source_url", "raw_json",
+))
+INJURY_CHANGED = changed_where("raw.nfl_injuries", (
+    "report_primary_injury", "report_secondary_injury", "report_status",
+    "practice_primary_injury", "practice_secondary_injury", "practice_status",
+    "source", "source_url", "raw_json",
+))
 
 log = logging.getLogger("nfl_pipeline.import_context")
 
@@ -280,7 +297,7 @@ def _upsert_rosters(conn, rows: list[tuple]) -> int:
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(
             cur,
-            """
+            f"""
             INSERT INTO raw.nfl_rosters (
                 season, week, game_type, team_abbr, player_id, player_name,
                 player_name_norm, position, depth_chart_position, jersey_number,
@@ -309,6 +326,7 @@ def _upsert_rosters(conn, rows: list[tuple]) -> int:
                 source_url = EXCLUDED.source_url,
                 raw_json = EXCLUDED.raw_json,
                 updated_at_utc = NOW()
+            WHERE {ROSTER_CHANGED}
             """,
             rows,
             page_size=5000,
@@ -326,7 +344,7 @@ def _upsert_depth(conn, rows: list[tuple]) -> int:
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(
             cur,
-            """
+            f"""
             INSERT INTO raw.nfl_depth_charts (
                 row_hash, season, week, game_type, snapshot_ts_utc, team_abbr, player_id,
                 player_name, player_name_norm, espn_id, pos_grp, pos_name,
@@ -351,6 +369,7 @@ def _upsert_depth(conn, rows: list[tuple]) -> int:
                 source_url = EXCLUDED.source_url,
                 raw_json = EXCLUDED.raw_json,
                 updated_at_utc = NOW()
+            WHERE {DEPTH_CHANGED}
             """,
             rows,
             page_size=5000,
@@ -365,7 +384,7 @@ def _upsert_injuries(conn, rows: list[tuple]) -> int:
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(
             cur,
-            """
+            f"""
             INSERT INTO raw.nfl_injuries (
                 row_hash, season, season_type, game_type, week, team_abbr,
                 player_id, player_name, player_name_norm, position,
@@ -385,6 +404,7 @@ def _upsert_injuries(conn, rows: list[tuple]) -> int:
                 source_url = EXCLUDED.source_url,
                 raw_json = EXCLUDED.raw_json,
                 updated_at_utc = NOW()
+            WHERE {INJURY_CHANGED}
             """,
             rows,
             page_size=5000,

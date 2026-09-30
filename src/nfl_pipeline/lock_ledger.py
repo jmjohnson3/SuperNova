@@ -183,6 +183,10 @@ def refresh_ledger_results(conn, cfg: LedgerConfig) -> int:
               AND l.prediction_id = g.prediction_id
               AND (%(game_date)s IS NULL OR l.game_date_et = %(game_date)s)
               AND COALESCE(l.result, '') NOT LIKE 'voided_%%'
+              AND (l.result, l.profit, l.clv_status) IS DISTINCT FROM (
+                  g.result,
+                  CASE WHEN g.result='win' THEN l.stake * CASE WHEN l.price>0 THEN l.price/100.0 ELSE 100.0/NULLIF(ABS(l.price),0) END WHEN g.result='loss' THEN -l.stake WHEN g.result='push' THEN 0 ELSE NULL END,
+                  c.clv_status)
             """,
             {"game_date": cfg.game_date},
         )
@@ -203,6 +207,10 @@ def refresh_ledger_results(conn, cfg: LedgerConfig) -> int:
               AND l.prediction_id = p.prediction_id
               AND (%(game_date)s IS NULL OR l.game_date_et = %(game_date)s)
               AND COALESCE(l.result, '') NOT LIKE 'voided_%%'
+              AND (l.result, l.profit, l.clv_status) IS DISTINCT FROM (
+                  p.result,
+                  CASE WHEN p.result='win' THEN l.stake * CASE WHEN l.price>0 THEN l.price/100.0 ELSE 100.0/NULLIF(ABS(l.price),0) END WHEN p.result='loss' THEN -l.stake WHEN p.result='push' THEN 0 ELSE NULL END,
+                  c.clv_status)
             """,
             {"game_date": cfg.game_date},
         )

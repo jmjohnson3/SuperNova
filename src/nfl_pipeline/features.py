@@ -1422,10 +1422,12 @@ def write_features(conn, df: pd.DataFrame) -> int:
         df[col] = None
     rows = [_row_tuple(row) for _, row in df[FEATURE_COLUMNS].iterrows()]
     columns_sql = ", ".join(FEATURE_COLUMNS)
-    update_sql = ", ".join(
-        f"{col} = EXCLUDED.{col}"
-        for col in FEATURE_COLUMNS
-        if col not in {"game_id", "player_id", "team_abbr"}
+    value_cols = [col for col in FEATURE_COLUMNS if col not in {"game_id", "player_id", "team_abbr"}]
+    update_sql = ", ".join(f"{col} = EXCLUDED.{col}" for col in value_cols)
+    # Skip no-op rewrites so updated_at_utc keeps meaning "last content change".
+    changed_sql = (
+        f"({', '.join(f'features.nfl_player_game_training_features.{col}' for col in value_cols)})"
+        f" IS DISTINCT FROM ({', '.join(f'EXCLUDED.{col}' for col in value_cols)})"
     )
     sql = f"""
         INSERT INTO features.nfl_player_game_training_features ({columns_sql})
@@ -1433,6 +1435,7 @@ def write_features(conn, df: pd.DataFrame) -> int:
         ON CONFLICT (game_id, player_id, team_abbr) DO UPDATE SET
             {update_sql},
             updated_at_utc = NOW()
+        WHERE {changed_sql}
     """
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(cur, sql, rows, page_size=5000)

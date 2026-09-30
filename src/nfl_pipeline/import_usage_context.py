@@ -164,6 +164,9 @@ def _update_snap_counts(conn, rows: list[tuple]) -> int:
               AND g.team_abbr = v.team_abbr
               AND (UPPER(COALESCE(g.position, '')) IN ('QB', 'RB', 'FB', 'WR', 'TE')
                    OR v.offense_snaps > 0)
+              AND (g.offense_snaps, g.offense_snap_share, g.snap_share) IS DISTINCT FROM (
+                  v.offense_snaps::numeric, v.offense_snap_share::numeric,
+                  COALESCE(g.snap_share, v.offense_snap_share::numeric))
             """,
             rows,
             page_size=5000,
@@ -210,6 +213,25 @@ def _update_advanced_usage(conn, rows: list[tuple]) -> int:
               AND g.player_id = v.player_id
               AND g.team_abbr = v.team_abbr
               AND UPPER(COALESCE(g.position, '')) IN ('RB', 'FB', 'WR', 'TE')
+              AND (g.routes_run, g.route_participation, g.target_share, g.air_yards_share,
+                   g.wopr, g.receiving_air_yards, g.receiving_yards_after_catch,
+                   g.targets_per_route_run, g.yards_per_route_run,
+                   g.first_read_targets, g.first_read_target_share,
+                   g.end_zone_targets, g.end_zone_target_share)
+                  IS DISTINCT FROM (
+                   COALESCE(v.routes_run, g.routes_run),
+                   COALESCE(v.route_participation, g.route_participation),
+                   COALESCE(v.target_share, g.target_share),
+                   COALESCE(v.air_yards_share, g.air_yards_share),
+                   COALESCE(v.wopr, g.wopr),
+                   COALESCE(v.receiving_air_yards, g.receiving_air_yards),
+                   COALESCE(v.receiving_yards_after_catch, g.receiving_yards_after_catch),
+                   COALESCE(v.targets_per_route_run, g.targets_per_route_run),
+                   COALESCE(v.yards_per_route_run, g.yards_per_route_run),
+                   COALESCE(v.first_read_targets, g.first_read_targets),
+                   COALESCE(v.first_read_target_share, g.first_read_target_share),
+                   COALESCE(v.end_zone_targets, g.end_zone_targets),
+                   COALESCE(v.end_zone_target_share, g.end_zone_target_share))
             """,
             rows,
             page_size=5000,
@@ -241,6 +263,8 @@ def _update_pass_route_opportunities(conn, rows: list[tuple]) -> int:
               AND g.game_id = v.game_id
               AND g.player_id = v.player_id
               AND g.team_abbr = v.team_abbr
+              AND (g.pass_route_opportunities, g.pass_route_opportunity_share) IS DISTINCT FROM (
+                  v.pass_route_opportunities::numeric, v.pass_route_opportunity_share::numeric)
             """,
             rows,
             page_size=5000,
@@ -506,6 +530,14 @@ def _update_red_zone(conn, rows: list[tuple]) -> int:
               AND g.game_id = v.game_id
               AND g.player_id = v.player_id
               AND g.team_abbr = v.team_abbr
+              AND (g.red_zone_carries, g.red_zone_targets, g.red_zone_receptions,
+                   g.red_zone_pass_attempts, g.red_zone_pass_tds, g.red_zone_rush_tds,
+                   g.red_zone_rec_tds, g.red_zone_touches, g.goal_line_carries, g.goal_line_targets)
+                  IS DISTINCT FROM (
+                   v.red_zone_carries::numeric, v.red_zone_targets::numeric, v.red_zone_receptions::numeric,
+                   v.red_zone_pass_attempts::numeric, v.red_zone_pass_tds::numeric, v.red_zone_rush_tds::numeric,
+                   v.red_zone_rec_tds::numeric, v.red_zone_touches::numeric, v.goal_line_carries::numeric,
+                   v.goal_line_targets::numeric)
             """,
             rows,
             page_size=5000,
@@ -816,6 +848,57 @@ def _upsert_pbp_player_usage(conn, rows: list[tuple]) -> int:
                     ELSE raw.nfl_player_gamelogs.source || '+pbp_usage'
                 END,
                 updated_at_utc = NOW()
+            WHERE (
+                raw.nfl_player_gamelogs.game_date_et, raw.nfl_player_gamelogs.player_name,
+                raw.nfl_player_gamelogs.opponent_abbr, raw.nfl_player_gamelogs.position,
+                raw.nfl_player_gamelogs.is_home,
+                raw.nfl_player_gamelogs.passing_yards, raw.nfl_player_gamelogs.passing_tds,
+                raw.nfl_player_gamelogs.rushing_yards, raw.nfl_player_gamelogs.rushing_tds,
+                raw.nfl_player_gamelogs.receiving_yards, raw.nfl_player_gamelogs.receiving_tds,
+                raw.nfl_player_gamelogs.carries, raw.nfl_player_gamelogs.targets,
+                raw.nfl_player_gamelogs.receptions, raw.nfl_player_gamelogs.pass_attempts,
+                raw.nfl_player_gamelogs.target_share, raw.nfl_player_gamelogs.air_yards_share,
+                raw.nfl_player_gamelogs.wopr, raw.nfl_player_gamelogs.receiving_air_yards,
+                raw.nfl_player_gamelogs.receiving_yards_after_catch,
+                raw.nfl_player_gamelogs.red_zone_carries, raw.nfl_player_gamelogs.red_zone_targets,
+                raw.nfl_player_gamelogs.red_zone_receptions, raw.nfl_player_gamelogs.red_zone_pass_attempts,
+                raw.nfl_player_gamelogs.red_zone_pass_tds, raw.nfl_player_gamelogs.red_zone_rush_tds,
+                raw.nfl_player_gamelogs.red_zone_rec_tds, raw.nfl_player_gamelogs.red_zone_touches,
+                raw.nfl_player_gamelogs.goal_line_carries, raw.nfl_player_gamelogs.goal_line_targets,
+                raw.nfl_player_gamelogs.end_zone_targets, raw.nfl_player_gamelogs.source
+            ) IS DISTINCT FROM (
+                COALESCE(EXCLUDED.game_date_et, raw.nfl_player_gamelogs.game_date_et),
+                COALESCE(EXCLUDED.player_name, raw.nfl_player_gamelogs.player_name),
+                COALESCE(EXCLUDED.opponent_abbr, raw.nfl_player_gamelogs.opponent_abbr),
+                COALESCE(NULLIF(EXCLUDED.position, ''), raw.nfl_player_gamelogs.position),
+                COALESCE(EXCLUDED.is_home, raw.nfl_player_gamelogs.is_home),
+                EXCLUDED.passing_yards, EXCLUDED.passing_tds,
+                EXCLUDED.rushing_yards, EXCLUDED.rushing_tds,
+                EXCLUDED.receiving_yards, EXCLUDED.receiving_tds,
+                EXCLUDED.carries, EXCLUDED.targets,
+                EXCLUDED.receptions, EXCLUDED.pass_attempts,
+                COALESCE(EXCLUDED.target_share, raw.nfl_player_gamelogs.target_share),
+                COALESCE(EXCLUDED.air_yards_share, raw.nfl_player_gamelogs.air_yards_share),
+                COALESCE(EXCLUDED.wopr, raw.nfl_player_gamelogs.wopr),
+                COALESCE(EXCLUDED.receiving_air_yards, raw.nfl_player_gamelogs.receiving_air_yards),
+                COALESCE(EXCLUDED.receiving_yards_after_catch, raw.nfl_player_gamelogs.receiving_yards_after_catch),
+                COALESCE(EXCLUDED.red_zone_carries, raw.nfl_player_gamelogs.red_zone_carries),
+                COALESCE(EXCLUDED.red_zone_targets, raw.nfl_player_gamelogs.red_zone_targets),
+                COALESCE(EXCLUDED.red_zone_receptions, raw.nfl_player_gamelogs.red_zone_receptions),
+                COALESCE(EXCLUDED.red_zone_pass_attempts, raw.nfl_player_gamelogs.red_zone_pass_attempts),
+                COALESCE(EXCLUDED.red_zone_pass_tds, raw.nfl_player_gamelogs.red_zone_pass_tds),
+                COALESCE(EXCLUDED.red_zone_rush_tds, raw.nfl_player_gamelogs.red_zone_rush_tds),
+                COALESCE(EXCLUDED.red_zone_rec_tds, raw.nfl_player_gamelogs.red_zone_rec_tds),
+                COALESCE(EXCLUDED.red_zone_touches, raw.nfl_player_gamelogs.red_zone_touches),
+                COALESCE(EXCLUDED.goal_line_carries, raw.nfl_player_gamelogs.goal_line_carries),
+                COALESCE(EXCLUDED.goal_line_targets, raw.nfl_player_gamelogs.goal_line_targets),
+                COALESCE(EXCLUDED.end_zone_targets, raw.nfl_player_gamelogs.end_zone_targets),
+                CASE
+                    WHEN raw.nfl_player_gamelogs.source IS NULL THEN EXCLUDED.source
+                    WHEN raw.nfl_player_gamelogs.source LIKE '%%pbp%%' THEN raw.nfl_player_gamelogs.source
+                    ELSE raw.nfl_player_gamelogs.source || '+pbp_usage'
+                END
+            )
             """,
             rows,
             page_size=5000,

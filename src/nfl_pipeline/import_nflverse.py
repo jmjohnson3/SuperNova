@@ -282,6 +282,23 @@ def _upsert_schedules(conn, rows: list[tuple]) -> int:
             source = EXCLUDED.source,
             raw_json = EXCLUDED.raw_json,
             updated_at_utc = NOW()
+        WHERE (
+            raw.nfl_games.season, raw.nfl_games.week, raw.nfl_games.season_type,
+            raw.nfl_games.game_date_et, raw.nfl_games.start_ts_utc,
+            raw.nfl_games.home_team_abbr, raw.nfl_games.away_team_abbr,
+            raw.nfl_games.home_score, raw.nfl_games.away_score,
+            raw.nfl_games.spread_line, raw.nfl_games.total_line,
+            raw.nfl_games.roof, raw.nfl_games.surface, raw.nfl_games.temp, raw.nfl_games.wind,
+            raw.nfl_games.status, raw.nfl_games.source, raw.nfl_games.raw_json
+        ) IS DISTINCT FROM (
+            EXCLUDED.season, EXCLUDED.week, EXCLUDED.season_type,
+            EXCLUDED.game_date_et, EXCLUDED.start_ts_utc,
+            EXCLUDED.home_team_abbr, EXCLUDED.away_team_abbr,
+            EXCLUDED.home_score, EXCLUDED.away_score,
+            EXCLUDED.spread_line, EXCLUDED.total_line,
+            EXCLUDED.roof, EXCLUDED.surface, EXCLUDED.temp, EXCLUDED.wind,
+            EXCLUDED.status, EXCLUDED.source, EXCLUDED.raw_json
+        )
     """
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(cur, sql, rows, page_size=1000)
@@ -293,7 +310,7 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
     if not rows:
         return 0
     sql = """
-        INSERT INTO raw.nfl_player_gamelogs (
+        INSERT INTO raw.nfl_player_gamelogs AS g (
             season, week, game_id, game_date_et, player_id, player_name,
             team_abbr, opponent_abbr, position, is_home,
             passing_yards, passing_tds, rushing_yards, rushing_tds,
@@ -319,9 +336,9 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             targets = EXCLUDED.targets,
             receptions = EXCLUDED.receptions,
             pass_attempts = EXCLUDED.pass_attempts,
-            routes_run = COALESCE(EXCLUDED.routes_run, raw.nfl_player_gamelogs.routes_run),
-            route_participation = COALESCE(EXCLUDED.route_participation, raw.nfl_player_gamelogs.route_participation),
-            snap_share = COALESCE(EXCLUDED.snap_share, raw.nfl_player_gamelogs.snap_share),
+            routes_run = COALESCE(EXCLUDED.routes_run, g.routes_run),
+            route_participation = COALESCE(EXCLUDED.route_participation, g.route_participation),
+            snap_share = COALESCE(EXCLUDED.snap_share, g.snap_share),
             target_share = EXCLUDED.target_share,
             air_yards_share = EXCLUDED.air_yards_share,
             wopr = EXCLUDED.wopr,
@@ -330,6 +347,24 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             source = EXCLUDED.source,
             raw_json = EXCLUDED.raw_json,
             updated_at_utc = NOW()
+        WHERE (
+            g.game_date_et, g.player_name, g.opponent_abbr, g.position, g.is_home,
+            g.passing_yards, g.passing_tds, g.rushing_yards, g.rushing_tds,
+            g.receiving_yards, g.receiving_tds, g.carries, g.targets, g.receptions,
+            g.pass_attempts, g.routes_run, g.route_participation, g.snap_share,
+            g.target_share, g.air_yards_share, g.wopr, g.receiving_air_yards,
+            g.receiving_yards_after_catch, g.source, g.raw_json
+        ) IS DISTINCT FROM (
+            EXCLUDED.game_date_et, EXCLUDED.player_name, EXCLUDED.opponent_abbr, EXCLUDED.position, EXCLUDED.is_home,
+            EXCLUDED.passing_yards, EXCLUDED.passing_tds, EXCLUDED.rushing_yards, EXCLUDED.rushing_tds,
+            EXCLUDED.receiving_yards, EXCLUDED.receiving_tds, EXCLUDED.carries, EXCLUDED.targets, EXCLUDED.receptions,
+            EXCLUDED.pass_attempts,
+            COALESCE(EXCLUDED.routes_run, g.routes_run),
+            COALESCE(EXCLUDED.route_participation, g.route_participation),
+            COALESCE(EXCLUDED.snap_share, g.snap_share),
+            EXCLUDED.target_share, EXCLUDED.air_yards_share, EXCLUDED.wopr, EXCLUDED.receiving_air_yards,
+            EXCLUDED.receiving_yards_after_catch, EXCLUDED.source, EXCLUDED.raw_json
+        )
     """
     with conn.cursor() as cur:
         psycopg2.extras.execute_values(cur, sql, rows, page_size=5000)
