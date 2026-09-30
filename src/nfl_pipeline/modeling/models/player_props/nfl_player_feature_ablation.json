@@ -1,0 +1,559 @@
+{
+  "built_at_utc": "2026-09-15T09:13:47Z",
+  "status": "ready",
+  "rows": 29073,
+  "targets": {
+    "qb_yards": {
+      "status": "ready",
+      "target": "passing_yards",
+      "kind": "regression",
+      "train_rows": 3577,
+      "holdout_rows": 33,
+      "full": {
+        "mae": 72.53579217459733,
+        "brier": 0.0,
+        "bias": 23.29015920880653
+      },
+      "baseline": {
+        "mae": 63.206514566552315,
+        "brier": 0.0,
+        "bias": 3.41634347495442
+      },
+      "full_gain_vs_baseline_mae": -9.329277608045018,
+      "groups": [
+        {
+          "group": "route_target_quality",
+          "status": "trained",
+          "columns_removed": 148,
+          "mae": 73.89578723804978,
+          "brier": 0.0,
+          "bias": 21.954677082697675,
+          "mae_loss_when_removed": 1.3599950634524447,
+          "brier_loss_when_removed": 0.0,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "game_market_env",
+          "status": "trained",
+          "columns_removed": 13,
+          "mae": 72.51887673329138,
+          "brier": 0.0,
+          "bias": 16.00282366512693,
+          "mae_loss_when_removed": -0.01691544130595446,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "depth_injury",
+          "status": "trained",
+          "columns_removed": 32,
+          "mae": 72.5084511958299,
+          "brier": 0.0,
+          "bias": 21.519517393041664,
+          "mae_loss_when_removed": -0.027340978767426805,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "workload_rest",
+          "status": "trained",
+          "columns_removed": 33,
+          "mae": 71.85479801367241,
+          "brier": 0.0,
+          "bias": 21.236929154565512,
+          "mae_loss_when_removed": -0.680994160924925,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "td_red_zone",
+          "status": "trained",
+          "columns_removed": 101,
+          "mae": 71.02464602886239,
+          "brier": 0.0,
+          "bias": 20.000679404188578,
+          "mae_loss_when_removed": -1.5111461457349407,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "rb_carry_role",
+          "status": "trained",
+          "columns_removed": 51,
+          "mae": 70.56003994946163,
+          "brier": 0.0,
+          "bias": 16.321394970447088,
+          "mae_loss_when_removed": -1.9757522251357074,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        }
+      ]
+    },
+    "rb_rush_yards": {
+      "status": "ready",
+      "target": "rushing_yards",
+      "kind": "regression",
+      "train_rows": 7494,
+      "holdout_rows": 53,
+      "full": {
+        "mae": 20.55847239402888,
+        "brier": 0.0,
+        "bias": -2.4879089055140846
+      },
+      "baseline": {
+        "mae": 23.21407331827918,
+        "brier": 0.0,
+        "bias": 1.2181552939616789
+      },
+      "full_gain_vs_baseline_mae": 2.655600924250301,
+      "groups": [
+        {
+          "group": "depth_injury",
+          "status": "trained",
+          "columns_removed": 39,
+          "mae": 21.04163180094967,
+          "brier": 0.0,
+          "bias": -3.7661105183376127,
+          "mae_loss_when_removed": 0.48315940692079096,
+          "brier_loss_when_removed": 0.0,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "route_target_quality",
+          "status": "trained",
+          "columns_removed": 148,
+          "mae": 20.85191725853722,
+          "brier": 0.0,
+          "bias": -3.33087333148699,
+          "mae_loss_when_removed": 0.2934448645083414,
+          "brier_loss_when_removed": 0.0,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "game_market_env",
+          "status": "trained",
+          "columns_removed": 13,
+          "mae": 20.751325529402443,
+          "brier": 0.0,
+          "bias": -3.985183615772074,
+          "mae_loss_when_removed": 0.1928531353735643,
+          "brier_loss_when_removed": 0.0,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "rb_carry_role",
+          "status": "trained",
+          "columns_removed": 51,
+          "mae": 20.6386939967608,
+          "brier": 0.0,
+          "bias": -7.063002408871249,
+          "mae_loss_when_removed": 0.08022160273192114,
+          "brier_loss_when_removed": 0.0,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "td_red_zone",
+          "status": "trained",
+          "columns_removed": 101,
+          "mae": 20.520591784899096,
+          "brier": 0.0,
+          "bias": -3.6381692736953015,
+          "mae_loss_when_removed": -0.03788060912978253,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "workload_rest",
+          "status": "trained",
+          "columns_removed": 33,
+          "mae": 20.43638502636761,
+          "brier": 0.0,
+          "bias": -2.803872124898964,
+          "mae_loss_when_removed": -0.12208736766126904,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        }
+      ]
+    },
+    "receiving_yards": {
+      "status": "ready",
+      "target": "receiving_yards",
+      "kind": "regression",
+      "train_rows": 25269,
+      "holdout_rows": 194,
+      "full": {
+        "mae": 18.4755637612301,
+        "brier": 0.0,
+        "bias": -4.87590945700409
+      },
+      "baseline": {
+        "mae": 21.425918280912242,
+        "brier": 0.0,
+        "bias": 3.6687674023912966
+      },
+      "full_gain_vs_baseline_mae": 2.9503545196821435,
+      "groups": [
+        {
+          "group": "workload_rest",
+          "status": "trained",
+          "columns_removed": 33,
+          "mae": 18.477501841014025,
+          "brier": 0.0,
+          "bias": -4.688336994099547,
+          "mae_loss_when_removed": 0.0019380797839261277,
+          "brier_loss_when_removed": 0.0,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "depth_injury",
+          "status": "trained",
+          "columns_removed": 55,
+          "mae": 18.46914226656906,
+          "brier": 0.0,
+          "bias": -4.887803289721905,
+          "mae_loss_when_removed": -0.0064214946610370305,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "rb_carry_role",
+          "status": "trained",
+          "columns_removed": 51,
+          "mae": 18.40203515591937,
+          "brier": 0.0,
+          "bias": -5.048585454302354,
+          "mae_loss_when_removed": -0.07352860531072736,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "game_market_env",
+          "status": "trained",
+          "columns_removed": 13,
+          "mae": 18.386138713221513,
+          "brier": 0.0,
+          "bias": -5.161266832949233,
+          "mae_loss_when_removed": -0.08942504800858586,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "td_red_zone",
+          "status": "trained",
+          "columns_removed": 101,
+          "mae": 18.354887944822917,
+          "brier": 0.0,
+          "bias": -5.065010975271593,
+          "mae_loss_when_removed": -0.12067581640718217,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "route_target_quality",
+          "status": "trained",
+          "columns_removed": 148,
+          "mae": 18.19505190136957,
+          "brier": 0.0,
+          "bias": -5.618794504213081,
+          "mae_loss_when_removed": -0.2805118598605283,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": true
+        }
+      ]
+    },
+    "rush_td": {
+      "status": "ready",
+      "target": "rushing_tds",
+      "kind": "regression",
+      "train_rows": 7494,
+      "holdout_rows": 53,
+      "full": {
+        "mae": 0.41509433962264153,
+        "brier": 0.0,
+        "bias": -0.41509433962264153
+      },
+      "baseline": {
+        "mae": 0.4453761362000047,
+        "brier": 0.0,
+        "bias": -0.09470894415304193
+      },
+      "full_gain_vs_baseline_mae": 0.030281796577363185,
+      "groups": [
+        {
+          "group": "workload_rest",
+          "status": "trained",
+          "columns_removed": 33,
+          "mae": 0.41509433962264153,
+          "brier": 0.0,
+          "bias": -0.41509433962264153,
+          "mae_loss_when_removed": 0.0,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": false
+        },
+        {
+          "group": "depth_injury",
+          "status": "trained",
+          "columns_removed": 39,
+          "mae": 0.41509433962264153,
+          "brier": 0.0,
+          "bias": -0.41509433962264153,
+          "mae_loss_when_removed": 0.0,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": false
+        },
+        {
+          "group": "route_target_quality",
+          "status": "trained",
+          "columns_removed": 148,
+          "mae": 0.41509433962264153,
+          "brier": 0.0,
+          "bias": -0.41509433962264153,
+          "mae_loss_when_removed": 0.0,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": false
+        },
+        {
+          "group": "rb_carry_role",
+          "status": "trained",
+          "columns_removed": 51,
+          "mae": 0.41509433962264153,
+          "brier": 0.0,
+          "bias": -0.41509433962264153,
+          "mae_loss_when_removed": 0.0,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": false
+        },
+        {
+          "group": "td_red_zone",
+          "status": "trained",
+          "columns_removed": 101,
+          "mae": 0.41509433962264153,
+          "brier": 0.0,
+          "bias": -0.41509433962264153,
+          "mae_loss_when_removed": 0.0,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": false
+        },
+        {
+          "group": "game_market_env",
+          "status": "trained",
+          "columns_removed": 13,
+          "mae": 0.41509433962264153,
+          "brier": 0.0,
+          "bias": -0.41509433962264153,
+          "mae_loss_when_removed": 0.0,
+          "brier_loss_when_removed": 0.0,
+          "helpful": false,
+          "hurts_full_model": false
+        }
+      ]
+    },
+    "receiving_td_any": {
+      "status": "ready",
+      "target": "receiving_tds",
+      "kind": "binary_any",
+      "train_rows": 17775,
+      "holdout_rows": 141,
+      "full": {
+        "mae": 0.3600330814278194,
+        "brier": 0.15792038997700952,
+        "bias": -0.00562881786416971
+      },
+      "baseline": {
+        "mae": 0.3315996847911742,
+        "brier": 0.17193755403894032,
+        "bias": -0.02042074393272886
+      },
+      "full_gain_vs_baseline_mae": -0.028433396636645236,
+      "groups": [
+        {
+          "group": "td_red_zone",
+          "status": "trained",
+          "columns_removed": 101,
+          "mae": 0.3619662917208528,
+          "brier": 0.15682307773161372,
+          "bias": 0.003099690450965268,
+          "mae_loss_when_removed": 0.0019332102930333939,
+          "brier_loss_when_removed": -0.001097312245395804,
+          "helpful": true,
+          "hurts_full_model": true
+        },
+        {
+          "group": "game_market_env",
+          "status": "trained",
+          "columns_removed": 13,
+          "mae": 0.3616424243771932,
+          "brier": 0.16105386500534527,
+          "bias": -0.006202416695525505,
+          "mae_loss_when_removed": 0.0016093429493737599,
+          "brier_loss_when_removed": 0.003133475028335747,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "workload_rest",
+          "status": "trained",
+          "columns_removed": 33,
+          "mae": 0.3615710019497971,
+          "brier": 0.1585240177849745,
+          "bias": -0.0018855089377593215,
+          "mae_loss_when_removed": 0.0015379205219776537,
+          "brier_loss_when_removed": 0.0006036278079649682,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "depth_injury",
+          "status": "trained",
+          "columns_removed": 50,
+          "mae": 0.3614410609960445,
+          "brier": 0.1604125921891437,
+          "bias": -0.007695985878600252,
+          "mae_loss_when_removed": 0.0014079795682250817,
+          "brier_loss_when_removed": 0.0024922022121341703,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "route_target_quality",
+          "status": "trained",
+          "columns_removed": 148,
+          "mae": 0.36104728052312435,
+          "brier": 0.15804596825787026,
+          "bias": -0.003041489173458822,
+          "mae_loss_when_removed": 0.001014199095304924,
+          "brier_loss_when_removed": 0.00012557828086073863,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "rb_carry_role",
+          "status": "trained",
+          "columns_removed": 51,
+          "mae": 0.3584293200733208,
+          "brier": 0.15778613676218708,
+          "bias": -0.00819938159042097,
+          "mae_loss_when_removed": -0.001603761354498634,
+          "brier_loss_when_removed": -0.00013425321482243846,
+          "helpful": false,
+          "hurts_full_model": true
+        }
+      ]
+    },
+    "limited_usage_risk": {
+      "status": "ready",
+      "target": "actual_limited_usage",
+      "kind": "binary",
+      "train_rows": 28754,
+      "holdout_rows": 182,
+      "full": {
+        "mae": 0.2762246722684,
+        "brier": 0.13094716774468815,
+        "bias": 0.09293245365631685
+      },
+      "baseline": {
+        "mae": 0.3364260070457469,
+        "brier": 0.15967234494559313,
+        "bias": 0.03155719567349253
+      },
+      "full_gain_vs_baseline_mae": 0.060201334777346904,
+      "groups": [
+        {
+          "group": "rb_carry_role",
+          "status": "trained",
+          "columns_removed": 51,
+          "mae": 0.2838140077183663,
+          "brier": 0.1336209952085492,
+          "bias": 0.107141676319847,
+          "mae_loss_when_removed": 0.007589335449966317,
+          "brier_loss_when_removed": 0.0026738274638610504,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "depth_injury",
+          "status": "trained",
+          "columns_removed": 55,
+          "mae": 0.27893843199388607,
+          "brier": 0.13197591130662617,
+          "bias": 0.0994364943066191,
+          "mae_loss_when_removed": 0.002713759725486098,
+          "brier_loss_when_removed": 0.0010287435619380225,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "route_target_quality",
+          "status": "trained",
+          "columns_removed": 148,
+          "mae": 0.2758421280905225,
+          "brier": 0.13355990583607374,
+          "bias": 0.10362547674678578,
+          "mae_loss_when_removed": -0.0003825441778774752,
+          "brier_loss_when_removed": 0.002612738091385597,
+          "helpful": true,
+          "hurts_full_model": false
+        },
+        {
+          "group": "td_red_zone",
+          "status": "trained",
+          "columns_removed": 101,
+          "mae": 0.2757398642874652,
+          "brier": 0.13069893948135758,
+          "bias": 0.09384952293712379,
+          "mae_loss_when_removed": -0.00048480798093475386,
+          "brier_loss_when_removed": -0.0002482282633305688,
+          "helpful": false,
+          "hurts_full_model": false
+        },
+        {
+          "group": "game_market_env",
+          "status": "trained",
+          "columns_removed": 13,
+          "mae": 0.27326431787944855,
+          "brier": 0.1291126488261743,
+          "bias": 0.0925663734692081,
+          "mae_loss_when_removed": -0.002960354388951425,
+          "brier_loss_when_removed": -0.0018345189185138555,
+          "helpful": false,
+          "hurts_full_model": true
+        },
+        {
+          "group": "workload_rest",
+          "status": "trained",
+          "columns_removed": 33,
+          "mae": 0.2715044194602912,
+          "brier": 0.1277546129494439,
+          "bias": 0.09275037666701584,
+          "mae_loss_when_removed": -0.0047202528081087824,
+          "brier_loss_when_removed": -0.0031925547952442457,
+          "helpful": false,
+          "hurts_full_model": true
+        }
+      ]
+    }
+  }
+}

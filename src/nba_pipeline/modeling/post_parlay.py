@@ -20,10 +20,11 @@ from zoneinfo import ZoneInfo
 import httpx
 from sqlalchemy import create_engine, text
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.modeling.post_parlay")
 
 _ET = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 
 # Minimum edge thresholds — match predict_today.py config

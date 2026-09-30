@@ -1,0 +1,13 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-09-27T15:35:17.107972+00:00",
+  "captured_at": "2026-09-27T15:35:17.331454+00:00",
+  "selected": [],
+  "exclusions": {
+    "outside_trial": 544,
+    "original_drift_guard_not_passed": 40,
+    "nonpositive_current_locked_ev": 22,
+    "fixed_cap_or_duplicate": 26
+  }
+}

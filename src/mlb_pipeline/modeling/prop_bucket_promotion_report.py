@@ -20,6 +20,7 @@ from .prop_real_money_eligibility import (
     PROP_REAL_MONEY_ELIGIBILITY_START_DATE,
     parse_eligibility_start_date,
 )
+from .prop_training_groups import dedupe_locked_offer_rows
 from .side_recalibration import prop_line_bucket, prop_line_surface, price_bucket
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
@@ -50,6 +51,10 @@ class PromotionConfig:
 
 SQL = """
 SELECT
+    id,
+    prop_offer_id,
+    lock_snapshot_id,
+    source_created_at,
     game_date_et,
     game_slug,
     player_id,
@@ -82,6 +87,7 @@ SELECT
     clv_unknown_reason
 FROM features.mlb_prop_market_training_examples
 WHERE game_date_et >= %(cutoff)s
+  AND result_status = 'graded'
   AND market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
   AND side IN ('over','under')
   AND market_line IS NOT NULL
@@ -160,6 +166,7 @@ def _load(cfg: PromotionConfig) -> pd.DataFrame:
         for market, side, line in zip(df["market"], df["side"], df["market_line"])
     ]
     df["price_bucket"] = df["market_price"].map(price_bucket)
+    df = dedupe_locked_offer_rows(df)
     df["bucket_key"] = df.apply(_bucket_key, axis=1)
     return df.replace([np.inf, -np.inf], np.nan)
 
@@ -364,6 +371,11 @@ def build_payload(cfg: PromotionConfig) -> dict[str, Any]:
             summary["bootstrap_micro_eligible"] = bool(ladder.get("bootstrap_micro_eligible"))
             summary["bootstrap_micro_reasons"] = list(ladder.get("bootstrap_micro_reasons") or [])
             summary["holdout_unique_clean_dates"] = ladder.get("holdout_unique_clean_dates")
+            summary["bootstrap_unique_clean_dates"] = ladder.get("bootstrap_unique_clean_dates")
+            summary["promotion_clean_dates"] = max(
+                int(ladder.get("holdout_unique_clean_dates") or 0),
+                int(ladder.get("bootstrap_unique_clean_dates") or 0),
+            )
             summary["holdout_clean_rows"] = ladder.get("holdout_clean_rows")
             ladder_reasons = list(ladder.get("model_reasons") or [])
             if ladder_reasons:
@@ -371,7 +383,7 @@ def build_payload(cfg: PromotionConfig) -> dict[str, Any]:
                 summary["blocker_categories"] = dict(
                     Counter(_blocker_category(reason) for reason in summary["reasons"])
                 )
-            clean_dates = _clean_float(summary.get("holdout_unique_clean_dates"))
+            clean_dates = _clean_float(summary.get("promotion_clean_dates"))
             if clean_dates is not None and clean_dates < cfg.min_clean_unique_dates:
                 summary["metric_gaps"].append(
                     f"needs {cfg.min_clean_unique_dates - int(clean_dates)} more clean dates"
@@ -407,6 +419,8 @@ def build_payload(cfg: PromotionConfig) -> dict[str, Any]:
         "promotion_scope": "exact_bucket_only",
         "eligibility_start_date": cfg.eligibility_start_date.isoformat(),
         "lookback_days": cfg.lookback_days,
+        "raw_rows": int(legacy_df.attrs.get("raw_rows", len(legacy_df))) if not legacy_df.empty else 0,
+        "deduped_rows": int(legacy_df.attrs.get("deduped_rows", 0)) if not legacy_df.empty else 0,
         "rows": int(len(df)),
         "legacy_audit_rows": int(len(legacy_df)),
         "bucket_count": len(rows),
@@ -463,8 +477,8 @@ def _display_rows(rows: list[dict[str, Any]], *, min_clean_unique_dates: int) ->
             "dates": f"{row['unique_dates']} / need {row['unique_dates_needed']}",
             "clean_dates": (
                 "-"
-                if row.get("holdout_unique_clean_dates") is None
-                else f"{int(row.get('holdout_unique_clean_dates') or 0)} / need {min_clean_unique_dates}"
+                if row.get("promotion_clean_dates") is None
+                else f"{int(row.get('promotion_clean_dates') or 0)} / need {min_clean_unique_dates}"
             ),
             "roi": _fmt_pct(row.get("roi"), signed=True),
             "clv_beat": _fmt_pct(row.get("clv_beat_rate")),
@@ -492,6 +506,8 @@ def build_report(cfg: PromotionConfig) -> str:
         f"Lookback days: {payload['lookback_days']}",
         f"Eligibility start: {payload['eligibility_start_date']}",
         f"Eligible training rows: {payload['rows']}",
+        f"Raw rows before locked-offer dedupe: {payload.get('raw_rows', payload['legacy_audit_rows'])}",
+        f"Collapsed duplicate locked-offer rows: {payload.get('deduped_rows', 0)}",
         f"Legacy audit rows: {payload['legacy_audit_rows']}",
         f"Exact buckets: {payload['bucket_count']}",
         f"Promotable buckets: {payload['promotable_count']}",

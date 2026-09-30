@@ -1,0 +1,1912 @@
+{
+  "generated_at_utc": "2026-07-25T03:09:50Z",
+  "slate_date": "2026-07-24",
+  "evaluation_status": "provisional",
+  "games": 15,
+  "final_games": 11,
+  "statuses": {
+    "final": 11,
+    "in_progress": 4
+  },
+  "slate_final": false,
+  "locked_offer_rows": 2891,
+  "valid_closes": 2513,
+  "valid_close_coverage": 0.8692493946731235,
+  "valid_closes_needed_for_90": 89,
+  "stale_close_rate": 0.0,
+  "strict_clean_slate": false,
+  "failure_reasons": {
+    "valid_close": 2513,
+    "player_prop_unavailable_at_close": 312,
+    "line_disappeared_at_close": 38,
+    "player_market_unavailable_at_close": 14,
+    "fallback_other_book_only": 14
+  },
+  "target_capture": {
+    "events": 15,
+    "all_targets_captured_events": 7,
+    "required_target_misses": {
+      "events_with_misses": 8,
+      "by_window": {
+        "t_minus_120": 6,
+        "t_minus_60": 2,
+        "t_minus_20": 0
+      },
+      "missed_events": [
+        {
+          "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+          "event": "ARI @ WAS",
+          "commence_time_utc": "2026-07-24T22:46:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 44
+        },
+        {
+          "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+          "event": "NYY @ PHI",
+          "commence_time_utc": "2026-07-24T22:46:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 44
+        },
+        {
+          "event_id": "5dc243f04181b459d0cc18968be70660",
+          "event": "ATL @ BAL",
+          "commence_time_utc": "2026-07-24T23:06:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 46
+        },
+        {
+          "event_id": "29437f5a0e0b0af43535ee03d438df64",
+          "event": "CLE @ TB",
+          "commence_time_utc": "2026-07-24T23:11:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 46
+        },
+        {
+          "event_id": "6a85ed309a708411951843fe95d213bb",
+          "event": "SD @ MIA",
+          "commence_time_utc": "2026-07-24T23:11:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 46
+        },
+        {
+          "event_id": "cee011b0978086fc2ebee48d455d495e",
+          "event": "LAD @ NYM",
+          "commence_time_utc": "2026-07-24T23:11:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 46
+        },
+        {
+          "event_id": "7623b2ff95daaba1c14165f508c506b8",
+          "event": "SEA @ TEX",
+          "commence_time_utc": "2026-07-25T00:06:00+00:00",
+          "missing_windows": [
+            "t_minus_60"
+          ],
+          "close_observations": 47
+        },
+        {
+          "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+          "event": "ATH @ MIN",
+          "commence_time_utc": "2026-07-25T00:11:00+00:00",
+          "missing_windows": [
+            "t_minus_60"
+          ],
+          "close_observations": 47
+        }
+      ]
+    },
+    "rows": [
+      {
+        "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+        "event": "COL @ MIL",
+        "commence_time_utc": "2026-07-24T20:11:00+00:00",
+        "close_observations": 35,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 4.620630966666667
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 6.029991416666666
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 5.5465177
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "263aac2dfd923f6a65c5136418407715",
+        "event": "CHC @ PIT",
+        "commence_time_utc": "2026-07-24T22:41:00+00:00",
+        "close_observations": 44,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 2.7085377166666667
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 4.3795066333333335
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 1.6661286333333334
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "74d637de5babda95c445e8cf11c32a15",
+        "event": "KC @ DET",
+        "commence_time_utc": "2026-07-24T22:41:00+00:00",
+        "close_observations": 42,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 2.7085377166666667
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 4.3795066333333335
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 1.6661286333333334
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "7cb10d307b371751677d513fb168b3bd",
+        "event": "TOR @ BOS",
+        "commence_time_utc": "2026-07-24T23:16:00+00:00",
+        "close_observations": 47,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 9.37520245
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 0.47425895
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 10.538431699999999
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+        "event": "HOU @ CWS",
+        "commence_time_utc": "2026-07-24T23:41:00+00:00",
+        "close_observations": 47,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 4.3795066333333335
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 3.305539216666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 4.984228066666666
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "e52022e436fbab769c0e31e1eec70f53",
+        "event": "CIN @ STL",
+        "commence_time_utc": "2026-07-25T00:16:00+00:00",
+        "close_observations": 47,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 0.47425895
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 9.984228066666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 10.2869447
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+        "event": "LAA @ SF",
+        "commence_time_utc": "2026-07-25T02:16:00+00:00",
+        "close_observations": 47,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 3.48959475
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 0.04880093333333334
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 10.4754813
+          }
+        },
+        "all_targets_captured": true
+      },
+      {
+        "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+        "event": "ARI @ WAS",
+        "commence_time_utc": "2026-07-24T22:46:00+00:00",
+        "close_observations": 44,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 0.6204933666666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 6.666128633333333
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+        "event": "NYY @ PHI",
+        "commence_time_utc": "2026-07-24T22:46:00+00:00",
+        "close_observations": 44,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 0.6204933666666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 6.666128633333333
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "5dc243f04181b459d0cc18968be70660",
+        "event": "ATL @ BAL",
+        "commence_time_utc": "2026-07-24T23:06:00+00:00",
+        "close_observations": 46,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 10.474258950000001
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 0.5384317000000001
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "29437f5a0e0b0af43535ee03d438df64",
+        "event": "CLE @ TB",
+        "commence_time_utc": "2026-07-24T23:11:00+00:00",
+        "close_observations": 46,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 5.47425895
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 5.5384317
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "6a85ed309a708411951843fe95d213bb",
+        "event": "SD @ MIA",
+        "commence_time_utc": "2026-07-24T23:11:00+00:00",
+        "close_observations": 46,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 5.47425895
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 5.5384317
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "cee011b0978086fc2ebee48d455d495e",
+        "event": "LAD @ NYM",
+        "commence_time_utc": "2026-07-24T23:11:00+00:00",
+        "close_observations": 46,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 5.47425895
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 5.5384317
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "7623b2ff95daaba1c14165f508c506b8",
+        "event": "SEA @ TEX",
+        "commence_time_utc": "2026-07-25T00:06:00+00:00",
+        "close_observations": 47,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 10.474258950000001
+          },
+          "t_minus_60": {
+            "captured": false,
+            "nearest_minutes": 19.984228066666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 0.2869447
+          }
+        },
+        "all_targets_captured": false
+      },
+      {
+        "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+        "event": "ATH @ MIN",
+        "commence_time_utc": "2026-07-25T00:11:00+00:00",
+        "close_observations": 47,
+        "targets": {
+          "t_minus_120": {
+            "captured": true,
+            "nearest_minutes": 5.47425895
+          },
+          "t_minus_60": {
+            "captured": false,
+            "nearest_minutes": 14.984228066666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 5.2869447
+          }
+        },
+        "all_targets_captured": false
+      }
+    ]
+  },
+  "outside_window_diagnostic": {
+    "rows": 0,
+    "reason_counts": {},
+    "by_book_market": []
+  },
+  "action_plan": [
+    {
+      "area": "coverage_gap_to_90",
+      "rows": 89,
+      "diagnosis": "additional valid exact closes needed for this slate to clear the clean-promotion threshold",
+      "next_action": "supplemental T-90/T-45/T-30/T-10 captures are enabled; keep the targeted-close task running through every game start"
+    },
+    {
+      "area": "required_target_windows",
+      "rows": 8,
+      "diagnosis": "events missing at least one required T-120/T-60/T-20 capture",
+      "next_action": "verify Task Scheduler history and mutex skips for those event windows"
+    },
+    {
+      "area": "player_prop_unavailable_at_close",
+      "rows": 312,
+      "diagnosis": "the book still had the game, but the player prop menu was gone for that player",
+      "next_action": "treat as line availability/bookability evidence; extra late snapshots may help, but promotion must require close availability"
+    },
+    {
+      "area": "line_disappeared_at_close",
+      "rows": 38,
+      "diagnosis": "same player and market existed at close, but the exact line moved or disappeared",
+      "next_action": "store nearest-line movement separately; exact-bucket promotion should keep this as not bookable"
+    },
+    {
+      "area": "player_market_unavailable_at_close",
+      "rows": 14,
+      "diagnosis": "the player was present at close but this market was unavailable",
+      "next_action": "rank by book/market and repair feed normalization or demote markets with repeat disappearance"
+    },
+    {
+      "area": "fallback_other_book_only",
+      "rows": 14,
+      "diagnosis": "another book had a close but the original book did not",
+      "next_action": "do not use cross-book fallback for promotion; use it only for diagnostics/display"
+    }
+  ],
+  "by_event": [
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "game_slug": "20260724-CLE-TB",
+      "rows": 232,
+      "valid_closes": 182,
+      "valid_close_coverage": 0.7844827586206896,
+      "stale_close_rate": 0.0,
+      "failed_rows": 50,
+      "failure_reasons": {
+        "valid_close": 182,
+        "player_prop_unavailable_at_close": 42,
+        "line_disappeared_at_close": 6,
+        "player_market_unavailable_at_close": 1,
+        "fallback_other_book_only": 1
+      }
+    },
+    {
+      "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+      "game_slug": "20260724-LAA-SF",
+      "rows": 144,
+      "valid_closes": 104,
+      "valid_close_coverage": 0.7222222222222222,
+      "stale_close_rate": 0.0,
+      "failed_rows": 40,
+      "failure_reasons": {
+        "valid_close": 104,
+        "player_prop_unavailable_at_close": 40
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "game_slug": "20260724-ARI-WAS",
+      "rows": 253,
+      "valid_closes": 215,
+      "valid_close_coverage": 0.849802371541502,
+      "stale_close_rate": 0.0,
+      "failed_rows": 38,
+      "failure_reasons": {
+        "valid_close": 215,
+        "player_prop_unavailable_at_close": 34,
+        "line_disappeared_at_close": 2,
+        "player_market_unavailable_at_close": 1,
+        "fallback_other_book_only": 1
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "game_slug": "20260724-SEA-TEX",
+      "rows": 168,
+      "valid_closes": 134,
+      "valid_close_coverage": 0.7976190476190477,
+      "stale_close_rate": 0.0,
+      "failed_rows": 34,
+      "failure_reasons": {
+        "valid_close": 134,
+        "player_prop_unavailable_at_close": 30,
+        "line_disappeared_at_close": 2,
+        "fallback_other_book_only": 1,
+        "player_market_unavailable_at_close": 1
+      }
+    },
+    {
+      "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+      "game_slug": "20260724-COL-MIL",
+      "rows": 194,
+      "valid_closes": 160,
+      "valid_close_coverage": 0.8247422680412371,
+      "stale_close_rate": 0.0,
+      "failed_rows": 34,
+      "failure_reasons": {
+        "valid_close": 160,
+        "player_prop_unavailable_at_close": 32,
+        "player_market_unavailable_at_close": 1,
+        "fallback_other_book_only": 1
+      }
+    },
+    {
+      "event_id": "74d637de5babda95c445e8cf11c32a15",
+      "game_slug": "20260724-KC-DET",
+      "rows": 222,
+      "valid_closes": 188,
+      "valid_close_coverage": 0.8468468468468469,
+      "stale_close_rate": 0.0,
+      "failed_rows": 34,
+      "failure_reasons": {
+        "valid_close": 188,
+        "player_prop_unavailable_at_close": 32,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "game_slug": "20260724-ATL-BAL",
+      "rows": 218,
+      "valid_closes": 188,
+      "valid_close_coverage": 0.8623853211009175,
+      "stale_close_rate": 0.0,
+      "failed_rows": 30,
+      "failure_reasons": {
+        "valid_close": 188,
+        "player_prop_unavailable_at_close": 20,
+        "line_disappeared_at_close": 6,
+        "player_market_unavailable_at_close": 2,
+        "fallback_other_book_only": 2
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "game_slug": "20260724-ATH-MIN",
+      "rows": 152,
+      "valid_closes": 134,
+      "valid_close_coverage": 0.881578947368421,
+      "stale_close_rate": 0.0,
+      "failed_rows": 18,
+      "failure_reasons": {
+        "valid_close": 134,
+        "player_prop_unavailable_at_close": 16,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "cee011b0978086fc2ebee48d455d495e",
+      "game_slug": "20260724-LAD-NYM",
+      "rows": 183,
+      "valid_closes": 165,
+      "valid_close_coverage": 0.9016393442622951,
+      "stale_close_rate": 0.0,
+      "failed_rows": 18,
+      "failure_reasons": {
+        "valid_close": 165,
+        "line_disappeared_at_close": 10,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+      "game_slug": "20260724-HOU-CWS",
+      "rows": 160,
+      "valid_closes": 144,
+      "valid_close_coverage": 0.9,
+      "stale_close_rate": 0.0,
+      "failed_rows": 16,
+      "failure_reasons": {
+        "valid_close": 144,
+        "player_prop_unavailable_at_close": 12,
+        "player_market_unavailable_at_close": 2,
+        "fallback_other_book_only": 2
+      }
+    },
+    {
+      "event_id": "7cb10d307b371751677d513fb168b3bd",
+      "game_slug": "20260724-TOR-BOS",
+      "rows": 179,
+      "valid_closes": 165,
+      "valid_close_coverage": 0.9217877094972067,
+      "stale_close_rate": 0.0,
+      "failed_rows": 14,
+      "failure_reasons": {
+        "valid_close": 165,
+        "player_prop_unavailable_at_close": 14
+      }
+    },
+    {
+      "event_id": "263aac2dfd923f6a65c5136418407715",
+      "game_slug": "20260724-CHC-PIT",
+      "rows": 182,
+      "valid_closes": 168,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 14,
+      "failure_reasons": {
+        "valid_close": 168,
+        "player_prop_unavailable_at_close": 12,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "game_slug": "20260724-NYY-PHI",
+      "rows": 203,
+      "valid_closes": 189,
+      "valid_close_coverage": 0.9310344827586207,
+      "stale_close_rate": 0.0,
+      "failed_rows": 14,
+      "failure_reasons": {
+        "valid_close": 189,
+        "player_prop_unavailable_at_close": 10,
+        "player_market_unavailable_at_close": 2,
+        "fallback_other_book_only": 2
+      }
+    },
+    {
+      "event_id": "6a85ed309a708411951843fe95d213bb",
+      "game_slug": "20260724-SD-MIA",
+      "rows": 211,
+      "valid_closes": 197,
+      "valid_close_coverage": 0.933649289099526,
+      "stale_close_rate": 0.0,
+      "failed_rows": 14,
+      "failure_reasons": {
+        "valid_close": 197,
+        "player_prop_unavailable_at_close": 10,
+        "line_disappeared_at_close": 2,
+        "fallback_other_book_only": 1,
+        "player_market_unavailable_at_close": 1
+      }
+    },
+    {
+      "event_id": "e52022e436fbab769c0e31e1eec70f53",
+      "game_slug": "20260724-CIN-STL",
+      "rows": 190,
+      "valid_closes": 180,
+      "valid_close_coverage": 0.9473684210526315,
+      "stale_close_rate": 0.0,
+      "failed_rows": 10,
+      "failure_reasons": {
+        "valid_close": 180,
+        "line_disappeared_at_close": 4,
+        "player_market_unavailable_at_close": 3,
+        "fallback_other_book_only": 3
+      }
+    }
+  ],
+  "by_book": [
+    {
+      "bookmaker_key": "fanduel",
+      "rows": 2133,
+      "valid_closes": 1897,
+      "valid_close_coverage": 0.8893577121425222,
+      "stale_close_rate": 0.0,
+      "failed_rows": 236,
+      "failure_reasons": {
+        "valid_close": 1897,
+        "player_prop_unavailable_at_close": 232,
+        "line_disappeared_at_close": 4
+      }
+    },
+    {
+      "bookmaker_key": "draftkings",
+      "rows": 758,
+      "valid_closes": 616,
+      "valid_close_coverage": 0.8126649076517151,
+      "stale_close_rate": 0.0,
+      "failed_rows": 142,
+      "failure_reasons": {
+        "valid_close": 616,
+        "player_prop_unavailable_at_close": 80,
+        "line_disappeared_at_close": 34,
+        "player_market_unavailable_at_close": 14,
+        "fallback_other_book_only": 14
+      }
+    }
+  ],
+  "by_market": [
+    {
+      "market": "batter_total_bases",
+      "rows": 1146,
+      "valid_closes": 988,
+      "valid_close_coverage": 0.8621291448516579,
+      "stale_close_rate": 0.0,
+      "failed_rows": 158,
+      "failure_reasons": {
+        "valid_close": 988,
+        "player_prop_unavailable_at_close": 130,
+        "player_market_unavailable_at_close": 14,
+        "fallback_other_book_only": 14
+      }
+    },
+    {
+      "market": "batter_hits",
+      "rows": 1197,
+      "valid_closes": 1051,
+      "valid_close_coverage": 0.8780284043441938,
+      "stale_close_rate": 0.0,
+      "failed_rows": 146,
+      "failure_reasons": {
+        "valid_close": 1051,
+        "player_prop_unavailable_at_close": 124,
+        "line_disappeared_at_close": 22
+      }
+    },
+    {
+      "market": "batter_home_runs",
+      "rows": 462,
+      "valid_closes": 404,
+      "valid_close_coverage": 0.8744588744588745,
+      "stale_close_rate": 0.0,
+      "failed_rows": 58,
+      "failure_reasons": {
+        "valid_close": 404,
+        "player_prop_unavailable_at_close": 58
+      }
+    },
+    {
+      "market": "pitcher_strikeouts",
+      "rows": 86,
+      "valid_closes": 70,
+      "valid_close_coverage": 0.813953488372093,
+      "stale_close_rate": 0.0,
+      "failed_rows": 16,
+      "failure_reasons": {
+        "valid_close": 70,
+        "line_disappeared_at_close": 16
+      }
+    }
+  ],
+  "by_event_book_market": [
+    {
+      "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 52,
+      "valid_closes": 36,
+      "valid_close_coverage": 0.6923076923076923,
+      "stale_close_rate": 0.0,
+      "failed_rows": 16,
+      "failure_reasons": {
+        "valid_close": 36,
+        "player_prop_unavailable_at_close": 16
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 72,
+      "valid_closes": 56,
+      "valid_close_coverage": 0.7777777777777778,
+      "stale_close_rate": 0.0,
+      "failed_rows": 16,
+      "failure_reasons": {
+        "valid_close": 56,
+        "player_prop_unavailable_at_close": 16
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 60,
+      "valid_closes": 48,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 12,
+      "failure_reasons": {
+        "valid_close": 48,
+        "player_prop_unavailable_at_close": 12
+      }
+    },
+    {
+      "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 68,
+      "valid_closes": 56,
+      "valid_close_coverage": 0.8235294117647058,
+      "stale_close_rate": 0.0,
+      "failed_rows": 12,
+      "failure_reasons": {
+        "valid_close": 56,
+        "player_prop_unavailable_at_close": 12
+      }
+    },
+    {
+      "event_id": "74d637de5babda95c445e8cf11c32a15",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 72,
+      "valid_closes": 60,
+      "valid_close_coverage": 0.8333333333333334,
+      "stale_close_rate": 0.0,
+      "failed_rows": 12,
+      "failure_reasons": {
+        "valid_close": 60,
+        "player_prop_unavailable_at_close": 12
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 76,
+      "valid_closes": 64,
+      "valid_close_coverage": 0.8421052631578947,
+      "stale_close_rate": 0.0,
+      "failed_rows": 12,
+      "failure_reasons": {
+        "valid_close": 64,
+        "player_prop_unavailable_at_close": 12
+      }
+    },
+    {
+      "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 26,
+      "valid_closes": 18,
+      "valid_close_coverage": 0.6923076923076923,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 18,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 26,
+      "valid_closes": 18,
+      "valid_close_coverage": 0.6923076923076923,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 18,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 28,
+      "valid_closes": 20,
+      "valid_close_coverage": 0.7142857142857143,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 20,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 36,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.7777777777777778,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 36,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.7777777777777778,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 36,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.7777777777777778,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 4,
+        "line_disappeared_at_close": 4
+      }
+    },
+    {
+      "event_id": "74d637de5babda95c445e8cf11c32a15",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 38,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.7894736842105263,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 6,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 40,
+      "valid_closes": 32,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 32,
+        "player_prop_unavailable_at_close": 6,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 62,
+      "valid_closes": 54,
+      "valid_close_coverage": 0.8709677419354839,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 54,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 64,
+      "valid_closes": 56,
+      "valid_close_coverage": 0.875,
+      "stale_close_rate": 0.0,
+      "failed_rows": 8,
+      "failure_reasons": {
+        "valid_close": 56,
+        "player_prop_unavailable_at_close": 8
+      }
+    },
+    {
+      "event_id": "e52022e436fbab769c0e31e1eec70f53",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 14,
+      "valid_closes": 8,
+      "valid_close_coverage": 0.5714285714285714,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 8,
+        "player_market_unavailable_at_close": 3,
+        "fallback_other_book_only": 3
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 26,
+      "valid_closes": 20,
+      "valid_close_coverage": 0.7692307692307693,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 20,
+        "player_prop_unavailable_at_close": 4,
+        "player_market_unavailable_at_close": 1,
+        "fallback_other_book_only": 1
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 28,
+      "valid_closes": 22,
+      "valid_close_coverage": 0.7857142857142857,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 22,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 30,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 30,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "7cb10d307b371751677d513fb168b3bd",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 30,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "cee011b0978086fc2ebee48d455d495e",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 30,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 24,
+        "line_disappeared_at_close": 6
+      }
+    },
+    {
+      "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 34,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.8235294117647058,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 34,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.8235294117647058,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 34,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.8235294117647058,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "263aac2dfd923f6a65c5136418407715",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 36,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.8333333333333334,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 4,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "74d637de5babda95c445e8cf11c32a15",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 36,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.8333333333333334,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 38,
+      "valid_closes": 32,
+      "valid_close_coverage": 0.8421052631578947,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 32,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "74d637de5babda95c445e8cf11c32a15",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 66,
+      "valid_closes": 60,
+      "valid_close_coverage": 0.9090909090909091,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 60,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 69,
+      "valid_closes": 63,
+      "valid_close_coverage": 0.9130434782608695,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "valid_close": 63,
+        "player_prop_unavailable_at_close": 6
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 8,
+      "valid_closes": 4,
+      "valid_close_coverage": 0.5,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 4,
+        "line_disappeared_at_close": 4
+      }
+    },
+    {
+      "event_id": "cee011b0978086fc2ebee48d455d495e",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 8,
+      "valid_closes": 4,
+      "valid_close_coverage": 0.5,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 4,
+        "line_disappeared_at_close": 4
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 10,
+      "valid_closes": 6,
+      "valid_close_coverage": 0.6,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 6,
+        "player_prop_unavailable_at_close": 2,
+        "fallback_other_book_only": 1,
+        "player_market_unavailable_at_close": 1
+      }
+    },
+    {
+      "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 10,
+      "valid_closes": 6,
+      "valid_close_coverage": 0.6,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 6,
+        "player_market_unavailable_at_close": 2,
+        "fallback_other_book_only": 2
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 12,
+      "valid_closes": 8,
+      "valid_close_coverage": 0.6666666666666666,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 8,
+        "player_prop_unavailable_at_close": 2,
+        "player_market_unavailable_at_close": 1,
+        "fallback_other_book_only": 1
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 12,
+      "valid_closes": 8,
+      "valid_close_coverage": 0.6666666666666666,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 8,
+        "player_market_unavailable_at_close": 2,
+        "fallback_other_book_only": 2
+      }
+    },
+    {
+      "event_id": "d7f4b3c3080d3f6612a4be54f7e0f798",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 16,
+      "valid_closes": 12,
+      "valid_close_coverage": 0.75,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 12,
+        "player_prop_unavailable_at_close": 2,
+        "player_market_unavailable_at_close": 1,
+        "fallback_other_book_only": 1
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 18,
+      "valid_closes": 14,
+      "valid_close_coverage": 0.7777777777777778,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 14,
+        "player_market_unavailable_at_close": 2,
+        "fallback_other_book_only": 2
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 26,
+      "valid_closes": 22,
+      "valid_close_coverage": 0.8461538461538461,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 22,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 30,
+      "valid_closes": 26,
+      "valid_close_coverage": 0.8666666666666667,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 26,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 32,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.875,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 28,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "e52022e436fbab769c0e31e1eec70f53",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 32,
+      "valid_closes": 28,
+      "valid_close_coverage": 0.875,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 28,
+        "line_disappeared_at_close": 4
+      }
+    },
+    {
+      "event_id": "6a85ed309a708411951843fe95d213bb",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 34,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.8823529411764706,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 2,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 52,
+      "valid_closes": 48,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 48,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "7cb10d307b371751677d513fb168b3bd",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 52,
+      "valid_closes": 48,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 48,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "cee011b0978086fc2ebee48d455d495e",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 52,
+      "valid_closes": 48,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 48,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 56,
+      "valid_closes": 52,
+      "valid_close_coverage": 0.9285714285714286,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 52,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 60,
+      "valid_closes": 56,
+      "valid_close_coverage": 0.9333333333333333,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 56,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "263aac2dfd923f6a65c5136418407715",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 64,
+      "valid_closes": 60,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 60,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 64,
+      "valid_closes": 60,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 60,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "6a85ed309a708411951843fe95d213bb",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 64,
+      "valid_closes": 60,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "valid_close": 60,
+        "player_prop_unavailable_at_close": 4
+      }
+    },
+    {
+      "event_id": "5dc243f04181b459d0cc18968be70660",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 4,
+      "valid_closes": 2,
+      "valid_close_coverage": 0.5,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 2,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 4,
+      "valid_closes": 2,
+      "valid_close_coverage": 0.5,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "line_disappeared_at_close": 2,
+        "valid_close": 2
+      }
+    },
+    {
+      "event_id": "29437f5a0e0b0af43535ee03d438df64",
+      "bookmaker_key": "fanduel",
+      "market": "pitcher_strikeouts",
+      "rows": 6,
+      "valid_closes": 4,
+      "valid_close_coverage": 0.6666666666666666,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 4,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "7623b2ff95daaba1c14165f508c506b8",
+      "bookmaker_key": "fanduel",
+      "market": "pitcher_strikeouts",
+      "rows": 6,
+      "valid_closes": 4,
+      "valid_close_coverage": 0.6666666666666666,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 4,
+        "line_disappeared_at_close": 2
+      }
+    },
+    {
+      "event_id": "74d637de5babda95c445e8cf11c32a15",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 10,
+      "valid_closes": 8,
+      "valid_close_coverage": 0.8,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 8,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 12,
+      "valid_closes": 10,
+      "valid_close_coverage": 0.8333333333333334,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 10,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "6a85ed309a708411951843fe95d213bb",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 20,
+      "valid_closes": 18,
+      "valid_close_coverage": 0.9,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 18,
+        "fallback_other_book_only": 1,
+        "player_market_unavailable_at_close": 1
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 26,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "6f9f1f656034bccc0a22e55a976cdf3b",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 26,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "7cb10d307b371751677d513fb168b3bd",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 26,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "cee011b0978086fc2ebee48d455d495e",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 26,
+      "valid_closes": 24,
+      "valid_close_coverage": 0.9230769230769231,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 24,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 28,
+      "valid_closes": 26,
+      "valid_close_coverage": 0.9285714285714286,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 26,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "e25ed72c9f5c072ef60c242c29ccf1a3",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 28,
+      "valid_closes": 26,
+      "valid_close_coverage": 0.9285714285714286,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 26,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "263aac2dfd923f6a65c5136418407715",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 32,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "263aac2dfd923f6a65c5136418407715",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 32,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 32,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 32,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "6a85ed309a708411951843fe95d213bb",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 32,
+      "valid_closes": 30,
+      "valid_close_coverage": 0.9375,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 30,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "7cb10d307b371751677d513fb168b3bd",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 49,
+      "valid_closes": 47,
+      "valid_close_coverage": 0.9591836734693877,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 47,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "cee011b0978086fc2ebee48d455d495e",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 49,
+      "valid_closes": 47,
+      "valid_close_coverage": 0.9591836734693877,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 47,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 59,
+      "valid_closes": 57,
+      "valid_close_coverage": 0.9661016949152542,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 57,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "6a85ed309a708411951843fe95d213bb",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 61,
+      "valid_closes": 59,
+      "valid_close_coverage": 0.9672131147540983,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "valid_close": 59,
+        "player_prop_unavailable_at_close": 2
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 2,
+      "valid_closes": 2,
+      "valid_close_coverage": 1.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 0,
+      "failure_reasons": {
+        "valid_close": 2
+      }
+    },
+    {
+      "event_id": "12a8e27a29d44d46e10583c9c875e5f5",
+      "bookmaker_key": "fanduel",
+      "market": "pitcher_strikeouts",
+      "rows": 2,
+      "valid_closes": 2,
+      "valid_close_coverage": 1.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 0,
+      "failure_reasons": {
+        "valid_close": 2
+      }
+    },
+    {
+      "event_id": "2192276baf2c4e8e5358e9905c801e2f",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 12,
+      "valid_closes": 12,
+      "valid_close_coverage": 1.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 0,
+      "failure_reasons": {
+        "valid_close": 12
+      }
+    },
+    {
+      "event_id": "263aac2dfd923f6a65c5136418407715",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 18,
+      "valid_closes": 18,
+      "valid_close_coverage": 1.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 0,
+      "failure_reasons": {
+        "valid_close": 18
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 2,
+      "valid_closes": 2,
+      "valid_close_coverage": 1.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 0,
+      "failure_reasons": {
+        "valid_close": 2
+      }
+    },
+    {
+      "event_id": "5859ce305cb0ae65e5e7f771db28dcdd",
+      "bookmaker_key": "fanduel",
+      "market": "pitcher_strikeouts",
+      "rows": 2,
+      "valid_closes": 2,
+      "valid_close_coverage": 1.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 0,
+      "failure_reasons": {
+        "valid_close": 2
+      }
+    }
+  ]
+}

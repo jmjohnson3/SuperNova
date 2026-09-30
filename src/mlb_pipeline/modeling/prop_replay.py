@@ -6,10 +6,12 @@ snapshots used for calibration, betting-layer training, diagnostics, and CLV.
 """
 from __future__ import annotations
 
+import json
+import logging
 import math
 import re
 import unicodedata
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
 import psycopg2
@@ -27,6 +29,39 @@ _STAT_COL = {
     "batter_home_runs": "home_runs",
     "batter_total_bases": "total_bases",
     "batter_walks": "walks_batter",
+}
+
+log = logging.getLogger(__name__)
+
+_PROP_REPLAY_CLV_REFRESH_COLUMNS = {
+    "id",
+    "prediction_key",
+    "source_pred_id",
+    "lock_snapshot_id",
+    "game_date_et",
+    "game_slug",
+    "player_name",
+    "player_name_norm",
+    "stat",
+    "side",
+    "line_bucket",
+    "bookmaker_key",
+    "market_line",
+    "market_price",
+    "over_price",
+    "under_price",
+    "closing_line",
+    "closing_price",
+    "clv_line",
+    "clv_price",
+    "closing_source_row_id",
+    "closing_snapshot_id",
+    "closing_fetched_at_utc",
+    "clv_match_method",
+    "clv_valid",
+    "clv_status",
+    "clv_unknown_reason",
+    "result_status",
 }
 
 
@@ -146,6 +181,7 @@ def ensure_prop_replay_schema(conn) -> None:
                 bankroll_tier TEXT,
                 bankroll_candidate BOOLEAN,
                 bankroll_reasons TEXT,
+                opportunity_context JSONB NOT NULL DEFAULT '{}'::jsonb,
                 stake_pct NUMERIC,
                 stake_usd NUMERIC,
                 actual_value NUMERIC,
@@ -177,6 +213,7 @@ def ensure_prop_replay_schema(conn) -> None:
                 ADD COLUMN IF NOT EXISTS locked_at_utc TIMESTAMPTZ,
                 ADD COLUMN IF NOT EXISTS bet_link TEXT,
                 ADD COLUMN IF NOT EXISTS minimum_acceptable_price NUMERIC,
+                ADD COLUMN IF NOT EXISTS opportunity_context JSONB NOT NULL DEFAULT '{}'::jsonb,
                 ADD COLUMN IF NOT EXISTS stake_usd NUMERIC,
                 ADD COLUMN IF NOT EXISTS closing_source_row_id BIGINT,
                 ADD COLUMN IF NOT EXISTS closing_snapshot_id BIGINT,
@@ -187,7 +224,8 @@ def ensure_prop_replay_schema(conn) -> None:
                 ADD COLUMN IF NOT EXISTS clv_unknown_reason TEXT;
             ALTER TABLE IF EXISTS bets.mlb_prop_predictions
                 ADD COLUMN IF NOT EXISTS lock_snapshot_id BIGINT,
-                ADD COLUMN IF NOT EXISTS locked_at_utc TIMESTAMPTZ;
+                ADD COLUMN IF NOT EXISTS locked_at_utc TIMESTAMPTZ,
+                ADD COLUMN IF NOT EXISTS opportunity_context JSONB NOT NULL DEFAULT '{}'::jsonb;
             CREATE INDEX IF NOT EXISTS idx_mlb_prop_replay_date
                 ON bets.mlb_prop_prediction_replay (game_date_et);
             CREATE INDEX IF NOT EXISTS idx_mlb_prop_replay_status
@@ -199,7 +237,44 @@ def ensure_prop_replay_schema(conn) -> None:
             """
         )
     conn.commit()
-    ensure_prop_offer_snapshot_schema(conn)
+
+
+def _table_exists(conn, schema: str, table: str) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT EXISTS (
+              SELECT 1 FROM information_schema.tables
+              WHERE table_schema = %s AND table_name = %s
+            )
+            """,
+            (schema, table),
+        )
+        return bool(cur.fetchone()[0])
+
+
+def _missing_prop_replay_clv_refresh_columns(conn) -> list[str]:
+    if not _table_exists(conn, "bets", "mlb_prop_prediction_replay"):
+        return ["bets.mlb_prop_prediction_replay"]
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'bets'
+              AND table_name = 'mlb_prop_prediction_replay'
+            """
+        )
+        existing = {str(row[0]) for row in cur.fetchall()}
+    return sorted(_PROP_REPLAY_CLV_REFRESH_COLUMNS - existing)
+
+
+def _set_session_timeout(conn, setting: str, value_ms: int | None) -> None:
+    if value_ms is None or int(value_ms) <= 0:
+        return
+    with conn.cursor() as cur:
+        cur.execute(f"SET SESSION {setting} = %s", (f"{int(value_ms)}ms",))
+    conn.commit()
 
 
 def _row_from_prediction(row: dict[str, Any], run_id: str, run_started_at_utc: datetime) -> dict[str, Any]:
@@ -269,6 +344,7 @@ def _row_from_prediction(row: dict[str, Any], run_id: str, run_started_at_utc: d
         "bankroll_tier": row.get("bankroll_tier"),
         "bankroll_candidate": row.get("bankroll_candidate"),
         "bankroll_reasons": row.get("bankroll_reasons"),
+        "opportunity_context": json.dumps(row.get("opportunity_context") or {}),
         "stake_pct": _clean_float(row.get("stake_pct")),
         "stake_usd": _clean_float(row.get("stake_usd")),
         "actual_value": _clean_float(row.get("actual_value")),
@@ -288,7 +364,7 @@ INSERT INTO bets.mlb_prop_prediction_replay (
     market_prob_under, no_vig_prob_over, no_vig_prob_under, pred_value,
     pred_count, model_prob_over, model_prob_side, prob_edge_vs_market,
     count_edge_vs_line, edge, ev, kelly_fraction, bankroll_tier,
-    bankroll_candidate, bankroll_reasons, stake_pct, stake_usd, actual_value, over_hit,
+    bankroll_candidate, bankroll_reasons, opportunity_context, stake_pct, stake_usd, actual_value, over_hit,
     source_created_at
 ) VALUES (
     %(run_id)s, %(run_started_at_utc)s, %(source_pred_id)s, %(prediction_key)s,
@@ -300,7 +376,7 @@ INSERT INTO bets.mlb_prop_prediction_replay (
     %(market_prob_under)s, %(no_vig_prob_over)s, %(no_vig_prob_under)s, %(pred_value)s,
     %(pred_count)s, %(model_prob_over)s, %(model_prob_side)s, %(prob_edge_vs_market)s,
     %(count_edge_vs_line)s, %(edge)s, %(ev)s, %(kelly_fraction)s, %(bankroll_tier)s,
-    %(bankroll_candidate)s, %(bankroll_reasons)s, %(stake_pct)s, %(stake_usd)s, %(actual_value)s, %(over_hit)s,
+    %(bankroll_candidate)s, %(bankroll_reasons)s, %(opportunity_context)s::jsonb, %(stake_pct)s, %(stake_usd)s, %(actual_value)s, %(over_hit)s,
     %(source_created_at)s
 )
 ON CONFLICT (run_id, source_pred_id) DO UPDATE SET
@@ -309,6 +385,7 @@ ON CONFLICT (run_id, source_pred_id) DO UPDATE SET
     bankroll_tier = EXCLUDED.bankroll_tier,
     bankroll_candidate = EXCLUDED.bankroll_candidate,
     bankroll_reasons = EXCLUDED.bankroll_reasons,
+    opportunity_context = EXCLUDED.opportunity_context,
     stake_pct = EXCLUDED.stake_pct,
     stake_usd = EXCLUDED.stake_usd,
     lock_snapshot_id = COALESCE(
@@ -579,6 +656,16 @@ def refresh_prop_replay_clv(
     date_to: Any | None = None,
     include_graded: bool = True,
     only_missing: bool = False,
+    markets: Iterable[str] | None = None,
+    sides: Iterable[str] | None = None,
+    bookmakers: Iterable[str] | None = None,
+    line_buckets: Iterable[str] | None = None,
+    limit: int | None = None,
+    batch_size: int = 100,
+    statement_timeout_ms: int = 30_000,
+    lock_timeout_ms: int = 2_000,
+    progress_every: int = 100,
+    ensure_schema: bool = False,
 ) -> int:
     """Attach valid close snapshots to locked replay rows before final grading.
 
@@ -586,7 +673,20 @@ def refresh_prop_replay_clv(
     close snapshot exists.  This refresh keeps pending replay rows useful for
     CLV diagnostics, walk-forward reports, and CLV-target training.
     """
-    ensure_prop_replay_schema(conn)
+    if ensure_schema:
+        ensure_prop_replay_schema(conn)
+    else:
+        missing = _missing_prop_replay_clv_refresh_columns(conn)
+        if missing:
+            raise RuntimeError(
+                "Prop replay CLV refresh dependencies are not ready: "
+                + ", ".join(missing)
+                + ". Run `python -m mlb_pipeline.modeling.refresh_prop_replay_clv --ensure-schema` "
+                + "from a non-live maintenance window."
+            )
+    _set_session_timeout(conn, "statement_timeout", statement_timeout_ms)
+    _set_session_timeout(conn, "lock_timeout", lock_timeout_ms)
+
     filters = [
         "side IN ('over', 'under')",
         "market_line IS NOT NULL",
@@ -607,56 +707,113 @@ def refresh_prop_replay_clv(
         filters.append("result_status = 'pending'")
     if only_missing:
         filters.append("(clv_status IS NULL OR clv_valid IS NULL OR clv_status = 'unknown')")
-
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute(
-            f"""
-            SELECT *
-            FROM bets.mlb_prop_prediction_replay
-            WHERE {' AND '.join(filters)}
-            ORDER BY game_date_et, id
-            """,
-            params,
-        )
-        rows = [dict(r) for r in cur.fetchall()]
-    if not rows:
-        return 0
-
+    market_values = [str(value) for value in (markets or []) if str(value or "").strip()]
+    if market_values:
+        filters.append("stat = ANY(%s)")
+        params.append(market_values)
+    side_values = [str(value).lower() for value in (sides or []) if str(value or "").strip()]
+    if side_values:
+        filters.append("side = ANY(%s)")
+        params.append(side_values)
+    bookmaker_values = [str(value).lower() for value in (bookmakers or []) if str(value or "").strip()]
+    if bookmaker_values:
+        filters.append("LOWER(bookmaker_key) = ANY(%s)")
+        params.append(bookmaker_values)
+    line_bucket_values = [str(value) for value in (line_buckets or []) if str(value or "").strip()]
+    if line_bucket_values:
+        filters.append("line_bucket = ANY(%s)")
+        params.append(line_bucket_values)
+    batch_size = max(1, int(batch_size or 100))
+    progress_every = max(1, int(progress_every or batch_size))
+    remaining = int(limit) if limit is not None and int(limit) > 0 else None
+    last_date = date_from or date(1900, 1, 1)
+    last_id = 0
     updated = 0
-    with conn.cursor() as cur:
-        for row in rows:
-            clv = _clv_fields_for_row(conn, row)
+    scanned = 0
+    skipped = 0
+    while True:
+        if remaining is not None and remaining <= 0:
+            break
+        this_batch_size = min(batch_size, remaining) if remaining is not None else batch_size
+        batch_params = list(params) + [last_date, last_date, last_id, this_batch_size]
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                """
-                UPDATE bets.mlb_prop_prediction_replay
-                SET closing_line = %s,
-                    closing_price = %s,
-                    clv_line = %s,
-                    clv_price = %s,
-                    closing_source_row_id = %s,
-                    closing_snapshot_id = %s,
-                    closing_fetched_at_utc = %s,
-                    clv_match_method = %s,
-                    clv_valid = %s,
-                    clv_status = %s,
-                    clv_unknown_reason = %s
-                WHERE id = %s
+                f"""
+                SELECT *
+                FROM bets.mlb_prop_prediction_replay
+                WHERE {' AND '.join(filters)}
+                  AND (game_date_et > %s OR (game_date_et = %s AND id > %s))
+                ORDER BY game_date_et, id
+                LIMIT %s
                 """,
-                (
-                    clv["closing_line"],
-                    clv["closing_price"],
-                    clv["clv_line"],
-                    clv["clv_price"],
-                    clv["closing_source_row_id"],
-                    clv["closing_snapshot_id"],
-                    clv["closing_fetched_at_utc"],
-                    clv["clv_match_method"],
-                    clv["clv_valid"],
-                    clv["clv_status"],
-                    clv["clv_unknown_reason"],
-                    row["id"],
-                ),
+                batch_params,
             )
-            updated += 1
-    conn.commit()
+            rows = [dict(r) for r in cur.fetchall()]
+        if not rows:
+            break
+        last_date = rows[-1]["game_date_et"] or last_date
+        last_id = int(rows[-1]["id"])
+        scanned += len(rows)
+        batch_updated = 0
+        batch_skipped = 0
+        with conn.cursor() as cur:
+            for row in rows:
+                cur.execute("SAVEPOINT prop_clv_refresh_row")
+                try:
+                    clv = _clv_fields_for_row(conn, row)
+                    cur.execute(
+                        """
+                        UPDATE bets.mlb_prop_prediction_replay
+                        SET closing_line = %s,
+                            closing_price = %s,
+                            clv_line = %s,
+                            clv_price = %s,
+                            closing_source_row_id = %s,
+                            closing_snapshot_id = %s,
+                            closing_fetched_at_utc = %s,
+                            clv_match_method = %s,
+                            clv_valid = %s,
+                            clv_status = %s,
+                            clv_unknown_reason = %s
+                        WHERE id = %s
+                        """,
+                        (
+                            clv["closing_line"],
+                            clv["closing_price"],
+                            clv["clv_line"],
+                            clv["clv_price"],
+                            clv["closing_source_row_id"],
+                            clv["closing_snapshot_id"],
+                            clv["closing_fetched_at_utc"],
+                            clv["clv_match_method"],
+                            clv["clv_valid"],
+                            clv["clv_status"],
+                            clv["clv_unknown_reason"],
+                            row["id"],
+                        ),
+                    )
+                    cur.execute("RELEASE SAVEPOINT prop_clv_refresh_row")
+                    updated += 1
+                    batch_updated += 1
+                except Exception as exc:
+                    cur.execute("ROLLBACK TO SAVEPOINT prop_clv_refresh_row")
+                    cur.execute("RELEASE SAVEPOINT prop_clv_refresh_row")
+                    skipped += 1
+                    batch_skipped += 1
+                    log.warning(
+                        "Skipping prop replay CLV refresh row id=%s after resolver/update failure: %s",
+                        row.get("id"),
+                        exc,
+                    )
+        conn.commit()
+        if remaining is not None:
+            remaining -= len(rows)
+        if scanned % progress_every == 0 or len(rows) < this_batch_size:
+            log.info(
+                "Prop replay CLV refresh progress: scanned=%s updated=%s skipped=%s last_id=%s",
+                scanned,
+                updated,
+                skipped,
+                last_id,
+            )
     return updated

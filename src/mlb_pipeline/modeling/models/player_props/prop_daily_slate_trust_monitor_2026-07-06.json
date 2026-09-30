@@ -1,0 +1,86 @@
+{
+  "generated_at_utc": "2026-07-09T15:26:13Z",
+  "slate_date": "2026-07-06",
+  "status": "fail",
+  "checks": [
+    {
+      "name": "all_games_finalized",
+      "passed": true,
+      "required": true,
+      "detail": "8/8 games final"
+    },
+    {
+      "name": "valid_close_coverage",
+      "passed": false,
+      "required": true,
+      "detail": "87.7% valid exact closes; required >= 90%"
+    },
+    {
+      "name": "stale_close_rate",
+      "passed": true,
+      "required": true,
+      "detail": "0.9% stale closes; required <= 2%"
+    },
+    {
+      "name": "targeted_close_captures",
+      "passed": false,
+      "required": true,
+      "detail": "5/8 events have T-120/T-60/T-20 captures"
+    },
+    {
+      "name": "hitter_anchor_settled_or_voided",
+      "passed": true,
+      "required": true,
+      "detail": "130 graded, 0 pending, 32 void"
+    },
+    {
+      "name": "pitcher_anchor_settled_or_voided",
+      "passed": true,
+      "required": true,
+      "detail": "14 graded, 0 pending, 0 void"
+    },
+    {
+      "name": "frozen_hitter_artifact_valid",
+      "passed": true,
+      "required": true,
+      "detail": "sha256 matched"
+    }
+  ],
+  "required_failures": [
+    {
+      "name": "valid_close_coverage",
+      "passed": false,
+      "required": true,
+      "detail": "87.7% valid exact closes; required >= 90%"
+    },
+    {
+      "name": "targeted_close_captures",
+      "passed": false,
+      "required": true,
+      "detail": "5/8 events have T-120/T-60/T-20 captures"
+    }
+  ],
+  "close_summary": {
+    "locked_offer_rows": 1532,
+    "valid_closes": 1344,
+    "valid_close_coverage": 0.8772845953002611,
+    "stale_close_rate": 0.009138381201044387,
+    "failure_reasons": {
+      "valid_close": 1344,
+      "close_outside_two_hour_window": 143,
+      "line_disappeared_at_close": 26,
+      "stale_close_before_lock": 14,
+      "fallback_other_book_only": 5
+    }
+  },
+  "checkpoint_summary": {
+    "status": "collecting",
+    "hitter_completed_dates": 2,
+    "hitter_dates_remaining": 3,
+    "hitter_micro_ready_buckets": 0,
+    "pitcher_completed_dates": 5,
+    "pitcher_dates_remaining": 0,
+    "pitcher_micro_ready_buckets": 0
+  },
+  "decision": "do_not_use_slate_for_clean_promotion_evidence"
+}

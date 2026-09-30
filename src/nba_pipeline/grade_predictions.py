@@ -12,9 +12,9 @@ from datetime import date, timedelta
 
 from sqlalchemy import create_engine, text
 
-log = logging.getLogger("nba_pipeline.grade_predictions")
+from nba_pipeline.db import PG_DSN as _PG_DSN
 
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
+log = logging.getLogger("nba_pipeline.grade_predictions")
 
 
 # ---------------------------------------------------------------------------

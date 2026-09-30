@@ -1,0 +1,183 @@
+{
+  "date": "2026-09-20",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 1672,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-20 16:00:14,267 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-20 16:00:26,578 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2980\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 540682,\n      \"rows_selected\": 2243,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 433\n    }\n  ],\n  \"roster_rows_upserted\": 2979,\n  \"depth_rows_upserted\": 2240,\n  \"injury_rows_upserted\": 433\n}\n",
+      "stderr_tail": "2026-09-20 16:00:31,855 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-20 16:00:36,356 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-20 16:01:43,095 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": ": \"advanced_route_usage\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 1674,\n      \"rows_matched\": 1672,\n      \"rows_updated\": 484\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 4150,\n      \"player_usage_rows\": 471,\n      \"player_usage_rows_updated\": 468,\n      \"player_game_rows\": 223,\n      \"rows_updated\": 223,\n      \"zero_filled_rows\": 342\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 57\n    }\n  ],\n  \"snap_rows_matched\": 1569,\n  \"snap_rows_updated\": 765,\n  \"advanced_usage_rows_matched\": 1672,\n  \"advanced_usage_rows_updated\": 484,\n  \"pbp_usage_player_game_rows\": 471,\n  \"pbp_usage_rows_updated\": 468,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 57,\n  \"red_zone_player_game_rows\": 223,\n  \"red_zone_rows_updated\": 565\n}\n",
+      "stderr_tail": "2026-09-20 16:01:48,473 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-20 16:01:51,160 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-09-20 16:01:54,193 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-09-20 16:01:54,437 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Odds Crawl",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"game_date\": \"2026-09-20\",\n  \"snapshot_role\": \"lock\",\n  \"game_odds_saved\": 1,\n  \"player_prop_events_saved\": 1,\n  \"provider_order\": [\n    \"sportsgameodds\",\n    \"therundown\",\n    \"oddsapi\",\n    \"manual_csv\"\n  ],\n  \"provider_attempts\": [\n    {\n      \"provider\": \"sportsgameodds\",\n      \"status\": \"ok\",\n      \"events\": 1,\n      \"game_odds_saved\": 1,\n      \"player_prop_events_saved\": 1,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": null,\n      \"player_prop_fetch_failures\": null\n    }\n  ],\n  \"provider_errors\": [],\n  \"manual_csv_dir\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Odds Parse",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"raw_payloads\": 36,\n  \"raw_game_payloads\": 36,\n  \"prop_lines_upserted\": 12973,\n  \"game_lines_upserted\": 736,\n  \"prop_parse_diagnostic\": {\n    \"raw_payloads\": 36,\n    \"events_seen\": 368,\n    \"events_with_zero_books\": 0,\n    \"bookmaker_entries\": 736,\n    \"market_entries\": 4408,\n    \"outcomes_seen\": 25691,\n    \"unknown_markets\": {\n      \"spreads\": 736,\n      \"totals\": 736\n    },\n    \"skipped_outcomes\": {}\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "# NFL Snapshot Health - 2026-09-20\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_events | lock | 2 | 2026-09-18 07:15:04.613499-07:00 |\n| nfl_game_odds | close | 27 | 2026-09-20 13:20:20.105784-07:00 |\n| nfl_game_odds | lock | 9 | 2026-09-20 15:02:10.733223-07:00 |\n| nfl_player_props | close | 27 | 2026-09-20 13:20:20.109784-07:00 |\n| nfl_player_props | lock | 9 | 2026-09-20 15:02:10.737223-07:00 |\n| nfl_sportsgameodds_events_raw | close | 27 | 2026-09-20 13:20:19.488487-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 8 | 2026-09-20 15:02:10.090441-07:00 |\n| nfl_therundown_events_raw | lock | 2 | 2026-09-18 07:15:01.743731-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| close | 510 | 14 | 2026-09-20 13:20:20.105784-07:00 |\n| lock | 226 | 14 | 2026-09-20 15:02:10.733223-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| close | 9087 | 191 | 2026-09-20 13:20:20.109784-07:00 |\n| lock | 3886 | 196 | 2026-09-20 15:02:10.737223-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 28 | 28 | 100.0% |\n| prop | 978 | 557 | 57.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "    \"book\": \"fanduel\",\n      \"line\": -6.5,\n      \"price\": -102,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476516&selectionId=50214\",\n      \"predicted_home_margin\": 6.5,\n      \"predicted_total_points\": 45.5,\n      \"baseline_home_margin\": 6.5,\n      \"baseline_total_points\": 45.5,\n      \"probability\": 0.5,\n      \"ev\": -0.009803921568627472,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"7c162ec3d0c42d82489248bf3062168396f0b111327140428fb24efbd18d6d28\"\n    },\n    {\n      \"game_date_et\": \"2026-09-20\",\n      \"season\": 2026,\n      \"week\": 2,\n      \"game_id\": \"2026_02_IND_KC\",\n      \"home_team_abbr\": \"KC\",\n      \"away_team_abbr\": \"IND\",\n      \"market\": \"total\",\n      \"side\": \"under\",\n      \"book\": \"fanduel\",\n      \"line\": 45.5,\n      \"price\": -105,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476519&selectionId=7017917\",\n      \"predicted_home_margin\": 6.5,\n      \"predicted_total_points\": 45.5,\n      \"baseline_home_margin\": 6.5,\n      \"baseline_total_points\": 45.5,\n      \"probability\": 0.49057421451787653,\n      \"ev\": -0.0422122478460506,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"062de0da0a7aa32d04daedee981b4270c1a6e2b78a3b4eb373bb98e93230471e\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"no_accepted_team_component\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "_p90\": 1.0,\n      \"distribution_kind\": \"rare_event_any_td\",\n      \"market_no_vig_probability\": null,\n      \"model_market_edge\": null,\n      \"projection_confidence\": 0.49541954330411203,\n      \"exact_line_model_probability\": null,\n      \"exact_line_clv_probability\": null,\n      \"exact_line_model_version\": null,\n      \"usage_context_quality\": 0.75,\n      \"limited_usage_risk\": 0.15300346707370258,\n      \"spike_usage_probability\": 0.07248510708476445,\n      \"tier\": \"paper\",\n      \"reasons\": \"cold_start_position_prior_unproven\",\n      \"prediction_key\": \"134a3f6a613e59b4a91e6aa45fdcecd997d86c787165a7e38d200ceccda11bed\",\n      \"prediction_context_cutoff_utc\": \"2026-09-20T22:03:04.907197+00:00\",\n      \"context_evidence\": {\n        \"contract\": \"nfl-context-evidence-v1\",\n        \"cutoff\": \"2026-09-20T22:03:04.907197+00:00\",\n        \"injury_status\": null,\n        \"practice_status\": null,\n        \"injury_observed_at\": null,\n        \"injury_missing\": true,\n        \"depth_rank\": null,\n        \"depth_movement\": null,\n        \"expected_starter_from_depth\": null,\n        \"depth_observed_at\": null,\n        \"roster_observed_at\": null,\n        \"teammate_injury_count\": null,\n        \"teammate_coverage\": \"unknown\",\n        \"routes_run_history\": null,\n        \"routes_source\": \"proxy_only\",\n        \"route_participation_proxy\": 0.4515226784263686,\n        \"first_read_history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"projection_semantics\": \"expected_count_or_any_td_head\"\n    }\n  ]\n}\n",
+      "stderr_tail": "PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"receiver_spike_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1284: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_carry_under_correction_v4_score\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1296: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_rush_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1305: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"yardage_projection_volatility_v4_score\"] = pd.concat([\n"
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 16,\n    \"qb_tail\": 2\n  },\n  \"excluded\": {},\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 2,\n  \"prop_locked\": 3,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 236\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 236\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "2026-09-20 15:02:10.090441-07:00 |\n| nfl_therundown_events_raw | lock | 2 | 2026-09-18 07:15:01.743731-07:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 736 | 14 |\n| player props | 12973 | 197 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 28 | 28 | 100.0% |\n| prop | 978 | 557 | 57.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 12973 | raw parser output |\n| true paired over/under offers | 12718 | 98.0% |\n| lock markets | 978 | exact book/player/stat/line locked |\n| close markets | 755 | exact book/player/stat/line closed |\n| lock-close exact matches | 557 | 57.0% |\n| CLV labels | 1282 | valid: 630 |\n| graded prop predictions | 662 | line-level result rows |\n| prop ledger rows | 370 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| valid_close | 630 |\n| missing_close | 547 |\n| close_outside_two_hour_window | 88 |\n| same_line_missing_side_price | 17 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 77 |\n| prop | micro_projection | 5 |\n| prop | paper | 365 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "on\": \"Kickoff: <t:1789950000:f> (<t:1789950000:R>)\\nQuotes are from locked forecasts; verify the price at the book.\\n\\n**PAPER - WR/TE Receiving TDs**\\n- Research only: R.Rice (KC vs IND) Receiving TDs proj=0.47 range=0.0-1.0 [ctx=81% spike=100% depth=1 prac=Full Participation in Practice]\\n- Research only: A.Pierce (IND vs KC) Receiving TDs proj=0.41 range=0.0-1.0 [ctx=79% spike=29% depth=1 prac=Full Participation in Practice]\\n- Research only: T.Warren (IND vs KC) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=81% spike=24% depth=1]\\n- Research only: T.Kelce (KC vs IND) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=81% spike=8% depth=1]\\n- Research only: J.Downs (IND vs KC) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=79% spike=8% depth=2]\\n- Research only: X.Worthy (KC vs IND) Receiving TDs proj=0.16 range=0.0-1.0 [ctx=79% spike=6% depth=2]\\n- Research only: K.Allen (IND vs KC) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=76% spike=15% depth=3 prac=Full Participation in Practice]\\n- Research only: M.Alie-Cox (IND vs KC) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=77% spike=18% depth=2]\\n- Research only: Deion Burks (IND vs KC) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=3% limited=24% depth=4]\\n- Research only: E.J. Horton (IND vs KC) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=7%]\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_IND_KC",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "IND @ KC | NFL 2026-09-20 (1/3)",
+            "description": "Kickoff: <t:1789950000:f> (<t:1789950000:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- KC -6.0 -108 | home margin=+6.5 | P=52% | EV=-0.6% [Bet DRAFTKINGS](<https://sportsbook.draftkings.com/event/34118260?outcomes=0HC84695703N600_1>)\n- KC -6.5 -102 | home margin=+6.5 | P=50% | EV=-1.0% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476516&selectionId=50214>)\n- UNDER 46.5 -118 | total=45.5 | P=52% | EV=-4.1% [Bet DRAFTKINGS](<https://sportsbook.draftkings.com/event/34118260?outcomes=0OU84695703U4650_3>)\n- UNDER 45.5 -105 | total=45.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476519&selectionId=7017917>)\n\n**PAPER - QB Passing Yards**\n- Research only: D.Jones (IND vs KC) QB Passing Yards UNDER216.5 -112 proj=184.05 range=74.7-288.5 | P(under)=58% | Mkt=50% | Edge=+7.6% | EV=+9.0% | Cur=-112 Min=-136 Drift=OK [ctx=79% spike=47% depth=1]\n- Research only: P.Mahomes (KC vs IND) QB Passing Yards OVER221.5 -112 proj=247.34 range=138.0-351.8 | P(over)=54% | Mkt=50% | Edge=+3.8% | EV=+1.9% | Cur=-112 Min=-117 Drift=OK [ctx=82% spike=63% depth=1 prac=Full Participation in Practice]\n\n**PAPER - QB Rushing Yards**\n- Research only: P.Mahomes (KC vs IND) Rushing Yards OVER17.5 -108 proj=27.78 range=3.3-61.5 | P(over)=60% | Mkt=49% | Edge=+11.0% | EV=+15.9% | Cur=-108 Min=-152 Drift=OK [ctx=82% spike=53% depth=1 prac=Full Participation in Practice]\n- Research only: D.Jones (IND vs KC) Rushing Yards OVER8.5 -113 proj=12.61 range=0.0-46.3 | P(over)=55% | Mkt=50% | Edge=+4.7% | EV=+3.5% | Cur=-113 Min=-122 Drift=OK [ctx=79% spike=28% depth=1]\n\n**PAPER - QB Passing TDs**\n- Research only: P.Mahomes (KC vs IND) QB Passing TDs UNDER1.5 -111 proj=1.20 range=0.0-3.0 | P(under)=59% | Mkt=50% | Edge=+9.2% | EV=+11.7% | Cur=-111 Min=-143 Drift=OK [ctx=82% spike=73% depth=1 prac=Full Participation in Practice]\n- Research only: D.Jones (IND vs KC) QB Passing TDs UNDER1.5 -204 proj=1.20 range=0.0-3.0 | P(under)=65% | Mkt=63% | Edge=+1.6% | EV=-3.2% | Cur=-204 Min=-186 Drift=CHECK [ctx=79% spike=23% depth=1]\n\n**PAPER - RB Rushing Yards**\n- Research only: J.Taylor (IND vs KC) Rushing Yards UNDER79.5 -113 proj=63.73 range=39.3-97.5 | P(under)=66% | Mkt=50% | Edge=+16.4% | EV=+25.2% | Cur=-113 Min=-198 Drift=OK [ctx=90% spike=89% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728593&selectionId=16593214>)\n- Research only: K.Walker (KC vs IND) Rushing Yards proj=109.50 range=85.0-143.2 [ctx=90% spike=92% depth=1]\n- Research only: E.Johnson (KC vs IND) Rushing Yards proj=23.35 range=0.0-57.1 [ctx=90% spike=31% depth=2]\n- Research only: Lincoln Pare (IND vs KC) Rushing Yards proj=21.49 range=0.0-55.2 [ctx=90% spike=19%]\n- Research only: D.Giddens (IND vs KC) Rushing Yards proj=15.31 range=0.0-49.0 [ctx=92% spike=18% limited=45% depth=3 inj=Questionable prac=Full Participation in Practice]\n\n**PAPER - RB Receiving Yards**\n- Research only: J.Taylor (IND vs KC) Receiving Yards UNDER17.5 -114 proj=17.37 range=0.0-48.8 | P(under)=55% | Mkt=50% | Edge=+4.9% | EV=+3.1% | Cur=-114 Min=-122 Drift=OK [ctx=90% spike=74% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728617&selectionId=16593214>)\n- Research only: E.Johnson (KC vs IND) Receiving Yards proj=33.27 range=10.8-64.7 [ctx=90% spike=27% depth=2]\n- Research only: K.Walker (KC vs IND) Receiving Yards proj=26.00 range=3.5-57.4 [ctx=90% spike=75% depth=1]\n- Research only: Lincoln Pare (IND vs KC) Receiving Yards proj=8.05 range=0.0-39.4 [ctx=90% spike=19%]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-20T22:04:26.614188+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_IND_KC",
+      "page": 2,
+      "payload": {
+        "embeds": [
+          {
+            "title": "IND @ KC | NFL 2026-09-20 (2/3)",
+            "description": "Kickoff: <t:1789950000:f> (<t:1789950000:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**PAPER - RB Rushing TDs**\n- Research only: J.Taylor (IND vs KC) Rushing TDs proj=0.64 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: K.Walker (KC vs IND) Rushing TDs proj=0.59 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: E.Johnson (KC vs IND) Rushing TDs proj=0.22 range=0.0-1.0 [ctx=90% spike=20% depth=2]\n- Research only: Lincoln Pare (IND vs KC) Rushing TDs proj=0.14 range=0.0-1.0 [ctx=90% spike=18%]\n- Research only: B.VanSumeren (KC vs IND) Rushing TDs proj=0.05 range=0.0-0.0 [ctx=78% spike=0% depth=1]\n- Research only: S.McGowan (IND vs KC) Rushing TDs proj=0.04 range=0.0-0.0 [ctx=76% spike=0% depth=2]\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: T.Warren (IND vs KC) Receiving Yards UNDER42.5 -109 proj=28.74 range=6.2-60.1 | P(under)=63% | Mkt=49% | Edge=+13.5% | EV=+20.6% | Cur=-109 Min=-170 Drift=OK [ctx=81% spike=72% depth=1]\n- Research only: X.Worthy (KC vs IND) Receiving Yards UNDER37.5 -113 proj=28.70 range=6.2-60.1 | P(under)=62% | Mkt=50% | Edge=+12.0% | EV=+16.9% | Cur=-113 Min=-164 Drift=OK [ctx=79% spike=72% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728598&selectionId=41066847>)\n- Research only: A.Pierce (IND vs KC) Receiving Yards OVER45.5 -109 proj=54.53 range=32.0-85.9 | P(over)=61% | Mkt=49% | Edge=+11.3% | EV=+16.4% | Cur=-109 Min=-155 Drift=OK [ctx=79% spike=67% depth=1 prac=Full Participation in Practice]\n- Research only: R.Rice (KC vs IND) Receiving Yards OVER53.5 -114 proj=60.24 range=37.8-91.6 | P(over)=58% | Mkt=50% | Edge=+7.6% | EV=+8.9% | Cur=-114 Min=-139 Drift=OK [ctx=81% spike=80% depth=1 prac=Full Participation in Practice]\n- Research only: J.Downs (IND vs KC) Receiving Yards UNDER39.5 -113 proj=37.10 range=14.6-68.5 | P(under)=57% | Mkt=50% | Edge=+6.9% | EV=+7.3% | Cur=-113 Min=-133 Drift=OK [ctx=79% spike=45% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728642&selectionId=41178411>)\n- Research only: T.Kelce (KC vs IND) Receiving Yards UNDER41.5 -113 proj=39.43 range=16.9-70.8 | P(under)=57% | Mkt=50% | Edge=+6.7% | EV=+6.8% | Cur=-113 Min=-131 Drift=OK [ctx=81% spike=69% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728658&selectionId=11802405>)\n- Research only: T.Thornton (KC vs IND) Receiving Yards UNDER14.5 -113 proj=13.67 range=0.0-45.1 | P(under)=55% | Mkt=50% | Edge=+5.5% | EV=+4.6% | Cur=-113 Min=-125 Drift=OK [ctx=75% spike=47% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728669&selectionId=41074863>)\n- Research only: K.Allen (IND vs KC) Receiving Yards UNDER29.5 -112 proj=28.91 range=6.4-60.3 | P(under)=55% | Mkt=50% | Edge=+5.2% | EV=+4.6% | Cur=-112 Min=-124 Drift=OK [ctx=76% spike=92% depth=3 prac=Full Participation in Practice]\n- Research only: N.Gray (KC vs IND) Receiving Yards UNDER10.5 -112 proj=10.98 range=0.0-42.4 | P(under)=53% | Mkt=50% | Edge=+2.8% | EV=+0.0% | Cur=-112 Min=-113 Drift=OK [ctx=78% spike=31% depth=2]\n- Research only: Deion Burks (IND vs KC) Receiving Yards proj=21.07 range=0.0-52.5 [ctx=75% spike=20% limited=24% depth=4]\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.186728598&selectionId[0]=41066847&marketId[1]=717.186728642&selectionId[1]=41178411&marketId[2]=717.186728658&selectionId[2]=11802405&marketId[3]=717.186728669&selectionId[3]=41074863>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-20T22:04:27.198433+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_IND_KC",
+      "page": 3,
+      "payload": {
+        "embeds": [
+          {
+            "title": "IND @ KC | NFL 2026-09-20 (3/3)",
+            "description": "Kickoff: <t:1789950000:f> (<t:1789950000:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: R.Rice (KC vs IND) Receiving TDs proj=0.47 range=0.0-1.0 [ctx=81% spike=100% depth=1 prac=Full Participation in Practice]\n- Research only: A.Pierce (IND vs KC) Receiving TDs proj=0.41 range=0.0-1.0 [ctx=79% spike=29% depth=1 prac=Full Participation in Practice]\n- Research only: T.Warren (IND vs KC) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=81% spike=24% depth=1]\n- Research only: T.Kelce (KC vs IND) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=81% spike=8% depth=1]\n- Research only: J.Downs (IND vs KC) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=79% spike=8% depth=2]\n- Research only: X.Worthy (KC vs IND) Receiving TDs proj=0.16 range=0.0-1.0 [ctx=79% spike=6% depth=2]\n- Research only: K.Allen (IND vs KC) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=76% spike=15% depth=3 prac=Full Participation in Practice]\n- Research only: M.Alie-Cox (IND vs KC) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=77% spike=18% depth=2]\n- Research only: Deion Burks (IND vs KC) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=3% limited=24% depth=4]\n- Research only: E.J. Horton (IND vs KC) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=7%]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-20T22:04:27.886035+00:00"
+    }
+  ]
+}

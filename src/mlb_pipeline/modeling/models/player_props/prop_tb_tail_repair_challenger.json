@@ -1,0 +1,1547 @@
+{
+  "generated_at_utc": "2026-08-29T12:53:20Z",
+  "status": "ready",
+  "usage": "live_tb15_state_probability_scorer",
+  "rows": 10643,
+  "evaluation_rows": 8910,
+  "dates": 57,
+  "fold_meta": {
+    "enabled": true,
+    "folds": [
+      {
+        "holdout_start": "2026-06-11",
+        "holdout_end": "2026-06-15",
+        "train_rows": 1733,
+        "holdout_rows": 943
+      },
+      {
+        "holdout_start": "2026-06-16",
+        "holdout_end": "2026-06-20",
+        "train_rows": 2676,
+        "holdout_rows": 982
+      },
+      {
+        "holdout_start": "2026-06-21",
+        "holdout_end": "2026-06-25",
+        "train_rows": 3658,
+        "holdout_rows": 920
+      },
+      {
+        "holdout_start": "2026-06-26",
+        "holdout_end": "2026-06-30",
+        "train_rows": 4578,
+        "holdout_rows": 1085
+      },
+      {
+        "holdout_start": "2026-07-01",
+        "holdout_end": "2026-07-05",
+        "train_rows": 5663,
+        "holdout_rows": 954
+      },
+      {
+        "holdout_start": "2026-07-06",
+        "holdout_end": "2026-07-10",
+        "train_rows": 6617,
+        "holdout_rows": 954
+      },
+      {
+        "holdout_start": "2026-07-11",
+        "holdout_end": "2026-07-18",
+        "train_rows": 7571,
+        "holdout_rows": 853
+      },
+      {
+        "holdout_start": "2026-07-19",
+        "holdout_end": "2026-07-23",
+        "train_rows": 8424,
+        "holdout_rows": 885
+      },
+      {
+        "holdout_start": "2026-07-24",
+        "holdout_end": "2026-07-28",
+        "train_rows": 9309,
+        "holdout_rows": 990
+      },
+      {
+        "holdout_start": "2026-07-29",
+        "holdout_end": "2026-07-30",
+        "train_rows": 10299,
+        "holdout_rows": 344
+      }
+    ],
+    "numeric_features": [
+      "lineup_slot",
+      "confirmed_starter_num",
+      "is_home",
+      "projected_pa",
+      "pa_games",
+      "model_pred_hits",
+      "model_pred_total_bases",
+      "model_pred_home_runs",
+      "pred_hit_rate",
+      "pred_tb_rate",
+      "pred_hr_rate",
+      "pred_extra_bases_per_hit",
+      "team_implied_runs",
+      "opponent_implied_runs",
+      "game_total_line",
+      "park_run_factor",
+      "park_hr_factor",
+      "park_babip_factor",
+      "temperature_f",
+      "wind_speed_mph",
+      "wind_sin",
+      "wind_cos",
+      "is_dome",
+      "is_day_game",
+      "own_lineup_xwoba_avg",
+      "own_lineup_xslg_avg",
+      "own_lineup_barrel_avg",
+      "own_lineup_hard_hit_avg",
+      "lineup_confirmed_flag",
+      "confirmed_team_lineup_slots",
+      "team_lineup_confirmed_flag",
+      "opp_sp_k_pct_10",
+      "opp_sp_bb_pct",
+      "opp_sp_xwoba",
+      "opp_sp_hard_hit_pct",
+      "opp_sp_whiff_pct",
+      "opp_bp_era_10",
+      "opp_bp_whip_10",
+      "opp_bp_k9_10",
+      "opp_bp_ip_last_3",
+      "opp_bp_ip_last_7",
+      "batter_vs_hand_hits_avg_10",
+      "batter_vs_hand_tb_avg_10",
+      "batter_vs_hand_hr_avg_10",
+      "batter_vs_hand_iso_avg_10",
+      "batter_vs_hand_k_rate_10",
+      "batter_vs_rp_ba_30",
+      "batter_vs_rp_slg_30",
+      "batter_vs_rp_hr_rate_30",
+      "batter_vs_rp_k_rate_30",
+      "batter_sc_barrel_rate",
+      "batter_sc_hard_hit_pct",
+      "batter_sc_avg_exit_velo",
+      "batter_sc_avg_launch_angle",
+      "batter_sc_sweet_spot_pct",
+      "batter_sc_fb_pct",
+      "batter_sc_gb_pct",
+      "batter_sc_ld_pct",
+      "batter_sc_xba",
+      "batter_sc_xslg",
+      "batter_sc_xwoba",
+      "batter_sc_xiso",
+      "batter_sc_brl_pa",
+      "batter_disc_whiff_pct",
+      "batter_disc_k_pct",
+      "batter_disc_bb_pct",
+      "opp_sp_sc_barrel_rate",
+      "opp_sp_sc_hard_hit_pct",
+      "opp_sp_sc_avg_exit_velo",
+      "opp_sp_sc_avg_launch_angle",
+      "opp_sp_sc_xba",
+      "opp_sp_sc_xslg",
+      "opp_sp_sc_xwoba",
+      "opp_sp_sc_xiso",
+      "opp_sp_fastball_family_pct",
+      "opp_sp_pitch_diversity"
+    ],
+    "categorical_features": [
+      "team_abbr",
+      "opponent_abbr",
+      "lineup_source",
+      "primary_position",
+      "batter_hand",
+      "opp_sp_hand"
+    ]
+  },
+  "states": [
+    "zero",
+    "one",
+    "two_three",
+    "four_plus_hr",
+    "four_plus_non_hr"
+  ],
+  "state_brier": {
+    "baseline": {
+      "rows": 8910,
+      "brier": 0.7927012769512888
+    },
+    "direct": {
+      "rows": 8910,
+      "brier": 0.7188649986669104
+    },
+    "gain": 0.07383627828437833
+  },
+  "tb_count": {
+    "baseline": {
+      "rows": 8910,
+      "mae": 1.4061209652076319,
+      "rmse": 1.8042734205347406,
+      "bias": 0.14123508755990238
+    },
+    "direct_state_expected": {
+      "rows": 8910,
+      "mae": 1.3519494474947071,
+      "rmse": 1.774726406166463,
+      "bias": 0.01149441470441136
+    },
+    "mae_gain": 0.05417151771292472
+  },
+  "true_pair_line_pricing": {
+    "rows": 41083,
+    "baseline_brier": 0.2682699471365475,
+    "direct_brier": 0.24864595457815214,
+    "calibrated_brier": 0.24565074137310458,
+    "calibrated_brier_gain_vs_baseline": 0.022619205763442923,
+    "selected_blend_alpha": 0.75,
+    "selected_blend_brier": 0.24500715014114927,
+    "selected_blend_brier_gain_vs_baseline": 0.02326279699539824,
+    "calibration_offsets": [
+      {
+        "date": "2026-06-12",
+        "line_key": "TB 1.5",
+        "prior_rows": 268,
+        "prior_pred_rate": 0.43750288021442896,
+        "prior_actual_rate": 0.458955223880597,
+        "offset": 0.04967926165265015
+      },
+      {
+        "date": "2026-06-13",
+        "line_key": "TB 1.5",
+        "prior_rows": 1442,
+        "prior_pred_rate": 0.40108105328663074,
+        "prior_actual_rate": 0.4264909847434119,
+        "offset": 0.09201778977546934
+      },
+      {
+        "date": "2026-06-13",
+        "line_key": "TB 2.5",
+        "prior_rows": 94,
+        "prior_pred_rate": 0.27312181799242025,
+        "prior_actual_rate": 0.39361702127659576,
+        "offset": 0.17479767772023708
+      },
+      {
+        "date": "2026-06-13",
+        "line_key": "TB 3.5+",
+        "prior_rows": 68,
+        "prior_pred_rate": 0.18195704884273198,
+        "prior_actual_rate": 0.3235294117647059,
+        "offset": 0.19424282101495352
+      },
+      {
+        "date": "2026-06-14",
+        "line_key": "TB 1.5",
+        "prior_rows": 2335,
+        "prior_pred_rate": 0.4086263997852902,
+        "prior_actual_rate": 0.41798715203426123,
+        "offset": 0.03555910115021522
+      },
+      {
+        "date": "2026-06-14",
+        "line_key": "TB 2.5",
+        "prior_rows": 150,
+        "prior_pred_rate": 0.29591815889713274,
+        "prior_actual_rate": 0.3466666666666667,
+        "offset": 0.09989482071324675
+      },
+      {
+        "date": "2026-06-14",
+        "line_key": "TB 3.5+",
+        "prior_rows": 122,
+        "prior_pred_rate": 0.19322449841266098,
+        "prior_actual_rate": 0.3524590163934426,
+        "offset": 0.31104126829591416
+      },
+      {
+        "date": "2026-06-15",
+        "line_key": "TB 1.5",
+        "prior_rows": 3144,
+        "prior_pred_rate": 0.40862745224505115,
+        "prior_actual_rate": 0.4258905852417303,
+        "offset": 0.06675809762327924
+      },
+      {
+        "date": "2026-06-15",
+        "line_key": "TB 2.5",
+        "prior_rows": 209,
+        "prior_pred_rate": 0.29487157125868574,
+        "prior_actual_rate": 0.36363636363636365,
+        "offset": 0.15954735862579159
+      },
+      {
+        "date": "2026-06-15",
+        "line_key": "TB 3.5+",
+        "prior_rows": 173,
+        "prior_pred_rate": 0.19221629563320078,
+        "prior_actual_rate": 0.3872832369942196,
+        "offset": 0.45310535638266464
+      },
+      {
+        "date": "2026-06-16",
+        "line_key": "TB 1.5",
+        "prior_rows": 3940,
+        "prior_pred_rate": 0.39996216385492606,
+        "prior_actual_rate": 0.40913705583756343,
+        "offset": 0.036248833123108275
+      },
+      {
+        "date": "2026-06-16",
+        "line_key": "TB 2.5",
+        "prior_rows": 249,
+        "prior_pred_rate": 0.2879291965942109,
+        "prior_actual_rate": 0.3654618473895582,
+        "offset": 0.1961649829167849
+      },
+      {
+        "date": "2026-06-16",
+        "line_key": "TB 3.5+",
+        "prior_rows": 209,
+        "prior_pred_rate": 0.1936131431134607,
+        "prior_actual_rate": 0.42105263157894735,
+        "offset": 0.5663173390502952
+      },
+      {
+        "date": "2026-06-17",
+        "line_key": "TB 1.5",
+        "prior_rows": 4931,
+        "prior_pred_rate": 0.3973294624465606,
+        "prior_actual_rate": 0.39626850537416347,
+        "offset": -0.004259889999623934
+      },
+      {
+        "date": "2026-06-17",
+        "line_key": "TB 2.5",
+        "prior_rows": 303,
+        "prior_pred_rate": 0.2799065349211923,
+        "prior_actual_rate": 0.3696369636963696,
+        "offset": 0.24767130597026946
+      },
+      {
+        "date": "2026-06-17",
+        "line_key": "TB 3.5+",
+        "prior_rows": 257,
+        "prior_pred_rate": 0.18840965774290924,
+        "prior_actual_rate": 0.41245136186770426,
+        "offset": 0.6222753612742336
+      },
+      {
+        "date": "2026-06-18",
+        "line_key": "TB 1.5",
+        "prior_rows": 5445,
+        "prior_pred_rate": 0.39812276910663186,
+        "prior_actual_rate": 0.40422405876951334,
+        "offset": 0.024497901505406806
+      },
+      {
+        "date": "2026-06-18",
+        "line_key": "TB 2.5",
+        "prior_rows": 336,
+        "prior_pred_rate": 0.27844744267320326,
+        "prior_actual_rate": 0.36904761904761907,
+        "offset": 0.2606953698137149
+      },
+      {
+        "date": "2026-06-18",
+        "line_key": "TB 3.5+",
+        "prior_rows": 294,
+        "prior_pred_rate": 0.1905223829316778,
+        "prior_actual_rate": 0.3979591836734694,
+        "offset": 0.6145692925796185
+      },
+      {
+        "date": "2026-06-19",
+        "line_key": "TB 1.5",
+        "prior_rows": 5749,
+        "prior_pred_rate": 0.39850742800924793,
+        "prior_actual_rate": 0.4040702730909723,
+        "offset": 0.02237568212968821
+      },
+      {
+        "date": "2026-06-19",
+        "line_key": "TB 2.5",
+        "prior_rows": 368,
+        "prior_pred_rate": 0.2788677988495129,
+        "prior_actual_rate": 0.39402173913043476,
+        "offset": 0.3366724575146636
+      },
+      {
+        "date": "2026-06-19",
+        "line_key": "TB 3.5+",
+        "prior_rows": 314,
+        "prior_pred_rate": 0.19247449670115332,
+        "prior_actual_rate": 0.3853503184713376,
+        "offset": 0.5908034219627439
+      },
+      {
+        "date": "2026-06-20",
+        "line_key": "TB 1.5",
+        "prior_rows": 6692,
+        "prior_pred_rate": 0.40099682409265697,
+        "prior_actual_rate": 0.415421398684997,
+        "offset": 0.05798267314750399
+      },
+      {
+        "date": "2026-06-20",
+        "line_key": "TB 2.5",
+        "prior_rows": 457,
+        "prior_pred_rate": 0.27436302881293645,
+        "prior_actual_rate": 0.37636761487964987,
+        "offset": 0.32525809510420417
+      },
+      {
+        "date": "2026-06-20",
+        "line_key": "TB 3.5+",
+        "prior_rows": 381,
+        "prior_pred_rate": 0.19124646173891433,
+        "prior_actual_rate": 0.3963254593175853,
+        "offset": 0.6696234199298395
+      },
+      {
+        "date": "2026-06-21",
+        "line_key": "TB 1.5",
+        "prior_rows": 7442,
+        "prior_pred_rate": 0.40762366338680767,
+        "prior_actual_rate": 0.416285944638538,
+        "offset": 0.03482308799142338
+      },
+      {
+        "date": "2026-06-21",
+        "line_key": "TB 2.5",
+        "prior_rows": 516,
+        "prior_pred_rate": 0.2794050753568286,
+        "prior_actual_rate": 0.3992248062015504,
+        "offset": 0.3882384104529954
+      },
+      {
+        "date": "2026-06-21",
+        "line_key": "TB 3.5+",
+        "prior_rows": 410,
+        "prior_pred_rate": 0.19316966816093661,
+        "prior_actual_rate": 0.4121951219512195,
+        "offset": 0.7223032304464393
+      },
+      {
+        "date": "2026-06-22",
+        "line_key": "TB 1.5",
+        "prior_rows": 8118,
+        "prior_pred_rate": 0.4083335774253949,
+        "prior_actual_rate": 0.41832963784183297,
+        "offset": 0.04023318900348727
+      },
+      {
+        "date": "2026-06-22",
+        "line_key": "TB 2.5",
+        "prior_rows": 564,
+        "prior_pred_rate": 0.28074168813086586,
+        "prior_actual_rate": 0.40425531914893614,
+        "offset": 0.4082503963321761
+      },
+      {
+        "date": "2026-06-22",
+        "line_key": "TB 3.5+",
+        "prior_rows": 445,
+        "prior_pred_rate": 0.19174443142419226,
+        "prior_actual_rate": 0.4067415730337079,
+        "offset": 0.7321890879603357
+      },
+      {
+        "date": "2026-06-23",
+        "line_key": "TB 1.5",
+        "prior_rows": 9021,
+        "prior_pred_rate": 0.4067621933320005,
+        "prior_actual_rate": 0.41680523223589405,
+        "offset": 0.04056510490501111
+      },
+      {
+        "date": "2026-06-23",
+        "line_key": "TB 2.5",
+        "prior_rows": 607,
+        "prior_pred_rate": 0.279629591270288,
+        "prior_actual_rate": 0.4200988467874794,
+        "offset": 0.46930206263073954
+      },
+      {
+        "date": "2026-06-23",
+        "line_key": "TB 3.5+",
+        "prior_rows": 484,
+        "prior_pred_rate": 0.19082227322100376,
+        "prior_actual_rate": 0.3925619834710744,
+        "offset": 0.7133483508016669
+      },
+      {
+        "date": "2026-06-24",
+        "line_key": "TB 1.5",
+        "prior_rows": 9473,
+        "prior_pred_rate": 0.4082571394903726,
+        "prior_actual_rate": 0.41750237517154015,
+        "offset": 0.03735150034049892
+      },
+      {
+        "date": "2026-06-24",
+        "line_key": "TB 2.5",
+        "prior_rows": 630,
+        "prior_pred_rate": 0.2802081658270529,
+        "prior_actual_rate": 0.42063492063492064,
+        "offset": 0.4730781935641601
+      },
+      {
+        "date": "2026-06-24",
+        "line_key": "TB 3.5+",
+        "prior_rows": 496,
+        "prior_pred_rate": 0.1918069556109333,
+        "prior_actual_rate": 0.3971774193548387,
+        "offset": 0.727660274100536
+      },
+      {
+        "date": "2026-06-25",
+        "line_key": "TB 1.5",
+        "prior_rows": 10026,
+        "prior_pred_rate": 0.4095301141824475,
+        "prior_actual_rate": 0.4175144623977658,
+        "offset": 0.03227911609488113
+      },
+      {
+        "date": "2026-06-25",
+        "line_key": "TB 2.5",
+        "prior_rows": 663,
+        "prior_pred_rate": 0.2786505529770723,
+        "prior_actual_rate": 0.416289592760181,
+        "offset": 0.4710460305065924
+      },
+      {
+        "date": "2026-06-25",
+        "line_key": "TB 3.5+",
+        "prior_rows": 517,
+        "prior_pred_rate": 0.19129321918885467,
+        "prior_actual_rate": 0.40425531914893614,
+        "offset": 0.7598987455511526
+      },
+      {
+        "date": "2026-06-26",
+        "line_key": "TB 1.5",
+        "prior_rows": 10230,
+        "prior_pred_rate": 0.4098209578073629,
+        "prior_actual_rate": 0.41652003910068425,
+        "offset": 0.02710022286306403
+      },
+      {
+        "date": "2026-06-26",
+        "line_key": "TB 2.5",
+        "prior_rows": 668,
+        "prior_pred_rate": 0.27868799833462604,
+        "prior_actual_rate": 0.42065868263473055,
+        "offset": 0.48553817346076605
+      },
+      {
+        "date": "2026-06-26",
+        "line_key": "TB 3.5+",
+        "prior_rows": 524,
+        "prior_pred_rate": 0.1907409419655881,
+        "prior_actual_rate": 0.4083969465648855,
+        "offset": 0.7777539631137769
+      },
+      {
+        "date": "2026-06-27",
+        "line_key": "TB 1.5",
+        "prior_rows": 11213,
+        "prior_pred_rate": 0.41008738908805864,
+        "prior_actual_rate": 0.41648087041826454,
+        "offset": 0.025905364052920297
+      },
+      {
+        "date": "2026-06-27",
+        "line_key": "TB 2.5",
+        "prior_rows": 691,
+        "prior_pred_rate": 0.2781870567952339,
+        "prior_actual_rate": 0.41389290882778584,
+        "offset": 0.46964502433889993
+      },
+      {
+        "date": "2026-06-27",
+        "line_key": "TB 3.5+",
+        "prior_rows": 533,
+        "prior_pred_rate": 0.18998354871727835,
+        "prior_actual_rate": 0.41275797373358347,
+        "offset": 0.7980758289335818
+      },
+      {
+        "date": "2026-06-28",
+        "line_key": "TB 1.5",
+        "prior_rows": 12017,
+        "prior_pred_rate": 0.4067050245097243,
+        "prior_actual_rate": 0.4179079637180661,
+        "offset": 0.04547927431201371
+      },
+      {
+        "date": "2026-06-28",
+        "line_key": "TB 2.5",
+        "prior_rows": 716,
+        "prior_pred_rate": 0.27519810325253763,
+        "prior_actual_rate": 0.4231843575418994,
+        "offset": 0.5148730755641764
+      },
+      {
+        "date": "2026-06-28",
+        "line_key": "TB 3.5+",
+        "prior_rows": 566,
+        "prior_pred_rate": 0.18853099443691795,
+        "prior_actual_rate": 0.4134275618374558,
+        "offset": 0.8200127596719506
+      },
+      {
+        "date": "2026-06-29",
+        "line_key": "TB 1.5",
+        "prior_rows": 12718,
+        "prior_pred_rate": 0.405398162426688,
+        "prior_actual_rate": 0.40957697751218747,
+        "offset": 0.017039931785584897
+      },
+      {
+        "date": "2026-06-29",
+        "line_key": "TB 2.5",
+        "prior_rows": 749,
+        "prior_pred_rate": 0.2734543241022934,
+        "prior_actual_rate": 0.411214953271028,
+        "offset": 0.4879325827503729
+      },
+      {
+        "date": "2026-06-29",
+        "line_key": "TB 3.5+",
+        "prior_rows": 591,
+        "prior_pred_rate": 0.18706380904905492,
+        "prior_actual_rate": 0.40947546531302875,
+        "offset": 0.8241638012995375
+      },
+      {
+        "date": "2026-06-30",
+        "line_key": "TB 1.5",
+        "prior_rows": 13721,
+        "prior_pred_rate": 0.4034031259665833,
+        "prior_actual_rate": 0.411777567232709,
+        "offset": 0.03418512360923992
+      },
+      {
+        "date": "2026-06-30",
+        "line_key": "TB 2.5",
+        "prior_rows": 812,
+        "prior_pred_rate": 0.27147032432319274,
+        "prior_actual_rate": 0.4236453201970443,
+        "offset": 0.5450902167714646
+      },
+      {
+        "date": "2026-06-30",
+        "line_key": "TB 3.5+",
+        "prior_rows": 639,
+        "prior_pred_rate": 0.18487761980787243,
+        "prior_actual_rate": 0.40688575899843504,
+        "offset": 0.8429541738437507
+      },
+      {
+        "date": "2026-07-01",
+        "line_key": "TB 1.5",
+        "prior_rows": 14841,
+        "prior_pred_rate": 0.40316492324326597,
+        "prior_actual_rate": 0.41439256114817064,
+        "offset": 0.045841412044419036
+      },
+      {
+        "date": "2026-07-01",
+        "line_key": "TB 2.5",
+        "prior_rows": 871,
+        "prior_pred_rate": 0.26881976900987103,
+        "prior_actual_rate": 0.4190585533869116,
+        "offset": 0.5481196626566323
+      },
+      {
+        "date": "2026-07-01",
+        "line_key": "TB 3.5+",
+        "prior_rows": 696,
+        "prior_pred_rate": 0.18404692894747102,
+        "prior_actual_rate": 0.4166666666666667,
+        "offset": 0.8953961016481888
+      },
+      {
+        "date": "2026-07-02",
+        "line_key": "TB 1.5",
+        "prior_rows": 15746,
+        "prior_pred_rate": 0.40506745741144984,
+        "prior_actual_rate": 0.41445446462593677,
+        "offset": 0.038326758541435545
+      },
+      {
+        "date": "2026-07-02",
+        "line_key": "TB 2.5",
+        "prior_rows": 925,
+        "prior_pred_rate": 0.27201321006771456,
+        "prior_actual_rate": 0.4118918918918919,
+        "offset": 0.5165877503409284
+      },
+      {
+        "date": "2026-07-02",
+        "line_key": "TB 3.5+",
+        "prior_rows": 737,
+        "prior_pred_rate": 0.18316142682537698,
+        "prior_actual_rate": 0.4151967435549525,
+        "offset": 0.906541953335056
+      },
+      {
+        "date": "2026-07-03",
+        "line_key": "TB 1.5",
+        "prior_rows": 16343,
+        "prior_pred_rate": 0.40465352305449753,
+        "prior_actual_rate": 0.41681453833445514,
+        "offset": 0.049640977606729184
+      },
+      {
+        "date": "2026-07-03",
+        "line_key": "TB 2.5",
+        "prior_rows": 990,
+        "prior_pred_rate": 0.26955998237011025,
+        "prior_actual_rate": 0.398989898989899,
+        "offset": 0.4884947358812349
+      },
+      {
+        "date": "2026-07-03",
+        "line_key": "TB 3.5+",
+        "prior_rows": 789,
+        "prior_pred_rate": 0.18094765954452513,
+        "prior_actual_rate": 0.40811153358681873,
+        "offset": 0.9079981621332023
+      },
+      {
+        "date": "2026-07-04",
+        "line_key": "TB 1.5",
+        "prior_rows": 17289,
+        "prior_pred_rate": 0.4015403718977953,
+        "prior_actual_rate": 0.4177800913875875,
+        "offset": 0.06638995504323536
+      },
+      {
+        "date": "2026-07-04",
+        "line_key": "TB 2.5",
+        "prior_rows": 1043,
+        "prior_pred_rate": 0.2661093250217098,
+        "prior_actual_rate": 0.3883029721955896,
+        "offset": 0.46989678745834923
+      },
+      {
+        "date": "2026-07-04",
+        "line_key": "TB 3.5+",
+        "prior_rows": 822,
+        "prior_pred_rate": 0.1795468805527769,
+        "prior_actual_rate": 0.41849148418491483,
+        "offset": 0.9574863111736909
+      },
+      {
+        "date": "2026-07-05",
+        "line_key": "TB 1.5",
+        "prior_rows": 18373,
+        "prior_pred_rate": 0.3981368740901541,
+        "prior_actual_rate": 0.41811353616720187,
+        "offset": 0.08182119902239889
+      },
+      {
+        "date": "2026-07-05",
+        "line_key": "TB 2.5",
+        "prior_rows": 1093,
+        "prior_pred_rate": 0.26488169451210436,
+        "prior_actual_rate": 0.3879231473010064,
+        "offset": 0.4773506751173859
+      },
+      {
+        "date": "2026-07-05",
+        "line_key": "TB 3.5+",
+        "prior_rows": 893,
+        "prior_pred_rate": 0.17562544068994757,
+        "prior_actual_rate": 0.42777155655095184,
+        "offset": 1.0256202698515693
+      },
+      {
+        "date": "2026-07-06",
+        "line_key": "TB 1.5",
+        "prior_rows": 19189,
+        "prior_pred_rate": 0.39554116843105896,
+        "prior_actual_rate": 0.41956329146907084,
+        "offset": 0.09848583054752584
+      },
+      {
+        "date": "2026-07-06",
+        "line_key": "TB 2.5",
+        "prior_rows": 1155,
+        "prior_pred_rate": 0.263355641500181,
+        "prior_actual_rate": 0.38961038961038963,
+        "offset": 0.4940924932985739
+      },
+      {
+        "date": "2026-07-06",
+        "line_key": "TB 3.5+",
+        "prior_rows": 942,
+        "prior_pred_rate": 0.1735813113095,
+        "prior_actual_rate": 0.4267515923566879,
+        "offset": 1.0437379289621849
+      },
+      {
+        "date": "2026-07-07",
+        "line_key": "TB 1.5",
+        "prior_rows": 19782,
+        "prior_pred_rate": 0.3947145313306659,
+        "prior_actual_rate": 0.42017996158123544,
+        "offset": 0.10444674272640823
+      },
+      {
+        "date": "2026-07-07",
+        "line_key": "TB 2.5",
+        "prior_rows": 1193,
+        "prior_pred_rate": 0.26307721230170944,
+        "prior_actual_rate": 0.393964794635373,
+        "offset": 0.513306039304684
+      },
+      {
+        "date": "2026-07-07",
+        "line_key": "TB 3.5+",
+        "prior_rows": 987,
+        "prior_pred_rate": 0.1729732281316886,
+        "prior_actual_rate": 0.43059777102330293,
+        "offset": 1.0687268877518012
+      },
+      {
+        "date": "2026-07-08",
+        "line_key": "TB 1.5",
+        "prior_rows": 20758,
+        "prior_pred_rate": 0.39281740442539376,
+        "prior_actual_rate": 0.4149243665092976,
+        "offset": 0.09096338784200085
+      },
+      {
+        "date": "2026-07-08",
+        "line_key": "TB 2.5",
+        "prior_rows": 1257,
+        "prior_pred_rate": 0.2615092321322679,
+        "prior_actual_rate": 0.4017501988862371,
+        "offset": 0.552114705632746
+      },
+      {
+        "date": "2026-07-08",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1052,
+        "prior_pred_rate": 0.17144385788331457,
+        "prior_actual_rate": 0.42585551330798477,
+        "offset": 1.07271043401803
+      },
+      {
+        "date": "2026-07-09",
+        "line_key": "TB 1.5",
+        "prior_rows": 21774,
+        "prior_pred_rate": 0.3917571163447966,
+        "prior_actual_rate": 0.41356663911086616,
+        "offset": 0.0898664085380712
+      },
+      {
+        "date": "2026-07-09",
+        "line_key": "TB 2.5",
+        "prior_rows": 1327,
+        "prior_pred_rate": 0.2601679748928167,
+        "prior_actual_rate": 0.4031650339110776,
+        "offset": 0.5672999238342661
+      },
+      {
+        "date": "2026-07-09",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1142,
+        "prior_pred_rate": 0.16972341769861676,
+        "prior_actual_rate": 0.4264448336252189,
+        "offset": 1.0987857728793944
+      },
+      {
+        "date": "2026-07-10",
+        "line_key": "TB 1.5",
+        "prior_rows": 22590,
+        "prior_pred_rate": 0.3910520017946981,
+        "prior_actual_rate": 0.41248339973439574,
+        "offset": 0.08840113048786286
+      },
+      {
+        "date": "2026-07-10",
+        "line_key": "TB 2.5",
+        "prior_rows": 1366,
+        "prior_pred_rate": 0.259423171365322,
+        "prior_actual_rate": 0.3953147877013177,
+        "offset": 0.5442569257538401
+      },
+      {
+        "date": "2026-07-10",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1180,
+        "prior_pred_rate": 0.16881063225544382,
+        "prior_actual_rate": 0.4211864406779661,
+        "offset": 1.0912223129111498
+      },
+      {
+        "date": "2026-07-11",
+        "line_key": "TB 1.5",
+        "prior_rows": 23614,
+        "prior_pred_rate": 0.3908863025236315,
+        "prior_actual_rate": 0.413779961040061,
+        "offset": 0.09442758029254555
+      },
+      {
+        "date": "2026-07-11",
+        "line_key": "TB 2.5",
+        "prior_rows": 1456,
+        "prior_pred_rate": 0.25889105597530343,
+        "prior_actual_rate": 0.40796703296703296,
+        "offset": 0.5973155121662058
+      },
+      {
+        "date": "2026-07-11",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1240,
+        "prior_pred_rate": 0.16968840203073549,
+        "prior_actual_rate": 0.41774193548387095,
+        "offset": 1.08137242046893
+      },
+      {
+        "date": "2026-07-12",
+        "line_key": "TB 1.5",
+        "prior_rows": 24471,
+        "prior_pred_rate": 0.39034099950271245,
+        "prior_actual_rate": 0.4117118221568387,
+        "offset": 0.08826440844154497
+      },
+      {
+        "date": "2026-07-12",
+        "line_key": "TB 2.5",
+        "prior_rows": 1520,
+        "prior_pred_rate": 0.2595407941244469,
+        "prior_actual_rate": 0.4085526315789474,
+        "offset": 0.5995204295865193
+      },
+      {
+        "date": "2026-07-12",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1290,
+        "prior_pred_rate": 0.16930228776486664,
+        "prior_actual_rate": 0.4124031007751938,
+        "offset": 1.0705617071427398
+      },
+      {
+        "date": "2026-07-16",
+        "line_key": "TB 1.5",
+        "prior_rows": 25502,
+        "prior_pred_rate": 0.3902371918099792,
+        "prior_actual_rate": 0.411536350090189,
+        "offset": 0.08800729929845823
+      },
+      {
+        "date": "2026-07-16",
+        "line_key": "TB 2.5",
+        "prior_rows": 1607,
+        "prior_pred_rate": 0.2593081385993675,
+        "prior_actual_rate": 0.40883634100808963,
+        "offset": 0.6054393863897001
+      },
+      {
+        "date": "2026-07-17",
+        "line_key": "TB 1.5",
+        "prior_rows": 25598,
+        "prior_pred_rate": 0.3902370401729089,
+        "prior_actual_rate": 0.4115165247284944,
+        "offset": 0.08792927000552059
+      },
+      {
+        "date": "2026-07-17",
+        "line_key": "TB 2.5",
+        "prior_rows": 1610,
+        "prior_pred_rate": 0.25945125488877385,
+        "prior_actual_rate": 0.4080745341614907,
+        "offset": 0.6020970647129272
+      },
+      {
+        "date": "2026-07-17",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1352,
+        "prior_pred_rate": 0.16903176341946627,
+        "prior_actual_rate": 0.40828402366863903,
+        "offset": 1.0640390210645632
+      },
+      {
+        "date": "2026-07-18",
+        "line_key": "TB 1.5",
+        "prior_rows": 26626,
+        "prior_pred_rate": 0.3899540331619863,
+        "prior_actual_rate": 0.41035078494704424,
+        "offset": 0.08435635993073205
+      },
+      {
+        "date": "2026-07-18",
+        "line_key": "TB 2.5",
+        "prior_rows": 1690,
+        "prior_pred_rate": 0.2601645428815912,
+        "prior_actual_rate": 0.4041420118343195,
+        "offset": 0.587366640024428
+      },
+      {
+        "date": "2026-07-18",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1397,
+        "prior_pred_rate": 0.16869893582568093,
+        "prior_actual_rate": 0.4101646385110952,
+        "offset": 1.0773533887683788
+      },
+      {
+        "date": "2026-07-19",
+        "line_key": "TB 1.5",
+        "prior_rows": 27426,
+        "prior_pred_rate": 0.3897260102220162,
+        "prior_actual_rate": 0.411033326040983,
+        "offset": 0.08812611419137516
+      },
+      {
+        "date": "2026-07-19",
+        "line_key": "TB 2.5",
+        "prior_rows": 1763,
+        "prior_pred_rate": 0.26002153886366786,
+        "prior_actual_rate": 0.39931934203062963,
+        "offset": 0.5725974507128976
+      },
+      {
+        "date": "2026-07-19",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1475,
+        "prior_pred_rate": 0.16828836688112206,
+        "prior_actual_rate": 0.4047457627118644,
+        "offset": 1.0673516770789582
+      },
+      {
+        "date": "2026-07-20",
+        "line_key": "TB 1.5",
+        "prior_rows": 28146,
+        "prior_pred_rate": 0.38930781866001657,
+        "prior_actual_rate": 0.412101186669509,
+        "offset": 0.09426692759728386
+      },
+      {
+        "date": "2026-07-20",
+        "line_key": "TB 2.5",
+        "prior_rows": 1839,
+        "prior_pred_rate": 0.26001422324955986,
+        "prior_actual_rate": 0.3953235454051115,
+        "offset": 0.5600026780603274
+      },
+      {
+        "date": "2026-07-20",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1510,
+        "prior_pred_rate": 0.16857502144177308,
+        "prior_actual_rate": 0.40463576158940395,
+        "offset": 1.0681034567067378
+      },
+      {
+        "date": "2026-07-21",
+        "line_key": "TB 1.5",
+        "prior_rows": 29231,
+        "prior_pred_rate": 0.3895146176261398,
+        "prior_actual_rate": 0.4139098901850775,
+        "offset": 0.10083776341620326
+      },
+      {
+        "date": "2026-07-21",
+        "line_key": "TB 2.5",
+        "prior_rows": 1923,
+        "prior_pred_rate": 0.25916527908626646,
+        "prior_actual_rate": 0.39365574622984917,
+        "offset": 0.5600888648720743
+      },
+      {
+        "date": "2026-07-21",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1589,
+        "prior_pred_rate": 0.16803562743527936,
+        "prior_actual_rate": 0.40591567023285086,
+        "offset": 1.0824898129814995
+      },
+      {
+        "date": "2026-07-22",
+        "line_key": "TB 1.5",
+        "prior_rows": 30168,
+        "prior_pred_rate": 0.3900787678890913,
+        "prior_actual_rate": 0.41388225934765316,
+        "offset": 0.0983896985577052
+      },
+      {
+        "date": "2026-07-22",
+        "line_key": "TB 2.5",
+        "prior_rows": 2001,
+        "prior_pred_rate": 0.2594970902993957,
+        "prior_actual_rate": 0.4017991004497751,
+        "offset": 0.5914901787264291
+      },
+      {
+        "date": "2026-07-22",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1636,
+        "prior_pred_rate": 0.16858406042145402,
+        "prior_actual_rate": 0.41014669926650366,
+        "offset": 1.0980952596547866
+      },
+      {
+        "date": "2026-07-23",
+        "line_key": "TB 1.5",
+        "prior_rows": 31139,
+        "prior_pred_rate": 0.3902152273646084,
+        "prior_actual_rate": 0.41356498281897297,
+        "offset": 0.09654034151767489
+      },
+      {
+        "date": "2026-07-23",
+        "line_key": "TB 2.5",
+        "prior_rows": 2078,
+        "prior_pred_rate": 0.2590725525779931,
+        "prior_actual_rate": 0.40038498556304136,
+        "offset": 0.5901349436242523
+      },
+      {
+        "date": "2026-07-23",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1692,
+        "prior_pred_rate": 0.16758163782581553,
+        "prior_actual_rate": 0.4083924349881797,
+        "offset": 1.1019906351812654
+      },
+      {
+        "date": "2026-07-24",
+        "line_key": "TB 1.5",
+        "prior_rows": 31322,
+        "prior_pred_rate": 0.39025336952259954,
+        "prior_actual_rate": 0.41312815273609604,
+        "offset": 0.09459466729831444
+      },
+      {
+        "date": "2026-07-24",
+        "line_key": "TB 2.5",
+        "prior_rows": 2091,
+        "prior_pred_rate": 0.25867827499565155,
+        "prior_actual_rate": 0.39933046389287424,
+        "offset": 0.5883221332153895
+      },
+      {
+        "date": "2026-07-24",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1701,
+        "prior_pred_rate": 0.1674712882776308,
+        "prior_actual_rate": 0.40858318636096413,
+        "offset": 1.1040217299782986
+      },
+      {
+        "date": "2026-07-25",
+        "line_key": "TB 1.5",
+        "prior_rows": 32265,
+        "prior_pred_rate": 0.39088654737728623,
+        "prior_actual_rate": 0.4128622346195568,
+        "offset": 0.09087834001843825
+      },
+      {
+        "date": "2026-07-25",
+        "line_key": "TB 2.5",
+        "prior_rows": 2170,
+        "prior_pred_rate": 0.2586578560102206,
+        "prior_actual_rate": 0.40046082949308753,
+        "offset": 0.5946081359673737
+      },
+      {
+        "date": "2026-07-25",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1755,
+        "prior_pred_rate": 0.16699962576293434,
+        "prior_actual_rate": 0.407977207977208,
+        "offset": 1.108395785760443
+      },
+      {
+        "date": "2026-07-26",
+        "line_key": "TB 1.5",
+        "prior_rows": 33108,
+        "prior_pred_rate": 0.39094403353389523,
+        "prior_actual_rate": 0.4105050138939229,
+        "offset": 0.08097849993055038
+      },
+      {
+        "date": "2026-07-26",
+        "line_key": "TB 2.5",
+        "prior_rows": 2227,
+        "prior_pred_rate": 0.25854157267580996,
+        "prior_actual_rate": 0.3991917377638078,
+        "offset": 0.5915989121433094
+      },
+      {
+        "date": "2026-07-26",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1779,
+        "prior_pred_rate": 0.16687698795301717,
+        "prior_actual_rate": 0.40472175379426645,
+        "offset": 1.0985888897945535
+      },
+      {
+        "date": "2026-07-27",
+        "line_key": "TB 1.5",
+        "prior_rows": 33782,
+        "prior_pred_rate": 0.3913315493114159,
+        "prior_actual_rate": 0.41217216269019,
+        "offset": 0.08621515132684726
+      },
+      {
+        "date": "2026-07-27",
+        "line_key": "TB 2.5",
+        "prior_rows": 2292,
+        "prior_pred_rate": 0.25900888896655383,
+        "prior_actual_rate": 0.3974694589877836,
+        "offset": 0.584134403302883
+      },
+      {
+        "date": "2026-07-27",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1820,
+        "prior_pred_rate": 0.16763280612167822,
+        "prior_actual_rate": 0.40934065934065933,
+        "offset": 1.1134490158850057
+      },
+      {
+        "date": "2026-07-28",
+        "line_key": "TB 1.5",
+        "prior_rows": 34564,
+        "prior_pred_rate": 0.391354413345958,
+        "prior_actual_rate": 0.41233653512324964,
+        "offset": 0.08680567518544405
+      },
+      {
+        "date": "2026-07-28",
+        "line_key": "TB 2.5",
+        "prior_rows": 2339,
+        "prior_pred_rate": 0.2586915133054955,
+        "prior_actual_rate": 0.39675074818298417,
+        "offset": 0.5838364610621816
+      },
+      {
+        "date": "2026-07-28",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1856,
+        "prior_pred_rate": 0.16712514748878615,
+        "prior_actual_rate": 0.40625,
+        "offset": 1.1073268411151023
+      },
+      {
+        "date": "2026-07-29",
+        "line_key": "TB 1.5",
+        "prior_rows": 35621,
+        "prior_pred_rate": 0.3917826580055911,
+        "prior_actual_rate": 0.41152690828443894,
+        "offset": 0.08170948146086558
+      },
+      {
+        "date": "2026-07-29",
+        "line_key": "TB 2.5",
+        "prior_rows": 2410,
+        "prior_pred_rate": 0.2589080626232277,
+        "prior_actual_rate": 0.3991701244813278,
+        "offset": 0.5934763868053969
+      },
+      {
+        "date": "2026-07-29",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1911,
+        "prior_pred_rate": 0.1669968592498679,
+        "prior_actual_rate": 0.4086865515436944,
+        "offset": 1.1204060337569535
+      },
+      {
+        "date": "2026-07-30",
+        "line_key": "TB 1.5",
+        "prior_rows": 36223,
+        "prior_pred_rate": 0.3919972550360066,
+        "prior_actual_rate": 0.4117273555475803,
+        "offset": 0.08164462098914395
+      },
+      {
+        "date": "2026-07-30",
+        "line_key": "TB 2.5",
+        "prior_rows": 2458,
+        "prior_pred_rate": 0.2590834700480224,
+        "prior_actual_rate": 0.3954434499593165,
+        "offset": 0.5791283489328787
+      },
+      {
+        "date": "2026-07-30",
+        "line_key": "TB 3.5+",
+        "prior_rows": 1948,
+        "prior_pred_rate": 0.16735522926906418,
+        "prior_actual_rate": 0.40965092402464065,
+        "offset": 1.123709247630602
+      }
+    ],
+    "by_line_book_side": [
+      {
+        "line_key": "TB 1.5",
+        "bookmaker_key": "draftkings",
+        "side": "over",
+        "rows": 11220,
+        "base_brier": 0.2666229603458823,
+        "direct_brier": 0.24600064945948139,
+        "calibrated_brier": 0.2459259447978012,
+        "base_calibration_error": 0.10984037548817699,
+        "direct_calibration_error": 0.01827708902792663,
+        "calibrated_calibration_error": 0.002915653303568577,
+        "win_rate": 0.41524064171122993,
+        "base_mean_prob": 0.5250810171994069,
+        "direct_mean_prob": 0.3969635526833033,
+        "calibrated_mean_prob": 0.41232498840766135
+      },
+      {
+        "line_key": "TB 1.5",
+        "bookmaker_key": "draftkings",
+        "side": "under",
+        "rows": 11220,
+        "base_brier": 0.2666229603458823,
+        "direct_brier": 0.24600064945948139,
+        "calibrated_brier": 0.2459259447978012,
+        "base_calibration_error": 0.10984037548817704,
+        "direct_calibration_error": 0.018277089027926685,
+        "calibrated_calibration_error": 0.002915653303568577,
+        "win_rate": 0.58475935828877,
+        "base_mean_prob": 0.47491898280059297,
+        "direct_mean_prob": 0.6030364473166967,
+        "calibrated_mean_prob": 0.5876750115923386
+      },
+      {
+        "line_key": "TB 1.5",
+        "bookmaker_key": "fanduel",
+        "side": "over",
+        "rows": 14227,
+        "base_brier": 0.2617353148119428,
+        "direct_brier": 0.24283433701637566,
+        "calibrated_brier": 0.24274787035381007,
+        "base_calibration_error": 0.10010463223541821,
+        "direct_calibration_error": 0.018247868983213955,
+        "calibrated_calibration_error": 0.002856885477177995,
+        "win_rate": 0.4033176354818303,
+        "base_mean_prob": 0.5034222677172485,
+        "direct_mean_prob": 0.38506976649861635,
+        "calibrated_mean_prob": 0.4004607500046523
+      },
+      {
+        "line_key": "TB 2.5",
+        "bookmaker_key": "draftkings",
+        "side": "over",
+        "rows": 38,
+        "base_brier": 0.2503707102936156,
+        "direct_brier": 0.24683742927625438,
+        "calibrated_brier": 0.25257489646828174,
+        "base_calibration_error": 0.013973595858632837,
+        "direct_calibration_error": 0.0478164342350233,
+        "calibrated_calibration_error": 0.015406544819644374,
+        "win_rate": 0.42105263157894735,
+        "base_mean_prob": 0.4070790357203145,
+        "direct_mean_prob": 0.37323619734392405,
+        "calibrated_mean_prob": 0.4364591763985917
+      },
+      {
+        "line_key": "TB 2.5",
+        "bookmaker_key": "draftkings",
+        "side": "under",
+        "rows": 38,
+        "base_brier": 0.2503707102936156,
+        "direct_brier": 0.24683742927625438,
+        "calibrated_brier": 0.25257489646828174,
+        "base_calibration_error": 0.013973595858633114,
+        "direct_calibration_error": 0.047816434235023464,
+        "calibrated_calibration_error": 0.015406544819644541,
+        "win_rate": 0.5789473684210527,
+        "base_mean_prob": 0.5929209642796858,
+        "direct_mean_prob": 0.6267638026560761,
+        "calibrated_mean_prob": 0.5635408236014081
+      },
+      {
+        "line_key": "TB 2.5",
+        "bookmaker_key": "fanduel",
+        "side": "over",
+        "rows": 2388,
+        "base_brier": 0.2625222526046662,
+        "direct_brier": 0.26112711197154137,
+        "calibrated_brier": 0.24619632117773962,
+        "base_calibration_error": 0.1253554009701212,
+        "direct_calibration_error": 0.13909084633043128,
+        "calibrated_calibration_error": 0.040875264372914444,
+        "win_rate": 0.3944723618090452,
+        "base_mean_prob": 0.269116960838924,
+        "direct_mean_prob": 0.25538151547861393,
+        "calibrated_mean_prob": 0.35359709743613077
+      },
+      {
+        "line_key": "TB 3.5+",
+        "bookmaker_key": "fanduel",
+        "side": "over",
+        "rows": 1948,
+        "base_brier": 0.34325836876976723,
+        "direct_brier": 0.30683479219519083,
+        "calibrated_brier": 0.26318528131960617,
+        "base_calibration_error": 0.3056295708491966,
+        "direct_calibration_error": 0.24305547424126228,
+        "calibrated_calibration_error": 0.08963933747861713,
+        "win_rate": 0.4106776180698152,
+        "base_mean_prob": 0.10504804722061853,
+        "direct_mean_prob": 0.1676221438285529,
+        "calibrated_mean_prob": 0.32103828059119804
+      }
+    ]
+  },
+  "dk_tb15_over_gate": {
+    "line_key": "TB 1.5",
+    "bookmaker_key": "draftkings",
+    "side": "over",
+    "rows": 11220,
+    "base_brier": 0.2666229603458823,
+    "direct_brier": 0.24600064945948139,
+    "calibrated_brier": 0.2459259447978012,
+    "base_calibration_error": 0.10984037548817699,
+    "direct_calibration_error": 0.01827708902792663,
+    "calibrated_calibration_error": 0.002915653303568577,
+    "win_rate": 0.41524064171122993,
+    "base_mean_prob": 0.5250810171994069,
+    "direct_mean_prob": 0.3969635526833033,
+    "calibrated_mean_prob": 0.41232498840766135,
+    "passed": true,
+    "reason": "passed",
+    "required_rows": 500,
+    "max_calibration_error": 0.05,
+    "brier_gain": 0.020697015548081094,
+    "calibration_error_gain": 0.10692472218460841
+  },
+  "blend_gate": {
+    "alphas": [
+      0.0,
+      0.05,
+      0.1,
+      0.2,
+      0.35,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "records": [
+      {
+        "alpha": 0.0,
+        "state_brier": 0.7927012769512888,
+        "state_brier_gain": 0.0,
+        "tb_mae": 1.4061209652076319,
+        "tb_mae_gain": 0.0,
+        "line_brier_rows": 41083,
+        "line_brier": 0.2559613694923158,
+        "line_brier_gain": 0.01230857764423171,
+        "accepted": false
+      },
+      {
+        "alpha": 0.05,
+        "state_brier": 0.78418758839014,
+        "state_brier_gain": 0.008513688561148758,
+        "tb_mae": 1.4020175175636322,
+        "tb_mae_gain": 0.004103447643999614,
+        "line_brier_rows": 41083,
+        "line_brier": 0.2544868087259575,
+        "line_brier_gain": 0.013783138410589979,
+        "accepted": true
+      },
+      {
+        "alpha": 0.1,
+        "state_brier": 0.7761814655812996,
+        "state_brier_gain": 0.016519811369989146,
+        "tb_mae": 1.398034933244027,
+        "tb_mae_gain": 0.008086031963604912,
+        "line_brier_rows": 41083,
+        "line_brier": 0.2531486575165829,
+        "line_brier_gain": 0.015121289619964617,
+        "accepted": true
+      },
+      {
+        "alpha": 0.2,
+        "state_brier": 0.7616919172205441,
+        "state_brier_gain": 0.0310093597307447,
+        "tb_mae": 1.3904732316107276,
+        "tb_mae_gain": 0.0156477335969043,
+        "line_brier_rows": 41083,
+        "line_brier": 0.2508401956068565,
+        "line_brier_gain": 0.017429751529691007,
+        "accepted": true
+      },
+      {
+        "alpha": 0.35,
+        "state_brier": 0.7437643378217239,
+        "state_brier_gain": 0.04893693912956487,
+        "tb_mae": 1.3802125399661105,
+        "tb_mae_gain": 0.02590842524152137,
+        "line_brier_rows": 41083,
+        "line_brier": 0.2481828220817155,
+        "line_brier_gain": 0.02008712505483201,
+        "accepted": true
+      },
+      {
+        "alpha": 0.5,
+        "state_brier": 0.7304048501936794,
+        "state_brier_gain": 0.06229642675760938,
+        "tb_mae": 1.371226329956611,
+        "tb_mae_gain": 0.03489463525102088,
+        "line_brier_rows": 41083,
+        "line_brier": 0.2463674600361041,
+        "line_brier_gain": 0.021902487100443402,
+        "accepted": true
+      },
+      {
+        "alpha": 0.75,
+        "state_brier": 0.7182903525264398,
+        "state_brier_gain": 0.07441092442484898,
+        "tb_mae": 1.359354058750968,
+        "tb_mae_gain": 0.046766906456663815,
+        "line_brier_rows": 41083,
+        "line_brier": 0.24500715014114927,
+        "line_brier_gain": 0.02326279699539824,
+        "accepted": true
+      },
+      {
+        "alpha": 1.0,
+        "state_brier": 0.7188649986669104,
+        "state_brier_gain": 0.07383627828437833,
+        "tb_mae": 1.3519494474947071,
+        "tb_mae_gain": 0.05417151771292472,
+        "line_brier_rows": 41083,
+        "line_brier": 0.24565074137310458,
+        "line_brier_gain": 0.022619205763442923,
+        "accepted": true
+      }
+    ],
+    "selected": {
+      "alpha": 0.75,
+      "state_brier": 0.7182903525264398,
+      "state_brier_gain": 0.07441092442484898,
+      "tb_mae": 1.359354058750968,
+      "tb_mae_gain": 0.046766906456663815,
+      "line_brier_rows": 41083,
+      "line_brier": 0.24500715014114927,
+      "line_brier_gain": 0.02326279699539824,
+      "accepted": true
+    },
+    "accepted": true,
+    "reason": "blended_state_count_and_true_pair_line_brier_improved"
+  },
+  "tail_rates": {
+    "actual_four_plus_hr": 0.11997755331088665,
+    "actual_four_plus_non_hr": 0.027160493827160494,
+    "baseline_four_plus_hr": 0.08384491954455939,
+    "baseline_four_plus_non_hr": 0.005212078355534511,
+    "direct_four_plus_hr": 0.1260387874499706,
+    "direct_four_plus_non_hr": 0.025360634210876015
+  },
+  "accepted": true,
+  "reason": "blended_state_count_and_dk_tb15_true_pair_over_improved",
+  "production_model_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\mlb_pipeline\\modeling\\models\\player_props\\prop_tb_tail_state_model.joblib",
+  "production_usage": "live_tb15_state_probability_scorer"
+}

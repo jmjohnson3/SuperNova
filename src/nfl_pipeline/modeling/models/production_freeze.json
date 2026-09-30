@@ -1,0 +1,10 @@
+{
+  "release_id": "nfl-20260918T143342Z",
+  "feature_contract": "nfl-asof-v2",
+  "sha256": {
+    "players": "9f9f363ae2528571dd265a1fb7bc08cf5f6484154bbe2058b7cab4c74a360985",
+    "games": "9c119031af111f3e2b10cb08a24205d82abf8ea4f8e76e624d3053181ec237b3"
+  },
+  "frozen_at": "2026-09-18T20:43:33.814685+00:00",
+  "reason": "Stable production while workload, uncertainty, calibration and game challengers are evaluated"
+}

@@ -8,7 +8,9 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Iterable
 
 import pandas as pd
@@ -28,10 +30,14 @@ from .bankroll_ledger import (
     _ET,
 )
 from .game_line_clv import game_line_clv, resolve_valid_game_close
+from .external_pick_ledger import attach_external_agreement
+from .prop_candidate_engine import _current_exact_offer
 from .prop_offer_snapshots import (
     ensure_prop_offer_snapshot_schema,
+    minimum_american_price,
     resolve_valid_prop_close,
 )
+from .side_recalibration import price_bucket
 
 log = logging.getLogger("mlb_pipeline.modeling.model_pick_ledger")
 
@@ -84,6 +90,224 @@ def _prob_from_edge_sigma(edge, sigma) -> float | None:
         return None
     p = 1.0 / (1.0 + math.exp(-abs(edge_v) / sigma_v))
     return max(0.0, min(0.99, p))
+
+
+def _clean_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y", "on"}:
+        return True
+    if text in {"0", "false", "no", "n", "off", ""}:
+        return False
+    return False
+
+
+def _row_stale_after_status(row: dict[str, Any]) -> tuple[bool, str]:
+    stale_after = row.get("stale_after_utc") or row.get("start_ts_utc") or row.get("commence_time_utc")
+    if stale_after is None:
+        return False, "stale_after_missing"
+    try:
+        ts = pd.Timestamp(stale_after)
+        if ts.tzinfo is None:
+            ts = ts.tz_localize("UTC")
+        ts_utc = ts.tz_convert("UTC")
+    except Exception:
+        return False, "stale_after_invalid"
+    if pd.Timestamp.now(tz="UTC") > ts_utc:
+        return False, "stale_after_expired"
+    return True, ""
+
+
+def _prop_price_drift_status(row: dict[str, Any], prop_lines) -> tuple[bool, str, float | None, str | None, str | None]:
+    """Return whether the exact prop offer is still bettable at the guard price."""
+    stale_ok, stale_reason = _row_stale_after_status(row)
+    if not stale_ok:
+        return False, stale_reason, None, row.get("bet_link"), row.get("bookmaker_key")
+    line_data = (prop_lines or {}).get((_normalize_name(row.get("player_name") or ""), row.get("stat")), {})
+    side = str(row.get("bet_side") or "").lower()
+    current_offer = _current_exact_offer(
+        line_data,
+        prop_offer_id=row.get("prop_offer_id"),
+        side=side,
+        line=row.get("book_line"),
+        bookmaker_key=row.get("bookmaker_key"),
+    )
+    current_price = _clean_float((current_offer or {}).get("price"))
+    minimum_price = _clean_float(row.get("minimum_acceptable_price"))
+    link = (current_offer or {}).get("link") or row.get("bet_link")
+    bookmaker = (current_offer or {}).get("bookmaker_key") or row.get("bookmaker_key")
+    if current_offer is None:
+        return False, "offer_no_longer_available", current_price, link, bookmaker
+    if current_price is None:
+        return False, "current_price_missing", current_price, link, bookmaker
+    if minimum_price is None:
+        return False, "minimum_acceptable_price_missing", current_price, link, bookmaker
+    if current_price < minimum_price:
+        return False, "price_drift_below_minimum", current_price, link, bookmaker
+    return True, "", current_price, link, bookmaker
+
+
+def _attach_prop_game_start_times(conn, rows: list[dict[str, Any]]) -> None:
+    missing = [
+        str(row.get("game_slug"))
+        for row in rows
+        if row.get("game_slug") and not (row.get("start_ts_utc") or row.get("commence_time_utc"))
+    ]
+    if not missing:
+        return
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT game_slug, start_ts_utc
+            FROM raw.mlb_games
+            WHERE game_slug = ANY(%s)
+            """,
+            (sorted(set(missing)),),
+        )
+        starts = {str(row["game_slug"]): row["start_ts_utc"] for row in cur.fetchall()}
+    for row in rows:
+        if not (row.get("start_ts_utc") or row.get("commence_time_utc")):
+            start = starts.get(str(row.get("game_slug")))
+            if start is not None:
+                row["start_ts_utc"] = start
+
+
+def _apply_selector_for_micro_ledger(
+    row: dict[str, Any],
+    *,
+    prop_lines,
+    selector_ctx,
+    selector_cfg,
+) -> None:
+    """Populate micro selector fields when the caller passed raw DB prediction rows."""
+    if (
+        str(row.get("selector_tier") or "").lower() == "micro_projection"
+        and _clean_bool(row.get("micro_projection_candidate"))
+        and row.get("micro_projection_prob_side") is not None
+        and row.get("micro_projection_ev") is not None
+    ):
+        return
+    if selector_ctx is None or selector_cfg is None:
+        return
+    side = str(row.get("bet_side") or "").lower()
+    line_data = (prop_lines or {}).get((_normalize_name(row.get("player_name") or ""), row.get("stat")), {})
+    current_offer = _current_exact_offer(
+        line_data,
+        prop_offer_id=row.get("prop_offer_id"),
+        side=side,
+        line=row.get("book_line"),
+        bookmaker_key=row.get("bookmaker_key"),
+    )
+    if current_offer is None:
+        return
+    score_row = dict(row)
+    current_price = _clean_float(current_offer.get("price"))
+    if current_price is not None:
+        score_row["bet_price"] = current_price
+    score_row["price_drift_ok"] = True
+    try:
+        from .prop_shadow_selector import score_prediction_row
+
+        selector = score_prediction_row(score_row, ctx=selector_ctx, cfg=selector_cfg)
+    except Exception:
+        log.exception("Could not score micro selector row for model-pick ledger")
+        return
+    for key in (
+        "selector_score",
+        "selector_tier",
+        "selector_real_candidate",
+        "selector_prob_side",
+        "selector_ev",
+        "pair_quality",
+        "market_prob_source",
+        "policy_variant",
+        "bucket_trust_status",
+        "bucket_key",
+        "line_surface",
+        "line_bucket",
+        "price_bucket",
+        "micro_projection_candidate",
+        "micro_projection_prob_side",
+        "micro_projection_raw_prob_side",
+        "micro_projection_prob_source",
+        "micro_probability_calibration_key",
+        "micro_probability_calibration_status",
+        "micro_probability_calibration_target",
+        "micro_probability_calibration_cap",
+        "micro_probability_calibration_shrink",
+        "micro_tb15_high_pa_power_cap_applied",
+        "micro_tb15_high_pa_power_cap",
+        "micro_tb15_high_pa_power_cap_reason",
+        "micro_tb15_high_pa_power_flags",
+        "micro_projection_edge",
+        "micro_projection_ev",
+        "micro_projection_required_prob_edge",
+        "micro_projection_required_ev",
+        "micro_projection_clv_confirms",
+        "micro_projection_bucket_history_confirms",
+        "micro_approved_model",
+        "micro_approved_model_key",
+        "micro_approved_model_reason",
+        "micro_external_agreement",
+        "micro_external_agreement_reason",
+        "micro_external_agreement_blockers",
+        "external_agreement_count",
+        "external_disagreement_count",
+        "external_agreement_strength",
+        "external_match_level",
+        "external_platforms",
+        "external_best_grade",
+        "external_max_ev",
+        "external_max_probability",
+        "micro_relaxed_trial_lane",
+        "micro_truth_filter_status",
+        "micro_truth_filter_reason",
+        "micro_truth_filter_key",
+        "micro_truth_filter_graded",
+        "micro_truth_filter_record",
+        "micro_truth_filter_roi",
+        "micro_truth_filter_clv_rows",
+        "micro_truth_filter_clv_beat_rate",
+        "micro_truth_filter_avg_clv",
+        "clv_beat_prob",
+        "expected_clv_price",
+        "residual_clv_beat_prob",
+        "event_side_line_clv_beat_prob",
+        "bookable_prob",
+        "line_available_prob",
+        "close_capture_prob",
+        "bucket_roi",
+        "bucket_clv_beat_rate",
+        "bucket_avg_clv",
+        "residual_bucket_decision",
+        "distribution_bucket_decision",
+        "tb15_calibration_key",
+        "micro_trial_ready",
+        "micro_trial_blockers",
+        "micro_clv_beat_prob",
+        "exact_bucket_clv_beat_prob",
+        "exact_bucket_avg_clv",
+        "exact_bucket_clv_micro_confirmed",
+        "k_under_repair_gate_key",
+        "k_under_repair_micro_allowed",
+        "k_under_repair_blockers",
+    ):
+        row[key] = selector.get(key)
+    row["selector_reasons"] = "; ".join(selector.get("selector_reasons") or [])
+    if selector.get("selector_tier") == "micro_projection" and _clean_bool(selector.get("micro_projection_candidate")):
+        row["bankroll_tier"] = "micro_projection"
+        selector_micro_required_ev = _clean_float(selector.get("micro_projection_required_ev"))
+        micro_min = minimum_american_price(
+            selector.get("micro_projection_prob_side"),
+            selector_cfg.micro_projection_min_ev if selector_micro_required_ev is None else selector_micro_required_ev,
+        )
+        if micro_min is not None:
+            row["minimum_acceptable_price"] = micro_min
+    elif str(row.get("bankroll_tier") or "").lower() == "micro_projection":
+        row["bankroll_tier"] = None
 
 
 def _link_bookmaker(link: str | None, fallback: str | None = None) -> str | None:
@@ -221,11 +445,21 @@ INSERT INTO bets.mlb_model_pick_ledger (
 """
 
 
-def insert_model_pick_rows(conn, rows: Iterable[dict[str, Any]]) -> int:
+def insert_model_pick_rows(
+    conn,
+    rows: Iterable[dict[str, Any]],
+    *,
+    setup_schema: bool = True,
+) -> int:
     payload = list(rows)
     if not payload:
         return 0
-    ensure_model_pick_ledger_schema(conn)
+    if setup_schema:
+        ensure_model_pick_ledger_schema(conn)
+    elif not _model_pick_ledger_has_required_columns(conn):
+        raise RuntimeError(
+            "bets.mlb_model_pick_ledger schema is not ready; run the ledger setup/grade step before prediction"
+        )
     for row in payload:
         row.setdefault("prediction_key", None)
         row.setdefault("prop_offer_id", None)
@@ -245,9 +479,12 @@ def insert_model_pick_rows(conn, rows: Iterable[dict[str, Any]]) -> int:
     return inserted
 
 
-def backfill_missing_game_model_pick_probabilities(conn) -> int:
+def backfill_missing_game_model_pick_probabilities(conn, *, setup_schema: bool = True) -> int:
     """Fill game model-pick probabilities from locked edge/sigma metadata."""
-    ensure_model_pick_ledger_schema(conn)
+    if setup_schema:
+        ensure_model_pick_ledger_schema(conn)
+    elif not _model_pick_ledger_has_required_columns(conn):
+        raise RuntimeError("bets.mlb_model_pick_ledger schema is not ready")
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
@@ -408,8 +645,8 @@ def insert_game_model_pick_ledger(conn, rows: list[dict[str, Any]], *, fd_links=
                 },
                 "thresholds": thresholds,
             })
-    inserted = insert_model_pick_rows(conn, out)
-    filled = backfill_missing_game_model_pick_probabilities(conn)
+    inserted = insert_model_pick_rows(conn, out, setup_schema=False)
+    filled = backfill_missing_game_model_pick_probabilities(conn, setup_schema=False)
     if filled:
         log.info("Filled %d MLB game model-pick probability gaps from locked edge/sigma", filled)
     return inserted
@@ -419,33 +656,71 @@ def insert_prop_model_pick_ledger(conn, rows: list[dict[str, Any]], *, prop_line
     thresholds = _cfg_thresholds(cfg)
     min_ev = _clean_float(getattr(cfg, "min_ev", None)) if cfg is not None else 0.02
     min_ev = 0.02 if min_ev is None else min_ev
+    micro_cap = int(getattr(cfg, "projection_micro_max_props", 5) or 0) if cfg is not None else 5
+    micro_stake_usd = _clean_float(getattr(cfg, "projection_micro_stake_usd", None)) if cfg is not None else 1.0
+    micro_stake_usd = 1.0 if micro_stake_usd is None else micro_stake_usd
+    micro_min_ev = _clean_float(getattr(cfg, "projection_micro_min_ev", None)) if cfg is not None else 0.03
+    micro_min_ev = 0.03 if micro_min_ev is None else micro_min_ev
+    canonical_ai_micro = os.getenv("MLB_AI_PICK_ENGINE_CANONICAL_MICRO", "1").strip().lower() not in {"0", "false", "no", "off"}
     out: list[dict[str, Any]] = []
-    for row in rows:
-        ev = _clean_float(row.get("ev"))
-        if ev is None or ev < min_ev:
-            continue
+    micro_candidates: list[tuple[tuple[float, ...], dict[str, Any]]] = []
+    _attach_prop_game_start_times(conn, rows)
+    try:
+        attach_external_agreement(conn, rows, game_date=getattr(cfg, "et_date", None))
+    except Exception:
+        log.exception("Could not attach external prop agreement metadata")
+    selector_ctx = selector_cfg = None
+    try:
+        from .prop_shadow_selector import SelectorContext, ShadowSelectorConfig
+
+        selector_ctx = SelectorContext(getattr(cfg, "model_dir", None) or Path(__file__).resolve().parent / "models" / "player_props")
+        selector_cfg = ShadowSelectorConfig(
+            pg_dsn=getattr(cfg, "pg_dsn", None) or "",
+            report_date=getattr(cfg, "et_date", None),
+            model_dir=getattr(cfg, "model_dir", None) or selector_ctx.model_dir,
+            min_ev=min_ev,
+        )
+    except Exception:
+        log.exception("Could not load prop selector context for automatic micro ledger scoring")
+
+    def _with_reason(existing: Any, reason: str) -> str:
+        parts = [part.strip() for part in str(existing or "").split(";") if part.strip()]
+        if reason not in parts:
+            parts.append(reason)
+        return "; ".join(parts)
+
+    def _ledger_row(
+        row: dict[str, Any],
+        *,
+        ev: float,
+        model_prob: float | None,
+        model_tier: str | None,
+        warning_reasons: str | None,
+        market_price: float | None,
+        link: str | None,
+        bookmaker: str | None,
+        stake_usd: float | None,
+        stake_pct: float | None,
+        micro_price_drift_ok: bool | None = None,
+        micro_price_drift_reason: str | None = None,
+    ) -> dict[str, Any] | None:
         side = (row.get("bet_side") or "").lower()
         if side not in {"over", "under"}:
-            continue
+            return None
         name = row.get("player_name") or ""
         stat = row.get("stat")
         norm = _normalize_name(name)
-        ld = (prop_lines or {}).get((norm, stat), {})
-        link = row.get("bet_link") or (ld.get("over_link") if side == "over" else ld.get("under_link"))
-        bookmaker = row.get("bookmaker_key")
-        if side == "under" and ld.get("under_link_book"):
-            bookmaker = ld.get("under_link_book")
-        bookmaker = _link_bookmaker(link, bookmaker)
-        p_over = _clean_float(row.get("pred_prob_over"))
-        model_prob = p_over if side == "over" else (1.0 - p_over if p_over is not None else None)
         line = _clean_float(row.get("book_line"))
         prop_offer_id = _clean_int(row.get("prop_offer_id"))
         prop_offer_source_row_id = _clean_int(row.get("prop_offer_source_row_id"))
-        out.append({
+        pick_identity = prop_offer_id or row.get("prediction_key") or link
+        if model_tier == "micro_projection":
+            pick_identity = f"micro_projection:{pick_identity}"
+        return {
             "pick_key": _pick_key(
                 "mlb", "model", "prop", row.get("game_date_et"), row.get("game_slug"),
                 row.get("player_id"), stat, side, line, bookmaker,
-                prop_offer_id or row.get("prediction_key") or link,
+                pick_identity,
             ),
             "source": "prop",
             "game_date_et": row.get("game_date_et"),
@@ -467,7 +742,7 @@ def insert_prop_model_pick_ledger(conn, rows: list[dict[str, Any]], *, prop_line
             "bookmaker_key": bookmaker,
             "market_line": line,
             "bet_line": line,
-            "market_price": _clean_float(row.get("bet_price")),
+            "market_price": market_price,
             "link": link,
             "pred_value": _clean_float(row.get("pred_value")),
             "pred_count": _clean_float(row.get("pred_count")),
@@ -476,22 +751,196 @@ def insert_prop_model_pick_ledger(conn, rows: list[dict[str, Any]], *, prop_line
             "edge_type": row.get("edge_type"),
             "ev": ev,
             "kelly_fraction": _clean_float(row.get("kelly_fraction")),
-            "model_tier": row.get("bankroll_tier"),
-            "warning_reasons": row.get("bankroll_reasons"),
-            "stake_pct": _clean_float(row.get("stake_pct")),
-            "stake_usd": _clean_float(row.get("stake_usd")),
+            "model_tier": model_tier,
+            "warning_reasons": warning_reasons,
+            "stake_pct": stake_pct,
+            "stake_usd": stake_usd,
             "minimum_acceptable_price": _clean_float(row.get("minimum_acceptable_price")),
             "model_meta": {
                 "model_family": row.get("model_family"),
                 "line_bucket": row.get("line_bucket"),
+                "price_bucket": row.get("price_bucket") or price_bucket(market_price),
                 "bookmaker_key": row.get("bookmaker_key"),
                 "prediction_key": row.get("prediction_key"),
                 "prop_offer_id": prop_offer_id,
                 "prop_offer_source_row_id": prop_offer_source_row_id,
+                "selector_tier": row.get("selector_tier"),
+                "selector_score": row.get("selector_score"),
+                "selector_ev": row.get("selector_ev"),
+                "selector_reasons": row.get("selector_reasons"),
+                "micro_projection_candidate": row.get("micro_projection_candidate"),
+                "micro_projection_prob_side": row.get("micro_projection_prob_side"),
+                "micro_projection_raw_prob_side": row.get("micro_projection_raw_prob_side"),
+                "micro_projection_prob_source": row.get("micro_projection_prob_source"),
+                "micro_probability_calibration_key": row.get("micro_probability_calibration_key"),
+                "micro_probability_calibration_status": row.get("micro_probability_calibration_status"),
+                "micro_probability_calibration_target": row.get("micro_probability_calibration_target"),
+                "micro_probability_calibration_cap": row.get("micro_probability_calibration_cap"),
+                "micro_probability_calibration_shrink": row.get("micro_probability_calibration_shrink"),
+                "micro_tb15_high_pa_power_cap_applied": row.get("micro_tb15_high_pa_power_cap_applied"),
+                "micro_tb15_high_pa_power_cap": row.get("micro_tb15_high_pa_power_cap"),
+                "micro_tb15_high_pa_power_cap_reason": row.get("micro_tb15_high_pa_power_cap_reason"),
+                "micro_tb15_high_pa_power_flags": row.get("micro_tb15_high_pa_power_flags"),
+                "micro_projection_edge": row.get("micro_projection_edge"),
+                "micro_projection_ev": row.get("micro_projection_ev"),
+                "micro_projection_required_prob_edge": row.get("micro_projection_required_prob_edge"),
+                "micro_projection_required_ev": row.get("micro_projection_required_ev"),
+                "micro_current_ev": ev if model_tier == "micro_projection" else None,
+                "micro_projection_clv_confirms": row.get("micro_projection_clv_confirms"),
+                "micro_projection_bucket_history_confirms": row.get("micro_projection_bucket_history_confirms"),
+                "micro_approved_model": row.get("micro_approved_model"),
+                "micro_approved_model_key": row.get("micro_approved_model_key"),
+                "micro_approved_model_reason": row.get("micro_approved_model_reason"),
+                "micro_external_agreement": row.get("micro_external_agreement"),
+                "micro_external_agreement_reason": row.get("micro_external_agreement_reason"),
+                "micro_external_agreement_blockers": row.get("micro_external_agreement_blockers"),
+                "external_agreement_count": row.get("external_agreement_count"),
+                "external_disagreement_count": row.get("external_disagreement_count"),
+                "external_agreement_strength": row.get("external_agreement_strength"),
+                "external_match_level": row.get("external_match_level"),
+                "external_platforms": row.get("external_platforms"),
+                "external_best_grade": row.get("external_best_grade"),
+                "external_max_ev": row.get("external_max_ev"),
+                "external_max_probability": row.get("external_max_probability"),
+                "micro_relaxed_trial_lane": row.get("micro_relaxed_trial_lane"),
+                "micro_truth_filter_status": row.get("micro_truth_filter_status"),
+                "micro_truth_filter_reason": row.get("micro_truth_filter_reason"),
+                "micro_truth_filter_key": row.get("micro_truth_filter_key"),
+                "micro_truth_filter_graded": row.get("micro_truth_filter_graded"),
+                "micro_truth_filter_record": row.get("micro_truth_filter_record"),
+                "micro_truth_filter_roi": row.get("micro_truth_filter_roi"),
+                "micro_truth_filter_clv_rows": row.get("micro_truth_filter_clv_rows"),
+                "micro_truth_filter_clv_beat_rate": row.get("micro_truth_filter_clv_beat_rate"),
+                "micro_truth_filter_avg_clv": row.get("micro_truth_filter_avg_clv"),
+                "micro_projection_price_drift_ok": micro_price_drift_ok,
+                "micro_projection_price_drift_reason": micro_price_drift_reason,
+                "micro_projection_stake_usd": micro_stake_usd if model_tier == "micro_projection" else None,
+                "clv_beat_prob": row.get("clv_beat_prob"),
+                "expected_clv_price": row.get("expected_clv_price"),
+                "residual_clv_beat_prob": row.get("residual_clv_beat_prob"),
+                "event_side_line_clv_beat_prob": row.get("event_side_line_clv_beat_prob"),
+                "bookable_prob": row.get("bookable_prob"),
+                "line_available_prob": row.get("line_available_prob"),
+                "close_capture_prob": row.get("close_capture_prob"),
+                "pair_quality": row.get("pair_quality"),
+                "market_prob_source": row.get("market_prob_source"),
+                "policy_variant": row.get("policy_variant"),
+                "residual_bucket_decision": row.get("residual_bucket_decision"),
+                "distribution_bucket_decision": row.get("distribution_bucket_decision"),
+                "bucket_trust_status": row.get("bucket_trust_status"),
+                "bucket_roi": row.get("bucket_roi"),
+                "bucket_clv_beat_rate": row.get("bucket_clv_beat_rate"),
+                "bucket_avg_clv": row.get("bucket_avg_clv"),
+                "tb15_calibration_key": row.get("tb15_calibration_key"),
+                "micro_trial_ready": row.get("micro_trial_ready"),
+                "micro_trial_blockers": row.get("micro_trial_blockers"),
+                "micro_clv_beat_prob": row.get("micro_clv_beat_prob"),
+                "exact_bucket_clv_beat_prob": row.get("exact_bucket_clv_beat_prob"),
+                "exact_bucket_avg_clv": row.get("exact_bucket_avg_clv"),
+                "exact_bucket_clv_micro_confirmed": row.get("exact_bucket_clv_micro_confirmed"),
+                "k_under_repair_gate_key": row.get("k_under_repair_gate_key"),
+                "k_under_repair_micro_allowed": row.get("k_under_repair_micro_allowed"),
+                "k_under_repair_blockers": row.get("k_under_repair_blockers"),
             },
             "thresholds": thresholds,
-        })
-    return insert_model_pick_rows(conn, out)
+        }
+
+    for row in rows:
+        side = (row.get("bet_side") or "").lower()
+        if side not in {"over", "under"}:
+            continue
+        _apply_selector_for_micro_ledger(
+            row,
+            prop_lines=prop_lines,
+            selector_ctx=selector_ctx,
+            selector_cfg=selector_cfg,
+        )
+        is_micro_projection = (
+            str(row.get("selector_tier") or "").lower() == "micro_projection"
+            and _clean_bool(row.get("micro_projection_candidate"))
+        )
+        if is_micro_projection:
+            if canonical_ai_micro:
+                continue
+            micro_ev = _clean_float(row.get("micro_projection_ev"))
+            micro_prob = _clean_float(row.get("micro_projection_prob_side"))
+            if micro_ev is None or micro_ev <= 0 or micro_prob is None:
+                continue
+            micro_required_ev = _clean_float(row.get("micro_projection_required_ev"))
+            if micro_required_ev is None:
+                micro_required_ev = micro_min_ev
+            micro_min = minimum_american_price(micro_prob, micro_required_ev)
+            drift_row = dict(row)
+            if micro_min is not None:
+                drift_row["minimum_acceptable_price"] = micro_min
+            drift_ok, drift_reason, current_price, link, bookmaker = _prop_price_drift_status(drift_row, prop_lines)
+            if not drift_ok or not link:
+                continue
+            current_ev = _ev_per_unit(micro_prob, current_price)
+            if current_ev is None or current_ev <= 0.0:
+                continue
+            bookmaker = _link_bookmaker(link, bookmaker)
+            ledger = _ledger_row(
+                drift_row,
+                ev=current_ev,
+                model_prob=micro_prob,
+                model_tier="micro_projection",
+                warning_reasons=_with_reason(row.get("bankroll_reasons"), "micro_projection_not_bankroll_proven"),
+                market_price=current_price,
+                link=link,
+                bookmaker=bookmaker,
+                stake_usd=micro_stake_usd,
+                stake_pct=0.0,
+                micro_price_drift_ok=True,
+                micro_price_drift_reason=drift_reason or None,
+            )
+            if ledger is not None:
+                micro_candidates.append((
+                    (
+                        _clean_float(row.get("selector_score")) or -999.0,
+                        _clean_float(row.get("clv_beat_prob")) or -999.0,
+                        _clean_float(row.get("bucket_clv_beat_rate")) or -999.0,
+                        _clean_float(row.get("bookable_prob")) or -999.0,
+                        current_ev,
+                        _clean_float(row.get("micro_projection_edge")) or -999.0,
+                        micro_prob,
+                    ),
+                    ledger,
+                ))
+            continue
+
+        ev = _clean_float(row.get("ev"))
+        if ev is None or ev < min_ev:
+            continue
+        stat = row.get("stat")
+        name = row.get("player_name") or ""
+        norm = _normalize_name(name)
+        ld = (prop_lines or {}).get((norm, stat), {})
+        link = row.get("bet_link") or (ld.get("over_link") if side == "over" else ld.get("under_link"))
+        bookmaker = row.get("bookmaker_key")
+        if side == "under" and ld.get("under_link_book"):
+            bookmaker = ld.get("under_link_book")
+        bookmaker = _link_bookmaker(link, bookmaker)
+        p_over = _clean_float(row.get("pred_prob_over"))
+        model_prob = p_over if side == "over" else (1.0 - p_over if p_over is not None else None)
+        ledger = _ledger_row(
+            row,
+            ev=ev,
+            model_prob=model_prob,
+            model_tier=row.get("bankroll_tier"),
+            warning_reasons=row.get("bankroll_reasons"),
+            market_price=_clean_float(row.get("bet_price")),
+            link=link,
+            bookmaker=bookmaker,
+            stake_usd=_clean_float(row.get("stake_usd")),
+            stake_pct=_clean_float(row.get("stake_pct")),
+        )
+        if ledger is not None:
+            out.append(ledger)
+    micro_candidates.sort(key=lambda item: item[0], reverse=True)
+    if micro_cap > 0:
+        out.extend(row for _score, row in micro_candidates[:micro_cap])
+    return insert_model_pick_rows(conn, out, setup_schema=False)
 
 
 def grade_model_pick_ledger(conn) -> int:

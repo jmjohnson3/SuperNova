@@ -18,6 +18,8 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
+
 from .prop_replay import american_to_prob, ev_per_unit, refresh_prop_replay_clv
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
@@ -146,6 +148,68 @@ WHERE r.game_date_et >= %(cutoff)s
   AND r.side IN ('over', 'under')
   AND r.market_line IS NOT NULL
 ORDER BY r.game_date_et, r.id
+"""
+
+TRAINING_EXAMPLES_SQL = """
+SELECT
+    e.id,
+    e.run_id,
+    e.source_pred_id,
+    e.prediction_key,
+    e.prop_offer_id,
+    e.lock_snapshot_id,
+    e.source_created_at AS locked_at_utc,
+    e.game_date_et,
+    e.game_slug,
+    e.player_id,
+    e.player_name,
+    e.team_abbr,
+    e.market,
+    e.side,
+    COALESCE(e.bookmaker_key, 'unknown') AS bookmaker_key,
+    e.market_line::float AS market_line,
+    e.market_price::float AS market_price,
+    NULL::float AS over_price,
+    NULL::float AS under_price,
+    CASE WHEN e.side = 'over' THEN e.no_vig_market_prob::float ELSE NULL::float END AS no_vig_prob_over,
+    CASE WHEN e.side = 'under' THEN e.no_vig_market_prob::float ELSE NULL::float END AS no_vig_prob_under,
+    e.model_prob_over::float AS model_prob_over,
+    e.model_prob_side::float AS model_prob_side,
+    e.pred_value::float AS pred_value,
+    e.pred_count::float AS pred_count,
+    COALESCE(e.line_bucket, 'unknown') AS line_bucket,
+    COALESCE(e.model_family, 'unknown') AS model_family,
+    COALESCE(e.edge_type, 'unknown') AS edge_type,
+    e.ev::float AS ev,
+    e.actual_value::float AS actual_value,
+    e.won,
+    COALESCE(e.push, false) AS push,
+    e.profit_units::float AS profit_units,
+    e.closing_line::float AS closing_line,
+    e.closing_price::float AS closing_price,
+    e.clv_line::float AS clv_line,
+    e.clv_price::float AS clv_price,
+    COALESCE(e.clv_valid, false) AS clv_valid,
+    e.clv_status,
+    e.clv_unknown_reason,
+    e.closing_fetched_at_utc,
+    e.result_status,
+    e.confirmed_batting_order,
+    e.confirmed_lineup_source,
+    e.projected_pa,
+    e.pa_games,
+    e.projected_ip,
+    e.projected_bf,
+    e.projected_pitch_count,
+    e.pitcher_starts,
+    COALESCE(e.line_surface, 'unknown') AS line_surface,
+    COALESCE(e.market_prob_side, e.no_vig_market_prob, e.raw_market_prob)::float AS market_prob_side
+FROM features.mlb_prop_market_training_examples e
+WHERE e.game_date_et >= %(cutoff)s
+  AND e.market IN ('pitcher_strikeouts', 'batter_hits', 'batter_total_bases', 'batter_home_runs')
+  AND e.side IN ('over', 'under')
+  AND e.market_line IS NOT NULL
+ORDER BY e.game_date_et, e.id
 """
 
 
@@ -284,16 +348,23 @@ def _distribution_prob(row: pd.Series) -> float | None:
 def _load(cfg: WalkForwardConfig) -> pd.DataFrame:
     cutoff = datetime.now(timezone.utc).date() - timedelta(days=max(1, cfg.lookback_days) - 1)
     with psycopg2.connect(cfg.dsn) as conn:
-        if not _table_exists(conn, "bets", "mlb_prop_prediction_replay"):
-            return pd.DataFrame()
         if cfg.refresh_clv:
             refresh_prop_replay_clv(conn, date_from=cutoff, include_graded=True)
+        if _table_exists(conn, "features", "mlb_prop_market_training_examples"):
+            source = "features.mlb_prop_market_training_examples"
+            sql = TRAINING_EXAMPLES_SQL
+        elif _table_exists(conn, "bets", "mlb_prop_prediction_replay"):
+            source = "bets.mlb_prop_prediction_replay"
+            sql = SQL
+        else:
+            return pd.DataFrame()
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(SQL, {"cutoff": cutoff})
+            cur.execute(sql, {"cutoff": cutoff})
             rows = [dict(r) for r in cur.fetchall()]
     df = pd.DataFrame(rows)
     if df.empty:
         return df
+    df.attrs["source"] = source
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
     for col in (
         "market_line", "market_price", "over_price", "under_price",
@@ -303,9 +374,11 @@ def _load(cfg: WalkForwardConfig) -> pd.DataFrame:
         "projected_ip", "projected_bf", "projected_pitch_count",
     ):
         df[col] = pd.to_numeric(df.get(col), errors="coerce")
+    if "line_surface" not in df.columns:
+        df["line_surface"] = "unknown"
     df["line_surface"] = [
-        prop_line_surface(market, side, line)
-        for market, side, line in zip(df["market"], df["side"], df["market_line"])
+        current if current and current != "unknown" else prop_line_surface(market, side, line)
+        for current, market, side, line in zip(df["line_surface"], df["market"], df["side"], df["market_line"])
     ]
     df["line_bucket"] = [
         current if current and current != "unknown" else prop_line_bucket(market, line)
@@ -322,12 +395,14 @@ def _load(cfg: WalkForwardConfig) -> pd.DataFrame:
         american_to_prob(price)
         for price in df["market_price"]
     ]
+    existing_market_prob = pd.to_numeric(df.get("market_prob_side"), errors="coerce")
     df["market_prob_side"] = [
-        nv_over if side == "over" and pd.notna(nv_over)
+        existing if pd.notna(existing)
+        else nv_over if side == "over" and pd.notna(nv_over)
         else nv_under if side == "under" and pd.notna(nv_under)
         else raw
-        for side, nv_over, nv_under, raw in zip(
-            df["side"], df["no_vig_prob_over"], df["no_vig_prob_under"], raw_market
+        for existing, side, nv_over, nv_under, raw in zip(
+            existing_market_prob, df["side"], df["no_vig_prob_over"], df["no_vig_prob_under"], raw_market
         )
     ]
     df["target"] = [
@@ -672,7 +747,7 @@ def build_payload(cfg: WalkForwardConfig) -> dict[str, Any]:
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "status": "ready",
-        "source": "bets.mlb_prop_prediction_replay",
+        "source": df.attrs.get("source", "bets.mlb_prop_prediction_replay"),
         "lookback_days": cfg.lookback_days,
         "min_ev": cfg.min_ev,
         "min_blend_train_rows": cfg.min_blend_train_rows,
@@ -716,7 +791,7 @@ def write_report(payload: dict[str, Any], cfg: WalkForwardConfig) -> str:
             "",
             "No locked replay rows were available for this lookback window.",
         ]
-        out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        atomic_write_text(out_path, "\n".join(lines) + "\n")
         return str(out_path)
 
     clv = payload["clv"]
@@ -794,8 +869,31 @@ def write_report(payload: dict[str, Any], cfg: WalkForwardConfig) -> str:
         "- `walk_forward_blend` picks a model/market weight from prior dates only.",
         "- A bucket is not real-money ready merely because it appears here; it still needs enough graded rows, valid CLV, ROI, calibration, and concentration checks.",
     ])
-    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(out_path, "\n".join(lines) + "\n")
     return str(out_path)
+
+
+def _fresh_payload_summary(json_path: Path, max_age_minutes: int) -> dict[str, Any] | None:
+    if max_age_minutes <= 0 or not json_path.exists():
+        return None
+    age_seconds = datetime.now(timezone.utc).timestamp() - json_path.stat().st_mtime
+    if age_seconds > max_age_minutes * 60:
+        return None
+    try:
+        payload = json.loads(json_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if payload.get("status") != "ready":
+        return None
+    return {
+        "status": "reused_fresh_artifact",
+        "artifact": str(json_path),
+        "age_minutes": round(age_seconds / 60.0, 1),
+        "rows": payload.get("rows", 0),
+        "graded_rows": payload.get("graded_rows", 0),
+        "valid_clv_rows": (payload.get("clv") or {}).get("valid_clv_rows", 0),
+        "generated_at_utc": payload.get("generated_at_utc"),
+    }
 
 
 def main() -> None:
@@ -810,7 +908,25 @@ def main() -> None:
     parser.add_argument("--out", default="reports/mlb_prop_walk_forward_accuracy_latest.md")
     parser.add_argument("--json-out", default=str(_MODEL_DIR / "prop_walk_forward_accuracy_report.json"))
     parser.add_argument("--no-refresh-clv", action="store_true")
+    parser.add_argument(
+        "--skip-if-fresh-minutes",
+        type=int,
+        default=0,
+        help=(
+            "Return the existing JSON artifact when it is newer than this many minutes. "
+            "Useful for repeated pregame/close scheduler runs where policy evidence does not need "
+            "to be recomputed every time."
+        ),
+    )
     args = parser.parse_args()
+    json_path = Path(args.json_out)
+    if not json_path.is_absolute():
+        json_path = Path(__file__).resolve().parents[3] / json_path
+    fresh = _fresh_payload_summary(json_path, max(0, args.skip_if_fresh_minutes))
+    if fresh is not None:
+        print(json.dumps(fresh, indent=2))
+        return
+
     cfg = WalkForwardConfig(
         dsn=args.pg_dsn,
         lookback_days=args.lookback_days,
@@ -826,8 +942,10 @@ def main() -> None:
     payload = build_payload(cfg)
     report_path = write_report(payload, cfg)
     json_path = Path(cfg.json_out)
+    if not json_path.is_absolute():
+        json_path = Path(__file__).resolve().parents[3] / json_path
     json_path.parent.mkdir(parents=True, exist_ok=True)
-    json_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    atomic_write_json(json_path, payload, default=str)
     print(json.dumps({
         "status": payload.get("status"),
         "rows": payload.get("rows", 0),

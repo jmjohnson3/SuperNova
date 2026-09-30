@@ -1,0 +1,677 @@
+{
+  "generated_at_utc": "2026-07-30T17:35:18.514316+00:00",
+  "slate_date": "2026-07-30",
+  "status": "failed_focus_low_offer_count",
+  "force": false,
+  "targets": [
+    {
+      "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+      "commence_time_utc": "2026-07-30T18:16:00+00:00",
+      "target_minutes_before_start": 45,
+      "target_time_utc": "2026-07-30T17:31:00+00:00",
+      "minutes_from_target": 4.272132966666666,
+      "capture_reason": "active_close_window"
+    },
+    {
+      "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+      "commence_time_utc": "2026-07-30T17:41:00+00:00",
+      "target_minutes_before_start": 10,
+      "target_time_utc": "2026-07-30T17:31:00+00:00",
+      "minutes_from_target": 4.272132966666666,
+      "capture_reason": "active_close_window"
+    },
+    {
+      "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+      "commence_time_utc": "2026-07-30T18:11:00+00:00",
+      "target_minutes_before_start": 30,
+      "target_time_utc": "2026-07-30T17:41:00+00:00",
+      "minutes_from_target": -5.727867033333334,
+      "capture_reason": "active_close_window"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "started_at_utc": "2026-07-30T17:35:18.515315+00:00",
+      "crawl": {
+        "module": "mlb_pipeline.crawler_oddsapi",
+        "args": [
+          "--skip-live",
+          "--force-props"
+        ],
+        "started_at_utc": "2026-07-30T17:35:18.515315+00:00",
+        "rc": 0,
+        "ok": true,
+        "seconds": 17.370452899951488,
+        "stdout_tail": "",
+        "stderr_tail": "2026-07-30 11:35:23,079 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-07-31. Catching up from 2026-08-01 to 2026-07-29\n2026-07-30 11:35:25,377 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 10 events (game_date=2026-07-30, as_of=2026-07-30)\n2026-07-30 11:35:26,262 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=a711967b87d0815d1a1b45806b632b42 (Texas Rangers@Tampa Bay Rays) | credits=13373\n2026-07-30 11:35:27,085 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=4ab9265338d5ee8f4e0ecf43a83aa9d7 (Kansas City Royals@Minnesota Twins) | credits=13365\n2026-07-30 11:35:28,111 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=c4f54051354f3d027c0f1cabfc630e52 (New York Yankees@Chicago White Sox) | credits=13357\n2026-07-30 11:35:29,048 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=459ad5aa37b0d7865d087c8acb7d9d4d (Chicago Cubs@St. Louis Cardinals) | credits=13349\n2026-07-30 11:35:30,299 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=690922fd97ed105a96d9b06ae8cf9a56 (Pittsburgh Pirates@Cincinnati Reds) | credits=13341\n2026-07-30 11:35:31,142 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=d64f0d0688a85bdcd854092dcbd6b233 (Miami Marlins@New York Mets) | credits=13333\n2026-07-30 11:35:32,114 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=9dfef5e196347eb0678512c7f8cd5c9d (Washington Nationals@Atlanta Braves) | credits=13325\n2026-07-30 11:35:33,206 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=e29b6d58950d18ba7eccacc0e05ce5c6 (Boston Red Sox@Athletics) | credits=13317\n2026-07-30 11:35:33,985 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=58ab19b637430e9e8416219614c4d185 (San Francisco Giants@San Diego Padres) | credits=13309\n2026-07-30 11:35:34,829 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=443672ce29e54ba67b3d8d50d63c33f8 (Seattle Mariners@Los Angeles Dodgers) | credits=13301\n2026-07-30 11:35:35,783 | INFO | mlb_pipeline.crawler_oddsapi | No events found for 2026-07-31 \u00e2\u20ac\u201d skipping prop fetch\n2026-07-30 11:35:35,783 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=0 skipped=0 credits_remaining=13301"
+      },
+      "parse": {
+        "module": "mlb_pipeline.parse_oddsapi",
+        "args": [
+          "--prop-snapshot-role",
+          "close",
+          "--prop-as-of-date",
+          "2026-07-30",
+          "--prop-snapshot-max-age-minutes",
+          "20.0"
+        ],
+        "started_at_utc": "2026-07-30T17:35:35.877272+00:00",
+        "rc": 0,
+        "ok": true,
+        "seconds": 28.24162460002117,
+        "stdout_tail": "",
+        "stderr_tail": "2026-07-30 11:35:39,332 | INFO | mlb_pipeline.parse_oddsapi | Upserted 1613 rows into odds.mlb_game_lines (live odds).\n2026-07-30 11:35:39,348 | INFO | mlb_pipeline.parse_oddsapi | Incremental historical MLB game odds: since 2026-07-29\n2026-07-30 11:35:39,348 | WARNING | mlb_pipeline.parse_oddsapi | No mlb_odds_historical snapshots found (as_of_date=None).\n2026-07-30 11:35:39,348 | INFO | mlb_pipeline.parse_oddsapi | Only assigning close prop snapshots to raw payloads fetched since 2026-07-30T17:15:39.348250+00:00.\n2026-07-30 11:36:04,017 | INFO | mlb_pipeline.parse_oddsapi | Upserted 2390 rows into odds.mlb_player_prop_lines.\n2026-07-30 11:36:04,017 | INFO | mlb_pipeline.parse_oddsapi | Processed 2390 immutable close prop snapshot observations for odds.mlb_player_prop_line_snapshots.\n2026-07-30 11:36:04,017 | INFO | mlb_pipeline.parse_oddsapi | Done."
+      },
+      "quality": {
+        "passed": true,
+        "events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "fresh_close_rows": 299,
+            "fresh_close_times": 1,
+            "latest_snapshot_at_utc": "2026-07-30T10:35:25.377120-07:00",
+            "baseline_rows": 299,
+            "required_rows": 254,
+            "passed": true
+          },
+          {
+            "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+            "fresh_close_rows": 303,
+            "fresh_close_times": 1,
+            "latest_snapshot_at_utc": "2026-07-30T10:35:25.377120-07:00",
+            "baseline_rows": 304,
+            "required_rows": 258,
+            "passed": true
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "fresh_close_rows": 288,
+            "fresh_close_times": 1,
+            "latest_snapshot_at_utc": "2026-07-30T10:35:25.377120-07:00",
+            "baseline_rows": 292,
+            "required_rows": 248,
+            "passed": true
+          }
+        ],
+        "low_events": [],
+        "thresholds": {
+          "min_rows_without_baseline": 50,
+          "min_rows_floor": 25,
+          "min_ratio": 0.85
+        }
+      },
+      "focus_quality": {
+        "passed": false,
+        "events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 7,
+                "baseline_rows": 10,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+            "passed": true,
+            "focus_rows": [
+              {
+                "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 12,
+                "baseline_rows": 13,
+                "required_rows": 12,
+                "enforced": true,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 4,
+                "baseline_rows": 5,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "low_events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 7,
+                "baseline_rows": 10,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 4,
+                "baseline_rows": 5,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "focus_specs": [
+          {
+            "bookmaker_key": "draftkings",
+            "stat": "batter_total_bases",
+            "line": 1.5,
+            "label": "draftkings:batter_total_bases:1.5"
+          }
+        ],
+        "thresholds": {
+          "min_rows_floor": 10,
+          "min_ratio": 0.9
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "started_at_utc": "2026-07-30T17:36:28.748335+00:00",
+      "crawl": {
+        "module": "mlb_pipeline.crawler_oddsapi",
+        "args": [
+          "--skip-live",
+          "--force-props"
+        ],
+        "started_at_utc": "2026-07-30T17:36:28.748335+00:00",
+        "rc": 0,
+        "ok": true,
+        "seconds": 17.044173100031912,
+        "stdout_tail": "",
+        "stderr_tail": "2026-07-30 11:36:33,267 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-07-31. Catching up from 2026-08-01 to 2026-07-29\n2026-07-30 11:36:35,548 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 10 events (game_date=2026-07-30, as_of=2026-07-30)\n2026-07-30 11:36:36,237 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=a711967b87d0815d1a1b45806b632b42 (Texas Rangers@Tampa Bay Rays) | credits=13294\n2026-07-30 11:36:37,236 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=4ab9265338d5ee8f4e0ecf43a83aa9d7 (Kansas City Royals@Minnesota Twins) | credits=13286\n2026-07-30 11:36:38,236 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=c4f54051354f3d027c0f1cabfc630e52 (New York Yankees@Chicago White Sox) | credits=13278\n2026-07-30 11:36:39,032 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=459ad5aa37b0d7865d087c8acb7d9d4d (Chicago Cubs@St. Louis Cardinals) | credits=13270\n2026-07-30 11:36:40,049 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=690922fd97ed105a96d9b06ae8cf9a56 (Pittsburgh Pirates@Cincinnati Reds) | credits=13262\n2026-07-30 11:36:41,048 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=d64f0d0688a85bdcd854092dcbd6b233 (Miami Marlins@New York Mets) | credits=13254\n2026-07-30 11:36:41,986 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=9dfef5e196347eb0678512c7f8cd5c9d (Washington Nationals@Atlanta Braves) | credits=13246\n2026-07-30 11:36:42,783 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=e29b6d58950d18ba7eccacc0e05ce5c6 (Boston Red Sox@Athletics) | credits=13238\n2026-07-30 11:36:43,885 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=58ab19b637430e9e8416219614c4d185 (San Francisco Giants@San Diego Padres) | credits=13230\n2026-07-30 11:36:44,663 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=443672ce29e54ba67b3d8d50d63c33f8 (Seattle Mariners@Los Angeles Dodgers) | credits=13222\n2026-07-30 11:36:45,736 | INFO | mlb_pipeline.crawler_oddsapi | No events found for 2026-07-31 \u00e2\u20ac\u201d skipping prop fetch\n2026-07-30 11:36:45,736 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=0 skipped=0 credits_remaining=13222"
+      },
+      "parse": {
+        "module": "mlb_pipeline.parse_oddsapi",
+        "args": [
+          "--prop-snapshot-role",
+          "close",
+          "--prop-as-of-date",
+          "2026-07-30",
+          "--prop-snapshot-max-age-minutes",
+          "20.0"
+        ],
+        "started_at_utc": "2026-07-30T17:36:45.784003+00:00",
+        "rc": 0,
+        "ok": true,
+        "seconds": 25.512164100073278,
+        "stdout_tail": "",
+        "stderr_tail": "2026-07-30 11:36:48,268 | INFO | mlb_pipeline.parse_oddsapi | Upserted 1613 rows into odds.mlb_game_lines (live odds).\n2026-07-30 11:36:48,268 | INFO | mlb_pipeline.parse_oddsapi | Incremental historical MLB game odds: since 2026-07-29\n2026-07-30 11:36:48,268 | WARNING | mlb_pipeline.parse_oddsapi | No mlb_odds_historical snapshots found (as_of_date=None).\n2026-07-30 11:36:48,268 | INFO | mlb_pipeline.parse_oddsapi | Only assigning close prop snapshots to raw payloads fetched since 2026-07-30T17:16:48.268645+00:00.\n2026-07-30 11:37:11,282 | INFO | mlb_pipeline.parse_oddsapi | Upserted 2390 rows into odds.mlb_player_prop_lines.\n2026-07-30 11:37:11,282 | INFO | mlb_pipeline.parse_oddsapi | Processed 2390 immutable close prop snapshot observations for odds.mlb_player_prop_line_snapshots.\n2026-07-30 11:37:11,282 | INFO | mlb_pipeline.parse_oddsapi | Done."
+      },
+      "quality": {
+        "passed": true,
+        "events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "fresh_close_rows": 299,
+            "fresh_close_times": 2,
+            "latest_snapshot_at_utc": "2026-07-30T10:36:35.548781-07:00",
+            "baseline_rows": 299,
+            "required_rows": 254,
+            "passed": true
+          },
+          {
+            "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+            "fresh_close_rows": 303,
+            "fresh_close_times": 2,
+            "latest_snapshot_at_utc": "2026-07-30T10:36:35.548781-07:00",
+            "baseline_rows": 303,
+            "required_rows": 258,
+            "passed": true
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "fresh_close_rows": 288,
+            "fresh_close_times": 2,
+            "latest_snapshot_at_utc": "2026-07-30T10:36:35.548781-07:00",
+            "baseline_rows": 288,
+            "required_rows": 245,
+            "passed": true
+          }
+        ],
+        "low_events": [],
+        "thresholds": {
+          "min_rows_without_baseline": 50,
+          "min_rows_floor": 25,
+          "min_ratio": 0.85
+        }
+      },
+      "focus_quality": {
+        "passed": false,
+        "events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 7,
+                "baseline_rows": 10,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+            "passed": true,
+            "focus_rows": [
+              {
+                "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 12,
+                "baseline_rows": 13,
+                "required_rows": 12,
+                "enforced": true,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 4,
+                "baseline_rows": 5,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "low_events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 7,
+                "baseline_rows": 10,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 4,
+                "baseline_rows": 5,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "focus_specs": [
+          {
+            "bookmaker_key": "draftkings",
+            "stat": "batter_total_bases",
+            "line": 1.5,
+            "label": "draftkings:batter_total_bases:1.5"
+          }
+        ],
+        "thresholds": {
+          "min_rows_floor": 10,
+          "min_ratio": 0.9
+        }
+      }
+    },
+    {
+      "attempt": 3,
+      "started_at_utc": "2026-07-30T17:37:36.092621+00:00",
+      "crawl": {
+        "module": "mlb_pipeline.crawler_oddsapi",
+        "args": [
+          "--skip-live",
+          "--force-props"
+        ],
+        "started_at_utc": "2026-07-30T17:37:36.092621+00:00",
+        "rc": 0,
+        "ok": true,
+        "seconds": 15.821919499896467,
+        "stdout_tail": "",
+        "stderr_tail": "2026-07-30 11:37:40,923 | INFO | mlb_pipeline.crawler_oddsapi | Last saved date: 2026-07-31. Catching up from 2026-08-01 to 2026-07-29\n2026-07-30 11:37:42,033 | INFO | mlb_pipeline.crawler_oddsapi | Fetching prop lines for 10 events (game_date=2026-07-30, as_of=2026-07-30)\n2026-07-30 11:37:42,580 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=a711967b87d0815d1a1b45806b632b42 (Texas Rangers@Tampa Bay Rays) | credits=13215\n2026-07-30 11:37:43,423 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=4ab9265338d5ee8f4e0ecf43a83aa9d7 (Kansas City Royals@Minnesota Twins) | credits=13207\n2026-07-30 11:37:44,486 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=c4f54051354f3d027c0f1cabfc630e52 (New York Yankees@Chicago White Sox) | credits=13199\n2026-07-30 11:37:45,455 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=459ad5aa37b0d7865d087c8acb7d9d4d (Chicago Cubs@St. Louis Cardinals) | credits=13191\n2026-07-30 11:37:46,344 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=690922fd97ed105a96d9b06ae8cf9a56 (Pittsburgh Pirates@Cincinnati Reds) | credits=13183\n2026-07-30 11:37:47,272 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=d64f0d0688a85bdcd854092dcbd6b233 (Miami Marlins@New York Mets) | credits=13175\n2026-07-30 11:37:48,279 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=9dfef5e196347eb0678512c7f8cd5c9d (Washington Nationals@Atlanta Braves) | credits=13167\n2026-07-30 11:37:49,157 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=e29b6d58950d18ba7eccacc0e05ce5c6 (Boston Red Sox@Athletics) | credits=13159\n2026-07-30 11:37:49,954 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=58ab19b637430e9e8416219614c4d185 (San Francisco Giants@San Diego Padres) | credits=13151\n2026-07-30 11:37:50,877 | INFO | mlb_pipeline.crawler_oddsapi | Prop odds as_of=2026-07-30 event=443672ce29e54ba67b3d8d50d63c33f8 (Seattle Mariners@Los Angeles Dodgers) | credits=13143\n2026-07-30 11:37:51,846 | INFO | mlb_pipeline.crawler_oddsapi | No events found for 2026-07-31 \u00e2\u20ac\u201d skipping prop fetch\n2026-07-30 11:37:51,846 | INFO | mlb_pipeline.crawler_oddsapi | Done. saved=0 skipped=0 credits_remaining=13143"
+      },
+      "parse": {
+        "module": "mlb_pipeline.parse_oddsapi",
+        "args": [
+          "--prop-snapshot-role",
+          "close",
+          "--prop-as-of-date",
+          "2026-07-30",
+          "--prop-snapshot-max-age-minutes",
+          "20.0"
+        ],
+        "started_at_utc": "2026-07-30T17:37:51.908419+00:00",
+        "rc": 0,
+        "ok": true,
+        "seconds": 28.407011000206694,
+        "stdout_tail": "",
+        "stderr_tail": "2026-07-30 11:37:54,408 | INFO | mlb_pipeline.parse_oddsapi | Upserted 1613 rows into odds.mlb_game_lines (live odds).\n2026-07-30 11:37:54,424 | INFO | mlb_pipeline.parse_oddsapi | Incremental historical MLB game odds: since 2026-07-29\n2026-07-30 11:37:54,424 | WARNING | mlb_pipeline.parse_oddsapi | No mlb_odds_historical snapshots found (as_of_date=None).\n2026-07-30 11:37:54,424 | INFO | mlb_pipeline.parse_oddsapi | Only assigning close prop snapshots to raw payloads fetched since 2026-07-30T17:17:54.424488+00:00.\n2026-07-30 11:38:19,487 | INFO | mlb_pipeline.parse_oddsapi | Upserted 2393 rows into odds.mlb_player_prop_lines.\n2026-07-30 11:38:19,487 | INFO | mlb_pipeline.parse_oddsapi | Processed 2393 immutable close prop snapshot observations for odds.mlb_player_prop_line_snapshots.\n2026-07-30 11:38:19,487 | INFO | mlb_pipeline.parse_oddsapi | Done."
+      },
+      "quality": {
+        "passed": true,
+        "events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "fresh_close_rows": 299,
+            "fresh_close_times": 2,
+            "latest_snapshot_at_utc": "2026-07-30T10:37:42.033137-07:00",
+            "baseline_rows": 299,
+            "required_rows": 254,
+            "passed": true
+          },
+          {
+            "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+            "fresh_close_rows": 303,
+            "fresh_close_times": 2,
+            "latest_snapshot_at_utc": "2026-07-30T10:37:42.033137-07:00",
+            "baseline_rows": 303,
+            "required_rows": 258,
+            "passed": true
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "fresh_close_rows": 288,
+            "fresh_close_times": 2,
+            "latest_snapshot_at_utc": "2026-07-30T10:37:42.033137-07:00",
+            "baseline_rows": 288,
+            "required_rows": 245,
+            "passed": true
+          }
+        ],
+        "low_events": [],
+        "thresholds": {
+          "min_rows_without_baseline": 50,
+          "min_rows_floor": 25,
+          "min_ratio": 0.85
+        }
+      },
+      "focus_quality": {
+        "passed": false,
+        "events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 7,
+                "baseline_rows": 10,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+            "passed": true,
+            "focus_rows": [
+              {
+                "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 12,
+                "baseline_rows": 13,
+                "required_rows": 12,
+                "enforced": true,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 4,
+                "baseline_rows": 5,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "low_events": [
+          {
+            "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 7,
+                "baseline_rows": 10,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+            "passed": false,
+            "focus_rows": [
+              {
+                "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+                "focus": "draftkings:batter_total_bases:1.5",
+                "fresh_rows": 4,
+                "baseline_rows": 5,
+                "required_rows": 10,
+                "enforced": true,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "focus_specs": [
+          {
+            "bookmaker_key": "draftkings",
+            "stat": "batter_total_bases",
+            "line": 1.5,
+            "label": "draftkings:batter_total_bases:1.5"
+          }
+        ],
+        "thresholds": {
+          "min_rows_floor": 10,
+          "min_ratio": 0.9
+        }
+      }
+    }
+  ],
+  "attempts_run": 3,
+  "max_attempts": 3,
+  "focus_specs": [
+    {
+      "bookmaker_key": "draftkings",
+      "stat": "batter_total_bases",
+      "line": 1.5,
+      "label": "draftkings:batter_total_bases:1.5"
+    }
+  ],
+  "error": {
+    "message": "Targeted close capture did not meet fresh offer-count quality thresholds.",
+    "last_quality": {
+      "passed": true,
+      "events": [
+        {
+          "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+          "fresh_close_rows": 299,
+          "fresh_close_times": 2,
+          "latest_snapshot_at_utc": "2026-07-30T10:37:42.033137-07:00",
+          "baseline_rows": 299,
+          "required_rows": 254,
+          "passed": true
+        },
+        {
+          "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+          "fresh_close_rows": 303,
+          "fresh_close_times": 2,
+          "latest_snapshot_at_utc": "2026-07-30T10:37:42.033137-07:00",
+          "baseline_rows": 303,
+          "required_rows": 258,
+          "passed": true
+        },
+        {
+          "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+          "fresh_close_rows": 288,
+          "fresh_close_times": 2,
+          "latest_snapshot_at_utc": "2026-07-30T10:37:42.033137-07:00",
+          "baseline_rows": 288,
+          "required_rows": 245,
+          "passed": true
+        }
+      ],
+      "low_events": [],
+      "thresholds": {
+        "min_rows_without_baseline": 50,
+        "min_rows_floor": 25,
+        "min_ratio": 0.85
+      }
+    },
+    "last_focus_quality": {
+      "passed": false,
+      "events": [
+        {
+          "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+          "passed": false,
+          "focus_rows": [
+            {
+              "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+              "focus": "draftkings:batter_total_bases:1.5",
+              "fresh_rows": 7,
+              "baseline_rows": 10,
+              "required_rows": 10,
+              "enforced": true,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+          "passed": true,
+          "focus_rows": [
+            {
+              "event_id": "4ab9265338d5ee8f4e0ecf43a83aa9d7",
+              "focus": "draftkings:batter_total_bases:1.5",
+              "fresh_rows": 12,
+              "baseline_rows": 13,
+              "required_rows": 12,
+              "enforced": true,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+          "passed": false,
+          "focus_rows": [
+            {
+              "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+              "focus": "draftkings:batter_total_bases:1.5",
+              "fresh_rows": 4,
+              "baseline_rows": 5,
+              "required_rows": 10,
+              "enforced": true,
+              "passed": false
+            }
+          ]
+        }
+      ],
+      "low_events": [
+        {
+          "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+          "passed": false,
+          "focus_rows": [
+            {
+              "event_id": "459ad5aa37b0d7865d087c8acb7d9d4d",
+              "focus": "draftkings:batter_total_bases:1.5",
+              "fresh_rows": 7,
+              "baseline_rows": 10,
+              "required_rows": 10,
+              "enforced": true,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+          "passed": false,
+          "focus_rows": [
+            {
+              "event_id": "c4f54051354f3d027c0f1cabfc630e52",
+              "focus": "draftkings:batter_total_bases:1.5",
+              "fresh_rows": 4,
+              "baseline_rows": 5,
+              "required_rows": 10,
+              "enforced": true,
+              "passed": false
+            }
+          ]
+        }
+      ],
+      "focus_specs": [
+        {
+          "bookmaker_key": "draftkings",
+          "stat": "batter_total_bases",
+          "line": 1.5,
+          "label": "draftkings:batter_total_bases:1.5"
+        }
+      ],
+      "thresholds": {
+        "min_rows_floor": 10,
+        "min_ratio": 0.9
+      }
+    }
+  }
+}

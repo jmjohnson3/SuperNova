@@ -33,8 +33,9 @@ from .bankroll_ledger import (
     locked_bankroll_state,
 )
 from .model_pick_ledger import insert_game_model_pick_ledger
+from .daily_forecast_ledger import lock_game_forecasts
+from .model_release import game_model_release_id
 from .features import add_game_derived_features, build_fd_parlay_url
-from .discord_record_summary import format_record_summary
 from .side_recalibration import (
     apply_side_calibrator,
     game_total_line_bucket as _cal_game_total_line_bucket,
@@ -1484,6 +1485,8 @@ def main() -> None:
 
     pred_run_diff_final = pred_run_diff_direct.copy()
     pred_total_final    = pred_total_direct.copy()
+    pred_run_diff_model_only = pred_run_diff_direct.copy()
+    pred_total_model_only = pred_total_direct.copy()
     used_market = np.zeros(len(df), dtype=bool)
 
     has_resid_models = ("rl_resid" in models) and ("total_resid" in models)
@@ -1601,6 +1604,8 @@ def main() -> None:
     out = id_df.copy()
     out["pred_run_diff"]    = np.round(pred_run_diff_final, 2)
     out["pred_total"]       = np.round(pred_total_final,    2)
+    out["pred_run_diff_model_only"] = np.round(pred_run_diff_model_only, 2)
+    out["pred_total_model_only"] = np.round(pred_total_model_only, 2)
     if pred_f5_final is not None:
         out["pred_f5_total"] = np.round(pred_f5_final, 2)
     out["used_market_recon"] = used_market
@@ -1767,23 +1772,19 @@ def main() -> None:
         )
     except Exception:
         log.exception("Failed to save predictions")
+    try:
+        with psycopg2.connect(cfg.pg_dsn) as forecast_conn:
+            forecast_rows = out.assign(model_version=game_model_release_id()).to_dict("records")
+            locked_forecasts = lock_game_forecasts(forecast_conn, forecast_rows)
+        log.info("Locked %d immutable game forecast rows", locked_forecasts)
+    except Exception:
+        log.exception("Failed to lock immutable game forecasts")
     locked_exposure, locked_pick_keys, locked_risk_slots = _load_locked_bankroll_state(
         cfg,
         et_day,
     )
 
     print(summary_line)
-    if discord:
-        record_summary = format_record_summary(
-            pg_dsn=cfg.pg_dsn,
-            end_date=et_day,
-            lookback_days=30,
-            include_game_bankroll=True,
-            include_game_model=True,
-            include_prop_shadow=True,
-        )
-        if record_summary:
-            print(record_summary)
 
     # Discord: print "BETS TODAY" summary block before per-game detail
     compact_discord = False
@@ -1990,8 +1991,13 @@ def main() -> None:
                 )
 
             def _print_chunked_parlays(title: str, links: list[str]) -> None:
-                dedup = list(dict.fromkeys([l for l in links if l]))
+                dedup = [
+                    link for link in list(dict.fromkeys([l for l in links if l]))
+                    if "fanduel.com" in link and "marketId=" in link and "selectionId=" in link
+                ]
                 if len(dedup) < 2:
+                    if dedup:
+                        print(f"- {title}: need 2+ FanDuel bankroll links")
                     return
                 n_chunks = math.ceil(len(dedup) / 25)
                 for i in range(0, len(dedup), 25):
@@ -1999,7 +2005,7 @@ def main() -> None:
                     if not url:
                         continue
                     sfx = f" {i // 25 + 1}/{n_chunks}" if n_chunks > 1 else ""
-                    print(f"\n**{title}{sfx}** [FD]({url})")
+                    print(f"- {title}{sfx}: [FD]({url})")
 
             if _bankroll_bets:
                 print(f"\n**BANKROLL GAME BETS ({len(_bankroll_bets)})**")

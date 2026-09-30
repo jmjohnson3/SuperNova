@@ -14,10 +14,11 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.modeling.update_outcomes")
 
 _ET = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 GAME_MARKET_BOOK = "draftkings"
 
 

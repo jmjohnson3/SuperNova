@@ -22,19 +22,30 @@ from mlb_pipeline.modeling.bankroll_ledger import (
 from mlb_pipeline.modeling.game_line_clv import game_line_clv, resolve_valid_game_close
 from mlb_pipeline.modeling.predict_player_props import (
     PredictConfig,
+    _apply_hitter_hits_bias_calibration,
     _cap_prop_db_rows,
+    _direct_hitter_count_repair_enabled,
+    _hitter_rate_challenger_live_forecast_enabled,
     _offer_line_data,
     _print_discord,
+    _rebuild_tb_from_live_rate_components,
 )
+from mlb_pipeline.modeling.prop_candidate_engine import exceeds_non_lottery_line_cap
+from mlb_pipeline.modeling.prop_shadow_selector import _is_tail_alt
+from mlb_pipeline.modeling import prop_prediction_schema
+from mlb_pipeline.modeling import train_prop_distribution_models as distribution_models
 from mlb_pipeline.modeling.prop_clean_slate import CleanSlateThresholds, clean_slate_qualifies
+from mlb_pipeline.modeling import prop_offer_snapshots
 from mlb_pipeline.modeling.prop_real_money_eligibility import PROP_REAL_MONEY_ELIGIBILITY_START_DATE
 from mlb_pipeline.modeling.train_hitter_player_game_outcome_models import (
+    _apply_conditional_xbh_logit_offsets,
     _apply_tb_hr_tail_logit_offset,
     _predict_hierarchical_event_probabilities,
     add_leakage_safe_player_priors,
     convolve_hitter_outcomes,
     projected_pa_pmf,
 )
+from mlb_pipeline.modeling.prop_k_distribution import score_k_v3_over_probability
 from mlb_pipeline.modeling.train_prop_distribution_models import (
     _add_offer_group_weights,
     _apply_true_pair_hitter_line_calibrators,
@@ -47,6 +58,10 @@ from mlb_pipeline.modeling.train_prop_distribution_models import (
 from mlb_pipeline.modeling.train_prop_opportunity_models import add_pitcher_history_features
 from mlb_pipeline.modeling.predict_today import _cap_game_bankroll_rows
 from mlb_pipeline.modeling.prop_offer_links import filter_prop_offers_for_game
+from mlb_pipeline.modeling.prop_player_game_bankroll_model_proof import (
+    _hitter_outcome_projection_proof,
+    _live_hitter_rate_projection_proof,
+)
 from mlb_pipeline.modeling.prop_snapshot_coverage_report import slate_qualifies
 from mlb_pipeline.modeling.update_outcomes import _resolve_game_close_for_bet
 from mlb_pipeline.parse_games import _status_from_game_obj
@@ -96,6 +111,15 @@ class _Connection:
         if self.calls == 1:
             return _Cursor([(self.commence,)])
         return _Cursor(self.snapshots)
+
+
+class _SequentialConnection:
+    def __init__(self, result_sets):
+        self.result_sets = list(result_sets)
+
+    def cursor(self, cursor_factory=None):
+        rows = self.result_sets.pop(0) if self.result_sets else []
+        return _Cursor(rows)
 
 
 class _UnexpectedConnection:
@@ -276,19 +300,75 @@ def test_saved_prediction_audit_only_reports_valid_clv():
 
 
 def test_mlb_runners_rebuild_offers_and_predict_before_slow_training():
+    from mlb_pipeline import run_daily_and_notify as notify_runner
+
     notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
     daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
     morning_bat = (ROOT / "scripts/mlb_morning.bat").read_text(encoding="utf-8")
+    pregame_labels = [step.label for step in notify_runner.PRE_GAME_STEPS]
 
     assert notify_text.index('Step("Build Prop Offer Links"') < notify_text.index('Step("Player Prop Projections"')
     assert notify_text.index('Step("Game Predictions"') < notify_text.index('Step("Train Game Models"')
+    assert notify_text.index('Step("Re-crawl same-day lineups"') < notify_text.index('Step("Player Props (pre-game)"')
+    assert notify_text.index('Step("Re-parse same-day lineups"') < notify_text.index('Step("Player Props (pre-game)"')
     assert notify_text.index('Step("Rebuild Prop Offer Links"') < notify_text.index('Step("Player Props (pre-game)"')
     assert 'args=("--force-props",)' in notify_text
+    assert '"--start-date", et_day.isoformat()' in notify_text
+    assert '"--end-date", et_day.isoformat()' in notify_text
     assert "--skip-train" in morning_bat
+    assert pregame_labels.index("Re-crawl same-day lineups") < pregame_labels.index("Player Props (pre-game)")
+    assert pregame_labels.index("Re-parse same-day lineups") < pregame_labels.index("Player Props (pre-game)")
+    lineup_crawl = next(step for step in notify_runner.PRE_GAME_STEPS if step.label == "Re-crawl same-day lineups")
+    assert lineup_crawl.module == "mlb_pipeline.crawler"
+    assert "--force-lineups" in lineup_crawl.args
 
     assert daily_text.index('name="Build prop offer links"') < daily_text.index('name="Predict player props"')
     assert daily_text.index('name="Predict today"') < daily_text.index('name="Train game models"')
+    assert daily_text.index('name="Re-crawl same-day lineups"') < daily_text.index('name="Re-predict player props + post to Discord"')
+    assert daily_text.index('name="Re-parse same-day lineups"') < daily_text.index('name="Re-predict player props + post to Discord"')
     assert daily_text.index('name="Rebuild prop offer links"') < daily_text.index('name="Re-predict player props + post to Discord"')
+
+
+def test_mlb_discord_prop_output_split_keeps_research_out_of_bankroll_channel():
+    from mlb_pipeline import run_daily_and_notify as notify_runner
+
+    body = "\n".join([
+        "**DATA HEALTH**",
+        "- Offers: 10 markets, 200 normalized offers, 200 linked sides",
+        "",
+        "**BANKROLL PROP BETS**",
+        "- No bankroll-qualified player props today",
+        "- Real-money blockers: CLV-weak 12",
+        "",
+        "**Top 10 Paper Strikeouts**",
+        "- Pitcher A K O5.5 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=1&selectionId=2>)",
+        "- Top 1 Paper Strikeouts Parlay: [FD](https://sportsbook.fanduel.com/addToBetslip?marketId=1&selectionId=2)",
+        "",
+        "**ALT-LINE LOTTERY / RESEARCH**",
+        "- Hitter B HR O1.5",
+    ])
+    main_body, research_body = notify_runner._split_player_prop_discord_output(body)
+
+    assert "BANKROLL PROP BETS" in main_body
+    assert "Real-money blockers" in main_body
+    assert "Top 10 Paper Strikeouts" not in main_body
+    assert "ALT-LINE LOTTERY" not in main_body
+    assert "[Bet FD]" not in main_body
+    assert "Paper Strikeouts Parlay" not in main_body
+    assert "Top 10 Paper Strikeouts" in research_body
+    assert "[Bet FD]" in research_body
+    assert "Paper Strikeouts Parlay" in research_body
+    assert "ALT-LINE LOTTERY" in research_body
+
+
+def test_game_bankroll_discord_section_has_fd_parlay_link():
+    source = (ROOT / "src/mlb_pipeline/modeling/predict_today.py").read_text(encoding="utf-8")
+    assert "**BANKROLL GAME BETS" in source
+    assert "Bankroll Game Bets Parlay" in source
+    assert "[b[\"link\"] for b in _bankroll_bets if b.get(\"link\")]" in source
+    assert '"fanduel.com" in link and "marketId=" in link and "selectionId=" in link' in source
+    assert "need 2+ FanDuel bankroll links" in source
+    assert 'print(f"- {title}{sfx}: [FD]({url})")' in source
 
 
 def test_game_feature_view_selects_latest_valid_event_snapshot():
@@ -365,6 +445,18 @@ def test_nba_latest_snapshot_loaders_prune_stale_rows():
 def test_nba_discord_close_runner_includes_outcome_grading():
     text = (ROOT / "src/nba_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
     assert 'Step("Update Outcomes + CLV",     "nba_pipeline.modeling.update_outcomes"' in text
+
+
+def test_nba_runners_kill_subprocess_trees_on_timeout():
+    for relative in (
+        "src/nba_pipeline/run_daily.py",
+        "src/nba_pipeline/run_daily_and_notify.py",
+        "src/nba_pipeline/run_nightly.py",
+    ):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        assert "run_subprocess_tree" in text
+        assert "subprocess.run(" not in text
+        assert "subprocess.TimeoutExpired" not in text
 
 
 def test_nba_runners_refresh_elo_before_materialized_features():
@@ -535,6 +627,10 @@ def test_locked_bankroll_ledger_is_authoritative_and_immutable():
     assert "pg_advisory_xact_lock" in ledger_text
     assert "sync_pending_game_bankroll_metadata" not in ledger_text
     assert "sync_pending_game_model_pick_metadata" not in model_pick_text
+    assert "insert_model_pick_rows(conn, out, setup_schema=False)" in model_pick_text
+    assert "ensure_prop_offer_snapshot_schema(conn)" not in model_pick_text.split(
+        "def insert_model_pick_rows", 1
+    )[1].split("def backfill_missing_game_model_pick_probabilities", 1)[0]
 
 
 def test_task_xml_files_are_parseable_and_use_expected_local_times():
@@ -654,23 +750,153 @@ def test_prop_close_resolver_distinguishes_line_disappearance():
     assert '"line_disappeared_at_close"' in bookability_text
 
 
+def test_prop_close_default_window_is_two_hours(monkeypatch):
+    commence = datetime(2026, 6, 4, 23, 0, tzinfo=timezone.utc)
+    lock = {
+        "snapshot_at_utc": commence - timedelta(hours=4),
+        "commence_time_utc": commence,
+        "event_id": "evt-1",
+        "as_of_date": date(2026, 6, 4),
+        "player_name_norm": "aaron judge",
+        "stat": "batter_total_bases",
+        "bookmaker_key": "fanduel",
+        "selected_side": "over",
+        "line": 1.5,
+        "over_price": 120,
+        "under_price": -145,
+    }
+    row = {
+        "game_date_et": date(2026, 6, 4),
+        "game_slug": "20260604-BOS-NYY",
+        "player_name": "Aaron Judge",
+        "stat": "batter_total_bases",
+        "bookmaker_key": "fanduel",
+        "book_line": 1.5,
+        "bet_side": "over",
+    }
+    monkeypatch.setattr(prop_offer_snapshots, "_lock_snapshot_for_row", lambda _conn, _row: lock)
+    late_but_outside_window = {
+        **lock,
+        "id": 10,
+        "snapshot_role": "close",
+        "snapshot_at_utc": commence - timedelta(hours=3),
+        "source_prop_line_id": 20,
+    }
+    close = prop_offer_snapshots.resolve_valid_prop_close(
+        _SequentialConnection([[late_but_outside_window], [], [], []]),
+        row,
+    )
+    assert close["valid"] is False
+    assert close["unknown_reason"] == "close_outside_two_hour_window"
+
+    valid_close = {
+        **late_but_outside_window,
+        "id": 11,
+        "snapshot_at_utc": commence - timedelta(minutes=90),
+    }
+    close = prop_offer_snapshots.resolve_valid_prop_close(
+        _SequentialConnection([[valid_close]]),
+        row,
+    )
+    assert close["valid"] is True
+    assert close["match_method"] == "same_book_exact_line_snapshot"
+
+
+def test_prop_close_distinguishes_offer_unavailable_from_close_capture_failure(monkeypatch):
+    commence = datetime(2026, 6, 4, 23, 0, tzinfo=timezone.utc)
+    lock = {
+        "snapshot_at_utc": commence - timedelta(hours=4),
+        "commence_time_utc": commence,
+        "event_id": "evt-1",
+        "as_of_date": date(2026, 6, 4),
+        "player_name_norm": "aaron judge",
+        "stat": "batter_total_bases",
+        "bookmaker_key": "fanduel",
+        "selected_side": "over",
+        "line": 1.5,
+        "over_price": 120,
+        "under_price": -145,
+    }
+    row = {
+        "game_date_et": date(2026, 6, 4),
+        "game_slug": "20260604-BOS-NYY",
+        "player_name": "Aaron Judge",
+        "stat": "batter_total_bases",
+        "bookmaker_key": "fanduel",
+        "book_line": 1.5,
+        "bet_side": "over",
+    }
+    monkeypatch.setattr(prop_offer_snapshots, "_lock_snapshot_for_row", lambda _conn, _row: lock)
+    close = prop_offer_snapshots.resolve_valid_prop_close(
+        _SequentialConnection([
+            [],  # exact same line
+            [],  # same player/stat, other line
+            [],  # fallback other book
+            [{"event_rows": 12, "player_rows": 0, "market_rows": 0}],
+        ]),
+        row,
+    )
+    assert close["valid"] is False
+    assert close["unknown_reason"] == "player_prop_unavailable_at_close"
+    assert close["match_method"] == "same_book_event_close_window"
+
+
 def test_prop_clv_refresh_and_walk_forward_reports_are_scheduled():
+    from mlb_pipeline import run_daily_and_notify as notify_runner
+
     daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
     notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
     replay_text = (ROOT / "src/mlb_pipeline/modeling/prop_replay.py").read_text(encoding="utf-8")
+    clv_cli_text = (ROOT / "src/mlb_pipeline/modeling/refresh_prop_replay_clv.py").read_text(encoding="utf-8")
     assert "refresh_prop_replay_clv" in replay_text
+    assert "markets: Iterable[str] | None = None" in replay_text
+    assert "stat = ANY(%s)" in replay_text
+    assert "LOWER(bookmaker_key) = ANY(%s)" in replay_text
+    assert "line_bucket = ANY(%s)" in replay_text
+    assert "LIMIT %s" in replay_text
+    assert 'parser.add_argument("--market"' in clv_cli_text
+    assert 'parser.add_argument("--bookmaker"' in clv_cli_text
+    assert 'parser.add_argument("--line-bucket"' in clv_cli_text
     assert "mlb_pipeline.modeling.refresh_prop_replay_clv" in daily_text
     assert "mlb_pipeline.modeling.refresh_prop_replay_clv" in notify_text
     assert "mlb_pipeline.modeling.prop_walk_forward_accuracy_report" in daily_text
     assert "mlb_pipeline.modeling.prop_walk_forward_accuracy_report" in notify_text
     assert "mlb_pipeline.modeling.prop_shadow_selector" in daily_text
     assert "mlb_pipeline.modeling.prop_shadow_selector" in notify_text
+    assert "mlb_pipeline.modeling.prop_player_game_bankroll_model_proof" in daily_text
+    assert "mlb_pipeline.modeling.prop_player_game_bankroll_model_proof" in notify_text
+    assert "mlb_pipeline.modeling.prop_tb15_line_calibration" in daily_text
+    assert "mlb_pipeline.modeling.prop_tb15_line_calibration" in notify_text
+    assert "mlb_pipeline.modeling.prop_k_under_repair_report" in daily_text
+    assert "mlb_pipeline.modeling.prop_k_under_repair_report" in notify_text
+    assert "mlb_pipeline.modeling.prop_exact_bucket_clv_priors" in daily_text
+    assert "mlb_pipeline.modeling.prop_exact_bucket_clv_priors" in notify_text
+    assert "mlb_pipeline.modeling.prop_micro_bucket_repair_report" in daily_text
+    assert "mlb_pipeline.modeling.prop_micro_bucket_repair_report" in notify_text
+    assert daily_text.index('name="Exact-bucket CLV priors"') < daily_text.index(
+        'name="Re-predict player props + post to Discord"'
+    )
+    pregame_labels = [step.label for step in notify_runner.PRE_GAME_STEPS]
+    assert pregame_labels.index("Exact-Bucket CLV Priors") < pregame_labels.index("Player Props (pre-game)")
+    assert pregame_labels.index("Prop Micro Promotion Evaluation") < pregame_labels.index("Player Props (pre-game)")
+    assert "mlb_pipeline.modeling.prop_post_gate_candidate_report" in daily_text
+    assert "mlb_pipeline.modeling.prop_post_gate_candidate_report" in notify_text
     assert "mlb_pipeline.modeling.prop_opportunity_feature_report" in daily_text
     assert "mlb_pipeline.modeling.prop_opportunity_feature_report" in notify_text
-    assert 'args=("--include-pending", "--ensure-schema")' in daily_text
+    assert "mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report" in daily_text
+    assert "mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report" in notify_text
+    assert 'args=("--lookback-days", "45", "--include-pending", "--ensure-schema", "--no-replace")' in daily_text
     assert 'args=("--include-pending", "--ensure-schema")' in notify_text
     assert 'args=("--lookback-days", "3", "--include-pending", "--no-replace")' in daily_text
     assert 'args=("--lookback-days", "3", "--include-pending", "--no-replace")' in notify_text
+
+
+def test_daily_forecast_grader_zero_fills_participating_hitter_null_stats():
+    ledger_text = (ROOT / "src/mlb_pipeline/modeling/daily_forecast_ledger.py").read_text(encoding="utf-8")
+    assert "WHEN 'batter_hits' THEN COALESCE(gl.hits, 0)::numeric" in ledger_text
+    assert "WHEN 'batter_total_bases' THEN COALESCE(gl.total_bases, 0)::numeric" in ledger_text
+    assert "WHEN 'batter_home_runs' THEN COALESCE(gl.home_runs, 0)::numeric" in ledger_text
+    assert "COALESCE(gl.at_bats, 0) + COALESCE(gl.walks_batter, 0)" in ledger_text
 
 
 def test_prop_offer_health_and_selector_sections_are_reported():
@@ -686,10 +912,68 @@ def test_prop_offer_health_and_selector_sections_are_reported():
 def test_ledger_schema_checks_are_not_prediction_time_ddl_by_default():
     ledger_text = (ROOT / "src/mlb_pipeline/modeling/bankroll_ledger.py").read_text(encoding="utf-8")
     snapshot_text = (ROOT / "src/mlb_pipeline/modeling/prop_offer_snapshots.py").read_text(encoding="utf-8")
+    predict_text = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+    schema_text = (ROOT / "src/mlb_pipeline/modeling/prop_prediction_schema.py").read_text(encoding="utf-8")
     assert "_bankroll_ledger_has_required_columns" in ledger_text
     assert "_bankroll_ledger_exists(conn) and _bankroll_ledger_has_required_columns(conn)" in ledger_text
     assert "SET LOCAL lock_timeout = '2s'" in ledger_text
     assert "SET LOCAL lock_timeout = '2s'" in snapshot_text
+    assert "allow_schema_ddl: bool = False" in predict_text
+    assert "_ensure_schema(conn, allow_ddl=cfg.allow_schema_ddl)" in predict_text
+    assert "Prediction runtime dependencies are not ready" in schema_text
+    assert "--allow-schema-ddl" in predict_text
+    assert "CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_batting_rolling_mat" not in predict_text
+    assert "CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_batting_rolling_mat" in schema_text
+
+
+def test_prediction_schema_validator_fails_closed_without_ddl(monkeypatch):
+    monkeypatch.setattr(
+        prop_prediction_schema,
+        "_verify_prediction_runtime_dependencies",
+        lambda _conn: ["bets.mlb_prop_predictions"],
+    )
+    with pytest.raises(RuntimeError, match="Prediction runtime dependencies are not ready"):
+        prop_prediction_schema._ensure_schema(object(), allow_ddl=False)
+
+
+def test_msf_crawlers_read_api_keys_from_environment():
+    config_text = (ROOT / "src/supernovabets_config.py").read_text(encoding="utf-8")
+    mlb_text = (ROOT / "src/mlb_pipeline/crawler.py").read_text(encoding="utf-8")
+    nba_text = (ROOT / "src/nba_pipeline/crawler.py").read_text(encoding="utf-8")
+    example_text = (ROOT / "example_fetch.py").read_text(encoding="utf-8")
+    for text in (mlb_text, nba_text, example_text):
+        assert "mysportsfeeds_api_key()" in text
+        assert "Missing MYSPORTSFEEDS_API_KEY or MSF_API_KEY" in text
+        assert ("4359" + "aa1b") not in text
+    assert "MYSPORTSFEEDS_API_KEY" in config_text
+    assert "MSF_API_KEY" in config_text
+    assert "_saved_windows_env" in config_text
+
+
+def test_nba_pipeline_uses_shared_dsn_config():
+    bad = []
+    for path in (ROOT / "src/nba_pipeline").glob("**/*.py"):
+        text = path.read_text(encoding="utf-8")
+        if "postgresql://josh:password@localhost:5432/nba" in text:
+            bad.append(str(path.relative_to(ROOT)))
+    assert bad == []
+    assert (ROOT / "src/nba_pipeline/db.py").exists()
+    assert "SUPERNOVABETS_PG_DSN" in (ROOT / "src/supernovabets_config.py").read_text(encoding="utf-8")
+
+
+def test_manual_mlb_diagnostics_have_ownership_docs():
+    doc = (ROOT / "docs/manual_mlb_diagnostics.md").read_text(encoding="utf-8")
+    for relative in (
+        "src/mlb_pipeline/modeling/prop_gate_diagnostics.py",
+        "src/mlb_pipeline/modeling/prop_failure_diagnostics.py",
+        "src/mlb_pipeline/modeling/real_money_audit_report.py",
+    ):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        module_name = Path(relative).stem
+        assert "Manual-only tool; see docs/manual_mlb_diagnostics.md" in text
+        assert module_name in doc
+    assert "Do not use as: bankroll evidence" in doc
+    assert "Do not use as: walk-forward proof or bankroll evidence" in doc
 
 
 def test_prop_no_vig_pairing_uses_event_fallbacks():
@@ -792,9 +1076,10 @@ def test_prop_opportunity_features_feed_training_and_betting_layers():
         assert f"ADD COLUMN IF NOT EXISTS {column}" in training_text
         assert f'"{column}"' in betting_text
         assert f'"{column}"' in direct_text
-        assert f"{column}::float" in compare_text
+    assert f"{column}::float" in compare_text
     assert "opportunity_features=pitcher_opportunity" in predict_text
-    assert "opportunity_features=batter_opportunity" in predict_text
+    assert "opportunity_features=offer_opportunity" in predict_text
+    assert "offer_opportunity = batter_opportunity" in predict_text
     report_text = (ROOT / "src/mlb_pipeline/modeling/prop_opportunity_feature_report.py").read_text(encoding="utf-8")
     assert "Projection Accuracy" in report_text
     assert "actual_pa::float AS actual_pa" in report_text
@@ -857,12 +1142,29 @@ def test_prop_bootstrap_micro_and_ladder_artifacts_are_unified():
     readiness_text = (ROOT / "src/mlb_pipeline/modeling/prop_real_money_readiness_report.py").read_text(encoding="utf-8")
     selector_text = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
     promotion_text = (ROOT / "src/mlb_pipeline/modeling/prop_bucket_promotion_report.py").read_text(encoding="utf-8")
+    micro_eval_text = (ROOT / "src/mlb_pipeline/modeling/prop_micro_promotion_evaluation.py").read_text(encoding="utf-8")
     assert "enable_bootstrap_micro" in policy_text
     assert "bootstrap_micro_only" in policy_text
     assert "bootstrap_micro_reasons" in promotion_text
     assert "_OPEN_LADDER_TIERS = {\"micro\", \"starter\", \"bankroll\"}" in readiness_text
     assert "_apply_ladder_policy(scores, cfg)" in readiness_text
     assert "trust_status in {\"bankroll\", \"starter\", \"micro\"}" in selector_text
+    assert "prop_player_game_bankroll_model_proof.json" in micro_eval_text
+    assert "prop_exact_bucket_clv_priors.json" in micro_eval_text
+    assert "player_game_bankroll_proof_not_passed" in micro_eval_text
+    assert "micro_trial_ready_count" in micro_eval_text
+    assert "projection_micro_allowed" in micro_eval_text
+    assert "player_game_projection_allowed_stats" in micro_eval_text
+    assert "trial_clv_source" in micro_eval_text
+    assert "fanduel_synthetic_hitter_evidence_display_only" in micro_eval_text
+    exact_clv_text = (ROOT / "src/mlb_pipeline/modeling/prop_exact_bucket_clv_priors.py").read_text(encoding="utf-8")
+    assert "valid_close_coverage" in exact_clv_text
+    assert "clv_unknown_reason_counts" in exact_clv_text
+    repair_text = (ROOT / "src/mlb_pipeline/modeling/prop_micro_bucket_repair_report.py").read_text(encoding="utf-8")
+    assert "dk_k_under_plus_money" in repair_text
+    assert "dk_tb15_over" in repair_text
+    assert "display_only_fanduel_synthetic_or_one_sided" in repair_text
+    assert "prop_micro_bucket_repair_report.json" in repair_text
 
 
 def test_prop_selector_uses_distribution_opportunity_and_bucket_clv_gates():
@@ -915,6 +1217,18 @@ def test_prop_promotion_uses_fixed_prospective_eligibility_cohort():
     assert 'legacy_df["game_date_et"] >= cfg.eligibility_start_date' in policy_text
     assert "eligibility_start_date" in readiness_text
     assert "legacy_close_quality" in readiness_text
+    assert "underlying_projection_not_proven" in policy_text
+
+
+def test_exact_line_models_require_projection_and_true_pair_proof():
+    direct_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_direct_side_models.py").read_text(encoding="utf-8")
+    audit_text = (ROOT / "src/mlb_pipeline/modeling/daily_forecast_projection_audit.py").read_text(encoding="utf-8")
+    assert "_projection_eligible_markets" in direct_text
+    assert "projection_gated_no_models" in direct_text
+    assert "true_pair_flag" in direct_text
+    assert "clean_market_pair_flag" in direct_text
+    assert "Model-Version Cohorts" in audit_text
+    assert "Active Prospective Collection" in audit_text
 
 
 class _ConstantProbabilityModel:
@@ -1119,6 +1433,255 @@ def test_tb_component_empirical_bayes_can_repair_supported_double_bias():
     assert sparse < 1.10
 
 
+def test_live_hitter_rate_repair_requires_accepted_direct_head():
+    accepted = {
+        "models": {"hits_count_blend_alpha": 0.5, "hits_count_model": object()},
+        "recommendation": {"direct_hits_count_repair_enabled": True},
+    }
+    disabled = {
+        "models": {"hits_count_blend_alpha": 0.0, "hits_count_model": object()},
+        "recommendation": {"direct_hits_count_repair_enabled": True},
+    }
+    assert _direct_hitter_count_repair_enabled(accepted, "hits")
+    assert not _direct_hitter_count_repair_enabled(disabled, "hits")
+
+
+def test_live_hitter_rate_repair_is_gated_per_head_by_prospective_mae(tmp_path, monkeypatch):
+    monkeypatch.delenv("MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", raising=False)
+    monkeypatch.delenv("MLB_HITTER_RATE_CHALLENGER_FORECAST_MODE", raising=False)
+    monkeypatch.delenv("MLB_HITTER_HITS_CHALLENGER_FORECAST_MODE", raising=False)
+    monkeypatch.delenv("MLB_HITTER_HR_CHALLENGER_FORECAST_MODE", raising=False)
+    artifact = {
+        "models": {
+            "hits_count_blend_alpha": 0.5,
+            "hits_count_model": object(),
+            "hr_count_blend_alpha": 0.35,
+            "hr_count_model": object(),
+        },
+        "recommendation": {
+            "direct_hits_count_repair_enabled": True,
+            "direct_hr_count_repair_enabled": True,
+        },
+    }
+    (tmp_path / "hitter_live_vs_legacy_forecast_diff.json").write_text(
+        """{
+          "graded_comparison": {
+            "hits": {"rows": 200, "dates": 3, "legacy_mae": 0.70, "live_mae": 0.72, "mae_gain": -0.02},
+            "home_runs": {"rows": 200, "dates": 3, "legacy_mae": 0.30, "live_mae": 0.25, "mae_gain": 0.05}
+          }
+        }""",
+        encoding="utf-8",
+    )
+
+    assert not _hitter_rate_challenger_live_forecast_enabled("hits", artifact, tmp_path)
+    assert _hitter_rate_challenger_live_forecast_enabled("hr", artifact, tmp_path)
+
+
+def test_live_hitter_rate_repair_rejects_worse_bias(tmp_path, monkeypatch):
+    monkeypatch.delenv("MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", raising=False)
+    monkeypatch.delenv("MLB_HITTER_RATE_CHALLENGER_FORECAST_MODE", raising=False)
+    artifact = {
+        "models": {"hits_count_blend_alpha": 0.5, "hits_count_model": object()},
+        "recommendation": {"direct_hits_count_repair_enabled": True},
+    }
+    (tmp_path / "hitter_live_vs_legacy_forecast_diff.json").write_text(
+        """{
+          "graded_comparison": {
+            "hits": {
+              "rows": 200, "dates": 3,
+              "legacy_mae": 0.72, "live_mae": 0.70, "mae_gain": 0.02,
+              "legacy_bias": -0.04, "live_bias": -0.16
+            }
+          }
+        }""",
+        encoding="utf-8",
+    )
+
+    assert not _hitter_rate_challenger_live_forecast_enabled("hits", artifact, tmp_path)
+
+
+def test_live_hitter_rate_repair_accepts_prospective_bias_repair(tmp_path, monkeypatch):
+    monkeypatch.delenv("MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", raising=False)
+    monkeypatch.delenv("MLB_HITTER_RATE_CHALLENGER_FORECAST_MODE", raising=False)
+    artifact = {
+        "models": {"hits_count_blend_alpha": 0.5, "hits_count_model": object()},
+        "recommendation": {"direct_hits_count_repair_enabled": True},
+    }
+    (tmp_path / "hitter_live_vs_legacy_forecast_diff.json").write_text(
+        """{
+          "graded_comparison": {
+            "hits": {
+              "rows": 1100, "dates": 6,
+              "legacy_mae": 0.713, "live_mae": 0.742, "mae_gain": -0.029,
+              "legacy_bias": 0.094, "live_bias": -0.359
+            }
+          },
+          "hits_live_bias_repair_v1": {
+            "accepted": true,
+            "rows": 1100,
+            "dates": 6,
+            "selected_alpha": 1.0,
+            "selected": {
+              "mae": 0.691,
+              "mae_gain_vs_live": 0.051,
+              "mae_gain_vs_legacy": 0.023,
+              "bias": -0.059,
+              "any_brier_gain_vs_legacy": 0.0004
+            }
+          }
+        }""",
+        encoding="utf-8",
+    )
+
+    assert _hitter_rate_challenger_live_forecast_enabled("hits", artifact, tmp_path)
+
+
+def test_hitter_hits_bias_calibration_applies_live_buckets() -> None:
+    row = pd.Series({
+        "player_id": 123,
+        "batter_hand": "L",
+        "opp_sp_hand": "R",
+        "is_home": 1,
+        "team_implied_runs": 5.2,
+        "park_babip_factor": 1.05,
+    })
+    calibration = {
+        "accepted": True,
+        "selected_alpha": 0.5,
+        "production_global_residual": 0.0,
+        "production_maps": [
+            {
+                "key": "lineup_pa_bucket",
+                "weight": 1.0,
+                "fallback": 0.0,
+                "values": {"slot_1_2|projected_pa_high_4_4_plus": 0.6},
+            },
+        ],
+    }
+
+    corrected, meta = _apply_hitter_hits_bias_calibration(
+        row=row,
+        pa_info={"effective_batting_order": 1.0, "projected_pa": 4.8},
+        artifact={"player_prior_state": {"123": {"player_prior_hit_rate": 0.300}}},
+        calibration=calibration,
+        base_hits=1.10,
+    )
+
+    assert corrected == pytest.approx(1.40)
+    assert meta["applied"] is True
+    assert meta["buckets"]["lineup_pa_bucket"] == "slot_1_2|projected_pa_high_4_4_plus"
+
+
+def test_hitter_bankroll_proof_splits_bad_hits_from_improved_hr(tmp_path):
+    (tmp_path / "hitter_live_vs_legacy_forecast_diff.json").write_text(
+        """{
+          "generated_at_utc": "2026-07-21T04:00:44Z",
+          "graded_comparison": {
+            "hits": {
+              "rows": 1500, "dates": 8,
+              "legacy_mae": 0.71, "live_mae": 0.74, "mae_gain": -0.03,
+              "legacy_bias": 0.10, "live_bias": -0.35
+            },
+            "home_runs": {
+              "rows": 1500, "dates": 8,
+              "legacy_mae": 0.31, "live_mae": 0.25, "mae_gain": 0.06,
+              "legacy_bias": 0.11, "live_bias": 0.03,
+              "hr_0_5_brier": {
+                "legacy_brier": 0.117,
+                "live_brier": 0.107,
+                "brier_gain": 0.010
+              }
+            }
+          }
+        }""",
+        encoding="utf-8",
+    )
+
+    hit_proof = _live_hitter_rate_projection_proof(tmp_path, "batter_hits")
+    hr_proof = _live_hitter_rate_projection_proof(tmp_path, "batter_home_runs")
+
+    assert hit_proof["eligible"] is False
+    assert "live_vs_legacy_mae_not_improved" in hit_proof["projection_blockers"]
+    assert "live_vs_legacy_bias_worse" in hit_proof["projection_blockers"]
+    assert hr_proof["eligible"] is True
+    assert hr_proof["line_brier_gain_vs_baseline"] == pytest.approx(0.010)
+
+
+def test_hitter_bankroll_proof_accepts_repaired_hits_projection(tmp_path):
+    (tmp_path / "hitter_live_vs_legacy_forecast_diff.json").write_text(
+        """{
+          "generated_at_utc": "2026-07-21T06:51:03Z",
+          "graded_comparison": {
+            "hits": {
+              "rows": 1107, "dates": 6,
+              "legacy_mae": 0.715, "live_mae": 0.742, "mae_gain": -0.027,
+              "legacy_bias": 0.104, "live_bias": -0.359
+            }
+          },
+          "hits_live_bias_repair_v1": {
+            "accepted": true,
+            "rows": 1107,
+            "dates": 6,
+            "selected": {
+              "mae": 0.691,
+              "mae_gain_vs_legacy": 0.023,
+              "bias": -0.059,
+              "any_brier": 0.2424,
+              "any_brier_gain_vs_legacy": 0.0004
+            },
+            "legacy": {"any_brier": 0.2428}
+          }
+        }""",
+        encoding="utf-8",
+    )
+
+    hit_proof = _live_hitter_rate_projection_proof(tmp_path, "batter_hits")
+
+    assert hit_proof["eligible"] is True
+    assert hit_proof["active_model_family"] == "hitter_hits_direct_player_game_blend_hits_bias_calibrated"
+    assert hit_proof["mae_gain_vs_baseline"] == pytest.approx(0.023)
+
+
+def test_hitter_outcome_projection_proof_accepts_ok_status_for_hr(tmp_path):
+    (tmp_path / "hitter_player_game_outcome_models.json").write_text(
+        """{
+          "status": "ok",
+          "model_release_id": "hitter-test-r1",
+          "holdout_rows": 1000,
+          "holdout_start": "2026-06-01",
+          "holdout_end": "2026-06-10",
+          "recommendation": {
+            "direct_hr_count_repair_enabled": true,
+            "direct_hr_count_repair_mae_gain": 0.02,
+            "direct_hr_count_repair_brier_gain": 0.004
+          }
+        }""",
+        encoding="utf-8",
+    )
+
+    proof = _hitter_outcome_projection_proof(tmp_path, "batter_home_runs")
+
+    assert proof["eligible"] is True
+    assert proof["active_model_family"] == "hitter_hr_direct_player_game_blend"
+    assert proof["graded_dates"] == 10
+
+
+def test_tb_component_rebuild_uses_live_hits_and_hr_shape():
+    rebuilt, meta = _rebuild_tb_from_live_rate_components(
+        legacy_tb=1.60,
+        legacy_hits=1.00,
+        legacy_hr=0.10,
+        live_hits=1.20,
+        live_hr=0.18,
+        alpha=1.0,
+    )
+    assert rebuilt is not None
+    assert rebuilt > 1.60
+    assert rebuilt >= 1.20
+    assert meta["non_hr_extra_per_non_hr_hit"] > 0.0
+    assert meta["component_blend_alpha"] == pytest.approx(1.0)
+
+
 def test_tb_hr_real_candidates_require_true_pair_line_production_gate():
     distribution_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_distribution_models.py").read_text(encoding="utf-8")
     selector_text = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
@@ -1126,6 +1689,33 @@ def test_tb_hr_real_candidates_require_true_pair_line_production_gate():
     assert "tb_hr_line_production_gates" in distribution_text
     assert "tb_hr_line_confirms" in selector_text
     assert "tb_hr_line_production_gate_failed" in selector_text
+
+
+def test_distribution_report_writes_even_without_exact_bucket_rows(tmp_path, monkeypatch):
+    monkeypatch.setattr(distribution_models, "_REPORT_DIR", tmp_path)
+    payload = {
+        "generated_at_utc": "2026-07-21T00:00:00Z",
+        "rows": 0,
+        "raw_rows": 0,
+        "deduped_rows": 0,
+        "date_min": None,
+        "date_max": None,
+        "status": "ready",
+        "overall": {},
+        "market": [],
+        "distribution_calibrators": {},
+        "tb_hr_line_production_gates": {"groups": {}},
+        "bucket_model_selection": [],
+    }
+    cfg = distribution_models.DistributionConfig(
+        model_dir=tmp_path,
+        report_file="empty_distribution_report.md",
+    )
+
+    path = Path(distribution_models._write_report(payload, cfg))
+
+    assert path.exists()
+    assert "Exact Bucket Model Selection" in path.read_text(encoding="utf-8")
 
 
 def test_discord_formatter_receives_exact_bucket_reopen_policy():
@@ -1155,7 +1745,6 @@ def test_discord_formatter_handles_empty_bankroll_path(monkeypatch, capsys):
             return False
 
     monkeypatch.setenv("DISCORD_FORMAT", "1")
-    monkeypatch.setattr(props_module, "format_record_summary", lambda **_kwargs: "")
     monkeypatch.setattr(props_module.psycopg2, "connect", lambda *_args, **_kwargs: _Context())
     monkeypatch.setattr(props_module, "locked_bankroll_state", lambda *_args, **_kwargs: (0.0, set(), set()))
     result = _print_discord(
@@ -1169,14 +1758,15 @@ def test_discord_formatter_handles_empty_bankroll_path(monkeypatch, capsys):
     )
     output = capsys.readouterr().out
     assert result == []
+    assert "Prop odds not loaded yet - no links/rankings generated" in output
     assert "No bankroll-qualified player props today" in output
-    assert "Top 10 Paper Strikeouts" in output
-    assert "Top 10 Paper Total Bases" in output
-    assert "Top 10 Paper Hits" in output
-    assert "Top 10 Paper Home Runs" in output
+    assert "Top 10 Paper Strikeouts" not in output
+    assert "Top 10 Paper Total Bases" not in output
+    assert "Top 10 Paper Hits" not in output
+    assert "Top 10 Paper Home Runs" not in output
     assert "LOTTERY / RESEARCH" not in output
     assert "ALT-LINE LOTTERY / RESEARCH" not in output
-    assert "NO-BET SUMMARY" in output
+    assert "NO-BET SUMMARY" not in output
 
 
 def test_clv_v2_live_offer_features_use_consensus_and_exact_open_price():
@@ -1218,6 +1808,35 @@ def test_head_ablation_runs_before_hitter_model_training():
     assert source.index("Hitter event feature ablation report") < source.index("Train hitter player-game outcome models")
 
 
+def test_lock_time_opportunity_context_survives_prediction_replay_and_training():
+    prediction_schema = (ROOT / "src/mlb_pipeline/modeling/prop_prediction_schema.py").read_text(encoding="utf-8")
+    replay = (ROOT / "src/mlb_pipeline/modeling/prop_replay.py").read_text(encoding="utf-8")
+    training = (ROOT / "src/mlb_pipeline/modeling/prop_market_training.py").read_text(encoding="utf-8")
+    assert "opportunity_context JSONB" in prediction_schema
+    assert "opportunity_context JSONB" in replay
+    assert "r.opportunity_context ->> 'confirmed_batting_order'" in training
+    assert "'lock_context'" in training
+    assert "{pitching,battersFaced}" in training
+    assert "{pitching,numberOfPitches}" in training
+
+
+def test_real_prop_candidate_requires_residual_and_clv_agreement():
+    selector = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
+    real_gate = selector[selector.index("real_candidate = ("):selector.index("reasons: list[str]")]
+    assert "and residual_wins" in real_gate
+    assert "and clv_wins" in real_gate
+    assert "and bucket_confirms" in real_gate
+    assert "market_residual_not_confirming" in selector
+
+
+def test_pa_distribution_is_gated_separately_from_pa_point_mean():
+    outcome = (ROOT / "src/mlb_pipeline/modeling/train_hitter_player_game_outcome_models.py").read_text(encoding="utf-8")
+    predictor = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+    assert 'models["pa_distribution_use"] = pa_distribution_use' in outcome
+    assert 'artifact_models.get("pa_distribution_use")' in predictor
+    assert "validated_pa_model_with_distribution" in predictor
+
+
 def test_clv_v2_is_true_pair_only_and_has_movement_features():
     source = (ROOT / "src/mlb_pipeline/modeling/train_prop_market_residual_models.py").read_text(encoding="utf-8")
     assert "open_to_lock_prob_move" in source
@@ -1225,6 +1844,76 @@ def test_clv_v2_is_true_pair_only_and_has_movement_features():
     assert "book_lead_lag_prob" in source
     assert "COALESCE(e.true_pair_flag::float" in source
     assert "COALESCE(e.synthetic_pair_flag::float" in source
+
+
+def test_k_v3_probability_increases_with_bf_and_k_rate():
+    artifact = {
+        "status": "trained",
+        "rate_model": {
+            "numeric_features": ["baseline_k_rate"],
+            "numeric_means": {"baseline_k_rate": 0.25},
+            "numeric_scales": {"baseline_k_rate": 0.05},
+            "intercept": -1.1,
+            "coef": {"baseline_k_rate": 0.6},
+        },
+        "bf_bias": 0.0,
+        "bf_sigma": 2.5,
+        "beta_concentration": 80.0,
+    }
+    base = score_k_v3_over_probability({"projected_bf": 20, "baseline_k_rate": 0.25}, 5.5, artifact)
+    more_bf = score_k_v3_over_probability({"projected_bf": 27, "baseline_k_rate": 0.25}, 5.5, artifact)
+    more_rate = score_k_v3_over_probability({"projected_bf": 20, "baseline_k_rate": 0.32}, 5.5, artifact)
+    assert base is not None
+    assert more_bf > base
+    assert more_rate > base
+
+
+def test_conditional_xbh_calibration_preserves_hits_and_repairs_doubles():
+    probabilities = pd.DataFrame({
+        "p_out": [0.68], "p_walk": [0.09], "p_single": [0.17],
+        "p_double": [0.025], "p_triple": [0.005], "p_hr": [0.03],
+    })
+    repaired = _apply_conditional_xbh_logit_offsets(
+        probabilities,
+        {"xbh_given_hit": 0.5, "hr_given_xbh": -0.2, "triple_given_non_hr_xbh": 0.0},
+    )
+    old_hits = probabilities[["p_single", "p_double", "p_triple", "p_hr"]].sum(axis=1).iloc[0]
+    new_hits = repaired[["p_single", "p_double", "p_triple", "p_hr"]].sum(axis=1).iloc[0]
+    assert new_hits == pytest.approx(old_hits)
+    assert repaired.iloc[0]["p_double"] > probabilities.iloc[0]["p_double"]
+    assert repaired.sum(axis=1).iloc[0] == pytest.approx(1.0)
+
+
+def test_prospective_opportunity_audit_uses_only_immutable_lock_context():
+    source = (ROOT / "src/mlb_pipeline/modeling/prop_prospective_opportunity_audit.py").read_text(encoding="utf-8")
+    assert "r.opportunity_context" in source
+    assert "context_near_lock" in source
+    assert "r.result_status = 'graded'" in source
+    assert "COALESCE(NULLIF(r.opportunity_context" not in source
+
+
+def test_clv_v4_and_conditional_magnitude_are_hard_real_candidate_inputs():
+    trainer = (ROOT / "src/mlb_pipeline/modeling/train_prop_market_residual_models.py").read_text(encoding="utf-8")
+    selector = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
+    assert "clv_beat_logistic_v3" in trainer
+    assert "clv_direction_logistic_v4" in trainer
+    assert "conditional_probability_space_clv_v4" in trainer
+    assert "_expected_clv_score" in selector
+    assert "recent_book_clv_mean" in trainer
+    real_gate = selector[selector.index("real_candidate = ("):selector.index("reasons: list[str]")]
+    assert "and clv_magnitude_confirms" in real_gate
+    assert "expected_clv_not_positive" in selector
+
+
+def test_hitter_non_lottery_line_caps_keep_higher_lines_in_lottery():
+    assert not exceeds_non_lottery_line_cap("batter_hits", 0.5)
+    assert exceeds_non_lottery_line_cap("batter_hits", 1.5)
+    assert not exceeds_non_lottery_line_cap("batter_total_bases", 1.5)
+    assert exceeds_non_lottery_line_cap("batter_total_bases", 2.5)
+    assert _is_tail_alt("batter_hits", "over", 1.5, "common")
+    assert _is_tail_alt("batter_total_bases", "over", 2.5, "common")
+    assert not _is_tail_alt("batter_hits", "over", 0.5, "common")
+    assert not _is_tail_alt("batter_total_bases", "over", 1.5, "common")
 
 
 def test_run_daily_step_names_are_unique():
@@ -1284,3 +1973,288 @@ def test_crawler_weather_is_scheduled_in_crawl_block():
     assert "mlb_pipeline.crawler_weather" in crawl_block, (
         "crawler_weather not found in the normal daily crawl block of run_daily.py"
     )
+
+
+def test_parse_all_bounds_live_sp_velocity_refresh():
+    """Live parse_all must not run an unbounded Baseball Savant velocity backfill."""
+    parse_source = (ROOT / "src/mlb_pipeline/parse_all.py").read_text(encoding="utf-8")
+    velocity_source = (ROOT / "src/mlb_pipeline/crawler_statcast_velocity.py").read_text(encoding="utf-8")
+
+    assert 'max_pairs=_env_int("MLB_SP_VELOCITY_PARSE_MAX_PAIRS", 12)' in parse_source
+    assert 'max_seconds=_env_float("MLB_SP_VELOCITY_PARSE_MAX_SECONDS", 90.0)' in parse_source
+    assert 'request_timeout_s=_env_float("MLB_SP_VELOCITY_PARSE_REQUEST_TIMEOUT", 8.0)' in parse_source
+    assert "conn.commit()" in velocity_source[velocity_source.index("n = _upsert_rows"):]
+
+
+def test_run_daily_training_skips_prop_optuna_by_default():
+    """Overnight training should not accidentally run full prop Optuna searches."""
+    source = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    assert "--full-prop-optuna" in source
+    assert 'args=() if args.full_prop_optuna else ("--skip-optuna",)' in source
+
+
+def test_projection_micro_lane_stays_separate_from_bankroll():
+    selector_text = (ROOT / "src/mlb_pipeline/modeling/prop_shadow_selector.py").read_text(encoding="utf-8")
+    predict_text = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+    ledger_text = (ROOT / "src/mlb_pipeline/modeling/model_pick_ledger.py").read_text(encoding="utf-8")
+    micro_lock_text = (ROOT / "src/mlb_pipeline/modeling/lock_micro_projection_ledger.py").read_text(encoding="utf-8")
+    micro_report_text = (ROOT / "src/mlb_pipeline/modeling/prop_micro_ledger_report.py").read_text(encoding="utf-8")
+    drift_text = (ROOT / "src/mlb_pipeline/modeling/prop_drift_guard_diagnostic.py").read_text(encoding="utf-8")
+    bettable_scan_text = (ROOT / "src/mlb_pipeline/modeling/prop_bettable_now_scan.py").read_text(encoding="utf-8")
+    daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
+    classification_text = (ROOT / "src/mlb_pipeline/modeling/prop_ledger_classification.py").read_text(encoding="utf-8")
+    record_text = (ROOT / "src/mlb_pipeline/modeling/discord_record_summary.py").read_text(encoding="utf-8")
+    ai_text = (ROOT / "src/mlb_pipeline/modeling/ai_pick_engine.py").read_text(encoding="utf-8")
+    ai_model_text = (ROOT / "src/mlb_pipeline/modeling/ai_bet_selection_model.py").read_text(encoding="utf-8")
+
+    assert 'tier = "micro_projection"' in selector_text
+    assert '"micro_projection_not_bankroll_proven"' in selector_text
+    assert "micro_projection_min_clv_beat_prob" in selector_text
+    assert "micro_projection_bucket_history_confirms" in selector_text
+    assert "prop_tb15_line_calibrators.json" in selector_text
+    assert "prop_k_under_repair.json" in selector_text
+    assert "prop_exact_bucket_clv_priors.json" in selector_text
+    assert "prop_micro_promotion_evaluation.json" in selector_text
+    assert "prop_micro_probability_calibrator.json" in selector_text
+    assert "_apply_distribution_probability_calibration" in selector_text
+    assert "_apply_micro_probability_calibration" in selector_text
+    assert 'k_v3_over is not None and k_v3_artifact.get("enabled")' in selector_text
+    assert '"k_distribution_calibrated"' in selector_text
+    assert '"distribution_calibration_key": distribution_calibration_key' in selector_text
+    assert '"micro_projection_raw_prob_side": micro_projection_raw_prob' in selector_text
+    assert '"micro_probability_calibration_key": micro_probability_calibration_key' in selector_text
+    assert "micro_projection_exact_bucket_clv_bad" in selector_text
+    assert "micro_projection_tb15_dk_true_pair_only" in selector_text
+    assert "_approved_micro_trial_model" in selector_text
+    assert "dk_tb15_over_tb_tail_state" in selector_text
+    assert "micro_trial_approved_model" in selector_text
+    assert "micro_trial_collecting_clv_not_required" in selector_text
+    assert "micro_trial_collecting_roi_not_required" in selector_text
+    assert "micro_truth_filter_losing" in selector_text
+    assert "relaxed_micro_trial_lane" in selector_text
+    assert '"micro_projection_required_ev": micro_projection_required_ev' in selector_text
+    assert "_apply_tb15_high_pa_power_micro_cap" in selector_text
+    assert "micro_projection_tb15_high_pa_power_cap" in selector_text
+    assert "if stat == \"batter_total_bases\":" in selector_text
+    assert "return None, None" in selector_text
+    assert '_book_key(feature_row) == "draftkings"' in selector_text
+    assert "if not cal.get(\"enabled\"):" in selector_text
+    assert "return p, None" in selector_text
+    assert "micro_projection_k_under_repair_gate_failed" in selector_text
+    assert "projected_bf_missing" in selector_text
+    assert "projected_pitch_count_missing" in selector_text
+    assert "low_line_under_high_pitch_count_projection" in selector_text
+    assert "micro_trial_exact_bucket" in selector_text
+    assert "micro_trial_exact_bucket_clv_prior" in selector_text
+    assert 'or tier == "micro_projection"' in predict_text
+    assert "discord_show_paper_links: bool = False" in predict_text
+    assert "discord_show_paper_links = False" in predict_text
+    assert '"prop_micro_only_mode"' in predict_text
+    assert "$1 MICRO TEST - BETTABLE NOW" in predict_text
+    assert "$1 MICRO TEST WATCH - PRICE MOVED / STALE / NOT BETTABLE" in predict_text
+    assert "No $1 micro-test player props passed approved-model, true-pair, positive-EV, and drift-guard checks." in predict_text
+    assert "Only bet if Cur is still at or better than Min." in predict_text
+    assert 'bool(item.get("micro_approved_model"))' in predict_text
+    assert 'str(item.get("pair_quality") or "").lower() == "same_book"' in predict_text
+    assert "prop_tb_tail_state_model.joblib" in predict_text
+    assert "_predict_tb_tail_state_probability" in predict_text
+    assert 'offer_family = "tb_tail_state"' in predict_text
+    assert "micro_projection_raw_prob_side" in predict_text
+    assert "micro_projection_required_ev" in predict_text
+    assert "micro_probability_calibration_key" in predict_text
+    assert "micro_tb15_high_pa_power_cap_applied" in predict_text
+    assert "_micro_item_bettable_now" in predict_text
+    assert "and current_ev > 0.0" in predict_text
+    assert "include_link=False" in predict_text
+    assert "include_links: bool = True" in predict_text
+    assert "include_section_parlays: bool = True" in predict_text
+    assert 'f"Top {len(shown)} {heading_kind} {label} Parlay"' in predict_text
+    assert "Top 10 Strikeout Projections Parlay" in predict_text
+    assert "Top 10 Total Bases Projections Parlay" in predict_text
+    assert "Top 10 Hits Projections Parlay" in predict_text
+    assert "Top 10 Home Run Projections Parlay" in predict_text
+    assert "_ai_fanduel_parlay_rows" in predict_text
+    assert "_ai_hr_fun_parlay_rows" in predict_text
+    assert "only_one_sided_hr_positive_ev_fanduel" in predict_text
+    assert "AI FANDUEL DIVERSIFIED PARLAY LEGS" in predict_text
+    assert "AI Diversified FanDuel Parlay" in predict_text
+    assert "AI HOME RUN PARLAY - FOR FUN" in predict_text
+    assert "AI Home Run Fun Parlay" in predict_text
+    assert "ranked by P(HR), not by EV, CLV, or bankroll approval" in predict_text
+    assert "ProjK" in predict_text
+    assert "AI-ML=" in predict_text
+    assert '"batter_hits_runs_rbis": "H+R+RBI"' in predict_text
+    assert '"pred_count": raw.get("pred_count")' in ai_text
+    assert "load_ai_bet_selection_artifact" in ai_text
+    assert "score_ai_bet_selection_row" in ai_text
+    assert "score_ai_bet_selection_rows" in ai_text
+    assert "ai_ml_score" in ai_text
+    assert "ai_ml_good_bet_prob" in ai_text
+    assert "ai_ml_fanduel_evidence_tier" in ai_text
+    assert "features.mlb_prop_market_training_examples" in ai_model_text
+    assert "expanding_player_game_folds" in ai_model_text
+    assert "target_win" in ai_model_text
+    assert "target_clv" in ai_model_text
+    assert "target_good_bet" in ai_model_text
+    assert "target_line_available_at_close" in ai_model_text
+    assert "target_daily_top_pick" in ai_model_text
+    assert "market_family_models" in ai_model_text
+    assert "fanduel_synthetic_display_only" in ai_model_text
+    assert "fanduel_one_sided_display_only" in ai_model_text
+    assert "serious_true_pairs_only" in ai_model_text
+    assert "--max-market-families" in daily_text
+    assert "--max-market-families" in notify_text
+    assert 'if row.get("stat") == "batter_hits":' in predict_text
+    assert 'if stat == "batter_hits_runs_rbis":' in predict_text
+    assert "The AI FanDuel parlay below excludes plain hits." in predict_text
+    assert "no plain hits" in predict_text
+    assert "Diversified headline view" in predict_text
+    assert 'max_stat = 3 if stat == "pitcher_strikeouts" else 2' in predict_text
+    assert 'max_stat_side = 1 if stat == "batter_hits" and side == "under" else 2' in predict_text
+    assert "book_counts[book] >= 3" in predict_text
+    assert "_ev_per_unit_local" in predict_text
+    assert "_apply_selector_for_micro_ledger" in ledger_text
+    assert '_clean_bool(row.get("micro_projection_candidate"))' in ledger_text
+    assert '"micro_projection_candidate": row.get("micro_projection_candidate")' in ledger_text
+    assert '"clv_beat_prob": row.get("clv_beat_prob")' in ledger_text
+    assert '"micro_projection_price_drift_ok": micro_price_drift_ok' in ledger_text
+    assert '"tb15_calibration_key": row.get("tb15_calibration_key")' in ledger_text
+    assert '"k_under_repair_gate_key": row.get("k_under_repair_gate_key")' in ledger_text
+    assert '"micro_trial_ready": row.get("micro_trial_ready")' in ledger_text
+    assert '"exact_bucket_clv_beat_prob": row.get("exact_bucket_clv_beat_prob")' in ledger_text
+    assert '"micro_current_ev": ev if model_tier == "micro_projection" else None' in ledger_text
+
+    assert '"micro_projection_raw_prob_side": row.get("micro_projection_raw_prob_side")' in ledger_text
+    assert '"micro_projection_required_ev": row.get("micro_projection_required_ev")' in ledger_text
+    assert '"micro_probability_calibration_key": row.get("micro_probability_calibration_key")' in ledger_text
+    assert '"micro_tb15_high_pa_power_cap_applied": row.get("micro_tb15_high_pa_power_cap_applied")' in ledger_text
+    assert '"micro_approved_model": row.get("micro_approved_model")' in ledger_text
+    assert '"micro_truth_filter_status": row.get("micro_truth_filter_status")' in ledger_text
+    assert "current_ev = _ev_per_unit(micro_prob, current_price)" in ledger_text
+    assert "ev=current_ev" in ledger_text
+    assert 'model_tier="micro_projection"' in ledger_text
+    assert "stale_after_expired" in ledger_text
+    assert "current_ev_not_positive" in micro_lock_text
+    assert "micro_projection_raw_prob_side" in micro_lock_text
+    assert "micro_probability_calibration_key" in micro_lock_text
+    assert "micro_tb15_high_pa_power_cap_applied" in micro_lock_text
+    assert "micro_projection_required_ev" in micro_lock_text
+    assert "micro_approved_model_key" in micro_lock_text
+    assert "micro_truth_filter_status" in micro_lock_text
+    assert "insert_prop_model_pick_ledger" in micro_lock_text
+    assert "active_prediction_rows" in micro_lock_text
+    assert "MLB Prop Micro Ledger Report" in micro_report_text
+    assert "Overall $1 Micro Projection" in micro_report_text
+    assert "Ladder Evidence" in micro_report_text
+    assert "Recent Micro Bets" in micro_report_text
+    assert "_STARTER_MIN_GRADED" in micro_report_text
+    assert "_MIN_CLV_BEAT = 0.55" in micro_report_text
+    assert "current_ev_below_required" in drift_text
+    assert "stale_after_expired" in drift_text
+    assert "stored_minimum_disagreements" in drift_text
+    assert "MLB Prop Bettable-Now Scan" in bettable_scan_text
+    assert "approved_micro" in bettable_scan_text
+    assert "near_approved" in bettable_scan_text
+    assert "current_ev is None or current_ev <= 0.0" in bettable_scan_text
+    assert "minimum_american_price(prob, required_ev)" in bettable_scan_text
+    assert "max(0, min(5, int(max_props)))" in bettable_scan_text
+    assert "dk_k_under_repair_gate" in bettable_scan_text
+    assert "dk_tb15_tb_tail_state_not_micro_candidate" in bettable_scan_text
+    assert "mlb_pipeline.modeling.prop_drift_guard_diagnostic" in daily_text
+    assert "mlb_pipeline.modeling.prop_drift_guard_diagnostic" in notify_text
+    assert "mlb_pipeline.modeling.prop_bettable_now_scan" in daily_text
+    assert "mlb_pipeline.modeling.prop_bettable_now_scan" in notify_text
+    assert "mlb_pipeline.modeling.lock_micro_projection_ledger" in daily_text
+    assert "mlb_pipeline.modeling.lock_micro_projection_ledger" in notify_text
+    assert "mlb_pipeline.modeling.prop_micro_ledger_report" in daily_text
+    assert "mlb_pipeline.modeling.prop_micro_ledger_report" in notify_text
+    assert "mlb_pipeline.modeling.prop_micro_loss_diagnostic" in daily_text
+    assert "mlb_pipeline.modeling.prop_micro_loss_diagnostic" in notify_text
+    assert "mlb_pipeline.modeling.prop_micro_probability_calibrator" in daily_text
+    assert "mlb_pipeline.modeling.prop_micro_probability_calibrator" in notify_text
+    assert "mlb_pipeline.modeling.ai_bet_selection_model" in daily_text
+    assert "mlb_pipeline.modeling.ai_bet_selection_model" in notify_text
+    assert daily_text.index("mlb_pipeline.modeling.ai_bet_selection_model") < daily_text.index("mlb_pipeline.modeling.ai_pick_engine")
+    assert notify_text.index("mlb_pipeline.modeling.ai_bet_selection_model") < notify_text.index("mlb_pipeline.modeling.ai_pick_engine")
+    micro_calibrator_text = (
+        ROOT / "src/mlb_pipeline/modeling/prop_micro_probability_calibrator.py"
+    ).read_text(encoding="utf-8")
+    assert "one_way_empirical_bayes_shrink_to_micro_results" in micro_calibrator_text
+    assert '"approved_model", market, side, line_bucket, book, model_family' in micro_calibrator_text
+    assert '"book_line", market, side, line_bucket, book' in micro_calibrator_text
+    assert '"global", "global|*"' in micro_calibrator_text
+    assert 'return "micro_projection"' in classification_text
+    assert "THEN 'micro_projection'" in record_text
+    post_gate_text = (ROOT / "src/mlb_pipeline/modeling/prop_post_gate_candidate_report.py").read_text(encoding="utf-8")
+    assert "prop_player_game_bankroll_model_proof.json" in post_gate_text
+    assert "projection_micro_allowed" in post_gate_text
+    assert "player_game_projection_proof_not_passed" in post_gate_text
+    assert "micro_clv_beat_prob" in post_gate_text
+    proof_text = (ROOT / "src/mlb_pipeline/modeling/prop_player_game_bankroll_model_proof.py").read_text(encoding="utf-8")
+    micro_promotion_text = (ROOT / "src/mlb_pipeline/modeling/prop_micro_promotion_evaluation.py").read_text(encoding="utf-8")
+    tb_tail_text = (ROOT / "src/mlb_pipeline/modeling/prop_tb_tail_repair_challenger.py").read_text(encoding="utf-8")
+    assert "prop_tb_tail_repair_challenger.json" in proof_text
+    assert "tb_tail_state_repair" in proof_text
+    assert "prop_tb_tail_repair_challenger.json" in micro_promotion_text
+    assert "tb15_tail_exact_model_proof" in micro_promotion_text
+    assert "prop_tb_tail_state_model.joblib" in tb_tail_text
+    assert "live_tb15_state_probability_scorer" in tb_tail_text
+    assert "_dk_tb15_over_gate" in tb_tail_text
+    assert "blended_state_count_and_dk_tb15_true_pair_over_improved" in tb_tail_text
+    assert "dk_tb15_over_gate" in tb_tail_text
+    assert "offer_context=offer_ld" in predict_text
+    assert 'offer_context.get("bookmaker_key") or "").lower() != "draftkings"' in predict_text
+    assert 'offer_context.get("selected_offer_side") or "").lower() != "over"' in predict_text
+    assert 'offer_context.get("pair_quality") or "").lower() != "same_book"' in predict_text
+
+
+def test_mlb_hrr_prop_market_is_wired_for_ai_research_parlays():
+    crawler_text = (ROOT / "src/mlb_pipeline/crawler_oddsapi.py").read_text(encoding="utf-8")
+    parser_text = (ROOT / "src/mlb_pipeline/parse_oddsapi.py").read_text(encoding="utf-8")
+    links_text = (ROOT / "src/mlb_pipeline/modeling/prop_offer_links.py").read_text(encoding="utf-8")
+    ai_text = (ROOT / "src/mlb_pipeline/modeling/ai_pick_engine.py").read_text(encoding="utf-8")
+    predict_text = (ROOT / "src/mlb_pipeline/modeling/predict_player_props.py").read_text(encoding="utf-8")
+
+    assert "batter_hits_runs_rbis,batter_hits_runs_rbis_alternate" in crawler_text
+    assert '"batter_hits_runs_rbis":         "batter_hits_runs_rbis"' in parser_text
+    assert '"batter_hits_runs_rbis_alternate": "batter_hits_runs_rbis"' in parser_text
+    assert '"batter_hits_runs_rbis_alternate"' in parser_text
+    assert '"batter_hits_runs_rbis": 1.5' in links_text
+    assert '"batter_hits_runs_rbis"' in ai_text
+    assert '"batter_hits_runs_rbis": "H+R+RBI"' in predict_text
+
+
+def test_prop_exact_bucket_proof_refresh_is_split_and_atomic():
+    trainer_text = (ROOT / "src/mlb_pipeline/modeling/train_prop_distribution_models.py").read_text(encoding="utf-8")
+    refresh_text = (ROOT / "src/mlb_pipeline/modeling/refresh_prop_exact_bucket_proof.py").read_text(encoding="utf-8")
+    daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+    notify_text = (ROOT / "src/mlb_pipeline/run_daily_and_notify.py").read_text(encoding="utf-8")
+
+    assert "--out-file" in trainer_text
+    assert "--report-file" in trainer_text
+    assert "atomic_write_json(cfg.model_dir / cfg.out_file, payload, default=str)" in trainer_text
+    assert 'prop_distribution_models.{market}.json' in refresh_text
+    assert "_merge_market_calibrators" in refresh_text
+    assert "market_refresh_runs" in refresh_text
+    assert "atomic_write_json(model_dir / \"prop_distribution_models.json\"" in refresh_text
+    assert "mlb_pipeline.modeling.refresh_prop_exact_bucket_proof" in daily_text
+    assert "mlb_pipeline.modeling.refresh_prop_exact_bucket_proof" in notify_text
+
+
+def test_targeted_close_scheduler_waits_and_fails_real_mutex_misses():
+    bat_text = (ROOT / "scripts/mlb_prop_targeted_close.bat").read_text(encoding="utf-8")
+    xml_text = (ROOT / "scripts/tasks/MLB-Prop-Targeted-Close.xml").read_text(encoding="utf-8")
+    capture_text = (ROOT / "src/mlb_pipeline/modeling/targeted_prop_close_capture.py").read_text(encoding="utf-8")
+    daily_text = (ROOT / "src/mlb_pipeline/run_daily.py").read_text(encoding="utf-8")
+
+    assert "-WaitSeconds 300" in bat_text
+    assert "This is a real close-coverage failure, not scheduler success." in bat_text
+    assert "set EXITCODE=0" not in bat_text
+    assert "<Interval>PT10M</Interval>" in xml_text
+    assert "<ExecutionTimeLimit>PT45M</ExecutionTimeLimit>" in xml_text
+    assert 'MLB_TARGETED_CLOSE_MIN_OFFER_RATIO", 0.85' in capture_text
+    assert 'MLB_TARGETED_CLOSE_MIN_ROWS_FLOOR", 25' in capture_text
+    assert "COUNT(DISTINCT concat_ws('|'" in capture_text
+    assert "MAX(snapshot_at_utc) AS latest_snapshot_at_utc" in capture_text
+    assert 'timeout_s=2700' in daily_text

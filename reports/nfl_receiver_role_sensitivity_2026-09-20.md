@@ -1,0 +1,150 @@
+# Receiving Latest-Game Sensitivity
+
+Diagnostic only. Production forecasts and betting eligibility are unchanged.
+
+| Player | Locked pick | Production yards | Challenger full / downweighted / omitted yards | Probability swing | Side changes |
+|---|---|---:|---:|---:|---|
+| K.Raymond | over 27.5 (fanduel) | 34.3 | 47.4 / 29.7 / 22.8 | 12.0pp | True |
+| B.Irving | under 16.5 (draftkings) | 15.8 | 32.6 / 28.1 / 19.4 | 9.5pp | True |
+| C.Loveland | over 53.5 (draftkings) | 68.8 | 53.5 / 64.5 / 76.2 | 7.7pp | False |
+| M.Golden | under 49.5 (draftkings) | 35.2 | 53.7 / 41.7 / 35.7 | 6.8pp | False |
+| J.McMillan | over 23.5 (draftkings) | 36.1 | 29.1 / 40.6 / 37.7 | 6.6pp | True |
+| C.Kupp | over 23.5 (draftkings) | 41.0 | 44.6 / 48.7 / 51.5 | 6.5pp | False |
+| J.Coker | over 50.5 (draftkings) | 66.1 | 74.0 / 71.5 / 55.8 | 6.5pp | True |
+| W.Robinson | over 37.5 (draftkings) | 50.9 | 72.5 / 82.4 / 74.3 | 6.1pp | False |
+| N.Fant | under 13.5 (draftkings) | 11.3 | 21.0 / 15.2 / 12.9 | 5.6pp | False |
+| T.Tremble | over 13.5 (draftkings) | 18.4 | 21.4 / 20.2 / 15.0 | 5.1pp | False |
+| D.Goedert | over 38.5 (draftkings) | 42.7 | 50.0 / 50.6 / 42.5 | 5.0pp | False |
+| R.Rice | over 53.5 (draftkings) | 60.2 | 59.1 / 64.7 / 72.4 | 4.9pp | False |
+| K.Allen | under 29.5 (draftkings) | 28.9 | 51.2 / 54.2 / 48.3 | 4.6pp | False |
+| J.Jeudy | under 26.5 (draftkings) | 28.0 | 53.8 / 58.1 / 55.5 | 4.4pp | False |
+| I.Williams | over 11.5 (draftkings) | 24.0 | 31.3 / 37.5 / 34.5 | 4.2pp | False |
+| C.Otton | over 29.5 (draftkings) | 35.4 | 46.4 / 47.9 / 40.4 | 4.1pp | True |
+| R.Dowdle | under 12.5 (draftkings) | 9.7 | 16.5 / 15.6 / 19.9 | 4.1pp | False |
+| J.Dotson | under 17.5 (draftkings) | 15.4 | 23.4 / 23.5 / 17.7 | 4.0pp | False |
+| N.Gray | under 10.5 (draftkings) | 11.0 | 14.3 / 16.3 / 12.5 | 4.0pp | False |
+| J.Chase | under 75.5 (draftkings) | 73.1 | 72.8 / 79.5 / 87.1 | 3.9pp | False |
+| C.Olave | over 71.5 (draftkings) | 94.4 | 87.1 / 88.9 / 80.2 | 3.9pp | False |
+| X.Worthy | under 37.5 (fanduel) | 28.7 | 41.3 / 32.4 / 37.7 | 3.9pp | False |
+| T.Harris | under 32.5 (draftkings) | 24.4 | 35.7 / 28.3 / 25.3 | 3.9pp | False |
+| J.Warren | under 18.5 (fanduel) | 12.0 | 22.2 / 19.4 / 13.6 | 3.8pp | False |
+| O.Zaccheaus | over 8.5 (draftkings) | 11.4 | 11.5 / 11.9 / 16.8 | 3.7pp | False |
+| A.Iosivas | over 14.5 (draftkings) | 17.9 | 26.4 / 28.6 / 22.1 | 3.7pp | True |
+| J.Meyers | under 37.5 (draftkings) | 37.8 | 45.4 / 49.3 / 53.4 | 3.7pp | False |
+| D.Montgomery | under 11.5 (draftkings) | 8.3 | 14.6 / 13.3 / 9.5 | 3.7pp | False |
+| G.Dulcich | over 23.5 (fanduel) | 32.1 | 32.2 / 36.3 / 30.4 | 3.6pp | False |
+| H.Fannin | over 35.5 (draftkings) | 46.5 | 32.4 / 33.0 / 44.9 | 3.5pp | False |
+| K.Bourne | under 23.5 (draftkings) | 22.2 | 29.7 / 21.6 / 15.5 | 3.5pp | False |
+| J.Smith-Njigba | under 81.5 (draftkings) | 72.1 | 94.0 / 87.0 / 81.2 | 3.5pp | False |
+| J.Brooks | over 8.5 (draftkings) | 13.3 | 12.5 / 10.2 / 7.5 | 3.5pp | False |
+| C.Sutton | under 39.5 (fanduel) | 30.5 | 53.1 / 54.2 / 50.2 | 3.3pp | False |
+| K.Boutte | under 33.5 (draftkings) | 33.8 | 48.3 / 55.4 / 55.7 | 3.2pp | True |
+| D.Waller | over 19.5 (draftkings) | 25.6 | 32.8 / 36.2 / 41.8 | 3.2pp | True |
+| Bi.Robinson | over 43.5 (draftkings) | 53.2 | 57.8 / 51.9 / 50.2 | 3.1pp | False |
+| Bri.Thomas | under 34.5 (draftkings) | 31.8 | 44.0 / 44.9 / 51.2 | 3.1pp | False |
+| A.Pierce | over 45.5 (draftkings) | 54.5 | 66.6 / 65.8 / 59.4 | 3.0pp | True |
+| R.Stevenson | over 17.5 (draftkings) | 29.0 | 23.5 / 22.0 / 20.7 | 3.0pp | False |
+| J.Oliver | over 13.5 (draftkings) | 17.5 | 21.2 / 18.9 / 17.9 | 2.9pp | False |
+| D.Washington | over 15.5 (draftkings) | 17.3 | 19.5 / 20.5 / 22.9 | 2.9pp | False |
+| K.Monangai | over 10.5 (draftkings) | 17.0 | 17.2 / 17.5 / 14.7 | 2.8pp | False |
+| M.Mayer | under 44.5 (draftkings) | 33.1 | 38.6 / 39.3 / 31.5 | 2.6pp | False |
+| D.Metcalf | under 58.5 (draftkings) | 58.8 | 68.7 / 66.2 / 57.1 | 2.5pp | False |
+| J.Reed | under 37.5 (draftkings) | 35.4 | 46.7 / 43.7 / 42.0 | 2.5pp | False |
+| Q.Judkins | over 12.5 (fanduel) | 18.7 | 18.6 / 20.2 / 18.7 | 2.5pp | False |
+| T.Warren | under 42.5 (draftkings) | 28.7 | 43.4 / 45.8 / 49.0 | 2.5pp | False |
+| B.Strange | under 32.5 (fanduel) | 32.9 | 38.0 / 40.7 / 37.5 | 2.5pp | False |
+| A.Trautman | over 9.5 (draftkings) | 13.5 | 14.8 / 13.2 / 12.8 | 2.4pp | False |
+| M.Washington | under 33.5 (draftkings) | 18.6 | 28.9 / 24.6 / 16.4 | 2.4pp | False |
+| C.Brown | over 21.5 (draftkings) | 28.7 | 26.7 / 25.4 / 23.7 | 2.4pp | False |
+| E.Egbuka | under 52.5 (draftkings) | 40.8 | 46.1 / 42.0 / 36.7 | 2.3pp | False |
+| S.Diggs | under 46.5 (draftkings) | 32.6 | 43.9 / 39.6 / 39.2 | 2.3pp | False |
+| T.Kraft | over 46.5 (fanduel) | 55.1 | 44.9 / 42.7 / 51.8 | 2.2pp | False |
+| K.Gainwell | over 12.5 (draftkings) | 33.0 | 22.6 / 27.2 / 24.7 | 2.2pp | False |
+| P.Bryant | under 30.5 (fanduel) | 24.4 | 30.4 / 23.6 / 29.9 | 2.2pp | False |
+| X.Legette | under 15.5 (draftkings) | 10.8 | 17.9 / 19.9 / 16.1 | 2.1pp | False |
+| D.Vele | over 43.5 (draftkings) | 54.6 | 55.5 / 55.5 / 50.7 | 2.0pp | False |
+| T.Pollard | under 8.5 (draftkings) | 7.0 | 11.0 / 11.4 / 8.5 | 2.0pp | False |
+| X.Hutchinson | over 32.5 (draftkings) | 35.6 | 39.8 / 41.1 / 44.3 | 1.9pp | False |
+| J.Taylor | under 17.5 (fanduel) | 17.4 | 23.9 / 24.1 / 21.3 | 1.9pp | False |
+| T.Hockenson | over 30.5 (draftkings) | 33.0 | 29.4 / 25.2 / 22.7 | 1.9pp | False |
+| C.Ridley | over 19.5 (fanduel) | 34.0 | 37.4 / 42.4 / 43.6 | 1.9pp | True |
+| T.Tucker | under 36.5 (fanduel) | 30.7 | 43.1 / 45.4 / 46.4 | 1.8pp | False |
+| M.Evans | over 50.5 (draftkings) | 53.0 | 52.0 / 48.8 / 59.0 | 1.8pp | False |
+| G.Kittle | over 41.5 (draftkings) | 44.3 | 54.4 / 56.0 / 58.8 | 1.8pp | False |
+| M.Taylor | over 17.5 (draftkings) | 23.3 | 29.0 / 31.4 / 31.8 | 1.8pp | True |
+| A.Barner | under 20.5 (draftkings) | 18.9 | 20.2 / 21.0 / 15.2 | 1.7pp | False |
+| O.Hampton | under 10.5 (draftkings) | 7.8 | 16.5 / 20.8 / 18.9 | 1.7pp | False |
+| T.McBride | over 60.5 (draftkings) | 71.9 | 74.3 / 71.6 / 70.7 | 1.7pp | False |
+| D.Douglas | under 34.5 (draftkings) | 16.5 | 27.6 / 23.9 / 18.7 | 1.7pp | False |
+| T.Thornton | under 14.5 (fanduel) | 13.7 | 15.2 / 16.8 / 13.4 | 1.6pp | False |
+| C.Godwin | under 37.5 (draftkings) | 36.4 | 42.4 / 41.5 / 46.6 | 1.6pp | False |
+| G.Pickens | under 62.5 (draftkings) | 51.6 | 60.1 / 57.9 / 69.3 | 1.6pp | False |
+| C.Kmet | over 13.5 (draftkings) | 19.1 | 21.1 / 19.5 / 19.3 | 1.5pp | False |
+| R.Doubs | over 41.5 (draftkings) | 51.8 | 47.3 / 51.2 / 52.7 | 1.5pp | False |
+| W.Marks | under 10.5 (draftkings) | 5.8 | 10.7 / 11.5 / 13.5 | 1.5pp | False |
+| D.Smith | under 59.5 (draftkings) | 46.5 | 67.8 / 66.9 / 61.1 | 1.5pp | False |
+| M.Gesicki | over 25.5 (draftkings) | 32.1 | 25.5 / 19.2 / 19.2 | 1.5pp | False |
+| R.Flournoy | over 30.5 (fanduel) | 45.1 | 41.1 / 44.4 / 42.7 | 1.5pp | False |
+| J.Smith | under 12.5 (draftkings) | 12.6 | 15.6 / 14.2 / 16.3 | 1.4pp | False |
+| D.Wicks | under 30.5 (draftkings) | 31.8 | 22.1 / 18.8 / 14.4 | 1.4pp | False |
+| D.Schultz | under 41.5 (fanduel) | 33.2 | 33.1 / 26.5 / 24.7 | 1.4pp | False |
+| H.Henry | under 37.5 (draftkings) | 25.9 | 29.2 / 30.3 / 27.4 | 1.3pp | False |
+| J.Downs | under 39.5 (fanduel) | 37.1 | 38.3 / 38.3 / 44.2 | 1.3pp | False |
+| T.Higgins | over 55.5 (fanduel) | 60.6 | 60.2 / 60.0 / 53.3 | 1.3pp | False |
+| D.Njoku | under 24.5 (draftkings) | 16.9 | 21.7 / 17.9 / 16.3 | 1.3pp | False |
+| A.Kamara | under 10.5 (draftkings) | 10.5 | 21.5 / 24.3 / 22.5 | 1.3pp | False |
+| G.Wilson | under 63.5 (draftkings) | 50.3 | 67.7 / 70.6 / 64.0 | 1.3pp | False |
+| J.Waddle | under 52.5 (fanduel) | 32.2 | 54.2 / 58.6 / 58.4 | 1.3pp | False |
+| S.Barkley | under 10.5 (draftkings) | 8.9 | 18.2 / 19.0 / 17.0 | 1.2pp | False |
+| J.Bates | under 13.5 (draftkings) | 9.6 | 11.2 / 10.3 / 8.8 | 1.2pp | False |
+| R.Wilson | under 25.5 (fanduel) | 14.5 | 24.3 / 21.6 / 18.3 | 1.2pp | False |
+| J.Williams | under 13.5 (draftkings) | 7.4 | 14.8 / 13.0 / 10.0 | 1.2pp | False |
+| R.Shaheed | under 23.5 (draftkings) | 17.3 | 26.6 / 26.9 / 25.6 | 1.2pp | False |
+| D.Sample | over 8.5 (fanduel) | 16.1 | 12.3 / 11.3 / 10.7 | 1.2pp | False |
+| J.Addison | under 35.5 (fanduel) | 20.5 | 22.5 / 22.9 / 24.4 | 1.1pp | False |
+| J.Nailor | under 32.5 (draftkings) | 24.2 | 26.4 / 22.8 / 20.6 | 1.0pp | False |
+| P.Freiermuth | over 31.5 (draftkings) | 35.1 | 33.9 / 32.5 / 30.5 | 1.0pp | False |
+| J.Johnson | over 38.5 (draftkings) | 57.2 | 45.1 / 44.8 / 41.7 | 1.0pp | False |
+| E.Engram | under 23.5 (fanduel) | 21.9 | 22.8 / 19.7 / 23.2 | 1.0pp | False |
+| J.Ferguson | under 26.5 (draftkings) | 12.4 | 17.0 / 18.0 / 21.4 | 1.0pp | False |
+| P.Washington | over 59.5 (draftkings) | 92.2 | 73.1 / 76.4 / 74.3 | 0.9pp | False |
+| D.Robinson | over 26.5 (draftkings) | 37.6 | 27.5 / 28.9 / 29.5 | 0.9pp | False |
+| C.Lamb | under 75.5 (draftkings) | 48.9 | 62.0 / 58.8 / 62.2 | 0.9pp | False |
+| D.Samuel | over 35.5 (fanduel) | 40.0 | 56.3 / 55.9 / 52.3 | 0.9pp | True |
+| T.Spears | under 15.5 (draftkings) | 13.1 | 22.6 / 23.0 / 24.1 | 0.8pp | False |
+| M.Harrison | under 34.5 (draftkings) | 29.1 | 32.4 / 31.2 / 38.3 | 0.8pp | False |
+| L.Burden | under 51.5 (draftkings) | 53.0 | 54.5 / 53.8 / 47.8 | 0.8pp | False |
+| T.Kelce | under 42.5 (draftkings) | 39.4 | 45.3 / 46.2 / 44.9 | 0.8pp | False |
+| A.Jeanty | over 26.5 (draftkings) | 24.8 | 21.6 / 20.4 / 18.0 | 0.7pp | False |
+| Q.Johnston | over 50.5 (draftkings) | 43.9 | 58.2 / 59.0 / 55.5 | 0.6pp | False |
+| R.Bateman | under 35.5 (draftkings) | 8.8 | 15.5 / 16.5 / 17.4 | 0.6pp | False |
+| J.Hill | under 13.5 (draftkings) | 6.9 | 9.4 / 9.3 / 11.2 | 0.6pp | False |
+| M.Andrews | under 46.5 (draftkings) | 24.7 | 33.0 / 31.1 / 30.7 | 0.5pp | False |
+| T.McMillan | over 58.5 (draftkings) | 60.3 | 59.7 / 58.5 / 53.6 | 0.5pp | False |
+| J.Noel | under 25.5 (draftkings) | 18.0 | 11.5 / 9.7 / 8.6 | 0.5pp | False |
+| C.Watson | under 60.5 (draftkings) | 59.1 | 60.3 / 56.0 / 59.0 | 0.5pp | False |
+| R.Odunze | under 40.5 (draftkings) | 41.4 | 44.3 / 45.9 / 46.6 | 0.5pp | False |
+| D.London | under 56.5 (draftkings) | 52.2 | 59.0 / 60.1 / 61.2 | 0.5pp | False |
+| B.Hall | under 18.5 (draftkings) | 11.0 | 17.6 / 17.9 / 16.6 | 0.5pp | False |
+| G.Helm | under 22.5 (draftkings) | 16.4 | 21.2 / 18.6 / 19.1 | 0.5pp | False |
+| B.Tuten | under 8.5 (draftkings) | 5.3 | 5.5 / 4.0 / 4.4 | 0.5pp | False |
+| D.Swift | over 11.5 (draftkings) | 15.0 | 11.0 / 10.7 / 12.7 | 0.5pp | False |
+| F.Moreau | over 7.5 (draftkings) | 9.2 | 13.9 / 13.0 / 12.9 | 0.4pp | False |
+| T.McLaurin | under 53.5 (draftkings) | 50.8 | 52.9 / 55.7 / 52.6 | 0.3pp | False |
+| A.Mitchell | over 35.5 (draftkings) | 38.6 | 35.2 / 36.3 / 34.3 | 0.3pp | False |
+| M.Hollins | over 36.5 (draftkings) | 52.2 | 42.0 / 41.2 / 41.2 | 0.3pp | False |
+| D.Achane | under 25.5 (draftkings) | 25.2 | 25.2 / 23.7 / 24.8 | 0.3pp | False |
+| J.Jefferson | under 77.5 (draftkings) | 61.2 | 75.7 / 73.5 / 73.4 | 0.2pp | False |
+| S.Perine | over 7.5 (draftkings) | 10.9 | 17.0 / 16.2 / 16.3 | 0.2pp | False |
+| C.Hubbard | under 12.5 (draftkings) | 13.2 | 14.8 / 14.3 / 14.4 | 0.0pp | False |
+| C.McCaffrey | under 39.5 (fanduel) | 37.6 | 47.6 / 47.4 / 48.1 | 0.0pp | False |
+| R.White | under 11.5 (draftkings) | 9.8 | 12.0 / 11.9 / 11.7 | 0.0pp | False |
+
+- Latest-game omission/downweighting changes player performance and that game in team pass history; current timestamped context is held fixed.
+- The complete captured scoring path is replayed at the same offered line and book; these are not current executable quotes.
+- Historical statistics are reconstructed from corrected final rows available at scoring time, not certified as their original lock-time versions.
+- Only pregame-scored rows can become prospective challenger evidence; started games are retrospective diagnostics.
+- A stable side is not proof of an edge, and a changed side is not an instruction to reverse a bet.
+- This artifact cannot promote a model or create micro/bankroll ledger rows.
+
+Excluded: {'no_captured_offer_scoring': 83, 'insufficient_player_history': 6}

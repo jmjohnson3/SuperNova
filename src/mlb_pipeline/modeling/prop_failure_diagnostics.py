@@ -3,6 +3,8 @@
 This report is meant to answer "why is this market weak?" by slicing graded
 prop picks by stat, side, line bucket, price bucket, model family, team, player,
 and probability buckets.
+
+Manual-only tool; see docs/manual_mlb_diagnostics.md for ownership and limits.
 """
 from __future__ import annotations
 

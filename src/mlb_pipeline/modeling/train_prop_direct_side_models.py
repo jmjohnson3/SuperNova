@@ -22,6 +22,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
 from .side_recalibration import prop_line_surface
+from .prop_training_groups import (
+    add_player_game_weights,
+    grouping_summary,
+    sample_weights,
+    temporal_player_game_split,
+)
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
@@ -90,6 +96,9 @@ class PropDirectSideConfig:
 SQL = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    player_name_norm,
     market,
     side,
     COALESCE(line_bucket, 'unknown') AS line_bucket,
@@ -152,6 +161,9 @@ WHERE game_date_et >= %(cutoff)s
   AND market_line IS NOT NULL
   AND won IS NOT NULL
   AND model_prob_side BETWEEN 0.0 AND 1.0
+  AND COALESCE(true_pair_flag::float, 0.0) >= 0.5
+  AND COALESCE(synthetic_pair_flag::float, 0.0) < 0.5
+  AND COALESCE(clean_market_pair_flag::float, 0.0) >= 0.5
 """
 
 
@@ -198,7 +210,7 @@ def _load(cfg: PropDirectSideConfig) -> pd.DataFrame:
     df["push"] = df["push"].fillna(False).astype(bool)
     for col in _CATEGORICAL_FEATURES:
         df[col] = df[col].fillna("unknown").astype(str)
-    return df
+    return add_player_game_weights(df)
 
 
 def _write_payload(cfg: PropDirectSideConfig, payload: dict) -> None:
@@ -208,6 +220,19 @@ def _write_payload(cfg: PropDirectSideConfig, payload: dict) -> None:
         payload["skipped_write_reason"] = payload.get("status")
         return
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _projection_eligible_markets(cfg: PropDirectSideConfig) -> tuple[set[str], dict]:
+    path = cfg.model_dir / "daily_forecast_projection_audit.json"
+    if not path.exists():
+        return set(), {"status": "missing_projection_audit"}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set(), {"status": "invalid_projection_audit"}
+    gates = payload.get("projection_gates") or {}
+    eligible = {str(market) for market, gate in gates.items() if bool((gate or {}).get("eligible"))}
+    return eligible, {"status": "ready", "gates": gates}
 
 
 def _key(
@@ -265,16 +290,15 @@ def _prepare_matrix(df: pd.DataFrame, *, means=None, scales=None, cats=None):
 
 
 def _split_mask(df: pd.DataFrame, cfg: PropDirectSideConfig) -> tuple[pd.Series, pd.Series, str]:
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train_mask = df["game_date_et"] < split
-    holdout_mask = df["game_date_et"] >= split
-    if train_mask.any():
-        return train_mask, holdout_mask, f"last_{cfg.holdout_days}_days"
-    dates = sorted(df["game_date_et"].unique())
-    if len(dates) > 1:
-        holdout_date = dates[-1]
-        return df["game_date_et"] < holdout_date, df["game_date_et"] >= holdout_date, "last_available_date"
-    return train_mask, holdout_mask, f"last_{cfg.holdout_days}_days"
+    split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    train_mask = pd.Series(df.index.isin(split.train.index), index=df.index)
+    holdout_mask = pd.Series(df.index.isin(split.holdout.index), index=df.index)
+    return train_mask, holdout_mask, split.strategy
 
 
 def _fit_group(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFrame) -> dict | None:
@@ -285,14 +309,15 @@ def _fit_group(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFram
     X_train, feature_names, means, scales, cats = _prepare_matrix(train)
     y_train = train["target"].astype(int).to_numpy()
     lr = LogisticRegression(max_iter=3000, solver="lbfgs")
-    lr.fit(X_train, y_train)
+    lr.fit(X_train, y_train, sample_weight=sample_weights(train))
 
     X_hold, _, _, _, _ = _prepare_matrix(holdout, means=means, scales=scales, cats=cats)
     raw = holdout["model_prob_side"].astype(float).clip(1e-6, 1 - 1e-6).to_numpy()
     y_hold = holdout["target"].astype(int).to_numpy()
     pred_hold = np.clip(lr.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
-    raw_brier = float(brier_score_loss(y_hold, raw))
-    model_brier = float(brier_score_loss(y_hold, pred_hold))
+    holdout_weights = sample_weights(holdout)
+    raw_brier = float(brier_score_loss(y_hold, raw, sample_weight=holdout_weights))
+    model_brier = float(brier_score_loss(y_hold, pred_hold, sample_weight=holdout_weights))
     improvement = raw_brier - model_brier
     base_weight = min(0.85, len(holdout) / (len(holdout) + 160.0))
     if improvement < -0.006:
@@ -305,14 +330,18 @@ def _fit_group(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFram
     X_all, feature_names, means, scales, cats = _prepare_matrix(all_rows)
     y_all = all_rows["target"].astype(int).to_numpy()
     final = LogisticRegression(max_iter=3000, solver="lbfgs")
-    final.fit(X_all, y_all)
+    final.fit(X_all, y_all, sample_weight=sample_weights(all_rows))
     coef = {
         name: float(value)
         for name, value in zip(feature_names, final.coef_[0])
         if abs(float(value)) > 1e-12
     }
     profit = pd.to_numeric(holdout.get("profit_units"), errors="coerce")
-    clv = pd.to_numeric(holdout.get("beat_clv_price"), errors="coerce").dropna()
+    profit_valid = profit.notna()
+    profit_weights = sample_weights(holdout.loc[profit_valid])
+    clv = pd.to_numeric(holdout.get("beat_clv_price"), errors="coerce")
+    clv_valid = clv.notna()
+    clv_weights = sample_weights(holdout.loc[clv_valid])
     return {
         "method": "locked_direct_side_logistic",
         "intercept": float(final.intercept_[0]),
@@ -323,17 +352,19 @@ def _fit_group(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFram
         "blend_weight": float(blend),
         "train_rows": int(len(train)),
         "holdout_rows": int(len(holdout)),
-        "actual_rate_holdout": float(np.mean(y_hold)),
-        "avg_raw_holdout": float(np.mean(raw)),
-        "avg_model_holdout": float(np.mean(pred_hold)),
-        "holdout_roi": float(profit.dropna().mean()) if not profit.dropna().empty else None,
-        "holdout_clv_beat_rate": float(clv.mean()) if not clv.empty else None,
+        "train_player_games": int(train["player_game_group"].nunique()),
+        "holdout_player_games": int(holdout["player_game_group"].nunique()),
+        "actual_rate_holdout": float(np.average(y_hold, weights=holdout_weights)),
+        "avg_raw_holdout": float(np.average(raw, weights=holdout_weights)),
+        "avg_model_holdout": float(np.average(pred_hold, weights=holdout_weights)),
+        "holdout_roi": float(np.average(profit.loc[profit_valid], weights=profit_weights)) if profit_valid.any() else None,
+        "holdout_clv_beat_rate": float(np.average(clv.loc[clv_valid], weights=clv_weights)) if clv_valid.any() else None,
         "brier_raw_holdout": raw_brier,
         "brier_model_holdout": model_brier,
-        "log_loss_raw_holdout": float(log_loss(y_hold, raw, labels=[0, 1])),
-        "log_loss_model_holdout": float(log_loss(y_hold, pred_hold, labels=[0, 1])),
-        "auc_raw_holdout": float(roc_auc_score(y_hold, raw)) if len(np.unique(y_hold)) == 2 else None,
-        "auc_model_holdout": float(roc_auc_score(y_hold, pred_hold)) if len(np.unique(y_hold)) == 2 else None,
+        "log_loss_raw_holdout": float(log_loss(y_hold, raw, labels=[0, 1], sample_weight=holdout_weights)),
+        "log_loss_model_holdout": float(log_loss(y_hold, pred_hold, labels=[0, 1], sample_weight=holdout_weights)),
+        "auc_raw_holdout": float(roc_auc_score(y_hold, raw, sample_weight=holdout_weights)) if len(np.unique(y_hold)) == 2 else None,
+        "auc_model_holdout": float(roc_auc_score(y_hold, pred_hold, sample_weight=holdout_weights)) if len(np.unique(y_hold)) == 2 else None,
     }
 
 
@@ -384,9 +415,24 @@ def train(cfg: PropDirectSideConfig) -> dict:
         ),
         "models": {},
         "backtest": [],
+        "grouped_player_game_training": grouping_summary(df),
     }
     if df.empty:
         payload["status"] = "no_rows"
+        _write_payload(cfg, payload)
+        return payload
+    eligible_markets, projection_audit = _projection_eligible_markets(cfg)
+    payload["projection_gate"] = projection_audit
+    payload["projection_eligible_markets"] = sorted(eligible_markets)
+    payload["projection_blocked_markets"] = sorted(set(df["market"].astype(str)) - eligible_markets)
+    payload["rows_before_projection_gate"] = int(len(df))
+    df = df[df["market"].astype(str).isin(eligible_markets)].copy()
+    payload["rows"] = int(len(df))
+    payload["grouped_player_game_training"] = grouping_summary(df)
+    if df.empty:
+        payload["status"] = "projection_gated_no_models"
+        payload["models"] = {}
+        payload["backtest"] = []
         _write_payload(cfg, payload)
         return payload
     train_mask, holdout_mask, split_strategy = _split_mask(df, cfg)

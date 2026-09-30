@@ -1,0 +1,218 @@
+{
+  "date": "2026-09-21",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 2160,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-21 16:00:15,874 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-21 16:00:28,054 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2980\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 545184,\n      \"rows_selected\": 2251,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 433\n    }\n  ],\n  \"roster_rows_upserted\": 2979,\n  \"depth_rows_upserted\": 2248,\n  \"injury_rows_upserted\": 433\n}\n",
+      "stderr_tail": "2026-09-21 16:00:34,319 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-21 16:00:39,246 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-21 16:01:15,003 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "\": \"advanced_route_usage\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2162,\n      \"rows_matched\": 2160,\n      \"rows_updated\": 629\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 5334,\n      \"player_usage_rows\": 616,\n      \"player_usage_rows_updated\": 611,\n      \"player_game_rows\": 301,\n      \"rows_updated\": 301,\n      \"zero_filled_rows\": 0\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 73\n    }\n  ],\n  \"snap_rows_matched\": 2869,\n  \"snap_rows_updated\": 1405,\n  \"advanced_usage_rows_matched\": 2160,\n  \"advanced_usage_rows_updated\": 629,\n  \"pbp_usage_player_game_rows\": 616,\n  \"pbp_usage_rows_updated\": 611,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 73,\n  \"red_zone_player_game_rows\": 301,\n  \"red_zone_rows_updated\": 301\n}\n",
+      "stderr_tail": "2026-09-21 16:01:19,766 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-21 16:01:20,616 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-09-21 16:01:24,363 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-09-21 16:01:24,588 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Odds Crawl",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"game_date\": \"2026-09-21\",\n  \"snapshot_role\": \"lock\",\n  \"game_odds_saved\": 1,\n  \"player_prop_events_saved\": 1,\n  \"provider_order\": [\n    \"sportsgameodds\",\n    \"therundown\",\n    \"oddsapi\",\n    \"manual_csv\"\n  ],\n  \"provider_attempts\": [\n    {\n      \"provider\": \"sportsgameodds\",\n      \"status\": \"ok\",\n      \"events\": 1,\n      \"game_odds_saved\": 1,\n      \"player_prop_events_saved\": 1,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": null,\n      \"player_prop_fetch_failures\": null\n    }\n  ],\n  \"provider_errors\": [],\n  \"manual_csv_dir\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Odds Parse",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"raw_payloads\": 1,\n  \"raw_game_payloads\": 1,\n  \"prop_lines_upserted\": 49,\n  \"game_lines_upserted\": 2,\n  \"prop_parse_diagnostic\": {\n    \"raw_payloads\": 1,\n    \"events_seen\": 1,\n    \"events_with_zero_books\": 0,\n    \"bookmaker_entries\": 2,\n    \"market_entries\": 12,\n    \"outcomes_seen\": 97,\n    \"unknown_markets\": {\n      \"spreads\": 2,\n      \"totals\": 2\n    },\n    \"skipped_outcomes\": {}\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "# NFL Snapshot Health - 2026-09-21\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_events | lock | 1 | 2026-09-21 06:32:01.213688-07:00 |\n| nfl_game_odds | lock | 1 | 2026-09-21 15:01:32.214260-07:00 |\n| nfl_player_props | lock | 1 | 2026-09-21 15:01:32.248179-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 1 | 2026-09-21 15:01:31.956984-07:00 |\n| nfl_therundown_events_raw | lock | 1 | 2026-09-21 06:31:54.510685-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| lock | 2 | 1 | 2026-09-21 15:01:32.214260-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| lock | 49 | 17 | 2026-09-21 15:01:32.248179-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 49 | 0 | 0.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "    \"book\": \"fanduel\",\n      \"line\": 6.5,\n      \"price\": -102,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476158&selectionId=50185\",\n      \"predicted_home_margin\": 6.5,\n      \"predicted_total_points\": 47.5,\n      \"baseline_home_margin\": 6.5,\n      \"baseline_total_points\": 47.5,\n      \"probability\": 0.5,\n      \"ev\": -0.009803921568627472,\n      \"edge\": -0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"c3280eb29c8a69b8849ad3974828f2881b03d947d7d2e87736367d85737554ac\"\n    },\n    {\n      \"game_date_et\": \"2026-09-21\",\n      \"season\": 2026,\n      \"week\": 2,\n      \"game_id\": \"2026_02_NYG_LA\",\n      \"home_team_abbr\": \"LA\",\n      \"away_team_abbr\": \"NYG\",\n      \"market\": \"total\",\n      \"side\": \"over\",\n      \"book\": \"fanduel\",\n      \"line\": 47.5,\n      \"price\": -105,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476159&selectionId=7017916\",\n      \"predicted_home_margin\": 6.5,\n      \"predicted_total_points\": 47.5,\n      \"baseline_home_margin\": 6.5,\n      \"baseline_total_points\": 47.5,\n      \"probability\": 0.4905742145178765,\n      \"ev\": -0.042212247846050766,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"eedd71a0e808e5a3dcd9bcf0d3e4e16044ef1599215b1c5b6d7054ba3d1d7354\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"no_accepted_team_component\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "\"distribution_kind\": \"rare_event_any_td\",\n      \"market_no_vig_probability\": null,\n      \"model_market_edge\": null,\n      \"projection_confidence\": 0.5,\n      \"exact_line_model_probability\": null,\n      \"exact_line_clv_probability\": null,\n      \"exact_line_model_version\": null,\n      \"usage_context_quality\": 0.7919814896657902,\n      \"limited_usage_risk\": 0.06764999999999997,\n      \"spike_usage_probability\": 0.0,\n      \"tier\": \"projection\",\n      \"reasons\": \"receiver_depth_role\",\n      \"prediction_key\": \"779a65de9fe0f88068ab6db0b46156cc5a792f1882ea624a8cfb4907e0a7a84e\",\n      \"prediction_context_cutoff_utc\": \"2026-09-21T22:02:40.489934+00:00\",\n      \"context_evidence\": {\n        \"contract\": \"nfl-context-evidence-v1\",\n        \"cutoff\": \"2026-09-21T22:02:40.489934+00:00\",\n        \"injury_status\": null,\n        \"practice_status\": null,\n        \"injury_observed_at\": null,\n        \"injury_missing\": true,\n        \"depth_rank\": 2.0,\n        \"depth_movement\": null,\n        \"expected_starter_from_depth\": false,\n        \"depth_observed_at\": \"2026-09-21T22:00:43.304767+00:00\",\n        \"roster_observed_at\": \"2026-09-21T22:00:37.037196+00:00\",\n        \"teammate_injury_count\": null,\n        \"teammate_coverage\": \"unknown\",\n        \"routes_run_history\": null,\n        \"routes_source\": \"proxy_only\",\n        \"route_participation_proxy\": 0.72,\n        \"first_read_history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"projection_semantics\": \"expected_count_or_any_td_head\"\n    }\n  ]\n}\n",
+      "stderr_tail": "PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"receiver_spike_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1284: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_carry_under_correction_v4_score\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1296: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_rush_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1305: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"yardage_projection_volatility_v4_score\"] = pd.concat([\n"
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 17,\n    \"qb_tail\": 2\n  },\n  \"excluded\": {},\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 0,\n  \"prop_locked\": 23,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Locked Micro Uncertainty",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 0,\n  \"exclusions\": {\n    \"crossed_kickoff_during_scoring\": 0\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 42,\n  \"exclusions\": {\n    \"missing_exact_lock_inputs\": 4\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": " |\n| nfl_game_odds | lock | 1 | 2026-09-21 15:01:32.214260-07:00 |\n| nfl_player_props | lock | 1 | 2026-09-21 15:01:32.248179-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 1 | 2026-09-21 15:01:31.956984-07:00 |\n| nfl_therundown_events_raw | lock | 1 | 2026-09-21 06:31:54.510685-07:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 2 | 1 |\n| player props | 49 | 17 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 49 | 0 | 0.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 49 | raw parser output |\n| true paired over/under offers | 48 | 98.0% |\n| lock markets | 49 | exact book/player/stat/line locked |\n| close markets | 0 | exact book/player/stat/line closed |\n| lock-close exact matches | 0 | 0.0% |\n| CLV labels | 0 | valid: 0 |\n| graded prop predictions | 0 | line-level result rows |\n| prop ledger rows | 23 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| none | 0 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 4 |\n| prop | paper | 23 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "m locked forecasts; verify the price at the book.\\n\\n**PAPER - WR/TE Receiving TDs**\\n- Research only: P.Nacua (LA vs NYG) Receiving TDs proj=0.55 range=0.0-1.0 [ctx=96% spike=100% limited=65% depth=1 inj=Questionable prac=Did Not Participate In Practice]\\n- Research only: M.Nabers (NYG vs LA) Receiving TDs proj=0.40 range=0.0-1.0 [ctx=78% spike=62% limited=25% depth=1]\\n- Research only: I.Likely (NYG vs LA) Receiving TDs proj=0.35 range=0.0-1.0 [ctx=80% spike=64% depth=1]\\n- Research only: C.Parkinson (LA vs NYG) Receiving TDs proj=0.34 range=0.0-1.0 [ctx=81% spike=61% depth=1]\\n- Research only: D.Adams (LA vs NYG) Receiving TDs proj=0.32 range=0.0-1.0 [ctx=78% spike=51% depth=2 prac=Full Participation in Practice]\\n- Research only: T.Johnson (NYG vs LA) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=78% spike=27% depth=2]\\n- Research only: T.Higbee (LA vs NYG) Receiving TDs proj=0.18 range=0.0-1.0 [ctx=75% spike=8% limited=65% depth=2 prac=Did Not Participate In Practice]\\n- Research only: D.Mooney (NYG vs LA) Receiving TDs proj=0.18 range=0.0-1.0 [ctx=76% spike=6% depth=3]\\n- Research only: M.Fields (NYG vs LA) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=79% spike=0% depth=2]\\n- Research only: K.Mumpfield (LA vs NYG) Receiving TDs proj=0.09 range=0.0-0.0 [ctx=73% spike=2% limited=25% depth=4]\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_NYG_LA",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NYG @ LA | NFL 2026-09-21 (1/4)",
+            "description": "Kickoff: <t:1790036100:f> (<t:1790036100:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- NYG +6.5 -102 | home margin=+6.5 | P=50% | EV=-1.0% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476158&selectionId=50185>)\n- NYG +6.5 -105 | home margin=+6.5 | P=50% | EV=-2.4% [Bet DRAFTKINGS](<https://sportsbook.draftkings.com/event/34118089?outcomes=0HC84695522P650_3>)\n- OVER 47.5 -105 | total=47.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476159&selectionId=7017916>)\n- OVER 47.5 -110 | total=47.5 | P=50% | EV=-4.5% [Bet DRAFTKINGS](<https://sportsbook.draftkings.com/event/34118089?outcomes=0OU84695522O4750_1>)\n\n**PAPER - QB Passing Yards**\n- Research only: J.Dart (NYG vs LA) QB Passing Yards UNDER213.5 -111 proj=202.21 range=92.9-306.7 | P(under)=52% | Mkt=50% | Edge=+2.2% | EV=-1.2% | Cur=-111 Min=-109 Drift=CHECK [ctx=81% spike=61% depth=1]\n- Research only: M.Stafford (LA vs NYG) QB Passing Yards OVER238.5 -112 proj=254.16 range=144.8-358.7 | P(over)=51% | Mkt=50% | Edge=+1.3% | EV=-2.9% | Cur=-112 Min=-106 Drift=CHECK [ctx=81% spike=74% depth=1]\n\n**PAPER - QB Rushing Yards**\n- Research only: J.Dart (NYG vs LA) Rushing Yards OVER35.5 -110 proj=37.42 range=12.9-71.1 | P(over)=51% | Mkt=50% | Edge=+1.2% | EV=-3.1% | Cur=-110 Min=-103 Drift=CHECK [ctx=81% spike=54% depth=1]\n\n**PAPER - QB Passing TDs**\n- Research only: J.Dart (NYG vs LA) QB Passing TDs OVER1.5 +184 proj=1.40 range=0.0-3.0 | P(over)=37% | Mkt=33% | Edge=+4.1% | EV=+6.4% | Cur=+184 Min=+168 Drift=OK [ctx=81% spike=88% depth=1]\n- Research only: M.Stafford (LA vs NYG) QB Passing TDs UNDER1.5 +142 proj=2.00 range=0.0-4.0 | P(under)=40% | Mkt=39% | Edge=+0.9% | EV=-3.5% | Cur=+142 Min=+151 Drift=CHECK [ctx=81% spike=41% depth=1]\n\n**PAPER - RB Rushing Yards**\n- Research only: K.Williams (LA vs NYG) Rushing Yards UNDER61.5 -110 proj=55.33 range=30.8-89.0 | P(under)=59% | Mkt=50% | Edge=+9.2% | EV=+12.1% | Cur=-110 Min=-143 Drift=OK [ctx=90% spike=71% depth=1]\n- Research only: B.Corum (LA vs NYG) Rushing Yards UNDER47.5 -113 proj=44.09 range=19.6-77.8 | P(under)=57% | Mkt=50% | Edge=+7.0% | EV=+7.5% | Cur=-113 Min=-133 Drift=OK [ctx=90% spike=42% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186715059&selectionId=41072423>)\n- Research only: C.Skattebo (NYG vs LA) Rushing Yards OVER51.5 -113 proj=58.96 range=34.5-92.7 | P(over)=52% | Mkt=50% | Edge=+1.8% | EV=-2.0% | Cur=-113 Min=-109 Drift=CHECK [ctx=90% spike=70% depth=1]\n- Research only: D.Singletary (NYG vs LA) Rushing Yards OVER14.5 -115 proj=27.47 range=3.0-61.2 | P(over)=52% | Mkt=51% | Edge=+1.4% | EV=-2.8% | Cur=-115 Min=-109 Drift=CHECK [ctx=90% spike=30% limited=21% depth=3]\n- Research only: N.Harris (NYG vs LA) Rushing Yards proj=19.59 range=0.0-53.3 [ctx=90% spike=24% limited=20% depth=2]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-21T22:05:30.815964+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_NYG_LA",
+      "page": 2,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NYG @ LA | NFL 2026-09-21 (2/4)",
+            "description": "Kickoff: <t:1790036100:f> (<t:1790036100:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**PAPER - RB Receiving Yards**\n- Research only: C.Skattebo (NYG vs LA) Receiving Yards OVER11.5 -115 proj=18.17 range=0.0-49.6 | P(over)=56% | Mkt=51% | Edge=+5.8% | EV=+5.6% | Cur=-115 Min=-130 Drift=OK [ctx=90% spike=50% depth=1]\n- Research only: B.Corum (LA vs NYG) Receiving Yards OVER3.5 -104 proj=7.03 range=0.0-38.4 | P(over)=52% | Mkt=48% | Edge=+3.2% | EV=+1.0% | Cur=-104 Min=-107 Drift=OK [ctx=90% spike=30% depth=2]\n- Research only: D.Singletary (NYG vs LA) Receiving Yards UNDER7.5 -115 proj=7.77 range=0.0-39.2 | P(under)=53% | Mkt=51% | Edge=+2.7% | EV=-0.3% | Cur=-115 Min=-115 Drift=CHECK [ctx=90% spike=26% limited=21% depth=3]\n- Research only: K.Williams (LA vs NYG) Receiving Yards OVER17.5 -111 proj=20.21 range=0.0-51.6 | P(over)=51% | Mkt=50% | Edge=+1.6% | EV=-2.3% | Cur=-111 Min=-106 Drift=CHECK [ctx=90% spike=53% depth=1]\n- Research only: N.Harris (NYG vs LA) Receiving Yards proj=11.94 range=0.0-43.3 [ctx=90% spike=35% limited=20% depth=2]\n\n**PAPER - RB Rushing TDs**\n- Research only: K.Williams (LA vs NYG) Rushing TDs proj=0.59 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: C.Skattebo (NYG vs LA) Rushing TDs proj=0.52 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: B.Corum (LA vs NYG) Rushing TDs proj=0.22 range=0.0-1.0 [ctx=90% spike=23% depth=2]\n- Research only: N.Harris (NYG vs LA) Rushing TDs proj=0.16 range=0.0-1.0 [ctx=90% spike=26% limited=20% depth=2]\n- Research only: P.Ricard (NYG vs LA) Rushing TDs proj=0.05 range=0.0-0.0 [ctx=80% spike=0% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-21T22:05:31.434304+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_NYG_LA",
+      "page": 3,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NYG @ LA | NFL 2026-09-21 (3/4)",
+            "description": "Kickoff: <t:1790036100:f> (<t:1790036100:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: D.Mooney (NYG vs LA) Receiving Yards OVER19.5 -113 proj=28.98 range=6.5-60.4 | P(over)=60% | Mkt=50% | Edge=+9.7% | EV=+12.6% | Cur=-113 Min=-149 Drift=OK [ctx=76% spike=47% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187599341&selectionId=73918279>)\n- Research only: D.Adams (LA vs NYG) Receiving Yards UNDER62.5 -110 proj=51.19 range=28.7-82.6 | P(under)=58% | Mkt=50% | Edge=+8.3% | EV=+10.5% | Cur=-110 Min=-138 Drift=OK [ctx=78% spike=71% depth=2 prac=Full Participation in Practice]\n- Research only: T.Johnson (NYG vs LA) Receiving Yards OVER8.5 -110 proj=36.06 range=13.6-67.5 | P(over)=58% | Mkt=50% | Edge=+8.3% | EV=+10.5% | Cur=-110 Min=-138 Drift=OK [ctx=78% spike=59% depth=2]\n- Research only: T.Higbee (LA vs NYG) Receiving Yards OVER13.5 -113 proj=27.91 range=5.4-59.3 | P(over)=58% | Mkt=50% | Edge=+7.9% | EV=+9.5% | Cur=-113 Min=-139 Drift=OK [ctx=75% spike=19% limited=65% depth=2 prac=Did Not Participate In Practice]\n- Research only: O.Beckham (NYG vs LA) Receiving Yards OVER5.5 +114 proj=7.84 range=0.0-39.2 | P(over)=48% | Mkt=44% | Edge=+4.1% | EV=+3.1% | Cur=+114 Min=+108 Drift=OK [ctx=73% spike=16% limited=26% depth=4] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187278582&selectionId=25909418>)\n- Research only: C.Parkinson (LA vs NYG) Receiving Yards OVER28.5 -113 proj=33.78 range=11.3-65.2 | P(over)=54% | Mkt=50% | Edge=+3.4% | EV=+1.1% | Cur=-113 Min=-116 Drift=OK [ctx=81% spike=54% depth=1]\n- Research only: M.Nabers (NYG vs LA) Receiving Yards UNDER61.5 -112 proj=62.23 range=39.7-93.6 | P(under)=52% | Mkt=50% | Edge=+1.9% | EV=-1.7% | Cur=-112 Min=-109 Drift=CHECK [ctx=78% spike=78% limited=25% depth=1]\n- Research only: T.Ferguson (LA vs NYG) Receiving Yards UNDER34.5 -113 proj=17.75 range=0.0-49.1 | P(under)=52% | Mkt=50% | Edge=+1.8% | EV=-2.0% | Cur=-113 Min=-109 Drift=CHECK [ctx=76% spike=24% depth=3]\n- Research only: K.Mumpfield (LA vs NYG) Receiving Yards UNDER14.5 -113 proj=6.00 range=0.0-37.4 | P(under)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-109 Drift=CHECK [ctx=73% spike=18% limited=25% depth=4] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187679944&selectionId=48013991>)\n- Research only: I.Likely (NYG vs LA) Receiving Yards OVER44.5 -110 proj=30.17 range=7.7-61.6 | P(over)=42% | EV=-20.3% | Cur=-110 Min=+140 Drift=CHECK [ctx=80% spike=54% depth=1]\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187599341&selectionId[0]=73918279&marketId[1]=717.187278582&selectionId[1]=25909418&marketId[2]=717.187679944&selectionId[2]=48013991>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-21T22:05:32.047470+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_02_NYG_LA",
+      "page": 4,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NYG @ LA | NFL 2026-09-21 (4/4)",
+            "description": "Kickoff: <t:1790036100:f> (<t:1790036100:R>)\nQuotes are from locked forecasts; verify the price at the book.\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: P.Nacua (LA vs NYG) Receiving TDs proj=0.55 range=0.0-1.0 [ctx=96% spike=100% limited=65% depth=1 inj=Questionable prac=Did Not Participate In Practice]\n- Research only: M.Nabers (NYG vs LA) Receiving TDs proj=0.40 range=0.0-1.0 [ctx=78% spike=62% limited=25% depth=1]\n- Research only: I.Likely (NYG vs LA) Receiving TDs proj=0.35 range=0.0-1.0 [ctx=80% spike=64% depth=1]\n- Research only: C.Parkinson (LA vs NYG) Receiving TDs proj=0.34 range=0.0-1.0 [ctx=81% spike=61% depth=1]\n- Research only: D.Adams (LA vs NYG) Receiving TDs proj=0.32 range=0.0-1.0 [ctx=78% spike=51% depth=2 prac=Full Participation in Practice]\n- Research only: T.Johnson (NYG vs LA) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=78% spike=27% depth=2]\n- Research only: T.Higbee (LA vs NYG) Receiving TDs proj=0.18 range=0.0-1.0 [ctx=75% spike=8% limited=65% depth=2 prac=Did Not Participate In Practice]\n- Research only: D.Mooney (NYG vs LA) Receiving TDs proj=0.18 range=0.0-1.0 [ctx=76% spike=6% depth=3]\n- Research only: M.Fields (NYG vs LA) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=79% spike=0% depth=2]\n- Research only: K.Mumpfield (LA vs NYG) Receiving TDs proj=0.09 range=0.0-0.0 [ctx=73% spike=2% limited=25% depth=4]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "sent_at": "2026-09-21T22:05:32.658190+00:00"
+    }
+  ]
+}

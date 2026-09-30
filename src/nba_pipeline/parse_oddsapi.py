@@ -11,6 +11,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.parse_oddsapi")
 _ET = ZoneInfo("America/New_York")
 
@@ -78,7 +80,7 @@ ORDER BY fetched_at_utc;
 
 @dataclass(frozen=True)
 class ParseConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     as_of_date: Optional[date] = None  # set to parse a specific ET date bucket
 
 
@@ -400,7 +402,7 @@ def iter_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) -> Ite
                 )
 
 
-def parse_prop_odds(pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
+def parse_prop_odds(pg_dsn: str = PG_DSN,
                    as_of_date: Optional[date] = None,
                    since_date: Optional[date] = None) -> None:
     """Parse raw nba_prop_odds payloads into odds.nba_player_prop_lines.
@@ -527,7 +529,7 @@ def iter_alt_prop_rows(as_of_date: date, fetched_at_utc, event_payload: dict) ->
 
 
 def parse_prop_odds_alt(
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
+    pg_dsn: str = PG_DSN,
     since_date: Optional[date] = None,
 ) -> None:
     """Parse alternate prop lines from raw nba_prop_odds payloads into
@@ -594,7 +596,7 @@ def parse_prop_odds_alt(
 
 
 def parse_game_odds_historical(
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba",
+    pg_dsn: str = PG_DSN,
     as_of_date: Optional[date] = None,
     since_date: Optional[date] = None,
 ) -> None:

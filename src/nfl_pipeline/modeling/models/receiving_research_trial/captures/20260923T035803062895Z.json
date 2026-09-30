@@ -1,0 +1,50 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-09-23T03:58:03.007582+00:00",
+  "captured_at": "2026-09-23T03:58:03.062895+00:00",
+  "selected": [
+    {
+      "forecast_id": 6984,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-09-24",
+      "game_id": "2026_03_ATL_GB",
+      "player_id": "00-0038124",
+      "team": "GB",
+      "season": 2026,
+      "week": 3,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "under",
+      "line": 66.5,
+      "price": -114,
+      "probability": 0.5888238248141382,
+      "market_probability": 0.5,
+      "ev": 0.10533595184408395,
+      "captured_at": "2026-09-23T03:58:03.062895+00:00"
+    },
+    {
+      "forecast_id": 6986,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-09-24",
+      "game_id": "2026_03_ATL_GB",
+      "player_id": "00-0038685",
+      "team": "GB",
+      "season": 2026,
+      "week": 3,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "under",
+      "line": 7.5,
+      "price": -114,
+      "probability": 0.5549429365716259,
+      "market_probability": 0.5,
+      "ev": 0.041734986195859136,
+      "captured_at": "2026-09-23T03:58:03.062895+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 61,
+    "original_drift_guard_not_passed": 5
+  }
+}

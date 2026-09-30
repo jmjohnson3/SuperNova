@@ -1,0 +1,2399 @@
+{
+  "generated_at_utc": "2026-07-30T14:38:45Z",
+  "status": "ready",
+  "usage": "tb_1_5_over_line_book_probability_calibration",
+  "lookback_days": 365,
+  "rows": 12031,
+  "target": "batter_total_bases|over|TB 1.5|true_pair_only",
+  "calibrators": {
+    "draftkings|fair_lay": {
+      "rows": 692,
+      "pred_rate": 0.4813601156069364,
+      "actual_rate": 0.47398843930635837,
+      "offset": -0.022418791052122026,
+      "blend_weight": 0.7587719298245614,
+      "bins": {
+        "p40_55": {
+          "rows": 667,
+          "pred_rate": 0.4846032983508246,
+          "actual_rate": 0.4737631184407796,
+          "offset": -0.03266399461434602,
+          "blend_weight": 0.7519729425028185
+        }
+      },
+      "key": "draftkings|fair_lay",
+      "level": "book_price",
+      "enabled": false,
+      "holdout_brier_gain": -0.000458805820146041,
+      "holdout_rows": 596,
+      "bookmaker_key": "draftkings",
+      "price_bucket": "fair_lay",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "draftkings|plus_100_149": {
+      "rows": 4417,
+      "pred_rate": 0.4131311523658592,
+      "actual_rate": 0.4111387819787186,
+      "offset": -0.007833285548480142,
+      "blend_weight": 0.85,
+      "bins": {
+        "p40_55": {
+          "rows": 2709,
+          "pred_rate": 0.43190465116279064,
+          "actual_rate": 0.42377260981912146,
+          "offset": -0.03072566511788203,
+          "blend_weight": 0.85
+        },
+        "p<40": {
+          "rows": 1702,
+          "pred_rate": 0.381805875440658,
+          "actual_rate": 0.390716803760282,
+          "offset": 0.03328734584998245,
+          "blend_weight": 0.85
+        }
+      },
+      "key": "draftkings|plus_100_149",
+      "level": "book_price",
+      "enabled": false,
+      "holdout_brier_gain": -0.00027374214495909377,
+      "holdout_rows": 4297,
+      "bookmaker_key": "draftkings",
+      "price_bucket": "plus_100_149",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "draftkings|plus_150_249": {
+      "rows": 231,
+      "pred_rate": 0.36773982683982687,
+      "actual_rate": 0.3203463203463203,
+      "offset": -0.10769180671861485,
+      "blend_weight": 0.5121951219512195,
+      "bins": {
+        "p<40": {
+          "rows": 220,
+          "pred_rate": 0.36433136363636365,
+          "actual_rate": 0.32272727272727275,
+          "offset": -0.09232640326701602,
+          "blend_weight": 0.5
+        }
+      },
+      "key": "draftkings|plus_150_249",
+      "level": "book_price",
+      "enabled": true,
+      "holdout_brier_gain": 0.00013545333684969463,
+      "holdout_rows": 148,
+      "bookmaker_key": "draftkings",
+      "price_bucket": "plus_150_249",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "fanduel|fair_lay": {
+      "rows": 1190,
+      "pred_rate": 0.5048372268907563,
+      "actual_rate": 0.44285714285714284,
+      "offset": -0.2100847545713422,
+      "blend_weight": 0.8439716312056738,
+      "bins": {
+        "p40_55": {
+          "rows": 1008,
+          "pred_rate": 0.5000119047619047,
+          "actual_rate": 0.44742063492063494,
+          "offset": -0.17331814627688233,
+          "blend_weight": 0.8208469055374593
+        },
+        "p55_70": {
+          "rows": 140,
+          "pred_rate": 0.5721742857142857,
+          "actual_rate": 0.4142857142857143,
+          "offset": -0.24772376764936457,
+          "blend_weight": 0.3888888888888889
+        },
+        "p<40": {
+          "rows": 39,
+          "pred_rate": 0.363725641025641,
+          "actual_rate": 0.41025641025641024,
+          "offset": 0.029562377754391515,
+          "blend_weight": 0.15057915057915058
+        }
+      },
+      "key": "fanduel|fair_lay",
+      "level": "book_price",
+      "enabled": true,
+      "holdout_brier_gain": 0.002432346758473314,
+      "holdout_rows": 1104,
+      "bookmaker_key": "fanduel",
+      "price_bucket": "fair_lay",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "fanduel|lay_130_149": {
+      "rows": 283,
+      "pred_rate": 0.545630035335689,
+      "actual_rate": 0.5053003533568905,
+      "offset": -0.09104789713865218,
+      "blend_weight": 0.562624254473161,
+      "bins": {
+        "p40_55": {
+          "rows": 130,
+          "pred_rate": 0.48435538461538463,
+          "actual_rate": 0.5076923076923077,
+          "offset": 0.034680491478458225,
+          "blend_weight": 0.37142857142857144
+        },
+        "p55_70": {
+          "rows": 139,
+          "pred_rate": 0.6025489208633094,
+          "actual_rate": 0.5323741007194245,
+          "offset": -0.11089767695428594,
+          "blend_weight": 0.3871866295264624
+        }
+      },
+      "key": "fanduel|lay_130_149",
+      "level": "book_price",
+      "enabled": true,
+      "holdout_brier_gain": 0.00037769690511019194,
+      "holdout_rows": 203,
+      "bookmaker_key": "fanduel",
+      "price_bucket": "lay_130_149",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "fanduel|lay_150_180": {
+      "rows": 148,
+      "pred_rate": 0.5693506756756758,
+      "actual_rate": 0.5,
+      "offset": -0.11228792967735066,
+      "blend_weight": 0.40217391304347827,
+      "bins": {
+        "p40_55": {
+          "rows": 53,
+          "pred_rate": 0.4807509433962264,
+          "actual_rate": 0.5283018867924528,
+          "offset": 0.03695691638690215,
+          "blend_weight": 0.19413919413919414
+        },
+        "p55_70": {
+          "rows": 92,
+          "pred_rate": 0.6063489130434784,
+          "actual_rate": 0.4891304347826087,
+          "offset": -0.14020438651311687,
+          "blend_weight": 0.2948717948717949
+        }
+      },
+      "key": "fanduel|lay_150_180",
+      "level": "book_price",
+      "enabled": true,
+      "holdout_brier_gain": 0.0022976326871733677,
+      "holdout_rows": 63,
+      "bookmaker_key": "fanduel",
+      "price_bucket": "lay_150_180",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "fanduel|plus_100_149": {
+      "rows": 4015,
+      "pred_rate": 0.4342336737235367,
+      "actual_rate": 0.4042341220423412,
+      "offset": -0.11685234538356816,
+      "blend_weight": 0.85,
+      "bins": {
+        "p40_55": {
+          "rows": 2967,
+          "pred_rate": 0.453252780586451,
+          "actual_rate": 0.40950455005055614,
+          "offset": -0.1661569585594733,
+          "blend_weight": 0.85
+        },
+        "p55_70": {
+          "rows": 39,
+          "pred_rate": 0.5676307692307692,
+          "actual_rate": 0.41025641025641024,
+          "offset": -0.09563232505670712,
+          "blend_weight": 0.15057915057915058
+        },
+        "p<40": {
+          "rows": 1007,
+          "pred_rate": 0.3719062562065541,
+          "actual_rate": 0.38927507447864945,
+          "offset": 0.06047513287838109,
+          "blend_weight": 0.8207008964955175
+        }
+      },
+      "key": "fanduel|plus_100_149",
+      "level": "book_price",
+      "enabled": true,
+      "holdout_brier_gain": 0.0009658618259751339,
+      "holdout_rows": 3923,
+      "bookmaker_key": "fanduel",
+      "price_bucket": "plus_100_149",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "fanduel|plus_150_249": {
+      "rows": 883,
+      "pred_rate": 0.35865730464326157,
+      "actual_rate": 0.3420158550396376,
+      "offset": -0.05854149800227082,
+      "blend_weight": 0.800543970988214,
+      "bins": {
+        "p40_55": {
+          "rows": 140,
+          "pred_rate": 0.4076957142857143,
+          "actual_rate": 0.42857142857142855,
+          "offset": 0.033373405598375636,
+          "blend_weight": 0.3888888888888889
+        },
+        "p<40": {
+          "rows": 743,
+          "pred_rate": 0.3494172274562584,
+          "actual_rate": 0.32570659488559894,
+          "offset": -0.08183534928968146,
+          "blend_weight": 0.7715472481827622
+        }
+      },
+      "key": "fanduel|plus_150_249",
+      "level": "book_price",
+      "enabled": false,
+      "holdout_brier_gain": -6.185963483723578e-05,
+      "holdout_rows": 797,
+      "bookmaker_key": "fanduel",
+      "price_bucket": "plus_150_249",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "draftkings|*": {
+      "rows": 5469,
+      "pred_rate": 0.42274472481257996,
+      "actual_rate": 0.41799232035106965,
+      "offset": -0.01875024461423166,
+      "blend_weight": 0.85,
+      "bins": {
+        "p40_55": {
+          "rows": 3482,
+          "pred_rate": 0.4441047960941988,
+          "actual_rate": 0.43595634692705343,
+          "offset": -0.031105018720120673,
+          "blend_weight": 0.85
+        },
+        "p55_70": {
+          "rows": 33,
+          "pred_rate": 0.580021212121212,
+          "actual_rate": 0.5151515151515151,
+          "offset": -0.03420467592085584,
+          "blend_weight": 0.13043478260869565
+        },
+        "p<40": {
+          "rows": 1946,
+          "pred_rate": 0.3796383350462487,
+          "actual_rate": 0.38437821171634123,
+          "offset": 0.018038492996935874,
+          "blend_weight": 0.85
+        }
+      },
+      "key": "draftkings|*",
+      "level": "book",
+      "enabled": false,
+      "holdout_brier_gain": -0.0002110203822824619,
+      "holdout_rows": 5329,
+      "bookmaker_key": "draftkings",
+      "price_bucket": "*",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "fanduel|*": {
+      "rows": 6562,
+      "pred_rate": 0.4445900640048765,
+      "actual_rate": 0.4088692471807376,
+      "offset": -0.1413490847600051,
+      "blend_weight": 0.85,
+      "bins": {
+        "p40_55": {
+          "rows": 4300,
+          "pred_rate": 0.46403058139534886,
+          "actual_rate": 0.4232558139534884,
+          "offset": -0.1572500607745749,
+          "blend_weight": 0.85
+        },
+        "p55_70": {
+          "rows": 423,
+          "pred_rate": 0.5904059101654846,
+          "actual_rate": 0.47044917257683216,
+          "offset": -0.3183912884079616,
+          "blend_weight": 0.6578538102643857
+        },
+        "p<40": {
+          "rows": 1826,
+          "pred_rate": 0.36137579408543263,
+          "actual_rate": 0.3608981380065717,
+          "offset": -0.0018476971798434883,
+          "blend_weight": 0.85
+        }
+      },
+      "key": "fanduel|*",
+      "level": "book",
+      "enabled": true,
+      "holdout_brier_gain": 0.0013308540949696912,
+      "holdout_rows": 6449,
+      "bookmaker_key": "fanduel",
+      "price_bucket": "*",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    },
+    "*|*": {
+      "rows": 12031,
+      "pred_rate": 0.4346597040977475,
+      "actual_rate": 0.4130163743662206,
+      "offset": -0.08705341006170794,
+      "blend_weight": 0.85,
+      "bins": {
+        "p40_55": {
+          "rows": 7782,
+          "pred_rate": 0.4551149318941146,
+          "actual_rate": 0.4289385762014906,
+          "offset": -0.10323952366992145,
+          "blend_weight": 0.85
+        },
+        "p55_70": {
+          "rows": 456,
+          "pred_rate": 0.5896543859649124,
+          "actual_rate": 0.47368421052631576,
+          "offset": -0.3156230501627842,
+          "blend_weight": 0.6745562130177515
+        },
+        "p<40": {
+          "rows": 3772,
+          "pred_rate": 0.3707975609756098,
+          "actual_rate": 0.3730116648992577,
+          "offset": 0.008956182960430152,
+          "blend_weight": 0.85
+        }
+      },
+      "key": "*|*",
+      "level": "global",
+      "enabled": true,
+      "holdout_brier_gain": 0.0004268125166657921,
+      "holdout_rows": 11778,
+      "bookmaker_key": "*",
+      "price_bucket": "*",
+      "line_bucket": "TB 1.5",
+      "market": "batter_total_bases",
+      "side": "over"
+    }
+  },
+  "groups": [
+    {
+      "rows": 5469,
+      "holdout_rows": 5329,
+      "win_rate": 0.4177143929442672,
+      "avg_raw_prob": 0.42358637643085006,
+      "avg_calibrated_prob": 0.42681563989786314,
+      "raw_brier": 0.24282254526552957,
+      "calibrated_brier": 0.24303356564781203,
+      "brier_gain": -0.0002110203822824619,
+      "raw_calibration_error": 0.005871983486582855,
+      "calibrated_calibration_error": 0.009101246953595932,
+      "clv_rows": 4670,
+      "clv_beat_rate": 0.48265524625267664,
+      "avg_clv_price": 0.35688650963597435,
+      "key": "draftkings|*",
+      "level": "book",
+      "bookmaker_key": "draftkings",
+      "price_bucket": "*",
+      "enabled": false,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 3482,
+          "prior_pred_rate": 0.4222133831131533,
+          "prior_actual_rate": 0.4247558874210224,
+          "prior_offset": 0.009795047711251852,
+          "holdout_rows": 99
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 3581,
+          "prior_pred_rate": 0.4221361910080983,
+          "prior_actual_rate": 0.421111421390673,
+          "prior_offset": -0.003959107830704848,
+          "holdout_rows": 109
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 3690,
+          "prior_pred_rate": 0.4221013008130082,
+          "prior_actual_rate": 0.42005420054200543,
+          "prior_offset": -0.007925138763019228,
+          "holdout_rows": 111
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 3801,
+          "prior_pred_rate": 0.42209163378058406,
+          "prior_actual_rate": 0.4191002367797948,
+          "prior_offset": -0.01160359889479239,
+          "holdout_rows": 113
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 3914,
+          "prior_pred_rate": 0.42208865610628515,
+          "prior_actual_rate": 0.41977516607051607,
+          "prior_offset": -0.008986226788440672,
+          "holdout_rows": 108
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 4022,
+          "prior_pred_rate": 0.4219999502734958,
+          "prior_actual_rate": 0.4181999005469915,
+          "prior_offset": -0.014789629105503124,
+          "holdout_rows": 106
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 4128,
+          "prior_pred_rate": 0.4219510416666667,
+          "prior_actual_rate": 0.4181201550387597,
+          "prior_offset": -0.014930158764497267,
+          "holdout_rows": 10
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 4138,
+          "prior_pred_rate": 0.42198320444659254,
+          "prior_actual_rate": 0.4180763653939101,
+          "prior_offset": -0.015228092562509746,
+          "holdout_rows": 112
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 4250,
+          "prior_pred_rate": 0.4223279294117647,
+          "prior_actual_rate": 0.4176470588235294,
+          "prior_offset": -0.0182699737105313,
+          "holdout_rows": 114
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 4364,
+          "prior_pred_rate": 0.42258313473877174,
+          "prior_actual_rate": 0.41842346471127406,
+          "prior_offset": -0.016251051806471805,
+          "holdout_rows": 112
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 4476,
+          "prior_pred_rate": 0.42269959785522787,
+          "prior_actual_rate": 0.419124218051832,
+          "prior_offset": -0.013981392186918433,
+          "holdout_rows": 117
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 4593,
+          "prior_pred_rate": 0.42294509035488786,
+          "prior_actual_rate": 0.4199869366427172,
+          "prior_offset": -0.011577407363509417,
+          "holdout_rows": 99
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 4692,
+          "prior_pred_rate": 0.42297453111679456,
+          "prior_actual_rate": 0.420076726342711,
+          "prior_offset": -0.011351729494231822,
+          "holdout_rows": 135
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 4827,
+          "prior_pred_rate": 0.423014108141703,
+          "prior_actual_rate": 0.4197223948622333,
+          "prior_offset": -0.012912302627408143,
+          "holdout_rows": 27
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 4854,
+          "prior_pred_rate": 0.4229995055624227,
+          "prior_actual_rate": 0.419241862381541,
+          "prior_offset": -0.014745943048666565,
+          "holdout_rows": 106
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 4960,
+          "prior_pred_rate": 0.42289949596774196,
+          "prior_actual_rate": 0.4191532258064516,
+          "prior_offset": -0.014715845785939511,
+          "holdout_rows": 109
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 5069,
+          "prior_pred_rate": 0.42270410337344644,
+          "prior_actual_rate": 0.416650226869205,
+          "prior_offset": -0.02382337601369924,
+          "holdout_rows": 104
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 5173,
+          "prior_pred_rate": 0.42277312971196596,
+          "prior_actual_rate": 0.4177459887879374,
+          "prior_offset": -0.019791835233662358,
+          "holdout_rows": 88
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 5261,
+          "prior_pred_rate": 0.42276696445542666,
+          "prior_actual_rate": 0.4177912944307166,
+          "prior_offset": -0.019602315389455702,
+          "holdout_rows": 112
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 5373,
+          "prior_pred_rate": 0.4227695328494324,
+          "prior_actual_rate": 0.417643774427694,
+          "prior_offset": -0.020211489209963646,
+          "holdout_rows": 96
+        }
+      ]
+    },
+    {
+      "rows": 6562,
+      "holdout_rows": 6449,
+      "win_rate": 0.408280353543185,
+      "avg_raw_prob": 0.44605369824779034,
+      "avg_calibrated_prob": 0.43183810582828386,
+      "raw_brier": 0.2432109693797505,
+      "calibrated_brier": 0.24188011528478082,
+      "brier_gain": 0.0013308540949696912,
+      "raw_calibration_error": 0.03777334470460536,
+      "calibrated_calibration_error": 0.023557752285098876,
+      "clv_rows": 6218,
+      "clv_beat_rate": 0.399002894821486,
+      "avg_clv_price": 0.12003055644901899,
+      "key": "fanduel|*",
+      "level": "book",
+      "bookmaker_key": "fanduel",
+      "price_bucket": "*",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 4082,
+          "prior_pred_rate": 0.441412714355708,
+          "prior_actual_rate": 0.4145026947574718,
+          "prior_offset": -0.10432869977175094,
+          "holdout_rows": 156
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 4238,
+          "prior_pred_rate": 0.44201406323737613,
+          "prior_actual_rate": 0.4110429447852761,
+          "prior_offset": -0.12041273284000685,
+          "holdout_rows": 137
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 4375,
+          "prior_pred_rate": 0.44292669714285715,
+          "prior_actual_rate": 0.41074285714285713,
+          "prior_offset": -0.12530185627793203,
+          "holdout_rows": 128
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 4503,
+          "prior_pred_rate": 0.4437909615811681,
+          "prior_actual_rate": 0.40994892294026203,
+          "prior_offset": -0.13193988601436354,
+          "holdout_rows": 135
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 4638,
+          "prior_pred_rate": 0.4444430789133247,
+          "prior_actual_rate": 0.41073738680465716,
+          "prior_offset": -0.13152980066368827,
+          "holdout_rows": 144
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 4782,
+          "prior_pred_rate": 0.4452497072354663,
+          "prior_actual_rate": 0.4098703471350899,
+          "prior_offset": -0.13825788311211998,
+          "holdout_rows": 134
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 4916,
+          "prior_pred_rate": 0.44573732709519936,
+          "prior_actual_rate": 0.4092758340113914,
+          "prior_offset": -0.1426663758404013,
+          "holdout_rows": 12
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 4928,
+          "prior_pred_rate": 0.4458203733766234,
+          "prior_actual_rate": 0.40929383116883117,
+          "prior_offset": -0.14293177367914706,
+          "holdout_rows": 145
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 5073,
+          "prior_pred_rate": 0.4465968263355017,
+          "prior_actual_rate": 0.4084368223930613,
+          "prior_offset": -0.14951660948794268,
+          "holdout_rows": 140
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 5213,
+          "prior_pred_rate": 0.4472845386533666,
+          "prior_actual_rate": 0.4089775561097257,
+          "prior_offset": -0.15020629060836316,
+          "holdout_rows": 141
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 5354,
+          "prior_pred_rate": 0.44772416884572275,
+          "prior_actual_rate": 0.4103474038102353,
+          "prior_offset": -0.14663385053459424,
+          "holdout_rows": 137
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 5491,
+          "prior_pred_rate": 0.4483990894190494,
+          "prior_actual_rate": 0.41140047350209435,
+          "prior_offset": -0.14521946736954028,
+          "holdout_rows": 123
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 5614,
+          "prior_pred_rate": 0.44796522978268616,
+          "prior_actual_rate": 0.410936943355896,
+          "prior_offset": -0.1454963639053672,
+          "holdout_rows": 157
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 5771,
+          "prior_pred_rate": 0.4474194073817363,
+          "prior_actual_rate": 0.4111939005371686,
+          "prior_offset": -0.14249696203711426,
+          "holdout_rows": 32
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 5803,
+          "prior_pred_rate": 0.4472427537480614,
+          "prior_actual_rate": 0.4108219886265725,
+          "prior_offset": -0.143317579140069,
+          "holdout_rows": 127
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 5930,
+          "prior_pred_rate": 0.44674913996627313,
+          "prior_actual_rate": 0.4102866779089376,
+          "prior_offset": -0.1436372215336569,
+          "holdout_rows": 133
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 6063,
+          "prior_pred_rate": 0.4460336796965199,
+          "prior_actual_rate": 0.4083786904172852,
+          "prior_offset": -0.14857140416680917,
+          "holdout_rows": 127
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 6190,
+          "prior_pred_rate": 0.44561379644588045,
+          "prior_actual_rate": 0.4101777059773829,
+          "prior_offset": -0.13985140139161953,
+          "holdout_rows": 104
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 6294,
+          "prior_pred_rate": 0.4453003336510963,
+          "prior_actual_rate": 0.41007308547823323,
+          "prior_offset": -0.13912251270803427,
+          "holdout_rows": 145
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 6439,
+          "prior_pred_rate": 0.4448530361857431,
+          "prior_actual_rate": 0.4092250349433142,
+          "prior_offset": -0.14086804637320482,
+          "holdout_rows": 123
+        }
+      ]
+    },
+    {
+      "rows": 692,
+      "holdout_rows": 596,
+      "win_rate": 0.47315436241610737,
+      "avg_raw_prob": 0.4886894295302014,
+      "avg_calibrated_prob": 0.48891670069439425,
+      "raw_brier": 0.24824416464765103,
+      "calibrated_brier": 0.24870297046779707,
+      "brier_gain": -0.000458805820146041,
+      "raw_calibration_error": 0.015535067114094026,
+      "calibrated_calibration_error": 0.01576233827828688,
+      "clv_rows": 584,
+      "clv_beat_rate": 0.488013698630137,
+      "avg_clv_price": 0.2864554794520548,
+      "key": "draftkings|fair_lay",
+      "level": "book_price",
+      "bookmaker_key": "draftkings",
+      "price_bucket": "fair_lay",
+      "enabled": false,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 465,
+          "prior_pred_rate": 0.4780696774193548,
+          "prior_actual_rate": 0.47956989247311826,
+          "prior_offset": 0.004080902522036091,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 472,
+          "prior_pred_rate": 0.4781608050847458,
+          "prior_actual_rate": 0.4809322033898305,
+          "prior_offset": 0.007573965334264858,
+          "holdout_rows": 13
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 485,
+          "prior_pred_rate": 0.47822494845360825,
+          "prior_actual_rate": 0.4742268041237113,
+          "prior_offset": -0.011026975285253397,
+          "holdout_rows": 17
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 502,
+          "prior_pred_rate": 0.4784470119521912,
+          "prior_actual_rate": 0.4760956175298805,
+          "prior_offset": -0.006553165647531415,
+          "holdout_rows": 9
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 511,
+          "prior_pred_rate": 0.47874403131115456,
+          "prior_actual_rate": 0.48140900195694714,
+          "prior_offset": 0.00746357829369742,
+          "holdout_rows": 10
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 521,
+          "prior_pred_rate": 0.4788880998080614,
+          "prior_actual_rate": 0.4817658349328215,
+          "prior_offset": 0.008105958768330151,
+          "holdout_rows": 9
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 530,
+          "prior_pred_rate": 0.47903415094339624,
+          "prior_actual_rate": 0.4830188679245283,
+          "prior_offset": 0.011279769278691535,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 531,
+          "prior_pred_rate": 0.47903370998116757,
+          "prior_actual_rate": 0.4821092278719397,
+          "prior_offset": 0.008711449775368618,
+          "holdout_rows": 18
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 549,
+          "prior_pred_rate": 0.4793338797814207,
+          "prior_actual_rate": 0.4772313296903461,
+          "prior_offset": -0.006015518943620585,
+          "holdout_rows": 15
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 564,
+          "prior_pred_rate": 0.47967641843971637,
+          "prior_actual_rate": 0.4769503546099291,
+          "prior_offset": -0.00785919237228225,
+          "holdout_rows": 19
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 583,
+          "prior_pred_rate": 0.4800329331046313,
+          "prior_actual_rate": 0.48027444253859347,
+          "prior_offset": 0.0007024766318013876,
+          "holdout_rows": 20
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 603,
+          "prior_pred_rate": 0.4805718076285241,
+          "prior_actual_rate": 0.47761194029850745,
+          "prior_offset": -0.008689825677744319,
+          "holdout_rows": 14
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 617,
+          "prior_pred_rate": 0.4806614262560777,
+          "prior_actual_rate": 0.47649918962722854,
+          "prior_offset": -0.012295515745112364,
+          "holdout_rows": 12
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 629,
+          "prior_pred_rate": 0.48085564387917334,
+          "prior_actual_rate": 0.4785373608903021,
+          "prior_offset": -0.006881559842336542,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 632,
+          "prior_pred_rate": 0.48088117088607596,
+          "prior_actual_rate": 0.4778481012658228,
+          "prior_offset": -0.00901491320748882,
+          "holdout_rows": 10
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 642,
+          "prior_pred_rate": 0.4809881619937695,
+          "prior_actual_rate": 0.4735202492211838,
+          "prior_offset": -0.022294351536179407,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 649,
+          "prior_pred_rate": 0.48097611710323573,
+          "prior_actual_rate": 0.47303543913713403,
+          "prior_offset": -0.02377229979648126,
+          "holdout_rows": 11
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 660,
+          "prior_pred_rate": 0.4812327272727273,
+          "prior_actual_rate": 0.47575757575757577,
+          "prior_offset": -0.016456061183826302,
+          "holdout_rows": 12
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 672,
+          "prior_pred_rate": 0.48128750000000003,
+          "prior_actual_rate": 0.4732142857142857,
+          "prior_offset": -0.024379252364896634,
+          "holdout_rows": 12
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 684,
+          "prior_pred_rate": 0.48136549707602344,
+          "prior_actual_rate": 0.4722222222222222,
+          "prior_offset": -0.027733085721122836,
+          "holdout_rows": 8
+        }
+      ]
+    },
+    {
+      "rows": 4417,
+      "holdout_rows": 4297,
+      "win_rate": 0.4107516872236444,
+      "avg_raw_prob": 0.4139794275075634,
+      "avg_calibrated_prob": 0.4167088929355404,
+      "raw_brier": 0.24247115486153198,
+      "calibrated_brier": 0.24274489700649107,
+      "brier_gain": -0.00027374214495909377,
+      "raw_calibration_error": 0.0032277402839189784,
+      "calibrated_calibration_error": 0.0059572057118960076,
+      "clv_rows": 3756,
+      "clv_beat_rate": 0.47710330138445156,
+      "avg_clv_price": 0.3600745473908413,
+      "key": "draftkings|plus_100_149",
+      "level": "book_price",
+      "bookmaker_key": "draftkings",
+      "price_bucket": "plus_100_149",
+      "enabled": false,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 2779,
+          "prior_pred_rate": 0.41168279956819,
+          "prior_actual_rate": 0.41777617848146814,
+          "prior_offset": 0.02326242074884824,
+          "holdout_rows": 84
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 2863,
+          "prior_pred_rate": 0.4118320293398533,
+          "prior_actual_rate": 0.41355221795319597,
+          "prior_offset": 0.0065907127506521,
+          "holdout_rows": 92
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 2955,
+          "prior_pred_rate": 0.41192483925549916,
+          "prior_actual_rate": 0.4135363790186125,
+          "prior_offset": 0.006188012380084292,
+          "holdout_rows": 83
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 3038,
+          "prior_pred_rate": 0.411966491112574,
+          "prior_actual_rate": 0.41244239631336405,
+          "prior_offset": 0.00183154760316353,
+          "holdout_rows": 100
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 3138,
+          "prior_pred_rate": 0.412088304652645,
+          "prior_actual_rate": 0.4126832377310389,
+          "prior_offset": 0.0022942695855445493,
+          "holdout_rows": 97
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 3235,
+          "prior_pred_rate": 0.41209332302936635,
+          "prior_actual_rate": 0.4105100463678516,
+          "prior_offset": -0.006122519617545384,
+          "holdout_rows": 90
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 3325,
+          "prior_pred_rate": 0.4121770526315789,
+          "prior_actual_rate": 0.4105263157894737,
+          "prior_offset": -0.006394175158672865,
+          "holdout_rows": 9
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 3334,
+          "prior_pred_rate": 0.4122263047390522,
+          "prior_actual_rate": 0.41061787642471503,
+          "prior_offset": -0.00623101438322762,
+          "holdout_rows": 87
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 3421,
+          "prior_pred_rate": 0.412419584916691,
+          "prior_actual_rate": 0.41069862613270974,
+          "prior_offset": -0.0066767990062888815,
+          "holdout_rows": 92
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 3513,
+          "prior_pred_rate": 0.41260347281525767,
+          "prior_actual_rate": 0.4116140051238258,
+          "prior_offset": -0.003843378127203886,
+          "holdout_rows": 85
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 3598,
+          "prior_pred_rate": 0.41264888827126184,
+          "prior_actual_rate": 0.41161756531406335,
+          "prior_offset": -0.004011470065740073,
+          "holdout_rows": 89
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 3687,
+          "prior_pred_rate": 0.41274193110930296,
+          "prior_actual_rate": 0.4128017358285869,
+          "prior_offset": 0.00023283499239168596,
+          "holdout_rows": 74
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 3761,
+          "prior_pred_rate": 0.4126967827705397,
+          "prior_actual_rate": 0.4118585482584419,
+          "prior_offset": -0.003268246529663749,
+          "holdout_rows": 111
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 3872,
+          "prior_pred_rate": 0.41277574896694214,
+          "prior_actual_rate": 0.41115702479338845,
+          "prior_offset": -0.006322794736533277,
+          "holdout_rows": 21
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 3893,
+          "prior_pred_rate": 0.41280498330336496,
+          "prior_actual_rate": 0.4107372206524531,
+          "prior_offset": -0.008080251542191136,
+          "holdout_rows": 93
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 3986,
+          "prior_pred_rate": 0.41279721525338686,
+          "prior_actual_rate": 0.41144004014049174,
+          "prior_offset": -0.005308750062936353,
+          "holdout_rows": 94
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 4080,
+          "prior_pred_rate": 0.4127914950980392,
+          "prior_actual_rate": 0.4088235294117647,
+          "prior_offset": -0.015554881303345078,
+          "holdout_rows": 90
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 4170,
+          "prior_pred_rate": 0.4128940767386091,
+          "prior_actual_rate": 0.40959232613908875,
+          "prior_offset": -0.01295337609431831,
+          "holdout_rows": 72
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 4242,
+          "prior_pred_rate": 0.41292769919849126,
+          "prior_actual_rate": 0.4101838755304102,
+          "prior_offset": -0.010771211597250684,
+          "holdout_rows": 94
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 4336,
+          "prior_pred_rate": 0.41304370387453876,
+          "prior_actual_rate": 0.41051660516605165,
+          "prior_offset": -0.009929417134872935,
+          "holdout_rows": 81
+        }
+      ]
+    },
+    {
+      "rows": 231,
+      "holdout_rows": 148,
+      "win_rate": 0.34459459459459457,
+      "avg_raw_prob": 0.3711905405405405,
+      "avg_calibrated_prob": 0.35615371475201224,
+      "raw_brier": 0.22629988918918922,
+      "calibrated_brier": 0.22616443585233953,
+      "brier_gain": 0.00013545333684969463,
+      "raw_calibration_error": 0.026595945945945942,
+      "calibrated_calibration_error": 0.011559120157417668,
+      "clv_rows": 101,
+      "clv_beat_rate": 0.6633663366336634,
+      "avg_clv_price": 0.9977227722772277,
+      "key": "draftkings|plus_150_249",
+      "level": "book_price",
+      "bookmaker_key": "draftkings",
+      "price_bucket": "plus_150_249",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-06",
+          "prior_rows": 137,
+          "prior_pred_rate": 0.36654452554744527,
+          "prior_actual_rate": 0.31386861313868614,
+          "prior_offset": -0.0901916500755118,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-07",
+          "prior_rows": 140,
+          "prior_pred_rate": 0.366705,
+          "prior_actual_rate": 0.32142857142857145,
+          "prior_offset": -0.07810279695547089,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 147,
+          "prior_pred_rate": 0.3668863945578232,
+          "prior_actual_rate": 0.3129251700680272,
+          "prior_offset": -0.09648386711087861,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 151,
+          "prior_pred_rate": 0.36692980132450337,
+          "prior_actual_rate": 0.31125827814569534,
+          "prior_offset": -0.10127685418060065,
+          "holdout_rows": 10
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 161,
+          "prior_pred_rate": 0.36731118012422365,
+          "prior_actual_rate": 0.3105590062111801,
+          "prior_offset": -0.10722256931399032,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 164,
+          "prior_pred_rate": 0.36741524390243907,
+          "prior_actual_rate": 0.3048780487804878,
+          "prior_offset": -0.11994801672687455,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 165,
+          "prior_pred_rate": 0.36747636363636366,
+          "prior_actual_rate": 0.3090909090909091,
+          "prior_offset": -0.11199181113025236,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 171,
+          "prior_pred_rate": 0.3677269005847954,
+          "prior_actual_rate": 0.30409356725146197,
+          "prior_offset": -0.12503506839517736,
+          "holdout_rows": 2
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 173,
+          "prior_pred_rate": 0.3677739884393064,
+          "prior_actual_rate": 0.3063583815028902,
+          "prior_offset": -0.121241513747793,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 176,
+          "prior_pred_rate": 0.36784147727272726,
+          "prior_actual_rate": 0.3125,
+          "prior_offset": -0.10976411006673104,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 182,
+          "prior_pred_rate": 0.36785,
+          "prior_actual_rate": 0.3131868131868132,
+          "prior_offset": -0.11038209818914782,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 186,
+          "prior_pred_rate": 0.36772956989247313,
+          "prior_actual_rate": 0.3172043010752688,
+          "prior_offset": -0.10293233026769334,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 192,
+          "prior_pred_rate": 0.3672661458333333,
+          "prior_actual_rate": 0.328125,
+          "prior_offset": -0.08048834517879072,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 199,
+          "prior_pred_rate": 0.3673728643216081,
+          "prior_actual_rate": 0.3316582914572864,
+          "prior_offset": -0.07465610485999996,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 202,
+          "prior_pred_rate": 0.367410396039604,
+          "prior_actual_rate": 0.3316831683168317,
+          "prior_offset": -0.07526642098108344,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 205,
+          "prior_pred_rate": 0.3674214634146342,
+          "prior_actual_rate": 0.33170731707317075,
+          "prior_offset": -0.07581547803122521,
+          "holdout_rows": 8
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 213,
+          "prior_pred_rate": 0.3675507042253521,
+          "prior_actual_rate": 0.3286384976525822,
+          "prior_offset": -0.08441815493067338,
+          "holdout_rows": 2
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 215,
+          "prior_pred_rate": 0.36759255813953484,
+          "prior_actual_rate": 0.3302325581395349,
+          "prior_offset": -0.08134151613981257,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 219,
+          "prior_pred_rate": 0.36767762557077627,
+          "prior_actual_rate": 0.3287671232876712,
+          "prior_offset": -0.0855914129721387,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 225,
+          "prior_pred_rate": 0.3677248888888889,
+          "prior_actual_rate": 0.3244444444444444,
+          "prior_offset": -0.0967912341187882,
+          "holdout_rows": 6
+        }
+      ]
+    },
+    {
+      "rows": 1190,
+      "holdout_rows": 1104,
+      "win_rate": 0.4420289855072464,
+      "avg_raw_prob": 0.5113739130434783,
+      "avg_calibrated_prob": 0.49138303711720605,
+      "raw_brier": 0.2543527062681168,
+      "calibrated_brier": 0.2519203595096435,
+      "brier_gain": 0.002432346758473314,
+      "raw_calibration_error": 0.06934492753623195,
+      "calibrated_calibration_error": 0.04935405160995965,
+      "clv_rows": 1073,
+      "clv_beat_rate": 0.3383038210624418,
+      "avg_clv_price": -0.1696924510717614,
+      "key": "fanduel|fair_lay",
+      "level": "book_price",
+      "bookmaker_key": "fanduel",
+      "price_bucket": "fair_lay",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 760,
+          "prior_pred_rate": 0.5007792105263158,
+          "prior_actual_rate": 0.45657894736842103,
+          "prior_offset": -0.13745116306985466,
+          "holdout_rows": 17
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 777,
+          "prior_pred_rate": 0.5017962676962677,
+          "prior_actual_rate": 0.4568854568854569,
+          "prior_offset": -0.14033744293034373,
+          "holdout_rows": 24
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 801,
+          "prior_pred_rate": 0.5028414481897627,
+          "prior_actual_rate": 0.4556803995006242,
+          "prior_offset": -0.14836214956944593,
+          "holdout_rows": 20
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 821,
+          "prior_pred_rate": 0.5037170523751522,
+          "prior_actual_rate": 0.45676004872107184,
+          "prior_offset": -0.1484751365682416,
+          "holdout_rows": 26
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 847,
+          "prior_pred_rate": 0.5046953955135773,
+          "prior_actual_rate": 0.45690672963400236,
+          "prior_offset": -0.15208208926595337,
+          "holdout_rows": 17
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 864,
+          "prior_pred_rate": 0.5052776620370371,
+          "prior_actual_rate": 0.4548611111111111,
+          "prior_offset": -0.16113114945383877,
+          "holdout_rows": 26
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 890,
+          "prior_pred_rate": 0.5059695505617978,
+          "prior_actual_rate": 0.451685393258427,
+          "prior_offset": -0.17458645240921036,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 893,
+          "prior_pred_rate": 0.5060786114221725,
+          "prior_actual_rate": 0.45240761478163494,
+          "prior_offset": -0.17271346530091244,
+          "holdout_rows": 33
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 926,
+          "prior_pred_rate": 0.5068585313174946,
+          "prior_actual_rate": 0.4470842332613391,
+          "prior_offset": -0.19384145246470944,
+          "holdout_rows": 30
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 956,
+          "prior_pred_rate": 0.5075765690376569,
+          "prior_actual_rate": 0.448744769874477,
+          "prior_offset": -0.19189279572346377,
+          "holdout_rows": 27
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 983,
+          "prior_pred_rate": 0.5082594099694812,
+          "prior_actual_rate": 0.4506612410986775,
+          "prior_offset": -0.18878830809573857,
+          "holdout_rows": 19
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 1002,
+          "prior_pred_rate": 0.5087339321357285,
+          "prior_actual_rate": 0.4471057884231537,
+          "prior_offset": -0.20278670889453232,
+          "holdout_rows": 19
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 1021,
+          "prior_pred_rate": 0.5084252693437806,
+          "prior_actual_rate": 0.4446620959843291,
+          "prior_offset": -0.21058957868370698,
+          "holdout_rows": 22
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 1043,
+          "prior_pred_rate": 0.5079401725790987,
+          "prior_actual_rate": 0.4448705656759348,
+          "prior_offset": -0.20908003263853692,
+          "holdout_rows": 5
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 1048,
+          "prior_pred_rate": 0.5078597328244275,
+          "prior_actual_rate": 0.4437022900763359,
+          "prior_offset": -0.21289880479235185,
+          "holdout_rows": 26
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 1074,
+          "prior_pred_rate": 0.507242364990689,
+          "prior_actual_rate": 0.4404096834264432,
+          "prior_offset": -0.2228268073037039,
+          "holdout_rows": 15
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 1089,
+          "prior_pred_rate": 0.5069884297520661,
+          "prior_actual_rate": 0.4380165289256198,
+          "prior_offset": -0.23058791412743884,
+          "holdout_rows": 22
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 1111,
+          "prior_pred_rate": 0.5064199819981997,
+          "prior_actual_rate": 0.44284428442844287,
+          "prior_offset": -0.21310824340329695,
+          "holdout_rows": 22
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 1133,
+          "prior_pred_rate": 0.5060339805825242,
+          "prior_actual_rate": 0.44130626654898497,
+          "prior_offset": -0.21772308973455304,
+          "holdout_rows": 33
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 1166,
+          "prior_pred_rate": 0.5053718696397942,
+          "prior_actual_rate": 0.4391080617495712,
+          "prior_offset": -0.22400578864526474,
+          "holdout_rows": 24
+        }
+      ]
+    },
+    {
+      "rows": 283,
+      "holdout_rows": 203,
+      "win_rate": 0.5270935960591133,
+      "avg_raw_prob": 0.5738758620689655,
+      "avg_calibrated_prob": 0.568446898240602,
+      "raw_brier": 0.2578230681773547,
+      "calibrated_brier": 0.2574453712722445,
+      "brier_gain": 0.00037769690511019194,
+      "raw_calibration_error": 0.046782266009852136,
+      "calibrated_calibration_error": 0.041353302181488694,
+      "clv_rows": 199,
+      "clv_beat_rate": 0.37185929648241206,
+      "avg_clv_price": -0.2119597989949749,
+      "key": "fanduel|lay_130_149",
+      "level": "book_price",
+      "bookmaker_key": "fanduel",
+      "price_bucket": "lay_130_149",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-05",
+          "prior_rows": 190,
+          "prior_pred_rate": 0.5264694736842105,
+          "prior_actual_rate": 0.5210526315789473,
+          "prior_offset": -0.010063802526389259,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-06",
+          "prior_rows": 197,
+          "prior_pred_rate": 0.5302695431472081,
+          "prior_actual_rate": 0.5126903553299492,
+          "prior_offset": -0.033284066373732726,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-07",
+          "prior_rows": 201,
+          "prior_pred_rate": 0.5322915422885572,
+          "prior_actual_rate": 0.5174129353233831,
+          "prior_offset": -0.028486752322255206,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 205,
+          "prior_pred_rate": 0.5336253658536586,
+          "prior_actual_rate": 0.5121951219512195,
+          "prior_offset": -0.04144116937237398,
+          "holdout_rows": 5
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 210,
+          "prior_pred_rate": 0.5359028571428571,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.07025672974641094,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 213,
+          "prior_pred_rate": 0.5371140845070423,
+          "prior_actual_rate": 0.49295774647887325,
+          "prior_offset": -0.08702047404829252,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 216,
+          "prior_pred_rate": 0.5382856481481482,
+          "prior_actual_rate": 0.49537037037037035,
+          "prior_offset": -0.08519218235272837,
+          "holdout_rows": 5
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 221,
+          "prior_pred_rate": 0.5398511312217195,
+          "prior_actual_rate": 0.49321266968325794,
+          "prior_offset": -0.09365906974191698,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 224,
+          "prior_pred_rate": 0.5409727678571429,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.08286960887890106,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 231,
+          "prior_pred_rate": 0.5419463203463204,
+          "prior_actual_rate": 0.49783549783549785,
+          "prior_offset": -0.09057588754929873,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 238,
+          "prior_pred_rate": 0.5428235294117647,
+          "prior_actual_rate": 0.4957983193277311,
+          "prior_offset": -0.09796554291009027,
+          "holdout_rows": 8
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 246,
+          "prior_pred_rate": 0.5438821138211383,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.09289995861264395,
+          "holdout_rows": 10
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 256,
+          "prior_pred_rate": 0.54510546875,
+          "prior_actual_rate": 0.5078125,
+          "prior_offset": -0.08049003587112946,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 259,
+          "prior_pred_rate": 0.5451247104247104,
+          "prior_actual_rate": 0.5096525096525096,
+          "prior_offset": -0.07698435233624924,
+          "holdout_rows": 8
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 267,
+          "prior_pred_rate": 0.5454756554307116,
+          "prior_actual_rate": 0.5056179775280899,
+          "prior_offset": -0.08768446934869681,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 271,
+          "prior_pred_rate": 0.5455040590405903,
+          "prior_actual_rate": 0.5018450184501845,
+          "prior_offset": -0.0966665036760978,
+          "holdout_rows": 2
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 273,
+          "prior_pred_rate": 0.5455186813186813,
+          "prior_actual_rate": 0.5018315018315018,
+          "prior_offset": -0.09704745819550573,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 277,
+          "prior_pred_rate": 0.5454606498194946,
+          "prior_actual_rate": 0.5018050541516246,
+          "prior_offset": -0.09760539748672505,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 280,
+          "prior_pred_rate": 0.5455142857142857,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.10223500661645829,
+          "holdout_rows": 2
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 282,
+          "prior_pred_rate": 0.5455712765957446,
+          "prior_actual_rate": 0.5035460992907801,
+          "prior_offset": -0.09471590596025725,
+          "holdout_rows": 1
+        }
+      ]
+    },
+    {
+      "rows": 148,
+      "holdout_rows": 63,
+      "win_rate": 0.5396825396825397,
+      "avg_raw_prob": 0.6079888888888889,
+      "avg_calibrated_prob": 0.5801931042779332,
+      "raw_brier": 0.25242192619047615,
+      "calibrated_brier": 0.2501242935033028,
+      "brier_gain": 0.0022976326871733677,
+      "raw_calibration_error": 0.06830634920634926,
+      "calibrated_calibration_error": 0.040510564595393594,
+      "clv_rows": 63,
+      "clv_beat_rate": 0.47619047619047616,
+      "avg_clv_price": -0.08206349206349206,
+      "key": "fanduel|lay_150_180",
+      "level": "book_price",
+      "bookmaker_key": "fanduel",
+      "price_bucket": "lay_150_180",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-02",
+          "prior_rows": 85,
+          "prior_pred_rate": 0.5407129411764706,
+          "prior_actual_rate": 0.47058823529411764,
+          "prior_offset": -0.07831040268410795,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-03",
+          "prior_rows": 88,
+          "prior_pred_rate": 0.543646590909091,
+          "prior_actual_rate": 0.4659090909090909,
+          "prior_offset": -0.08903068354468816,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-04",
+          "prior_rows": 91,
+          "prior_pred_rate": 0.5462296703296704,
+          "prior_actual_rate": 0.4725274725274725,
+          "prior_offset": -0.08644977641715651,
+          "holdout_rows": 7
+        },
+        {
+          "date": "2026-07-05",
+          "prior_rows": 98,
+          "prior_pred_rate": 0.551484693877551,
+          "prior_actual_rate": 0.4897959183673469,
+          "prior_offset": -0.07627151116617624,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-06",
+          "prior_rows": 104,
+          "prior_pred_rate": 0.5550086538461538,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.07091544007683671,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-07",
+          "prior_rows": 105,
+          "prior_pred_rate": 0.5557190476190477,
+          "prior_actual_rate": 0.49523809523809526,
+          "prior_offset": -0.07846049513869621,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 106,
+          "prior_pred_rate": 0.5562103773584905,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.07341832217269097,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 110,
+          "prior_pred_rate": 0.5581536363636364,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.07789067679957279,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 111,
+          "prior_pred_rate": 0.5586009009009009,
+          "prior_actual_rate": 0.5045045045045045,
+          "prior_offset": -0.07292710327964597,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 112,
+          "prior_pred_rate": 0.5589705357142857,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.0799467730288597,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 113,
+          "prior_pred_rate": 0.5594026548672566,
+          "prior_actual_rate": 0.504424778761062,
+          "prior_offset": -0.07500707240324318,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 119,
+          "prior_pred_rate": 0.5617050420168066,
+          "prior_actual_rate": 0.4957983193277311,
+          "prior_offset": -0.09298564883630693,
+          "holdout_rows": 6
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 125,
+          "prior_pred_rate": 0.5642695999999997,
+          "prior_actual_rate": 0.488,
+          "prior_offset": -0.11105712579261082,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 128,
+          "prior_pred_rate": 0.5652898437499999,
+          "prior_actual_rate": 0.5,
+          "prior_offset": -0.09661024215530255,
+          "holdout_rows": 8
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 136,
+          "prior_pred_rate": 0.5681110294117647,
+          "prior_actual_rate": 0.49264705882352944,
+          "prior_offset": -0.11596758830972875,
+          "holdout_rows": 4
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 140,
+          "prior_pred_rate": 0.5687700000000001,
+          "prior_actual_rate": 0.5071428571428571,
+          "prior_offset": -0.09654601116979133,
+          "holdout_rows": 3
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 143,
+          "prior_pred_rate": 0.5690062937062937,
+          "prior_actual_rate": 0.5104895104895105,
+          "prior_offset": -0.09290422760314002,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 144,
+          "prior_pred_rate": 0.5690229166666667,
+          "prior_actual_rate": 0.5069444444444444,
+          "prior_offset": -0.09893521059242247,
+          "holdout_rows": 2
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 146,
+          "prior_pred_rate": 0.5691417808219177,
+          "prior_actual_rate": 0.5068493150684932,
+          "prior_offset": -0.1001063465055092,
+          "holdout_rows": 2
+        }
+      ]
+    },
+    {
+      "rows": 4015,
+      "holdout_rows": 3923,
+      "win_rate": 0.40300790211572773,
+      "avg_raw_prob": 0.4359875350497069,
+      "avg_calibrated_prob": 0.4207292400253446,
+      "raw_brier": 0.24256191655110937,
+      "calibrated_brier": 0.24159605472513423,
+      "brier_gain": 0.0009658618259751339,
+      "raw_calibration_error": 0.03297963293397915,
+      "calibrated_calibration_error": 0.017721337909616885,
+      "clv_rows": 3767,
+      "clv_beat_rate": 0.39660207061322006,
+      "avg_clv_price": 0.11664189009822139,
+      "key": "fanduel|plus_100_149",
+      "level": "book_price",
+      "bookmaker_key": "fanduel",
+      "price_bucket": "plus_100_149",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 2477,
+          "prior_pred_rate": 0.43005296729915216,
+          "prior_actual_rate": 0.40976988292289057,
+          "prior_offset": -0.07648823382666568,
+          "holdout_rows": 91
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 2568,
+          "prior_pred_rate": 0.431558605919003,
+          "prior_actual_rate": 0.404595015576324,
+          "prior_offset": -0.10211237139918228,
+          "holdout_rows": 84
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 2652,
+          "prior_pred_rate": 0.43284449472096537,
+          "prior_actual_rate": 0.4042232277526395,
+          "prior_offset": -0.1086320766826966,
+          "holdout_rows": 85
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 2737,
+          "prior_pred_rate": 0.4338128242601388,
+          "prior_actual_rate": 0.40336134453781514,
+          "prior_offset": -0.11585489042513444,
+          "holdout_rows": 81
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 2818,
+          "prior_pred_rate": 0.43469439318665726,
+          "prior_actual_rate": 0.4038325053229241,
+          "prior_offset": -0.11761598797966563,
+          "holdout_rows": 102
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 2920,
+          "prior_pred_rate": 0.435946095890411,
+          "prior_actual_rate": 0.40308219178082194,
+          "prior_offset": -0.1255485795388967,
+          "holdout_rows": 78
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 2998,
+          "prior_pred_rate": 0.43667348232154773,
+          "prior_actual_rate": 0.40360240160106736,
+          "prior_offset": -0.12651935685150173,
+          "holdout_rows": 8
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 3006,
+          "prior_pred_rate": 0.43675904856952763,
+          "prior_actual_rate": 0.40352628077178976,
+          "prior_offset": -0.1271611772461721,
+          "holdout_rows": 78
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 3084,
+          "prior_pred_rate": 0.43725791180285345,
+          "prior_actual_rate": 0.4040207522697795,
+          "prior_offset": -0.12735631072302867,
+          "holdout_rows": 77
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 3161,
+          "prior_pred_rate": 0.4377500158177792,
+          "prior_actual_rate": 0.40461879152167035,
+          "prior_offset": -0.12711124565208198,
+          "holdout_rows": 77
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 3238,
+          "prior_pred_rate": 0.4381694873378629,
+          "prior_actual_rate": 0.40395305744286597,
+          "prior_offset": -0.13149231213699114,
+          "holdout_rows": 86
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 3324,
+          "prior_pred_rate": 0.43865553549939834,
+          "prior_actual_rate": 0.40583634175691935,
+          "prior_offset": -0.1262299628671146,
+          "holdout_rows": 77
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 3401,
+          "prior_pred_rate": 0.43796636283446044,
+          "prior_actual_rate": 0.40488091737724197,
+          "prior_offset": -0.1275012839186476,
+          "holdout_rows": 106
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 3507,
+          "prior_pred_rate": 0.4371690048474479,
+          "prior_actual_rate": 0.4049044767607642,
+          "prior_offset": -0.12459515539456911,
+          "holdout_rows": 19
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 3526,
+          "prior_pred_rate": 0.43704498014747584,
+          "prior_actual_rate": 0.4047078842881452,
+          "prior_offset": -0.1249283546023941,
+          "holdout_rows": 76
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 3602,
+          "prior_pred_rate": 0.4364735702387562,
+          "prior_actual_rate": 0.4058856191004997,
+          "prior_offset": -0.1182892810018536,
+          "holdout_rows": 95
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 3697,
+          "prior_pred_rate": 0.4358011360562618,
+          "prior_actual_rate": 0.4043819312956451,
+          "prior_offset": -0.12177266357609051,
+          "holdout_rows": 83
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 3780,
+          "prior_pred_rate": 0.4352934126984127,
+          "prior_actual_rate": 0.4052910052910053,
+          "prior_offset": -0.11640594542125463,
+          "holdout_rows": 64
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 3844,
+          "prior_pred_rate": 0.4349624349635796,
+          "prior_actual_rate": 0.40556711758584807,
+          "prior_offset": -0.11415553425971353,
+          "holdout_rows": 92
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 3936,
+          "prior_pred_rate": 0.4344744156504065,
+          "prior_actual_rate": 0.40523373983739835,
+          "prior_offset": -0.11372916343884812,
+          "holdout_rows": 79
+        }
+      ]
+    },
+    {
+      "rows": 883,
+      "holdout_rows": 797,
+      "win_rate": 0.3462986198243413,
+      "avg_raw_prob": 0.362103513174404,
+      "avg_calibrated_prob": 0.3549618112564742,
+      "raw_brier": 0.22548095900878293,
+      "calibrated_brier": 0.22554281864362016,
+      "brier_gain": -6.185963483723578e-05,
+      "raw_calibration_error": 0.015804893350062688,
+      "calibrated_calibration_error": 0.0086631914321329,
+      "clv_rows": 773,
+      "clv_beat_rate": 0.49029754204398446,
+      "avg_clv_price": 0.6121086675291073,
+      "key": "fanduel|plus_150_249",
+      "level": "book_price",
+      "bookmaker_key": "fanduel",
+      "price_bucket": "plus_150_249",
+      "enabled": false,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 507,
+          "prior_pred_rate": 0.3482745562130177,
+          "prior_actual_rate": 0.3254437869822485,
+          "prior_offset": -0.07129592429266197,
+          "holdout_rows": 43
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 550,
+          "prior_pred_rate": 0.3503070909090909,
+          "prior_actual_rate": 0.3290909090909091,
+          "prior_offset": -0.06757855818870094,
+          "holdout_rows": 23
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 573,
+          "prior_pred_rate": 0.3512113438045375,
+          "prior_actual_rate": 0.33507853403141363,
+          "prior_offset": -0.05172545865908881,
+          "holdout_rows": 15
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 588,
+          "prior_pred_rate": 0.35209285714285715,
+          "prior_actual_rate": 0.33503401360544216,
+          "prior_offset": -0.05505323396968427,
+          "holdout_rows": 22
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 610,
+          "prior_pred_rate": 0.3530995081967213,
+          "prior_actual_rate": 0.33934426229508197,
+          "prior_offset": -0.044666107538319726,
+          "holdout_rows": 19
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 629,
+          "prior_pred_rate": 0.35378966613672497,
+          "prior_actual_rate": 0.34181240063593005,
+          "prior_offset": -0.03912207657473696,
+          "holdout_rows": 25
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 654,
+          "prior_pred_rate": 0.35457568807339457,
+          "prior_actual_rate": 0.3379204892966361,
+          "prior_offset": -0.055065384071110175,
+          "holdout_rows": 1
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 655,
+          "prior_pred_rate": 0.35463312977099243,
+          "prior_actual_rate": 0.3374045801526718,
+          "prior_offset": -0.0570012472043361,
+          "holdout_rows": 21
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 676,
+          "prior_pred_rate": 0.35532100591715976,
+          "prior_actual_rate": 0.33727810650887574,
+          "prior_offset": -0.06014341599458099,
+          "holdout_rows": 20
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 696,
+          "prior_pred_rate": 0.3555974137931034,
+          "prior_actual_rate": 0.33764367816091956,
+          "prior_offset": -0.06024510276384075,
+          "holdout_rows": 26
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 722,
+          "prior_pred_rate": 0.35602423822714685,
+          "prior_actual_rate": 0.3448753462603878,
+          "prior_offset": -0.037541100558301066,
+          "holdout_rows": 12
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 734,
+          "prior_pred_rate": 0.356208446866485,
+          "prior_actual_rate": 0.3446866485013624,
+          "prior_offset": -0.0389457532719102,
+          "holdout_rows": 18
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 752,
+          "prior_pred_rate": 0.35663656914893616,
+          "prior_actual_rate": 0.34441489361702127,
+          "prior_offset": -0.04153684855469951,
+          "holdout_rows": 17
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 769,
+          "prior_pred_rate": 0.3570599479843954,
+          "prior_actual_rate": 0.3472041612483745,
+          "prior_offset": -0.033593140865553664,
+          "holdout_rows": 8
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 777,
+          "prior_pred_rate": 0.3572034749034749,
+          "prior_actual_rate": 0.3474903474903475,
+          "prior_offset": -0.03317360877648115,
+          "holdout_rows": 20
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 797,
+          "prior_pred_rate": 0.3575411543287328,
+          "prior_actual_rate": 0.3450439146800502,
+          "prior_offset": -0.042980165730416284,
+          "holdout_rows": 21
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 818,
+          "prior_pred_rate": 0.35774327628361857,
+          "prior_actual_rate": 0.3422982885085575,
+          "prior_offset": -0.0535060859861912,
+          "holdout_rows": 16
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 834,
+          "prior_pred_rate": 0.35801594724220626,
+          "prior_actual_rate": 0.34532374100719426,
+          "prior_offset": -0.044052103887475054,
+          "holdout_rows": 15
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 849,
+          "prior_pred_rate": 0.35808527679623087,
+          "prior_actual_rate": 0.3462897526501767,
+          "prior_offset": -0.0410633604788879,
+          "holdout_rows": 17
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 866,
+          "prior_pred_rate": 0.358295727482679,
+          "prior_actual_rate": 0.3441108545034642,
+          "prior_offset": -0.049646734727776684,
+          "holdout_rows": 17
+        }
+      ]
+    },
+    {
+      "rows": 12031,
+      "holdout_rows": 11778,
+      "win_rate": 0.41254881983358804,
+      "avg_raw_prob": 0.43588827474953296,
+      "avg_calibrated_prob": 0.43020447199442896,
+      "raw_brier": 0.2430352254415026,
+      "calibrated_brier": 0.2426084129248368,
+      "brier_gain": 0.0004268125166657921,
+      "raw_calibration_error": 0.023339454915944913,
+      "calibrated_calibration_error": 0.017655652160840918,
+      "clv_rows": 10888,
+      "clv_beat_rate": 0.43488243938280674,
+      "avg_clv_price": 0.2216210506980162,
+      "key": "*|*",
+      "level": "global",
+      "bookmaker_key": "*",
+      "price_bucket": "*",
+      "enabled": true,
+      "folds": [
+        {
+          "date": "2026-07-07",
+          "prior_rows": 7564,
+          "prior_pred_rate": 0.4325745240613432,
+          "prior_actual_rate": 0.41922263352723427,
+          "prior_offset": -0.05306710592126317,
+          "holdout_rows": 255
+        },
+        {
+          "date": "2026-07-08",
+          "prior_rows": 7819,
+          "prior_pred_rate": 0.43291025706612096,
+          "prior_actual_rate": 0.41565417572579616,
+          "prior_offset": -0.06871873536376046,
+          "holdout_rows": 246
+        },
+        {
+          "date": "2026-07-09",
+          "prior_rows": 8065,
+          "prior_pred_rate": 0.4333984004959702,
+          "prior_actual_rate": 0.4150030998140112,
+          "prior_offset": -0.07332145752182849,
+          "holdout_rows": 239
+        },
+        {
+          "date": "2026-07-10",
+          "prior_rows": 8304,
+          "prior_pred_rate": 0.4338585019267822,
+          "prior_actual_rate": 0.4141377649325626,
+          "prior_offset": -0.07867600556910018,
+          "holdout_rows": 248
+        },
+        {
+          "date": "2026-07-11",
+          "prior_rows": 8552,
+          "prior_pred_rate": 0.4342121141253508,
+          "prior_actual_rate": 0.4148737137511693,
+          "prior_offset": -0.07718193362463104,
+          "holdout_rows": 252
+        },
+        {
+          "date": "2026-07-12",
+          "prior_rows": 8804,
+          "prior_pred_rate": 0.43462833939118584,
+          "prior_actual_rate": 0.4136756019990913,
+          "prior_offset": -0.0837073396957347,
+          "holdout_rows": 240
+        },
+        {
+          "date": "2026-07-16",
+          "prior_rows": 9044,
+          "prior_pred_rate": 0.43488042901371077,
+          "prior_actual_rate": 0.413312693498452,
+          "prior_offset": -0.08622388453457279,
+          "holdout_rows": 22
+        },
+        {
+          "date": "2026-07-17",
+          "prior_rows": 9066,
+          "prior_pred_rate": 0.4349403595852636,
+          "prior_actual_rate": 0.4133024487094639,
+          "prior_offset": -0.08650817951525827,
+          "holdout_rows": 257
+        },
+        {
+          "date": "2026-07-18",
+          "prior_rows": 9323,
+          "prior_pred_rate": 0.4355335621581036,
+          "prior_actual_rate": 0.4126354177839751,
+          "prior_offset": -0.09161043343665566,
+          "holdout_rows": 254
+        },
+        {
+          "date": "2026-07-19",
+          "prior_rows": 9577,
+          "prior_pred_rate": 0.43602872507048135,
+          "prior_actual_rate": 0.41328182102954997,
+          "prior_offset": -0.09102858839213439,
+          "holdout_rows": 253
+        },
+        {
+          "date": "2026-07-20",
+          "prior_rows": 9830,
+          "prior_pred_rate": 0.43632946083418106,
+          "prior_actual_rate": 0.4143438453713123,
+          "prior_offset": -0.08799497990768966,
+          "holdout_rows": 254
+        },
+        {
+          "date": "2026-07-21",
+          "prior_rows": 10084,
+          "prior_pred_rate": 0.43680545418484723,
+          "prior_actual_rate": 0.41531138437128123,
+          "prior_offset": -0.08603661401269795,
+          "holdout_rows": 222
+        },
+        {
+          "date": "2026-07-22",
+          "prior_rows": 10306,
+          "prior_pred_rate": 0.436587745002911,
+          "prior_actual_rate": 0.4150980011643703,
+          "prior_offset": -0.08607011703210683,
+          "holdout_rows": 292
+        },
+        {
+          "date": "2026-07-23",
+          "prior_rows": 10598,
+          "prior_pred_rate": 0.43630368937535385,
+          "prior_actual_rate": 0.4150783166635214,
+          "prior_offset": -0.08506774225800015,
+          "holdout_rows": 59
+        },
+        {
+          "date": "2026-07-24",
+          "prior_rows": 10657,
+          "prior_pred_rate": 0.4362005536267243,
+          "prior_actual_rate": 0.41465703293609835,
+          "prior_offset": -0.08636678751052351,
+          "holdout_rows": 233
+        },
+        {
+          "date": "2026-07-25",
+          "prior_rows": 10890,
+          "prior_pred_rate": 0.43588649219467407,
+          "prior_actual_rate": 0.4143250688705234,
+          "prior_offset": -0.08649310320280656,
+          "holdout_rows": 242
+        },
+        {
+          "date": "2026-07-26",
+          "prior_rows": 11132,
+          "prior_pred_rate": 0.4354104653251887,
+          "prior_actual_rate": 0.41214516708587856,
+          "prior_offset": -0.09344781016874419,
+          "holdout_rows": 231
+        },
+        {
+          "date": "2026-07-27",
+          "prior_rows": 11363,
+          "prior_pred_rate": 0.4352155944732906,
+          "prior_actual_rate": 0.41362316289712225,
+          "prior_offset": -0.08672567438084422,
+          "holdout_rows": 192
+        },
+        {
+          "date": "2026-07-28",
+          "prior_rows": 11555,
+          "prior_pred_rate": 0.4350408740804847,
+          "prior_actual_rate": 0.4135871916919083,
+          "prior_offset": -0.08620102892895154,
+          "holdout_rows": 257
+        },
+        {
+          "date": "2026-07-29",
+          "prior_rows": 11812,
+          "prior_pred_rate": 0.43480777175753466,
+          "prior_actual_rate": 0.41305452082627836,
+          "prior_offset": -0.0874614869794557,
+          "holdout_rows": 219
+        }
+      ]
+    }
+  ],
+  "draftkings_focus_keys": [
+    "draftkings|plus_100_149",
+    "draftkings|*",
+    "*|*",
+    "draftkings|fair_lay",
+    "draftkings|*",
+    "*|*"
+  ],
+  "enabled_count": 7
+}

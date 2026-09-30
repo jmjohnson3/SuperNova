@@ -1,0 +1,214 @@
+{
+  "generated_at_utc": "2026-07-30T16:01:06Z",
+  "status": "ready",
+  "layer_control_status": "ready",
+  "checkpoint_status": "evaluation_ready_no_micro_buckets",
+  "minimum_completed_dates": 5,
+  "shadow_layers": [
+    {
+      "layer": "hitter_projection",
+      "title": "Hitter opportunity / rates",
+      "status": "unknown",
+      "current_mode": "shadow",
+      "target_mode": "production",
+      "completed_dates": 0,
+      "rows": 51553,
+      "mae": null,
+      "baseline_mae": null,
+      "mae_gain": null,
+      "brier": null,
+      "baseline_brier": null,
+      "brier_gain": null,
+      "calibration": null,
+      "passes_promotion": false,
+      "blockers": [
+        "challenger_not_accepted"
+      ]
+    },
+    {
+      "layer": "hitter_tb_distribution",
+      "title": "TB conditional/XBH distribution",
+      "status": "ok",
+      "current_mode": "shadow",
+      "target_mode": "production",
+      "completed_dates": 0,
+      "rows": 51553,
+      "mae": null,
+      "baseline_mae": null,
+      "mae_gain": null,
+      "brier": null,
+      "baseline_brier": null,
+      "brier_gain": null,
+      "calibration": null,
+      "passes_promotion": false,
+      "blockers": [
+        "challenger_not_accepted"
+      ]
+    },
+    {
+      "layer": "tb_tail_repair",
+      "title": "TB 4+ tail / line calibration challenger",
+      "status": "ready",
+      "current_mode": "shadow",
+      "target_mode": "production",
+      "completed_dates": 48,
+      "rows": 8986,
+      "mae": 1.3649328219495245,
+      "baseline_mae": 1.3980422486918387,
+      "mae_gain": null,
+      "brier": 0.24532114508165437,
+      "baseline_brier": 0.2629221149203344,
+      "brier_gain": null,
+      "calibration": null,
+      "passes_promotion": true,
+      "blockers": []
+    },
+    {
+      "layer": "pitcher_projection",
+      "title": "Pitcher opportunity",
+      "status": "ready",
+      "current_mode": "shadow",
+      "target_mode": "production",
+      "completed_dates": 0,
+      "rows": 34120,
+      "mae": null,
+      "baseline_mae": null,
+      "mae_gain": null,
+      "brier": null,
+      "baseline_brier": null,
+      "brier_gain": null,
+      "calibration": null,
+      "passes_promotion": false,
+      "blockers": [
+        "challenger_not_accepted"
+      ]
+    },
+    {
+      "layer": "pitcher_k_rate",
+      "title": "Pitcher K-rate conservative challenger",
+      "status": "ready",
+      "current_mode": "shadow",
+      "target_mode": "production",
+      "completed_dates": 53,
+      "rows": 1078,
+      "mae": 1.8176497461928935,
+      "baseline_mae": 1.8176497461928935,
+      "mae_gain": 0.0,
+      "brier": 0.2523218022155044,
+      "baseline_brier": 0.2523218022155044,
+      "brier_gain": 0.0,
+      "calibration": null,
+      "passes_promotion": false,
+      "blockers": [
+        "challenger_not_accepted"
+      ]
+    },
+    {
+      "layer": "hitter_hits_hr_shadow",
+      "title": "Hitter Hits/HR Shadow",
+      "status": "unknown",
+      "current_mode": "shadow",
+      "target_mode": "production_scoring",
+      "completed_dates": 11,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "batter_hits_projection_not_better_than_baseline",
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "hitter_pa_v3",
+      "title": "Hitter PA v3",
+      "status": "unknown",
+      "current_mode": "challenger",
+      "target_mode": "production_scoring",
+      "completed_dates": 15,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "tb_projection",
+      "title": "Total Bases Projection",
+      "status": "unknown",
+      "current_mode": "production_tracking",
+      "target_mode": "production_scoring_verified",
+      "completed_dates": 15,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "batter_total_bases_projection_gate_failed",
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "pitcher_k_projection",
+      "title": "Pitcher K Projection",
+      "status": "unknown",
+      "current_mode": "production_tracking",
+      "target_mode": "production_scoring_verified",
+      "completed_dates": 17,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "clv_direction",
+      "title": "CLV Direction Model",
+      "status": "unknown",
+      "current_mode": "support",
+      "target_mode": "support_enabled",
+      "completed_dates": 0,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "market_residual_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "bookability",
+      "title": "Bookability / Close Capture",
+      "status": "unknown",
+      "current_mode": "support",
+      "target_mode": "support_enabled",
+      "completed_dates": 0,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "bookability_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "distribution_selector",
+      "title": "Distribution / Exact-Line Selector",
+      "status": "unknown",
+      "current_mode": "shadow_support",
+      "target_mode": "support_enabled",
+      "completed_dates": 0,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "distribution_artifact_stale>36h"
+      ]
+    },
+    {
+      "layer": "exact_bucket_micro",
+      "title": "Exact Bucket $1 Micro",
+      "status": "unknown",
+      "current_mode": "watch",
+      "target_mode": "micro",
+      "completed_dates": 0,
+      "rows": 0,
+      "passes_promotion": false,
+      "blockers": [
+        "micro_ready_exact_buckets=0",
+        "real_money_kill_switch_active"
+      ]
+    }
+  ]
+}

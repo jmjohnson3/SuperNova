@@ -1,0 +1,717 @@
+{
+  "generated_at_utc": "2026-07-13T03:53:09Z",
+  "source_audit_generated_at_utc": "2026-07-13T03:52:57Z",
+  "source_date_from": "2026-06-01",
+  "source_date_to": "2026-07-11",
+  "canonical_forecast_phase": "day_pregame",
+  "status_counts": {
+    "prop_promotion_countable": 4,
+    "not_countable": 11
+  },
+  "rows": [
+    {
+      "slate_date": "2026-07-04",
+      "status": "prop_promotion_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": true,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 6716,
+      "forecast_rows": 1668,
+      "valid_clv_coverage": 0.9414830256104825,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.5129541393686718,
+      "original_blockers": [
+        "opportunity_pending_on_settled_games"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "strict_only_non_prop_blockers",
+          "status": "prop_promotion_countable",
+          "reason": "core_prop_forecasts_and_prop_close_evidence_pass; remaining blockers are not prop-promotion blockers"
+        },
+        {
+          "blocker": "pending_forecasts_on_settled_games",
+          "status": "repairable",
+          "pending_rows": 2,
+          "core_pending_rows": 0,
+          "opportunity_pending_rows": 2,
+          "reason": "pending_rows_are_opportunity_only; strict promotion can ignore_or_void_ungradeable_opportunity_rows",
+          "rows": [
+            {
+              "game_date_et": "2026-07-04",
+              "stat": "pitcher_batters_faced",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 1
+            },
+            {
+              "game_date_et": "2026-07-04",
+              "stat": "pitcher_pitch_count",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 1
+            }
+          ]
+        }
+      ],
+      "recommended_action": "Count this slate for prop-promotion evidence; keep it out of strict all-layer evidence until non-prop blockers are cleared."
+    },
+    {
+      "slate_date": "2026-07-09",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": false,
+      "forecast_countable": true,
+      "prop_rows": 5964,
+      "forecast_rows": 1443,
+      "valid_clv_coverage": 0.8959223300970873,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.48205902079141516,
+      "original_blockers": [
+        "valid_clv_coverage<90%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "valid_clv_coverage",
+          "status": "not_repairable",
+          "gap_rows": 11,
+          "valid_coverage": 0.8959223300970873,
+          "locked_rows": 2575,
+          "valid_rows": 2307,
+          "repairable_rows": 0,
+          "permanent_rows": 268,
+          "reason": "missing_clv_rows_are_true_unavailable_or_no_recoverable_snapshot_reason",
+          "failure_reasons": {
+            "valid_close": 2307,
+            "player_prop_unavailable_at_close": 215,
+            "line_disappeared_at_close": 28,
+            "fallback_other_book_only": 13,
+            "player_market_unavailable_at_close": 12
+          }
+        }
+      ],
+      "recommended_action": "Do not count strict promotion; valid CLV miss is mostly true line/player unavailability, not a relabeling issue."
+    },
+    {
+      "slate_date": "2026-07-05",
+      "status": "prop_promotion_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": true,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 5320,
+      "forecast_rows": 1673,
+      "valid_clv_coverage": 0.924436090225564,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.5212406015037594,
+      "original_blockers": [
+        "opportunity_pending_on_settled_games"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "strict_only_non_prop_blockers",
+          "status": "prop_promotion_countable",
+          "reason": "core_prop_forecasts_and_prop_close_evidence_pass; remaining blockers are not prop-promotion blockers"
+        },
+        {
+          "blocker": "pending_forecasts_on_settled_games",
+          "status": "repairable",
+          "pending_rows": 1,
+          "core_pending_rows": 0,
+          "opportunity_pending_rows": 1,
+          "reason": "pending_rows_are_opportunity_only; strict promotion can ignore_or_void_ungradeable_opportunity_rows",
+          "rows": [
+            {
+              "game_date_et": "2026-07-05",
+              "stat": "pitcher_batters_faced",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 1
+            }
+          ]
+        }
+      ],
+      "recommended_action": "Count this slate for prop-promotion evidence; keep it out of strict all-layer evidence until non-prop blockers are cleared."
+    },
+    {
+      "slate_date": "2026-07-02",
+      "status": "prop_promotion_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": true,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 4261,
+      "forecast_rows": 821,
+      "valid_clv_coverage": 0.9535320347336306,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.519596338887585,
+      "original_blockers": [
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "strict_only_non_prop_blockers",
+          "status": "prop_promotion_countable",
+          "reason": "core_prop_forecasts_and_prop_close_evidence_pass; remaining blockers are not prop-promotion blockers"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable_without_external_artifact_proof",
+          "coverage": 0.9305724725943971,
+          "reason": "forecast_rows_use_current_or_unknown_model_version",
+          "versions": [
+            {
+              "game_date_et": "2026-07-02",
+              "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+              "rows": 764
+            },
+            {
+              "game_date_et": "2026-07-02",
+              "model_version": "current",
+              "rows": 57
+            }
+          ]
+        }
+      ],
+      "recommended_action": "Count this slate for prop-promotion evidence; keep it out of strict all-layer evidence until non-prop blockers are cleared."
+    },
+    {
+      "slate_date": "2026-07-06",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": false,
+      "forecast_countable": true,
+      "prop_rows": 3828,
+      "forecast_rows": 866,
+      "valid_clv_coverage": 0.8772845953002611,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.5214211076280042,
+      "original_blockers": [
+        "valid_clv_coverage<90%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "valid_clv_coverage",
+          "status": "not_repairable",
+          "gap_rows": 35,
+          "valid_coverage": 0.8772845953002611,
+          "locked_rows": 1532,
+          "valid_rows": 1344,
+          "repairable_rows": 0,
+          "permanent_rows": 188,
+          "reason": "missing_clv_rows_are_true_unavailable_or_no_recoverable_snapshot_reason",
+          "failure_reasons": {
+            "valid_close": 1344,
+            "player_prop_unavailable_at_close": 152,
+            "line_disappeared_at_close": 26,
+            "player_market_unavailable_at_close": 5,
+            "fallback_other_book_only": 5
+          }
+        }
+      ],
+      "recommended_action": "Do not count strict promotion; valid CLV miss is mostly true line/player unavailability, not a relabeling issue."
+    },
+    {
+      "slate_date": "2026-07-10",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": false,
+      "forecast_countable": false,
+      "prop_rows": 8100,
+      "forecast_rows": 2235,
+      "valid_clv_coverage": 0.8757637474541752,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.485679012345679,
+      "original_blockers": [
+        "opportunity_pending_on_settled_games",
+        "valid_clv_coverage<90%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "pending_forecasts_on_settled_games",
+          "status": "repairable",
+          "pending_rows": 4,
+          "core_pending_rows": 0,
+          "opportunity_pending_rows": 4,
+          "reason": "pending_rows_are_opportunity_only; strict promotion can ignore_or_void_ungradeable_opportunity_rows",
+          "rows": [
+            {
+              "game_date_et": "2026-07-10",
+              "stat": "pitcher_batters_faced",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 2
+            },
+            {
+              "game_date_et": "2026-07-10",
+              "stat": "pitcher_pitch_count",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 2
+            }
+          ]
+        },
+        {
+          "blocker": "valid_clv_coverage",
+          "status": "not_repairable",
+          "gap_rows": 72,
+          "valid_coverage": 0.8757637474541752,
+          "locked_rows": 2946,
+          "valid_rows": 2580,
+          "repairable_rows": 0,
+          "permanent_rows": 366,
+          "reason": "missing_clv_rows_are_true_unavailable_or_no_recoverable_snapshot_reason",
+          "failure_reasons": {
+            "valid_close": 2580,
+            "player_prop_unavailable_at_close": 298,
+            "line_disappeared_at_close": 46,
+            "player_market_unavailable_at_close": 13,
+            "fallback_other_book_only": 9
+          }
+        }
+      ],
+      "recommended_action": "Do not count strict promotion; valid CLV miss is mostly true line/player unavailability, not a relabeling issue."
+    },
+    {
+      "slate_date": "2026-07-07",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": false,
+      "forecast_countable": true,
+      "prop_rows": 7577,
+      "forecast_rows": 1667,
+      "valid_clv_coverage": 0.8754436915133914,
+      "stale_close_rate": 0.002904162633107454,
+      "true_pair_rate": 0.47419823149003565,
+      "original_blockers": [
+        "side_locks_not_before_start",
+        "valid_clv_coverage<90%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "valid_clv_coverage",
+          "status": "not_repairable",
+          "gap_rows": 77,
+          "valid_coverage": 0.8754436915133914,
+          "locked_rows": 3099,
+          "valid_rows": 2713,
+          "repairable_rows": 0,
+          "permanent_rows": 386,
+          "reason": "missing_clv_rows_are_true_unavailable_or_no_recoverable_snapshot_reason",
+          "failure_reasons": {
+            "valid_close": 2713,
+            "player_prop_unavailable_at_close": 318,
+            "line_disappeared_at_close": 39,
+            "player_market_unavailable_at_close": 10,
+            "fallback_other_book_only": 10,
+            "stale_close_before_lock": 9
+          }
+        },
+        {
+          "blocker": "side_locks_not_before_start",
+          "status": "partially_repairable",
+          "late_rows": 53,
+          "side_lock_rows": 8289,
+          "reason": "late_or_missing_start_side_locks_must_be_excluded_then_coverage_recomputed"
+        }
+      ],
+      "recommended_action": "Do not count strict promotion; valid CLV miss is mostly true line/player unavailability, not a relabeling issue."
+    },
+    {
+      "slate_date": "2026-07-08",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": false,
+      "forecast_countable": false,
+      "prop_rows": 7165,
+      "forecast_rows": 1631,
+      "valid_clv_coverage": 0.8674332093337842,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.5034193998604326,
+      "original_blockers": [
+        "opportunity_pending_on_settled_games",
+        "valid_clv_coverage<90%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "pending_forecasts_on_settled_games",
+          "status": "repairable",
+          "pending_rows": 1,
+          "core_pending_rows": 0,
+          "opportunity_pending_rows": 1,
+          "reason": "pending_rows_are_opportunity_only; strict promotion can ignore_or_void_ungradeable_opportunity_rows",
+          "rows": [
+            {
+              "game_date_et": "2026-07-08",
+              "stat": "pitcher_batters_faced",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 1
+            }
+          ]
+        },
+        {
+          "blocker": "valid_clv_coverage",
+          "status": "not_repairable",
+          "gap_rows": 97,
+          "valid_coverage": 0.8674332093337842,
+          "locked_rows": 2957,
+          "valid_rows": 2565,
+          "repairable_rows": 0,
+          "permanent_rows": 392,
+          "reason": "missing_clv_rows_are_true_unavailable_or_no_recoverable_snapshot_reason",
+          "failure_reasons": {
+            "valid_close": 2565,
+            "player_prop_unavailable_at_close": 330,
+            "line_disappeared_at_close": 42,
+            "player_market_unavailable_at_close": 10,
+            "fallback_other_book_only": 10
+          }
+        }
+      ],
+      "recommended_action": "Do not count strict promotion; valid CLV miss is mostly true line/player unavailability, not a relabeling issue."
+    },
+    {
+      "slate_date": "2026-07-11",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": false,
+      "forecast_countable": false,
+      "prop_rows": 6643,
+      "forecast_rows": 2372,
+      "valid_clv_coverage": 0.8917884481558803,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.4835164835164835,
+      "original_blockers": [
+        "opportunity_pending_on_settled_games",
+        "valid_clv_coverage<90%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "pending_forecasts_on_settled_games",
+          "status": "repairable",
+          "pending_rows": 2,
+          "core_pending_rows": 0,
+          "opportunity_pending_rows": 2,
+          "reason": "pending_rows_are_opportunity_only; strict promotion can ignore_or_void_ungradeable_opportunity_rows",
+          "rows": [
+            {
+              "game_date_et": "2026-07-11",
+              "stat": "pitcher_batters_faced",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 1
+            },
+            {
+              "game_date_et": "2026-07-11",
+              "stat": "pitcher_pitch_count",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "pitcher-k-2026-07-03-r1",
+              "rows": 1
+            }
+          ]
+        },
+        {
+          "blocker": "valid_clv_coverage",
+          "status": "not_repairable",
+          "gap_rows": 24,
+          "valid_coverage": 0.8917884481558803,
+          "locked_rows": 2874,
+          "valid_rows": 2563,
+          "repairable_rows": 0,
+          "permanent_rows": 311,
+          "reason": "missing_clv_rows_are_true_unavailable_or_no_recoverable_snapshot_reason",
+          "failure_reasons": {
+            "valid_close": 2563,
+            "player_prop_unavailable_at_close": 236,
+            "line_disappeared_at_close": 49,
+            "player_market_unavailable_at_close": 13,
+            "fallback_other_book_only": 13
+          }
+        }
+      ],
+      "recommended_action": "Do not count strict promotion; valid CLV miss is mostly true line/player unavailability, not a relabeling issue."
+    },
+    {
+      "slate_date": "2026-07-03",
+      "status": "prop_promotion_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": true,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 6263,
+      "forecast_rows": 1172,
+      "valid_clv_coverage": 0.9406035446271754,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.5095002395018362,
+      "original_blockers": [
+        "opportunity_pending_on_settled_games",
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "strict_only_non_prop_blockers",
+          "status": "prop_promotion_countable",
+          "reason": "core_prop_forecasts_and_prop_close_evidence_pass; remaining blockers are not prop-promotion blockers"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable_without_external_artifact_proof",
+          "coverage": 0.9215017064846417,
+          "reason": "forecast_rows_use_current_or_unknown_model_version",
+          "versions": [
+            {
+              "game_date_et": "2026-07-03",
+              "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+              "rows": 1080
+            },
+            {
+              "game_date_et": "2026-07-03",
+              "model_version": "current",
+              "rows": 92
+            }
+          ]
+        },
+        {
+          "blocker": "pending_forecasts_on_settled_games",
+          "status": "repairable",
+          "pending_rows": 2,
+          "core_pending_rows": 0,
+          "opportunity_pending_rows": 2,
+          "reason": "pending_rows_are_opportunity_only; strict promotion can ignore_or_void_ungradeable_opportunity_rows",
+          "rows": [
+            {
+              "game_date_et": "2026-07-03",
+              "stat": "pitcher_batters_faced",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "current",
+              "rows": 1
+            },
+            {
+              "game_date_et": "2026-07-03",
+              "stat": "pitcher_pitch_count",
+              "forecast_type": "opportunity",
+              "model_family": "pitcher_opportunity_v3",
+              "model_version": "current",
+              "rows": 1
+            }
+          ]
+        }
+      ],
+      "recommended_action": "Count this slate for prop-promotion evidence; keep it out of strict all-layer evidence until non-prop blockers are cleared."
+    },
+    {
+      "slate_date": "2026-06-12",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 8018,
+      "forecast_rows": 0,
+      "valid_clv_coverage": 0.957345971563981,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.49613369917685207,
+      "original_blockers": [
+        "no_canonical_forecast_ledger_rows",
+        "no_graded_forecasts",
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "forecast_ledger_missing",
+          "status": "not_repairable",
+          "reason": "cannot_create_prospective_forecasts_after_results_without_hindsight_risk"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable",
+          "coverage": null,
+          "reason": "no_immutable_forecast_ledger_rows_for_this_date",
+          "versions": []
+        }
+      ],
+      "recommended_action": "Use this date for CLV/bookability research only; do not count it as forecast-proof evidence."
+    },
+    {
+      "slate_date": "2026-06-16",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 7632,
+      "forecast_rows": 0,
+      "valid_clv_coverage": 0.9233490566037735,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.4736635220125786,
+      "original_blockers": [
+        "no_canonical_forecast_ledger_rows",
+        "no_graded_forecasts",
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "forecast_ledger_missing",
+          "status": "not_repairable",
+          "reason": "cannot_create_prospective_forecasts_after_results_without_hindsight_risk"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable",
+          "coverage": null,
+          "reason": "no_immutable_forecast_ledger_rows_for_this_date",
+          "versions": []
+        }
+      ],
+      "recommended_action": "Use this date for CLV/bookability research only; do not count it as forecast-proof evidence."
+    },
+    {
+      "slate_date": "2026-06-26",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 7565,
+      "forecast_rows": 0,
+      "valid_clv_coverage": 0.9076007931262393,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.4511566424322538,
+      "original_blockers": [
+        "no_canonical_forecast_ledger_rows",
+        "no_graded_forecasts",
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "forecast_ledger_missing",
+          "status": "not_repairable",
+          "reason": "cannot_create_prospective_forecasts_after_results_without_hindsight_risk"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable",
+          "coverage": null,
+          "reason": "no_immutable_forecast_ledger_rows_for_this_date",
+          "versions": []
+        }
+      ],
+      "recommended_action": "Use this date for CLV/bookability research only; do not count it as forecast-proof evidence."
+    },
+    {
+      "slate_date": "2026-06-19",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 7343,
+      "forecast_rows": 0,
+      "valid_clv_coverage": 0.9457987198692632,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.4944845431022743,
+      "original_blockers": [
+        "no_canonical_forecast_ledger_rows",
+        "no_graded_forecasts",
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "forecast_ledger_missing",
+          "status": "not_repairable",
+          "reason": "cannot_create_prospective_forecasts_after_results_without_hindsight_risk"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable",
+          "coverage": null,
+          "reason": "no_immutable_forecast_ledger_rows_for_this_date",
+          "versions": []
+        }
+      ],
+      "recommended_action": "Use this date for CLV/bookability research only; do not count it as forecast-proof evidence."
+    },
+    {
+      "slate_date": "2026-06-30",
+      "status": "not_countable",
+      "strict_countable": false,
+      "prop_promotion_countable": false,
+      "prop_close_countable": true,
+      "forecast_countable": false,
+      "prop_rows": 7228,
+      "forecast_rows": 0,
+      "valid_clv_coverage": 0.9561427780852241,
+      "stale_close_rate": 0.0,
+      "true_pair_rate": 0.5066408411732153,
+      "original_blockers": [
+        "no_canonical_forecast_ledger_rows",
+        "no_graded_forecasts",
+        "model_version_coverage<95%"
+      ],
+      "blocker_details": [
+        {
+          "blocker": "forecast_ledger_missing",
+          "status": "not_repairable",
+          "reason": "cannot_create_prospective_forecasts_after_results_without_hindsight_risk"
+        },
+        {
+          "blocker": "model_version_coverage",
+          "status": "not_repairable",
+          "coverage": null,
+          "reason": "no_immutable_forecast_ledger_rows_for_this_date",
+          "versions": []
+        }
+      ],
+      "recommended_action": "Use this date for CLV/bookability research only; do not count it as forecast-proof evidence."
+    }
+  ],
+  "strict_eligible_dates": [],
+  "prop_promotion_countable_dates": [
+    "2026-07-02",
+    "2026-07-03",
+    "2026-07-04",
+    "2026-07-05"
+  ],
+  "prop_close_countable_dates": [
+    "2026-06-12",
+    "2026-06-13",
+    "2026-06-14",
+    "2026-06-15",
+    "2026-06-16",
+    "2026-06-18",
+    "2026-06-19",
+    "2026-06-20",
+    "2026-06-21",
+    "2026-06-22",
+    "2026-06-26",
+    "2026-06-27",
+    "2026-06-29",
+    "2026-06-30",
+    "2026-07-02",
+    "2026-07-03",
+    "2026-07-04",
+    "2026-07-05"
+  ],
+  "forecast_countable_dates": [
+    "2026-07-06",
+    "2026-07-07",
+    "2026-07-09"
+  ]
+}

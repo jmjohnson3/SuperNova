@@ -19,6 +19,13 @@ def main() -> None:
     parser.add_argument("--date-from", default=None)
     parser.add_argument("--date-to", default=None)
     parser.add_argument("--run-id", action="append", default=[], help="Limit to one replay run_id; repeatable.")
+    parser.add_argument("--market", action="append", default=[], help="Limit to one market/stat; repeatable.")
+    parser.add_argument("--side", action="append", default=[], choices=("over", "under"), help="Limit to one side; repeatable.")
+    parser.add_argument("--bookmaker", action="append", default=[], help="Limit to one bookmaker key; repeatable.")
+    parser.add_argument("--line-bucket", action="append", default=[], help="Limit to one prop line bucket; repeatable.")
+    parser.add_argument("--limit", type=int, default=None, help="Maximum replay rows to rebuild.")
+    parser.add_argument("--statement-timeout-ms", type=int, default=300_000, help="Postgres statement timeout for the targeted rebuild.")
+    parser.add_argument("--lock-timeout-ms", type=int, default=5_000, help="Postgres lock timeout for delete/upsert operations.")
     parser.add_argument("--include-pending", action="store_true")
     parser.add_argument(
         "--allow-unlocked",
@@ -43,6 +50,13 @@ def main() -> None:
         require_lock=not args.allow_unlocked,
         replace=not args.no_replace,
         ensure_schema=args.ensure_schema,
+        markets=tuple(args.market or ()),
+        sides=tuple(args.side or ()),
+        bookmakers=tuple(args.bookmaker or ()),
+        line_buckets=tuple(args.line_bucket or ()),
+        limit=args.limit,
+        statement_timeout_ms=args.statement_timeout_ms,
+        lock_timeout_ms=args.lock_timeout_ms,
     ))
     print(json.dumps(result, indent=2))
 

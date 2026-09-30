@@ -1,0 +1,2357 @@
+{
+  "generated_at_utc": "2026-09-01T10:35:34Z",
+  "source": "features.mlb_prop_market_training_examples",
+  "usage": "shadow_only",
+  "markets": [
+    "batter_home_runs"
+  ],
+  "cache_used": true,
+  "cache_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\mlb_pipeline\\modeling\\models\\player_props\\prop_distribution_training_cache.pkl",
+  "cache_generated_at_utc": "2026-07-15T08:45:51Z",
+  "max_walk_forward_folds_per_market": 1,
+  "raw_rows": 67088,
+  "deduped_rows": 40802,
+  "rows": 4234,
+  "date_min": "2026-07-02",
+  "date_max": "2026-07-12",
+  "market_training": [
+    {
+      "market": "batter_home_runs",
+      "rows": 4234,
+      "status": "ready",
+      "production_split_strategy": "temporal_row_80_20_player_game_purged_0",
+      "train_rows": 3376,
+      "holdout_rows": 858,
+      "train_player_games": 1686,
+      "holdout_player_games": 429,
+      "fold_count": 0,
+      "oof_rows": 0,
+      "fallback_used": true,
+      "folds": []
+    }
+  ],
+  "production_split_strategy": "market_split_temporal_player_game",
+  "split_strategy": "market_split_temporal_player_game",
+  "train_rows": 3376,
+  "holdout_rows": 858,
+  "grouped_walk_forward": {
+    "method": "market_split_expanding_window",
+    "weighting": "inverse_offer_rows_per_player_game_normalized_to_mean_one",
+    "purge_key": "game_slug|player_id",
+    "strict_date_split": true,
+    "test_window_days": 7,
+    "max_folds_per_market": 1,
+    "fold_count": 0,
+    "oof_rows": 0,
+    "folds": [],
+    "fallback_used": true,
+    "train_player_games": 1686,
+    "holdout_player_games": 429
+  },
+  "overall": {
+    "model_only": {
+      "forecast": {
+        "rows": 858,
+        "effective_player_games": 429,
+        "actual_rate": 0.05710955710955711,
+        "avg_prob": 0.0807541958041958,
+        "calibration_error": -0.023644638694638682,
+        "brier": 0.05187115693473194,
+        "log_loss": 0.19040011813230234
+      },
+      "selection": {
+        "selected_rows": 0,
+        "roi": null,
+        "clv_beat_rate": null
+      }
+    },
+    "market_no_vig": {
+      "forecast": {
+        "rows": 858,
+        "effective_player_games": 429,
+        "actual_rate": 0.05710955710955711,
+        "avg_prob": 0.029923727190117287,
+        "calibration_error": 0.027185829919439825,
+        "brier": 0.046949375772629635,
+        "log_loss": 0.16202134772640003
+      },
+      "selection": {
+        "selected_rows": 45,
+        "selected_player_games": 38,
+        "roi": 4.437777777777778,
+        "win_rate": 0.17777777777777778,
+        "clv_beat_rate": 0.46153846153846156,
+        "avg_clv_price": 0.10333333333333335
+      }
+    },
+    "distribution": {
+      "forecast": {
+        "rows": 858,
+        "effective_player_games": 429,
+        "actual_rate": 0.05710955710955711,
+        "avg_prob": 0.1286130964458759,
+        "calibration_error": -0.07150353933631878,
+        "brier": 0.06013007412328518,
+        "log_loss": 0.21955685381375195
+      },
+      "selection": {
+        "selected_rows": 752,
+        "selected_player_games": 406,
+        "roi": -0.3086436170212766,
+        "win_rate": 0.061170212765957445,
+        "clv_beat_rate": 0.35020519835841313,
+        "avg_clv_price": 0.04321477428180574
+      }
+    },
+    "distribution_calibrated": {
+      "forecast": {
+        "rows": 858,
+        "effective_player_games": 429,
+        "actual_rate": 0.05710955710955711,
+        "avg_prob": 0.1286130964458759,
+        "calibration_error": -0.07150353933631878,
+        "brier": 0.06013007412328518,
+        "log_loss": 0.21955685381375195
+      },
+      "selection": {
+        "selected_rows": 752,
+        "selected_player_games": 406,
+        "roi": -0.3086436170212766,
+        "win_rate": 0.061170212765957445,
+        "clv_beat_rate": 0.35020519835841313,
+        "avg_clv_price": 0.04321477428180574
+      }
+    },
+    "distribution_empirical_blend": {
+      "forecast": {
+        "rows": 858,
+        "effective_player_games": 429,
+        "actual_rate": 0.05710955710955711,
+        "avg_prob": 0.11123151541772708,
+        "calibration_error": -0.054121958308169967,
+        "brier": 0.05599307190974348,
+        "log_loss": 0.2070327460549804
+      },
+      "selection": {
+        "selected_rows": 738,
+        "selected_player_games": 398,
+        "roi": -0.3890921409214092,
+        "win_rate": 0.058265582655826556,
+        "clv_beat_rate": 0.34825174825174826,
+        "avg_clv_price": 0.04604195804195804
+      }
+    },
+    "event_side_line": {
+      "forecast": {
+        "rows": 0,
+        "brier": null
+      },
+      "selection": {
+        "selected_rows": 0,
+        "roi": null,
+        "clv_beat_rate": null
+      }
+    },
+    "k_v3": {
+      "forecast": {
+        "rows": 0,
+        "brier": null
+      },
+      "selection": {
+        "selected_rows": 0,
+        "roi": null,
+        "clv_beat_rate": null
+      }
+    }
+  },
+  "market": [
+    {
+      "key": "batter_home_runs",
+      "rows": 858,
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.0807541958041958,
+            "calibration_error": -0.023644638694638682,
+            "brier": 0.05187115693473194,
+            "log_loss": 0.19040011813230234
+          },
+          "selection": {
+            "selected_rows": 0,
+            "roi": null,
+            "clv_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.029923727190117287,
+            "calibration_error": 0.027185829919439825,
+            "brier": 0.046949375772629635,
+            "log_loss": 0.16202134772640003
+          },
+          "selection": {
+            "selected_rows": 45,
+            "selected_player_games": 38,
+            "roi": 4.437777777777778,
+            "win_rate": 0.17777777777777778,
+            "clv_beat_rate": 0.46153846153846156,
+            "avg_clv_price": 0.10333333333333335
+          }
+        },
+        "distribution": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.1286130964458759,
+            "calibration_error": -0.07150353933631878,
+            "brier": 0.06013007412328518,
+            "log_loss": 0.21955685381375195
+          },
+          "selection": {
+            "selected_rows": 752,
+            "selected_player_games": 406,
+            "roi": -0.3086436170212766,
+            "win_rate": 0.061170212765957445,
+            "clv_beat_rate": 0.35020519835841313,
+            "avg_clv_price": 0.04321477428180574
+          }
+        },
+        "distribution_calibrated": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.1286130964458759,
+            "calibration_error": -0.07150353933631878,
+            "brier": 0.06013007412328518,
+            "log_loss": 0.21955685381375195
+          },
+          "selection": {
+            "selected_rows": 752,
+            "selected_player_games": 406,
+            "roi": -0.3086436170212766,
+            "win_rate": 0.061170212765957445,
+            "clv_beat_rate": 0.35020519835841313,
+            "avg_clv_price": 0.04321477428180574
+          }
+        },
+        "distribution_empirical_blend": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.11123151541772708,
+            "calibration_error": -0.054121958308169967,
+            "brier": 0.05599307190974348,
+            "log_loss": 0.2070327460549804
+          },
+          "selection": {
+            "selected_rows": 738,
+            "selected_player_games": 398,
+            "roi": -0.3890921409214092,
+            "win_rate": 0.058265582655826556,
+            "clv_beat_rate": 0.34825174825174826,
+            "avg_clv_price": 0.04604195804195804
+          }
+        },
+        "event_side_line": {
+          "forecast": {
+            "rows": 0,
+            "brier": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "roi": null,
+            "clv_beat_rate": null
+          }
+        },
+        "k_v3": {
+          "forecast": {
+            "rows": 0,
+            "brier": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "roi": null,
+            "clv_beat_rate": null
+          }
+        }
+      }
+    }
+  ],
+  "market_side": [
+    {
+      "key": "batter_home_runs|over",
+      "rows": 858,
+      "variants": {
+        "model_only": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.0807541958041958,
+            "calibration_error": -0.023644638694638682,
+            "brier": 0.05187115693473194,
+            "log_loss": 0.19040011813230234
+          },
+          "selection": {
+            "selected_rows": 0,
+            "roi": null,
+            "clv_beat_rate": null
+          }
+        },
+        "market_no_vig": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.029923727190117287,
+            "calibration_error": 0.027185829919439825,
+            "brier": 0.046949375772629635,
+            "log_loss": 0.16202134772640003
+          },
+          "selection": {
+            "selected_rows": 45,
+            "selected_player_games": 38,
+            "roi": 4.437777777777778,
+            "win_rate": 0.17777777777777778,
+            "clv_beat_rate": 0.46153846153846156,
+            "avg_clv_price": 0.10333333333333335
+          }
+        },
+        "distribution": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.1286130964458759,
+            "calibration_error": -0.07150353933631878,
+            "brier": 0.06013007412328518,
+            "log_loss": 0.21955685381375195
+          },
+          "selection": {
+            "selected_rows": 752,
+            "selected_player_games": 406,
+            "roi": -0.3086436170212766,
+            "win_rate": 0.061170212765957445,
+            "clv_beat_rate": 0.35020519835841313,
+            "avg_clv_price": 0.04321477428180574
+          }
+        },
+        "distribution_calibrated": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.1286130964458759,
+            "calibration_error": -0.07150353933631878,
+            "brier": 0.06013007412328518,
+            "log_loss": 0.21955685381375195
+          },
+          "selection": {
+            "selected_rows": 752,
+            "selected_player_games": 406,
+            "roi": -0.3086436170212766,
+            "win_rate": 0.061170212765957445,
+            "clv_beat_rate": 0.35020519835841313,
+            "avg_clv_price": 0.04321477428180574
+          }
+        },
+        "distribution_empirical_blend": {
+          "forecast": {
+            "rows": 858,
+            "effective_player_games": 429,
+            "actual_rate": 0.05710955710955711,
+            "avg_prob": 0.11123151541772708,
+            "calibration_error": -0.054121958308169967,
+            "brier": 0.05599307190974348,
+            "log_loss": 0.2070327460549804
+          },
+          "selection": {
+            "selected_rows": 738,
+            "selected_player_games": 398,
+            "roi": -0.3890921409214092,
+            "win_rate": 0.058265582655826556,
+            "clv_beat_rate": 0.34825174825174826,
+            "avg_clv_price": 0.04604195804195804
+          }
+        },
+        "event_side_line": {
+          "forecast": {
+            "rows": 0,
+            "brier": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "roi": null,
+            "clv_beat_rate": null
+          }
+        },
+        "k_v3": {
+          "forecast": {
+            "rows": 0,
+            "brier": null
+          },
+          "selection": {
+            "selected_rows": 0,
+            "roi": null,
+            "clv_beat_rate": null
+          }
+        }
+      }
+    }
+  ],
+  "true_pair_production_evaluation": {
+    "evidence": "all hitter markets use true-pair non-synthetic holdout only",
+    "rows": 0,
+    "overall": {
+      "model_only": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      },
+      "market_no_vig": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      },
+      "distribution": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      },
+      "distribution_calibrated": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      },
+      "distribution_empirical_blend": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      },
+      "event_side_line": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      },
+      "k_v3": {
+        "forecast": {
+          "rows": 0,
+          "brier": null
+        },
+        "selection": {
+          "selected_rows": 0,
+          "roi": null,
+          "clv_beat_rate": null
+        }
+      }
+    },
+    "market_side": []
+  },
+  "tb_hr_line_production_gates": {
+    "status": "no_true_pair_rows",
+    "evidence": "holdout_true_pair_non_synthetic_only",
+    "groups": {}
+  },
+  "bucket_model_selection": [],
+  "distribution_calibrators": {
+    "by_market": {
+      "batter_home_runs": {
+        "outcome": {
+          "method": "player_game_outcome_rate_shrinkage",
+          "lookup_order": [
+            "slot_power",
+            "power",
+            "slot",
+            "global"
+          ],
+          "groups": {
+            "global": {
+              "rows": 1688,
+              "pa": 6750.0,
+              "hit_multiplier": 1.577700094067422,
+              "tb_multiplier": 1.165471633183832,
+              "hr_multiplier": 0.8066361966036892,
+              "non_hr_extra_multiplier": 0.8011158991879259,
+              "actual_hits_per_pa": 0.22340740740740742,
+              "pred_hits_per_pa": 0.13688356578849256,
+              "actual_tb_per_pa": 0.37851851851851853,
+              "pred_tb_per_pa": 0.32165766690874953,
+              "actual_hr_per_pa": 0.036,
+              "pred_hr_per_pa": 0.04630735832328757
+            },
+            "slot=slot_top": {
+              "rows": 781,
+              "pa": 3388.0,
+              "hit_multiplier": 1.4576364821145351,
+              "tb_multiplier": 1.1288707934080384,
+              "hr_multiplier": 0.8260753335209365,
+              "non_hr_extra_multiplier": 0.8492292790553483,
+              "actual_hits_per_pa": 0.22579693034238488,
+              "pred_hits_per_pa": 0.14648201440862518,
+              "actual_tb_per_pa": 0.39728453364817,
+              "pred_tb_per_pa": 0.3466276177844213,
+              "actual_hr_per_pa": 0.0410271546635183,
+              "pred_hr_per_pa": 0.052894597903365204
+            },
+            "power=power_high": {
+              "rows": 1591,
+              "pa": 6380.0,
+              "hit_multiplier": 1.616071498949769,
+              "tb_multiplier": 1.1628114073119162,
+              "hr_multiplier": 0.8176422139621418,
+              "non_hr_extra_multiplier": 0.7704048485842868,
+              "actual_hits_per_pa": 0.22241379310344828,
+              "pred_hits_per_pa": 0.13249270132638544,
+              "actual_tb_per_pa": 0.38009404388714735,
+              "pred_tb_per_pa": 0.32360491891324344,
+              "actual_hr_per_pa": 0.03699059561128527,
+              "pred_hr_per_pa": 0.04691019608164174
+            },
+            "slot_power=slot_top|power_high": {
+              "rows": 761,
+              "pa": 3295.0,
+              "hit_multiplier": 1.4662807508047595,
+              "tb_multiplier": 1.1237132129760419,
+              "hr_multiplier": 0.8287570125730079,
+              "non_hr_extra_multiplier": 0.8337439100779731,
+              "actual_hits_per_pa": 0.22458270106221548,
+              "pred_hits_per_pa": 0.14444405803746083,
+              "actual_tb_per_pa": 0.39726858877086496,
+              "pred_tb_per_pa": 0.3482604922780716,
+              "actual_hr_per_pa": 0.04157814871016692,
+              "pred_hr_per_pa": 0.053452201546386406
+            },
+            "slot=slot_middle": {
+              "rows": 367,
+              "pa": 1433.0,
+              "hit_multiplier": 1.409955950533374,
+              "tb_multiplier": 1.105383114079599,
+              "hr_multiplier": 0.8666002441736249,
+              "non_hr_extra_multiplier": 0.8407170275812104,
+              "actual_hits_per_pa": 0.2135380321004885,
+              "pred_hits_per_pa": 0.1331918501517201,
+              "actual_tb_per_pa": 0.35659455687369157,
+              "pred_tb_per_pa": 0.31275484865315395,
+              "actual_hr_per_pa": 0.03349616189811584,
+              "pred_hr_per_pa": 0.044349179885863434
+            },
+            "slot_power=slot_middle|power_high": {
+              "rows": 343,
+              "pa": 1342.0,
+              "hit_multiplier": 1.4712391290824773,
+              "tb_multiplier": 1.1296018132312853,
+              "hr_multiplier": 0.8965220575776806,
+              "non_hr_extra_multiplier": 0.8322133472094583,
+              "actual_hits_per_pa": 0.21758569299552907,
+              "pred_hits_per_pa": 0.12654577006851792,
+              "actual_tb_per_pa": 0.36885245901639346,
+              "pred_tb_per_pa": 0.31366490096371613,
+              "actual_hr_per_pa": 0.03576751117734724,
+              "pred_hr_per_pa": 0.044566290751954625
+            },
+            "slot=slot_bottom": {
+              "rows": 540,
+              "pa": 1929.0,
+              "hit_multiplier": 1.6171956233039841,
+              "tb_multiplier": 1.2163720908196454,
+              "hr_multiplier": 0.8824391264383608,
+              "non_hr_extra_multiplier": 0.8327715261993718,
+              "actual_hits_per_pa": 0.22654224987039917,
+              "pred_hits_per_pa": 0.12276779833514083,
+              "actual_tb_per_pa": 0.3618455158113012,
+              "pred_tb_per_pa": 0.28441533668246355,
+              "actual_hr_per_pa": 0.029030585795749093,
+              "pred_hr_per_pa": 0.03619253302703352
+            },
+            "slot_power=slot_bottom|power_high": {
+              "rows": 487,
+              "pa": 1743.0,
+              "hit_multiplier": 1.657789353507236,
+              "tb_multiplier": 1.1958531323798312,
+              "hr_multiplier": 0.8895462968934665,
+              "non_hr_extra_multiplier": 0.7872829475336458,
+              "actual_hits_per_pa": 0.22203098106712565,
+              "pred_hits_per_pa": 0.1144783934578048,
+              "actual_tb_per_pa": 0.35628227194492257,
+              "pred_tb_per_pa": 0.2846487455633624,
+              "actual_hr_per_pa": 0.029259896729776247,
+              "pred_hr_per_pa": 0.03634772502375694
+            },
+            "power=power_mid": {
+              "rows": 83,
+              "pa": 317.0,
+              "hit_multiplier": 1.0510290763198185,
+              "tb_multiplier": 1.0878268642483466,
+              "hr_multiplier": 0.9454185559481952,
+              "non_hr_extra_multiplier": 1.1170844884426623,
+              "actual_hits_per_pa": 0.23659305993690852,
+              "pred_hits_per_pa": 0.2052290583840816,
+              "actual_tb_per_pa": 0.35962145110410093,
+              "pred_tb_per_pa": 0.2884433791210953,
+              "actual_hr_per_pa": 0.022082018927444796,
+              "pred_hr_per_pa": 0.037793599550692974
+            },
+            "slot_power=slot_bottom|power_mid": {
+              "rows": 46,
+              "pa": 163.0,
+              "hit_multiplier": 1.0649413512657346,
+              "tb_multiplier": 1.0928247910397064,
+              "hr_multiplier": 0.9930183899605908,
+              "non_hr_extra_multiplier": 1.0440018581872492,
+              "actual_hits_per_pa": 0.26993865030674846,
+              "pred_hits_per_pa": 0.19389075499608424,
+              "actual_tb_per_pa": 0.4233128834355828,
+              "pred_tb_per_pa": 0.2827522713865302,
+              "actual_hr_per_pa": 0.03067484662576687,
+              "pred_hr_per_pa": 0.03599517463577308
+            }
+          }
+        },
+        "tb_structure": {
+          "method": "player_game_component_shrinkage",
+          "mean_policy": "preserve_source_expected_tb",
+          "lookup_order": [
+            "slot_power",
+            "pa_power",
+            "power",
+            "pa",
+            "slot",
+            "global"
+          ],
+          "groups": {
+            "global": {
+              "rows": 1690,
+              "pa": 6757.0,
+              "single_multiplier": 2.6873201599679923,
+              "double_multiplier": 0.8874430554791043,
+              "triple_multiplier": 0.9203262937536206,
+              "hr_multiplier": 0.8201636508586388,
+              "tb_multiplier": 1.1603803728558268,
+              "actual_zero_tb_rate": 0.38284023668639056,
+              "pred_zero_tb_rate": 0.5665353791933618,
+              "actual_single_per_pa": 0.14370282669823886,
+              "pred_single_per_pa": 0.03993132303181397,
+              "actual_double_per_pa": 0.0406985348527453,
+              "pred_double_per_pa": 0.04695244735328874,
+              "actual_triple_per_pa": 0.003255882788219624,
+              "pred_triple_per_pa": 0.004145213315429294,
+              "actual_hr_per_pa": 0.03596270534260767,
+              "pred_hr_per_pa": 0.045953465003294204
+            },
+            "slot=slot_top": {
+              "rows": 782,
+              "pa": 3392.0,
+              "single_multiplier": 2.464424055468109,
+              "double_multiplier": 0.9581307904430809,
+              "triple_multiplier": 0.9231426048729918,
+              "hr_multiplier": 0.845749560971504,
+              "tb_multiplier": 1.1223924932073432,
+              "actual_zero_tb_rate": 0.34782608695652173,
+              "pred_zero_tb_rate": 0.5146770426685158,
+              "actual_single_per_pa": 0.1391509433962264,
+              "pred_single_per_pa": 0.043995028399201344,
+              "actual_double_per_pa": 0.0433372641509434,
+              "pred_double_per_pa": 0.04602232470918388,
+              "actual_triple_per_pa": 0.0026533018867924527,
+              "pred_triple_per_pa": 0.004204821604410601,
+              "actual_hr_per_pa": 0.04097877358490566,
+              "pred_hr_per_pa": 0.05239530206027024
+            },
+            "power=power_high": {
+              "rows": 1593,
+              "pa": 6387.0,
+              "single_multiplier": 2.6165689053801877,
+              "double_multiplier": 0.8574095069675833,
+              "triple_multiplier": 0.9058783523901226,
+              "hr_multiplier": 0.831362643206178,
+              "tb_multiplier": 1.1575430635910058,
+              "actual_zero_tb_rate": 0.3797865662272442,
+              "pred_zero_tb_rate": 0.5759977472276323,
+              "actual_single_per_pa": 0.1420072021293252,
+              "pred_single_per_pa": 0.03300501843746923,
+              "actual_double_per_pa": 0.04055111946140598,
+              "pred_double_per_pa": 0.04882767039500666,
+              "actual_triple_per_pa": 0.003131360576170346,
+              "pred_triple_per_pa": 0.004234295030969567,
+              "actual_hr_per_pa": 0.036950054798810084,
+              "pred_hr_per_pa": 0.04653514096538941
+            },
+            "pa=pa_mid": {
+              "rows": 1067,
+              "pa": 4235.0,
+              "single_multiplier": 2.5216972643559323,
+              "double_multiplier": 0.8894766635493698,
+              "triple_multiplier": 0.9115200625636314,
+              "hr_multiplier": 0.9040351431881807,
+              "tb_multiplier": 1.1918067867404736,
+              "actual_zero_tb_rate": 0.3880037488284911,
+              "pred_zero_tb_rate": 0.5787191852284739,
+              "actual_single_per_pa": 0.1409681227863046,
+              "pred_single_per_pa": 0.037561418478995336,
+              "actual_double_per_pa": 0.03943329397874852,
+              "pred_double_per_pa": 0.04606298909703426,
+              "actual_triple_per_pa": 0.0025974025974025974,
+              "pred_triple_per_pa": 0.0040223319631752675,
+              "actual_hr_per_pa": 0.0384887839433294,
+              "pred_hr_per_pa": 0.044265228242794934
+            },
+            "slot_power=slot_top|power_high": {
+              "rows": 762,
+              "pa": 3299.0,
+              "single_multiplier": 2.456610221795957,
+              "double_multiplier": 0.9381671292377919,
+              "triple_multiplier": 0.9277224840540537,
+              "hr_multiplier": 0.8486130273538842,
+              "tb_multiplier": 1.1173826789371073,
+              "actual_zero_tb_rate": 0.34908136482939633,
+              "pred_zero_tb_rate": 0.519671346940156,
+              "actual_single_per_pa": 0.1379205819945438,
+              "pred_single_per_pa": 0.04062745121831633,
+              "actual_double_per_pa": 0.04274022431039709,
+              "pred_double_per_pa": 0.04678793560220265,
+              "actual_triple_per_pa": 0.002728099424067899,
+              "pred_triple_per_pa": 0.004232269027942024,
+              "actual_hr_per_pa": 0.04152773567747802,
+              "pred_hr_per_pa": 0.05293815428529207
+            },
+            "pa_power=pa_mid|power_high": {
+              "rows": 1003,
+              "pa": 3989.0,
+              "single_multiplier": 2.4151588962249937,
+              "double_multiplier": 0.8532899250284074,
+              "triple_multiplier": 0.9053576644134761,
+              "hr_multiplier": 0.9183705472386008,
+              "tb_multiplier": 1.1888832424554208,
+              "actual_zero_tb_rate": 0.38384845463609174,
+              "pred_zero_tb_rate": 0.5893637044503531,
+              "actual_single_per_pa": 0.13938330408623714,
+              "pred_single_per_pa": 0.03033006114141754,
+              "actual_double_per_pa": 0.03885685635497618,
+              "pred_double_per_pa": 0.048108256408273126,
+              "actual_triple_per_pa": 0.00250689395838556,
+              "pred_triple_per_pa": 0.004128639674477982,
+              "actual_hr_per_pa": 0.039608924542491854,
+              "pred_hr_per_pa": 0.04465565169509979
+            },
+            "slot=slot_middle": {
+              "rows": 368,
+              "pa": 1436.0,
+              "single_multiplier": 2.0540748474936743,
+              "double_multiplier": 0.9122449771654827,
+              "triple_multiplier": 0.9637356368982049,
+              "hr_multiplier": 0.8905963029241692,
+              "tb_multiplier": 1.0928372074888308,
+              "actual_zero_tb_rate": 0.3967391304347826,
+              "pred_zero_tb_rate": 0.5803746664860876,
+              "actual_single_per_pa": 0.13997214484679665,
+              "pred_single_per_pa": 0.03879986736652764,
+              "actual_double_per_pa": 0.0383008356545961,
+              "pred_double_per_pa": 0.04645632540515225,
+              "actual_triple_per_pa": 0.0020891364902506965,
+              "pred_triple_per_pa": 0.0040917384730055064,
+              "actual_hr_per_pa": 0.033426183844011144,
+              "pred_hr_per_pa": 0.04397020363625342
+            },
+            "slot_power=slot_middle|power_high": {
+              "rows": 344,
+              "pa": 1345.0,
+              "single_multiplier": 1.875722653307632,
+              "double_multiplier": 0.9019216249077024,
+              "triple_multiplier": 0.9656801713811294,
+              "hr_multiplier": 0.9167570448185418,
+              "tb_multiplier": 1.1135971506334148,
+              "actual_zero_tb_rate": 0.3808139534883721,
+              "pred_zero_tb_rate": 0.5945227968924777,
+              "actual_single_per_pa": 0.14052044609665426,
+              "pred_single_per_pa": 0.0289561517644169,
+              "actual_double_per_pa": 0.03940520446096654,
+              "pred_double_per_pa": 0.049260434959761575,
+              "actual_triple_per_pa": 0.0022304832713754648,
+              "pred_triple_per_pa": 0.004317646747363183,
+              "actual_hr_per_pa": 0.035687732342007436,
+              "pred_hr_per_pa": 0.04416118946791132
+            },
+            "pa=pa_low": {
+              "rows": 226,
+              "pa": 766.0,
+              "single_multiplier": 1.62711536961912,
+              "double_multiplier": 0.9288884545811668,
+              "triple_multiplier": 1.0278697095729963,
+              "hr_multiplier": 0.9128698707233812,
+              "tb_multiplier": 1.1494586870027619,
+              "actual_zero_tb_rate": 0.43805309734513276,
+              "pred_zero_tb_rate": 0.6608277975311135,
+              "actual_single_per_pa": 0.16840731070496084,
+              "pred_single_per_pa": 0.029816360893358346,
+              "actual_double_per_pa": 0.037859007832898174,
+              "pred_double_per_pa": 0.0485482506378702,
+              "actual_triple_per_pa": 0.007832898172323759,
+              "pred_triple_per_pa": 0.0038300848861730057,
+              "actual_hr_per_pa": 0.022193211488250653,
+              "pred_hr_per_pa": 0.034217115128464204
+            },
+            "pa_power=pa_low|power_high": {
+              "rows": 205,
+              "pa": 698.0,
+              "single_multiplier": 1.4048123284859437,
+              "double_multiplier": 0.9224127270571086,
+              "triple_multiplier": 1.0194685556287957,
+              "hr_multiplier": 0.9146292582724791,
+              "tb_multiplier": 1.1271135688383025,
+              "actual_zero_tb_rate": 0.44878048780487806,
+              "pred_zero_tb_rate": 0.6783720011944954,
+              "actual_single_per_pa": 0.16332378223495703,
+              "pred_single_per_pa": 0.01817843650479666,
+              "actual_double_per_pa": 0.03868194842406877,
+              "pred_double_per_pa": 0.05176195086269911,
+              "actual_triple_per_pa": 0.0071633237822349575,
+              "pred_triple_per_pa": 0.003936533440317217,
+              "actual_hr_per_pa": 0.02148997134670487,
+              "pred_hr_per_pa": 0.034479280673109035
+            },
+            "slot=slot_bottom": {
+              "rows": 540,
+              "pa": 1929.0,
+              "single_multiplier": 2.129437070992961,
+              "double_multiplier": 0.8648841488410065,
+              "triple_multiplier": 1.0284863377761697,
+              "hr_multiplier": 0.899307462525911,
+              "tb_multiplier": 1.1973013776536927,
+              "actual_zero_tb_rate": 0.42407407407407405,
+              "pred_zero_tb_rate": 0.6322027151909655,
+              "actual_single_per_pa": 0.15448418869880767,
+              "pred_single_per_pa": 0.03362789209825954,
+              "actual_double_per_pa": 0.03784344219803007,
+              "pred_double_per_pa": 0.04895732403878808,
+              "actual_triple_per_pa": 0.005184033177812338,
+              "pred_triple_per_pa": 0.004080204791580672,
+              "actual_hr_per_pa": 0.029030585795749093,
+              "pred_hr_per_pa": 0.03610237740651251
+            },
+            "slot_power=slot_bottom|power_high": {
+              "rows": 487,
+              "pa": 1743.0,
+              "single_multiplier": 1.8613988450410162,
+              "double_multiplier": 0.833082662522334,
+              "triple_multiplier": 1.0094751959415467,
+              "hr_multiplier": 0.9066211554350563,
+              "tb_multiplier": 1.1773419805743925,
+              "actual_zero_tb_rate": 0.4271047227926078,
+              "pred_zero_tb_rate": 0.6510451803577122,
+              "actual_single_per_pa": 0.1508892713711991,
+              "pred_single_per_pa": 0.021702275999856427,
+              "actual_double_per_pa": 0.037292025243832475,
+              "pred_double_per_pa": 0.052354358141343774,
+              "actual_triple_per_pa": 0.004589787722317842,
+              "pred_triple_per_pa": 0.004173810650842489,
+              "actual_hr_per_pa": 0.029259896729776247,
+              "pred_hr_per_pa": 0.036247948665762086
+            },
+            "pa=pa_high": {
+              "rows": 397,
+              "pa": 1756.0,
+              "single_multiplier": 1.942415806494178,
+              "double_multiplier": 0.960734342905154,
+              "triple_multiplier": 0.9600530378024642,
+              "hr_multiplier": 0.8064725920109456,
+              "tb_multiplier": 1.0287572564473992,
+              "actual_zero_tb_rate": 0.33753148614609574,
+              "pred_zero_tb_rate": 0.48011168250873615,
+              "actual_single_per_pa": 0.13952164009111617,
+              "pred_single_per_pa": 0.050059231220449564,
+              "actual_double_per_pa": 0.044988610478359906,
+              "pred_double_per_pa": 0.04840146238702935,
+              "actual_triple_per_pa": 0.0028473804100227792,
+              "pred_triple_per_pa": 0.004579035014521639,
+              "actual_hr_per_pa": 0.035876993166287015,
+              "pred_hr_per_pa": 0.05514465332039803
+            },
+            "pa_power=pa_high|power_high": {
+              "rows": 385,
+              "pa": 1700.0,
+              "single_multiplier": 2.0377025665929294,
+              "double_multiplier": 0.9551362173880057,
+              "triple_multiplier": 0.9632361946453731,
+              "hr_multiplier": 0.816348821820527,
+              "tb_multiplier": 1.03618650389628,
+              "actual_zero_tb_rate": 0.33246753246753247,
+              "pred_zero_tb_rate": 0.48666585850660327,
+              "actual_single_per_pa": 0.13941176470588235,
+              "pred_single_per_pa": 0.04536934716861961,
+              "actual_double_per_pa": 0.045294117647058825,
+              "pred_double_per_pa": 0.04931097311655428,
+              "actual_triple_per_pa": 0.0029411764705882353,
+              "pred_triple_per_pa": 0.004604469623510932,
+              "actual_hr_per_pa": 0.03705882352941176,
+              "pred_hr_per_pa": 0.05589530166138784
+            },
+            "power=power_mid": {
+              "rows": 83,
+              "pa": 317.0,
+              "single_multiplier": 1.0263290535384728,
+              "double_multiplier": 1.0807965267479689,
+              "triple_multiplier": 1.005253061505915,
+              "hr_multiplier": 0.9630213474531559,
+              "tb_multiplier": 1.0669059843737878,
+              "actual_zero_tb_rate": 0.43373493975903615,
+              "pred_zero_tb_rate": 0.42290296635252705,
+              "actual_single_per_pa": 0.1640378548895899,
+              "pred_single_per_pa": 0.14737198891913753,
+              "actual_double_per_pa": 0.04416403785488959,
+              "pred_double_per_pa": 0.01702005032575555,
+              "actual_triple_per_pa": 0.006309148264984227,
+              "pred_triple_per_pa": 0.0030434195884956093,
+              "actual_hr_per_pa": 0.022082018927444796,
+              "pred_hr_per_pa": 0.037793599550692974
+            },
+            "pa_power=pa_mid|power_mid": {
+              "rows": 57,
+              "pa": 215.0,
+              "single_multiplier": 1.0133812633298627,
+              "double_multiplier": 1.0592968394956674,
+              "triple_multiplier": 1.0016181047756858,
+              "hr_multiplier": 0.9783357979952101,
+              "tb_multiplier": 1.05124711961437,
+              "actual_zero_tb_rate": 0.45614035087719296,
+              "pred_zero_tb_rate": 0.4192448457005634,
+              "actual_single_per_pa": 0.16279069767441862,
+              "pred_single_per_pa": 0.14989890269492728,
+              "actual_double_per_pa": 0.05116279069767442,
+              "pred_double_per_pa": 0.014757786108551878,
+              "actual_triple_per_pa": 0.004651162790697674,
+              "pred_triple_per_pa": 0.0026299172211841355,
+              "actual_hr_per_pa": 0.023255813953488372,
+              "pred_hr_per_pa": 0.0400402853304294
+            }
+          }
+        },
+        "event_model": {
+          "status": "loaded",
+          "method": "hierarchical_conditional_lgbm",
+          "trained_at_utc": "2026-07-05T07:32:10.149811+00:00",
+          "event_classes": [
+            "out",
+            "walk",
+            "single",
+            "double",
+            "triple",
+            "hr"
+          ],
+          "recommendation": {
+            "production_status": "diagnostic_only",
+            "reason": "Require repeated holdout gains before replacing prop projections.",
+            "holdout_rows": 7713,
+            "pa_mae_gain_vs_slot_prior": 0.266880522023337,
+            "hits_mae_gain_vs_slot_rate_prior": 0.0042772502731909245,
+            "tb_mae_gain_vs_slot_rate_prior": -0.023297355501037842,
+            "hr_mae_gain_vs_slot_rate_prior": -0.0033271683463068358,
+            "direct_event_hits_mae_gain_vs_independent_rates": -0.00011076566566559087,
+            "direct_event_tb_mae_gain_vs_independent_rates": -0.005442015074446305,
+            "direct_event_hr_mae_gain_vs_independent_rates": 0.003524349308427932,
+            "direct_event_hits_mae_gain_vs_slot_prior": 0.004166484607525334,
+            "direct_event_tb_mae_gain_vs_slot_prior": -0.028739370575484147,
+            "hr_any_brier_gain_vs_prior": 0.002684092697256002,
+            "direct_tb_count_repair_enabled": true,
+            "direct_tb_count_repair_mae_gain": 0.010510299431856662,
+            "direct_tb_count_repair_alpha": 0.5,
+            "direct_hits_count_repair_enabled": true,
+            "direct_hits_count_repair_mae_gain": 0.02807895327989418,
+            "direct_hits_count_repair_alpha": 0.5,
+            "direct_hr_count_repair_enabled": true,
+            "direct_hr_count_repair_mae_gain": 0.020614242136077432,
+            "direct_hr_count_repair_brier_gain": 0.003942770859251182,
+            "direct_hr_count_repair_alpha": 0.5,
+            "passes_basic_gate": false
+          },
+          "production_eligible": false,
+          "pa_uncertainty": {
+            "status": "trained",
+            "method": "two_part_low_pa_plus_conditional_normal_pa",
+            "calibration_start": "2026-05-09",
+            "global": {
+              "rows": 6664,
+              "bias": 0.01753932065499222,
+              "sigma": 0.6641891833239565,
+              "low_pa_state_probs": {
+                "0": 0.20319488817891374,
+                "1": 0.4306709265175719,
+                "2": 0.3661341853035144
+              }
+            },
+            "groups": {
+              "bottom|away": {
+                "rows": 1073,
+                "bias": -0.12399408281813414,
+                "sigma": 0.6622451743051363,
+                "low_pa_state_probs": {
+                  "0": 0.12839506172839507,
+                  "1": 0.4246913580246914,
+                  "2": 0.4469135802469136
+                }
+              },
+              "bottom|home": {
+                "rows": 1047,
+                "bias": -0.32403957867757166,
+                "sigma": 0.609982341001237,
+                "low_pa_state_probs": {
+                  "0": 0.16435185185185186,
+                  "1": 0.3611111111111111,
+                  "2": 0.47453703703703703
+                }
+              },
+              "middle|away": {
+                "rows": 1124,
+                "bias": 0.15151885095203216,
+                "sigma": 0.6468895847906808,
+                "low_pa_state_probs": {
+                  "0": 0.2682926829268293,
+                  "1": 0.3699186991869919,
+                  "2": 0.3617886178861789
+                }
+              },
+              "middle|home": {
+                "rows": 1116,
+                "bias": -0.03025299260913888,
+                "sigma": 0.5820539194666333,
+                "low_pa_state_probs": {
+                  "0": 0.18503937007874016,
+                  "1": 0.4251968503937008,
+                  "2": 0.38976377952755903
+                }
+              },
+              "top|away": {
+                "rows": 1152,
+                "bias": 0.18159839166223601,
+                "sigma": 0.7126697060262613,
+                "low_pa_state_probs": {
+                  "0": 0.23699421965317918,
+                  "1": 0.5375722543352601,
+                  "2": 0.2254335260115607
+                }
+              },
+              "top|home": {
+                "rows": 1152,
+                "bias": 0.21132892940187717,
+                "sigma": 0.5947208892089206,
+                "low_pa_state_probs": {
+                  "0": 0.2967741935483871,
+                  "1": 0.4774193548387097,
+                  "2": 0.22580645161290322
+                }
+              }
+            }
+          },
+          "player_prior_players": 783,
+          "tb_state_distribution": {
+            "rows": 7395,
+            "multiclass_brier": 0.6983679036040872,
+            "log_loss": 1.343623790851329,
+            "states": [
+              "tb_0",
+              "tb_1",
+              "tb_2_3",
+              "tb_4_plus_hr",
+              "tb_4_plus_non_hr"
+            ],
+            "predicted_rates": {
+              "tb_0": 0.44033919815792766,
+              "tb_1": 0.24402431261357185,
+              "tb_2_3": 0.18740880900337742,
+              "tb_4_plus_hr": 0.105695429582661,
+              "tb_4_plus_non_hr": 0.02253225064246208
+            },
+            "actual_rates": {
+              "tb_0": 0.4192021636240703,
+              "tb_1": 0.24178498985801217,
+              "tb_2_3": 0.1916159567275186,
+              "tb_4_plus_hr": 0.12183908045977011,
+              "tb_4_plus_non_hr": 0.025557809330628803
+            }
+          },
+          "tb_state_residual": {
+            "method": "gated_direct_state_candidates_with_hr_tail_hierarchy",
+            "states": [
+              "tb_0",
+              "tb_1",
+              "tb_2_3",
+              "tb_4_plus_hr",
+              "tb_4_plus_non_hr"
+            ],
+            "base_holdout": {
+              "rows": 7395,
+              "multiclass_brier": 0.6983679036040872,
+              "log_loss": 1.343623790851329,
+              "predicted_rates": {
+                "tb_0": 0.44033919815792766,
+                "tb_1": 0.24402431261357185,
+                "tb_2_3": 0.18740880900337742,
+                "tb_4_plus_hr": 0.105695429582661,
+                "tb_4_plus_non_hr": 0.02253225064246208
+              },
+              "actual_rates": {
+                "tb_0": 0.4192021636240703,
+                "tb_1": 0.24178498985801217,
+                "tb_2_3": 0.1916159567275186,
+                "tb_4_plus_hr": 0.12183908045977011,
+                "tb_4_plus_non_hr": 0.025557809330628803
+              },
+              "hr_driven_4_plus": {
+                "actual_rate": 0.12183908045977011,
+                "avg_probability": 0.105695429582661,
+                "calibration_error": -0.016143650877109117,
+                "brier": 0.10449754060223698
+              }
+            },
+            "candidate_holdout": {
+              "one_vs_rest": {
+                "rows": 7395,
+                "multiclass_brier": 0.7129929570371565,
+                "log_loss": 1.3802717634083899,
+                "predicted_rates": {
+                  "tb_0": 0.3319838134933841,
+                  "tb_1": 0.25071446360185506,
+                  "tb_2_3": 0.22404519075750753,
+                  "tb_4_plus_hr": 0.13494279973969545,
+                  "tb_4_plus_non_hr": 0.058313732407557904
+                },
+                "actual_rates": {
+                  "tb_0": 0.4192021636240703,
+                  "tb_1": 0.24178498985801217,
+                  "tb_2_3": 0.1916159567275186,
+                  "tb_4_plus_hr": 0.12183908045977011,
+                  "tb_4_plus_non_hr": 0.025557809330628803
+                },
+                "hr_driven_4_plus": {
+                  "actual_rate": 0.12183908045977011,
+                  "avg_probability": 0.13494279973969545,
+                  "calibration_error": 0.013103719279925333,
+                  "brier": 0.10530243646597373
+                }
+              },
+              "hierarchical_hr_tail": {
+                "rows": 7395,
+                "multiclass_brier": 0.7047382415059427,
+                "log_loss": 1.3601804950223166,
+                "predicted_rates": {
+                  "tb_0": 0.4526284522917858,
+                  "tb_1": 0.2384673933783418,
+                  "tb_2_3": 0.15189250720613767,
+                  "tb_4_plus_hr": 0.11956198775795707,
+                  "tb_4_plus_non_hr": 0.03744965936577767
+                },
+                "actual_rates": {
+                  "tb_0": 0.4192021636240703,
+                  "tb_1": 0.24178498985801217,
+                  "tb_2_3": 0.1916159567275186,
+                  "tb_4_plus_hr": 0.12183908045977011,
+                  "tb_4_plus_non_hr": 0.025557809330628803
+                },
+                "hr_driven_4_plus": {
+                  "actual_rate": 0.12183908045977011,
+                  "avg_probability": 0.11956198775795707,
+                  "calibration_error": -0.0022770927018130466,
+                  "brier": 0.10497556131326546
+                }
+              }
+            },
+            "candidate_hr_tail_logit_offsets": {
+              "one_vs_rest": -0.24933920198412396,
+              "hierarchical_hr_tail": 0.30762530059153115
+            },
+            "production_hr_tail_logit_offsets": {
+              "one_vs_rest": -0.3245150574592601,
+              "hierarchical_hr_tail": 0.2903613822778207
+            },
+            "tail_calibration_end": "2026-06-20",
+            "enabled": false,
+            "reason": "no_joint_validation_gain",
+            "selected_candidate": "convolution",
+            "alpha": 0.0,
+            "tune_end": "2026-06-20",
+            "validation_start": "2026-06-21",
+            "candidates": [
+              {
+                "candidate": "one_vs_rest",
+                "alpha": 0.25,
+                "tune_brier": 0.7035754045683621,
+                "tune_hr_tail_brier": 0.10765916395810558,
+                "tune_joint_loss": 0.8112345685264677
+              },
+              {
+                "candidate": "one_vs_rest",
+                "alpha": 0.5,
+                "tune_brier": 0.7053581775035085,
+                "tune_hr_tail_brier": 0.10773317026386764,
+                "tune_joint_loss": 0.8130913477673761
+              },
+              {
+                "candidate": "one_vs_rest",
+                "alpha": 0.75,
+                "tune_brier": 0.7096399679635534,
+                "tune_hr_tail_brier": 0.10800264659666492,
+                "tune_joint_loss": 0.8176426145602184
+              },
+              {
+                "candidate": "one_vs_rest",
+                "alpha": 1.0,
+                "tune_brier": 0.716420775948497,
+                "tune_hr_tail_brier": 0.10846759295649742,
+                "tune_joint_loss": 0.8248883689049944
+              },
+              {
+                "candidate": "hierarchical_hr_tail",
+                "alpha": 0.25,
+                "tune_brier": 0.7048676379459788,
+                "tune_hr_tail_brier": 0.10770589785950466,
+                "tune_joint_loss": 0.8125735358054835
+              },
+              {
+                "candidate": "hierarchical_hr_tail",
+                "alpha": 0.5,
+                "tune_brier": 0.7062404887863171,
+                "tune_hr_tail_brier": 0.10774723237072699,
+                "tune_joint_loss": 0.8139877211570441
+              },
+              {
+                "candidate": "hierarchical_hr_tail",
+                "alpha": 0.75,
+                "tune_brier": 0.7084102016791286,
+                "tune_hr_tail_brier": 0.1079046312130457,
+                "tune_joint_loss": 0.8163148328921743
+              },
+              {
+                "candidate": "hierarchical_hr_tail",
+                "alpha": 1.0,
+                "tune_brier": 0.7113767766244138,
+                "tune_hr_tail_brier": 0.10817809438646084,
+                "tune_joint_loss": 0.8195548710108747
+              },
+              {
+                "candidate": "convolution",
+                "alpha": 0.0,
+                "tune_brier": 0.7042916491581143,
+                "tune_hr_tail_brier": 0.10778062767937877,
+                "tune_joint_loss": 0.8120722768374931
+              }
+            ],
+            "base_validation": {
+              "rows": 3742,
+              "multiclass_brier": 0.692585048844905,
+              "log_loss": 1.3293394306494046,
+              "predicted_rates": {
+                "tb_0": 0.4395151560764186,
+                "tb_1": 0.2442842521099638,
+                "tb_2_3": 0.18844829665239676,
+                "tb_4_plus_hr": 0.10489996222994194,
+                "tb_4_plus_non_hr": 0.02285233293127889
+              },
+              "actual_rates": {
+                "tb_0": 0.4291822554783538,
+                "tb_1": 0.2397113842864778,
+                "tb_2_3": 0.1913415285943346,
+                "tb_4_plus_hr": 0.11678246926777125,
+                "tb_4_plus_non_hr": 0.022982362373062535
+              },
+              "hr_driven_4_plus": {
+                "actual_rate": 0.11678246926777125,
+                "avg_probability": 0.10489996222994194,
+                "calibration_error": -0.01188250703782931,
+                "brier": 0.1012925387067803
+              }
+            },
+            "blended_validation": {
+              "rows": 3742,
+              "multiclass_brier": 0.6930888168128962,
+              "log_loss": 1.3316429339633642,
+              "predicted_rates": {
+                "tb_0": 0.4123910847293868,
+                "tb_1": 0.24582011803589615,
+                "tb_2_3": 0.19753494358591617,
+                "tb_4_plus_hr": 0.1124811590053609,
+                "tb_4_plus_non_hr": 0.03177269464343999
+              },
+              "actual_rates": {
+                "tb_0": 0.4291822554783538,
+                "tb_1": 0.2397113842864778,
+                "tb_2_3": 0.1913415285943346,
+                "tb_4_plus_hr": 0.11678246926777125,
+                "tb_4_plus_non_hr": 0.022982362373062535
+              },
+              "hr_driven_4_plus": {
+                "actual_rate": 0.11678246926777125,
+                "avg_probability": 0.1124811590053609,
+                "calibration_error": -0.004301310262410346,
+                "brier": 0.10121140076602192
+              }
+            },
+            "validation_brier_gain": -0.000503767967991231,
+            "validation_hr_tail_brier_gain": 8.113794075838288e-05
+          },
+          "tb_state_model_kind": "convolution",
+          "two_part_pa": {
+            "enabled": false,
+            "low_pa_rows": 1439,
+            "low_pa_rate": 0.18656813172565798,
+            "low_pa_model_brier": 0.09271660574823624,
+            "low_pa_baseline_brier": 0.1518079794517036,
+            "distribution_enabled": true,
+            "immutable_lock_low_pa_rows": 1849,
+            "distribution_validation_rows": 7713,
+            "distribution_validation_brier": 0.09271660574823624,
+            "distribution_validation_baseline_brier": 0.1518079794517036,
+            "activation_reason": "distribution_only_gain",
+            "normal_pa_rows": 6274,
+            "normal_pa_mae": 0.46138589476789615,
+            "low_pa_conditional_mean": 1.1629392971246006
+          }
+        },
+        "outcome_policy": {
+          "min_gain": 0.0005,
+          "markets": {
+            "batter_hits": {
+              "rows": 0,
+              "base_brier": null,
+              "learned_brier": null,
+              "brier_gain": null,
+              "use_learned": false
+            },
+            "batter_total_bases": {
+              "rows": 0,
+              "base_brier": null,
+              "learned_brier": null,
+              "brier_gain": null,
+              "use_learned": false
+            },
+            "batter_home_runs": {
+              "rows": 0,
+              "base_brier": null,
+              "learned_brier": null,
+              "brier_gain": null,
+              "use_learned": false
+            }
+          },
+          "bucket_policy": {
+            "min_rows": 80,
+            "min_gain": 0.002,
+            "buckets": {}
+          }
+        },
+        "probability": {
+          "overall_holdout_enabled": false,
+          "raw_holdout_brier": 0.06013007412328518,
+          "calibrated_holdout_brier": 0.06013007412328518,
+          "overall_holdout_brier_gain": 0.0,
+          "system_holdout_selection": "raw",
+          "system_holdout_brier": {
+            "raw": 0.06013007412328518,
+            "generic": 0.06013007412328518,
+            "generic_plus_line": 0.06013007412328518
+          }
+        },
+        "true_pair_hitter_line_calibration": {
+          "status": "insufficient_true_pair_rows",
+          "evidence": "temporal_train_true_pair_non_synthetic_only",
+          "method": "walk_forward_beta_or_isotonic",
+          "groups": {},
+          "overall_holdout_enabled": false,
+          "enabled_groups": []
+        },
+        "side_line_models": {
+          "win_probability": {
+            "status": "insufficient_rows",
+            "train_rows": 0,
+            "holdout_rows": 0,
+            "clean_pair_required": true,
+            "raw_train_rows": 3376,
+            "raw_holdout_rows": 858
+          },
+          "clv_beat_probability": {
+            "status": "insufficient_rows",
+            "train_rows": 0,
+            "holdout_rows": 0,
+            "clean_pair_required": true,
+            "raw_train_rows": 3256,
+            "raw_holdout_rows": 827
+          },
+          "usage": "shadow_only_until_exact_buckets_show_positive_roi_and_clv"
+        },
+        "k_v3": {
+          "status": "insufficient_rows",
+          "player_games": 0,
+          "enabled": false
+        }
+      }
+    },
+    "outcome": {
+      "groups": {
+        "batter_home_runs|global": {
+          "rows": 1688,
+          "pa": 6750.0,
+          "hit_multiplier": 1.577700094067422,
+          "tb_multiplier": 1.165471633183832,
+          "hr_multiplier": 0.8066361966036892,
+          "non_hr_extra_multiplier": 0.8011158991879259,
+          "actual_hits_per_pa": 0.22340740740740742,
+          "pred_hits_per_pa": 0.13688356578849256,
+          "actual_tb_per_pa": 0.37851851851851853,
+          "pred_tb_per_pa": 0.32165766690874953,
+          "actual_hr_per_pa": 0.036,
+          "pred_hr_per_pa": 0.04630735832328757
+        },
+        "batter_home_runs|slot=slot_top": {
+          "rows": 781,
+          "pa": 3388.0,
+          "hit_multiplier": 1.4576364821145351,
+          "tb_multiplier": 1.1288707934080384,
+          "hr_multiplier": 0.8260753335209365,
+          "non_hr_extra_multiplier": 0.8492292790553483,
+          "actual_hits_per_pa": 0.22579693034238488,
+          "pred_hits_per_pa": 0.14648201440862518,
+          "actual_tb_per_pa": 0.39728453364817,
+          "pred_tb_per_pa": 0.3466276177844213,
+          "actual_hr_per_pa": 0.0410271546635183,
+          "pred_hr_per_pa": 0.052894597903365204
+        },
+        "batter_home_runs|power=power_high": {
+          "rows": 1591,
+          "pa": 6380.0,
+          "hit_multiplier": 1.616071498949769,
+          "tb_multiplier": 1.1628114073119162,
+          "hr_multiplier": 0.8176422139621418,
+          "non_hr_extra_multiplier": 0.7704048485842868,
+          "actual_hits_per_pa": 0.22241379310344828,
+          "pred_hits_per_pa": 0.13249270132638544,
+          "actual_tb_per_pa": 0.38009404388714735,
+          "pred_tb_per_pa": 0.32360491891324344,
+          "actual_hr_per_pa": 0.03699059561128527,
+          "pred_hr_per_pa": 0.04691019608164174
+        },
+        "batter_home_runs|slot_power=slot_top|power_high": {
+          "rows": 761,
+          "pa": 3295.0,
+          "hit_multiplier": 1.4662807508047595,
+          "tb_multiplier": 1.1237132129760419,
+          "hr_multiplier": 0.8287570125730079,
+          "non_hr_extra_multiplier": 0.8337439100779731,
+          "actual_hits_per_pa": 0.22458270106221548,
+          "pred_hits_per_pa": 0.14444405803746083,
+          "actual_tb_per_pa": 0.39726858877086496,
+          "pred_tb_per_pa": 0.3482604922780716,
+          "actual_hr_per_pa": 0.04157814871016692,
+          "pred_hr_per_pa": 0.053452201546386406
+        },
+        "batter_home_runs|slot=slot_middle": {
+          "rows": 367,
+          "pa": 1433.0,
+          "hit_multiplier": 1.409955950533374,
+          "tb_multiplier": 1.105383114079599,
+          "hr_multiplier": 0.8666002441736249,
+          "non_hr_extra_multiplier": 0.8407170275812104,
+          "actual_hits_per_pa": 0.2135380321004885,
+          "pred_hits_per_pa": 0.1331918501517201,
+          "actual_tb_per_pa": 0.35659455687369157,
+          "pred_tb_per_pa": 0.31275484865315395,
+          "actual_hr_per_pa": 0.03349616189811584,
+          "pred_hr_per_pa": 0.044349179885863434
+        },
+        "batter_home_runs|slot_power=slot_middle|power_high": {
+          "rows": 343,
+          "pa": 1342.0,
+          "hit_multiplier": 1.4712391290824773,
+          "tb_multiplier": 1.1296018132312853,
+          "hr_multiplier": 0.8965220575776806,
+          "non_hr_extra_multiplier": 0.8322133472094583,
+          "actual_hits_per_pa": 0.21758569299552907,
+          "pred_hits_per_pa": 0.12654577006851792,
+          "actual_tb_per_pa": 0.36885245901639346,
+          "pred_tb_per_pa": 0.31366490096371613,
+          "actual_hr_per_pa": 0.03576751117734724,
+          "pred_hr_per_pa": 0.044566290751954625
+        },
+        "batter_home_runs|slot=slot_bottom": {
+          "rows": 540,
+          "pa": 1929.0,
+          "hit_multiplier": 1.6171956233039841,
+          "tb_multiplier": 1.2163720908196454,
+          "hr_multiplier": 0.8824391264383608,
+          "non_hr_extra_multiplier": 0.8327715261993718,
+          "actual_hits_per_pa": 0.22654224987039917,
+          "pred_hits_per_pa": 0.12276779833514083,
+          "actual_tb_per_pa": 0.3618455158113012,
+          "pred_tb_per_pa": 0.28441533668246355,
+          "actual_hr_per_pa": 0.029030585795749093,
+          "pred_hr_per_pa": 0.03619253302703352
+        },
+        "batter_home_runs|slot_power=slot_bottom|power_high": {
+          "rows": 487,
+          "pa": 1743.0,
+          "hit_multiplier": 1.657789353507236,
+          "tb_multiplier": 1.1958531323798312,
+          "hr_multiplier": 0.8895462968934665,
+          "non_hr_extra_multiplier": 0.7872829475336458,
+          "actual_hits_per_pa": 0.22203098106712565,
+          "pred_hits_per_pa": 0.1144783934578048,
+          "actual_tb_per_pa": 0.35628227194492257,
+          "pred_tb_per_pa": 0.2846487455633624,
+          "actual_hr_per_pa": 0.029259896729776247,
+          "pred_hr_per_pa": 0.03634772502375694
+        },
+        "batter_home_runs|power=power_mid": {
+          "rows": 83,
+          "pa": 317.0,
+          "hit_multiplier": 1.0510290763198185,
+          "tb_multiplier": 1.0878268642483466,
+          "hr_multiplier": 0.9454185559481952,
+          "non_hr_extra_multiplier": 1.1170844884426623,
+          "actual_hits_per_pa": 0.23659305993690852,
+          "pred_hits_per_pa": 0.2052290583840816,
+          "actual_tb_per_pa": 0.35962145110410093,
+          "pred_tb_per_pa": 0.2884433791210953,
+          "actual_hr_per_pa": 0.022082018927444796,
+          "pred_hr_per_pa": 0.037793599550692974
+        },
+        "batter_home_runs|slot_power=slot_bottom|power_mid": {
+          "rows": 46,
+          "pa": 163.0,
+          "hit_multiplier": 1.0649413512657346,
+          "tb_multiplier": 1.0928247910397064,
+          "hr_multiplier": 0.9930183899605908,
+          "non_hr_extra_multiplier": 1.0440018581872492,
+          "actual_hits_per_pa": 0.26993865030674846,
+          "pred_hits_per_pa": 0.19389075499608424,
+          "actual_tb_per_pa": 0.4233128834355828,
+          "pred_tb_per_pa": 0.2827522713865302,
+          "actual_hr_per_pa": 0.03067484662576687,
+          "pred_hr_per_pa": 0.03599517463577308
+        }
+      }
+    },
+    "tb_structure": {
+      "groups": {
+        "batter_home_runs|global": {
+          "rows": 1690,
+          "pa": 6757.0,
+          "single_multiplier": 2.6873201599679923,
+          "double_multiplier": 0.8874430554791043,
+          "triple_multiplier": 0.9203262937536206,
+          "hr_multiplier": 0.8201636508586388,
+          "tb_multiplier": 1.1603803728558268,
+          "actual_zero_tb_rate": 0.38284023668639056,
+          "pred_zero_tb_rate": 0.5665353791933618,
+          "actual_single_per_pa": 0.14370282669823886,
+          "pred_single_per_pa": 0.03993132303181397,
+          "actual_double_per_pa": 0.0406985348527453,
+          "pred_double_per_pa": 0.04695244735328874,
+          "actual_triple_per_pa": 0.003255882788219624,
+          "pred_triple_per_pa": 0.004145213315429294,
+          "actual_hr_per_pa": 0.03596270534260767,
+          "pred_hr_per_pa": 0.045953465003294204
+        },
+        "batter_home_runs|slot=slot_top": {
+          "rows": 782,
+          "pa": 3392.0,
+          "single_multiplier": 2.464424055468109,
+          "double_multiplier": 0.9581307904430809,
+          "triple_multiplier": 0.9231426048729918,
+          "hr_multiplier": 0.845749560971504,
+          "tb_multiplier": 1.1223924932073432,
+          "actual_zero_tb_rate": 0.34782608695652173,
+          "pred_zero_tb_rate": 0.5146770426685158,
+          "actual_single_per_pa": 0.1391509433962264,
+          "pred_single_per_pa": 0.043995028399201344,
+          "actual_double_per_pa": 0.0433372641509434,
+          "pred_double_per_pa": 0.04602232470918388,
+          "actual_triple_per_pa": 0.0026533018867924527,
+          "pred_triple_per_pa": 0.004204821604410601,
+          "actual_hr_per_pa": 0.04097877358490566,
+          "pred_hr_per_pa": 0.05239530206027024
+        },
+        "batter_home_runs|power=power_high": {
+          "rows": 1593,
+          "pa": 6387.0,
+          "single_multiplier": 2.6165689053801877,
+          "double_multiplier": 0.8574095069675833,
+          "triple_multiplier": 0.9058783523901226,
+          "hr_multiplier": 0.831362643206178,
+          "tb_multiplier": 1.1575430635910058,
+          "actual_zero_tb_rate": 0.3797865662272442,
+          "pred_zero_tb_rate": 0.5759977472276323,
+          "actual_single_per_pa": 0.1420072021293252,
+          "pred_single_per_pa": 0.03300501843746923,
+          "actual_double_per_pa": 0.04055111946140598,
+          "pred_double_per_pa": 0.04882767039500666,
+          "actual_triple_per_pa": 0.003131360576170346,
+          "pred_triple_per_pa": 0.004234295030969567,
+          "actual_hr_per_pa": 0.036950054798810084,
+          "pred_hr_per_pa": 0.04653514096538941
+        },
+        "batter_home_runs|pa=pa_mid": {
+          "rows": 1067,
+          "pa": 4235.0,
+          "single_multiplier": 2.5216972643559323,
+          "double_multiplier": 0.8894766635493698,
+          "triple_multiplier": 0.9115200625636314,
+          "hr_multiplier": 0.9040351431881807,
+          "tb_multiplier": 1.1918067867404736,
+          "actual_zero_tb_rate": 0.3880037488284911,
+          "pred_zero_tb_rate": 0.5787191852284739,
+          "actual_single_per_pa": 0.1409681227863046,
+          "pred_single_per_pa": 0.037561418478995336,
+          "actual_double_per_pa": 0.03943329397874852,
+          "pred_double_per_pa": 0.04606298909703426,
+          "actual_triple_per_pa": 0.0025974025974025974,
+          "pred_triple_per_pa": 0.0040223319631752675,
+          "actual_hr_per_pa": 0.0384887839433294,
+          "pred_hr_per_pa": 0.044265228242794934
+        },
+        "batter_home_runs|slot_power=slot_top|power_high": {
+          "rows": 762,
+          "pa": 3299.0,
+          "single_multiplier": 2.456610221795957,
+          "double_multiplier": 0.9381671292377919,
+          "triple_multiplier": 0.9277224840540537,
+          "hr_multiplier": 0.8486130273538842,
+          "tb_multiplier": 1.1173826789371073,
+          "actual_zero_tb_rate": 0.34908136482939633,
+          "pred_zero_tb_rate": 0.519671346940156,
+          "actual_single_per_pa": 0.1379205819945438,
+          "pred_single_per_pa": 0.04062745121831633,
+          "actual_double_per_pa": 0.04274022431039709,
+          "pred_double_per_pa": 0.04678793560220265,
+          "actual_triple_per_pa": 0.002728099424067899,
+          "pred_triple_per_pa": 0.004232269027942024,
+          "actual_hr_per_pa": 0.04152773567747802,
+          "pred_hr_per_pa": 0.05293815428529207
+        },
+        "batter_home_runs|pa_power=pa_mid|power_high": {
+          "rows": 1003,
+          "pa": 3989.0,
+          "single_multiplier": 2.4151588962249937,
+          "double_multiplier": 0.8532899250284074,
+          "triple_multiplier": 0.9053576644134761,
+          "hr_multiplier": 0.9183705472386008,
+          "tb_multiplier": 1.1888832424554208,
+          "actual_zero_tb_rate": 0.38384845463609174,
+          "pred_zero_tb_rate": 0.5893637044503531,
+          "actual_single_per_pa": 0.13938330408623714,
+          "pred_single_per_pa": 0.03033006114141754,
+          "actual_double_per_pa": 0.03885685635497618,
+          "pred_double_per_pa": 0.048108256408273126,
+          "actual_triple_per_pa": 0.00250689395838556,
+          "pred_triple_per_pa": 0.004128639674477982,
+          "actual_hr_per_pa": 0.039608924542491854,
+          "pred_hr_per_pa": 0.04465565169509979
+        },
+        "batter_home_runs|slot=slot_middle": {
+          "rows": 368,
+          "pa": 1436.0,
+          "single_multiplier": 2.0540748474936743,
+          "double_multiplier": 0.9122449771654827,
+          "triple_multiplier": 0.9637356368982049,
+          "hr_multiplier": 0.8905963029241692,
+          "tb_multiplier": 1.0928372074888308,
+          "actual_zero_tb_rate": 0.3967391304347826,
+          "pred_zero_tb_rate": 0.5803746664860876,
+          "actual_single_per_pa": 0.13997214484679665,
+          "pred_single_per_pa": 0.03879986736652764,
+          "actual_double_per_pa": 0.0383008356545961,
+          "pred_double_per_pa": 0.04645632540515225,
+          "actual_triple_per_pa": 0.0020891364902506965,
+          "pred_triple_per_pa": 0.0040917384730055064,
+          "actual_hr_per_pa": 0.033426183844011144,
+          "pred_hr_per_pa": 0.04397020363625342
+        },
+        "batter_home_runs|slot_power=slot_middle|power_high": {
+          "rows": 344,
+          "pa": 1345.0,
+          "single_multiplier": 1.875722653307632,
+          "double_multiplier": 0.9019216249077024,
+          "triple_multiplier": 0.9656801713811294,
+          "hr_multiplier": 0.9167570448185418,
+          "tb_multiplier": 1.1135971506334148,
+          "actual_zero_tb_rate": 0.3808139534883721,
+          "pred_zero_tb_rate": 0.5945227968924777,
+          "actual_single_per_pa": 0.14052044609665426,
+          "pred_single_per_pa": 0.0289561517644169,
+          "actual_double_per_pa": 0.03940520446096654,
+          "pred_double_per_pa": 0.049260434959761575,
+          "actual_triple_per_pa": 0.0022304832713754648,
+          "pred_triple_per_pa": 0.004317646747363183,
+          "actual_hr_per_pa": 0.035687732342007436,
+          "pred_hr_per_pa": 0.04416118946791132
+        },
+        "batter_home_runs|pa=pa_low": {
+          "rows": 226,
+          "pa": 766.0,
+          "single_multiplier": 1.62711536961912,
+          "double_multiplier": 0.9288884545811668,
+          "triple_multiplier": 1.0278697095729963,
+          "hr_multiplier": 0.9128698707233812,
+          "tb_multiplier": 1.1494586870027619,
+          "actual_zero_tb_rate": 0.43805309734513276,
+          "pred_zero_tb_rate": 0.6608277975311135,
+          "actual_single_per_pa": 0.16840731070496084,
+          "pred_single_per_pa": 0.029816360893358346,
+          "actual_double_per_pa": 0.037859007832898174,
+          "pred_double_per_pa": 0.0485482506378702,
+          "actual_triple_per_pa": 0.007832898172323759,
+          "pred_triple_per_pa": 0.0038300848861730057,
+          "actual_hr_per_pa": 0.022193211488250653,
+          "pred_hr_per_pa": 0.034217115128464204
+        },
+        "batter_home_runs|pa_power=pa_low|power_high": {
+          "rows": 205,
+          "pa": 698.0,
+          "single_multiplier": 1.4048123284859437,
+          "double_multiplier": 0.9224127270571086,
+          "triple_multiplier": 1.0194685556287957,
+          "hr_multiplier": 0.9146292582724791,
+          "tb_multiplier": 1.1271135688383025,
+          "actual_zero_tb_rate": 0.44878048780487806,
+          "pred_zero_tb_rate": 0.6783720011944954,
+          "actual_single_per_pa": 0.16332378223495703,
+          "pred_single_per_pa": 0.01817843650479666,
+          "actual_double_per_pa": 0.03868194842406877,
+          "pred_double_per_pa": 0.05176195086269911,
+          "actual_triple_per_pa": 0.0071633237822349575,
+          "pred_triple_per_pa": 0.003936533440317217,
+          "actual_hr_per_pa": 0.02148997134670487,
+          "pred_hr_per_pa": 0.034479280673109035
+        },
+        "batter_home_runs|slot=slot_bottom": {
+          "rows": 540,
+          "pa": 1929.0,
+          "single_multiplier": 2.129437070992961,
+          "double_multiplier": 0.8648841488410065,
+          "triple_multiplier": 1.0284863377761697,
+          "hr_multiplier": 0.899307462525911,
+          "tb_multiplier": 1.1973013776536927,
+          "actual_zero_tb_rate": 0.42407407407407405,
+          "pred_zero_tb_rate": 0.6322027151909655,
+          "actual_single_per_pa": 0.15448418869880767,
+          "pred_single_per_pa": 0.03362789209825954,
+          "actual_double_per_pa": 0.03784344219803007,
+          "pred_double_per_pa": 0.04895732403878808,
+          "actual_triple_per_pa": 0.005184033177812338,
+          "pred_triple_per_pa": 0.004080204791580672,
+          "actual_hr_per_pa": 0.029030585795749093,
+          "pred_hr_per_pa": 0.03610237740651251
+        },
+        "batter_home_runs|slot_power=slot_bottom|power_high": {
+          "rows": 487,
+          "pa": 1743.0,
+          "single_multiplier": 1.8613988450410162,
+          "double_multiplier": 0.833082662522334,
+          "triple_multiplier": 1.0094751959415467,
+          "hr_multiplier": 0.9066211554350563,
+          "tb_multiplier": 1.1773419805743925,
+          "actual_zero_tb_rate": 0.4271047227926078,
+          "pred_zero_tb_rate": 0.6510451803577122,
+          "actual_single_per_pa": 0.1508892713711991,
+          "pred_single_per_pa": 0.021702275999856427,
+          "actual_double_per_pa": 0.037292025243832475,
+          "pred_double_per_pa": 0.052354358141343774,
+          "actual_triple_per_pa": 0.004589787722317842,
+          "pred_triple_per_pa": 0.004173810650842489,
+          "actual_hr_per_pa": 0.029259896729776247,
+          "pred_hr_per_pa": 0.036247948665762086
+        },
+        "batter_home_runs|pa=pa_high": {
+          "rows": 397,
+          "pa": 1756.0,
+          "single_multiplier": 1.942415806494178,
+          "double_multiplier": 0.960734342905154,
+          "triple_multiplier": 0.9600530378024642,
+          "hr_multiplier": 0.8064725920109456,
+          "tb_multiplier": 1.0287572564473992,
+          "actual_zero_tb_rate": 0.33753148614609574,
+          "pred_zero_tb_rate": 0.48011168250873615,
+          "actual_single_per_pa": 0.13952164009111617,
+          "pred_single_per_pa": 0.050059231220449564,
+          "actual_double_per_pa": 0.044988610478359906,
+          "pred_double_per_pa": 0.04840146238702935,
+          "actual_triple_per_pa": 0.0028473804100227792,
+          "pred_triple_per_pa": 0.004579035014521639,
+          "actual_hr_per_pa": 0.035876993166287015,
+          "pred_hr_per_pa": 0.05514465332039803
+        },
+        "batter_home_runs|pa_power=pa_high|power_high": {
+          "rows": 385,
+          "pa": 1700.0,
+          "single_multiplier": 2.0377025665929294,
+          "double_multiplier": 0.9551362173880057,
+          "triple_multiplier": 0.9632361946453731,
+          "hr_multiplier": 0.816348821820527,
+          "tb_multiplier": 1.03618650389628,
+          "actual_zero_tb_rate": 0.33246753246753247,
+          "pred_zero_tb_rate": 0.48666585850660327,
+          "actual_single_per_pa": 0.13941176470588235,
+          "pred_single_per_pa": 0.04536934716861961,
+          "actual_double_per_pa": 0.045294117647058825,
+          "pred_double_per_pa": 0.04931097311655428,
+          "actual_triple_per_pa": 0.0029411764705882353,
+          "pred_triple_per_pa": 0.004604469623510932,
+          "actual_hr_per_pa": 0.03705882352941176,
+          "pred_hr_per_pa": 0.05589530166138784
+        },
+        "batter_home_runs|power=power_mid": {
+          "rows": 83,
+          "pa": 317.0,
+          "single_multiplier": 1.0263290535384728,
+          "double_multiplier": 1.0807965267479689,
+          "triple_multiplier": 1.005253061505915,
+          "hr_multiplier": 0.9630213474531559,
+          "tb_multiplier": 1.0669059843737878,
+          "actual_zero_tb_rate": 0.43373493975903615,
+          "pred_zero_tb_rate": 0.42290296635252705,
+          "actual_single_per_pa": 0.1640378548895899,
+          "pred_single_per_pa": 0.14737198891913753,
+          "actual_double_per_pa": 0.04416403785488959,
+          "pred_double_per_pa": 0.01702005032575555,
+          "actual_triple_per_pa": 0.006309148264984227,
+          "pred_triple_per_pa": 0.0030434195884956093,
+          "actual_hr_per_pa": 0.022082018927444796,
+          "pred_hr_per_pa": 0.037793599550692974
+        },
+        "batter_home_runs|pa_power=pa_mid|power_mid": {
+          "rows": 57,
+          "pa": 215.0,
+          "single_multiplier": 1.0133812633298627,
+          "double_multiplier": 1.0592968394956674,
+          "triple_multiplier": 1.0016181047756858,
+          "hr_multiplier": 0.9783357979952101,
+          "tb_multiplier": 1.05124711961437,
+          "actual_zero_tb_rate": 0.45614035087719296,
+          "pred_zero_tb_rate": 0.4192448457005634,
+          "actual_single_per_pa": 0.16279069767441862,
+          "pred_single_per_pa": 0.14989890269492728,
+          "actual_double_per_pa": 0.05116279069767442,
+          "pred_double_per_pa": 0.014757786108551878,
+          "actual_triple_per_pa": 0.004651162790697674,
+          "pred_triple_per_pa": 0.0026299172211841355,
+          "actual_hr_per_pa": 0.023255813953488372,
+          "pred_hr_per_pa": 0.0400402853304294
+        }
+      }
+    },
+    "true_pair_hitter_line_calibration": {
+      "status": "insufficient_true_pair_rows",
+      "evidence": "market_split_temporal_train_true_pair_non_synthetic_only",
+      "groups": {},
+      "enabled_groups": []
+    },
+    "outcome_policy": {
+      "markets": {
+        "batter_hits": {
+          "rows": 0,
+          "base_brier": null,
+          "learned_brier": null,
+          "brier_gain": null,
+          "use_learned": false
+        },
+        "batter_total_bases": {
+          "rows": 0,
+          "base_brier": null,
+          "learned_brier": null,
+          "brier_gain": null,
+          "use_learned": false
+        },
+        "batter_home_runs": {
+          "rows": 0,
+          "base_brier": null,
+          "learned_brier": null,
+          "brier_gain": null,
+          "use_learned": false
+        }
+      },
+      "bucket_policy": {
+        "buckets": {}
+      }
+    },
+    "side_line_models": {
+      "by_market": {
+        "batter_home_runs": {
+          "win_probability": {
+            "status": "insufficient_rows",
+            "train_rows": 0,
+            "holdout_rows": 0,
+            "clean_pair_required": true,
+            "raw_train_rows": 3376,
+            "raw_holdout_rows": 858
+          },
+          "clv_beat_probability": {
+            "status": "insufficient_rows",
+            "train_rows": 0,
+            "holdout_rows": 0,
+            "clean_pair_required": true,
+            "raw_train_rows": 3256,
+            "raw_holdout_rows": 827
+          },
+          "usage": "shadow_only_until_exact_buckets_show_positive_roi_and_clv"
+        }
+      },
+      "win_probability": {
+        "status": "insufficient_rows",
+        "train_rows": 0,
+        "holdout_rows": 0,
+        "clean_pair_required": true,
+        "raw_train_rows": 3376,
+        "raw_holdout_rows": 858,
+        "selected_market": "batter_home_runs"
+      },
+      "clv_beat_probability": {
+        "status": "insufficient_rows",
+        "train_rows": 0,
+        "holdout_rows": 0,
+        "clean_pair_required": true,
+        "raw_train_rows": 3256,
+        "raw_holdout_rows": 827,
+        "selected_market": "batter_home_runs"
+      }
+    },
+    "event_model": {
+      "status": "loaded",
+      "method": "hierarchical_conditional_lgbm",
+      "trained_at_utc": "2026-07-05T07:32:10.149811+00:00",
+      "event_classes": [
+        "out",
+        "walk",
+        "single",
+        "double",
+        "triple",
+        "hr"
+      ],
+      "recommendation": {
+        "production_status": "diagnostic_only",
+        "reason": "Require repeated holdout gains before replacing prop projections.",
+        "holdout_rows": 7713,
+        "pa_mae_gain_vs_slot_prior": 0.266880522023337,
+        "hits_mae_gain_vs_slot_rate_prior": 0.0042772502731909245,
+        "tb_mae_gain_vs_slot_rate_prior": -0.023297355501037842,
+        "hr_mae_gain_vs_slot_rate_prior": -0.0033271683463068358,
+        "direct_event_hits_mae_gain_vs_independent_rates": -0.00011076566566559087,
+        "direct_event_tb_mae_gain_vs_independent_rates": -0.005442015074446305,
+        "direct_event_hr_mae_gain_vs_independent_rates": 0.003524349308427932,
+        "direct_event_hits_mae_gain_vs_slot_prior": 0.004166484607525334,
+        "direct_event_tb_mae_gain_vs_slot_prior": -0.028739370575484147,
+        "hr_any_brier_gain_vs_prior": 0.002684092697256002,
+        "direct_tb_count_repair_enabled": true,
+        "direct_tb_count_repair_mae_gain": 0.010510299431856662,
+        "direct_tb_count_repair_alpha": 0.5,
+        "direct_hits_count_repair_enabled": true,
+        "direct_hits_count_repair_mae_gain": 0.02807895327989418,
+        "direct_hits_count_repair_alpha": 0.5,
+        "direct_hr_count_repair_enabled": true,
+        "direct_hr_count_repair_mae_gain": 0.020614242136077432,
+        "direct_hr_count_repair_brier_gain": 0.003942770859251182,
+        "direct_hr_count_repair_alpha": 0.5,
+        "passes_basic_gate": false
+      },
+      "production_eligible": false,
+      "pa_uncertainty": {
+        "status": "trained",
+        "method": "two_part_low_pa_plus_conditional_normal_pa",
+        "calibration_start": "2026-05-09",
+        "global": {
+          "rows": 6664,
+          "bias": 0.01753932065499222,
+          "sigma": 0.6641891833239565,
+          "low_pa_state_probs": {
+            "0": 0.20319488817891374,
+            "1": 0.4306709265175719,
+            "2": 0.3661341853035144
+          }
+        },
+        "groups": {
+          "bottom|away": {
+            "rows": 1073,
+            "bias": -0.12399408281813414,
+            "sigma": 0.6622451743051363,
+            "low_pa_state_probs": {
+              "0": 0.12839506172839507,
+              "1": 0.4246913580246914,
+              "2": 0.4469135802469136
+            }
+          },
+          "bottom|home": {
+            "rows": 1047,
+            "bias": -0.32403957867757166,
+            "sigma": 0.609982341001237,
+            "low_pa_state_probs": {
+              "0": 0.16435185185185186,
+              "1": 0.3611111111111111,
+              "2": 0.47453703703703703
+            }
+          },
+          "middle|away": {
+            "rows": 1124,
+            "bias": 0.15151885095203216,
+            "sigma": 0.6468895847906808,
+            "low_pa_state_probs": {
+              "0": 0.2682926829268293,
+              "1": 0.3699186991869919,
+              "2": 0.3617886178861789
+            }
+          },
+          "middle|home": {
+            "rows": 1116,
+            "bias": -0.03025299260913888,
+            "sigma": 0.5820539194666333,
+            "low_pa_state_probs": {
+              "0": 0.18503937007874016,
+              "1": 0.4251968503937008,
+              "2": 0.38976377952755903
+            }
+          },
+          "top|away": {
+            "rows": 1152,
+            "bias": 0.18159839166223601,
+            "sigma": 0.7126697060262613,
+            "low_pa_state_probs": {
+              "0": 0.23699421965317918,
+              "1": 0.5375722543352601,
+              "2": 0.2254335260115607
+            }
+          },
+          "top|home": {
+            "rows": 1152,
+            "bias": 0.21132892940187717,
+            "sigma": 0.5947208892089206,
+            "low_pa_state_probs": {
+              "0": 0.2967741935483871,
+              "1": 0.4774193548387097,
+              "2": 0.22580645161290322
+            }
+          }
+        }
+      },
+      "player_prior_players": 783,
+      "tb_state_distribution": {
+        "rows": 7395,
+        "multiclass_brier": 0.6983679036040872,
+        "log_loss": 1.343623790851329,
+        "states": [
+          "tb_0",
+          "tb_1",
+          "tb_2_3",
+          "tb_4_plus_hr",
+          "tb_4_plus_non_hr"
+        ],
+        "predicted_rates": {
+          "tb_0": 0.44033919815792766,
+          "tb_1": 0.24402431261357185,
+          "tb_2_3": 0.18740880900337742,
+          "tb_4_plus_hr": 0.105695429582661,
+          "tb_4_plus_non_hr": 0.02253225064246208
+        },
+        "actual_rates": {
+          "tb_0": 0.4192021636240703,
+          "tb_1": 0.24178498985801217,
+          "tb_2_3": 0.1916159567275186,
+          "tb_4_plus_hr": 0.12183908045977011,
+          "tb_4_plus_non_hr": 0.025557809330628803
+        }
+      },
+      "tb_state_residual": {
+        "method": "gated_direct_state_candidates_with_hr_tail_hierarchy",
+        "states": [
+          "tb_0",
+          "tb_1",
+          "tb_2_3",
+          "tb_4_plus_hr",
+          "tb_4_plus_non_hr"
+        ],
+        "base_holdout": {
+          "rows": 7395,
+          "multiclass_brier": 0.6983679036040872,
+          "log_loss": 1.343623790851329,
+          "predicted_rates": {
+            "tb_0": 0.44033919815792766,
+            "tb_1": 0.24402431261357185,
+            "tb_2_3": 0.18740880900337742,
+            "tb_4_plus_hr": 0.105695429582661,
+            "tb_4_plus_non_hr": 0.02253225064246208
+          },
+          "actual_rates": {
+            "tb_0": 0.4192021636240703,
+            "tb_1": 0.24178498985801217,
+            "tb_2_3": 0.1916159567275186,
+            "tb_4_plus_hr": 0.12183908045977011,
+            "tb_4_plus_non_hr": 0.025557809330628803
+          },
+          "hr_driven_4_plus": {
+            "actual_rate": 0.12183908045977011,
+            "avg_probability": 0.105695429582661,
+            "calibration_error": -0.016143650877109117,
+            "brier": 0.10449754060223698
+          }
+        },
+        "candidate_holdout": {
+          "one_vs_rest": {
+            "rows": 7395,
+            "multiclass_brier": 0.7129929570371565,
+            "log_loss": 1.3802717634083899,
+            "predicted_rates": {
+              "tb_0": 0.3319838134933841,
+              "tb_1": 0.25071446360185506,
+              "tb_2_3": 0.22404519075750753,
+              "tb_4_plus_hr": 0.13494279973969545,
+              "tb_4_plus_non_hr": 0.058313732407557904
+            },
+            "actual_rates": {
+              "tb_0": 0.4192021636240703,
+              "tb_1": 0.24178498985801217,
+              "tb_2_3": 0.1916159567275186,
+              "tb_4_plus_hr": 0.12183908045977011,
+              "tb_4_plus_non_hr": 0.025557809330628803
+            },
+            "hr_driven_4_plus": {
+              "actual_rate": 0.12183908045977011,
+              "avg_probability": 0.13494279973969545,
+              "calibration_error": 0.013103719279925333,
+              "brier": 0.10530243646597373
+            }
+          },
+          "hierarchical_hr_tail": {
+            "rows": 7395,
+            "multiclass_brier": 0.7047382415059427,
+            "log_loss": 1.3601804950223166,
+            "predicted_rates": {
+              "tb_0": 0.4526284522917858,
+              "tb_1": 0.2384673933783418,
+              "tb_2_3": 0.15189250720613767,
+              "tb_4_plus_hr": 0.11956198775795707,
+              "tb_4_plus_non_hr": 0.03744965936577767
+            },
+            "actual_rates": {
+              "tb_0": 0.4192021636240703,
+              "tb_1": 0.24178498985801217,
+              "tb_2_3": 0.1916159567275186,
+              "tb_4_plus_hr": 0.12183908045977011,
+              "tb_4_plus_non_hr": 0.025557809330628803
+            },
+            "hr_driven_4_plus": {
+              "actual_rate": 0.12183908045977011,
+              "avg_probability": 0.11956198775795707,
+              "calibration_error": -0.0022770927018130466,
+              "brier": 0.10497556131326546
+            }
+          }
+        },
+        "candidate_hr_tail_logit_offsets": {
+          "one_vs_rest": -0.24933920198412396,
+          "hierarchical_hr_tail": 0.30762530059153115
+        },
+        "production_hr_tail_logit_offsets": {
+          "one_vs_rest": -0.3245150574592601,
+          "hierarchical_hr_tail": 0.2903613822778207
+        },
+        "tail_calibration_end": "2026-06-20",
+        "enabled": false,
+        "reason": "no_joint_validation_gain",
+        "selected_candidate": "convolution",
+        "alpha": 0.0,
+        "tune_end": "2026-06-20",
+        "validation_start": "2026-06-21",
+        "candidates": [
+          {
+            "candidate": "one_vs_rest",
+            "alpha": 0.25,
+            "tune_brier": 0.7035754045683621,
+            "tune_hr_tail_brier": 0.10765916395810558,
+            "tune_joint_loss": 0.8112345685264677
+          },
+          {
+            "candidate": "one_vs_rest",
+            "alpha": 0.5,
+            "tune_brier": 0.7053581775035085,
+            "tune_hr_tail_brier": 0.10773317026386764,
+            "tune_joint_loss": 0.8130913477673761
+          },
+          {
+            "candidate": "one_vs_rest",
+            "alpha": 0.75,
+            "tune_brier": 0.7096399679635534,
+            "tune_hr_tail_brier": 0.10800264659666492,
+            "tune_joint_loss": 0.8176426145602184
+          },
+          {
+            "candidate": "one_vs_rest",
+            "alpha": 1.0,
+            "tune_brier": 0.716420775948497,
+            "tune_hr_tail_brier": 0.10846759295649742,
+            "tune_joint_loss": 0.8248883689049944
+          },
+          {
+            "candidate": "hierarchical_hr_tail",
+            "alpha": 0.25,
+            "tune_brier": 0.7048676379459788,
+            "tune_hr_tail_brier": 0.10770589785950466,
+            "tune_joint_loss": 0.8125735358054835
+          },
+          {
+            "candidate": "hierarchical_hr_tail",
+            "alpha": 0.5,
+            "tune_brier": 0.7062404887863171,
+            "tune_hr_tail_brier": 0.10774723237072699,
+            "tune_joint_loss": 0.8139877211570441
+          },
+          {
+            "candidate": "hierarchical_hr_tail",
+            "alpha": 0.75,
+            "tune_brier": 0.7084102016791286,
+            "tune_hr_tail_brier": 0.1079046312130457,
+            "tune_joint_loss": 0.8163148328921743
+          },
+          {
+            "candidate": "hierarchical_hr_tail",
+            "alpha": 1.0,
+            "tune_brier": 0.7113767766244138,
+            "tune_hr_tail_brier": 0.10817809438646084,
+            "tune_joint_loss": 0.8195548710108747
+          },
+          {
+            "candidate": "convolution",
+            "alpha": 0.0,
+            "tune_brier": 0.7042916491581143,
+            "tune_hr_tail_brier": 0.10778062767937877,
+            "tune_joint_loss": 0.8120722768374931
+          }
+        ],
+        "base_validation": {
+          "rows": 3742,
+          "multiclass_brier": 0.692585048844905,
+          "log_loss": 1.3293394306494046,
+          "predicted_rates": {
+            "tb_0": 0.4395151560764186,
+            "tb_1": 0.2442842521099638,
+            "tb_2_3": 0.18844829665239676,
+            "tb_4_plus_hr": 0.10489996222994194,
+            "tb_4_plus_non_hr": 0.02285233293127889
+          },
+          "actual_rates": {
+            "tb_0": 0.4291822554783538,
+            "tb_1": 0.2397113842864778,
+            "tb_2_3": 0.1913415285943346,
+            "tb_4_plus_hr": 0.11678246926777125,
+            "tb_4_plus_non_hr": 0.022982362373062535
+          },
+          "hr_driven_4_plus": {
+            "actual_rate": 0.11678246926777125,
+            "avg_probability": 0.10489996222994194,
+            "calibration_error": -0.01188250703782931,
+            "brier": 0.1012925387067803
+          }
+        },
+        "blended_validation": {
+          "rows": 3742,
+          "multiclass_brier": 0.6930888168128962,
+          "log_loss": 1.3316429339633642,
+          "predicted_rates": {
+            "tb_0": 0.4123910847293868,
+            "tb_1": 0.24582011803589615,
+            "tb_2_3": 0.19753494358591617,
+            "tb_4_plus_hr": 0.1124811590053609,
+            "tb_4_plus_non_hr": 0.03177269464343999
+          },
+          "actual_rates": {
+            "tb_0": 0.4291822554783538,
+            "tb_1": 0.2397113842864778,
+            "tb_2_3": 0.1913415285943346,
+            "tb_4_plus_hr": 0.11678246926777125,
+            "tb_4_plus_non_hr": 0.022982362373062535
+          },
+          "hr_driven_4_plus": {
+            "actual_rate": 0.11678246926777125,
+            "avg_probability": 0.1124811590053609,
+            "calibration_error": -0.004301310262410346,
+            "brier": 0.10121140076602192
+          }
+        },
+        "validation_brier_gain": -0.000503767967991231,
+        "validation_hr_tail_brier_gain": 8.113794075838288e-05
+      },
+      "tb_state_model_kind": "convolution",
+      "two_part_pa": {
+        "enabled": false,
+        "low_pa_rows": 1439,
+        "low_pa_rate": 0.18656813172565798,
+        "low_pa_model_brier": 0.09271660574823624,
+        "low_pa_baseline_brier": 0.1518079794517036,
+        "distribution_enabled": true,
+        "immutable_lock_low_pa_rows": 1849,
+        "distribution_validation_rows": 7713,
+        "distribution_validation_brier": 0.09271660574823624,
+        "distribution_validation_baseline_brier": 0.1518079794517036,
+        "activation_reason": "distribution_only_gain",
+        "normal_pa_rows": 6274,
+        "normal_pa_mae": 0.46138589476789615,
+        "low_pa_conditional_mean": 1.1629392971246006
+      }
+    }
+  },
+  "k_v3": {},
+  "models": {
+    "pitcher_strikeouts": {
+      "distribution": "learned_k_per_bf_mixed_over_bf_uncertainty",
+      "fallback": "poisson_from_opportunity_adjusted_k_mean",
+      "k_v3_enabled": false
+    },
+    "batter_hits": {
+      "distribution": "nonlinear_event_curve_mixed_over_projected_pa_distribution"
+    },
+    "batter_total_bases": {
+      "distribution": "explicit_0_1_2_3_4plus_hr_nonhr_states_from_nonlinear_event_curve"
+    },
+    "batter_home_runs": {
+      "distribution": "separate_rare_event_head_with_pa_mixture"
+    }
+  },
+  "status": "ready",
+  "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_distribution_models_batter_home_runs_latest.md"
+}

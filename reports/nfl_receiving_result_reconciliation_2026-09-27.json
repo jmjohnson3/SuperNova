@@ -1,0 +1,80 @@
+{
+  "built_at": "2026-09-28T14:56:42.585008+00:00",
+  "counts": {
+    "void_nonparticipant": 5
+  },
+  "unresolved_final_rows": 0,
+  "rows": [
+    {
+      "forecast_id": 7497,
+      "game_id": "2026_03_NYJ_DET",
+      "player_id": "00-0039890",
+      "player": "A.Mitchell",
+      "team": "NYJ",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-09-28T14:50:46.892603+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 8121,
+      "game_id": "2026_03_NYJ_DET",
+      "player_id": "00-0039890",
+      "player": "A.Mitchell",
+      "team": "NYJ",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-09-28T14:50:46.892603+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 8623,
+      "game_id": "2026_03_TEN_NYG",
+      "player_id": "00-0035250",
+      "player": "D.Singletary",
+      "team": "NYG",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-09-28T14:50:46.892603+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 8739,
+      "game_id": "2026_03_NYJ_DET",
+      "player_id": "00-0039890",
+      "player": "A.Mitchell",
+      "team": "NYJ",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-09-28T14:50:46.892603+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 9141,
+      "game_id": "2026_03_TEN_NYG",
+      "player_id": "00-0035250",
+      "player": "D.Singletary",
+      "team": "NYG",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-09-28T14:50:46.892603+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    }
+  ],
+  "unique_unresolved_player_games": 0,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

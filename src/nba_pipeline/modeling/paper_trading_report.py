@@ -16,10 +16,11 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.modeling.paper_trading_report")
 
 _ET = ZoneInfo("America/New_York")
-PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 
 
 def _roi(wins: int, n: int) -> float:

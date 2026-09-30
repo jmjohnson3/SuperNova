@@ -1,0 +1,126 @@
+"""Selection-preserving FanDuel links for publication, not forecast mutation."""
+from __future__ import annotations
+
+import html
+import re
+from urllib.parse import parse_qsl, urlencode, urlsplit
+
+CONTRACT = 'fanduel-betslip-links-v1'
+BETSLIP_BASE = 'https://account.sportsbook.fanduel.com/sportsbook/addToBetslip'
+MAX_LEGS = 20
+
+
+def provider_link(link):
+    """Keep the original destination as a fallback, with safe Markdown boundaries."""
+    if not isinstance(link, str):
+        return None
+    link = html.unescape(link.strip())
+    if not link or any(c.isspace() or ord(c) < 32 or c in '<>\\' for c in link):
+        return None
+    try:
+        url = urlsplit(link)
+        host = url.hostname or ''
+        if (url.scheme != 'https' or url.username or url.password or url.port is not None
+                or not (host == 'fanduel.com' or host.endswith('.fanduel.com'))):
+            return None
+    except ValueError:
+        return None
+    return link
+
+
+def selections(link):
+    """Read scalar or indexed IDs. Never borrow a missing ID or a different leg."""
+    link = provider_link(link)
+    if not link:
+        return ()
+    url = urlsplit(link)
+    if url.path.rstrip('/') not in {'/addToBetslip', '/sportsbook/addToBetslip'} or url.fragment:
+        return ()
+    try:
+        query = parse_qsl(url.query, keep_blank_values=True, max_num_fields=100)
+    except ValueError:
+        return ()
+    legs = {}
+    styles = set()
+    for key, value in query:
+        if not key.startswith(('marketId', 'selectionId')):
+            continue
+        match = re.fullmatch(r'(marketId|selectionId)(?:\[(\d+)\])?', key)
+        if not match:
+            return ()
+        field, index = match.groups()
+        styles.add('scalar' if index is None else 'indexed')
+        index = int(index or 0)
+        if index >= MAX_LEGS:
+            return ()
+        leg = legs.setdefault(index, {})
+        if field in leg:
+            return ()
+        pattern = r'[0-9]+(?:\.[0-9]+)?' if field == 'marketId' else r'[0-9]+'
+        if not re.fullmatch(pattern, value):
+            return ()
+        leg[field] = value
+    if len(styles) != 1 or not legs:
+        return ()
+    result = []
+    markets = {}
+    for _, leg in sorted(legs.items()):
+        if set(leg) != {'marketId', 'selectionId'}:
+            return ()
+        market, selection = leg['marketId'], leg['selectionId']
+        if market in markets and markets[market] != selection:
+            return ()
+        markets[market] = selection
+        if (market, selection) not in result:
+            result.append((market, selection))
+    return tuple(result)
+
+
+def _betslip_url(legs):
+    query = [(f'{key}[{i}]', value) for i, (market, selection) in enumerate(legs)
+             for key, value in (('marketId', market), ('selectionId', selection))]
+    # Avoid raw brackets in Discord URLs; preserve IDs as strings, never floats.
+    return BETSLIP_BASE + '?' + urlencode(query)
+
+
+def single_betslip_url(link):
+    legs = selections(link)
+    return _betslip_url(legs) if len(legs) == 1 else None
+
+
+def parlay_betslip_url(links):
+    legs = []
+    markets = {}
+    for link in links:
+        parsed = selections(link)
+        # Each displayed pick must describe one selection; never omit invalid picks.
+        if len(parsed) != 1:
+            return None
+        market, selection = parsed[0]
+        if market in markets and markets[market] != selection:
+            return None
+        markets[market] = selection
+        if parsed[0] not in legs:
+            legs.append(parsed[0])
+    return _betslip_url(legs) if 2 <= len(legs) <= MAX_LEGS else None
+
+
+def row_link(row):
+    if str(row.get('book') or '').lower() != 'fanduel':
+        return ''
+    original = provider_link(row.get('link'))
+    betslip = single_betslip_url(original)
+    if betslip:
+        fallback = f' | [Provider link](<{original}>)' if original != betslip else ''
+        return f' [Add to slip](<{betslip}>){fallback}'
+    if original:
+        return f' [Open FanDuel - manual selection](<{original}>)'
+    return ' | Betslip link unavailable' if row.get('line') is not None else ''
+
+
+def format_prop_row(row, *, action):
+    # Reuse the frozen numeric formatter without changing its scoring fingerprint.
+    from nfl_pipeline.modeling import predict_player_props as props
+    rendered = props._format_prop_row(dict(row, link=None), action=action)
+    from nfl_pipeline.forecast_outputs import display_suffix
+    return rendered + display_suffix(row) + (row_link(row) if row.get('line') is not None else '')

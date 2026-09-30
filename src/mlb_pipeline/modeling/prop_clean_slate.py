@@ -48,19 +48,23 @@ def _rate(numerator: Any, denominator: Any) -> float | None:
 def clean_slate_reasons(row: dict[str, Any], thresholds: CleanSlateThresholds) -> list[str]:
     side_locks = _safe_int(row.get("side_lock_rows"))
     valid_side_locks = _safe_int(row.get("valid_side_locks"))
+    captured_side_locks = _safe_int(row.get("captured_side_locks")) or valid_side_locks
     training_rows = _safe_int(row.get("training_rows"))
     close_times = _safe_int(row.get("close_times"))
     missing_lock_rate = _rate(row.get("missing_lock_examples"), training_rows)
     stale_close_rate = _rate(row.get("stale_close_examples"), training_rows)
-    valid_coverage = _rate(valid_side_locks, side_locks)
+    capture_coverage = _rate(captured_side_locks, side_locks)
+    valid_close_coverage = _rate(valid_side_locks, side_locks)
 
     reasons: list[str] = []
     if side_locks < thresholds.min_side_locks:
         reasons.append(f"side_locks<{thresholds.min_side_locks}")
-    if valid_side_locks < thresholds.min_valid_side_locks:
-        reasons.append(f"valid_side_locks<{thresholds.min_valid_side_locks}")
-    if valid_coverage is None or valid_coverage < thresholds.min_valid_coverage:
-        reasons.append(f"valid_clv_coverage<{thresholds.min_valid_coverage:.2f}")
+    if captured_side_locks < thresholds.min_valid_side_locks:
+        reasons.append(f"captured_side_locks<{thresholds.min_valid_side_locks}")
+    if capture_coverage is None or capture_coverage < thresholds.min_valid_coverage:
+        reasons.append(f"close_capture_coverage<{thresholds.min_valid_coverage:.2f}")
+    if valid_close_coverage is None or valid_close_coverage < thresholds.min_valid_coverage:
+        reasons.append(f"valid_close_coverage<{thresholds.min_valid_coverage:.2f}")
     if training_rows <= 0:
         reasons.append("no_training_rows")
     if missing_lock_rate is None or missing_lock_rate > thresholds.max_missing_lock_rate:
@@ -80,7 +84,10 @@ def decorate_clean_slate_row(row: dict[str, Any], thresholds: CleanSlateThreshol
     out = dict(row)
     training_rows = _safe_int(out.get("training_rows"))
     side_locks = _safe_int(out.get("side_lock_rows"))
+    captured_side_locks = _safe_int(out.get("captured_side_locks")) or _safe_int(out.get("valid_side_locks"))
     out["valid_clv_coverage"] = _rate(out.get("valid_side_locks"), side_locks)
+    out["operational_close_capture_coverage"] = _rate(captured_side_locks, side_locks)
+    out["line_available_rate_at_close"] = _rate(out.get("line_available_side_locks"), captured_side_locks)
     out["missing_lock_rate"] = _rate(out.get("missing_lock_examples"), training_rows)
     out["stale_close_rate"] = _rate(out.get("stale_close_examples"), training_rows)
     reasons = clean_slate_reasons(out, thresholds)
@@ -217,6 +224,18 @@ def load_clean_slate_rows(
                 WHERE c.snapshot_role = 'close'
                   AND c.as_of_date = l.as_of_date
                   AND c.event_id = l.event_id
+                  AND c.bookmaker_key = l.bookmaker_key
+                  AND c.snapshot_at_utc > l.snapshot_at_utc
+                  AND c.snapshot_at_utc BETWEEN
+                        l.commence_time_utc - interval '2 hours'
+                        AND l.commence_time_utc
+            ) AS has_close_capture,
+            EXISTS (
+                SELECT 1
+                FROM odds.mlb_player_prop_line_snapshots c
+                WHERE c.snapshot_role = 'close'
+                  AND c.as_of_date = l.as_of_date
+                  AND c.event_id = l.event_id
                   AND c.player_name_norm = l.player_name_norm
                   AND c.stat = l.stat
                   AND c.bookmaker_key = l.bookmaker_key
@@ -229,7 +248,7 @@ def load_clean_slate_rows(
                         (l.selected_side = 'over' AND c.over_price IS NOT NULL)
                      OR (l.selected_side = 'under' AND c.under_price IS NOT NULL)
                   )
-            ) AS has_valid_close
+            ) AS line_available_at_close
         FROM snapshots l
         WHERE l.snapshot_role = 'lock'
           AND l.selected_side IN ('over', 'under')
@@ -237,7 +256,9 @@ def load_clean_slate_rows(
     valid_counts AS (
         SELECT
             slate_date,
-            COUNT(*) FILTER (WHERE has_valid_close) AS valid_side_locks
+            COUNT(*) FILTER (WHERE has_close_capture) AS captured_side_locks,
+            COUNT(*) FILTER (WHERE line_available_at_close) AS line_available_side_locks,
+            COUNT(*) FILTER (WHERE line_available_at_close) AS valid_side_locks
         FROM lock_coverage
         GROUP BY slate_date
     ),
@@ -250,6 +271,8 @@ def load_clean_slate_rows(
         COALESCE(s.side_lock_rows, 0) AS side_lock_rows,
         COALESCE(s.close_rows, 0) AS close_rows,
         COALESCE(v.valid_side_locks, 0) AS valid_side_locks,
+        COALESCE(v.captured_side_locks, 0) AS captured_side_locks,
+        COALESCE(v.line_available_side_locks, 0) AS line_available_side_locks,
         COALESCE(s.lock_phases, 0) AS lock_phases,
         COALESCE(s.close_times, 0) AS close_times,
         COALESCE(s.lock_identity_gaps, 0) AS lock_identity_gaps,

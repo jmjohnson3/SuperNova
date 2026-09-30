@@ -1,0 +1,13 @@
+{
+  "contract": "nfl-shared-yardage-benchmark-v1",
+  "run_id": "benchmark-20260921T152139155071Z",
+  "scored_at": "2026-09-21T15:29:20.579301+00:00",
+  "artifact_created_at": "2026-09-21T15:27:37.570723+00:00",
+  "training_end": "2026-09-17",
+  "source_manifest": {
+    "run_id": "benchmark-20260921T152139155071Z",
+    "sha256": "ee0eac73eb8fd17b7630840d5d0042d4a48219ff5a472d51653c36d3f5ea333a"
+  },
+  "rows": [],
+  "exclusions": {}
+}

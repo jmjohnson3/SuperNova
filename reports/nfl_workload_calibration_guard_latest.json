@@ -1,0 +1,33 @@
+{
+  "source_run": "workload-repair-20260928T210154323193Z",
+  "stats": {
+    "receiving_yards": {
+      "enabled": false,
+      "before": {
+        "rows": 792,
+        "brier": 0.23385856615191622,
+        "log_loss": 0.6621321209171752,
+        "calibration_error": 0.07806935028093158,
+        "probability_bias": 0.03810162375488667,
+        "coverage_80": 0.8618181818181818,
+        "interval_score": 83.78963319740383
+      },
+      "after": {
+        "rows": 792,
+        "brier": 0.22849573258019493,
+        "log_loss": 0.649253022452002,
+        "calibration_error": 0.023416465233853684,
+        "probability_bias": -1.2813193312998744e-05,
+        "coverage_80": 1.0,
+        "interval_score": 151.92534856301666
+      },
+      "reason": "full_curve_calibration_gate_failed"
+    },
+    "rushing_yards": {
+      "enabled": false,
+      "reason": "line_calibration_not_accepted"
+    }
+  },
+  "production_changed": false,
+  "original_artifact_unchanged": true
+}

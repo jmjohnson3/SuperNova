@@ -1,0 +1,85 @@
+{
+  "config": {
+    "strategy_id": "fanduel-common-receiving-v1",
+    "trial_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+    "release": "nfl-20260918T143342Z",
+    "variant": "stable_ensemble_calibrated",
+    "artifact_sha256": "766abeada2c010094c71e89f85e2978974df7b5d3d4c40aa5f5695d90354460c",
+    "scoring_version": "e29cbbca864ea8e37e57d7ba178ee30ff3dd371a412726d569d8f89b063c1afd",
+    "source_kind": "prop",
+    "stat": "receiving_yards",
+    "book": "fanduel",
+    "research_registration": {
+      "config": {
+        "trial_id": "fanduel-common-receiving-v1",
+        "contract": "nfl-research-strategy-v1",
+        "registered_at": "2026-09-22T16:31:06.874590+00:00",
+        "run_id": "benchmark-20260921T230305171980Z",
+        "artifact_sha256": "766abeada2c010094c71e89f85e2978974df7b5d3d4c40aa5f5695d90354460c",
+        "production_release": "nfl-20260918T143342Z",
+        "stat": "receiving_yards",
+        "book": "fanduel",
+        "variant": "stable_ensemble_calibrated",
+        "market_keys": [
+          "player_reception_yds",
+          "player_receiving_yards"
+        ],
+        "rules": {
+          "max_per_date": 3,
+          "max_per_game": 2,
+          "max_per_player_game": 1,
+          "max_quote_age_minutes": 20,
+          "sides": "original_locked_side_only",
+          "rank": "challenger_EV_desc_then_forecast_id",
+          "require_true_pair": true,
+          "require_positive_ev": true,
+          "require_positive_market_edge": true,
+          "require_original_drift_pass": true,
+          "require_book_link": true,
+          "updates": "first_eligible_capture_fills_remaining_daily_slots_no_replacements"
+        },
+        "review": {
+          "min_independent_weeks": 3,
+          "min_selected_player_games": 50,
+          "brier_gain_lower_95_above_zero": true,
+          "calibration_must_improve": true,
+          "coverage_80_min": 0.75,
+          "coverage_80_max": 0.85,
+          "min_valid_close_coverage": 0.9,
+          "min_clv_beat_rate": 0.55,
+          "min_roi": 0.0,
+          "min_average_clv": 0.0,
+          "max_player_share": 0.2,
+          "max_team_share": 0.35,
+          "max_week_share": 0.5
+        },
+        "automatic_deployment": false,
+        "automatic_betting_approval": false,
+        "research_only": true
+      },
+      "sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a"
+    },
+    "policy": {
+      "version": "nfl-cash-trial-v1",
+      "book": "fanduel",
+      "stake": 1.0,
+      "daily_limit": 5,
+      "weekly_stake_limit": 20.0,
+      "loss_limit": 30.0,
+      "checkpoints": [
+        50,
+        100,
+        200
+      ],
+      "min_weeks": 3,
+      "family_alpha": 0.05,
+      "strategy_slots": 8,
+      "max_ece": 0.05,
+      "min_close": 0.9,
+      "max_stale": 0.02,
+      "min_clv_beat": 0.55
+    },
+    "registered_at": "2026-09-27T00:00:25.773901+00:00"
+  },
+  "sha256": "d868a14c4857995b2da380673dcebb9b014caaa9576f67baf427725bab057be0"
+}

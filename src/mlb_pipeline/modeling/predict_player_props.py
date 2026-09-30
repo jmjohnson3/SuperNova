@@ -24,6 +24,7 @@ import os
 import re
 import sys
 import unicodedata
+import warnings
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -60,11 +61,25 @@ from .bankroll_ledger import (
     prop_bankroll_pick_key,
     prop_bankroll_risk_slot,
 )
+from .ai_pick_engine import load_ai_pick_rows, refresh_ai_pick_engine
 from .model_pick_ledger import insert_prop_model_pick_ledger
+from .daily_forecast_ledger import lock_hitter_rate_shadow_forecasts, lock_player_forecasts
+from .external_pick_ledger import attach_external_agreement
+from .model_release import (
+    HITTER_CHALLENGER_ARTIFACT,
+    ensure_hitter_production_artifact,
+    ensure_hitter_rate_live_artifact,
+    hitter_model_release_id,
+    hitter_production_artifact_path,
+    hitter_rate_live_artifact_path,
+    hitter_rate_shadow_release_id,
+    pitcher_model_release_id,
+)
 from .features import add_player_prop_derived_features, build_fd_parlay_url
 from .prop_candidate_engine import (
     book_label as _prop_book_label,
     candidate_from_prediction_row,
+    exceeds_non_lottery_line_cap,
     pick_score as _prop_pick_score,
 )
 from .prop_betting_layer import apply_prop_betting_layer, apply_prop_market_side_prior
@@ -74,13 +89,14 @@ from .prop_offer_links import (
     filter_prop_offers_for_game,
 )
 from .prop_offer_snapshots import minimum_american_price
+from .prop_prediction_schema import _UPSERT_SQL, _ensure_schema
 from .prop_shadow_selector import (
     SelectorContext as PropSelectorContext,
     ShadowSelectorConfig as PropSelectorConfig,
     score_prediction_row as score_prop_shadow_row,
 )
 from .prop_real_money_kill_switch import load_prop_kill_switch_state
-from .discord_record_summary import format_record_summary
+from .prop_layer_promotion_report import layer_auto_integration_enabled
 from .side_recalibration import (
     apply_side_calibrator,
     price_bucket as _cal_price_bucket,
@@ -156,6 +172,10 @@ class PredictConfig:
     market_side_prior_max_blend: float = 0.35
     walk_forward_policy_file: str = "prop_walk_forward_accuracy_report.json"
     apply_walk_forward_policy: bool = True
+    tb15_line_calibrators_file: str = "prop_tb15_line_calibrators.json"
+    apply_tb15_line_calibration: bool = True
+    tb_tail_state_model_file: str = "prop_tb_tail_state_model.joblib"
+    apply_tb_tail_state_model: bool = True
     # Bankroll props reopen only after this policy approves the exact market/side/line/price bucket.
     bucket_reopen_policy_file: str = "prop_bucket_reopen_policy.json"
     enforce_prop_bucket_reopen: bool = True
@@ -170,17 +190,22 @@ class PredictConfig:
     lottery_max_per_game: int = 2
     # Shadow-bankroll layer: labels real-money readiness without hiding signals.
     bankroll_shadow_mode: bool = True
+    # Live prediction should validate runtime dependencies, not run DDL. Use
+    # --allow-schema-ddl only for manual repair/bootstrap runs.
+    allow_schema_ddl: bool = False
     bankroll_max_stake_pct: float = 0.005
     bankroll_max_daily_exposure_pct: float = 0.02
     bankroll_max_lay_price: int = -180
     bankroll_reference_usd: float = 1000.0
     bankroll_micro_stake_usd: float = 1.0
     bankroll_starter_stake_pct: float = 0.001
-    # Discord research output: keep bankroll links/parlays first, then show
-    # linked paper props by stat so research plays do not get mistaken for
-    # bankroll bets. Set paper limit to 0 to show every priced row per section.
-    discord_show_paper_links: bool = True
+    projection_micro_stake_usd: float = 1.0
+    projection_micro_max_props: int = 5
+    # Discord research output: keep only bankroll/micro sections actionable by
+    # default. Paper/research rows are forecasts, not real-money instructions.
+    discord_show_paper_links: bool = False
     discord_include_all_priced_props: bool = False
+    discord_show_no_bet_diagnostics: bool = True
     discord_paper_limit: int = 10
 
 
@@ -2070,6 +2095,46 @@ def _load_prop_walk_forward_policy(model_dir: Path, file_name: str) -> dict:
     return policy
 
 
+def _load_prop_tb15_line_calibrators(model_dir: Path, file_name: str) -> dict:
+    path = model_dir / file_name
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("Could not parse TB 1.5 line calibrators at %s: %s", path, exc)
+        return {}
+    calibrators = raw.get("calibrators") or {}
+    enabled = sum(1 for rec in calibrators.values() if bool((rec or {}).get("enabled")))
+    if enabled:
+        log.info("Loaded TB 1.5 line calibrators from %s (%d enabled)", path, enabled)
+    return raw
+
+
+def _load_prop_tb_tail_state_model(model_dir: Path, file_name: str) -> dict | None:
+    if joblib is None:
+        return None
+    path = model_dir / file_name
+    if not path.exists():
+        return None
+    try:
+        artifact = joblib.load(path)
+    except Exception as exc:
+        log.warning("Could not load TB tail state model at %s: %s", path, exc)
+        return None
+    if not artifact.get("accepted") or artifact.get("model") is None:
+        return None
+    alpha = _float_or_none(artifact.get("selected_blend_alpha"))
+    if alpha is None or alpha <= 0.0:
+        return None
+    log.info(
+        "Loaded accepted TB tail state model from %s (blend alpha %.2f)",
+        path,
+        alpha,
+    )
+    return artifact
+
+
 def _load_prop_bucket_reopen_policy(model_dir: Path, file_name: str) -> dict:
     path = model_dir / file_name
     if not path.exists():
@@ -2094,6 +2159,62 @@ def _float_or_none(value: Any) -> Optional[float]:
     return out if math.isfinite(out) else None
 
 
+def _logit_prob(p: float) -> float:
+    p = max(1e-6, min(1.0 - 1e-6, float(p)))
+    return math.log(p / (1.0 - p))
+
+
+def _inv_logit_prob(z: float) -> float:
+    return 1.0 / (1.0 + math.exp(-max(-30.0, min(30.0, float(z)))))
+
+
+def _tb15_prob_bin(value: Any) -> str:
+    p = _clip_probability(value)
+    if p is None:
+        return "missing_prob"
+    if p < 0.40:
+        return "p<40"
+    if p < 0.55:
+        return "p40_55"
+    if p < 0.70:
+        return "p55_70"
+    return "p70_plus"
+
+
+def _apply_tb15_line_calibrator(
+    p_over: Optional[float],
+    calibrators: dict | None,
+    *,
+    bookmaker_key: Any,
+    price: Any,
+) -> tuple[Optional[float], Optional[str]]:
+    """Apply enabled TB 1.5 over line/book calibration without falling through disabled exact keys."""
+    p = _clip_probability(p_over)
+    if p is None or not calibrators:
+        return p_over, None
+    cal_map = calibrators.get("calibrators") or {}
+    if not cal_map:
+        return p, None
+    book = str(bookmaker_key or "unknown").strip().lower() or "unknown"
+    pb = _cal_price_bucket(price)
+    keys = [f"{book}|{pb}", f"{book}|*", f"*|{pb}", "*|*"]
+    for key in keys:
+        rec = cal_map.get(key)
+        if not rec:
+            continue
+        if not bool(rec.get("enabled")):
+            return p, None
+        bin_key = _tb15_prob_bin(p)
+        bin_rec = (rec.get("bins") or {}).get(bin_key) or {}
+        offset = bin_rec.get("offset", rec.get("offset", 0.0))
+        try:
+            calibrated = _inv_logit_prob(_logit_prob(p) + float(offset or 0.0))
+        except Exception:
+            return p, None
+        return max(1e-6, min(1.0 - 1e-6, calibrated)), f"tb15_line:{key}:{bin_key}"
+    return p, None
+
+
 def _slot_pa_prior(slot: Optional[float]) -> Optional[float]:
     if slot is None:
         return None
@@ -2116,7 +2237,7 @@ def _rough_hitter_projected_pa(row: pd.Series, effective_order: Optional[float])
 def _load_hitter_pa_artifact(model_dir: Path) -> Optional[dict]:
     if joblib is None:
         return None
-    path = model_dir / "hitter_player_game_outcome_models.joblib"
+    path = ensure_hitter_production_artifact(model_dir) or hitter_production_artifact_path(model_dir)
     if not path.exists():
         return None
     try:
@@ -2139,6 +2260,267 @@ def _load_hitter_pa_artifact(model_dir: Path) -> Optional[dict]:
         "unknown" if pa_gain is None else f"{pa_gain:.4f}",
     )
     return artifact
+
+
+def _direct_hitter_count_repair_enabled(artifact: Optional[dict], prefix: str) -> bool:
+    """Return whether a player-game count head passed its own OOF repair gate."""
+    if not artifact:
+        return False
+    models = artifact.get("models") or {}
+    alpha = _float_or_none(models.get(f"{prefix}_count_blend_alpha")) or 0.0
+    if alpha <= 0.0 or models.get(f"{prefix}_count_model") is None:
+        return False
+    rec = artifact.get("recommendation") or {}
+    metrics = artifact.get("metrics") or {}
+    metric = metrics.get(f"direct_{prefix}_count_repair") or {}
+    return bool(
+        rec.get(f"direct_{prefix}_count_repair_enabled")
+        or metric.get("enabled")
+        or _float_or_none(rec.get(f"direct_{prefix}_count_repair_mae_gain")) is not None
+        and float(rec.get(f"direct_{prefix}_count_repair_mae_gain") or 0.0) > 0.0
+    )
+
+
+def _load_hitter_rate_count_artifact(
+    model_dir: Path,
+    production_artifact: Optional[dict],
+) -> Optional[dict]:
+    """Load the artifact used for live hits/HR count-repair scoring.
+
+    PA remains tied to the frozen production artifact. Hits/HR count heads can
+    be newer challenger artifacts when their own date-purged count-repair gate
+    passed; the betting layer still has separate CLV/bucket gates.
+    """
+    mode = os.getenv("MLB_HITTER_RATE_CHALLENGER_ARTIFACT_MODE", "accepted").strip().lower()
+    if mode in {"production", "frozen", "baseline", "off"}:
+        return production_artifact
+    if joblib is None:
+        return production_artifact
+    if mode in {"challenger", "latest", "nightly"}:
+        path = Path(model_dir) / HITTER_CHALLENGER_ARTIFACT
+    else:
+        path = ensure_hitter_rate_live_artifact(model_dir) or hitter_rate_live_artifact_path(model_dir)
+    if not path.exists():
+        return production_artifact
+    try:
+        candidate = joblib.load(path)
+    except Exception as exc:
+        log.warning("Could not load hitter hits/HR challenger artifact at %s: %s", path, exc)
+        return production_artifact
+    accepted = [
+        prefix for prefix in ("hits", "hr")
+        if _direct_hitter_count_repair_enabled(candidate, prefix)
+    ]
+    if mode in {"challenger", "latest", "nightly"} or accepted:
+        log.info(
+            "Loaded hitter hits/HR count-repair artifact from %s (accepted heads=%s)",
+            path,
+            ",".join(accepted) if accepted else "forced",
+        )
+        return candidate
+    return production_artifact
+
+
+def _load_hitter_hits_bias_calibration(model_dir: Path) -> Optional[dict[str, Any]]:
+    best_payload: Optional[dict[str, Any]] = None
+    best_path: Optional[Path] = None
+    for filename in ("hitter_hits_live_bias_repair_v1.json", "hitter_hits_bias_calibration_v2.json"):
+        path = Path(model_dir) / filename
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+        except Exception:
+            log.warning("Could not read hitter hits bias calibration at %s", path, exc_info=True)
+            continue
+        alpha = _float_or_none(payload.get("selected_alpha")) or 0.0
+        if payload.get("accepted") and alpha > 0.0 and payload.get("production_maps"):
+            best_payload = payload
+            best_path = path
+            break
+        if best_payload is None:
+            best_payload = payload
+            best_path = path
+    if best_payload and best_payload.get("accepted"):
+        log.info(
+            "Loaded accepted hitter hits bias calibration from %s (alpha %.2f)",
+            best_path,
+            _float_or_none(best_payload.get("selected_alpha")) or 0.0,
+        )
+    return best_payload
+
+
+def _live_lineup_bucket(effective_order: Any) -> str:
+    order = _float_or_none(effective_order)
+    if order is None:
+        return "slot_unknown"
+    if 1.0 <= order <= 2.0:
+        return "slot_1_2"
+    if 3.0 <= order <= 5.0:
+        return "slot_3_5"
+    if 6.0 <= order <= 9.0:
+        return "slot_6_9"
+    return "slot_unknown"
+
+
+def _live_projected_pa_bucket(projected_pa: Any) -> str:
+    pa = _float_or_none(projected_pa)
+    if pa is None:
+        return "projected_pa_missing"
+    if pa >= 4.4:
+        return "projected_pa_high_4_4_plus"
+    if pa >= 3.8:
+        return "projected_pa_mid_3_8_4_4"
+    return "projected_pa_low_under_3_8"
+
+
+def _live_player_prior_hit_bucket(row: pd.Series, artifact: Optional[dict], fallback_pred_hits: Any, projected_pa: Any) -> tuple[str, Optional[float]]:
+    prior = _float_or_none(row.get("player_prior_hit_rate"))
+    if prior is None and artifact:
+        try:
+            player_key = str(int(row.get("player_id")))
+        except (TypeError, ValueError):
+            player_key = str(row.get("player_id") or "")
+        prior = _float_or_none(((artifact.get("player_prior_state") or {}).get(player_key) or {}).get("player_prior_hit_rate"))
+    if prior is None:
+        pa = _float_or_none(projected_pa)
+        hits = _float_or_none(fallback_pred_hits)
+        if pa is not None and pa > 0 and hits is not None:
+            prior = hits / pa
+    if prior is None:
+        return "prior_hit_rate_missing", None
+    if prior >= 0.280:
+        return "prior_hit_rate_high", prior
+    if prior >= 0.235:
+        return "prior_hit_rate_mid", prior
+    return "prior_hit_rate_low", prior
+
+
+def _live_platoon_bucket(row: pd.Series) -> str:
+    batter_hand = str(row.get("batter_hand") or "unknown").upper()
+    pitcher_hand = str(row.get("opp_sp_hand") or "unknown").upper()
+    if batter_hand in {"L", "R"} and pitcher_hand in {"L", "R"}:
+        return "same_hand" if batter_hand == pitcher_hand else "opposite_hand"
+    return "unknown_hand"
+
+
+def _live_run_environment_bucket(row: pd.Series) -> str:
+    team_runs = _float_or_none(row.get("team_implied_runs"))
+    if team_runs is None:
+        total = _float_or_none(row.get("game_total_line")) or _float_or_none(row.get("market_total"))
+        team_runs = total / 2.0 if total is not None else None
+    if team_runs is None:
+        return "team_total_missing"
+    if team_runs >= 4.8:
+        return "team_total_high"
+    if team_runs >= 4.0:
+        return "team_total_mid"
+    return "team_total_low"
+
+
+def _live_park_hit_bucket(row: pd.Series) -> str:
+    park = _float_or_none(row.get("park_babip_factor"))
+    if park is None:
+        park = _float_or_none(row.get("park_run_factor"))
+    if park is None:
+        return "hit_park_missing"
+    if park >= 1.03:
+        return "hit_park_boost"
+    if park >= 0.97:
+        return "hit_park_neutral"
+    return "hit_park_suppress"
+
+
+def _apply_hitter_hits_bias_calibration(
+    *,
+    row: pd.Series,
+    pa_info: dict[str, Any],
+    artifact: Optional[dict],
+    calibration: Optional[dict[str, Any]],
+    base_hits: Any,
+) -> tuple[Optional[float], dict[str, Any]]:
+    base = _float_or_none(base_hits)
+    if base is None:
+        return None, {"applied": False, "reason": "missing_base_hits"}
+    if not calibration:
+        return base, {"applied": False, "reason": "calibration_missing"}
+    alpha = _float_or_none(calibration.get("selected_alpha")) or 0.0
+    maps = list(calibration.get("production_maps") or [])
+    if not calibration.get("accepted") or alpha <= 0.0 or not maps:
+        return base, {
+            "applied": False,
+            "reason": calibration.get("reason") or calibration.get("status") or "calibration_not_accepted",
+        }
+    projected_pa = pa_info.get("projected_pa")
+    lineup_bucket = _live_lineup_bucket(pa_info.get("effective_batting_order"))
+    projected_pa_bucket = _live_projected_pa_bucket(projected_pa)
+    prior_bucket, prior_rate = _live_player_prior_hit_bucket(row, artifact, base, projected_pa)
+    platoon_bucket = _live_platoon_bucket(row)
+    player_id_numeric = _float_or_none(row.get("player_id"))
+    is_home_value = _float_or_none(row.get("is_home"))
+    team_total_bucket = _live_run_environment_bucket(row)
+    buckets = {
+        "player_id": str(int(player_id_numeric)) if player_id_numeric is not None else str(row.get("player_id") or ""),
+        "lineup_bucket": lineup_bucket,
+        "projected_pa_bucket": projected_pa_bucket,
+        "player_prior_hit_bucket": prior_bucket,
+        "platoon_bucket": platoon_bucket,
+        "handedness_bucket": platoon_bucket,
+        "lineup_pa_bucket": f"{lineup_bucket}|{projected_pa_bucket}",
+        "lineup_hand_bucket": f"{lineup_bucket}|{platoon_bucket}",
+        "lineup_prior_bucket": f"{lineup_bucket}|{prior_bucket}",
+        "platoon_prior_bucket": f"{platoon_bucket}|{prior_bucket}",
+        "park_hit_bucket": _live_park_hit_bucket(row),
+        "run_environment_bucket": team_total_bucket,
+        "team_total_bucket": team_total_bucket,
+        "pa_team_total_bucket": f"{projected_pa_bucket}|{team_total_bucket}",
+        "home_away_bucket": (
+            "home" if is_home_value is not None and is_home_value >= 0.5
+            else "away" if is_home_value is not None
+            else "missing"
+        ),
+    }
+    total_weight = 0.0
+    residual = 0.0
+    fallback_global = _float_or_none(calibration.get("production_global_residual")) or 0.0
+    contributors: list[dict[str, Any]] = []
+    for spec in maps:
+        key = str(spec.get("key") or "")
+        weight = _float_or_none(spec.get("weight")) or 0.0
+        if key not in buckets or weight <= 0.0:
+            continue
+        values = spec.get("values") or {}
+        fallback = _float_or_none(spec.get("fallback"))
+        if fallback is None:
+            fallback = fallback_global
+        raw = _float_or_none(values.get(str(buckets[key])))
+        used_fallback = raw is None
+        value = fallback if raw is None else raw
+        residual += weight * float(value)
+        total_weight += weight
+        contributors.append({
+            "key": key,
+            "bucket": buckets[key],
+            "residual": float(value),
+            "weight": float(weight),
+            "fallback": bool(used_fallback),
+        })
+    if total_weight <= 0.0:
+        return base, {"applied": False, "reason": "no_matching_calibration_maps", "buckets": buckets}
+    residual = max(-0.90, min(0.90, residual / total_weight))
+    corrected = max(0.0, min(5.0, base + alpha * residual))
+    return corrected, {
+        "applied": True,
+        "source": calibration.get("source") or "hits_bias_calibration_v2",
+        "selected_alpha": float(alpha),
+        "base_hits": float(base),
+        "residual": float(residual),
+        "correction": float(corrected - base),
+        "corrected_hits": float(corrected),
+        "player_prior_hit_rate": prior_rate,
+        "buckets": buckets,
+        "contributors": contributors[:8],
+    }
 
 
 def _pa_feature_value(row: pd.Series, name: str, projected_pa: Optional[float], effective_order: Optional[float]) -> Any:
@@ -2317,8 +2699,13 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
     model = artifact_models.get("pa_model")
     low_model = artifact_models.get("pa_low_model")
     normal_model = artifact_models.get("pa_normal_model")
-    use_two_part = bool(artifact_models.get("pa_two_part_use") and low_model is not None and normal_model is not None)
-    if model is None and not use_two_part:
+    has_pa_distribution = bool(
+        artifact_models.get("pa_distribution_use")
+        and low_model is not None
+        and normal_model is not None
+    )
+    use_two_part_mean = bool(artifact_models.get("pa_two_part_use") and has_pa_distribution)
+    if model is None and not use_two_part_mean:
         return infos
     try:
         valid_indices = [i for i, feat in enumerate(feature_rows) if feat is not None]
@@ -2334,22 +2721,36 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
                 X[col] = "unknown"
             X[col] = X[col].fillna("unknown").astype(str)
         model_input = X[numeric_features + categorical_features]
-        if use_two_part:
+        if has_pa_distribution:
             low_prob = np.clip(np.asarray(low_model.predict_proba(model_input)[:, 1], dtype=float), 1e-5, 1.0 - 1e-5)
             normal_pred = np.clip(np.asarray(normal_model.predict(model_input), dtype=float), 3.0, 7.0)
             low_states = ((((artifact.get("pa_uncertainty") or {}).get("global") or {}).get("low_pa_state_probs"))
                           or {"0": 0.05, "1": 0.20, "2": 0.75})
             low_total = sum(float(low_states.get(str(n), 0.0)) for n in range(3)) or 1.0
             low_mean = sum(n * float(low_states.get(str(n), 0.0)) for n in range(3)) / low_total
-            pred = np.clip(low_prob * low_mean + (1.0 - low_prob) * normal_pred, 0.4, 6.4)
+            two_part_pred = np.clip(low_prob * low_mean + (1.0 - low_prob) * normal_pred, 0.4, 6.4)
         else:
             low_prob = np.full(len(model_input), np.nan, dtype=float)
             normal_pred = np.full(len(model_input), np.nan, dtype=float)
+            two_part_pred = np.full(len(model_input), np.nan, dtype=float)
+        if use_two_part_mean:
+            pred = two_part_pred
+        else:
             pred = np.clip(np.asarray(model.predict(model_input), dtype=float), 0.4, 6.4)
     except Exception:
         log.warning("Validated hitter PA model failed at prediction time; using baseline PA", exc_info=True)
         return infos
 
+    production_mode = os.getenv("MLB_HITTER_PA_PRODUCTION_MODE", "auto").strip().lower()
+    if production_mode in {"challenger", "validated", "v3", "production", "live", "1", "true", "yes"}:
+        use_challenger_in_production = True
+    elif production_mode in {"baseline", "off", "shadow", "0", "false", "no"}:
+        use_challenger_in_production = False
+    else:
+        use_challenger_in_production = layer_auto_integration_enabled(
+            _MODEL_DIR,
+            "hitter_pa_v3_production",
+        )
     for pos, (i, pa) in enumerate(zip(valid_indices, pred)):
         if not math.isfinite(float(pa)):
             continue
@@ -2357,15 +2758,421 @@ def _predict_validated_hitter_pa(df: pd.DataFrame, artifact: Optional[dict]) -> 
         scale = 1.0
         if base is not None and base > 0:
             scale = max(0.75, min(1.25, float(pa) / float(base)))
+        challenger_source = (
+            "validated_two_part_pa"
+            if use_two_part_mean
+            else "validated_pa_model_with_distribution"
+            if has_pa_distribution
+            else "validated_pa_model"
+        )
         infos[i].update({
-            "projected_pa": float(pa),
+            "projected_pa": float(pa) if use_challenger_in_production else base,
             "validated_projected_pa": float(pa),
-            "pa_scale": scale,
-            "pa_model_source": "validated_two_part_pa" if use_two_part else "validated_pa_model",
+            "pa_scale": scale if use_challenger_in_production else 1.0,
+            "challenger_pa_scale": scale,
+            "pa_model_source": challenger_source if use_challenger_in_production else "baseline_production",
+            "pa_challenger_source": challenger_source,
             "low_pa_probability": float(low_prob[pos]) if math.isfinite(float(low_prob[pos])) else None,
             "normal_projected_pa": float(normal_pred[pos]) if math.isfinite(float(normal_pred[pos])) else None,
+            "two_part_projected_pa": float(two_part_pred[pos]) if math.isfinite(float(two_part_pred[pos])) else None,
         })
     return infos
+
+
+def _predict_validated_hitter_count_repair(
+    df: pd.DataFrame,
+    pa_infos: list[dict[str, Any]],
+    artifact: Optional[dict],
+    prefix: str,
+) -> tuple[np.ndarray, float]:
+    """Predict a direct player-game count for a validated gated blend."""
+    models = (artifact or {}).get("models") or {}
+    model = models.get(f"{prefix}_count_model")
+    alpha = _float_or_none(models.get(f"{prefix}_count_blend_alpha")) or 0.0
+    bias_offset = _float_or_none(models.get(f"{prefix}_count_bias_offset")) or 0.0
+    numeric = list(models.get(f"{prefix}_count_numeric_features") or [])
+    categorical = list(models.get(f"{prefix}_count_categorical_features") or [])
+    if model is None or alpha <= 0.0 or not numeric:
+        return np.full(len(df), np.nan, dtype=float), 0.0
+    try:
+        from .train_hitter_player_game_outcome_models import prepare_hitter_outcome_features
+
+        raw = df.copy().reset_index(drop=True)
+        raw["lineup_slot"] = [info.get("effective_batting_order") for info in pa_infos]
+        raw["projected_pa"] = [info.get("projected_pa") for info in pa_infos]
+        raw["confirmed_starter"] = [
+            info.get("confirmed_batting_order") is not None for info in pa_infos
+        ]
+        raw["lineup_source"] = raw.get(
+            "confirmed_lineup_source", pd.Series("rolling_batting_order", index=raw.index)
+        ).fillna("rolling_batting_order")
+        raw["starter_status_source"] = np.where(
+            raw["confirmed_starter"], "confirmed_lineup", "rolling_batting_order"
+        )
+        player_priors = (artifact or {}).get("player_prior_state") or {}
+        for index, player_id in enumerate(raw.get("player_id", pd.Series(index=raw.index, dtype=float))):
+            try:
+                player_key = str(int(player_id))
+            except (TypeError, ValueError):
+                player_key = str(player_id or "")
+            for name, value in (player_priors.get(player_key) or {}).items():
+                raw.loc[index, name] = value
+        features = prepare_hitter_outcome_features(raw)
+        for column in numeric:
+            if column not in features:
+                features[column] = np.nan
+            features[column] = pd.to_numeric(features[column], errors="coerce")
+        for column in categorical:
+            if column not in features:
+                features[column] = "unknown"
+            features[column] = features[column].fillna("unknown").astype(str)
+        upper = {"hits": 5.0, "tb": 8.0, "hr": 3.0}.get(prefix, 8.0)
+        prediction = np.clip(
+            np.asarray(model.predict(features[numeric + categorical]), dtype=float) + bias_offset,
+            0.0,
+            upper,
+        )
+        log.info(
+            "Enabled validated direct %s count repair (blend alpha %.2f, bias offset %+.3f)",
+            prefix,
+            alpha,
+            bias_offset,
+        )
+        return prediction, float(alpha)
+    except Exception:
+        log.warning("Validated direct %s repair failed; using legacy count", prefix, exc_info=True)
+        return np.full(len(df), np.nan, dtype=float), 0.0
+
+
+_TB_TAIL_STATES = ("zero", "one", "two_three", "four_plus_hr", "four_plus_non_hr")
+
+
+def _tb_tail_baseline_state_probs(tb_mean: Any, hr_mean: Any) -> dict[str, float] | None:
+    lam = _float_or_none(tb_mean)
+    if lam is None:
+        return None
+    lam = max(1e-6, min(12.0, lam))
+    probs = []
+    for k in range(4):
+        probs.append(math.exp(-lam) * (lam ** k) / math.factorial(k))
+    tail = max(0.0, 1.0 - sum(probs))
+    pred_hr = max(0.0, _float_or_none(hr_mean) or 0.0)
+    hr_tail = min(tail, (1.0 - math.exp(-pred_hr)) * 0.95)
+    non_hr_tail = max(0.0, tail - hr_tail)
+    out = {
+        "zero": probs[0],
+        "one": probs[1],
+        "two_three": probs[2] + probs[3],
+        "four_plus_hr": hr_tail,
+        "four_plus_non_hr": non_hr_tail,
+    }
+    total = sum(out.values()) or 1.0
+    return {key: value / total for key, value in out.items()}
+
+
+def _tb_tail_feature_value(
+    row: pd.Series,
+    name: str,
+    *,
+    pa_info: dict[str, Any],
+    hits_mean: float,
+    tb_mean: float,
+    hr_mean: float,
+) -> Any:
+    projected_pa = _float_or_none(pa_info.get("projected_pa"))
+    effective_order = _float_or_none(pa_info.get("effective_batting_order"))
+    if name == "model_pred_hits":
+        return hits_mean
+    if name == "model_pred_total_bases":
+        return tb_mean
+    if name == "model_pred_home_runs":
+        return hr_mean
+    if name == "pred_hit_rate":
+        return None if not projected_pa or projected_pa <= 0 else hits_mean / projected_pa
+    if name == "pred_tb_rate":
+        return None if not projected_pa or projected_pa <= 0 else tb_mean / projected_pa
+    if name == "pred_hr_rate":
+        return None if not projected_pa or projected_pa <= 0 else hr_mean / projected_pa
+    if name == "pred_extra_bases_per_hit":
+        return max(0.0, tb_mean - hits_mean) / max(hits_mean, 0.15)
+    if name == "lineup_slot":
+        return effective_order
+    if name == "confirmed_starter_num":
+        return 1.0 if pa_info.get("confirmed_batting_order") is not None else 0.0
+    if name == "projected_pa":
+        return projected_pa
+    if name == "pa_games":
+        return row.get("n_games_prev_10")
+    if name == "lineup_source":
+        return row.get("confirmed_lineup_source") or row.get("lineup_source") or "rolling_batting_order"
+    if name == "is_home":
+        return 1.0 if row.get("is_home") is True else 0.0 if row.get("is_home") is False else row.get("is_home")
+    value = _pa_feature_value(row, name, projected_pa, effective_order)
+    if value is not None:
+        return value
+    return row.get(name) if name in row else None
+
+
+def _predict_tb_tail_state_probability(
+    row: pd.Series,
+    *,
+    pa_info: dict[str, Any],
+    artifact: Optional[dict],
+    line: Any,
+    hits_mean: float,
+    tb_mean: float,
+    hr_mean: float,
+    offer_context: Optional[dict[str, Any]] = None,
+) -> tuple[Optional[float], dict[str, Any]]:
+    line_v = _float_or_none(line)
+    if line_v is None or abs(line_v - 1.5) > 1e-9:
+        return None, {}
+    offer_context = offer_context or {}
+    if str(offer_context.get("bookmaker_key") or "").lower() != "draftkings":
+        return None, {}
+    if str(offer_context.get("selected_offer_side") or "").lower() != "over":
+        return None, {}
+    if str(offer_context.get("pair_quality") or "").lower() != "same_book":
+        return None, {}
+    if not artifact or not artifact.get("accepted"):
+        return None, {}
+    dk_gate = ((artifact.get("metrics") or {}).get("dk_tb15_over_gate") or {})
+    if not dk_gate.get("passed"):
+        return None, {}
+    model = artifact.get("model")
+    if model is None:
+        return None, {}
+    alpha = _float_or_none(artifact.get("selected_blend_alpha")) or 0.0
+    if alpha <= 0.0:
+        return None, {}
+    numeric = list(artifact.get("numeric_features") or [])
+    categorical = list(artifact.get("categorical_features") or [])
+    if not numeric:
+        return None, {}
+    try:
+        feature = {
+            name: _tb_tail_feature_value(
+                row,
+                name,
+                pa_info=pa_info,
+                hits_mean=hits_mean,
+                tb_mean=tb_mean,
+                hr_mean=hr_mean,
+            )
+            for name in numeric + categorical
+        }
+        X = pd.DataFrame([feature])
+        for col in numeric:
+            if col not in X:
+                X[col] = np.nan
+            X[col] = pd.to_numeric(X[col], errors="coerce")
+        for col in categorical:
+            if col not in X:
+                X[col] = "unknown"
+            X[col] = X[col].fillna("unknown").astype(str)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="X does not have valid feature names.*")
+            raw = model.predict_proba(X[numeric + categorical])
+        classes = [str(cls) for cls in getattr(model.named_steps.get("model"), "classes_", [])]
+        direct = {state: 0.0 for state in _TB_TAIL_STATES}
+        for idx, cls in enumerate(classes):
+            if cls in direct:
+                direct[cls] = float(raw[0, idx])
+        direct_total = sum(direct.values()) or 1.0
+        direct = {key: value / direct_total for key, value in direct.items()}
+        baseline = _tb_tail_baseline_state_probs(tb_mean, hr_mean)
+        if not baseline:
+            return None, {}
+        blended = {
+            state: (1.0 - alpha) * baseline[state] + alpha * direct[state]
+            for state in _TB_TAIL_STATES
+        }
+        total = sum(blended.values()) or 1.0
+        blended = {key: value / total for key, value in blended.items()}
+        p_over = (
+            blended["two_three"]
+            + blended["four_plus_hr"]
+            + blended["four_plus_non_hr"]
+        )
+        return max(1e-6, min(1.0 - 1e-6, p_over)), {
+            "source": "tb_tail_state_model",
+            "blend_alpha": alpha,
+            "p_over_1_5": p_over,
+            "direct_four_plus_hr": direct["four_plus_hr"],
+            "direct_four_plus_non_hr": direct["four_plus_non_hr"],
+            "baseline_four_plus_hr": baseline["four_plus_hr"],
+            "baseline_four_plus_non_hr": baseline["four_plus_non_hr"],
+            "dk_tb15_over_gate": dk_gate,
+            "trained_at_utc": artifact.get("trained_at_utc"),
+        }
+    except Exception:
+        log.warning("TB tail state scorer failed for %s; falling back", row.get("player_id"), exc_info=True)
+        return None, {}
+
+
+def _hitter_rate_challenger_production_enabled(model_dir: Path = _MODEL_DIR) -> bool:
+    mode = os.getenv("MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", "auto").strip().lower()
+    if mode in {"1", "true", "yes", "production", "validated", "live"}:
+        return True
+    if mode in {"0", "false", "no", "shadow", "off", "baseline"}:
+        return False
+    return layer_auto_integration_enabled(model_dir, "hitter_rate_challenger_production")
+
+
+def _hitter_rate_challenger_live_forecast_enabled(
+    prefix: str,
+    artifact: Optional[dict],
+    model_dir: Path = _MODEL_DIR,
+) -> bool:
+    """Decide whether an accepted hits/HR count head should score live forecasts."""
+    enabled, _reason, _metrics = _hitter_rate_challenger_live_forecast_decision(prefix, artifact, model_dir)
+    return bool(enabled)
+
+
+def _hitter_rate_live_report_gate(
+    prefix: str,
+    model_dir: Path = _MODEL_DIR,
+) -> tuple[Optional[bool], str, dict[str, Any]]:
+    """Use prospective live-vs-legacy evidence to avoid enabling a worse rate head."""
+    stat_key = "home_runs" if prefix in {"hr", "home_runs"} else "hits"
+    path = model_dir / "hitter_live_vs_legacy_forecast_diff.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None, "live_vs_legacy_report_missing", {}
+    except Exception:
+        log.warning("Failed to read hitter live-vs-legacy report at %s", path, exc_info=True)
+        return None, "live_vs_legacy_report_unreadable", {}
+
+    rec = ((payload.get("graded_comparison") or {}).get(stat_key) or {})
+    rows = int(rec.get("rows") or 0)
+    dates = int(rec.get("dates") or 0)
+    mae_gain = _float_or_none(rec.get("mae_gain"))
+    live_mae = _float_or_none(rec.get("live_mae"))
+    legacy_mae = _float_or_none(rec.get("legacy_mae"))
+    live_bias = _float_or_none(rec.get("live_bias"))
+    legacy_bias = _float_or_none(rec.get("legacy_bias"))
+    line_brier_gain = None
+    if stat_key == "home_runs":
+        line_brier_gain = _float_or_none(((rec.get("hr_0_5_brier") or {}).get("brier_gain")))
+    metrics = {
+        "rows": rows,
+        "dates": dates,
+        "mae_gain": mae_gain,
+        "live_mae": live_mae,
+        "legacy_mae": legacy_mae,
+        "live_bias": live_bias,
+        "legacy_bias": legacy_bias,
+        "line_brier_gain": line_brier_gain,
+    }
+    if stat_key == "hits":
+        repair = payload.get("hits_live_bias_repair_v1") or {}
+        selected = repair.get("selected") or {}
+        if repair.get("accepted"):
+            metrics["hits_live_bias_repair_v1"] = {
+                "rows": repair.get("rows"),
+                "dates": repair.get("dates"),
+                "selected_alpha": repair.get("selected_alpha"),
+                "selected_mae": selected.get("mae"),
+                "mae_gain_vs_live": selected.get("mae_gain_vs_live"),
+                "mae_gain_vs_legacy": selected.get("mae_gain_vs_legacy"),
+                "selected_bias": selected.get("bias"),
+                "any_brier_gain_vs_legacy": selected.get("any_brier_gain_vs_legacy"),
+            }
+            return True, "hits_live_bias_repair_beats_live_and_legacy", metrics
+    if rows <= 0 or mae_gain is None:
+        return None, "live_vs_legacy_report_no_graded_rows", metrics
+    if mae_gain < 0:
+        return False, "live_vs_legacy_mae_worse", metrics
+    if live_bias is not None and legacy_bias is not None:
+        max_bias_worsening = 0.05 if stat_key == "hits" else 0.02
+        if abs(live_bias) > abs(legacy_bias) + max_bias_worsening:
+            return False, "live_vs_legacy_bias_worse", metrics
+    if stat_key == "home_runs" and line_brier_gain is not None and line_brier_gain < 0:
+        return False, "live_vs_legacy_hr_0_5_brier_worse", metrics
+    return True, "live_vs_legacy_mae_improved", metrics
+
+
+def _hitter_rate_challenger_live_forecast_decision(
+    prefix: str,
+    artifact: Optional[dict],
+    model_dir: Path = _MODEL_DIR,
+) -> tuple[bool, str, dict[str, Any]]:
+    """Return the per-head live forecast decision, reason, and evidence metrics."""
+    production_mode = os.getenv("MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", "").strip().lower()
+    if production_mode in {"1", "true", "yes", "production", "validated", "live"}:
+        return True, "forced_by_MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", {}
+    if production_mode in {"0", "false", "no", "shadow", "off", "baseline"}:
+        return False, "disabled_by_MLB_HITTER_RATE_CHALLENGER_PRODUCTION_MODE", {}
+
+    stat_env = {
+        "hits": "MLB_HITTER_HITS_CHALLENGER_FORECAST_MODE",
+        "hr": "MLB_HITTER_HR_CHALLENGER_FORECAST_MODE",
+        "home_runs": "MLB_HITTER_HR_CHALLENGER_FORECAST_MODE",
+    }.get(prefix, f"MLB_HITTER_{prefix.upper()}_CHALLENGER_FORECAST_MODE")
+    raw_mode = os.getenv(stat_env)
+    if raw_mode is None:
+        raw_mode = os.getenv("MLB_HITTER_RATE_CHALLENGER_FORECAST_MODE", "accepted")
+    mode = str(raw_mode).strip().lower()
+    if mode in {"0", "false", "no", "shadow", "off", "baseline"}:
+        return False, f"disabled_by_{stat_env if os.getenv(stat_env) is not None else 'MLB_HITTER_RATE_CHALLENGER_FORECAST_MODE'}", {}
+    if mode in {"strict", "promotion", "auto_control", "control"}:
+        enabled = layer_auto_integration_enabled(model_dir, "hitter_rate_challenger_production")
+        return bool(enabled), "layer_auto_integration_enabled" if enabled else "layer_auto_integration_not_enabled", {}
+    if mode in {"1", "true", "yes", "production", "validated", "live", "forecast"}:
+        return True, f"forced_by_{stat_env if os.getenv(stat_env) is not None else 'MLB_HITTER_RATE_CHALLENGER_FORECAST_MODE'}", {}
+
+    accepted = _direct_hitter_count_repair_enabled(artifact, prefix)
+    if not accepted:
+        return False, "head_not_accepted_by_rate_artifact", {}
+    gate, reason, metrics = _hitter_rate_live_report_gate(prefix, model_dir)
+    if gate is False:
+        return False, reason, metrics
+    return True, reason if gate is True else "accepted_head_no_prospective_gate_yet", metrics
+
+
+def _rebuild_tb_from_live_rate_components(
+    *,
+    legacy_tb: float,
+    legacy_hits: float,
+    legacy_hr: float,
+    live_hits: float,
+    live_hr: float,
+    alpha: Optional[float] = None,
+) -> tuple[Optional[float], dict[str, Any]]:
+    """Rebuild expected TB from live hits/HR while preserving non-HR hit shape."""
+    values = [legacy_tb, legacy_hits, legacy_hr, live_hits, live_hr]
+    if any(not math.isfinite(float(value)) for value in values):
+        return None, {}
+
+    legacy_tb = max(0.0, float(legacy_tb))
+    legacy_hits = max(0.0, float(legacy_hits))
+    legacy_hr = max(0.0, min(float(legacy_hr), legacy_hits))
+    live_hits = max(0.0, float(live_hits))
+    live_hr = max(0.0, min(float(live_hr), live_hits * 0.85))
+
+    non_hr_hits = max(legacy_hits - legacy_hr, 0.15)
+    non_hr_extra = max(0.0, legacy_tb - legacy_hits - (3.0 * legacy_hr))
+    non_hr_extra_per_hit = max(0.0, min(1.75, non_hr_extra / non_hr_hits))
+    live_non_hr_hits = max(0.0, live_hits - live_hr)
+    component_tb = live_hits + (non_hr_extra_per_hit * live_non_hr_hits) + (3.0 * live_hr)
+    component_tb = max(live_hits, min(8.0, component_tb))
+
+    if alpha is None:
+        alpha = _float_or_none(os.getenv("MLB_HITTER_TB_COMPONENT_REBUILD_ALPHA"))
+    blend_alpha = max(0.0, min(1.0, float(alpha if alpha is not None else 0.65)))
+    rebuilt_tb = ((1.0 - blend_alpha) * legacy_tb) + (blend_alpha * component_tb)
+    rebuilt_tb = max(0.0, min(8.0, rebuilt_tb))
+    return rebuilt_tb, {
+        "component_tb": component_tb,
+        "component_blend_alpha": blend_alpha,
+        "non_hr_extra_per_non_hr_hit": non_hr_extra_per_hit,
+        "live_hits": live_hits,
+        "live_hr": live_hr,
+        "legacy_tb": legacy_tb,
+        "legacy_hits": legacy_hits,
+        "legacy_hr": legacy_hr,
+    }
 
 
 def _prop_reopen_bucket_key(
@@ -2603,6 +3410,7 @@ def _apply_prop_side_recalibration(
     apply_market_side_priors: bool = False,
     market_side_prior_max_blend: float = 0.35,
     walk_forward_policy: dict | None = None,
+    tb15_line_calibrators: dict | None = None,
     opportunity_features: Optional[Dict[str, float]] = None,
 ) -> tuple[Optional[float], Optional[float], Optional[str]]:
     """Return calibrated P(over), signed price-aware edge, and calibrator key."""
@@ -2723,8 +3531,25 @@ def _apply_prop_side_recalibration(
             or line_data.get("bookmaker_key")
         ),
     )
+    tb15_key = None
+    if (
+        stat == "batter_total_bases"
+        and line is not None
+        and abs(float(line) - 1.5) <= 1e-9
+    ):
+        p_over_side, tb15_key = _apply_tb15_line_calibrator(
+            p_over_side,
+            tb15_line_calibrators,
+            bookmaker_key=line_data.get("over_bookmaker_key") or line_data.get("bookmaker_key"),
+            price=line_data.get("over_price"),
+        )
+        if tb15_key and p_over_side is not None:
+            p_under_side = max(1e-6, min(1.0 - 1e-6, 1.0 - float(p_over_side)))
     key_over = wf_key_over or bet_key_over or key_over
     key_under = wf_key_under or bet_key_under or key_under
+    if tb15_key:
+        key_over = tb15_key
+        key_under = f"{tb15_key}:under_complement"
 
     cands: list[tuple[float, str, float, str | None]] = []
     ev_over = _ev_per_unit(p_over_side, line_data.get("over_price"))
@@ -3190,6 +4015,8 @@ def _prop_bankroll_assessment(
 
     if side and side in (blocked_sides or set()):
         soft.append(f"weak_{side}_bucket")
+    if cfg.bankroll_shadow_mode:
+        hard.append("prop_micro_only_mode")
     if _is_tail_alt_over(stat, side, line):
         tail_reopened, _tail_key = _prop_bucket_is_reopened(
             bucket_reopen_policy,
@@ -3491,13 +4318,74 @@ def _apply_prop_shadow_selector_gate(rows: List[Dict], cfg: PredictConfig) -> Li
             row["selector_prob_side"] = selector.get("selector_prob_side")
             row["selector_ev"] = selector.get("selector_ev")
             row["selector_reasons"] = "; ".join(selector.get("selector_reasons") or [])
+            row["pair_quality"] = selector.get("pair_quality")
+            row["market_prob_source"] = selector.get("market_prob_source")
+            row["policy_variant"] = selector.get("policy_variant")
+            row["bucket_trust_status"] = selector.get("bucket_trust_status")
+            row["micro_projection_candidate"] = selector.get("micro_projection_candidate")
+            row["micro_projection_prob_side"] = selector.get("micro_projection_prob_side")
+            row["micro_projection_raw_prob_side"] = selector.get("micro_projection_raw_prob_side")
+            row["micro_projection_prob_source"] = selector.get("micro_projection_prob_source")
+            row["micro_probability_calibration_key"] = selector.get("micro_probability_calibration_key")
+            row["micro_probability_calibration_status"] = selector.get("micro_probability_calibration_status")
+            row["micro_probability_calibration_target"] = selector.get("micro_probability_calibration_target")
+            row["micro_probability_calibration_cap"] = selector.get("micro_probability_calibration_cap")
+            row["micro_probability_calibration_shrink"] = selector.get("micro_probability_calibration_shrink")
+            row["micro_tb15_high_pa_power_cap_applied"] = selector.get("micro_tb15_high_pa_power_cap_applied")
+            row["micro_tb15_high_pa_power_cap"] = selector.get("micro_tb15_high_pa_power_cap")
+            row["micro_tb15_high_pa_power_cap_reason"] = selector.get("micro_tb15_high_pa_power_cap_reason")
+            row["micro_tb15_high_pa_power_flags"] = selector.get("micro_tb15_high_pa_power_flags")
+            row["micro_projection_edge"] = selector.get("micro_projection_edge")
+            row["micro_projection_ev"] = selector.get("micro_projection_ev")
+            row["micro_projection_required_prob_edge"] = selector.get("micro_projection_required_prob_edge")
+            row["micro_projection_required_ev"] = selector.get("micro_projection_required_ev")
+            row["micro_approved_model"] = selector.get("micro_approved_model")
+            row["micro_approved_model_key"] = selector.get("micro_approved_model_key")
+            row["micro_approved_model_reason"] = selector.get("micro_approved_model_reason")
+            row["micro_external_agreement"] = selector.get("micro_external_agreement")
+            row["micro_external_agreement_reason"] = selector.get("micro_external_agreement_reason")
+            row["micro_external_agreement_blockers"] = selector.get("micro_external_agreement_blockers")
+            row["external_agreement_count"] = selector.get("external_agreement_count")
+            row["external_disagreement_count"] = selector.get("external_disagreement_count")
+            row["external_agreement_strength"] = selector.get("external_agreement_strength")
+            row["external_match_level"] = selector.get("external_match_level")
+            row["external_platforms"] = selector.get("external_platforms")
+            row["external_best_grade"] = selector.get("external_best_grade")
+            row["external_max_ev"] = selector.get("external_max_ev")
+            row["external_max_probability"] = selector.get("external_max_probability")
+            row["micro_relaxed_trial_lane"] = selector.get("micro_relaxed_trial_lane")
+            row["micro_truth_filter_status"] = selector.get("micro_truth_filter_status")
+            row["micro_truth_filter_reason"] = selector.get("micro_truth_filter_reason")
+            row["micro_truth_filter_key"] = selector.get("micro_truth_filter_key")
+            row["micro_truth_filter_graded"] = selector.get("micro_truth_filter_graded")
+            row["micro_truth_filter_record"] = selector.get("micro_truth_filter_record")
+            row["micro_truth_filter_roi"] = selector.get("micro_truth_filter_roi")
+            row["micro_truth_filter_clv_rows"] = selector.get("micro_truth_filter_clv_rows")
+            row["micro_truth_filter_clv_beat_rate"] = selector.get("micro_truth_filter_clv_beat_rate")
+            row["micro_truth_filter_avg_clv"] = selector.get("micro_truth_filter_avg_clv")
+            if selector.get("selector_tier") == "micro_projection" and not row.get("bankroll_candidate"):
+                row["bankroll_tier"] = "micro_projection"
+                micro_prob = selector.get("micro_projection_prob_side")
+                micro_required_ev = _clean_float_or_none(selector.get("micro_projection_required_ev"))
+                micro_min = minimum_american_price(
+                    micro_prob,
+                    selector_cfg.micro_projection_min_ev if micro_required_ev is None else micro_required_ev,
+                )
+                if micro_min is not None:
+                    row["minimum_acceptable_price"] = micro_min
         if bool(row.get("bankroll_candidate")) and not (selector or {}).get("selector_real_candidate"):
+            selector_reasons = [str(reason) for reason in ((selector or {}).get("selector_reasons") or [])]
+            diagnostic_reasons = selector_reasons[:5]
+            if any(reason == "clv_model_not_confirming" for reason in selector_reasons):
+                diagnostic_reasons.insert(0, "selector_clv_hard_gate_block")
+            if any(reason == "fanduel_synthetic_market_evidence" for reason in selector_reasons):
+                diagnostic_reasons.insert(0, "selector_synthetic_market_evidence")
             row["bankroll_candidate"] = False
             row["bankroll_tier"] = "watch"
-            row["bankroll_reasons"] = _append_bankroll_reason(
-                row.get("bankroll_reasons") or "",
-                "selector_clv_residual_block",
-            )
+            reasons = _append_bankroll_reason(row.get("bankroll_reasons") or "", "selector_clv_residual_block")
+            for reason in diagnostic_reasons:
+                reasons = _append_bankroll_reason(reasons, reason)
+            row["bankroll_reasons"] = reasons
             row["stake_pct"] = 0.0
             row["stake_usd"] = 0.0
     return rows
@@ -3737,13 +4625,27 @@ def _offer_line_data(offer: Dict, sibling_offers: Optional[List[Dict]] = None) -
         })
     ld["lock_offer_available"] = 1.0 if offer.get("price") is not None else 0.0
     ld["lock_same_book_pair_available"] = 1.0 if ld.get("over_price") is not None and ld.get("under_price") is not None else 0.0
+    same_book_pair = bool(
+        ld.get("over_price") is not None
+        and ld.get("under_price") is not None
+        and str(ld.get("over_bookmaker_key") or "").lower() == str(ld.get("under_bookmaker_key") or "").lower()
+    )
+    ld["pair_quality"] = "same_book" if same_book_pair else "one_sided"
+    ld["same_book_pair_flag"] = 1.0 if same_book_pair else 0.0
+    ld["cross_book_pair_flag"] = 0.0
+    ld["synthetic_pair_flag"] = 0.0
+    ld["true_pair_flag"] = 1.0 if same_book_pair else 0.0
+    ld["market_prob_source"] = "same_book_lock_pair" if same_book_pair else "raw_implied_one_sided"
     fetched = pd.to_datetime(offer.get("fetched_at_utc"), utc=True, errors="coerce")
+    open_fetched = pd.to_datetime(offer.get("open_snapshot_at_utc"), utc=True, errors="coerce")
     commence = pd.to_datetime(offer.get("commence_time_utc"), utc=True, errors="coerce")
     now_utc = pd.Timestamp.now(tz="UTC")
     if pd.notna(fetched):
         ld["lock_price_age_minutes"] = max(0.0, float((now_utc - fetched).total_seconds() / 60.0))
     if pd.notna(fetched) and pd.notna(commence):
         ld["minutes_to_first_pitch_at_lock"] = float((commence - fetched).total_seconds() / 60.0)
+    if pd.notna(fetched) and pd.notna(open_fetched) and fetched >= open_fetched:
+        ld["open_to_lock_minutes"] = float((fetched - open_fetched).total_seconds() / 60.0)
     return ld
 
 
@@ -3754,6 +4656,23 @@ def _same_line(a, b) -> bool:
         return abs(float(a) - float(b)) <= 1e-9
     except (TypeError, ValueError):
         return False
+
+
+def _json_safe_opportunity_context(context: Optional[dict[str, Any]]) -> str:
+    def clean(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {str(key): clean(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [clean(item) for item in value]
+        if isinstance(value, np.generic):
+            value = value.item()
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        if isinstance(value, float) and not math.isfinite(value):
+            return None
+        return value
+
+    return json.dumps(clean(context or {}), allow_nan=False)
 
 
 def _prop_db_row(
@@ -3777,6 +4696,8 @@ def _prop_db_row(
     cfg: Optional[PredictConfig] = None,
     blocked_sides: Optional[set[str]] = None,
     bucket_reopen_policy: Optional[dict] = None,
+    opportunity_context: Optional[dict[str, Any]] = None,
+    calibration_key: Optional[str] = None,
 ) -> Dict:
     """Build the persisted prop row with explicit count/probability/price fields."""
     line = float(book_line) if book_line is not None else None
@@ -3867,6 +4788,24 @@ def _prop_db_row(
         else assess_bankroll_layer(has_signal=side is not None, kelly_fraction=kelly_for_bankroll)
     )
 
+    immutable_context = dict(opportunity_context or {})
+    if calibration_key:
+        immutable_context["probability_calibration_key"] = calibration_key
+        if str(calibration_key).startswith("tb15_line:"):
+            immutable_context["tb15_calibration_key"] = calibration_key
+    for context_key in (
+        "open_price_implied", "lock_price_implied", "open_to_lock_prob_move",
+        "open_to_lock_line_move_side", "open_to_lock_minutes",
+        "consensus_prob_at_lock", "consensus_price_dispersion", "consensus_book_count",
+        "book_lead_lag_prob", "best_consensus_prob", "worst_consensus_prob",
+        "lock_offer_available", "lock_same_book_pair_available",
+        "minutes_to_first_pitch_at_lock", "lock_price_age_minutes",
+        "pair_quality", "market_prob_source", "same_book_pair_flag",
+        "cross_book_pair_flag", "synthetic_pair_flag", "true_pair_flag",
+    ):
+        if line_data.get(context_key) is not None:
+            immutable_context[context_key] = line_data.get(context_key)
+
     return {
         "game_date_et": game_date_et,
         "game_slug": game_slug,
@@ -3908,6 +4847,7 @@ def _prop_db_row(
         "bankroll_tier": bankroll.tier,
         "bankroll_candidate": bankroll.candidate,
         "bankroll_reasons": bankroll.reasons,
+        "opportunity_context": _json_safe_opportunity_context(immutable_context),
         "stake_pct": _round_or_none(bankroll.stake_pct, 4),
         "stake_usd": _round_or_none(bankroll.stake_usd, 2),
         "lock_price_implied": line_data.get("lock_price_implied"),
@@ -3922,255 +4862,6 @@ def _prop_db_row(
         "minutes_to_first_pitch_at_lock": line_data.get("minutes_to_first_pitch_at_lock"),
         "lock_price_age_minutes": line_data.get("lock_price_age_minutes"),
     }
-
-
-_ENSURE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS bets.mlb_prop_predictions (
-    id               SERIAL PRIMARY KEY,
-    game_date_et     DATE        NOT NULL,
-    game_slug        TEXT        NOT NULL,
-    player_id        BIGINT      NOT NULL,
-    player_name      TEXT,
-    team_abbr        TEXT,
-    stat             TEXT        NOT NULL,
-    prediction_key   TEXT,
-    prop_offer_id    BIGINT,
-    prop_offer_source_row_id INTEGER,
-    pred_value       NUMERIC,
-    book_line        NUMERIC,
-    edge             NUMERIC,
-    kelly_fraction   NUMERIC,
-    actual_value     NUMERIC,
-    over_hit         BOOLEAN,
-    closing_line     NUMERIC,
-    closing_price    NUMERIC,
-    clv_line         NUMERIC,
-    clv_price        NUMERIC,
-    beat_clv_line    BOOLEAN,
-    beat_clv_price   BOOLEAN,
-    run_id           TEXT,
-    is_active        BOOLEAN NOT NULL DEFAULT TRUE,
-    superseded_at    TIMESTAMPTZ,
-    stale_reason     TEXT,
-    created_at       TIMESTAMPTZ DEFAULT NOW(),
-    updated_at       TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE (game_date_et, game_slug, player_id, stat)
-);
-
-ALTER TABLE bets.mlb_prop_predictions
-    DROP CONSTRAINT IF EXISTS mlb_prop_predictions_game_date_et_game_slug_player_id_stat_key,
-    DROP CONSTRAINT IF EXISTS mlb_prop_predictions_game_slug_player_id_stat_key;
-
-ALTER TABLE bets.mlb_prop_predictions
-    ADD COLUMN IF NOT EXISTS prediction_key   TEXT,
-    ADD COLUMN IF NOT EXISTS prop_offer_id    BIGINT,
-    ADD COLUMN IF NOT EXISTS prop_offer_source_row_id INTEGER,
-    ADD COLUMN IF NOT EXISTS closing_line     NUMERIC,
-    ADD COLUMN IF NOT EXISTS closing_price    NUMERIC,
-    ADD COLUMN IF NOT EXISTS clv_line         NUMERIC,
-    ADD COLUMN IF NOT EXISTS clv_price        NUMERIC,
-    ADD COLUMN IF NOT EXISTS beat_clv_line    BOOLEAN,
-    ADD COLUMN IF NOT EXISTS beat_clv_price   BOOLEAN,
-    ADD COLUMN IF NOT EXISTS pred_count      NUMERIC,
-    ADD COLUMN IF NOT EXISTS pred_prob_over  NUMERIC,
-    ADD COLUMN IF NOT EXISTS edge_type       TEXT,
-    ADD COLUMN IF NOT EXISTS model_family    TEXT,
-    ADD COLUMN IF NOT EXISTS bet_side        TEXT,
-    ADD COLUMN IF NOT EXISTS line_bucket     TEXT,
-    ADD COLUMN IF NOT EXISTS over_price      NUMERIC,
-    ADD COLUMN IF NOT EXISTS under_price     NUMERIC,
-    ADD COLUMN IF NOT EXISTS bet_price       NUMERIC,
-    ADD COLUMN IF NOT EXISTS minimum_acceptable_price NUMERIC,
-    ADD COLUMN IF NOT EXISTS breakeven_prob  NUMERIC,
-    ADD COLUMN IF NOT EXISTS ev              NUMERIC,
-    ADD COLUMN IF NOT EXISTS bookmaker_key   TEXT,
-    ADD COLUMN IF NOT EXISTS bet_link        TEXT,
-    ADD COLUMN IF NOT EXISTS bankroll_tier   TEXT,
-    ADD COLUMN IF NOT EXISTS bankroll_candidate BOOLEAN,
-    ADD COLUMN IF NOT EXISTS bankroll_reasons TEXT,
-    ADD COLUMN IF NOT EXISTS stake_pct       NUMERIC,
-    ADD COLUMN IF NOT EXISTS stake_usd       NUMERIC,
-    ADD COLUMN IF NOT EXISTS lock_snapshot_id BIGINT,
-    ADD COLUMN IF NOT EXISTS locked_at_utc   TIMESTAMPTZ,
-    ADD COLUMN IF NOT EXISTS closing_snapshot_id BIGINT,
-    ADD COLUMN IF NOT EXISTS closing_source_row_id BIGINT,
-    ADD COLUMN IF NOT EXISTS closing_fetched_at_utc TIMESTAMPTZ,
-    ADD COLUMN IF NOT EXISTS clv_match_method TEXT,
-    ADD COLUMN IF NOT EXISTS clv_valid BOOLEAN,
-    ADD COLUMN IF NOT EXISTS clv_status TEXT,
-    ADD COLUMN IF NOT EXISTS clv_unknown_reason TEXT,
-    ADD COLUMN IF NOT EXISTS run_id          TEXT,
-    ADD COLUMN IF NOT EXISTS is_active       BOOLEAN NOT NULL DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS superseded_at   TIMESTAMPTZ,
-    ADD COLUMN IF NOT EXISTS stale_reason    TEXT,
-    ADD COLUMN IF NOT EXISTS updated_at      TIMESTAMPTZ DEFAULT NOW();
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_mlb_prop_predictions_prediction_key
-    ON bets.mlb_prop_predictions (prediction_key);
-CREATE INDEX IF NOT EXISTS idx_mlb_prop_predictions_offer
-    ON bets.mlb_prop_predictions (prop_offer_id);
-CREATE INDEX IF NOT EXISTS idx_mlb_prop_predictions_date_market
-    ON bets.mlb_prop_predictions (game_date_et, stat, bet_side);
-"""
-
-_UPSERT_SQL = """
-INSERT INTO bets.mlb_prop_predictions
-    (game_date_et, game_slug, player_id, player_name, team_abbr, stat,
-     prediction_key, prop_offer_id, prop_offer_source_row_id,
-     pred_value, pred_count, pred_prob_over, book_line, edge, edge_type,
-     model_family, bet_side, line_bucket, over_price, under_price, bet_price,
-     minimum_acceptable_price, breakeven_prob, ev, bookmaker_key, bet_link, kelly_fraction,
-     bankroll_tier, bankroll_candidate, bankroll_reasons, stake_pct, stake_usd,
-     run_id, is_active, stale_reason)
-VALUES
-    (%(game_date_et)s, %(game_slug)s, %(player_id)s, %(player_name)s, %(team_abbr)s,
-     %(stat)s, %(prediction_key)s, %(prop_offer_id)s, %(prop_offer_source_row_id)s,
-     %(pred_value)s, %(pred_count)s, %(pred_prob_over)s, %(book_line)s,
-     %(edge)s, %(edge_type)s, %(model_family)s, %(bet_side)s, %(line_bucket)s,
-     %(over_price)s, %(under_price)s, %(bet_price)s, %(minimum_acceptable_price)s, %(breakeven_prob)s,
-     %(ev)s, %(bookmaker_key)s, %(bet_link)s, %(kelly_fraction)s,
-     %(bankroll_tier)s, %(bankroll_candidate)s, %(bankroll_reasons)s, %(stake_pct)s, %(stake_usd)s,
-     %(run_id)s, TRUE, NULL)
-ON CONFLICT (prediction_key) DO UPDATE SET
-    player_name     = EXCLUDED.player_name,
-    team_abbr       = EXCLUDED.team_abbr,
-    prop_offer_id   = EXCLUDED.prop_offer_id,
-    prop_offer_source_row_id = EXCLUDED.prop_offer_source_row_id,
-    pred_value      = EXCLUDED.pred_value,
-    pred_count      = EXCLUDED.pred_count,
-    pred_prob_over  = EXCLUDED.pred_prob_over,
-    book_line       = EXCLUDED.book_line,
-    edge            = EXCLUDED.edge,
-    edge_type       = EXCLUDED.edge_type,
-    model_family    = EXCLUDED.model_family,
-    bet_side        = EXCLUDED.bet_side,
-    line_bucket     = EXCLUDED.line_bucket,
-    over_price      = EXCLUDED.over_price,
-    under_price     = EXCLUDED.under_price,
-    bet_price       = EXCLUDED.bet_price,
-    minimum_acceptable_price = EXCLUDED.minimum_acceptable_price,
-    breakeven_prob  = EXCLUDED.breakeven_prob,
-    ev              = EXCLUDED.ev,
-    bookmaker_key   = EXCLUDED.bookmaker_key,
-    bet_link        = EXCLUDED.bet_link,
-    kelly_fraction  = EXCLUDED.kelly_fraction,
-    bankroll_tier   = EXCLUDED.bankroll_tier,
-    bankroll_candidate = EXCLUDED.bankroll_candidate,
-    bankroll_reasons = EXCLUDED.bankroll_reasons,
-    stake_pct       = EXCLUDED.stake_pct,
-    stake_usd       = EXCLUDED.stake_usd,
-    run_id          = EXCLUDED.run_id,
-    is_active       = TRUE,
-    stale_reason    = NULL,
-    superseded_at   = NULL,
-    lock_snapshot_id = NULL,
-    locked_at_utc   = NULL,
-    actual_value    = NULL,
-    over_hit        = NULL,
-    closing_line    = NULL,
-    closing_price   = NULL,
-    clv_line        = NULL,
-    clv_price       = NULL,
-    beat_clv_line   = NULL,
-    beat_clv_price  = NULL,
-    closing_source_row_id = NULL,
-    closing_snapshot_id = NULL,
-    closing_fetched_at_utc = NULL,
-    clv_match_method = NULL,
-    clv_valid       = NULL,
-    clv_status      = NULL,
-    clv_unknown_reason = NULL,
-    updated_at      = NOW()
-"""
-
-
-def _ensure_schema(conn) -> None:
-    with conn.cursor() as cur:
-        cur.execute(_ENSURE_TABLE_SQL)
-    conn.commit()
-    _ensure_lineup_quality_dependency(conn)
-
-
-def _regclass_exists(conn, name: str) -> bool:
-    with conn.cursor() as cur:
-        cur.execute("SELECT to_regclass(%s) IS NOT NULL", (name,))
-        return bool(cur.fetchone()[0])
-
-
-def _ensure_player_batting_rolling_mat(conn) -> None:
-    if _regclass_exists(conn, "features.mlb_player_batting_rolling_mat"):
-        return
-    if not _regclass_exists(conn, "features.mlb_player_batting_rolling"):
-        log.warning("features.mlb_player_batting_rolling missing; lineup quality will use empty fallback")
-        return
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            CREATE MATERIALIZED VIEW IF NOT EXISTS features.mlb_player_batting_rolling_mat AS
-            SELECT * FROM features.mlb_player_batting_rolling
-            WITH DATA;
-
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_mlb_batting_player_mat_pk
-                ON features.mlb_player_batting_rolling_mat (game_slug, player_id);
-            CREATE INDEX IF NOT EXISTS idx_mlb_batting_player_mat_player_date
-                ON features.mlb_player_batting_rolling_mat (player_id, game_date_et DESC, game_slug DESC);
-            """
-        )
-    conn.commit()
-    log.info("Created compatibility matview features.mlb_player_batting_rolling_mat")
-
-
-def _create_empty_lineup_quality_mat(conn) -> None:
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            CREATE SCHEMA IF NOT EXISTS features;
-            DROP MATERIALIZED VIEW IF EXISTS features.mlb_lineup_quality_mat;
-            CREATE MATERIALIZED VIEW features.mlb_lineup_quality_mat AS
-            SELECT
-                NULL::text AS game_slug,
-                NULL::text AS team_abbr,
-                NULL::boolean AS is_home,
-                NULL::numeric AS lineup_avg_avg_10,
-                NULL::numeric AS lineup_slg_avg_10,
-                NULL::numeric AS lineup_iso_avg_10,
-                NULL::numeric AS top4_slg_avg_10,
-                NULL::double precision AS lineup_data_completeness,
-                NULL::double precision AS lineup_xwoba_avg,
-                NULL::double precision AS lineup_xslg_avg,
-                NULL::double precision AS lineup_barrel_avg,
-                NULL::double precision AS lineup_hard_hit_avg,
-                NULL::numeric AS lineup_k_pct_std,
-                NULL::numeric AS lineup_k_pct_cv,
-                NULL::numeric AS pct_lhb
-            WHERE false;
-            CREATE UNIQUE INDEX IF NOT EXISTS mlb_lineup_quality_mat_pk
-                ON features.mlb_lineup_quality_mat (game_slug, team_abbr);
-            """
-        )
-    conn.commit()
-    log.warning("Created empty fallback features.mlb_lineup_quality_mat; lineup quality fields will be median-imputed")
-
-
-def _ensure_lineup_quality_dependency(conn) -> None:
-    if _regclass_exists(conn, "features.mlb_lineup_quality_mat"):
-        return
-    try:
-        _ensure_player_batting_rolling_mat(conn)
-        lineup_sql = _SQL_DIR / "MLB011_mlb_lineup_quality.sql"
-        mat_sql = _SQL_DIR / "MLB011b_mlb_lineup_quality_mat.sql"
-        if not lineup_sql.exists() or not mat_sql.exists():
-            raise FileNotFoundError("MLB011 lineup quality SQL files are missing")
-        with conn.cursor() as cur:
-            cur.execute(lineup_sql.read_text(encoding="utf-8"))
-            cur.execute(mat_sql.read_text(encoding="utf-8"))
-        conn.commit()
-        log.info("Created features.mlb_lineup_quality_mat for player prop prediction")
-    except Exception:
-        conn.rollback()
-        log.exception("Could not create full lineup quality matview; using empty fallback")
-        _create_empty_lineup_quality_mat(conn)
-
 
 def _save_predictions(conn, rows: List[Dict]) -> None:
     if not rows:
@@ -4231,6 +4922,7 @@ def _save_predictions(conn, rows: List[Dict]) -> None:
         if deleted:
             log.info("_save_predictions: marked %d rows inactive for OUT/DOUBTFUL players", deleted)
         for row in rows:
+            row.setdefault("opportunity_context", "{}")
             for key in (
                 "pred_count", "pred_prob_over", "edge_type", "model_family",
                 "bet_side", "line_bucket", "over_price", "under_price",
@@ -4946,6 +5638,7 @@ def _print_discord(
     all_alt_lines: Optional[Dict] = None,
     lottery_legs: Optional[List[Dict]] = None,
     db_rows: Optional[List[Dict]] = None,
+    ai_pick_rows: Optional[List[Dict]] = None,
     bucket_reopen_policy: Optional[Dict] = None,
 ) -> List[str]:
     """Print per-game prop output. Returns edge-play links for parlay.
@@ -5012,6 +5705,7 @@ def _print_discord(
             require_confirmed_sp=False,
             sp_k_ceiling=None, sp_k_lookup=None,
             skip_clf=False,
+            max_line=None,
         ):
             """Return (p_over, pred, line, name, team, opp, link, bankroll) for rows that
             pass all quality gates, sorted by P(over) descending.
@@ -5063,6 +5757,8 @@ def _print_discord(
                 if not ld or ld.get("line") is None:
                     continue
                 line = ld["line"]
+                if max_line is not None and float(line) > float(max_line) + 1e-9:
+                    continue
 
                 # ── Prediction gate ──────────────────────────────────────────
                 if pred_gate and pred_val < (min_pred if min_pred is not None else line):
@@ -5193,10 +5889,13 @@ def _print_discord(
             ev_s = f" EV={display_ev:+.1%}" if display_ev is not None else ""
             clv_prob = _as_float(item.get("clv_beat_prob"))
             clv_s = f" CLV={clv_prob:.0%}" if clv_prob is not None else ""
+            locked_price = _as_float(item.get("entry_price"))
             current_price = _as_float(item.get("current_price"))
             minimum_price = _as_float(item.get("minimum_acceptable_price"))
-            price_s = f" Price={current_price:+.0f}" if current_price is not None else " Price=?"
+            lock_s = f" Lock={locked_price:+.0f}" if locked_price is not None else " Lock=?"
+            price_s = f" Cur={current_price:+.0f}" if current_price is not None else " Cur=?"
             min_s = f" Min={minimum_price:+.0f}" if minimum_price is not None else " Min=?"
+            stale_s = f" Stale={item.get('stale_after_label')}" if item.get("stale_after_label") else ""
             drift_s = "" if item.get("price_drift_ok") else " DRIFT BLOCK"
             tags_s = _tag_text(item)
             book = item.get("book") or _book_label(item.get("link"))
@@ -5204,8 +5903,65 @@ def _print_discord(
             print(
                 f"- {item['name']} ({item['team']} vs {item['opp']}) "
                 f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}{p_s}{ev_s}"
-                f"{clv_s}{price_s}{min_s}{drift_s}{tags_s} "
+                f"{clv_s}{lock_s}{price_s}{min_s}{stale_s}{drift_s}{tags_s} "
                 f"[{bankroll_tag(item['bankroll'])}]{link_s}"
+            )
+
+        def _print_micro_projection_item(
+            item: Dict,
+            *,
+            stake_usd: float,
+            include_link: bool = True,
+        ) -> None:
+            pred_s = item["pred_fmt"].format(item["pred_val"])
+            prob = _as_float(item.get("micro_projection_prob_side"))
+            edge = _as_float(item.get("micro_projection_edge"))
+            ev = _as_float(item.get("micro_current_ev"))
+            if ev is None:
+                ev = _as_float(item.get("micro_projection_ev"))
+            clv_prob = _as_float(item.get("clv_beat_prob"))
+            locked_price = _as_float(item.get("entry_price"))
+            current_price = _as_float(item.get("current_price"))
+            minimum_price = _as_float(item.get("minimum_acceptable_price"))
+            book = item.get("book") or _book_label(item.get("link"))
+            link_s = f" [Bet {book}](<{item['link']}>)" if include_link and item.get("link") else ""
+            p_s = f" P={prob:.1%}" if prob is not None else ""
+            edge_s = f" Edge={edge:+.1%}" if edge is not None else ""
+            ev_s = f" EV={ev:+.1%}" if ev is not None else ""
+            clv_s = f" CLV={clv_prob:.0%}" if clv_prob is not None else ""
+            lock_s = f" Lock={locked_price:+.0f}" if locked_price is not None else " Lock=?"
+            price_s = f" Cur={current_price:+.0f}" if current_price is not None else " Cur=?"
+            min_s = f" Min={minimum_price:+.0f}" if minimum_price is not None else " Min=?"
+            stale_s = f" Stale={item.get('stale_after_label')}" if item.get("stale_after_label") else ""
+            drift_s = "" if item.get("price_drift_ok") else " DRIFT BLOCK"
+            source = item.get("micro_projection_prob_source") or "projection"
+            reasons = [
+                str(reason).replace("_", " ")
+                for reason in (item.get("selector_reasons") or [])
+                if str(reason) in {
+                    "bucket_roi_negative",
+                    "bucket_clv_beat_low",
+                    "clv_model_not_confirming",
+                    "market_residual_not_confirming",
+                    "micro_trial_approved_model",
+                    "micro_trial_collecting_clv_not_required",
+                    "micro_trial_collecting_roi_not_required",
+                    "micro_projection_not_bankroll_proven",
+                    "external_model_agreement_micro_lane",
+                    "micro_external_agreement_not_bankroll_proven",
+                }
+            ][:3]
+            external_s = ""
+            if item.get("micro_external_agreement"):
+                platforms = str(item.get("external_platforms") or "").strip()
+                external_s = f" +EXT={platforms}" if platforms else " +EXT"
+            why_s = f" | why not bankroll: {', '.join(reasons)}" if reasons else ""
+            stake_s = f"${stake_usd:.0f}" if stake_usd > 0 else "WATCH"
+            print(
+                f"- {stake_s} {item['name']} ({item['team']} vs {item['opp']}) "
+                f"{item['market']} {item.get('side', 'O')}{item['line']:.1f} -> {pred_s}"
+                f"{p_s}{edge_s}{ev_s}{clv_s}{lock_s}{price_s}{min_s}{stale_s}{drift_s} "
+                f"[{source}{external_s}]{link_s}{why_s}"
             )
 
         def _as_float(value) -> Optional[float]:
@@ -5221,6 +5977,43 @@ def _print_discord(
             except (TypeError, ValueError):
                 return None
 
+        def _ev_per_unit_local(prob: Any, price: Any) -> Optional[float]:
+            p = _as_float(prob)
+            px = _as_float(price)
+            if p is None or px is None or px == 0:
+                return None
+            payout = px / 100.0 if px > 0 else 100.0 / abs(px)
+            return p * payout - (1.0 - p)
+
+        def _is_stale_after_valid(item: Dict) -> bool:
+            stale_after = item.get("stale_after_utc")
+            if not stale_after:
+                return False
+            try:
+                ts = pd.Timestamp(stale_after)
+                if ts.tzinfo is None:
+                    ts = ts.tz_localize("UTC")
+                return pd.Timestamp.now(tz="UTC") <= ts.tz_convert("UTC")
+            except Exception:
+                return False
+
+        def _micro_item_bettable_now(item: Dict) -> bool:
+            current_ev = _as_float(item.get("micro_current_ev"))
+            if current_ev is None:
+                current_ev = _ev_per_unit_local(
+                    item.get("micro_projection_prob_side"),
+                    item.get("current_price"),
+                )
+            return (
+                bool(item.get("price_drift_ok"))
+                and (bool(item.get("micro_approved_model")) or bool(item.get("micro_external_agreement")))
+                and str(item.get("pair_quality") or "").lower() == "same_book"
+                and bool(item.get("link"))
+                and _is_stale_after_valid(item)
+                and current_ev is not None
+                and current_ev > 0.0
+            )
+
         def _opponent_for_row(row: Dict) -> str:
             gm = game_map.get(row.get("game_slug"), {})
             team = row.get("team_abbr")
@@ -5232,6 +6025,22 @@ def _print_discord(
                 return home or "?"
             return row.get("opponent_abbr") or "?"
 
+        def _stale_after_for_row(row: Dict) -> tuple[Optional[str], Optional[str]]:
+            gm = game_map.get(row.get("game_slug"), {})
+            start_ts = gm.get("start_ts_utc") or row.get("commence_time_utc")
+            if start_ts is None:
+                return None, None
+            try:
+                ts = pd.Timestamp(start_ts)
+                if ts.tzinfo is None:
+                    ts = ts.tz_localize("UTC")
+                ts_utc = ts.tz_convert("UTC")
+                ts_et = ts_utc.tz_convert(_ET)
+                label = ts_et.strftime("%I:%M %p ET").lstrip("0")
+                return ts_utc.isoformat(), label
+            except Exception:
+                return None, None
+
         def _db_row_to_prop_item(row: Dict) -> Optional[Dict]:
             item = candidate_from_prediction_row(
                 row,
@@ -5240,6 +6049,10 @@ def _print_discord(
             )
             if item is None:
                 return None
+            stale_after_utc, stale_after_label = _stale_after_for_row(row)
+            if stale_after_utc:
+                item["stale_after_utc"] = stale_after_utc
+                item["stale_after_label"] = stale_after_label
             if prop_selector_ctx is not None:
                 selector_row = dict(row)
                 selector_row["price_drift_ok"] = item.get("price_drift_ok")
@@ -5265,8 +6078,63 @@ def _print_discord(
                         "event_side_line_prob_side": selector.get("event_side_line_prob_side"),
                         "bucket_trust_status": selector.get("bucket_trust_status"),
                         "no_bet_decision": selector.get("no_bet_decision"),
+                        "micro_projection_candidate": selector.get("micro_projection_candidate"),
+                        "micro_projection_prob_side": selector.get("micro_projection_prob_side"),
+                        "micro_projection_raw_prob_side": selector.get("micro_projection_raw_prob_side"),
+                        "micro_projection_prob_source": selector.get("micro_projection_prob_source"),
+                        "micro_probability_calibration_key": selector.get("micro_probability_calibration_key"),
+                        "micro_probability_calibration_status": selector.get("micro_probability_calibration_status"),
+                        "micro_probability_calibration_target": selector.get("micro_probability_calibration_target"),
+                        "micro_probability_calibration_cap": selector.get("micro_probability_calibration_cap"),
+                        "micro_probability_calibration_shrink": selector.get("micro_probability_calibration_shrink"),
+                        "micro_tb15_high_pa_power_cap_applied": selector.get("micro_tb15_high_pa_power_cap_applied"),
+                        "micro_tb15_high_pa_power_cap": selector.get("micro_tb15_high_pa_power_cap"),
+                        "micro_tb15_high_pa_power_cap_reason": selector.get("micro_tb15_high_pa_power_cap_reason"),
+                        "micro_tb15_high_pa_power_flags": selector.get("micro_tb15_high_pa_power_flags"),
+                        "micro_projection_edge": selector.get("micro_projection_edge"),
+                        "micro_projection_ev": selector.get("micro_projection_ev"),
+                        "micro_projection_required_prob_edge": selector.get("micro_projection_required_prob_edge"),
+                        "micro_projection_required_ev": selector.get("micro_projection_required_ev"),
+                        "micro_approved_model": selector.get("micro_approved_model"),
+                        "micro_approved_model_key": selector.get("micro_approved_model_key"),
+                        "micro_approved_model_reason": selector.get("micro_approved_model_reason"),
+                        "micro_external_agreement": selector.get("micro_external_agreement"),
+                        "micro_external_agreement_reason": selector.get("micro_external_agreement_reason"),
+                        "micro_external_agreement_blockers": selector.get("micro_external_agreement_blockers"),
+                        "external_agreement_count": selector.get("external_agreement_count"),
+                        "external_disagreement_count": selector.get("external_disagreement_count"),
+                        "external_agreement_strength": selector.get("external_agreement_strength"),
+                        "external_match_level": selector.get("external_match_level"),
+                        "external_platforms": selector.get("external_platforms"),
+                        "external_best_grade": selector.get("external_best_grade"),
+                        "external_max_ev": selector.get("external_max_ev"),
+                        "external_max_probability": selector.get("external_max_probability"),
+                        "micro_relaxed_trial_lane": selector.get("micro_relaxed_trial_lane"),
+                        "micro_truth_filter_status": selector.get("micro_truth_filter_status"),
+                        "micro_truth_filter_reason": selector.get("micro_truth_filter_reason"),
+                        "micro_truth_filter_key": selector.get("micro_truth_filter_key"),
+                        "micro_truth_filter_graded": selector.get("micro_truth_filter_graded"),
+                        "micro_truth_filter_record": selector.get("micro_truth_filter_record"),
+                        "micro_truth_filter_roi": selector.get("micro_truth_filter_roi"),
+                        "micro_truth_filter_clv_rows": selector.get("micro_truth_filter_clv_rows"),
+                        "micro_truth_filter_clv_beat_rate": selector.get("micro_truth_filter_clv_beat_rate"),
+                        "micro_truth_filter_avg_clv": selector.get("micro_truth_filter_avg_clv"),
                         "selector_reasons": selector.get("selector_reasons") or [],
                     })
+                    if selector.get("selector_tier") == "micro_projection":
+                        micro_required_ev = _as_float(selector.get("micro_projection_required_ev"))
+                        micro_min = minimum_american_price(
+                            selector.get("micro_projection_prob_side"),
+                            prop_selector_cfg.micro_projection_min_ev if micro_required_ev is None else micro_required_ev,
+                        )
+                        if micro_min is not None:
+                            item["minimum_acceptable_price"] = micro_min
+                            current_price = _as_float(item.get("current_price"))
+                            item["price_drift_ok"] = current_price is not None and current_price >= micro_min
+                            item["micro_current_ev"] = _ev_per_unit_local(
+                                selector.get("micro_projection_prob_side"),
+                                current_price,
+                            )
                     if item["bankroll"].candidate and not selector.get("selector_real_candidate"):
                         item["bankroll"] = BankrollAssessment(
                             tier="watch",
@@ -5280,6 +6148,25 @@ def _print_discord(
                         )
                 except Exception:
                     log.exception("Failed to apply prop shadow selector to %s", row.get("prediction_key"))
+            line_cap_exceeded = exceeds_non_lottery_line_cap(item.get("stat_key"), item.get("line"))
+            item["line_cap_exceeded"] = line_cap_exceeded
+            if line_cap_exceeded:
+                reasons = list(item.get("selector_reasons") or [])
+                reasons.append("non_lottery_line_cap")
+                item["selector_reasons"] = list(dict.fromkeys(reasons))
+                if str(item.get("side") or "").upper() == "O":
+                    item["selector_tier"] = "lottery"
+                if item["bankroll"].candidate:
+                    item["bankroll"] = BankrollAssessment(
+                        tier="watch",
+                        candidate=False,
+                        reasons=_append_bankroll_reason(
+                            item["bankroll"].reasons,
+                            "non_lottery_line_cap",
+                        ),
+                        stake_pct=0.0,
+                        stake_usd=0.0,
+                    )
             return item
 
         def _pick_score(item: Dict) -> tuple[float, float]:
@@ -5307,8 +6194,8 @@ def _print_discord(
             if side != "O" or line is None:
                 return False
             return (
-                (stat_key == "batter_hits" and line >= 2.5)
-                or (stat_key == "batter_total_bases" and line >= 3.5)
+                (stat_key == "batter_hits" and line >= 1.5)
+                or (stat_key == "batter_total_bases" and line >= 2.5)
                 or (stat_key == "batter_home_runs" and line >= 1.5)
             )
 
@@ -5417,7 +6304,7 @@ def _print_discord(
                 )
             print(f"- Display pool: {total} rows; clean pair {clean_pair_s}; synthetic {synthetic_s}; CLV model coverage {clv_s}")
 
-        def _print_watch_item(item: Dict) -> None:
+        def _print_watch_item(item: Dict, *, include_link: bool = False) -> None:
             """Compact single-line format for watchlist entries."""
             market = item.get("market", "?")
             side = item.get("side", "O")
@@ -5428,7 +6315,7 @@ def _print_discord(
             line_s = f" O{line:.1f}" if line is not None else ""
             link = item.get("link")
             book = item.get("book") or _book_label(link)
-            link_s = f" [Bet {book}](<{link}>)" if link else ""
+            link_s = f" [Bet {book}](<{link}>)" if include_link and link else ""
             print(f"- {item['name']} ({item['team']} vs {item['opp']}) {market}{line_s} → {pred_s}{link_s}")
 
         def _print_paper_sections(
@@ -5439,7 +6326,10 @@ def _print_discord(
             include_empty_stats: bool = True,
             heading_kind: str = "Paper",
             compact: bool = False,
+            include_links: bool = True,
+            include_section_parlays: bool = True,
         ) -> None:
+            rows = [item for item in rows if not item.get("line_cap_exceeded")]
             configured_limit = int(cfg.discord_paper_limit or 10)
             per_section_limit = min(max(configured_limit, 1), 10)
             printed_section = False
@@ -5468,14 +6358,566 @@ def _print_discord(
                 total_shown += len(shown)
                 for item in shown:
                     if compact:
-                        _print_watch_item(item)
+                        _print_watch_item(item, include_link=include_links)
                     else:
-                        _print_prop_item(item, include_link=cfg.discord_show_paper_links)
+                        _print_prop_item(item, include_link=include_links)
+                if include_section_parlays:
+                    _print_prop_parlay(
+                        f"Top {len(shown)} {heading_kind} {label} Parlay",
+                        [item.get("link") for item in shown],
+                    )
             if not printed_section and not include_empty_stats:
                 print("- No qualifying player props to show")
             elif total_shown < len(rows):
                 print("")
                 print(f"- Showing {total_shown} of {len(rows)} paper/research rows")
+
+        def _ai_meta(row: Dict) -> Dict:
+            meta = row.get("model_meta")
+            return meta if isinstance(meta, dict) else {}
+
+        def _ai_bool(value: Any) -> bool:
+            if isinstance(value, bool):
+                return value
+            if value is None:
+                return False
+            return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+        def _ai_book(row: Dict) -> str:
+            return str(row.get("book") or _book_label(row.get("link")) or "-")
+
+        def _ai_opp(row: Dict) -> str:
+            gm = game_map.get(row.get("game_slug"), {})
+            team = row.get("team_abbr")
+            home = gm.get("home") or row.get("home_team_abbr")
+            away = gm.get("away") or row.get("away_team_abbr")
+            if team == home:
+                return away or "?"
+            if team == away:
+                return home or "?"
+            return row.get("opponent_abbr") or "?"
+
+        def _ai_stat_label(stat: Any) -> str:
+            return {
+                "pitcher_strikeouts": "K",
+                "batter_hits": "H",
+                "batter_hits_runs_rbis": "H+R+RBI",
+                "batter_total_bases": "TB",
+                "batter_home_runs": "HR",
+            }.get(str(stat or ""), str(stat or "?"))
+
+        def _ai_pred_fmt(stat: Any) -> str:
+            return "{:.3f}" if stat == "batter_home_runs" else ("{:.1f}" if stat == "pitcher_strikeouts" else "{:.2f}")
+
+        def _ai_projection_text(row: Dict) -> str:
+            stat = str(row.get("stat") or row.get("market") or "")
+            meta = _ai_meta(row)
+            projected = _as_float(
+                meta.get("pred_count")
+                if meta.get("pred_count") is not None
+                else meta.get("projection_count")
+            )
+            if projected is None:
+                projected = _as_float(row.get("pred_count"))
+            if projected is not None:
+                label = {
+                    "pitcher_strikeouts": "ProjK",
+                    "batter_hits": "ProjH",
+                    "batter_hits_runs_rbis": "ProjH+R+RBI",
+                    "batter_total_bases": "ProjTB",
+                    "batter_home_runs": "ProjHR",
+                }.get(stat, "Proj")
+                return f"{label}={_ai_pred_fmt(stat).format(projected)}"
+            pred = _as_float(row.get("pred_value"))
+            if pred is None:
+                return "Proj=?"
+            label = "P(HR)" if stat == "batter_home_runs" else "Score"
+            return f"{label}={_ai_pred_fmt(stat).format(pred)}"
+
+        def _ai_side_label(row: Dict) -> str:
+            side = str(row.get("side") or "").lower()
+            return "O" if side == "over" else ("U" if side == "under" else side.upper())
+
+        def _ai_score(row: Dict) -> tuple[float, float, float]:
+            return (
+                _as_float(row.get("ranking_score")) or -999.0,
+                _as_float(row.get("current_ev")) or _as_float(row.get("ev")) or -999.0,
+                _as_float(row.get("model_prob")) or -999.0,
+            )
+
+        def _ai_reason_counts(rows: List[Dict]) -> Counter:
+            counts: Counter = Counter()
+            for row in rows:
+                tags: List[str] = []
+                for reason in list(row.get("blockers") or []) + list(row.get("reasons") or []):
+                    compact = _compact_reason(reason)
+                    if compact and compact not in tags:
+                        tags.append(compact)
+                counts.update(tags or ["unclassified"])
+            return counts
+
+        def _print_ai_data_health(rows: List[Dict], *, offers_missing: bool) -> None:
+            health = _prop_offer_health(prop_lines)
+            total = len(rows)
+            clean_pairs = 0
+            synthetic = 0
+            clv_known = 0
+            for row in rows:
+                meta = _ai_meta(row)
+                pair = str(meta.get("pair_quality") or "").lower()
+                if pair in {"same_book", "cross_book"}:
+                    clean_pairs += 1
+                elif pair in {"synthetic", "one_sided", "unknown"}:
+                    synthetic += 1
+                if _as_float(meta.get("clv_beat_prob")) is not None:
+                    clv_known += 1
+            print("")
+            print("**DATA HEALTH**")
+            if offers_missing:
+                print("- Prop odds not loaded yet - no links/rankings generated")
+            else:
+                print(
+                    f"- Offers: {health['entries']} markets, {health['offer_rows']} normalized offers, "
+                    f"{health['linked_sides']} linked sides"
+                )
+            print(
+                f"- AI pick source: bets.mlb_ai_pick_engine; display pool {total} rows; "
+                f"clean pair {(clean_pairs / total):.0%} / synthetic {(synthetic / total):.0%} / "
+                f"CLV model coverage {(clv_known / total):.0%}" if total
+                else "- AI pick source: bets.mlb_ai_pick_engine; display pool 0 rows"
+            )
+
+        def _print_ai_prop_item(row: Dict, *, include_link: bool = True, stake_prefix: Optional[str] = None) -> None:
+            stat = row.get("stat") or row.get("market")
+            line = _as_float(row.get("line"))
+            projection_s = _ai_projection_text(row)
+            prob = _as_float(row.get("model_prob"))
+            ev = _as_float(row.get("current_ev"))
+            if ev is None:
+                ev = _as_float(row.get("ev"))
+            current_price = _as_float(row.get("current_price"))
+            locked_price = _as_float(row.get("locked_price"))
+            minimum_price = _as_float(row.get("minimum_acceptable_price"))
+            meta = _ai_meta(row)
+            clv_prob = _as_float(meta.get("clv_beat_prob"))
+            ai_ml_score = _as_float(meta.get("ai_ml_score"))
+            ai_ml_good = _as_float(meta.get("ai_ml_good_bet_prob"))
+            ai_ml_win = _as_float(meta.get("ai_ml_win_prob"))
+            ai_ml_clv = _as_float(meta.get("ai_ml_clv_beat_prob"))
+            ai_ml_fd_tier = str(meta.get("ai_ml_fanduel_evidence_tier") or "")
+            book = _ai_book(row)
+            link = row.get("link")
+            side_label = _ai_side_label(row)
+            line_s = f"{side_label}{line:.1f}" if line is not None else side_label
+            p_s = f" P={prob:.1%}" if prob is not None else ""
+            ev_s = f" EV={ev:+.1%}" if ev is not None else ""
+            clv_s = f" CLV={clv_prob:.0%}" if clv_prob is not None else ""
+            ai_ml_s = (
+                f" AI-ML={ai_ml_score:.0f} G={ai_ml_good:.0%} W={ai_ml_win:.0%} C={ai_ml_clv:.0%}"
+                + (f" {ai_ml_fd_tier}" if ai_ml_fd_tier and ai_ml_fd_tier != "not_fanduel" else "")
+                if ai_ml_score is not None and ai_ml_good is not None and ai_ml_win is not None and ai_ml_clv is not None
+                else ""
+            )
+            lock_s = f" Lock={locked_price:+.0f}" if locked_price is not None else " Lock=?"
+            price_s = f" Cur={current_price:+.0f}" if current_price is not None else " Cur=?"
+            min_s = f" Min={minimum_price:+.0f}" if minimum_price is not None else " Min=?"
+            blockers = list(row.get("blockers") or [])
+            block_s = f" | block: {', '.join(blockers[:3])}" if blockers and not _ai_bool(row.get("qualifies_now")) else ""
+            source = row.get("model_family") or meta.get("micro_projection_prob_source") or "ai_pick_engine"
+            link_s = f" [Bet {book}](<{link}>)" if include_link and link else ""
+            stake_s = f"{stake_prefix} " if stake_prefix else ""
+            print(
+                f"- {stake_s}{row.get('player_name') or '?'} ({row.get('team_abbr') or '?'} vs {_ai_opp(row)}) "
+                f"{_ai_stat_label(stat)} {line_s} | {projection_s}{p_s}{ev_s}{clv_s}{ai_ml_s}{lock_s}{price_s}{min_s} "
+                f"[{source}]{link_s}{block_s}"
+            )
+
+        def _print_ai_prop_parlay(title: str, rows: List[Dict]) -> None:
+            _print_prop_parlay(title, [row.get("link") for row in rows if row.get("link")])
+
+        def _ai_fanduel_link_ok(row: Dict) -> bool:
+            link = str(row.get("link") or "")
+            return (
+                "fanduel.com" in link
+                and "marketId=" in link
+                and "selectionId=" in link
+            )
+
+        def _ai_clean_pair_quality(row: Dict) -> bool:
+            pair = str(_ai_meta(row).get("pair_quality") or row.get("pair_quality") or "").lower()
+            return pair in {"same_book", "cross_book"}
+
+        def _ai_common_parlay_line(row: Dict) -> bool:
+            stat = str(row.get("stat") or "")
+            line = _as_float(row.get("line"))
+            side = str(row.get("side") or "").lower()
+            if line is None:
+                return False
+            if stat == "pitcher_strikeouts":
+                return 3.5 <= line <= 7.5
+            if stat == "batter_hits":
+                return line <= 1.5
+            if stat == "batter_hits_runs_rbis":
+                return 1.5 <= line <= 3.5
+            if stat == "batter_total_bases":
+                return line <= 2.5
+            if stat == "batter_home_runs":
+                return side == "over" and line <= 0.5
+            return False
+
+        def _ai_favorite_rows(
+            rows: List[Dict],
+            *,
+            limit: int = 5,
+            only_fanduel: bool = False,
+            include_one_sided: bool = False,
+        ) -> List[Dict]:
+            candidates: List[Dict] = []
+            excluded_tiers = {"lottery", "no_bet"}
+            if not include_one_sided:
+                excluded_tiers.add("one_sided_fanduel")
+            for row in rows:
+                tier = str(row.get("recommendation_tier") or "").lower()
+                if tier in excluded_tiers:
+                    continue
+                link = str(row.get("link") or "")
+                if not link:
+                    continue
+                if only_fanduel and (
+                    "fanduel.com" not in link
+                    or "marketId=" not in link
+                    or "selectionId=" not in link
+                ):
+                    continue
+                if row.get("blockers"):
+                    continue
+                ev = _as_float(row.get("current_ev"))
+                if ev is None:
+                    ev = _as_float(row.get("ev"))
+                if ev is None or ev <= 0.0:
+                    continue
+                candidates.append(row)
+            candidates.sort(
+                key=lambda row: (
+                    1 if _ai_bool(row.get("qualifies_now")) else 0,
+                    *_ai_score(row),
+                ),
+                reverse=True,
+            )
+            selected: List[Dict] = []
+            stat_counts: Counter = Counter()
+            stat_side_counts: Counter = Counter()
+            book_counts: Counter = Counter()
+            player_keys: set[str] = set()
+            for row in candidates:
+                tier = str(row.get("recommendation_tier") or "").lower()
+                stat = str(row.get("stat") or "")
+                side = str(row.get("side") or "").lower()
+                book = str(_ai_book(row) or "").lower()
+                player_key = str(row.get("player_id") or row.get("player_name") or "")
+                actionable = tier in {"bankroll", "starter", "micro"} and _ai_bool(row.get("qualifies_now"))
+                if not actionable:
+                    if player_key and player_key in player_keys:
+                        continue
+                    max_stat = 3 if stat == "pitcher_strikeouts" else 2
+                    if stat_counts[stat] >= max_stat:
+                        continue
+                    if book_counts[book] >= 3:
+                        continue
+                    max_stat_side = 1 if stat == "batter_hits" and side == "under" else 2
+                    if stat_side_counts[(stat, side)] >= max_stat_side:
+                        continue
+                selected.append(row)
+                stat_counts[stat] += 1
+                stat_side_counts[(stat, side)] += 1
+                book_counts[book] += 1
+                if player_key:
+                    player_keys.add(player_key)
+                if len(selected) >= limit:
+                    break
+            return selected
+
+        def _ai_fanduel_parlay_rows(rows: List[Dict], *, limit: int = 5) -> tuple[List[Dict], str]:
+            """Pick a cleaner, diversified FanDuel research parlay from AI rows.
+
+            One-sided FanDuel HRs can show in the one-sided research section, but
+            they should not masquerade as the normal "top 5 AI favorites" parlay.
+            """
+            candidates: List[Dict] = []
+            fd_positive = 0
+            fd_one_sided_hr = 0
+            for row in rows:
+                if not _ai_fanduel_link_ok(row):
+                    continue
+                tier = str(row.get("recommendation_tier") or "").lower()
+                if tier in {"lottery", "no_bet"}:
+                    continue
+                if row.get("blockers"):
+                    continue
+                ev = _as_float(row.get("current_ev"))
+                if ev is None:
+                    ev = _as_float(row.get("ev"))
+                if ev is None or ev <= 0.0:
+                    continue
+                fd_positive += 1
+                if tier == "one_sided_fanduel" and row.get("stat") == "batter_home_runs":
+                    fd_one_sided_hr += 1
+                if tier == "one_sided_fanduel":
+                    continue
+                if row.get("stat") == "batter_hits":
+                    continue
+                if not _ai_clean_pair_quality(row):
+                    continue
+                if not _ai_common_parlay_line(row):
+                    continue
+                candidates.append(row)
+
+            candidates.sort(
+                key=lambda row: (
+                    1 if _ai_bool(row.get("qualifies_now")) else 0,
+                    *_ai_score(row),
+                ),
+                reverse=True,
+            )
+
+            selected: List[Dict] = []
+            stat_counts: Counter = Counter()
+            player_keys: set[str] = set()
+            for row in candidates:
+                stat = str(row.get("stat") or "")
+                player_key = str(row.get("player_id") or row.get("player_name") or "")
+                if player_key and player_key in player_keys:
+                    continue
+                if stat == "batter_home_runs" and stat_counts[stat] >= 1:
+                    continue
+                if stat_counts[stat] >= 2:
+                    continue
+                selected.append(row)
+                stat_counts[stat] += 1
+                if player_key:
+                    player_keys.add(player_key)
+                if len(selected) >= limit:
+                    break
+
+            if len(selected) >= 2:
+                return selected, "ok"
+            if fd_positive and fd_positive == fd_one_sided_hr:
+                return [], "only_one_sided_hr_positive_ev_fanduel"
+            if fd_positive:
+                return [], "not_enough_clean_diversified_fanduel_legs"
+            return [], "no_positive_ev_fanduel_legs"
+
+        def _ai_hr_fun_parlay_rows(rows: List[Dict], *, limit: int = 5) -> List[Dict]:
+            """Top FanDuel HR-over legs by model probability for a clearly labeled fun parlay."""
+            candidates: List[Dict] = []
+            for row in rows:
+                if row.get("stat") != "batter_home_runs":
+                    continue
+                if str(row.get("side") or "").lower() != "over":
+                    continue
+                line = _as_float(row.get("line"))
+                if line is None or line > 0.5:
+                    continue
+                if not _ai_fanduel_link_ok(row):
+                    continue
+                prob = _as_float(row.get("model_prob"))
+                if prob is None or prob <= 0.0:
+                    continue
+                candidates.append(row)
+
+            candidates.sort(
+                key=lambda row: (
+                    _as_float(row.get("model_prob")) or -999.0,
+                    _as_float(row.get("current_ev")) or _as_float(row.get("ev")) or -999.0,
+                    _as_float(row.get("locked_price")) or -999.0,
+                ),
+                reverse=True,
+            )
+            selected: List[Dict] = []
+            player_keys: set[str] = set()
+            for row in candidates:
+                player_key = str(row.get("player_id") or row.get("player_name") or "")
+                if player_key and player_key in player_keys:
+                    continue
+                selected.append(row)
+                if player_key:
+                    player_keys.add(player_key)
+                if len(selected) >= limit:
+                    break
+            return selected
+
+        def _print_ai_hr_fun_parlay_section(rows: List[Dict]) -> None:
+            hr_rows = _ai_hr_fun_parlay_rows(rows, limit=5)
+            print("")
+            print(f"**AI HOME RUN PARLAY - FOR FUN ({len(hr_rows)} shown)**")
+            if not hr_rows:
+                print("- No FanDuel HR-over links available right now")
+                return
+            print("- Research only: ranked by P(HR), not by EV, CLV, or bankroll approval.")
+            for row in hr_rows:
+                _print_ai_prop_item(row, include_link=True)
+            _print_ai_prop_parlay("AI Home Run Fun Parlay", hr_rows)
+
+        def _print_ai_favorites_section(rows: List[Dict]) -> None:
+            favorites = _ai_favorite_rows(rows, limit=5)
+            print("")
+            print(f"**AI TOP 5 FAVORITES ({len(favorites)} shown)**")
+            if not favorites:
+                print("- No positive-EV, unblocked AI rows with links right now")
+            else:
+                print("- Headline ranking only. The AI FanDuel parlay below excludes plain hits.")
+                print("- Diversified headline view: hit unders limited to one; strikeouts capped at three.")
+                for row in favorites:
+                    prefix = "$1" if row.get("recommendation_tier") == "micro" and _ai_bool(row.get("qualifies_now")) else None
+                    _print_ai_prop_item(row, include_link=True, stake_prefix=prefix)
+
+            fd_rows, fd_reason = _ai_fanduel_parlay_rows(rows, limit=5)
+            if not fd_rows:
+                reason_text = {
+                    "only_one_sided_hr_positive_ev_fanduel": (
+                        "only one-sided FanDuel HR legs had positive EV, so they stay in research"
+                    ),
+                    "not_enough_clean_diversified_fanduel_legs": (
+                        "not enough clean, diversified FanDuel legs passed"
+                    ),
+                    "no_positive_ev_fanduel_legs": "no FanDuel-compatible positive-EV legs available",
+                }.get(fd_reason, fd_reason)
+                print(f"- AI FanDuel Parlay: not built - {reason_text}")
+            else:
+                print("")
+                print(f"**AI FANDUEL DIVERSIFIED PARLAY LEGS ({len(fd_rows)} shown)**")
+                print("- Research only: clean paired/common lines, no plain hits, max two per stat and max one HR.")
+                for row in fd_rows:
+                    _print_ai_prop_item(row, include_link=True)
+                _print_ai_prop_parlay("AI Diversified FanDuel Parlay", fd_rows)
+            _print_ai_hr_fun_parlay_section(rows)
+
+        def _print_ai_paper_sections(rows: List[Dict]) -> None:
+            configured_limit = int(cfg.discord_paper_limit or 10)
+            per_section_limit = min(max(configured_limit, 1), 10)
+            print("")
+            print(f"**PAPER PLAYER PROPS ({len(rows)} research rows)**")
+            sections = [
+                ("pitcher_strikeouts", "Strikeouts"),
+                ("batter_total_bases", "Total Bases"),
+                ("batter_hits_runs_rbis", "Hits + Runs + RBIs"),
+                ("batter_hits", "Hits"),
+                ("batter_home_runs", "Home Runs"),
+            ]
+            shown_total = 0
+            for stat_key, label in sections:
+                stat_rows = [row for row in rows if row.get("stat") == stat_key]
+                stat_rows.sort(key=_ai_score, reverse=True)
+                shown = stat_rows[:per_section_limit]
+                print("")
+                print(f"**Top {per_section_limit} Paper {label}**")
+                if not shown:
+                    print("- No qualifying rows")
+                    continue
+                shown_total += len(shown)
+                for row in shown:
+                    _print_ai_prop_item(row, include_link=True)
+                _print_ai_prop_parlay(f"Top {len(shown)} Paper {label} Parlay", shown)
+            if shown_total < len(rows):
+                print("")
+                print(f"- Showing {shown_total} of {len(rows)} paper/research rows")
+
+        if ai_pick_rows is not None:
+            ai_rows = [
+                dict(row) for row in ai_pick_rows
+                if str(row.get("market_type") or "").lower() == "prop"
+            ]
+            ai_rows.sort(key=_ai_score, reverse=True)
+            offers_missing = _prop_offers_missing(prop_lines)
+            _print_ai_data_health(ai_rows, offers_missing=offers_missing)
+
+            bankroll_ai_rows = [
+                row for row in ai_rows
+                if row.get("recommendation_tier") in {"bankroll", "starter"}
+                and _ai_bool(row.get("qualifies_now"))
+            ]
+            if bankroll_ai_rows:
+                print("")
+                print(f"**BANKROLL PROP BETS ({len(bankroll_ai_rows)})**")
+                for row in bankroll_ai_rows:
+                    _print_ai_prop_item(row, include_link=True)
+                _print_ai_prop_parlay("Bankroll Props Parlay", bankroll_ai_rows)
+            else:
+                print("")
+                print("**BANKROLL PROP BETS**")
+                print("- No bankroll-qualified player props today")
+                blockers = _ai_reason_counts([
+                    row for row in ai_rows
+                    if row.get("recommendation_tier") in {"bankroll", "starter", "micro", "watch"}
+                ])
+                if blockers:
+                    print(
+                        "- Real-money blockers: "
+                        + ", ".join(f"{reason} {count}" for reason, count in blockers.most_common(6))
+                    )
+
+            combined_exposure = _locked_bankroll_exposure()
+            cap = cfg.bankroll_max_daily_exposure_pct
+            if combined_exposure > cap + 1e-12:
+                print(
+                    f"- GLOBAL CAP WARNING: games + props total {combined_exposure:.2%} "
+                    f"vs daily cap {cap:.2%} (over by {combined_exposure - cap:.2%})"
+                )
+
+            micro_all = [row for row in ai_rows if row.get("recommendation_tier") == "micro"]
+            micro_bettable = [row for row in micro_all if _ai_bool(row.get("qualifies_now"))]
+            micro_moved = [row for row in micro_all if not _ai_bool(row.get("qualifies_now"))]
+            micro_cap = max(0, int(cfg.projection_micro_max_props or 0))
+            micro_shown = micro_bettable[:micro_cap] if micro_cap else []
+            if micro_shown:
+                print("")
+                print(
+                    f"**$1 MICRO TEST - BETTABLE NOW "
+                    f"({len(micro_shown)} shown / {len(micro_bettable)} live / {len(micro_all)} qualified)**"
+                )
+                print(
+                    f"- ${float(cfg.projection_micro_stake_usd or 0.0):.0f} flat only. "
+                    "Only bet if Cur is still at or better than Min."
+                )
+                for row in micro_shown:
+                    _print_ai_prop_item(
+                        row,
+                        include_link=True,
+                        stake_prefix=f"${float(cfg.projection_micro_stake_usd or 0.0):.0f}",
+                    )
+                _print_ai_prop_parlay("Micro Projection Props Parlay", micro_shown)
+            elif micro_all:
+                print("")
+                print(f"**$1 MICRO TEST - BETTABLE NOW (0 live / {len(micro_all)} qualified)**")
+                blockers = _ai_reason_counts(micro_all)
+                print(
+                    "- No micro props are bettable at the current price/link. Top blockers: "
+                    + ", ".join(f"{reason} {count}" for reason, count in blockers.most_common(6))
+                )
+
+            if micro_moved:
+                print("")
+                print(f"**$1 MICRO TEST WATCH - PRICE MOVED / STALE / NOT BETTABLE ({len(micro_moved)})**")
+                for row in micro_moved[:10]:
+                    _print_ai_prop_item(row, include_link=True, stake_prefix="WATCH")
+
+            _print_ai_favorites_section(ai_rows)
+
+            paper_source = [
+                row for row in ai_rows
+                if row.get("recommendation_tier") in {"watch", "paper_common"}
+                and row.get("recommendation_tier") not in {"lottery", "one_sided_fanduel"}
+            ]
+            _print_ai_paper_sections(paper_source)
+
+            one_sided = [row for row in ai_rows if row.get("recommendation_tier") == "one_sided_fanduel"]
+            if one_sided:
+                print("")
+                print(f"**ONE-SIDED FANDUEL RESEARCH ({min(10, len(one_sided))} shown / {len(one_sided)})**")
+                for row in one_sided[:10]:
+                    _print_ai_prop_item(row, include_link=True)
+            print("")
+            return []
 
         if db_rows is not None:
             for row in db_rows:
@@ -5485,7 +6927,8 @@ def _print_discord(
                 if item.get("link") or item.get("ev") is not None:
                     research_rows.append(item)
                 ev = item.get("ev")
-                if ev is not None and ev >= cfg.min_ev:
+                tier = str(item.get("selector_tier") or "").lower()
+                if (ev is not None and ev >= cfg.min_ev) or tier == "micro_projection":
                     model_pick_rows.append(item)
                 if item["bankroll"].candidate:
                     bankroll_rows.append(item)
@@ -5501,12 +6944,17 @@ def _print_discord(
             display_source = research_rows if cfg.discord_include_all_priced_props else model_pick_rows
             display_source.sort(key=_pick_score, reverse=True)
             non_bankroll_rows = [item for item in display_source if not item["bankroll"].candidate]
+            micro_projection_rows: List[Dict] = []
             paper_rows: List[Dict] = []
             no_bet_rows: List[Dict] = []
             watch_rows: List[Dict] = []
             for item in non_bankroll_rows:
+                if item.get("line_cap_exceeded"):
+                    continue
                 tier = str(item.get("selector_tier") or "").lower()
-                if tier == "no_bet" or item.get("no_bet_decision"):
+                if tier == "micro_projection":
+                    micro_projection_rows.append(item)
+                elif tier == "no_bet" or item.get("no_bet_decision"):
                     no_bet_rows.append(item)
                 elif tier == "lottery" or _is_tail_alt_item(item):
                     continue
@@ -5517,16 +6965,6 @@ def _print_discord(
                 else:
                     no_bet_rows.append(item)
 
-            prop_record = format_record_summary(
-                pg_dsn=cfg.pg_dsn,
-                end_date=cfg.et_date,
-                lookback_days=30,
-                include_game_bankroll=False,
-                include_game_model=False,
-                include_prop_shadow=True,
-            )
-            if prop_record:
-                print(prop_record)
             offers_missing = _prop_offers_missing(prop_lines)
             _print_data_health(display_source, offers_missing=offers_missing)
             if bankroll_rows:
@@ -5554,6 +6992,63 @@ def _print_discord(
                     f"vs daily cap {cap:.2%} (over by {combined_exposure - cap:.2%})"
                 )
 
+            micro_projection_rows.sort(
+                key=lambda item: (
+                    _as_float(item.get("micro_projection_ev")) or -999.0,
+                    _as_float(item.get("micro_projection_edge")) or -999.0,
+                    _as_float(item.get("micro_projection_prob_side")) or -999.0,
+                ),
+                reverse=True,
+            )
+            micro_cap = max(0, int(cfg.projection_micro_max_props or 0))
+            micro_bettable_rows = [
+                item for item in micro_projection_rows
+                if _micro_item_bettable_now(item)
+            ]
+            micro_bettable_ids = {id(item) for item in micro_bettable_rows}
+            micro_moved_rows = [
+                item for item in micro_projection_rows
+                if id(item) not in micro_bettable_ids
+            ]
+            micro_shown = micro_bettable_rows[:micro_cap] if micro_cap else []
+            if micro_shown:
+                print("")
+                print(
+                    f"**$1 MICRO TEST - BETTABLE NOW "
+                    f"({len(micro_shown)} shown / {len(micro_bettable_rows)} live / "
+                    f"{len(micro_projection_rows)} qualified)**"
+                )
+                print(
+                    f"- ${float(cfg.projection_micro_stake_usd or 0.0):.0f} flat only. "
+                    "Only bet if Cur is still at or better than Min."
+                )
+                for item in micro_shown:
+                    _print_micro_projection_item(
+                        item,
+                        stake_usd=max(0.0, float(cfg.projection_micro_stake_usd or 0.0)),
+                        include_link=True,
+                    )
+                micro_links = [item.get("link") for item in micro_shown if item.get("link")]
+                _print_prop_parlay("Micro Projection Props Parlay", micro_links)
+            elif micro_projection_rows:
+                print("")
+                print("**$1 MICRO TEST - BETTABLE NOW**")
+                print("- No micro-projection plays are currently bettable at the required price.")
+            else:
+                print("")
+                print("**$1 MICRO TEST - BETTABLE NOW**")
+                print("- No $1 micro-test player props passed approved-model, true-pair, positive-EV, and drift-guard checks.")
+            moved_shown = micro_moved_rows[:micro_cap] if micro_cap else []
+            if moved_shown:
+                print("")
+                print(
+                    f"**$1 MICRO TEST WATCH - PRICE MOVED / STALE / NOT BETTABLE "
+                    f"({len(moved_shown)} shown / {len(micro_moved_rows)} moved)**"
+                )
+                print("- Do not bet these unless the book price returns to Min or better before Stale.")
+                for item in moved_shown:
+                    _print_micro_projection_item(item, stake_usd=0.0, include_link=False)
+
             # ── Projection Leaderboards ──────────────────────────────────────────
             # Top 10 Strikeouts (by highest projection)
             k_proj_rows = sorted(
@@ -5563,6 +7058,7 @@ def _print_discord(
             if k_proj_rows:
                 print("")
                 print("**Top 10 Strikeout Projections Today**")
+                k_projection_links: List[str] = []
                 for i, r in enumerate(k_proj_rows[:10], start=1):
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
@@ -5571,10 +7067,17 @@ def _print_discord(
                     _ld = prop_lines.get((_normalize_name(_name), "pitcher_strikeouts"))
                     if _ld and _ld.get("line") is not None:
                         _lnk = _ld.get("over_link")
-                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        _book = _book_label(
+                            _lnk,
+                            _ld.get("over_bookmaker_key") or _ld.get("bookmaker_key"),
+                        )
+                        _link_str = f" [Bet {_book}](<{_lnk}>)" if _lnk else ""
+                        if _lnk:
+                            k_projection_links.append(_lnk)
                         print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_k:.1f} · O{_ld['line']:.1f}{_link_str}")
                     else:
                         print(f"{i:>2}. {_name} ({_team} vs {_opp}) — {_pred_k:.1f}")
+                _print_prop_parlay("Top 10 Strikeout Projections Parlay", k_projection_links)
 
             # Top 10 Total Bases (by highest projection) — bullet format avoids Discord link-merge
             tb_proj_rows = sorted(
@@ -5584,18 +7087,30 @@ def _print_discord(
             if tb_proj_rows:
                 print("")
                 print("**Top 10 Total Bases Projections Today**")
+                tb_projection_links: List[str] = []
                 for r in tb_proj_rows[:10]:
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
                     _opp = r.get("opponent_abbr", "?")
                     _pred_tb = r["pred_total_bases"]
                     _ld = prop_lines.get((_normalize_name(_name), "batter_total_bases"))
-                    if _ld and _ld.get("line") is not None:
+                    if (
+                        _ld
+                        and _ld.get("line") is not None
+                        and not exceeds_non_lottery_line_cap("batter_total_bases", _ld.get("line"))
+                    ):
                         _lnk = _ld.get("over_link")
-                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        _book = _book_label(
+                            _lnk,
+                            _ld.get("over_bookmaker_key") or _ld.get("bookmaker_key"),
+                        )
+                        _link_str = f" [Bet {_book}](<{_lnk}>)" if _lnk else ""
+                        if _lnk:
+                            tb_projection_links.append(_lnk)
                         print(f"- {_name} ({_team} vs {_opp}) — {_pred_tb:.2f} · O{_ld['line']:.1f}{_link_str}")
                     else:
                         print(f"- {_name} ({_team} vs {_opp}) — {_pred_tb:.2f}")
+                _print_prop_parlay("Top 10 Total Bases Projections Parlay", tb_projection_links)
 
             # Top 10 Hits (by highest projection) — bullet format
             h_proj_rows = sorted(
@@ -5605,18 +7120,30 @@ def _print_discord(
             if h_proj_rows:
                 print("")
                 print("**Top 10 Hits Projections Today**")
+                h_projection_links: List[str] = []
                 for r in h_proj_rows[:10]:
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
                     _opp = r.get("opponent_abbr", "?")
                     _pred_h = r["pred_hits"]
                     _ld = prop_lines.get((_normalize_name(_name), "batter_hits"))
-                    if _ld and _ld.get("line") is not None:
+                    if (
+                        _ld
+                        and _ld.get("line") is not None
+                        and not exceeds_non_lottery_line_cap("batter_hits", _ld.get("line"))
+                    ):
                         _lnk = _ld.get("over_link")
-                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        _book = _book_label(
+                            _lnk,
+                            _ld.get("over_bookmaker_key") or _ld.get("bookmaker_key"),
+                        )
+                        _link_str = f" [Bet {_book}](<{_lnk}>)" if _lnk else ""
+                        if _lnk:
+                            h_projection_links.append(_lnk)
                         print(f"- {_name} ({_team} vs {_opp}) — {_pred_h:.2f} · O{_ld['line']:.1f}{_link_str}")
                     else:
                         print(f"- {_name} ({_team} vs {_opp}) — {_pred_h:.2f}")
+                _print_prop_parlay("Top 10 Hits Projections Parlay", h_projection_links)
 
             # Top 10 Home Runs (by highest projection) — bullet format
             hr_proj_rows = sorted(
@@ -5626,6 +7153,7 @@ def _print_discord(
             if hr_proj_rows:
                 print("")
                 print("**Top 10 Home Run Projections Today**")
+                hr_projection_links: List[str] = []
                 for r in hr_proj_rows[:10]:
                     _name = r.get("player_name", f"id={r['player_id']}")
                     _team = r.get("team_abbr", "?")
@@ -5634,10 +7162,17 @@ def _print_discord(
                     _ld = prop_lines.get((_normalize_name(_name), "batter_home_runs"))
                     if _ld and _ld.get("line") is not None:
                         _lnk = _ld.get("over_link")
-                        _link_str = f" [Bet](<{_lnk}>)" if _lnk else ""
+                        _book = _book_label(
+                            _lnk,
+                            _ld.get("over_bookmaker_key") or _ld.get("bookmaker_key"),
+                        )
+                        _link_str = f" [Bet {_book}](<{_lnk}>)" if _lnk else ""
+                        if _lnk:
+                            hr_projection_links.append(_lnk)
                         print(f"- {_name} ({_team} vs {_opp}) — {_pred_hr:.3f} · O{_ld['line']:.1f}{_link_str}")
                     else:
                         print(f"- {_name} ({_team} vs {_opp}) — {_pred_hr:.3f}")
+                _print_prop_parlay("Top 10 Home Run Projections Parlay", hr_projection_links)
 
             # ── Lottery picks ────────────────────────────────────────────────────
             if cfg.lottery_mode:
@@ -5671,6 +7206,15 @@ def _print_discord(
                     heading_kind="Watch",
                     compact=True,
                 )
+            if no_bet_rows and cfg.discord_show_no_bet_diagnostics:
+                _print_no_bet_summary(no_bet_rows)
+                _print_paper_sections(
+                    no_bet_rows,
+                    source_label="selector-blocked model picks",
+                    title="DIAGNOSTIC NO-BET PLAYER PROPS",
+                    include_empty_stats=False,
+                    heading_kind="No-Bet",
+                )
 
             print("")
             return []
@@ -5703,6 +7247,7 @@ def _print_discord(
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
+            max_line=0.5,
         )
         for p_over, pred_val, line, name, team, opp, lnk, bankroll in h_entries[:10]:
             _record_prop_item(
@@ -5727,6 +7272,7 @@ def _print_discord(
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
+            max_line=1.5,
         )
         for p_over, pred_val, line, name, team, opp, lnk, bankroll in tb_entries[:10]:
             _record_prop_item(
@@ -5837,9 +7383,9 @@ def _print_discord(
         if k_entries:
             print("**Top 10 Strikeouts Today**")
             for i, (p_over, pred_val, line, name, team, opp, lnk, bankroll) in enumerate(k_entries[:10], start=1):
-                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                link_str = ""
                 print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.1f} · O{line:.1f} · P={p_over:.1%} [{_bankroll_label(bankroll)}]{link_str}")
-            k_links = [lnk for _, _, _, _, _, _, lnk, _bankroll in k_entries[:10] if lnk]
+            k_links = []
             k_parlay_url = build_fd_parlay_url(k_links[:25]) if k_links else None
             if k_parlay_url:
                 print(f"• Top 10 K Parlay: [FD]({k_parlay_url})")
@@ -5864,14 +7410,15 @@ def _print_discord(
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
+            max_line=0.5,
         )
         if h_entries:
             print("")
             print("**Top 10 Hits Today**")
             for i, (p_over, pred_val, line, name, team, opp, lnk, bankroll) in enumerate(h_entries[:10], start=1):
-                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                link_str = ""
                 print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%} [{_bankroll_label(bankroll)}]{link_str}")
-            h_links = [lnk for _, _, _, _, _, _, lnk, _bankroll in h_entries[:10] if lnk]
+            h_links = []
             h_parlay_url = build_fd_parlay_url(h_links[:25]) if h_links else None
             if h_parlay_url:
                 print(f"• Top 10 H Parlay: [FD]({h_parlay_url})")
@@ -5896,14 +7443,15 @@ def _print_discord(
             require_confirmed_sp=False,
             sp_k_ceiling=9.0, sp_k_lookup=_sp_k_lookup,
             skip_clf=True,
+            max_line=1.5,
         )
         if tb_entries:
             print("")
             print("**Top TB Today (high confidence only)**")
             for i, (p_over, pred_val, line, name, team, opp, lnk, bankroll) in enumerate(tb_entries[:10], start=1):
-                link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                link_str = ""
                 print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_val:.3f} · O{line:.1f} · P={p_over:.1%} [{_bankroll_label(bankroll)}]{link_str}")
-            tb_links = [lnk for _, _, _, _, _, _, lnk, _bankroll in tb_entries[:10] if lnk]
+            tb_links = []
             tb_parlay_url = build_fd_parlay_url(tb_links[:25]) if tb_links else None
             if tb_parlay_url:
                 print(f"• Top TB Parlay: [FD]({tb_parlay_url})")
@@ -5911,9 +7459,7 @@ def _print_discord(
 
         print("")
         # Dedicated Top-10 HR parlay (single slip unless links are missing).
-        top_hr_links = _collect_top_hr_parlay_links(
-            all_batter_rows, prop_lines, top_n=7, min_pred=0.17
-        )
+        top_hr_links = []
         if top_hr_links:
             top_hr_url = build_fd_parlay_url(top_hr_links[:25])
             if top_hr_url:
@@ -5953,7 +7499,7 @@ def _print_discord(
                         p_over = _prob_over_from_regression(pred_hr, line, None)
                     p_str = f"P={p_over:.1%}" if p_over is not None else ""
                     lnk = ld.get("over_link")
-                    link_str = f" [Bet](<{lnk}>)" if lnk else ""
+                    link_str = ""
                     bankroll = _prop_bankroll_from_pick(
                         stat="batter_home_runs",
                         side_label="O",
@@ -5966,7 +7512,7 @@ def _print_discord(
                         bucket_reopen_policy=bucket_reopen_policy,
                     )
                     print(f"{i:>2}. {name} ({team} vs {opp}) — {pred_hr:.3f} · O{line:.1f} · {p_str} [{_bankroll_label(bankroll)}]{link_str}")
-                    if lnk and p_over and len(hr_parlay_legs) < _HR_PARLAY_LEGS:
+                    if cfg.discord_show_paper_links and lnk and p_over and len(hr_parlay_legs) < _HR_PARLAY_LEGS:
                         hr_parlay_legs.append({
                             "name": name, "team": team, "opp": opp,
                             "pred_hr": pred_hr, "line": line, "p_over": p_over, "lnk": lnk,
@@ -6385,7 +7931,7 @@ def _print_discord(
                 d = b.get("side", ("O" if b["edge"] > 0 else "U"))
                 ls = f"{d}{b['line']:.1f}"
                 ps = "{:.1f}".format(b["pred"]) if b["stat"] == "K" else "{:.2f}".format(b["pred"])
-                link_txt = f"  [Bet {b.get('book', 'FD')}](<{b['lnk']}>)" if b.get("lnk") else ""
+                link_txt = ""
                 bankroll = b.get("bankroll")
                 bankroll_str = f" [{bankroll_tag(bankroll)}]" if bankroll else ""
                 print(f"• {short} ({b['team']}) {b['stat']} {ls} → {ps}  +{abs(b['edge']):.2f}{bankroll_str}{link_txt}")
@@ -6660,6 +8206,9 @@ def predict_props(cfg: PredictConfig) -> None:
     pitcher_alt_clf_arts = None
     batter_alt_clf_arts  = None
     hitter_pa_artifact = None
+    hitter_rate_count_artifact = None
+    hitter_hits_bias_calibration = None
+    tb_tail_state_artifact = None
 
     if pitcher_artifacts_ok:
         try:
@@ -6706,6 +8255,28 @@ def predict_props(cfg: PredictConfig) -> None:
             hitter_pa_artifact = _load_hitter_pa_artifact(model_dir)
         except Exception:
             log.warning("Could not load hitter PA artifact", exc_info=True)
+        try:
+            hitter_rate_count_artifact = _load_hitter_rate_count_artifact(
+                model_dir,
+                hitter_pa_artifact,
+            )
+        except Exception:
+            log.warning("Could not load hitter hits/HR count-repair artifact", exc_info=True)
+            hitter_rate_count_artifact = hitter_pa_artifact
+        try:
+            hitter_hits_bias_calibration = _load_hitter_hits_bias_calibration(model_dir)
+        except Exception:
+            log.warning("Could not load hitter hits bias calibration", exc_info=True)
+            hitter_hits_bias_calibration = None
+        try:
+            tb_tail_state_artifact = (
+                _load_prop_tb_tail_state_model(model_dir, cfg.tb_tail_state_model_file)
+                if cfg.apply_tb_tail_state_model
+                else None
+            )
+        except Exception:
+            log.warning("Could not load TB tail state model", exc_info=True)
+            tb_tail_state_artifact = None
 
     if not pitcher_artifacts_ok and not batter_artifacts_ok:
         log.warning("No prop models found. Run train_player_prop_models first.")
@@ -6714,7 +8285,7 @@ def predict_props(cfg: PredictConfig) -> None:
 
     # ── Connect and fetch data ─────────────────────────────────────────────
     conn = psycopg2.connect(cfg.pg_dsn)
-    _ensure_schema(conn)
+    _ensure_schema(conn, allow_ddl=cfg.allow_schema_ddl)
 
     prop_lines = _load_prop_lines(conn, et_date)
     log.info("Loaded %d prop line entries for %s", len(prop_lines), et_date)
@@ -6730,6 +8301,11 @@ def predict_props(cfg: PredictConfig) -> None:
     walk_forward_policy = (
         _load_prop_walk_forward_policy(cfg.model_dir, cfg.walk_forward_policy_file)
         if cfg.apply_walk_forward_policy
+        else {}
+    )
+    tb15_line_calibrators = (
+        _load_prop_tb15_line_calibrators(cfg.model_dir, cfg.tb15_line_calibrators_file)
+        if cfg.apply_tb15_line_calibration
         else {}
     )
     bucket_reopen_policy = _load_prop_bucket_reopen_policy(cfg.model_dir, cfg.bucket_reopen_policy_file)
@@ -6792,6 +8368,7 @@ def predict_props(cfg: PredictConfig) -> None:
 
             for i, (_, row) in enumerate(df_p.iterrows()):
                 pk = max(0.0, float(pred_k[i]))
+                raw_pk = pk
                 name = row.get("player_name", f"id={row['player_id']}")
                 norm = _normalize_name(name)
                 ld, offer_rows = pitcher_offer_contexts[i]
@@ -6800,10 +8377,44 @@ def predict_props(cfg: PredictConfig) -> None:
                     _ip_avg_5 = float(row.get("ip_avg_5")) if row.get("ip_avg_5") is not None else None
                 except Exception:
                     _ip_avg_5 = None
+                _projected_bf = _float_or_none(row.get("bf_est_avg_5"))
+                if _projected_bf is None and _ip_avg_5 is not None:
+                    _projected_bf = _ip_avg_5 * 4.25
                 pitcher_opportunity = {
-                    "projected_bf": (_ip_avg_5 * 4.25) if _ip_avg_5 is not None else None,
+                    "context_version": "pitcher_opportunity_v3_lock",
+                    "captured_at": datetime.now(timezone.utc).isoformat(),
+                    "projected_ip": _ip_avg_5,
+                    "projected_bf": _projected_bf,
                     "projected_pitch_count": (_ip_avg_5 * 16.5) if _ip_avg_5 is not None else None,
+                    "pitcher_days_rest": _float_or_none(row.get("sp_days_since_last_start")),
+                    "pitcher_short_rest": _float_or_none(row.get("is_short_rest")),
+                    "pitcher_last_ip": _float_or_none(row.get("last_start_ip")),
+                    "pitcher_last_k": _float_or_none(row.get("last_start_k")),
+                    "days_rest": _float_or_none(row.get("sp_days_since_last_start")),
+                    "is_short_rest": _float_or_none(row.get("is_short_rest")),
+                    "last_start_ip": _float_or_none(row.get("last_start_ip")),
+                    "last_start_k": _float_or_none(row.get("last_start_k")),
+                    "pitcher_k_pct_5": _float_or_none(row.get("k_pct_5")),
+                    "pitcher_k_pct_10": _float_or_none(row.get("k_pct_10")),
+                    "pitcher_k9_5": _float_or_none(row.get("k9_5")),
+                    "pitcher_bb_pct_5": _float_or_none(row.get("bb_pct_5")),
+                    "pitcher_sc_whiff_pct": _float_or_none(row.get("sc_sp_disc_whiff_pct")),
+                    "pitcher_sc_oz_swing_pct": _float_or_none(row.get("sc_sp_oz_swing_pct")),
+                    "pitcher_fb_put_away": _float_or_none(row.get("sc_sp_fb_put_away")),
+                    "pitcher_sl_whiff_pct": _float_or_none(row.get("sc_sp_sl_whiff_pct")),
+                    "pitcher_ch_whiff_pct": _float_or_none(row.get("sc_sp_ch_whiff_pct")),
+                    "opp_team_k_pct_10": _float_or_none(row.get("opp_k_pct_avg_10")),
+                    "opp_team_slg_10": _float_or_none(row.get("opp_slg_avg_10")),
+                    "game_total_line": _float_or_none(row.get("market_total")),
+                    "is_home": 1.0 if row.get("is_home") is True else 0.0 if row.get("is_home") is False else None,
                 }
+                if _projected_bf and _projected_bf > 0:
+                    pitcher_opportunity["baseline_k_rate"] = pk / _projected_bf
+                if pitcher_opportunity.get("pitcher_last_ip") and pitcher_opportunity["pitcher_last_ip"] > 0:
+                    pitcher_opportunity["pitcher_recent_k_per_ip"] = (
+                        (pitcher_opportunity.get("pitcher_last_k") or 0.0)
+                        / pitcher_opportunity["pitcher_last_ip"]
+                    )
                 # Dynamic side-penalty (with shrinkage) for weak directional buckets.
                 if line is not None:
                     pk, _pen_k = _apply_count_side_penalty(
@@ -6856,6 +8467,7 @@ def predict_props(cfg: PredictConfig) -> None:
                         apply_market_side_priors=cfg.apply_market_side_priors,
                         market_side_prior_max_blend=cfg.market_side_prior_max_blend,
                         walk_forward_policy=walk_forward_policy,
+                        tb15_line_calibrators=tb15_line_calibrators,
                         opportunity_features=pitcher_opportunity,
                     )
                     kel = 0.0
@@ -6878,6 +8490,7 @@ def predict_props(cfg: PredictConfig) -> None:
                         apply_market_side_priors=cfg.apply_market_side_priors,
                         market_side_prior_max_blend=cfg.market_side_prior_max_blend,
                         walk_forward_policy=walk_forward_policy,
+                        tb15_line_calibrators=tb15_line_calibrators,
                         opportunity_features=pitcher_opportunity,
                     )
                     kel = 0.0
@@ -6889,13 +8502,26 @@ def predict_props(cfg: PredictConfig) -> None:
                     "game_date_et": et_date,
                     "player_id": int(row["player_id"]),
                     "player_name": name,
+                    "model_version": pitcher_model_release_id(),
                     "team_abbr": row.get("team_abbr"),
                     "is_home": row.get("is_home"),
                     "opponent_abbr": row.get("opponent_abbr"),
                     "start_ts_utc": row.get("start_ts_utc"),
                     "pred_strikeouts": pk,
+                    "raw_pred_strikeouts": raw_pk,
+                    "baseline_strikeouts": (
+                        (_float_or_none(row.get("k9_10")) * _ip_avg_5 / 9.0)
+                        if _float_or_none(row.get("k9_10")) is not None and _ip_avg_5 is not None
+                        else _float_or_none(row.get("last_start_k"))
+                    ),
+                    "baseline_bf": _float_or_none(row.get("bf_est_avg_5")),
+                    "baseline_pitch_count": (
+                        _float_or_none(row.get("last_start_ip")) * 16.5
+                        if _float_or_none(row.get("last_start_ip")) is not None else None
+                    ),
                     "projected_bf": pitcher_opportunity.get("projected_bf"),
                     "projected_pitch_count": pitcher_opportunity.get("projected_pitch_count"),
+                    "opportunity_context": pitcher_opportunity,
                     "clf_p_over": {"pitcher_strikeouts": None if clf_k_disabled else p_over_k},
                     "sigma_strikeouts": sigma_k,
                     "weak_prop_sides": {
@@ -6956,6 +8582,7 @@ def predict_props(cfg: PredictConfig) -> None:
                         apply_market_side_priors=cfg.apply_market_side_priors,
                         market_side_prior_max_blend=cfg.market_side_prior_max_blend,
                         walk_forward_policy=walk_forward_policy,
+                        tb15_line_calibrators=tb15_line_calibrators,
                         opportunity_features=pitcher_opportunity,
                     )
                     db_rows.append(_prop_db_row(
@@ -6978,6 +8605,8 @@ def predict_props(cfg: PredictConfig) -> None:
                         cfg=cfg,
                         blocked_sides=_blocked_sides_for_row(r, "pitcher_strikeouts"),
                         bucket_reopen_policy=bucket_reopen_policy,
+                        opportunity_context=pitcher_opportunity,
+                        calibration_key=_offer_cal_key,
                     ))
 
     # ── Batter predictions ─────────────────────────────────────────────────
@@ -7028,10 +8657,65 @@ def predict_props(cfg: PredictConfig) -> None:
             sigma_tb = bt.get("ci_total_bases") if bt else None
             sigma_hr = bt.get("ci_home_runs")   if bt else None
             hitter_pa_infos = _predict_validated_hitter_pa(df_b, hitter_pa_artifact)
+            direct_count_repairs = {
+                prefix: _predict_validated_hitter_count_repair(
+                    df_b,
+                    hitter_pa_infos,
+                    hitter_rate_count_artifact,
+                    prefix,
+                )
+                for prefix in ("hits", "tb", "hr")
+            }
+            direct_hits_predictions, direct_hits_blend_alpha = direct_count_repairs["hits"]
+            direct_tb_predictions, direct_tb_blend_alpha = direct_count_repairs["tb"]
+            direct_hr_predictions, direct_hr_blend_alpha = direct_count_repairs["hr"]
+            hitter_model_version = hitter_model_release_id(hitter_pa_artifact)
+            hitter_rate_shadow_version = hitter_rate_shadow_release_id()
+            (
+                use_hits_rate_challenger_live,
+                hits_rate_live_reason,
+                hits_rate_live_metrics,
+            ) = _hitter_rate_challenger_live_forecast_decision(
+                "hits",
+                hitter_rate_count_artifact,
+            )
+            (
+                use_hr_rate_challenger_live,
+                hr_rate_live_reason,
+                hr_rate_live_metrics,
+            ) = _hitter_rate_challenger_live_forecast_decision(
+                "hr",
+                hitter_rate_count_artifact,
+            )
+            use_hitter_rate_challenger_live = (
+                use_hits_rate_challenger_live or use_hr_rate_challenger_live
+            )
+            if not use_hitter_rate_challenger_live and (
+                direct_hits_blend_alpha > 0.0 or direct_hr_blend_alpha > 0.0
+            ):
+                log.info(
+                    "Hitter hits/HR direct challengers are shadow-only under release %s; "
+                    "promotion control will enable them automatically after prospective proof.",
+                    hitter_rate_shadow_version,
+                )
+            elif use_hitter_rate_challenger_live:
+                log.info(
+                    "Hitter rate challengers enabled for live forecast scoring: hits=%s (%s) hr=%s (%s)",
+                    use_hits_rate_challenger_live,
+                    hits_rate_live_reason,
+                    use_hr_rate_challenger_live,
+                    hr_rate_live_reason,
+                )
+            else:
+                log.info(
+                    "Hitter hits/HR direct challengers remain shadow-only: hits=%s hr=%s",
+                    hits_rate_live_reason,
+                    hr_rate_live_reason,
+                )
             _pa_scales = [
                 float(info.get("pa_scale") or 1.0)
                 for info in hitter_pa_infos
-                if info.get("pa_model_source") in {"validated_pa_model", "validated_two_part_pa"}
+                if info.get("pa_model_source") != "baseline_production"
             ]
             if _pa_scales:
                 log.info(
@@ -7102,9 +8786,97 @@ def predict_props(cfg: PredictConfig) -> None:
                 pa_info = hitter_pa_infos[i] if i < len(hitter_pa_infos) else {}
                 pa_scale = float(pa_info.get("pa_scale") or 1.0)
                 # Regression predictions with additive bias correction
-                raw_ph  = max(0.0, float(pred_h[i])  + bias.get("batter_hits",        0.0)) * pa_scale
-                raw_ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0)) * pa_scale
-                raw_phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs",   0.0)) * pa_scale
+                legacy_raw_ph = max(0.0, float(pred_h[i]) + bias.get("batter_hits", 0.0)) * pa_scale
+                direct_hits = float(direct_hits_predictions[i]) if i < len(direct_hits_predictions) else math.nan
+                shadow_raw_ph = None
+                hits_bias_calibration_meta: dict[str, Any] = {}
+                if direct_hits_blend_alpha > 0.0 and math.isfinite(direct_hits):
+                    shadow_raw_ph = (
+                        (1.0 - direct_hits_blend_alpha) * legacy_raw_ph
+                        + direct_hits_blend_alpha * direct_hits
+                    )
+                    calibrated_shadow, hits_bias_calibration_meta = _apply_hitter_hits_bias_calibration(
+                        row=row,
+                        pa_info=pa_info,
+                        artifact=hitter_rate_count_artifact,
+                        calibration=hitter_hits_bias_calibration,
+                        base_hits=shadow_raw_ph,
+                    )
+                    if calibrated_shadow is not None and hits_bias_calibration_meta.get("applied"):
+                        shadow_raw_ph = calibrated_shadow
+                    if use_hits_rate_challenger_live:
+                        raw_ph = shadow_raw_ph
+                        hits_count_source = (
+                            "validated_direct_player_game_blend_hits_bias_calibrated"
+                            if hits_bias_calibration_meta.get("applied")
+                            else "validated_direct_player_game_blend"
+                        )
+                    else:
+                        raw_ph = legacy_raw_ph
+                        hits_count_source = "legacy_regression_pa_scaled"
+                else:
+                    raw_ph = legacy_raw_ph
+                    hits_count_source = "legacy_regression_pa_scaled"
+                legacy_raw_ptb = max(0.0, float(pred_tb[i]) + bias.get("batter_total_bases", 0.0)) * pa_scale
+                direct_tb = float(direct_tb_predictions[i]) if i < len(direct_tb_predictions) else math.nan
+                legacy_raw_phr = max(0.0, float(pred_hr[i]) + bias.get("batter_home_runs", 0.0)) * pa_scale
+                direct_hr = float(direct_hr_predictions[i]) if i < len(direct_hr_predictions) else math.nan
+                shadow_raw_phr = None
+                if direct_hr_blend_alpha > 0.0 and math.isfinite(direct_hr):
+                    shadow_raw_phr = (
+                        (1.0 - direct_hr_blend_alpha) * legacy_raw_phr
+                        + direct_hr_blend_alpha * direct_hr
+                    )
+                    if use_hr_rate_challenger_live:
+                        raw_phr = shadow_raw_phr
+                        hr_count_source = "validated_direct_player_game_blend"
+                    else:
+                        raw_phr = legacy_raw_phr
+                        hr_count_source = "legacy_regression_pa_scaled"
+                else:
+                    raw_phr = legacy_raw_phr
+                    hr_count_source = "legacy_regression_pa_scaled"
+                tb_component_meta: dict[str, Any] = {}
+                hits_component_live = str(hits_count_source or "").startswith("validated_direct_player_game_blend")
+                hr_component_live = str(hr_count_source or "").startswith("validated_direct_player_game_blend")
+                if (
+                    use_hitter_rate_challenger_live
+                    and (hits_component_live or hr_component_live)
+                ):
+                    tb_source_label = (
+                        "component_rebuild_from_live_hits_live_hr"
+                        if hits_component_live
+                        and hr_component_live
+                        else "component_rebuild_from_live_hits_legacy_hr"
+                        if hits_component_live
+                        else "component_rebuild_from_legacy_hits_live_hr"
+                    )
+                    rebuilt_tb, tb_component_meta = _rebuild_tb_from_live_rate_components(
+                        legacy_tb=legacy_raw_ptb,
+                        legacy_hits=legacy_raw_ph,
+                        legacy_hr=legacy_raw_phr,
+                        live_hits=raw_ph,
+                        live_hr=raw_phr,
+                    )
+                    if rebuilt_tb is not None:
+                        raw_ptb = rebuilt_tb
+                        tb_count_source = tb_source_label
+                        tb_component_meta.update({
+                            "hits_component_source": hits_count_source,
+                            "hr_component_source": hr_count_source,
+                        })
+                    else:
+                        raw_ptb = legacy_raw_ptb
+                        tb_count_source = "legacy_regression_pa_scaled"
+                elif direct_tb_blend_alpha > 0.0 and math.isfinite(direct_tb):
+                    raw_ptb = (
+                        (1.0 - direct_tb_blend_alpha) * legacy_raw_ptb
+                        + direct_tb_blend_alpha * direct_tb
+                    )
+                    tb_count_source = "validated_direct_player_game_blend"
+                else:
+                    raw_ptb = legacy_raw_ptb
+                    tb_count_source = "legacy_regression_pa_scaled"
 
                 row_offer_contexts = {
                     stat_key: batter_offer_contexts[stat_key][i]
@@ -7150,20 +8922,80 @@ def predict_props(cfg: PredictConfig) -> None:
                 _effective_order = pa_info.get("effective_batting_order")
                 _projected_pa = pa_info.get("projected_pa")
                 batter_opportunity = {
+                    "context_version": "hitter_opportunity_v3_lock",
+                    "captured_at": datetime.now(timezone.utc).isoformat(),
                     "confirmed_batting_order": _conf_order,
+                    "confirmed_lineup_source": row.get("confirmed_lineup_source"),
+                    "confirmed_team_lineup_slots": pa_info.get("confirmed_team_lineup_slots"),
+                    "effective_batting_order": _effective_order,
                     "projected_pa": _projected_pa,
                     "baseline_projected_pa": pa_info.get("baseline_projected_pa"),
                     "validated_projected_pa": pa_info.get("validated_projected_pa"),
+                    "two_part_projected_pa": pa_info.get("two_part_projected_pa"),
                     "pa_model_scale": pa_scale,
                     "pa_model_source": pa_info.get("pa_model_source"),
-                    "opp_model_low_pa": pa_info.get("low_pa_probability"),
-                    "opp_model_normal_pa": pa_info.get("normal_projected_pa"),
+                    "pa_challenger_source": pa_info.get("pa_challenger_source"),
+                    "challenger_pa_scale": pa_info.get("challenger_pa_scale"),
+                    "hits_count_source": hits_count_source,
+                    "hits_direct_prediction": direct_hits if math.isfinite(direct_hits) else None,
+                    "hits_direct_blend_alpha": direct_hits_blend_alpha,
+                    "hits_shadow_prediction": shadow_raw_ph,
+                    "hits_bias_calibration": hits_bias_calibration_meta or None,
+                    "hits_shadow_release_id": hitter_rate_shadow_version,
+                    "hits_shadow_production_impact": (
+                        "live_forecast_scoring" if use_hits_rate_challenger_live and shadow_raw_ph is not None
+                        else "shadow_only" if shadow_raw_ph is not None
+                        else None
+                    ),
+                    "hits_live_forecast_enabled": bool(use_hits_rate_challenger_live),
+                    "hits_live_forecast_reason": hits_rate_live_reason,
+                    "hits_live_forecast_metrics": hits_rate_live_metrics or None,
+                    "tb_count_source": tb_count_source,
+                    "tb_direct_prediction": direct_tb if math.isfinite(direct_tb) else None,
+                    "tb_direct_blend_alpha": direct_tb_blend_alpha,
+                    "tb_component_rebuild": tb_component_meta or None,
+                    "tb_tail_state_model_enabled": bool(tb_tail_state_artifact),
+                    "tb_tail_state_model_trained_at": (
+                        (tb_tail_state_artifact or {}).get("trained_at_utc")
+                        if tb_tail_state_artifact
+                        else None
+                    ),
+                    "tb_tail_state_blend_alpha": (
+                        (tb_tail_state_artifact or {}).get("selected_blend_alpha")
+                        if tb_tail_state_artifact
+                        else None
+                    ),
+                    "hr_count_source": hr_count_source,
+                    "hr_direct_prediction": direct_hr if math.isfinite(direct_hr) else None,
+                    "hr_direct_blend_alpha": direct_hr_blend_alpha,
+                    "hr_shadow_prediction": shadow_raw_phr,
+                    "hr_shadow_release_id": hitter_rate_shadow_version,
+                    "hr_shadow_production_impact": (
+                        "live_forecast_scoring" if use_hr_rate_challenger_live and shadow_raw_phr is not None
+                        else "shadow_only" if shadow_raw_phr is not None
+                        else None
+                    ),
+                    "hr_live_forecast_enabled": bool(use_hr_rate_challenger_live),
+                    "hr_live_forecast_reason": hr_rate_live_reason,
+                    "hr_live_forecast_metrics": hr_rate_live_metrics or None,
+                    "low_pa_probability": pa_info.get("low_pa_probability"),
+                    "normal_projected_pa": pa_info.get("normal_projected_pa"),
+                    "pinch_hit_removal_risk": pa_info.get("low_pa_probability"),
+                    "is_home": bool(row.get("is_home")) if row.get("is_home") is not None else None,
+                    "team_implied_runs": _float_or_none(row.get("team_implied_runs")),
+                    "opponent_implied_runs": _float_or_none(row.get("opponent_implied_runs")),
+                    "market_total": _float_or_none(row.get("market_total")),
+                    "rest_days": _float_or_none(row.get("rest_days")),
+                    "primary_position": row.get("primary_position"),
+                    "batter_hand": row.get("batter_hand"),
+                    "opp_sp_hand": row.get("opp_sp_hand"),
                 }
                 r = {
                     "game_slug": slug,
                     "game_date_et": et_date,
                     "player_id": pid,
                     "player_name": name,
+                    "model_version": hitter_model_version,
                     "team_abbr": row.get("team_abbr"),
                     "is_home": row.get("is_home"),
                     "opponent_abbr": row.get("opponent_abbr"),
@@ -7175,6 +9007,10 @@ def predict_props(cfg: PredictConfig) -> None:
                     "raw_pred_hits": raw_ph,
                     "raw_pred_total_bases": raw_ptb,
                     "raw_pred_home_runs": raw_phr,
+                    "baseline_hits": _float_or_none(row.get("hits_avg_10")),
+                    "baseline_total_bases": _float_or_none(row.get("tb_avg_10")),
+                    "baseline_home_runs": _float_or_none(row.get("hr_avg_10")),
+                    "opportunity_context": batter_opportunity,
                     "weak_prop_sides": {
                         "batter_hits": _weak_sides_for_line("batter_hits", line_h, side_penalties),
                         "batter_total_bases": _weak_sides_for_line("batter_total_bases", line_tb, side_penalties),
@@ -7205,6 +9041,29 @@ def predict_props(cfg: PredictConfig) -> None:
                     "validated_projected_pa": pa_info.get("validated_projected_pa"),
                     "pa_model_scale":         pa_scale,
                     "pa_model_source":        pa_info.get("pa_model_source"),
+                    "pa_challenger_source":   pa_info.get("pa_challenger_source"),
+                    "challenger_pa_scale":   pa_info.get("challenger_pa_scale"),
+                    "hits_count_source":      hits_count_source,
+                    "hits_direct_prediction": direct_hits if math.isfinite(direct_hits) else None,
+                    "hits_direct_blend_alpha": direct_hits_blend_alpha,
+                    "shadow_rate_model_version": hitter_rate_shadow_version,
+                    "shadow_raw_pred_hits": shadow_raw_ph,
+                    "shadow_baseline_raw_pred_hits": legacy_raw_ph,
+                    "shadow_hits_direct_prediction": direct_hits if math.isfinite(direct_hits) else None,
+                    "shadow_hits_bias_calibration": hits_bias_calibration_meta or None,
+                    "shadow_hits_blend_alpha": direct_hits_blend_alpha,
+                    "tb_count_source":        tb_count_source,
+                    "tb_direct_prediction":   direct_tb if math.isfinite(direct_tb) else None,
+                    "tb_direct_blend_alpha":  direct_tb_blend_alpha,
+                    "tb_component_rebuild":   tb_component_meta or None,
+                    "baseline_raw_pred_total_bases": legacy_raw_ptb,
+                    "hr_count_source":        hr_count_source,
+                    "hr_direct_prediction":   direct_hr if math.isfinite(direct_hr) else None,
+                    "hr_direct_blend_alpha":  direct_hr_blend_alpha,
+                    "shadow_raw_pred_home_runs": shadow_raw_phr,
+                    "shadow_baseline_raw_pred_home_runs": legacy_raw_phr,
+                    "shadow_hr_direct_prediction": direct_hr if math.isfinite(direct_hr) else None,
+                    "shadow_hr_blend_alpha": direct_hr_blend_alpha,
                     "opp_model_low_pa":       pa_info.get("low_pa_probability"),
                     "opp_model_normal_pa":    pa_info.get("normal_projected_pa"),
                     # Effective batting order: confirmed if available, else rolling avg
@@ -7222,6 +9081,7 @@ def predict_props(cfg: PredictConfig) -> None:
                     canonical_clf_p = (r.get("clf_p_over") or {}).get(stat_key)
                     canonical_clf_family = (r.get("clf_model_family") or {}).get(stat_key) or "clf"
                     for offer in offer_rows:
+                        offer_opportunity = batter_opportunity
                         offer_ld = _offer_line_data(offer, offer_rows)
                         offer_line = offer_ld.get("line")
                         offer_side = offer_ld.get("selected_offer_side")
@@ -7261,6 +9121,25 @@ def predict_props(cfg: PredictConfig) -> None:
                         if offer_raw_p is None and offer_line is not None:
                             offer_raw_p = _prob_over_from_regression(reg_pred, offer_line, sigma)
                             offer_family = "regression"
+                        if stat_key == "batter_total_bases" and offer_line is not None:
+                            tb_tail_p, tb_tail_meta = _predict_tb_tail_state_probability(
+                                row,
+                                pa_info=pa_info,
+                                artifact=tb_tail_state_artifact,
+                                line=offer_line,
+                                hits_mean=ph,
+                                tb_mean=reg_pred,
+                                hr_mean=phr,
+                                offer_context=offer_ld,
+                            )
+                            if tb_tail_p is not None:
+                                offer_raw_p = tb_tail_p
+                                offer_family = "tb_tail_state"
+                                if tb_tail_meta:
+                                    offer_opportunity = {
+                                        **batter_opportunity,
+                                        "tb_tail_state_scoring": tb_tail_meta,
+                                    }
                         offer_p_over, offer_edge, _offer_cal_key = _apply_prop_side_recalibration(
                             stat=stat_key,
                             line=offer_line,
@@ -7273,7 +9152,8 @@ def predict_props(cfg: PredictConfig) -> None:
                             apply_market_side_priors=cfg.apply_market_side_priors,
                             market_side_prior_max_blend=cfg.market_side_prior_max_blend,
                             walk_forward_policy=walk_forward_policy,
-                            opportunity_features=batter_opportunity,
+                            tb15_line_calibrators=tb15_line_calibrators,
+                            opportunity_features=offer_opportunity,
                         )
                         db_rows.append(_prop_db_row(
                             game_date_et=et_date,
@@ -7295,9 +9175,30 @@ def predict_props(cfg: PredictConfig) -> None:
                             cfg=cfg,
                             blocked_sides=_blocked_sides_for_row(r, stat_label),
                             bucket_reopen_policy=bucket_reopen_policy,
+                            opportunity_context=offer_opportunity,
+                            calibration_key=_offer_cal_key,
                         ))
 
     # ── Save to DB ────────────────────────────────────────────────────────
+    try:
+        locked_forecasts = lock_player_forecasts(conn, all_pitcher_rows, all_batter_rows)
+        log.info("Locked %d immutable player/opportunity forecast rows", locked_forecasts)
+    except Exception:
+        conn.rollback()
+        log.exception("Failed to lock immutable player forecasts")
+    try:
+        locked_shadow = lock_hitter_rate_shadow_forecasts(conn, all_batter_rows)
+        if locked_shadow:
+            log.info("Locked %d shadow hitter hits/HR rate challenger forecast rows", locked_shadow)
+    except Exception:
+        conn.rollback()
+        log.exception("Failed to lock shadow hitter hits/HR rate challenger forecasts")
+
+    try:
+        attach_external_agreement(conn, db_rows, game_date=et_date)
+    except Exception:
+        conn.rollback()
+        log.exception("Could not attach external MLB prop agreement metadata")
     db_rows = _apply_prop_shadow_selector_gate(db_rows, cfg)
     db_rows = _apply_prop_real_money_kill_switch(db_rows, cfg)
 
@@ -7344,12 +9245,24 @@ def predict_props(cfg: PredictConfig) -> None:
         require_locked=True,
     )
     _save_predictions(conn, db_rows)
+    ai_pick_rows_for_discord: Optional[List[Dict]] = None
     try:
         locked = insert_prop_model_pick_ledger(conn, db_rows, prop_lines=prop_lines, cfg=cfg)
         log.info("Locked %d MLB prop model-pick ledger rows", locked)
     except Exception:
         conn.rollback()
         log.exception("Failed to lock MLB prop model-pick ledger rows")
+    try:
+        payload = refresh_ai_pick_engine(conn, et_date)
+        ai_pick_rows_for_discord = load_ai_pick_rows(conn, et_date, market_type="prop")
+        log.info(
+            "Refreshed MLB AI pick engine rows for prop Discord: saved=%s loaded=%d",
+            payload.get("saved_rows"),
+            len(ai_pick_rows_for_discord),
+        )
+    except Exception:
+        conn.rollback()
+        log.exception("Failed to refresh/load MLB AI pick engine rows; falling back to prediction rows for Discord")
 
     # ── Collect lottery legs once (no conn needed) then persist ───────────
     lottery_legs_collected: List[Dict] = []
@@ -7392,7 +9305,8 @@ def predict_props(cfg: PredictConfig) -> None:
 
     _print_discord(all_pitcher_rows, all_batter_rows, prop_lines, game_map, cfg,
                    all_alt_lines=all_alt_lines, lottery_legs=lottery_legs_collected,
-                   db_rows=db_rows, bucket_reopen_policy=bucket_reopen_policy)
+                   db_rows=db_rows, ai_pick_rows=ai_pick_rows_for_discord,
+                   bucket_reopen_policy=bucket_reopen_policy)
 
     if not is_discord:
         fd_links = _print_best_bets(
@@ -7461,11 +9375,21 @@ def main() -> None:
     parser.add_argument("--walk-forward-policy-file", type=str, default=None)
     parser.add_argument("--disable-walk-forward-policy", action="store_true")
     parser.add_argument("--discord-paper-limit", type=int, default=None)
+    parser.add_argument("--projection-micro-max-props", type=int, default=None)
+    parser.add_argument("--projection-micro-stake-usd", type=float, default=None)
     parser.add_argument("--hide-discord-paper-links", action="store_true")
+    parser.add_argument("--hide-no-bet-diagnostics", action="store_true")
     parser.add_argument(
         "--discord-model-picks-only",
         action="store_true",
         help="Keep Discord paper sections limited to positive-EV model picks.",
+    )
+    parser.add_argument(
+        "--allow-schema-ddl",
+        "--ensure-schema",
+        dest="allow_schema_ddl",
+        action="store_true",
+        help="Allow prediction startup to create/alter required tables and compatibility views.",
     )
     args = parser.parse_args()
 
@@ -7483,8 +9407,9 @@ def main() -> None:
     elif lottery_mode_env is not None:
         lottery_mode = lottery_mode_env.strip().lower() in {"1", "true", "yes", "on"}
     else:
-        # Discord compact output defaults to showing a lottery section.
-        lottery_mode = os.getenv("DISCORD_FORMAT") == "1"
+        # Lottery/research parlays are explicit opt-in only; normal Discord
+        # output should not create actionable prop links outside bankroll/micro.
+        lottery_mode = False
     lottery_legs = args.lottery_legs if args.lottery_legs is not None else int(os.getenv("MLB_LOTTERY_LEGS", "5"))
     lottery_min_american = (
         args.lottery_min_american
@@ -7520,14 +9445,22 @@ def main() -> None:
     apply_walk_forward_policy = not args.disable_walk_forward_policy
     if walk_forward_env is not None and not args.disable_walk_forward_policy:
         apply_walk_forward_policy = walk_forward_env.strip().lower() in {"1", "true", "yes", "on"}
+    tb_tail_env = os.getenv("MLB_PROP_APPLY_TB_TAIL_STATE_MODEL")
+    apply_tb_tail_state_model = True
+    if tb_tail_env is not None:
+        apply_tb_tail_state_model = tb_tail_env.strip().lower() in {"1", "true", "yes", "on"}
     paper_links_env = os.getenv("MLB_DISCORD_PAPER_LINKS")
-    discord_show_paper_links = not args.hide_discord_paper_links
+    discord_show_paper_links = False
     if paper_links_env is not None and not args.hide_discord_paper_links:
         discord_show_paper_links = paper_links_env.strip().lower() in {"1", "true", "yes", "on"}
     all_priced_env = os.getenv("MLB_DISCORD_ALL_PRICED_PROPS")
     discord_include_all_priced_props = False
     if all_priced_env is not None and not args.discord_model_picks_only:
         discord_include_all_priced_props = all_priced_env.strip().lower() in {"1", "true", "yes", "on"}
+    no_bet_diag_env = os.getenv("MLB_DISCORD_NO_BET_DIAGNOSTICS")
+    discord_show_no_bet_diagnostics = not args.hide_no_bet_diagnostics
+    if no_bet_diag_env is not None and not args.hide_no_bet_diagnostics:
+        discord_show_no_bet_diagnostics = no_bet_diag_env.strip().lower() in {"1", "true", "yes", "on"}
     discord_paper_limit = (
         args.discord_paper_limit
         if args.discord_paper_limit is not None
@@ -7536,6 +9469,23 @@ def main() -> None:
     bankroll_reference_usd = float(os.getenv("MLB_BANKROLL_REFERENCE_USD", "1000"))
     bankroll_micro_stake_usd = float(os.getenv("MLB_PROP_MICRO_STAKE_USD", "1"))
     bankroll_starter_stake_pct = float(os.getenv("MLB_PROP_STARTER_STAKE_PCT", "0.001"))
+    projection_micro_max_props = (
+        args.projection_micro_max_props
+        if args.projection_micro_max_props is not None
+        else int(os.getenv("MLB_PROJECTION_MICRO_MAX_PROPS", "5"))
+    )
+    projection_micro_stake_usd = (
+        args.projection_micro_stake_usd
+        if args.projection_micro_stake_usd is not None
+        else float(os.getenv("MLB_PROJECTION_MICRO_STAKE_USD", "1"))
+    )
+    allow_schema_ddl_env = (
+        os.getenv("MLB_PROP_PREDICT_ALLOW_SCHEMA_DDL")
+        or os.getenv("MLB_ALLOW_PREDICTION_DDL")
+    )
+    allow_schema_ddl = args.allow_schema_ddl
+    if allow_schema_ddl_env is not None and not allow_schema_ddl:
+        allow_schema_ddl = allow_schema_ddl_env.strip().lower() in {"1", "true", "yes", "on"}
 
     cfg = PredictConfig(
         et_date=et_date,
@@ -7547,12 +9497,17 @@ def main() -> None:
         bucket_reopen_policy_file=bucket_reopen_policy_file,
         walk_forward_policy_file=walk_forward_policy_file,
         apply_walk_forward_policy=apply_walk_forward_policy,
+        apply_tb_tail_state_model=apply_tb_tail_state_model,
         discord_show_paper_links=discord_show_paper_links,
         discord_include_all_priced_props=discord_include_all_priced_props,
+        discord_show_no_bet_diagnostics=discord_show_no_bet_diagnostics,
         discord_paper_limit=discord_paper_limit,
         bankroll_reference_usd=bankroll_reference_usd,
         bankroll_micro_stake_usd=bankroll_micro_stake_usd,
         bankroll_starter_stake_pct=bankroll_starter_stake_pct,
+        projection_micro_stake_usd=projection_micro_stake_usd,
+        projection_micro_max_props=projection_micro_max_props,
+        allow_schema_ddl=allow_schema_ddl,
     )
     _apply_threshold_overrides(cfg)
     predict_props(cfg)

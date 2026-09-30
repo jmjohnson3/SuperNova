@@ -1,0 +1,73 @@
+{
+  "generated_at_utc": "2026-07-13T01:08:31Z",
+  "slate_date": "2026-07-12",
+  "status": "pass",
+  "checks": [
+    {
+      "name": "all_games_finalized",
+      "passed": true,
+      "required": true,
+      "detail": "15/15 games final"
+    },
+    {
+      "name": "valid_close_coverage",
+      "passed": true,
+      "required": true,
+      "detail": "91.0% valid exact closes; required >= 90%"
+    },
+    {
+      "name": "stale_close_rate",
+      "passed": true,
+      "required": true,
+      "detail": "0.0% stale closes; required <= 2%"
+    },
+    {
+      "name": "targeted_close_captures",
+      "passed": true,
+      "required": true,
+      "detail": "15/15 events have T-120/T-60/T-20 captures"
+    },
+    {
+      "name": "hitter_anchor_settled_or_voided",
+      "passed": true,
+      "required": true,
+      "detail": "234 graded, 0 pending, 72 void"
+    },
+    {
+      "name": "pitcher_anchor_settled_or_voided",
+      "passed": true,
+      "required": true,
+      "detail": "25 graded, 0 pending, 0 void"
+    },
+    {
+      "name": "frozen_hitter_artifact_valid",
+      "passed": true,
+      "required": true,
+      "detail": "sha256 matched"
+    }
+  ],
+  "required_failures": [],
+  "close_summary": {
+    "locked_offer_rows": 2601,
+    "valid_closes": 2366,
+    "valid_close_coverage": 0.9096501345636294,
+    "stale_close_rate": 0.0,
+    "failure_reasons": {
+      "valid_close": 2366,
+      "player_prop_unavailable_at_close": 200,
+      "line_disappeared_at_close": 29,
+      "player_market_unavailable_at_close": 3,
+      "fallback_other_book_only": 3
+    }
+  },
+  "checkpoint_summary": {
+    "status": "evaluation_ready_no_micro_buckets",
+    "hitter_completed_dates": 7,
+    "hitter_dates_remaining": 0,
+    "hitter_micro_ready_buckets": 0,
+    "pitcher_completed_dates": 9,
+    "pitcher_dates_remaining": 0,
+    "pitcher_micro_ready_buckets": 0
+  },
+  "decision": "slate_trusted_for_evaluation"
+}

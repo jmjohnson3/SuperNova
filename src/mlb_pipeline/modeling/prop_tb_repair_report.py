@@ -19,6 +19,8 @@ import numpy as np
 import pandas as pd
 import psycopg2
 import psycopg2.extras
+
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
 from sklearn.metrics import brier_score_loss
 
 from .prop_market_training import ensure_prop_market_training_schema
@@ -62,6 +64,8 @@ SELECT
     e.actual_value::float AS actual_total_bases,
     h.actual_pa::float AS actual_pa,
     h.actual_hits::float AS actual_hits,
+    h.actual_doubles::float AS actual_doubles,
+    h.actual_triples::float AS actual_triples,
     h.actual_home_runs::float AS actual_home_runs,
     h.projected_pa::float AS player_game_projected_pa,
     e.projected_pa::float AS offer_projected_pa,
@@ -109,6 +113,8 @@ SELECT
     e.actual_value::float AS actual_total_bases,
     e.actual_pa::float AS actual_pa,
     NULL::float AS actual_hits,
+    NULL::float AS actual_doubles,
+    NULL::float AS actual_triples,
     NULL::float AS actual_home_runs,
     NULL::float AS player_game_projected_pa,
     e.projected_pa::float AS offer_projected_pa,
@@ -190,6 +196,7 @@ def _load(cfg: TBRepairConfig) -> pd.DataFrame:
         "market_line", "market_price", "paired_price", "pred_count",
         "model_prob_side", "market_prob_side", "prob_edge_vs_market", "ev",
         "actual_total_bases", "actual_pa", "actual_hits", "actual_home_runs",
+        "actual_doubles", "actual_triples",
         "player_game_projected_pa", "offer_projected_pa", "won", "profit_units",
         "clv_price", "beat_clv_price", "confirmed_batting_order",
     ):
@@ -205,6 +212,11 @@ def _load(cfg: TBRepairConfig) -> pd.DataFrame:
     df["projected_pa"] = df["player_game_projected_pa"].combine_first(df["offer_projected_pa"])
     df["pa_error"] = df["projected_pa"] - df["actual_pa"]
     df["tb_error"] = df["pred_count"] - df["actual_total_bases"]
+    df["actual_xbh"] = (
+        df["actual_doubles"].fillna(0.0)
+        + df["actual_triples"].fillna(0.0)
+        + df["actual_home_runs"].fillna(0.0)
+    )
     df["line_result_margin"] = np.where(
         df["side"].eq("over"),
         df["actual_total_bases"] - df["market_line"],
@@ -238,6 +250,15 @@ def _bucket_summary(group: pd.DataFrame) -> dict[str, Any]:
     market_brier = _safe_brier(won, group["market_prob_side"])
     pa_mae = _safe_mean(group["pa_error"].abs()) if "pa_error" in group else None
     tb_bias = _safe_mean(group["tb_error"])
+    total_pa = pd.to_numeric(group.get("actual_pa"), errors="coerce").sum()
+    actual_double_per_pa = (
+        float(pd.to_numeric(group.get("actual_doubles"), errors="coerce").fillna(0.0).sum() / total_pa)
+        if total_pa and total_pa > 0 else None
+    )
+    actual_xbh_per_pa = (
+        float(pd.to_numeric(group.get("actual_xbh"), errors="coerce").fillna(0.0).sum() / total_pa)
+        if total_pa and total_pa > 0 else None
+    )
     clv_beat = _safe_mean(valid_clv["beat_clv_price"]) if not valid_clv.empty else None
     avg_clv = _safe_mean(valid_clv["clv_price"]) if not valid_clv.empty else None
     issues: list[str] = []
@@ -253,6 +274,14 @@ def _bucket_summary(group: pd.DataFrame) -> dict[str, Any]:
         issues.append("pa_projection_error")
     if market_brier is not None and model_brier is not None and market_brier < model_brier:
         issues.append("market_beats_model_brier")
+    if (
+        actual_double_per_pa is not None
+        and actual_double_per_pa >= 0.035
+        and market_brier is not None
+        and model_brier is not None
+        and market_brier <= model_brier
+    ):
+        issues.append("double_xbh_structure_repair_needed")
     if avg_clv is not None and avg_clv <= 0.0:
         issues.append("negative_or_flat_clv")
     if clv_beat is not None and clv_beat < 0.52:
@@ -281,6 +310,8 @@ def _bucket_summary(group: pd.DataFrame) -> dict[str, Any]:
         "avg_actual_tb": _safe_mean(group["actual_total_bases"]),
         "tb_bias_pred_minus_actual": tb_bias,
         "tb_mae": _safe_mean(group["tb_error"].abs()),
+        "actual_double_per_pa": actual_double_per_pa,
+        "actual_xbh_per_pa": actual_xbh_per_pa,
         "pa_mae": pa_mae,
         "low_pa_actual_rate": float((pd.to_numeric(group["actual_pa"], errors="coerce") <= 2).mean()),
         "confirmed_lineup_rate": float(group["confirmed_batting_order"].notna().mean()),
@@ -322,7 +353,12 @@ def _summaries(df: pd.DataFrame, cfg: TBRepairConfig) -> dict[str, Any]:
         "top_repair_targets": [
             r for r in exact
             if int(r["rows"]) >= cfg.min_bucket_rows
-            and ("market_beats_model_brier" in r["issues"] or "tb_projection_high" in r["issues"] or "pa_projection_error" in r["issues"])
+            and (
+                "market_beats_model_brier" in r["issues"]
+                or "tb_projection_high" in r["issues"]
+                or "pa_projection_error" in r["issues"]
+                or "double_xbh_structure_repair_needed" in r["issues"]
+            )
         ][: cfg.top_n],
     }
 
@@ -336,7 +372,7 @@ def _fmt(value: Any, digits: int = 3) -> str:
 
 def _write(payload: dict[str, Any], cfg: TBRepairConfig) -> None:
     cfg.model_dir.mkdir(parents=True, exist_ok=True)
-    (cfg.model_dir / cfg.json_out).write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    atomic_write_json(cfg.model_dir / cfg.json_out, payload, default=str)
     _REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = _REPORT_DIR / cfg.report_file
     lines: list[str] = [
@@ -352,8 +388,8 @@ def _write(payload: dict[str, Any], cfg: TBRepairConfig) -> None:
     if not targets:
         lines.append("No TB buckets met the repair-target row threshold yet.")
     else:
-        lines.append("| Bucket | Rows | ROI | CLV | Brier M/Mkt | TB Bias | PA MAE | Issues |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---|")
+        lines.append("| Bucket | Rows | ROI | CLV | Brier M/Mkt | TB Bias | 2B/PA | XBH/PA | PA MAE | Issues |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---|")
         for rec in targets[: cfg.top_n]:
             bucket = " | ".join([
                 rec["side"], rec["line_surface"], rec["line_bucket"], rec["price_bucket"], rec["bookmaker_key"],
@@ -361,7 +397,8 @@ def _write(payload: dict[str, Any], cfg: TBRepairConfig) -> None:
             lines.append(
                 f"| {bucket} | {rec['rows']} | {_fmt(rec.get('roi_units'))} | "
                 f"{_fmt(rec.get('avg_clv_price'))} | {_fmt(rec.get('model_brier'))}/{_fmt(rec.get('market_brier'))} | "
-                f"{_fmt(rec.get('tb_bias_pred_minus_actual'))} | {_fmt(rec.get('pa_mae'))} | "
+                f"{_fmt(rec.get('tb_bias_pred_minus_actual'))} | {_fmt(rec.get('actual_double_per_pa'))} | "
+                f"{_fmt(rec.get('actual_xbh_per_pa'))} | {_fmt(rec.get('pa_mae'))} | "
                 f"{', '.join(rec.get('issues') or [])} |"
             )
 
@@ -370,8 +407,8 @@ def _write(payload: dict[str, Any], cfg: TBRepairConfig) -> None:
     if not exact:
         lines.append("No exact TB buckets available.")
     else:
-        lines.append("| Bucket | Rows | Dates | Win | ROI | CLV Beat | Avg CLV | Pred/Actual TB | PA MAE | Issues |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---|")
+        lines.append("| Bucket | Rows | Dates | Win | ROI | CLV Beat | Avg CLV | Pred/Actual TB | 2B/PA | PA MAE | Issues |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|")
         for rec in exact[: cfg.top_n]:
             bucket = " | ".join([
                 rec["side"], rec["line_surface"], rec["line_bucket"], rec["price_bucket"], rec["bookmaker_key"],
@@ -379,7 +416,8 @@ def _write(payload: dict[str, Any], cfg: TBRepairConfig) -> None:
             lines.append(
                 f"| {bucket} | {rec['rows']} | {rec['dates']} | {_fmt(rec.get('win_rate'))} | "
                 f"{_fmt(rec.get('roi_units'))} | {_fmt(rec.get('clv_beat_rate'))} | {_fmt(rec.get('avg_clv_price'))} | "
-                f"{_fmt(rec.get('avg_pred_tb'))}/{_fmt(rec.get('avg_actual_tb'))} | {_fmt(rec.get('pa_mae'))} | "
+                f"{_fmt(rec.get('avg_pred_tb'))}/{_fmt(rec.get('avg_actual_tb'))} | "
+                f"{_fmt(rec.get('actual_double_per_pa'))} | {_fmt(rec.get('pa_mae'))} | "
                 f"{', '.join(rec.get('issues') or [])} |"
             )
 
@@ -388,17 +426,18 @@ def _write(payload: dict[str, Any], cfg: TBRepairConfig) -> None:
     if not groups:
         lines.append("No TB diagnostic groups available.")
     else:
-        lines.append("| Group | Rows | Win | ROI | TB Bias | PA MAE | Model/Mkt Brier | Issues |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---|")
+        lines.append("| Group | Rows | Win | ROI | TB Bias | 2B/PA | PA MAE | Model/Mkt Brier | Issues |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---|")
         for rec in groups[: cfg.top_n]:
             lines.append(
                 f"| {rec.get('group')} | {rec['rows']} | {_fmt(rec.get('win_rate'))} | {_fmt(rec.get('roi_units'))} | "
-                f"{_fmt(rec.get('tb_bias_pred_minus_actual'))} | {_fmt(rec.get('pa_mae'))} | "
+                f"{_fmt(rec.get('tb_bias_pred_minus_actual'))} | {_fmt(rec.get('actual_double_per_pa'))} | "
+                f"{_fmt(rec.get('pa_mae'))} | "
                 f"{_fmt(rec.get('model_brier'))}/{_fmt(rec.get('market_brier'))} | "
                 f"{', '.join(rec.get('issues') or [])} |"
             )
 
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(path, "\n".join(lines) + "\n")
 
 
 def build_report(cfg: TBRepairConfig) -> dict[str, Any]:

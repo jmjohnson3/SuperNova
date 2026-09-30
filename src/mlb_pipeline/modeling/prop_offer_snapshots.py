@@ -58,7 +58,7 @@ def ensure_prop_offer_snapshot_schema(conn) -> None:
         return
     try:
         with conn.cursor() as cur:
-            cur.execute("SET LOCAL lock_timeout = '30s'")
+            cur.execute("SET LOCAL lock_timeout = '2s'")
             cur.execute("SET LOCAL statement_timeout = '60s'")
             cur.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (_SCHEMA_LOCK_KEY,))
             cur.execute(
@@ -408,7 +408,7 @@ def resolve_valid_prop_close(
     conn,
     row: dict[str, Any],
     *,
-    max_hours_before_start: float = 4.0,
+    max_hours_before_start: float = 2.0,
 ) -> dict[str, Any]:
     """Resolve a close only when it is a valid same-offer pregame observation."""
     unknown = {
@@ -574,6 +574,46 @@ def resolve_valid_prop_close(
             **unknown,
             "unknown_reason": "fallback_other_book_only",
             "match_method": "fallback_other_book_only",
+        }
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*)::int AS event_rows,
+                COUNT(*) FILTER (WHERE player_name_norm = %s)::int AS player_rows,
+                COUNT(*) FILTER (WHERE player_name_norm = %s AND stat = %s)::int AS market_rows
+            FROM odds.mlb_player_prop_line_snapshots
+            WHERE snapshot_role = 'close'
+              AND as_of_date = %s
+              AND bookmaker_key = %s
+              AND event_id = %s
+              AND snapshot_at_utc > %s
+              AND snapshot_at_utc BETWEEN %s AND %s
+            """,
+            (
+                player_norm, player_norm, stat,
+                game_date, book, event_id,
+                lock_at, earliest_valid, commence,
+            ),
+        )
+        close_window_counts = dict(cur.fetchone() or {})
+    if int(close_window_counts.get("event_rows") or 0) > 0:
+        if int(close_window_counts.get("market_rows") or 0) > 0:
+            return {
+                **unknown,
+                "unknown_reason": "exact_line_unavailable_at_close",
+                "match_method": "same_book_same_player_market_close_window",
+            }
+        if int(close_window_counts.get("player_rows") or 0) > 0:
+            return {
+                **unknown,
+                "unknown_reason": "player_market_unavailable_at_close",
+                "match_method": "same_book_same_player_close_window",
+            }
+        return {
+            **unknown,
+            "unknown_reason": "player_prop_unavailable_at_close",
+            "match_method": "same_book_event_close_window",
         }
     if exact:
         timed = [candidate for candidate in exact if candidate.get("snapshot_at_utc") is not None]

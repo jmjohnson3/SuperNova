@@ -18,6 +18,14 @@ Steps:
 
 Set env var:
   MLB_DISCORD_WEBHOOK_URL   — Discord webhook URL for the #mlb channel
+  MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL — Discord webhook URL for #record-ledger
+  MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL — optional paper/watch/lottery prop channel
+  MLB_OPS_DISCORD_WEBHOOK_URL — optional scheduler/status channel
+  MLB_ALERTS_DISCORD_WEBHOOK_URL — optional failure alert channel
+  MLB_EXTERNAL_PICKS_DIR — optional folder scanned for Edge/Outlier/Rithmm CSVs
+  MLB_EXTERNAL_PICKS_CSVS — optional semicolon-separated external CSV import paths
+  MLB_EXTERNAL_PICKS_PLATFORM — optional platform label for that CSV import
+  MLB_DISCORD_QUIET=1 — suppress optional chatter from the main channel by default
   DISCORD_FORMAT=1          — set automatically by this script for prediction steps
   MLB_POST_PREDICTION_CARDS — set to 1/true/yes to post PNG cards to Discord
 """
@@ -33,18 +41,19 @@ from pathlib import Path
 
 import httpx
 
+from mlb_pipeline.modeling.discord_record_summary import format_record_summary
 from mlb_pipeline.subprocess_utils import run_subprocess_tree
 
 log = logging.getLogger("mlb_pipeline.run_daily_and_notify")
 
-def _load_discord_webhook_url() -> str:
+def _load_discord_webhook_url(env_name: str = "MLB_DISCORD_WEBHOOK_URL") -> str:
     """Load the webhook even from stale Windows shells.
 
     Windows user/machine env changes are not visible to already-open terminals.
     The scheduled batch files hydrate the variable, but direct
     ``python -m mlb_pipeline.run_daily_and_notify`` runs should also work.
     """
-    value = os.getenv("MLB_DISCORD_WEBHOOK_URL")
+    value = os.getenv(env_name)
     if value:
         return value
     if os.name != "nt":
@@ -55,7 +64,7 @@ def _load_discord_webhook_url() -> str:
         for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             try:
                 with winreg.OpenKey(root, "Environment") as key:
-                    saved, _ = winreg.QueryValueEx(key, "MLB_DISCORD_WEBHOOK_URL")
+                    saved, _ = winreg.QueryValueEx(key, env_name)
                     if saved:
                         return str(saved)
             except OSError:
@@ -65,12 +74,47 @@ def _load_discord_webhook_url() -> str:
     return ""
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
 MLB_DISCORD_WEBHOOK_URL = _load_discord_webhook_url()
+MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL = _load_discord_webhook_url(
+    "MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL"
+)
+MLB_OPS_DISCORD_WEBHOOK_URL = (
+    _load_discord_webhook_url("MLB_OPS_DISCORD_WEBHOOK_URL")
+    or _load_discord_webhook_url("MLB_PIPELINE_DISCORD_WEBHOOK_URL")
+)
+MLB_ALERTS_DISCORD_WEBHOOK_URL = _load_discord_webhook_url(
+    "MLB_ALERTS_DISCORD_WEBHOOK_URL"
+)
+MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL = (
+    _load_discord_webhook_url("MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL")
+    or _load_discord_webhook_url("MLB_RESEARCH_DISCORD_WEBHOOK_URL")
+)
+MLB_DISCORD_QUIET = _env_flag("MLB_DISCORD_QUIET", True)
+MLB_DISCORD_RESEARCH_FALLBACK_TO_MAIN = _env_flag(
+    "MLB_DISCORD_RESEARCH_FALLBACK_TO_MAIN",
+    False,
+)
 MLB_POST_PREDICTION_CARDS = os.getenv("MLB_POST_PREDICTION_CARDS", "0").strip().lower() in {
     "1", "true", "yes", "on",
 }
 
 DISCORD_LIMIT = 1950
+PROP_WALK_FORWARD_TIMEOUT_S = _env_int("MLB_PROP_WALK_FORWARD_TIMEOUT_S", 1800)
+PROP_WALK_FORWARD_FRESH_MINUTES = _env_int("MLB_PROP_WALK_FORWARD_FRESH_MINUTES", 360)
 
 
 # ---------------------------------------------------------------------------
@@ -103,10 +147,23 @@ STEPS: list[Step] = [
          critical=False, post_output=False, timeout_s=300),
     Step("Grade Prop Shadow Replay", "mlb_pipeline.modeling.grade_prop_prediction_replay",
          critical=False, post_output=False, timeout_s=300),
+    Step("Grade Daily Forecast Ledger", "mlb_pipeline.modeling.daily_forecast_ledger",
+         args=("--ensure-schema", "--grade"), critical=False, post_output=False, timeout_s=300),
     Step("Game Predictions",       "mlb_pipeline.modeling.predict_today",
          critical=False, post_output=True),
+    Step("External Pick Fetch", "mlb_pipeline.modeling.external_pick_fetcher",
+         critical=False, post_output=False, timeout_s=180),
+    Step("External Pick Import", "mlb_pipeline.modeling.external_pick_ledger",
+         critical=False, post_output=False, timeout_s=120),
     Step("Player Prop Projections", "mlb_pipeline.modeling.predict_player_props",
          critical=False, post_output=True),
+    Step("External Model Comparison", "mlb_pipeline.modeling.external_pick_ledger",
+         args=("--skip-import",), critical=False, post_output=False, timeout_s=120),
+    Step("Train AI Bet Selection Model", "mlb_pipeline.modeling.ai_bet_selection_model",
+         args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+         critical=False, post_output=False, timeout_s=300),
+    Step("AI Pick Engine", "mlb_pipeline.modeling.ai_pick_engine",
+         critical=False, post_output=False, timeout_s=300),
     Step("Shadow-Lock Prop Predictions", "mlb_pipeline.modeling.shadow_lock_prop_predictions",
          args=("--phase", "morning"), critical=True, post_output=False, timeout_s=600,
          fail_task_on_error=True),
@@ -123,12 +180,48 @@ STEPS: list[Step] = [
     Step("Prop Bucket Promotion", "mlb_pipeline.modeling.prop_bucket_promotion_report",
          args=("--lookback-days", "365", "--top-n", "25"),
          critical=False, post_output=False, timeout_s=120),
+    Step("Player-Game Bankroll Proof", "mlb_pipeline.modeling.prop_player_game_bankroll_model_proof",
+         critical=False, post_output=False, timeout_s=360),
+    Step("TB 1.5 Line Calibration", "mlb_pipeline.modeling.prop_tb15_line_calibration",
+         critical=False, post_output=False, timeout_s=180),
+    Step("K-Under Repair Report", "mlb_pipeline.modeling.prop_k_under_repair_report",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Exact-Bucket CLV Priors", "mlb_pipeline.modeling.prop_exact_bucket_clv_priors",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Prop Micro Promotion Evaluation", "mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Micro Probability Calibrator", "mlb_pipeline.modeling.prop_micro_probability_calibrator",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Gate Sensitivity", "mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Micro Bucket Repair", "mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Trial Candidate Queue", "mlb_pipeline.modeling.prop_trial_candidate_queue_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Drift Guard Diagnostic", "mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Bettable-Now Scan", "mlb_pipeline.modeling.prop_bettable_now_scan",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Lock Micro Projection Ledger", "mlb_pipeline.modeling.lock_micro_projection_ledger",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Ledger Report", "mlb_pipeline.modeling.prop_micro_ledger_report",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Loss Diagnostic", "mlb_pipeline.modeling.prop_micro_loss_diagnostic",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Probability Calibrator", "mlb_pipeline.modeling.prop_micro_probability_calibrator",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Post-Gate Candidate Report", "mlb_pipeline.modeling.prop_post_gate_candidate_report",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Layer Promotion Control", "mlb_pipeline.modeling.prop_layer_promotion_report",
+         critical=False, post_output=False, timeout_s=60),
     Step("Prop Miss Diagnostic", "mlb_pipeline.modeling.prop_miss_diagnostic_report",
          critical=False, post_output=False, timeout_s=180),
     Step("Prop Bucket Repair", "mlb_pipeline.modeling.prop_bucket_repair_report",
          critical=False, post_output=False, timeout_s=180),
     Step("Prop Target Quality", "mlb_pipeline.modeling.prop_target_quality_report",
          critical=False, post_output=False, timeout_s=180),
+    Step("FanDuel One-Sided Diagnostic", "mlb_pipeline.modeling.fanduel_one_sided_diagnostic",
+         args=("--lookback-days", "30"), critical=False, post_output=False, timeout_s=300),
     Step("Prop Slate Post-Mortem", "mlb_pipeline.modeling.prop_slate_postmortem_report",
          args=("--top-n", "25"),
          critical=False, post_output=False, timeout_s=120),
@@ -147,12 +240,17 @@ STEPS: list[Step] = [
     Step("Build Prop Market Training Table", "mlb_pipeline.modeling.build_prop_market_training_table",
          args=("--include-pending", "--ensure-schema"), critical=False, post_output=False,
          timeout_s=1800, fail_task_on_error=True),
+    Step("Train AI Bet Selection Model", "mlb_pipeline.modeling.ai_bet_selection_model",
+         args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+         critical=False, post_output=False, timeout_s=300),
     Step("Build Hitter Player-Game Training Table", "mlb_pipeline.modeling.build_hitter_player_game_training_table",
          critical=False, post_output=False, timeout_s=600),
     Step("Hitter Event Feature Ablation", "mlb_pipeline.modeling.hitter_event_feature_ablation_report",
          critical=False, post_output=False, timeout_s=900),
     Step("Train Hitter Player-Game Outcome Models", "mlb_pipeline.modeling.train_hitter_player_game_outcome_models",
          critical=False, post_output=False, timeout_s=900),
+    Step("TB Tail Repair Challenger", "mlb_pipeline.modeling.prop_tb_tail_repair_challenger",
+         critical=False, post_output=False, timeout_s=600),
     Step("Train Prop Side Recalibrators", "mlb_pipeline.modeling.train_prop_side_recalibrators",
          critical=False, post_output=False),
     Step("Train Prop Betting Layer", "mlb_pipeline.modeling.train_prop_betting_layer",
@@ -165,17 +263,70 @@ STEPS: list[Step] = [
          critical=False, post_output=False, timeout_s=600),
     Step("Train Prop Market-Residual Models", "mlb_pipeline.modeling.train_prop_market_residual_models",
          critical=False, post_output=False, timeout_s=600),
-    Step("Train Prop Distribution Models", "mlb_pipeline.modeling.train_prop_distribution_models",
-         critical=False, post_output=False, timeout_s=600),
+    Step("Refresh Prop Exact-Bucket Proof", "mlb_pipeline.modeling.refresh_prop_exact_bucket_proof",
+         critical=False, post_output=False, timeout_s=3900),
     Step("Compare Prop Probability Variants", "mlb_pipeline.modeling.compare_prop_probability_variants",
-         critical=False, post_output=False),
+         critical=False, post_output=False, timeout_s=1800),
     Step("Prop Opportunity Feature Report", "mlb_pipeline.modeling.prop_opportunity_feature_report",
          args=("--lookback-days", "30"),
          critical=False, post_output=False, timeout_s=600),
+    Step("Prospective Prop Opportunity Audit", "mlb_pipeline.modeling.prop_prospective_opportunity_audit",
+         critical=False, post_output=False, timeout_s=300),
+    Step("Daily Forecast Projection Audit", "mlb_pipeline.modeling.daily_forecast_projection_audit",
+         critical=False, post_output=False, timeout_s=600),
+    Step("Hitter Live-vs-Legacy Forecast Diff", "mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Forecast Repair Error Decomposition", "mlb_pipeline.modeling.forecast_repair_error_report",
+         critical=False, post_output=False, timeout_s=600),
+    Step("TB Tail Repair Challenger", "mlb_pipeline.modeling.prop_tb_tail_repair_challenger",
+         critical=False, post_output=False, timeout_s=600),
+    Step("Real-Money Operational Reports", "mlb_pipeline.modeling.prop_real_money_operational_reports",
+         critical=False, post_output=False, timeout_s=300),
+    Step("Pitcher K-Rate Challenger", "mlb_pipeline.modeling.pitcher_k_rate_challenger_report",
+         critical=False, post_output=False, timeout_s=300),
     Step("Train Prop Bucket Reopen Policy", "mlb_pipeline.modeling.train_prop_bucket_reopen_policy",
          critical=False, post_output=False),
+    Step("Player-Game Bankroll Proof", "mlb_pipeline.modeling.prop_player_game_bankroll_model_proof",
+         critical=False, post_output=False, timeout_s=360),
+    Step("TB 1.5 Line Calibration", "mlb_pipeline.modeling.prop_tb15_line_calibration",
+         critical=False, post_output=False, timeout_s=180),
+    Step("K-Under Repair Report", "mlb_pipeline.modeling.prop_k_under_repair_report",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Exact-Bucket CLV Priors", "mlb_pipeline.modeling.prop_exact_bucket_clv_priors",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Prop Micro Promotion Evaluation", "mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Micro Probability Calibrator", "mlb_pipeline.modeling.prop_micro_probability_calibrator",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Gate Sensitivity", "mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Micro Bucket Repair", "mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Trial Candidate Queue", "mlb_pipeline.modeling.prop_trial_candidate_queue_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Drift Guard Diagnostic", "mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Bettable-Now Scan", "mlb_pipeline.modeling.prop_bettable_now_scan",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Lock Micro Projection Ledger", "mlb_pipeline.modeling.lock_micro_projection_ledger",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Ledger Report", "mlb_pipeline.modeling.prop_micro_ledger_report",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Loss Diagnostic", "mlb_pipeline.modeling.prop_micro_loss_diagnostic",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Probability Calibrator", "mlb_pipeline.modeling.prop_micro_probability_calibrator",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Post-Gate Candidate Report", "mlb_pipeline.modeling.prop_post_gate_candidate_report",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Layer Promotion Control", "mlb_pipeline.modeling.prop_layer_promotion_report",
+         critical=False, post_output=False, timeout_s=60),
     Step("Prop Walk-Forward Accuracy", "mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
-         critical=False, post_output=False, timeout_s=1200),
+         args=(
+             "--no-refresh-clv",
+             "--lookback-days", "45",
+             "--skip-if-fresh-minutes", str(PROP_WALK_FORWARD_FRESH_MINUTES),
+         ),
+         critical=False, post_output=False, timeout_s=PROP_WALK_FORWARD_TIMEOUT_S),
     Step("Prop Shadow Selector", "mlb_pipeline.modeling.prop_shadow_selector",
          critical=False, post_output=False, timeout_s=300, fail_task_on_error=True),
     Step("Optimize Prop Thresholds", "mlb_pipeline.modeling.optimize_prop_thresholds",
@@ -186,8 +337,12 @@ STEPS: list[Step] = [
 
 # Steps run before day and evening slates to refresh injuries + odds before first pitch.
 PRE_GAME_STEPS: list[Step] = [
+    Step("Grade Daily Forecast Ledger", "mlb_pipeline.modeling.daily_forecast_ledger",
+         args=("--ensure-schema", "--grade"), critical=False, post_output=False, timeout_s=300),
     Step("Re-crawl Injuries (force)", "mlb_pipeline.crawler",
          args=("--force-meta",), critical=False, post_output=False, timeout_s=300),
+    Step("Re-crawl same-day lineups", "mlb_pipeline.crawler",
+         args=("--force-lineups",), critical=False, post_output=False, timeout_s=300),
     Step("Re-crawl Game Odds", "mlb_pipeline.crawler_oddsapi",
          args=("--skip-props",),
          critical=False, post_output=False, timeout_s=600),
@@ -196,13 +351,40 @@ PRE_GAME_STEPS: list[Step] = [
          critical=True, post_output=False, timeout_s=600),
     Step("Re-parse Meta (injuries)",  "mlb_pipeline.parse_meta",
          critical=False, post_output=False, timeout_s=300),
+    Step("Re-parse same-day lineups", "mlb_pipeline.parse_lineup",
+         critical=False, post_output=False, timeout_s=120),
     Step("Re-parse Game Odds + Morning-Lock Prop Close Snapshot", "mlb_pipeline.parse_oddsapi",
          args=("--prop-snapshot-role", "close"),
          critical=True,  post_output=False, timeout_s=300),
     Step("Rebuild Prop Offer Links", "mlb_pipeline.modeling.build_prop_offer_links_table",
          critical=True, post_output=False, timeout_s=300),
+    Step("Daily Forecast Projection Audit", "mlb_pipeline.modeling.daily_forecast_projection_audit",
+         critical=False, post_output=False, timeout_s=600),
+    Step("Player-Game Bankroll Proof", "mlb_pipeline.modeling.prop_player_game_bankroll_model_proof",
+         critical=False, post_output=False, timeout_s=360),
+    Step("TB 1.5 Line Calibration", "mlb_pipeline.modeling.prop_tb15_line_calibration",
+         critical=False, post_output=False, timeout_s=180),
+    Step("K-Under Repair Report", "mlb_pipeline.modeling.prop_k_under_repair_report",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Exact-Bucket CLV Priors", "mlb_pipeline.modeling.prop_exact_bucket_clv_priors",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Prop Micro Promotion Evaluation", "mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Micro Probability Calibrator", "mlb_pipeline.modeling.prop_micro_probability_calibrator",
+         critical=False, post_output=False, timeout_s=120),
+    Step("External Pick Fetch", "mlb_pipeline.modeling.external_pick_fetcher",
+         critical=False, post_output=False, timeout_s=180),
+    Step("External Pick Import", "mlb_pipeline.modeling.external_pick_ledger",
+         critical=False, post_output=False, timeout_s=120),
     Step("Player Props (pre-game)",   "mlb_pipeline.modeling.predict_player_props",
          critical=True,  post_output=True,  timeout_s=900),
+    Step("External Model Comparison", "mlb_pipeline.modeling.external_pick_ledger",
+         args=("--skip-import",), critical=False, post_output=False, timeout_s=120),
+    Step("Train AI Bet Selection Model", "mlb_pipeline.modeling.ai_bet_selection_model",
+         args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+         critical=False, post_output=False, timeout_s=300),
+    Step("AI Pick Engine", "mlb_pipeline.modeling.ai_pick_engine",
+         critical=False, post_output=False, timeout_s=300),
     Step("Shadow-Lock Props (pre-game)", "mlb_pipeline.modeling.shadow_lock_prop_predictions",
          critical=True, post_output=False, timeout_s=300, fail_task_on_error=True),
     Step("Re-crawl Post-Lock Closing Prop Odds", "mlb_pipeline.crawler_oddsapi",
@@ -217,8 +399,12 @@ PRE_GAME_STEPS: list[Step] = [
          args=("--lookback-days", "3", "--include-pending", "--no-replace"),
          critical=False, post_output=False, timeout_s=600),
     Step("Prop Walk-Forward Accuracy", "mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
-         args=("--no-refresh-clv",),
-         critical=False, post_output=False, timeout_s=1200),
+         args=(
+             "--no-refresh-clv",
+             "--lookback-days", "45",
+             "--skip-if-fresh-minutes", str(PROP_WALK_FORWARD_FRESH_MINUTES),
+         ),
+         critical=False, post_output=False, timeout_s=PROP_WALK_FORWARD_TIMEOUT_S),
     Step("Prop Shadow Selector", "mlb_pipeline.modeling.prop_shadow_selector",
          critical=False, post_output=False, timeout_s=300, fail_task_on_error=True),
     Step("Prop Miss Diagnostic", "mlb_pipeline.modeling.prop_miss_diagnostic_report",
@@ -227,9 +413,38 @@ PRE_GAME_STEPS: list[Step] = [
          critical=False, post_output=False, timeout_s=180),
     Step("Prop Target Quality", "mlb_pipeline.modeling.prop_target_quality_report",
          critical=False, post_output=False, timeout_s=180),
-    Step("Prop Opportunity Feature Report", "mlb_pipeline.modeling.prop_opportunity_feature_report",
-         args=("--lookback-days", "30"),
+    Step("FanDuel One-Sided Diagnostic", "mlb_pipeline.modeling.fanduel_one_sided_diagnostic",
+         args=("--lookback-days", "30"), critical=False, post_output=False, timeout_s=300),
+    Step("Hitter Live-vs-Legacy Forecast Diff", "mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report",
+         critical=False, post_output=False, timeout_s=180),
+    Step("Prop Micro Gate Sensitivity", "mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Micro Bucket Repair", "mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Prop Drift Guard Diagnostic", "mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Bettable-Now Scan", "mlb_pipeline.modeling.prop_bettable_now_scan",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Lock Micro Projection Ledger", "mlb_pipeline.modeling.lock_micro_projection_ledger",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Ledger Report", "mlb_pipeline.modeling.prop_micro_ledger_report",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Loss Diagnostic", "mlb_pipeline.modeling.prop_micro_loss_diagnostic",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Micro Probability Calibrator", "mlb_pipeline.modeling.prop_micro_probability_calibrator",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Post-Gate Candidate Report", "mlb_pipeline.modeling.prop_post_gate_candidate_report",
+         critical=False, post_output=False, timeout_s=120),
+    Step("Prop Layer Promotion Control", "mlb_pipeline.modeling.prop_layer_promotion_report",
+         critical=False, post_output=False, timeout_s=60),
+    Step("Forecast Repair Error Decomposition", "mlb_pipeline.modeling.forecast_repair_error_report",
          critical=False, post_output=False, timeout_s=600),
+    Step("TB Tail Repair Challenger", "mlb_pipeline.modeling.prop_tb_tail_repair_challenger",
+         critical=False, post_output=False, timeout_s=600),
+    Step("Real-Money Operational Reports", "mlb_pipeline.modeling.prop_real_money_operational_reports",
+         critical=False, post_output=False, timeout_s=300),
+    Step("Pitcher K-Rate Challenger", "mlb_pipeline.modeling.pitcher_k_rate_challenger_report",
+         critical=False, post_output=False, timeout_s=300),
     Step("Prop Snapshot Coverage", "mlb_pipeline.modeling.prop_snapshot_coverage_report",
          critical=False, post_output=False, timeout_s=120),
 ]
@@ -264,16 +479,24 @@ def run_module(mod: str, args: tuple[str, ...], timeout_s: int) -> tuple[int, st
 # ---------------------------------------------------------------------------
 # Discord helpers
 # ---------------------------------------------------------------------------
-async def _post(content: str) -> None:
-    if not MLB_DISCORD_WEBHOOK_URL:
-        log.warning("MLB_DISCORD_WEBHOOK_URL not set; printing to stdout instead.")
-        print(content)
+async def _post(
+    content: str,
+    *,
+    webhook_url: str | None = None,
+    webhook_name: str = "MLB_DISCORD_WEBHOOK_URL",
+    fallback_print: bool = True,
+) -> None:
+    target_webhook = webhook_url if webhook_url is not None else MLB_DISCORD_WEBHOOK_URL
+    if not target_webhook:
+        log.warning("%s not set; %s.", webhook_name, "printing to stdout" if fallback_print else "skipping post")
+        if fallback_print:
+            print(content)
         return
 
     async with httpx.AsyncClient(timeout=20) as client:
         for attempt in range(4):
             try:
-                r = await client.post(MLB_DISCORD_WEBHOOK_URL, json={"content": content})
+                r = await client.post(target_webhook, json={"content": content})
                 if r.status_code in (200, 204):
                     log.info("Discord post succeeded (%d)", r.status_code)
                     return
@@ -339,18 +562,224 @@ def _build_rich_chunks(header: str, body: str) -> list[str]:
     return chunks
 
 
-async def _post_section(header: str, body: str) -> None:
+async def _post_section(
+    header: str,
+    body: str,
+    *,
+    webhook_url: str | None = None,
+    webhook_name: str = "MLB_DISCORD_WEBHOOK_URL",
+    fallback_print: bool = True,
+) -> None:
     for chunk in _build_rich_chunks(header, body):
-        await _post(chunk)
+        await _post(
+            chunk,
+            webhook_url=webhook_url,
+            webhook_name=webhook_name,
+            fallback_print=fallback_print,
+        )
         await asyncio.sleep(0.4)
 
 
+def _discord_channel_target(channel: str) -> tuple[str, str]:
+    normalized = channel.strip().lower()
+    if normalized == "record":
+        return "MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL", MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL
+    if normalized == "ops":
+        return "MLB_OPS_DISCORD_WEBHOOK_URL", MLB_OPS_DISCORD_WEBHOOK_URL
+    if normalized == "alerts":
+        return "MLB_ALERTS_DISCORD_WEBHOOK_URL", MLB_ALERTS_DISCORD_WEBHOOK_URL
+    if normalized == "research":
+        return "MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL", MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL
+    return "MLB_DISCORD_WEBHOOK_URL", MLB_DISCORD_WEBHOOK_URL
+
+
+async def _post_channel(
+    content: str,
+    *,
+    channel: str = "main",
+    fallback_to_main: bool = False,
+    fallback_print: bool = True,
+) -> None:
+    webhook_name, webhook_url = _discord_channel_target(channel)
+    if not webhook_url and fallback_to_main and channel != "main":
+        webhook_name, webhook_url = _discord_channel_target("main")
+    if not webhook_url and not fallback_print:
+        log.info("%s not set; skipping Discord %s post.", webhook_name, channel)
+        return
+    await _post(
+        content,
+        webhook_url=webhook_url,
+        webhook_name=webhook_name,
+        fallback_print=fallback_print,
+    )
+
+
+async def _post_section_channel(
+    header: str,
+    body: str,
+    *,
+    channel: str = "main",
+    fallback_to_main: bool = False,
+    fallback_print: bool = True,
+) -> None:
+    for chunk in _build_rich_chunks(header, body):
+        await _post_channel(
+            chunk,
+            channel=channel,
+            fallback_to_main=fallback_to_main,
+            fallback_print=fallback_print,
+        )
+        await asyncio.sleep(0.4)
+
+
+def _trim_blank_edges(lines: list[str]) -> list[str]:
+    start = 0
+    end = len(lines)
+    while start < end and not lines[start].strip():
+        start += 1
+    while end > start and not lines[end - 1].strip():
+        end -= 1
+    return lines[start:end]
+
+
+def _split_player_prop_discord_output(body: str) -> tuple[str, str]:
+    """Return (main_bankroll_body, research_body) for compact prop Discord text."""
+    lines = body.strip().splitlines()
+    main_lines: list[str] = []
+    research_lines: list[str] = []
+    data_health_lines: list[str] = []
+    in_bankroll = False
+    in_data_health = False
+
+    for line in lines:
+        stripped = line.strip()
+        is_heading = stripped.startswith("**") and stripped.endswith("**")
+        if is_heading:
+            heading = stripped.upper()
+            in_bankroll = "BANKROLL PROP BETS" in heading
+            in_data_health = "DATA HEALTH" in heading
+
+        if in_bankroll:
+            main_lines.append(line)
+            continue
+
+        if in_data_health:
+            data_health_lines.append(line)
+
+        if "GLOBAL CAP WARNING" in stripped.upper():
+            main_lines.append(line)
+
+        research_lines.append(line)
+
+    if any("PROP ODDS NOT LOADED YET" in line.upper() for line in data_health_lines):
+        main_lines = [*data_health_lines, "", *main_lines]
+
+    return (
+        "\n".join(_trim_blank_edges(main_lines)),
+        "\n".join(_trim_blank_edges(research_lines)),
+    )
+
+
+async def _post_player_prop_output(header: str, body: str) -> None:
+    main_body, research_body = _split_player_prop_discord_output(body)
+    has_research_channel = bool(_discord_channel_target("research")[1])
+
+    if has_research_channel:
+        if main_body:
+            await _post_section_channel(
+                f"{header} - Bankroll",
+                main_body,
+                channel="main",
+                fallback_to_main=True,
+            )
+        if research_body:
+            await _post_section_channel(
+                f"{header} - Research",
+                research_body,
+                channel="research",
+                fallback_print=False,
+            )
+        return
+
+    if MLB_DISCORD_QUIET:
+        if main_body:
+            await _post_section_channel(
+                f"{header} - Bankroll",
+                main_body,
+                channel="main",
+                fallback_to_main=True,
+            )
+        else:
+            await _post_channel(
+                f"{header}\n_(player props generated; research output suppressed)_",
+                channel="main",
+                fallback_to_main=True,
+            )
+        if research_body:
+            if MLB_DISCORD_RESEARCH_FALLBACK_TO_MAIN:
+                await _post_section_channel(
+                    f"{header} - Research",
+                    research_body,
+                    channel="main",
+                    fallback_to_main=True,
+                )
+            else:
+                log.info(
+                    "Suppressed player-prop research Discord output; set "
+                    "MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL to route it to another channel."
+                )
+        return
+
+    await _post_section_channel(header, body, channel="main", fallback_to_main=True)
+
+
+async def _post_prediction_output(step: Step, header: str, body: str) -> None:
+    if step.module == "mlb_pipeline.modeling.predict_player_props":
+        await _post_player_prop_output(header, body)
+    else:
+        await _post_section_channel(header, body, channel="main", fallback_to_main=True)
+
+
 async def _post_status(step: Step, secs: float, ok: bool, detail: str = "") -> None:
-    icon = "✅" if ok else "❌"
-    msg = f"{icon} **{step.label}** — {'done' if ok else 'FAILED'} in {secs:.0f}s"
+    icon = "OK" if ok else "FAIL"
+    msg = f"**{icon} {step.label}** - {'done' if ok else 'FAILED'} in {secs:.0f}s"
     if detail:
         msg += f"\n```\n{detail[:800]}\n```"
-    await _post(msg)
+    if ok:
+        await _post_channel(
+            msg,
+            channel="ops",
+            fallback_to_main=not MLB_DISCORD_QUIET,
+            fallback_print=False,
+        )
+    else:
+        await _post_channel(
+            msg,
+            channel="alerts",
+            fallback_to_main=True,
+            fallback_print=True,
+        )
+
+
+async def _post_record_ledger(et_day) -> None:
+    if not MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL:
+        log.info("MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL not set; skipping record-ledger post.")
+        return
+    try:
+        body = format_record_summary(end_date=et_day, lookback_days=30)
+    except Exception as exc:
+        log.warning("Could not build record ledger summary: %s", exc)
+        return
+    if not body.strip():
+        log.info("Record ledger summary was empty; skipping record-ledger post.")
+        return
+    await _post_section(
+        "**MLB Record Ledger**",
+        body,
+        webhook_url=MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL,
+        webhook_name="MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL",
+        fallback_print=False,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +814,15 @@ async def main() -> None:
     now_et = _datetime.now(_ZI("America/New_York"))
     et_day = _date.fromisoformat(args.date) if args.date else now_et.date()
     os.environ["MLB_ET_DATE"] = et_day.isoformat()
+    forecast_phase = (
+        args.lock_phase
+        or ("pregame" if args.pre_game else "daily")
+    )
+    os.environ["MLB_FORECAST_PHASE"] = forecast_phase
+    os.environ["MLB_FORECAST_RUN_ID"] = (
+        f"{et_day.isoformat()}:{forecast_phase}:"
+        f"{_datetime.now(_ZI('UTC')).strftime('%Y%m%dT%H%M%SZ')}"
+    )
 
     _CRAWL_MODULES  = {"mlb_pipeline.crawler_statsapi", "mlb_pipeline.crawler",
                        "mlb_pipeline.crawler_oddsapi", "mlb_pipeline.crawler_statcast",
@@ -408,6 +846,7 @@ async def main() -> None:
                         "mlb_pipeline.modeling.train_prop_bookability_model",
                         "mlb_pipeline.modeling.train_prop_market_residual_models",
                         "mlb_pipeline.modeling.train_prop_distribution_models",
+                        "mlb_pipeline.modeling.refresh_prop_exact_bucket_proof",
                         "mlb_pipeline.modeling.compare_prop_probability_variants",
                         "mlb_pipeline.modeling.train_prop_bucket_reopen_policy"}
     _PREDICT_MODULES = {"mlb_pipeline.modeling.predict_today",
@@ -419,11 +858,17 @@ async def main() -> None:
                         "mlb_pipeline.modeling.prop_bucket_promotion_report",
                         "mlb_pipeline.modeling.prop_snapshot_coverage_report",
                         "mlb_pipeline.modeling.prop_slate_postmortem_report",
+                        "mlb_pipeline.modeling.external_pick_fetcher",
+                        "mlb_pipeline.modeling.external_pick_ledger",
+                        "mlb_pipeline.modeling.ai_pick_engine",
                         "mlb_pipeline.modeling.prop_shadow_selector",
+                        "mlb_pipeline.modeling.prop_bettable_now_scan",
                         "mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
                         "mlb_pipeline.modeling.prop_miss_diagnostic_report",
                         "mlb_pipeline.modeling.prop_bucket_repair_report",
                         "mlb_pipeline.modeling.prop_target_quality_report",
+                        "mlb_pipeline.modeling.fanduel_one_sided_diagnostic",
+                        "mlb_pipeline.modeling.prop_micro_bucket_repair_report",
                         "mlb_pipeline.modeling.prop_opportunity_feature_report"}
 
     def _should_skip(step: Step) -> bool:
@@ -452,6 +897,20 @@ async def main() -> None:
                 fail_task_on_error=step.fail_task_on_error,
             )
             if step.module == "mlb_pipeline.modeling.shadow_lock_prop_predictions"
+            else Step(
+                step.label,
+                step.module,
+                args=(
+                    "--force-lineups",
+                    "--start-date", et_day.isoformat(),
+                    "--end-date", et_day.isoformat(),
+                ),
+                critical=step.critical,
+                post_output=step.post_output,
+                timeout_s=step.timeout_s,
+                fail_task_on_error=step.fail_task_on_error,
+            )
+            if step.label == "Re-crawl same-day lineups"
             else step
             for step in PRE_GAME_STEPS
         ]
@@ -464,7 +923,12 @@ async def main() -> None:
         if args.pre_game
         else "⚾ **SuperNovaBets MLB** — daily pipeline starting…"
     )
-    await _post(start_msg)
+    await _post_channel(
+        start_msg,
+        channel="ops",
+        fallback_to_main=not MLB_DISCORD_QUIET,
+        fallback_print=False,
+    )
 
     results: list[tuple[str, bool, float]] = []
     halted = False
@@ -493,7 +957,12 @@ async def main() -> None:
         if not ok:
             err_tail = "\n".join(stderr.strip().splitlines()[-25:])
             if step.post_output:
-                await _post_section(f"❌ **{step.label} FAILED**", err_tail or "(no output)")
+                await _post_section_channel(
+                    f"FAILED **{step.label}**",
+                    err_tail or "(no output)",
+                    channel="alerts",
+                    fallback_to_main=True,
+                )
             else:
                 await _post_status(step, secs, ok=False, detail=err_tail)
             if step.fail_task_on_error:
@@ -503,7 +972,11 @@ async def main() -> None:
                     step.label,
                 )
             if step.critical:
-                await _post(f"🛑 **MLB pipeline halted** — `{step.label}` is required.")
+                await _post_channel(
+                    f"STOP **MLB pipeline halted** - `{step.label}` is required.",
+                    channel="alerts",
+                    fallback_to_main=True,
+                )
                 halted = True
             continue
 
@@ -513,11 +986,18 @@ async def main() -> None:
                 "Player Prop Projections": "⚾ **MLB Player Props**",
             }.get(step.label, f"**{step.label}**")
             if stdout.strip():
-                await _post_section(header, stdout.strip())
+                await _post_prediction_output(step, header, stdout.strip())
             else:
-                await _post(f"{header}\n_(no games for today's slate)_")
+                await _post_channel(
+                    f"{header}\n_(no games for today's slate)_",
+                    channel="main",
+                    fallback_to_main=True,
+                )
         else:
             await _post_status(step, secs, ok=True)
+
+    # ── Dedicated record ledger post ---------------------------------------
+    await _post_record_ledger(et_day)
 
     # ── Optional prediction cards (PNG images) ─────────────────────────────
     predict_ok = not halted and not args.skip_predict
@@ -538,7 +1018,14 @@ async def main() -> None:
     ]
     all_ok = all(ok for _, ok, _ in results)
     icon = "✅" if all_ok else ("🛑" if halted else "⚠️")
-    await _post_section(f"{icon} **MLB pipeline complete** — {total:.0f}s total", "\n".join(lines))
+    completion_channel = "alerts" if halted or task_failed else "ops"
+    await _post_section_channel(
+        f"{icon} **MLB pipeline complete** — {total:.0f}s total",
+        "\n".join(lines),
+        channel=completion_channel,
+        fallback_to_main=halted or task_failed or not MLB_DISCORD_QUIET,
+        fallback_print=halted or task_failed,
+    )
     if halted or task_failed:
         raise SystemExit(1)
 

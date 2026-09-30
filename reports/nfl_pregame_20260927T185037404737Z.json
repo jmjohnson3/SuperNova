@@ -1,0 +1,141 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-09-27T18:50:37.362965+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_03_CAR_CLE",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_CIN_PIT",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_HOU_IND",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_KC_MIA",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_LAC_BUF",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_NE_JAX",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_NYJ_DET",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_SEA_WAS",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_TEN_NYG",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "target_at": "2026-09-27T15:30:00+00:00",
+      "minutes_to_start": -110.6,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_ARI_SF",
+      "kickoff": "2026-09-27T20:05:00+00:00",
+      "target_at": "2026-09-27T18:35:00+00:00",
+      "minutes_to_start": 74.4,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_MIN_TB",
+      "kickoff": "2026-09-27T20:05:00+00:00",
+      "target_at": "2026-09-27T18:35:00+00:00",
+      "minutes_to_start": 74.4,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_BAL_DAL",
+      "kickoff": "2026-09-27T20:25:00+00:00",
+      "target_at": "2026-09-27T18:55:00+00:00",
+      "minutes_to_start": 94.4,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_03_LV_NO",
+      "kickoff": "2026-09-27T20:25:00+00:00",
+      "target_at": "2026-09-27T18:55:00+00:00",
+      "minutes_to_start": 94.4,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_03_LA_DEN",
+      "kickoff": "2026-09-28T00:20:00+00:00",
+      "target_at": "2026-09-27T22:50:00+00:00",
+      "minutes_to_start": 329.4,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_03_PHI_CHI",
+      "kickoff": "2026-09-29T00:15:00+00:00",
+      "target_at": "2026-09-28T22:45:00+00:00",
+      "minutes_to_start": 1764.4,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_17d3893403c54fe79dc0db15d230a37f",
+      "game_ids": [
+        "2026_03_ARI_SF",
+        "2026_03_MIN_TB"
+      ],
+      "status": "review_required",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

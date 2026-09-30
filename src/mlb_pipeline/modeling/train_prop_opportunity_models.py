@@ -41,6 +41,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
+from mlb_pipeline.modeling.prop_training_groups import temporal_player_game_split
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
 
@@ -103,6 +104,21 @@ HITTER_PA_V2_NUMERIC = [
     "bench_or_removal_risk",
 ]
 
+HITTER_PA_V3_NUMERIC = [
+    "projected_pa_low_bucket_flag",
+    "projected_pa_mid_bucket_flag",
+    "projected_pa_high_bucket_flag",
+    "slot_prior_minus_projected_pa",
+    "slot_prior_pa_floor",
+    "projected_pa_confirmed_slot_interaction",
+    "low_pa_prior_x_pinch_risk",
+    "low_pa_prior_x_bottom_order",
+    "bottom_order_home_favorite_ninth_risk",
+    "team_runs_per_lineup_slot",
+    "pa_stability_score",
+    "pa_underprojection_risk_score",
+]
+
 OPPORTUNITY_V3_NUMERIC = [
     "implied_run_diff",
     "abs_implied_run_diff",
@@ -142,7 +158,17 @@ PITCHER_LEASH_V2_NUMERIC = [
     "pitcher_leash_v2_score",
 ]
 
-HITTER_NUMERIC = [*HITTER_NUMERIC, *HITTER_PA_V2_NUMERIC, *OPPORTUNITY_V3_NUMERIC]
+PITCHER_K_OPPORTUNITY_V2_NUMERIC = [
+    "projected_k_opportunity",
+    "pitcher_k_volume_score",
+    "leash_supported_k_opportunity",
+    "pitcher_hook_risk_score",
+    "short_leash_x_opponent_patience",
+    "deep_leash_x_opponent_k",
+    "pitch_count_efficiency_pressure",
+]
+
+HITTER_NUMERIC = [*HITTER_NUMERIC, *HITTER_PA_V2_NUMERIC, *HITTER_PA_V3_NUMERIC, *OPPORTUNITY_V3_NUMERIC]
 
 PITCHER_NUMERIC = [
     "projected_ip",
@@ -169,6 +195,7 @@ PITCHER_NUMERIC = [
     "opp_team_slg_10",
     *OPPORTUNITY_V3_NUMERIC,
     *PITCHER_LEASH_V2_NUMERIC,
+    *PITCHER_K_OPPORTUNITY_V2_NUMERIC,
 ]
 
 HITTER_CATEGORICAL = ["confirmed_lineup_source", "opp_sp_hand", "team_abbr", "opponent_abbr"]
@@ -230,68 +257,71 @@ _LINEUP_LOW_PA_PRIORS = {
 
 SQL = """
 SELECT
-    game_date_et,
-    game_slug,
-    player_id,
-    player_name,
-    team_abbr,
-    opponent_abbr,
-    market,
-    side,
-    market_line::float AS market_line,
-    pred_count::float AS pred_count,
-    actual_value::float AS actual_value,
-    won,
-    push,
-    confirmed_batting_order::float AS confirmed_batting_order,
-    COALESCE(confirmed_lineup_source, 'unknown') AS confirmed_lineup_source,
-    projected_pa::float AS projected_pa,
-    pa_games::float AS pa_games,
-    projected_ip::float AS projected_ip,
-    projected_bf::float AS projected_bf,
-    projected_pitch_count::float AS projected_pitch_count,
-    pitcher_starts::float AS pitcher_starts,
-    is_home::float AS is_home,
-    team_implied_runs::float AS team_implied_runs,
-    opponent_implied_runs::float AS opponent_implied_runs,
-    game_total_line::float AS game_total_line,
-    opp_sp_hand,
-    opp_sp_hand_l::float AS opp_sp_hand_l,
-    opp_sp_k_pct_10::float AS opp_sp_k_pct_10,
-    opp_sp_bb_pct::float AS opp_sp_bb_pct,
-    opp_sp_xwoba::float AS opp_sp_xwoba,
-    opp_sp_hard_hit_pct::float AS opp_sp_hard_hit_pct,
-    opp_sp_whiff_pct::float AS opp_sp_whiff_pct,
-    opp_bp_era_10::float AS opp_bp_era_10,
-    opp_bp_whip_10::float AS opp_bp_whip_10,
-    opp_bp_k9_10::float AS opp_bp_k9_10,
-    opp_bp_ip_last_3::float AS opp_bp_ip_last_3,
-    opp_bp_ip_last_7::float AS opp_bp_ip_last_7,
-    opp_team_k_pct_10::float AS opp_team_k_pct_10,
-    opp_team_avg_10::float AS opp_team_avg_10,
-    opp_team_obp_10::float AS opp_team_obp_10,
-    opp_team_slg_10::float AS opp_team_slg_10,
-    batter_vs_hand_hits_avg_10::float AS batter_vs_hand_hits_avg_10,
-    batter_vs_hand_tb_avg_10::float AS batter_vs_hand_tb_avg_10,
-    batter_vs_hand_hr_avg_10::float AS batter_vs_hand_hr_avg_10,
-    batter_vs_hand_iso_avg_10::float AS batter_vs_hand_iso_avg_10,
-    batter_vs_hand_k_rate_10::float AS batter_vs_hand_k_rate_10,
-    batter_vs_hand_games_10::float AS batter_vs_hand_games_10,
-    batter_vs_rp_ba_30::float AS batter_vs_rp_ba_30,
-    batter_vs_rp_slg_30::float AS batter_vs_rp_slg_30,
-    batter_vs_rp_hr_rate_30::float AS batter_vs_rp_hr_rate_30,
-    batter_vs_rp_k_rate_30::float AS batter_vs_rp_k_rate_30,
-    pinch_hit_risk::float AS pinch_hit_risk,
-    actual_pa::float AS actual_pa,
-    actual_bf::float AS actual_bf,
-    actual_ip::float AS actual_ip,
-    actual_pitch_count_proxy::float AS actual_pitch_count_proxy,
-    low_pa_flag::float AS low_pa_flag
-FROM features.mlb_prop_market_training_examples
-WHERE game_date_et >= %(cutoff)s
-  AND result_status = 'graded'
-  AND market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
-ORDER BY game_date_et, game_slug, player_id, market
+    e.game_date_et,
+    e.game_slug,
+    e.player_id,
+    e.player_name,
+    e.team_abbr,
+    e.opponent_abbr,
+    e.market,
+    e.side,
+    e.market_line::float AS market_line,
+    e.pred_count::float AS pred_count,
+    e.actual_value::float AS actual_value,
+    e.won,
+    e.push,
+    e.confirmed_batting_order::float AS confirmed_batting_order,
+    COALESCE(e.confirmed_lineup_source, 'unknown') AS confirmed_lineup_source,
+    e.projected_pa::float AS projected_pa,
+    e.pa_games::float AS pa_games,
+    e.projected_ip::float AS projected_ip,
+    e.projected_bf::float AS projected_bf,
+    e.projected_pitch_count::float AS projected_pitch_count,
+    e.pitcher_starts::float AS pitcher_starts,
+    e.is_home::float AS is_home,
+    e.team_implied_runs::float AS team_implied_runs,
+    e.opponent_implied_runs::float AS opponent_implied_runs,
+    e.game_total_line::float AS game_total_line,
+    e.opp_sp_hand,
+    e.opp_sp_hand_l::float AS opp_sp_hand_l,
+    e.opp_sp_k_pct_10::float AS opp_sp_k_pct_10,
+    e.opp_sp_bb_pct::float AS opp_sp_bb_pct,
+    e.opp_sp_xwoba::float AS opp_sp_xwoba,
+    e.opp_sp_hard_hit_pct::float AS opp_sp_hard_hit_pct,
+    e.opp_sp_whiff_pct::float AS opp_sp_whiff_pct,
+    e.opp_bp_era_10::float AS opp_bp_era_10,
+    e.opp_bp_whip_10::float AS opp_bp_whip_10,
+    e.opp_bp_k9_10::float AS opp_bp_k9_10,
+    e.opp_bp_ip_last_3::float AS opp_bp_ip_last_3,
+    e.opp_bp_ip_last_7::float AS opp_bp_ip_last_7,
+    e.opp_team_k_pct_10::float AS opp_team_k_pct_10,
+    e.opp_team_avg_10::float AS opp_team_avg_10,
+    e.opp_team_obp_10::float AS opp_team_obp_10,
+    e.opp_team_slg_10::float AS opp_team_slg_10,
+    e.batter_vs_hand_hits_avg_10::float AS batter_vs_hand_hits_avg_10,
+    e.batter_vs_hand_tb_avg_10::float AS batter_vs_hand_tb_avg_10,
+    e.batter_vs_hand_hr_avg_10::float AS batter_vs_hand_hr_avg_10,
+    e.batter_vs_hand_iso_avg_10::float AS batter_vs_hand_iso_avg_10,
+    e.batter_vs_hand_k_rate_10::float AS batter_vs_hand_k_rate_10,
+    e.batter_vs_hand_games_10::float AS batter_vs_hand_games_10,
+    e.batter_vs_rp_ba_30::float AS batter_vs_rp_ba_30,
+    e.batter_vs_rp_slg_30::float AS batter_vs_rp_slg_30,
+    e.batter_vs_rp_hr_rate_30::float AS batter_vs_rp_hr_rate_30,
+    e.batter_vs_rp_k_rate_30::float AS batter_vs_rp_k_rate_30,
+    e.pinch_hit_risk::float AS pinch_hit_risk,
+    e.actual_pa::float AS actual_pa,
+    e.actual_bf::float AS actual_bf,
+    e.actual_ip::float AS actual_ip,
+    e.actual_pitch_count_proxy::float AS actual_pitch_count_proxy,
+    e.low_pa_flag::float AS low_pa_flag
+FROM features.mlb_prop_market_training_examples e
+JOIN raw.mlb_games g_final
+  ON g_final.game_slug = e.game_slug
+ AND g_final.status = 'final'
+WHERE e.game_date_et >= %(cutoff)s
+  AND e.result_status = 'graded'
+  AND e.market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
+ORDER BY e.game_date_et, e.game_slug, e.player_id, e.market
 """
 
 
@@ -392,7 +422,33 @@ def add_hitter_pa_v2_features(df: pd.DataFrame) -> pd.DataFrame:
 
     add_opportunity_v3_features(out, in_place=True)
 
-    for col in [*HITTER_PA_V2_NUMERIC, *OPPORTUNITY_V3_NUMERIC]:
+    projected_pa_filled = projected_pa.fillna(slot_prior)
+    pa_games = _numeric_series(out, "pa_games", 0.0).fillna(0.0)
+    home_ninth = _numeric_series(out, "home_favorite_ninth_penalty", 0.0).fillna(0.0).clip(0.0, 1.0)
+    slot_gap = (slot_prior - projected_pa_filled).clip(lower=-1.5, upper=2.5)
+    out["projected_pa_low_bucket_flag"] = (projected_pa_filled < 3.2).astype(float)
+    out["projected_pa_mid_bucket_flag"] = projected_pa_filled.between(3.2, 3.7, inclusive="left").astype(float)
+    out["projected_pa_high_bucket_flag"] = (projected_pa_filled >= 4.3).astype(float)
+    out["slot_prior_minus_projected_pa"] = slot_gap
+    out["slot_prior_pa_floor"] = np.maximum(projected_pa_filled, slot_prior - 0.35 * out["bench_or_removal_risk"])
+    out["projected_pa_confirmed_slot_interaction"] = projected_pa_filled * out["lineup_confirmed_flag"]
+    out["low_pa_prior_x_pinch_risk"] = low_pa_prior * pinch_risk
+    out["low_pa_prior_x_bottom_order"] = low_pa_prior * out["bottom_order_flag"]
+    out["bottom_order_home_favorite_ninth_risk"] = out["bottom_order_flag"] * home_ninth
+    out["team_runs_per_lineup_slot"] = team_runs / slot_int.astype("float64").fillna(5.0).clip(lower=1.0)
+    out["pa_stability_score"] = (
+        0.45 * (pa_games / 10.0).clip(0.0, 1.0)
+        + 0.35 * out["lineup_confirmed_flag"]
+        + 0.20 * (1.0 - out["bench_or_removal_risk"])
+    ).clip(0.0, 1.0)
+    out["pa_underprojection_risk_score"] = (
+        0.45 * slot_gap.clip(lower=0.0)
+        + 0.25 * out["lineup_confirmed_flag"]
+        + 0.15 * out["top_order_flag"]
+        + 0.15 * (team_runs - 4.0).fillna(0.0).clip(-1.0, 2.0)
+    ).clip(-1.0, 3.0)
+
+    for col in [*HITTER_PA_V2_NUMERIC, *HITTER_PA_V3_NUMERIC, *OPPORTUNITY_V3_NUMERIC]:
         out[col] = pd.to_numeric(out.get(col), errors="coerce")
     return out
 
@@ -528,8 +584,30 @@ def add_pitcher_leash_v2_features(df: pd.DataFrame, *, in_place: bool = False) -
         - 0.30 * out["opponent_patience_hook_risk"]
         - 0.25 * out["opponent_power_hook_risk"]
     ).clip(-3.5, 4.0)
+    out["projected_k_opportunity"] = (projected_bf * opp_k).clip(0.0, 14.0)
+    out["pitcher_k_volume_score"] = (
+        0.45 * ((projected_bf - 21.0) / 5.0).clip(-2.0, 2.5)
+        + 0.35 * ((projected_pitch_count - 85.0) / 15.0).clip(-2.0, 2.5)
+        + 0.20 * ((opp_k - 0.220) / 0.055).clip(-2.0, 2.5)
+    ).clip(-3.0, 4.0)
+    out["leash_supported_k_opportunity"] = (
+        out["projected_k_opportunity"] * (1.0 + 0.055 * out["pitcher_leash_v2_score"])
+    ).clip(0.0, 16.0)
+    out["pitcher_hook_risk_score"] = (
+        0.45 * out["opponent_patience_hook_risk"]
+        + 0.35 * out["opponent_power_hook_risk"]
+        + 0.20 * blowout
+        - 0.25 * out["bullpen_fatigue_leash_support"]
+    ).clip(-2.5, 4.0)
+    out["short_leash_x_opponent_patience"] = out["short_leash_projection_flag"] * out["opponent_patience_hook_risk"]
+    out["deep_leash_x_opponent_k"] = out["deep_leash_projection_flag"] * out["opponent_k_leash_support"]
+    out["pitch_count_efficiency_pressure"] = (
+        ((opp_obp - 0.315) / 0.045).clip(-2.0, 2.5)
+        + ((opp_sp_bb - 0.080) / 0.035).clip(-2.0, 2.5)
+        - ((opp_k - 0.220) / 0.055).clip(-2.0, 2.5)
+    ).clip(-4.0, 5.0)
 
-    for col in PITCHER_LEASH_V2_NUMERIC:
+    for col in [*PITCHER_LEASH_V2_NUMERIC, *PITCHER_K_OPPORTUNITY_V2_NUMERIC]:
         out[col] = pd.to_numeric(out.get(col), errors="coerce")
     return out
 
@@ -681,6 +759,8 @@ def _joint_regressor(
 def _k_probability_brier(
     offers: pd.DataFrame,
     opportunity: pd.DataFrame,
+    *,
+    adjustment_alpha: float = 1.0,
 ) -> dict[str, Any]:
     if offers.empty or opportunity.empty:
         return {"rows": 0}
@@ -700,7 +780,8 @@ def _k_probability_brier(
     ):
         ratio = pd.to_numeric(work[pred], errors="coerce") / pd.to_numeric(work[base], errors="coerce").replace(0.0, np.nan)
         ratios.append(ratio.clip(0.65, 1.35))
-    factor = (0.45 * ratios[0] + 0.35 * ratios[1] + 0.20 * ratios[2]).fillna(1.0).clip(0.70, 1.30)
+    raw_factor = (0.45 * ratios[0] + 0.35 * ratios[1] + 0.20 * ratios[2]).fillna(1.0).clip(0.70, 1.30)
+    factor = (1.0 + float(adjustment_alpha) * (raw_factor - 1.0)).clip(0.70, 1.30)
     base_mu = pd.to_numeric(work["pred_count"], errors="coerce").clip(0.05, 15.0)
     joint_mu = (base_mu * factor).clip(0.05, 15.0)
     line_floor = np.floor(pd.to_numeric(work["market_line"], errors="coerce")).astype(int)
@@ -719,6 +800,7 @@ def _k_probability_brier(
             - brier_score_loss(target, np.clip(joint_prob, 1e-6, 1 - 1e-6))
         ),
         "avg_opportunity_factor": float(factor.mean()),
+        "adjustment_alpha": float(adjustment_alpha),
     }
 
 
@@ -755,8 +837,8 @@ def _fit_pitcher_joint_opportunity(
     residuals: dict[str, np.ndarray] = {}
     improved_targets = 0
     for label, (target, baseline, lo, hi) in PITCHER_JOINT_TARGETS.items():
-        fit_train = train.dropna(subset=[target]).copy()
-        fit_holdout = holdout.dropna(subset=[target]).copy()
+        fit_train = train.dropna(subset=[target, baseline]).copy()
+        fit_holdout = holdout.dropna(subset=[target, baseline]).copy()
         if len(fit_train) < cfg.min_train_rows or len(fit_holdout) < cfg.min_holdout_rows:
             record["targets"][label] = {"status": "insufficient_rows"}
             continue
@@ -817,22 +899,64 @@ def _fit_pitcher_joint_opportunity(
     record["residual_correlation"] = (
         common_residuals.corr().round(6).to_dict() if len(common_residuals) >= 10 else {}
     )
-    holdout_dates = set(holdout["game_date_et"])
+    holdout_dates = sorted(set(holdout["game_date_et"]))
     k_holdout = k_offers.loc[k_offers["game_date_et"].isin(holdout_dates)].copy()
-    record["k_line_holdout"] = _k_probability_brier(k_holdout, holdout_predictions.dropna())
+    k_opportunity_alpha = 1.0
+    if len(holdout_dates) >= 4:
+        validation_start = holdout_dates[max(1, len(holdout_dates) // 2)]
+        tune_dates = set(date for date in holdout_dates if date < validation_start)
+        validation_dates = set(date for date in holdout_dates if date >= validation_start)
+        tune_offers = k_holdout.loc[k_holdout["game_date_et"].isin(tune_dates)]
+        validation_offers = k_holdout.loc[k_holdout["game_date_et"].isin(validation_dates)]
+        alpha_candidates: list[dict[str, Any]] = []
+        for alpha in (0.0, 0.25, 0.50, 0.75, 1.0):
+            result = _k_probability_brier(
+                tune_offers,
+                holdout_predictions.dropna(),
+                adjustment_alpha=alpha,
+            )
+            alpha_candidates.append(result)
+        usable_candidates = [row for row in alpha_candidates if row.get("joint_brier") is not None]
+        if usable_candidates:
+            selected = min(usable_candidates, key=lambda row: float(row["joint_brier"]))
+            k_opportunity_alpha = float(selected.get("adjustment_alpha") or 0.0)
+        record["k_line_tuning"] = {
+            "tune_end": str(holdout_dates[max(0, len(holdout_dates) // 2 - 1)]),
+            "validation_start": str(validation_start),
+            "candidates": alpha_candidates,
+            "selected_alpha": k_opportunity_alpha,
+        }
+        record["k_line_holdout"] = _k_probability_brier(
+            validation_offers,
+            holdout_predictions.dropna(),
+            adjustment_alpha=k_opportunity_alpha,
+        )
+    else:
+        record["k_line_holdout"] = _k_probability_brier(
+            k_holdout,
+            holdout_predictions.dropna(),
+            adjustment_alpha=k_opportunity_alpha,
+        )
     k_gain = (record["k_line_holdout"] or {}).get("brier_gain")
-    use_for_distribution = bool(improved_targets >= 2 and k_gain is not None and float(k_gain) > 0.0)
+    use_for_distribution = bool(improved_targets >= 2)
+    projection_alpha = 1.0 if use_for_distribution else 0.0
     record.update({
         "status": "trained",
         "improved_targets": improved_targets,
         "use_for_distribution": use_for_distribution,
-        "activation_gate": "at_least_two_opportunity_targets_and_k_line_brier_must_improve",
+        "activation_gate": "at_least_two_opportunity_targets_improve_holdout_mae",
+        "projection_selection_basis": "opportunity_mae_only",
+        "betting_diagnostic_k_brier_gain": k_gain,
+        "betting_tuned_alpha_shadow_only": k_opportunity_alpha,
+        "production_projection_alpha": projection_alpha,
     })
     runtime = {
         "models": runtime_models,
         "numeric_features": usable_numeric,
         "categorical_features": PITCHER_CATEGORICAL,
         "player_history_state": _pitcher_history_state(work),
+        "k_opportunity_alpha": projection_alpha,
+        "betting_tuned_alpha_shadow_only": k_opportunity_alpha,
         "use_for_distribution": use_for_distribution,
         "trained_at_utc": datetime.now(timezone.utc).isoformat(),
     }
@@ -869,16 +993,13 @@ def _load(cfg: OpportunityConfig) -> pd.DataFrame:
 
 
 def _split(df: pd.DataFrame, cfg: OpportunityConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train = df.loc[df["game_date_et"] < split].copy()
-    holdout = df.loc[df["game_date_et"] >= split].copy()
-    if len(train) >= cfg.min_train_rows and len(holdout) >= cfg.min_holdout_rows:
-        return train, holdout, f"last_{cfg.holdout_days}_days"
-    dates = sorted(df["game_date_et"].unique())
-    if len(dates) > 1:
-        holdout_date = dates[-1]
-        return df.loc[df["game_date_et"] < holdout_date].copy(), df.loc[df["game_date_et"] >= holdout_date].copy(), "last_available_date"
-    return train, holdout, f"last_{cfg.holdout_days}_days"
+    split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    return split.train, split.holdout, split.strategy
 
 
 def _joint_date_split(df: pd.DataFrame, cfg: OpportunityConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
@@ -978,6 +1099,11 @@ def _model_metrics_reg(df: pd.DataFrame, target: str, pred: np.ndarray) -> dict[
         return {"rows": 0}
     y = work[target].astype(float)
     p = pd.Series(pred, index=df.index).loc[work.index].astype(float)
+    finite = np.isfinite(y.to_numpy(dtype=float)) & np.isfinite(p.to_numpy(dtype=float))
+    if not finite.any():
+        return {"rows": 0}
+    y = y.loc[finite]
+    p = p.loc[finite]
     rmse = math.sqrt(mean_squared_error(y, p))
     return {
         "rows": int(len(work)),
@@ -1203,8 +1329,10 @@ def _write_report(payload: dict[str, Any], cfg: OpportunityConfig) -> str:
             f"{_fmt_pct(rec.get('quantile_coverage_25_75'))} |"
         )
     k_holdout = joint.get("k_line_holdout") or {}
+    k_tuning = joint.get("k_line_tuning") or {}
     lines.extend([
         "",
+        f"K opportunity adjustment alpha: {k_tuning.get('selected_alpha', k_holdout.get('adjustment_alpha', '-'))}",
         f"K-line holdout rows: {k_holdout.get('rows', 0)} | baseline Brier: "
         f"{_fmt_num(k_holdout.get('baseline_brier'))} | joint Brier: {_fmt_num(k_holdout.get('joint_brier'))} | "
         f"gain: {_fmt_num(k_holdout.get('brier_gain'), signed=True)}.",

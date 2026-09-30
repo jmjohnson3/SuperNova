@@ -29,6 +29,13 @@ STAT_SECTIONS: list[tuple[str, str]] = [
     ("batter_home_runs", "Home Runs"),
 ]
 
+# Book lines are one half below the displayed threshold: O0.5 means 1+ hit,
+# and O1.5 means 2+ total bases. Higher lines remain available to lottery rows.
+NON_LOTTERY_MAX_BOOK_LINE: dict[str, float] = {
+    "batter_hits": 0.5,
+    "batter_total_bases": 1.5,
+}
+
 
 def normalize_name(name: str) -> str:
     s = unicodedata.normalize("NFKD", name or "")
@@ -50,6 +57,12 @@ def clean_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return None if math.isnan(v) else v
+
+
+def exceeds_non_lottery_line_cap(stat: Any, line: Any) -> bool:
+    maximum = NON_LOTTERY_MAX_BOOK_LINE.get(str(stat or ""))
+    line_value = clean_float(line)
+    return bool(maximum is not None and line_value is not None and line_value > maximum + 1e-9)
 
 
 def book_label(link: str | None, fallback: str | None = None) -> str:
@@ -197,6 +210,8 @@ def candidate_from_prediction_row(
         "entry_price": entry_price,
         "current_price": current_price,
         "minimum_acceptable_price": minimum_price,
+        "stale_after_utc": row.get("stale_after_utc"),
+        "stale_after_label": row.get("stale_after_label"),
         "price_drift_ok": price_drift_ok,
         "book": book_label(link, book),
         "bankroll": assessment,

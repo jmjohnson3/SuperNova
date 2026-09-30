@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from nba_pipeline.fetcher import MySportsFeedsClient, NoContentYetError, RateLimitedError, BadPayloadError
 from nba_pipeline.raw_store import save_api_response
 from mlb_pipeline.db import PG_DSN
+from supernovabets_config import mysportsfeeds_api_key
 
 log = logging.getLogger("mlb_pipeline.crawler")
 
@@ -55,7 +56,7 @@ class Season:
 
 @dataclass(frozen=True)
 class CrawlerConfig:
-    api_key: str = "4359aa1b-cc29-4647-a3e5-7314e2"
+    api_key: str = mysportsfeeds_api_key()
     pg_dsn: str = PG_DSN
 
     # "incremental window" behavior:
@@ -586,6 +587,8 @@ def main() -> None:
     args = parser.parse_args()
 
     cfg = CrawlerConfig()
+    if not cfg.api_key:
+        raise RuntimeError("Missing MYSPORTSFEEDS_API_KEY or MSF_API_KEY")
     client = MySportsFeedsClient(api_key=cfg.api_key)
 
     seasons = [

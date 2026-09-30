@@ -1,0 +1,28 @@
+
+**DATA HEALTH**
+- Offers: 59 markets, 280 normalized offers, 280 linked sides
+- Display pool: 14 rows; clean pair 71%; synthetic 0%; CLV model coverage 100%
+
+**BANKROLL PROP BETS**
+- No bankroll-qualified player props today
+- Real-money blockers: CLV-weak 14, opportunity 14, ROI-weak 10, market-better 7, bucket-closed 4, one-sided 4
+
+**MICRO PROJECTION PLAYS - BETTABLE NOW**
+- No micro-projection plays are currently bettable at the required price.
+
+**MICRO WATCH - PRICE MOVED / STALE / NOT BETTABLE (5 shown / 10 moved)**
+- Do not bet these unless the book price returns to Min or better before Stale.
+- WATCH A.J. Ewing (NYM vs PHI) TB O1.5 -> 2.728 P=68.5% Edge=+22.8% EV=+50.0% CLV=47% Lock=+119 Cur=+119 Min=-198 Stale=6:10 PM ET [distribution_projection] | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- WATCH Justin Crawford (PHI vs NYM) H O0.5 -> 0.827 P=62.0% Edge=+15.5% EV=+33.3% CLV=27% Lock=-192 Cur=+115 Min=-151 Stale=6:10 PM ET [distribution_projection] | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- WATCH Bryce Harper (PHI vs NYM) H O0.5 -> 1.174 P=75.1% Edge=+17.6% EV=+30.7% CLV=36% Lock=-252 Cur=-135 Min=-268 Stale=6:10 PM ET [distribution_projection] | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- WATCH Brett Baty (NYM vs PHI) H O0.5 -> 0.770 P=57.5% Edge=+13.0% EV=+29.3% CLV=36% Lock=-143 Cur=+125 Min=-126 Stale=6:10 PM ET [distribution_projection] | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- WATCH Trea Turner (PHI vs NYM) TB O1.5 -> 2.398 P=60.0% Edge=+13.5% EV=+28.9% CLV=42% Lock=+114 Cur=+115 Min=-139 Stale=6:10 PM ET [distribution_projection] | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+
+**WATCHLIST - NOT SELECTOR APPROVED (4 watch model picks)**
+
+**Top 10 Watch Home Runs**
+- Brandon Marsh (PHI vs NYM) HR O0.5 → 0.234 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=32578651>)
+- A.J. Ewing (NYM vs PHI) HR O0.5 → 0.234 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=98418793>)
+- Jared Young (NYM vs PHI) HR O0.5 → 0.233 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=48539655>)
+- Bryce Harper (PHI vs NYM) HR O0.5 → 0.282 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=7423201>)
+

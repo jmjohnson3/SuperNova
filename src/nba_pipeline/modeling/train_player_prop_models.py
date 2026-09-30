@@ -12,6 +12,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sqlalchemy import create_engine, text
 from xgboost import XGBRegressor
 
+from nba_pipeline.db import PG_DSN
+
 try:
     import lightgbm as lgb
     _HAS_LGB = True
@@ -25,7 +27,7 @@ log = logging.getLogger("nba_pipeline.modeling.train_player_prop_models")
 
 @dataclass(frozen=True)
 class TrainConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     model_dir: Path = Path(__file__).resolve().parent / "models" / "player_props"
 
     # basic quality filters

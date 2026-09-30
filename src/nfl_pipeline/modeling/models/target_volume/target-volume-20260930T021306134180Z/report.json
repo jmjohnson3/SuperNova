@@ -1,0 +1,657 @@
+{
+  "run_id": "target-volume-20260930T021306134180Z",
+  "contract": "nfl-target-volume-only-v1",
+  "status": "rejected",
+  "built_at": "2026-09-30T02:15:12.724732+00:00",
+  "production_release": "nfl-20260918T143342Z",
+  "training_end": "2026-09-17",
+  "context": {
+    "contract": "nfl-player-game-role-asof-v1",
+    "overall": {
+      "rows": 30541,
+      "verified_locks": 156,
+      "status": {
+        "missing_verified_lock": 30385,
+        "no_matching_pregame_observations": 156
+      },
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "by_season": {
+      "2019": {
+        "rows": 2920,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 2920
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2020": {
+        "rows": 4229,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 4229
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2021": {
+        "rows": 4513,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 4513
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2022": {
+        "rows": 4519,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 4519
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2023": {
+        "rows": 4568,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 4568
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2024": {
+        "rows": 4513,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 4513
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2025": {
+        "rows": 5004,
+        "verified_locks": 0,
+        "status": {
+          "missing_verified_lock": 5004
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      },
+      "2026": {
+        "rows": 275,
+        "verified_locks": 156,
+        "status": {
+          "no_matching_pregame_observations": 156,
+          "missing_verified_lock": 119
+        },
+        "fields": {
+          "depth_rank": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "expected_starter": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "depth_movement": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "injury_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "practice_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "roster_status": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_absences": {
+            "nonmissing": 0,
+            "distinct": 0
+          },
+          "teammate_limited": {
+            "nonmissing": 0,
+            "distinct": 0
+          }
+        }
+      }
+    },
+    "rejected_observations": {
+      "unusable_identity_or_timestamp": 118
+    },
+    "limitations": [
+      "No actual lock means role evidence is unknown, not a kickoff reconstruction.",
+      "A source snapshot date alone does not override its first observed timestamp.",
+      "Teammate counts cover observed reports only; absent reports are not proof of health.",
+      "This join does not manufacture measured routes or first-read history."
+    ]
+  },
+  "metrics": {
+    "challenger": {
+      "target": {
+        "rows": 5279,
+        "mae": 1.7323144208536978,
+        "rmse": 2.251670380683126,
+        "bias": 0.20090678373470022
+      },
+      "yardage": {
+        "rows": 5279,
+        "mae": 17.32974560826987,
+        "rmse": 24.140381771815626,
+        "bias": 1.1568521457838412,
+        "interval_rows": 5279,
+        "coverage_80": 0.8067815874218602,
+        "interval_width": 49.808553779526434
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.2287060912612476,
+        "log_loss": 0.6488701136874914,
+        "calibration_error": 0.04606560711161106,
+        "probability_bias": 0.04327679186321552
+      },
+      "interval_score": 76.46521535565641,
+      "below_80": 0.09073688198522448,
+      "above_80": 0.10248153059291533
+    },
+    "control": {
+      "target": {
+        "rows": 5279,
+        "mae": 1.7095637215812405,
+        "rmse": 2.282156017576347,
+        "bias": 0.15433918641982075
+      },
+      "yardage": {
+        "rows": 5279,
+        "mae": 17.192530570256906,
+        "rmse": 24.300204482800112,
+        "bias": 1.1053198115271834,
+        "interval_rows": 5279,
+        "coverage_80": 0.8010986929342678,
+        "interval_width": 47.74146240217017
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.22721931621744212,
+        "log_loss": 0.6463299651412149,
+        "calibration_error": 0.014635488474767035,
+        "probability_bias": 0.0027276726800071235
+      },
+      "interval_score": 76.53043941683792,
+      "below_80": 0.0878954347414283,
+      "above_80": 0.11100587232430384
+    },
+    "long_role": {
+      "target": {
+        "rows": 5279,
+        "mae": 1.7060006325526365,
+        "rmse": 2.2543713017469806,
+        "bias": 0.2113576800820929
+      },
+      "yardage": {
+        "rows": 5279,
+        "mae": 17.24100593473703,
+        "rmse": 24.20540845096918,
+        "bias": 1.5274486361056185,
+        "interval_rows": 5279,
+        "coverage_80": 0.803940140178064,
+        "interval_width": 48.53600307039206
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.22668190487577927,
+        "log_loss": 0.6449330643468153,
+        "calibration_error": 0.029588980471621965,
+        "probability_bias": 0.01995733609304954
+      },
+      "interval_score": 76.17804731162659,
+      "below_80": 0.08865315400644061,
+      "above_80": 0.10740670581549536
+    },
+    "recent_share": {
+      "target": {
+        "rows": 5279,
+        "mae": 1.7321984838495934,
+        "rmse": 2.3349105681882323,
+        "bias": 0.14905932085778684
+      },
+      "yardage": {
+        "rows": 5279,
+        "mae": 17.284306417066436,
+        "rmse": 24.49990427918417,
+        "bias": 1.1242787772963547,
+        "interval_rows": 5279,
+        "coverage_80": 0.7986361053229778,
+        "interval_width": 47.23877698337853
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.22986836002684513,
+        "log_loss": 0.6525235470713457,
+        "calibration_error": 0.04399351269531427,
+        "probability_bias": 0.001109231872531161
+      },
+      "interval_score": 77.22412778347014,
+      "below_80": 0.08732714529266906,
+      "above_80": 0.1140367493843531
+    },
+    "reference": {
+      "target": {
+        "rows": 5279,
+        "mae": 1.6998737134558313,
+        "rmse": 2.2859512988929853,
+        "bias": 0.09604091684031069
+      },
+      "yardage": {
+        "rows": 5279,
+        "mae": 17.032178904904633,
+        "rmse": 24.232171868310626,
+        "bias": 0.08200250028336774,
+        "interval_rows": 5279,
+        "coverage_80": 0.8005304034855086,
+        "interval_width": 54.27641069414136
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.22958082232669838,
+        "log_loss": 0.6516934555682111,
+        "calibration_error": 0.03272509482431488,
+        "probability_bias": 0.026291983242650963
+      },
+      "interval_score": 89.38021975368063,
+      "below_80": 0.09888236408410683,
+      "above_80": 0.10058723243038455
+    }
+  },
+  "comparison": {
+    "targets": {
+      "clusters": 24,
+      "lower_95": 0.05301836219110132,
+      "upper_95": 0.2272002246129107,
+      "mean_gain": 0.13821658531423864
+    },
+    "yards": {
+      "clusters": 24,
+      "lower_95": 0.6559052734180096,
+      "upper_95": 15.018633162147925,
+      "mean_gain": 7.741905816890316
+    },
+    "brier": {
+      "clusters": 24,
+      "lower_95": -0.004402867789257429,
+      "upper_95": 0.0018440315086985226,
+      "mean_gain": -0.0014867750438054693
+    }
+  },
+  "folds": [
+    {
+      "fold": "2025-W01",
+      "alpha": 0.25,
+      "tuning": {
+        "0.0": 0.9581705312855014,
+        "0.25": 0.9401178609636387,
+        "0.5": 0.9536930766568109
+      },
+      "model_fit_end": "2024-12-09",
+      "residual_end": "2024-12-23",
+      "tuning_end": "2025-01-05",
+      "used_role_features": []
+    },
+    {
+      "fold": "2025-W05",
+      "alpha": 0.25,
+      "tuning": {
+        "0.0": 0.9524890947594558,
+        "0.25": 0.9274713458391768,
+        "0.5": 0.9333572029625099
+      },
+      "model_fit_end": "2025-01-05",
+      "residual_end": "2025-01-19",
+      "tuning_end": "2025-02-09",
+      "used_role_features": []
+    },
+    {
+      "fold": "2025-W09",
+      "alpha": 0.5,
+      "tuning": {
+        "0.0": 1.060061541877059,
+        "0.25": 1.0173468378651895,
+        "0.5": 1.0150507356037313
+      },
+      "model_fit_end": "2025-02-09",
+      "residual_end": "2025-09-15",
+      "tuning_end": "2025-09-29",
+      "used_role_features": []
+    },
+    {
+      "fold": "2025-W13",
+      "alpha": 0.25,
+      "tuning": {
+        "0.0": 1.016499478729212,
+        "0.25": 1.0136480324481505,
+        "0.5": 1.0392148765622982
+      },
+      "model_fit_end": "2025-09-29",
+      "residual_end": "2025-10-13",
+      "tuning_end": "2025-10-27",
+      "used_role_features": []
+    },
+    {
+      "fold": "2025-W17",
+      "alpha": 0.25,
+      "tuning": {
+        "0.0": 1.0207423480917965,
+        "0.25": 0.9967399449743548,
+        "0.5": 1.0085551209462218
+      },
+      "model_fit_end": "2025-10-27",
+      "residual_end": "2025-11-10",
+      "tuning_end": "2025-11-24",
+      "used_role_features": []
+    },
+    {
+      "fold": "2025-W21",
+      "alpha": 0.25,
+      "tuning": {
+        "0.0": 1.0135913287852651,
+        "0.25": 0.9948097807969594,
+        "0.5": 1.0120824520512552
+      },
+      "model_fit_end": "2025-11-24",
+      "residual_end": "2025-12-08",
+      "tuning_end": "2025-12-22",
+      "used_role_features": []
+    },
+    {
+      "fold": "2026-W01",
+      "alpha": 0.5,
+      "tuning": {
+        "0.0": 1.0932319247588353,
+        "0.25": 1.0513003634855653,
+        "0.5": 1.0459629669466006
+      },
+      "model_fit_end": "2025-12-08",
+      "residual_end": "2025-12-22",
+      "tuning_end": "2026-01-04",
+      "used_role_features": []
+    }
+  ],
+  "historical_screen_passed": false,
+  "forecast_deployment_approved": false,
+  "betting_approved": false,
+  "prospective_acceptance_start": "2026-10-01",
+  "production_changed": false,
+  "source_cache_sha256": "273b1352d4c2c4739ee9cbab5b7b02cdd54c4d5809c3013f0971befb77efe98c",
+  "limitations": [
+    "Efficiency recipe, efficiency residuals, and ranking are not tuned between target variants.",
+    "The control and target variants share one conditional yardage mixture; the reference is tested separately.",
+    "Historical proxy lines are not real offered-line or profitable-bet evidence.",
+    "No missing historical lock is reconstructed. Unlearnable role fields are excluded and reported.",
+    "Week 3 is diagnostic only; post-development locked evidence must pass before deployment."
+  ],
+  "artifact_sha256": "006a1a375a78f5bb41439ceab7546c712732a4da08be921091934fe6270c9050"
+}

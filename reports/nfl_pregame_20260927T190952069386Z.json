@@ -1,0 +1,69 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-09-27T19:09:52.045452+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_03_ARI_SF",
+      "kickoff": "2026-09-27T20:05:00+00:00",
+      "target_at": "2026-09-27T18:35:00+00:00",
+      "minutes_to_start": 55.1,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_MIN_TB",
+      "kickoff": "2026-09-27T20:05:00+00:00",
+      "target_at": "2026-09-27T18:35:00+00:00",
+      "minutes_to_start": 55.1,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_BAL_DAL",
+      "kickoff": "2026-09-27T20:25:00+00:00",
+      "target_at": "2026-09-27T18:55:00+00:00",
+      "minutes_to_start": 75.1,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_LV_NO",
+      "kickoff": "2026-09-27T20:25:00+00:00",
+      "target_at": "2026-09-27T18:55:00+00:00",
+      "minutes_to_start": 75.1,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_LA_DEN",
+      "kickoff": "2026-09-28T00:20:00+00:00",
+      "target_at": "2026-09-27T22:50:00+00:00",
+      "minutes_to_start": 310.1,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_03_PHI_CHI",
+      "kickoff": "2026-09-29T00:15:00+00:00",
+      "target_at": "2026-09-28T22:45:00+00:00",
+      "minutes_to_start": 1745.1,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_417b79ae6ee6439b8aea40c846330890",
+      "game_ids": [
+        "2026_03_BAL_DAL",
+        "2026_03_LV_NO"
+      ],
+      "status": "review_required",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

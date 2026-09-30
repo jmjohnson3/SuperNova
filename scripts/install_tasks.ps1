@@ -1,4 +1,4 @@
-# Removes known legacy MLB tasks and registers the maintained SuperNovaBets set.
+# Removes known legacy tasks and registers the maintained SuperNovaBets set.
 # The script requests Administrator elevation when needed.
 #
 # Usage:
@@ -45,7 +45,10 @@ $legacyTasks = @(
     @{ Path = "\"; Name = "MLB_7am" },
     @{ Path = "\"; Name = "SuperNovaBets_MLB_CloseOnly" },
     @{ Path = "\"; Name = "SuperNovaBets_MLB_Daily" },
-    @{ Path = $taskPath; Name = "MLB-PreGame" }
+    @{ Path = "\"; Name = "SuperNovaBets_NFL_Daily" },
+    @{ Path = "\"; Name = "SuperNovaBets_NFL_CloseOnly" },
+    @{ Path = $taskPath; Name = "MLB-PreGame" },
+    @{ Path = $taskPath; Name = "NFL-PreGame" }
 )
 
 if (-not $KeepLegacyTasks) {
@@ -89,8 +92,13 @@ $tasks = @(
     @{ Name = "MLB-Morning";          File = "MLB-Morning.xml"          },
     @{ Name = "MLB-PreGame-Day";      File = "MLB-PreGame.xml"          },
     @{ Name = "MLB-PreGame-Evening";  File = "MLB-PreGame-Evening.xml"  },
+    @{ Name = "MLB-Prop-Targeted-Close"; File = "MLB-Prop-Targeted-Close.xml" },
     @{ Name = "MLB-Close";            File = "MLB-Close.xml"            },
-    @{ Name = "MLB-Training";         File = "MLB-Training.xml"         }
+    @{ Name = "MLB-Training";         File = "MLB-Training.xml"         },
+    @{ Name = "NFL-Daily";            File = "NFL-Daily.xml"            },
+    @{ Name = "NFL-PrimeTime-Refresh"; File = "NFL-PrimeTime-Refresh.xml" },
+    @{ Name = "NFL-Close";            File = "NFL-Close.xml"            },
+    @{ Name = "NFL-Training";         File = "NFL-Training.xml"         }
 )
 
 foreach ($t in $tasks) {

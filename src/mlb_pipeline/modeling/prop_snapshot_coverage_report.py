@@ -5,6 +5,8 @@ import argparse
 import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
+
+from mlb_pipeline.atomic_io import atomic_write_text
 from zoneinfo import ZoneInfo
 
 import psycopg2
@@ -195,9 +197,9 @@ def main() -> None:
     parser.add_argument("--lookback-days", type=int, default=14)
     parser.add_argument("--target-slates", type=int, default=10)
     parser.add_argument("--min-valid-locks-per-slate", type=int, default=100)
-    parser.add_argument("--min-valid-coverage", type=float, default=0.25)
+    parser.add_argument("--min-valid-coverage", type=float, default=0.90)
     parser.add_argument("--max-missing-lock-rate", type=float, default=0.02)
-    parser.add_argument("--max-stale-close-rate", type=float, default=0.05)
+    parser.add_argument("--max-stale-close-rate", type=float, default=0.02)
     parser.add_argument("--date", default=None, help="End date in YYYY-MM-DD format. Defaults to today ET.")
     parser.add_argument(
         "--output",
@@ -221,7 +223,7 @@ def main() -> None:
         )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(report, encoding="utf-8")
+    atomic_write_text(output, report)
     print(report)
 
 

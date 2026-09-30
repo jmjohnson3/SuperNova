@@ -1,0 +1,147 @@
+{
+  "contract": "nfl-cash-trial-v1",
+  "day": "2026-09-27",
+  "built_at": "2026-09-28T05:08:21.150073+00:00",
+  "registration_sha256": "d868a14c4857995b2da380673dcebb9b014caaa9576f67baf427725bab057be0",
+  "strategy_id": "fanduel-common-receiving-v1",
+  "release": "nfl-20260918T143342Z",
+  "scoring_version": "e29cbbca864ea8e37e57d7ba178ee30ff3dd371a412726d569d8f89b063c1afd",
+  "decision": {
+    "status": "research",
+    "checkpoints": [],
+    "next_checkpoint": 50,
+    "pause": null
+  },
+  "provisional": {
+    "status": "research",
+    "blockers": [
+      "checkpoint_sample_incomplete",
+      "independent_weeks_below_three",
+      "positive_roi_unconfirmed",
+      "selected_market_advantage_unconfirmed",
+      "selected_calibration_unknown",
+      "distribution_coverage_not_confirmed",
+      "valid_closes_below_90_percent",
+      "stale_close_quality_unknown",
+      "clv_not_confirming",
+      "player_id_concentration",
+      "team_concentration",
+      "week_key_concentration"
+    ],
+    "metrics": {
+      "decisions": 0,
+      "binary": 0,
+      "weeks": 0,
+      "alpha_per_test": 0.0010416666666666667,
+      "checkpoint": 50,
+      "unresolved": 0,
+      "roi": null,
+      "roi_lower": null,
+      "market_brier_gain_lower": null,
+      "calibration": null,
+      "coverage_80": null,
+      "all_offer_brier_delta": -0.0007966328887200785,
+      "valid_close_coverage": null,
+      "stale_close_rate": null,
+      "average_clv": null,
+      "clv_beat_rate": null,
+      "unchanged_closes": 0,
+      "player_id_concentration": 0.0,
+      "team_concentration": 0.0,
+      "week_key_concentration": 0.0
+    },
+    "model_deployment_approved": false,
+    "wagers_placed": false
+  },
+  "exclusions": {
+    "quote_expired_before_challenger_capture": 3,
+    "pre_policy_history": 4700,
+    "outside_market": 240,
+    "different_scoring_cohort": 723,
+    "missing_final_participation_or_result": 16
+  },
+  "pending": 0,
+  "selection_cohort_accounting": {
+    "registered_at": "2026-09-27T00:00:25.773901+00:00",
+    "counts": {
+      "pre_policy_selection_preserved": 5
+    },
+    "rows": [
+      {
+        "forecast_id": 6984,
+        "status": "pre_policy_selection_preserved"
+      },
+      {
+        "forecast_id": 6986,
+        "status": "pre_policy_selection_preserved"
+      },
+      {
+        "forecast_id": 7398,
+        "status": "pre_policy_selection_preserved"
+      },
+      {
+        "forecast_id": 7362,
+        "status": "pre_policy_selection_preserved"
+      },
+      {
+        "forecast_id": 7446,
+        "status": "pre_policy_selection_preserved"
+      }
+    ],
+    "current_scoring_matches_registration": true,
+    "historical_slots_replaced": false
+  },
+  "forecast_deployment_review": {
+    "status": "collecting_evidence",
+    "blockers": [
+      "real_offers:insufficient_independent_weeks",
+      "real_offers:brier_improvement_unconfirmed"
+    ],
+    "deployment_approved": false,
+    "betting_approved": false,
+    "market_evidence_blockers": [
+      "real_offers:insufficient_independent_market_weeks",
+      "real_offers:market_brier_advantage_unconfirmed",
+      "real_offers:market_calibration_advantage_unconfirmed",
+      "exact_micro:missing_true_pair_matches"
+    ],
+    "automatic_promotion": false
+  },
+  "executions": {
+    "states": {},
+    "confirmed_record": {},
+    "confirmed_profit": 0,
+    "confirmed_roi": null
+  },
+  "other_strategies": {
+    "passing_yards": "not_registered_no_cash_approval",
+    "rushing_yards": "not_registered_no_cash_approval",
+    "passing_tds": "not_registered_no_cash_approval",
+    "rushing_tds": "not_registered_no_cash_approval",
+    "receiving_tds": "not_registered_no_cash_approval",
+    "spread": "not_registered_no_cash_approval",
+    "total": "not_registered_no_cash_approval"
+  },
+  "limits": {
+    "version": "nfl-cash-trial-v1",
+    "book": "fanduel",
+    "stake": 1.0,
+    "daily_limit": 5,
+    "weekly_stake_limit": 20.0,
+    "loss_limit": 30.0,
+    "checkpoints": [
+      50,
+      100,
+      200
+    ],
+    "min_weeks": 3,
+    "family_alpha": 0.05,
+    "strategy_slots": 8,
+    "max_ece": 0.05,
+    "min_close": 0.9,
+    "max_stale": 0.02,
+    "min_clv_beat": 0.55
+  },
+  "automatically_places_bets": false,
+  "production_changed": false
+}

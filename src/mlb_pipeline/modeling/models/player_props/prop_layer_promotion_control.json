@@ -1,0 +1,252 @@
+{
+  "generated_at_utc": "2026-09-01T11:25:51Z",
+  "status": "ready",
+  "automatic_integration_mode": "safe_next_rung",
+  "thresholds": {
+    "min_projection_dates": 5,
+    "min_player_rows": 100,
+    "min_opportunity_rows": 50,
+    "min_clean_dates": 5,
+    "min_clv_auc": 0.55,
+    "max_artifact_age_hours": 36.0
+  },
+  "kill_switch": {
+    "status": "disabled",
+    "active": true,
+    "blockers": [
+      "artifact_stale:reopen_policy",
+      "artifact_stale:shadow_selector",
+      "artifact_stale:target_quality",
+      "no_open_prop_buckets",
+      "valid_close_coverage<0.90"
+    ]
+  },
+  "ladder_counts": {
+    "watch": 132
+  },
+  "layers": {
+    "hitter_hits_hr_shadow": {
+      "name": "hitter_hits_hr_shadow",
+      "title": "Hitter Hits/HR Shadow",
+      "current_mode": "shadow",
+      "target_mode": "production_scoring",
+      "integration_key": "hitter_rate_challenger_production",
+      "can_score_live": false,
+      "can_auto_integrate": false,
+      "completed_dates": 17,
+      "pending_terminal_anchor_rows": 0,
+      "metrics": {
+        "batter_hits": {
+          "rows": 3476,
+          "dates": 17,
+          "mae": 0.7303520934613627,
+          "rmse": 0.9248245096658307,
+          "bias": -0.3100377860675639,
+          "baseline_mae": 0.7140008632750029,
+          "mae_gain_vs_baseline": -0.016351230186359755,
+          "projection_pass": false
+        },
+        "batter_home_runs": {
+          "rows": 3476,
+          "dates": 17,
+          "mae": 0.23848077119881977,
+          "rmse": 0.34911488365916626,
+          "bias": 0.05014946352336487,
+          "baseline_mae": 0.30564354648531433,
+          "mae_gain_vs_baseline": 0.06716277528649456,
+          "projection_pass": true
+        }
+      },
+      "blockers": [
+        "batter_hits_projection_not_better_than_baseline",
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    "hitter_pa_v3": {
+      "name": "hitter_pa_v3",
+      "title": "Hitter PA v3",
+      "current_mode": "challenger",
+      "target_mode": "production_scoring",
+      "integration_key": "hitter_pa_v3_production",
+      "can_score_live": false,
+      "can_auto_integrate": false,
+      "completed_dates": 21,
+      "pending_terminal_anchor_rows": 0,
+      "metrics": {
+        "hitter_plate_appearances_challenger": {
+          "rows": 4136,
+          "dates": 21,
+          "mae": 0.749347182839262,
+          "rmse": 1.0764033500021548,
+          "bias": 0.04908938492935059,
+          "baseline_mae": 0.760158768536428,
+          "mae_gain_vs_baseline": 0.010811585697166004,
+          "projection_pass": true
+        }
+      },
+      "blockers": [
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    "tb_projection": {
+      "name": "tb_projection",
+      "title": "Total Bases Projection",
+      "current_mode": "production_tracking",
+      "target_mode": "production_scoring_verified",
+      "integration_key": null,
+      "can_score_live": false,
+      "can_auto_integrate": false,
+      "completed_dates": 21,
+      "pending_terminal_anchor_rows": 0,
+      "metrics": {
+        "batter_total_bases": {
+          "rows": 4299,
+          "dates": 21,
+          "mae": 1.3983820228300843,
+          "rmse": 1.7787193760138107,
+          "bias": 0.23427859080561775,
+          "baseline_mae": 1.3851887851364475,
+          "mae_gain_vs_baseline": -0.013193237693636783,
+          "projection_pass": false
+        }
+      },
+      "blockers": [
+        "batter_total_bases_projection_gate_failed",
+        "batter_total_bases_projection_not_better_than_baseline",
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    "pitcher_k_projection": {
+      "name": "pitcher_k_projection",
+      "title": "Pitcher K Projection",
+      "current_mode": "production_tracking",
+      "target_mode": "production_scoring_verified",
+      "integration_key": null,
+      "can_score_live": false,
+      "can_auto_integrate": false,
+      "completed_dates": 23,
+      "pending_terminal_anchor_rows": 0,
+      "metrics": {
+        "pitcher_strikeouts": {
+          "rows": 476,
+          "dates": 23,
+          "mae": 1.8311031037091503,
+          "rmse": 2.270420789728969,
+          "bias": 0.12847845558301257,
+          "baseline_mae": 1.918483413790424,
+          "mae_gain_vs_baseline": 0.08738031008127378,
+          "projection_pass": true
+        }
+      },
+      "blockers": [
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    "clv_direction": {
+      "name": "clv_direction",
+      "title": "CLV Direction Model",
+      "current_mode": "support",
+      "target_mode": "support_enabled",
+      "integration_key": null,
+      "can_score_live": true,
+      "can_auto_integrate": false,
+      "metrics": {
+        "selected_variant": "clv_v2",
+        "auc": 0.600799086099843,
+        "brier": 0.23500536645713963,
+        "rows": 42702
+      },
+      "blockers": []
+    },
+    "bookability": {
+      "name": "bookability",
+      "title": "Bookability / Close Capture",
+      "current_mode": "support",
+      "target_mode": "support_enabled",
+      "integration_key": null,
+      "can_score_live": true,
+      "can_auto_integrate": false,
+      "metrics": {
+        "selected_scoring_method": "logistic",
+        "holdout_rows": 66827,
+        "actual_bookable_rate": 0.8123200774149869,
+        "auc": 0.6833549416322442,
+        "model_usable": true
+      },
+      "blockers": []
+    },
+    "distribution_selector": {
+      "name": "distribution_selector",
+      "title": "Distribution / Exact-Line Selector",
+      "current_mode": "shadow_support",
+      "target_mode": "support_enabled",
+      "integration_key": null,
+      "can_score_live": true,
+      "can_auto_integrate": false,
+      "metrics": {
+        "true_pair_bucket_count": 84,
+        "bucket_count": 84,
+        "usage": "shadow_only"
+      },
+      "blockers": []
+    },
+    "exact_bucket_micro": {
+      "name": "exact_bucket_micro",
+      "title": "Exact Bucket $1 Micro",
+      "current_mode": "watch",
+      "target_mode": "micro",
+      "integration_key": "exact_bucket_micro_ladder",
+      "can_score_live": false,
+      "can_auto_integrate": false,
+      "metrics": {
+        "micro_ready_count": 0,
+        "tb_k_micro_ready_count": 0,
+        "clv_classifier_ready": true
+      },
+      "ready_buckets": [],
+      "blockers": [
+        "micro_ready_exact_buckets=0",
+        "real_money_kill_switch_active"
+      ]
+    }
+  },
+  "auto_integrations": {
+    "hitter_rate_challenger_production": {
+      "enabled": false,
+      "layer": "hitter_hits_hr_shadow",
+      "target_mode": "production_scoring",
+      "blockers": [
+        "batter_hits_projection_not_better_than_baseline",
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    "hitter_pa_v3_production": {
+      "enabled": false,
+      "layer": "hitter_pa_v3",
+      "target_mode": "production_scoring",
+      "blockers": [
+        "five_date_checkpoint_artifact_stale>36h"
+      ]
+    },
+    "exact_bucket_micro_ladder": {
+      "enabled": false,
+      "layer": "exact_bucket_micro",
+      "target_mode": "micro",
+      "blockers": [
+        "micro_ready_exact_buckets=0",
+        "real_money_kill_switch_active"
+      ]
+    }
+  },
+  "blockers": [
+    "exact_bucket_micro:micro_ready_exact_buckets=0",
+    "exact_bucket_micro:real_money_kill_switch_active",
+    "hitter_hits_hr_shadow:batter_hits_projection_not_better_than_baseline",
+    "hitter_hits_hr_shadow:five_date_checkpoint_artifact_stale>36h",
+    "hitter_pa_v3:five_date_checkpoint_artifact_stale>36h",
+    "pitcher_k_projection:five_date_checkpoint_artifact_stale>36h",
+    "tb_projection:batter_total_bases_projection_gate_failed",
+    "tb_projection:batter_total_bases_projection_not_better_than_baseline",
+    "tb_projection:five_date_checkpoint_artifact_stale>36h"
+  ]
+}

@@ -1,0 +1,272 @@
+{
+  "day": "2026-09-27",
+  "built_at": "2026-09-28T05:09:41.839636+00:00",
+  "effective_date": "2026-09-24",
+  "status": "needs_attention",
+  "games": [
+    {
+      "game_id": "2026_03_LAC_BUF",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 32,
+      "challenger_captures": 32,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.84375,
+      "unknown_closes": 5,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    },
+    {
+      "game_id": "2026_03_CAR_CLE",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 38,
+      "challenger_captures": 38,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8947368421052632,
+      "unknown_closes": 4,
+      "unresolved_forecast_ids": [
+        9153,
+        8642,
+        8028,
+        9191,
+        7402,
+        8701
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_NYJ_DET",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 39,
+      "challenger_captures": 39,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8461538461538461,
+      "unknown_closes": 6,
+      "unresolved_forecast_ids": [
+        8739,
+        8121,
+        7497
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_HOU_IND",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 47,
+      "challenger_captures": 47,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8085106382978723,
+      "unknown_closes": 9,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    },
+    {
+      "game_id": "2026_03_NE_JAX",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 46,
+      "challenger_captures": 46,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.9130434782608695,
+      "unknown_closes": 4,
+      "unresolved_forecast_ids": [
+        9256
+      ],
+      "blockers": [
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_CIN_PIT",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 38,
+      "challenger_captures": 38,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.7368421052631579,
+      "unknown_closes": 10,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    },
+    {
+      "game_id": "2026_03_SEA_WAS",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 33,
+      "challenger_captures": 33,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.6666666666666666,
+      "unknown_closes": 11,
+      "unresolved_forecast_ids": [
+        9235,
+        8769,
+        8150
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_KC_MIA",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 28,
+      "challenger_captures": 28,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.7142857142857143,
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    },
+    {
+      "game_id": "2026_03_TEN_NYG",
+      "kickoff": "2026-09-27T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 42,
+      "challenger_captures": 42,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8333333333333334,
+      "unknown_closes": 7,
+      "unresolved_forecast_ids": [
+        8623,
+        9141
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_ARI_SF",
+      "kickoff": "2026-09-27T20:05:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 33,
+      "challenger_captures": 33,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8787878787878788,
+      "unknown_closes": 4,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    },
+    {
+      "game_id": "2026_03_MIN_TB",
+      "kickoff": "2026-09-27T20:05:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 47,
+      "challenger_captures": 47,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.7659574468085106,
+      "unknown_closes": 11,
+      "unresolved_forecast_ids": [
+        8622,
+        8007,
+        9425,
+        7382
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_BAL_DAL",
+      "kickoff": "2026-09-27T20:25:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 36,
+      "challenger_captures": 36,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.5833333333333334,
+      "unknown_closes": 15,
+      "unresolved_forecast_ids": [
+        7503
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_LV_NO",
+      "kickoff": "2026-09-27T20:25:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 36,
+      "challenger_captures": 36,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.7777777777777778,
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [
+        9530,
+        8765
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    },
+    {
+      "game_id": "2026_03_LA_DEN",
+      "kickoff": "2026-09-28T00:20:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 34,
+      "challenger_captures": 34,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.7941176470588235,
+      "unknown_closes": 7,
+      "unresolved_forecast_ids": [
+        8644,
+        9579
+      ],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent",
+        "final_result_or_participation_unresolved"
+      ]
+    }
+  ],
+  "blockers": [
+    "2026_03_LAC_BUF:valid_exact_close_coverage_below_90_percent",
+    "2026_03_CAR_CLE:valid_exact_close_coverage_below_90_percent",
+    "2026_03_CAR_CLE:final_result_or_participation_unresolved",
+    "2026_03_NYJ_DET:valid_exact_close_coverage_below_90_percent",
+    "2026_03_NYJ_DET:final_result_or_participation_unresolved",
+    "2026_03_HOU_IND:valid_exact_close_coverage_below_90_percent",
+    "2026_03_NE_JAX:final_result_or_participation_unresolved",
+    "2026_03_CIN_PIT:valid_exact_close_coverage_below_90_percent",
+    "2026_03_SEA_WAS:valid_exact_close_coverage_below_90_percent",
+    "2026_03_SEA_WAS:final_result_or_participation_unresolved",
+    "2026_03_KC_MIA:valid_exact_close_coverage_below_90_percent",
+    "2026_03_TEN_NYG:valid_exact_close_coverage_below_90_percent",
+    "2026_03_TEN_NYG:final_result_or_participation_unresolved",
+    "2026_03_ARI_SF:valid_exact_close_coverage_below_90_percent",
+    "2026_03_MIN_TB:valid_exact_close_coverage_below_90_percent",
+    "2026_03_MIN_TB:final_result_or_participation_unresolved",
+    "2026_03_BAL_DAL:valid_exact_close_coverage_below_90_percent",
+    "2026_03_BAL_DAL:final_result_or_participation_unresolved",
+    "2026_03_LV_NO:valid_exact_close_coverage_below_90_percent",
+    "2026_03_LV_NO:final_result_or_participation_unresolved",
+    "2026_03_LA_DEN:valid_exact_close_coverage_below_90_percent",
+    "2026_03_LA_DEN:final_result_or_participation_unresolved"
+  ],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval."
+}

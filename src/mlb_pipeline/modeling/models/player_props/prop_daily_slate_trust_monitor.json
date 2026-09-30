@@ -1,0 +1,104 @@
+{
+  "generated_at_utc": "2026-08-20T08:38:05Z",
+  "slate_date": "2026-08-20",
+  "status": "provisional",
+  "checks": [
+    {
+      "name": "all_games_finalized",
+      "passed": false,
+      "required": true,
+      "detail": "0/9 games final"
+    },
+    {
+      "name": "valid_close_coverage",
+      "passed": false,
+      "required": true,
+      "detail": "0.0% valid exact closes; required >= 90%"
+    },
+    {
+      "name": "stale_close_rate",
+      "passed": false,
+      "required": true,
+      "detail": "0.0% stale closes; required <= 2%"
+    },
+    {
+      "name": "targeted_close_captures",
+      "passed": false,
+      "required": true,
+      "detail": "0/0 events have T-120/T-60/T-20 captures"
+    },
+    {
+      "name": "hitter_anchor_settled_or_voided",
+      "passed": false,
+      "required": true,
+      "detail": "missing hitter anchor row"
+    },
+    {
+      "name": "pitcher_anchor_settled_or_voided",
+      "passed": false,
+      "required": true,
+      "detail": "missing pitcher anchor row"
+    },
+    {
+      "name": "frozen_hitter_artifact_valid",
+      "passed": true,
+      "required": true,
+      "detail": "sha256 matched"
+    }
+  ],
+  "required_failures": [
+    {
+      "name": "all_games_finalized",
+      "passed": false,
+      "required": true,
+      "detail": "0/9 games final"
+    },
+    {
+      "name": "valid_close_coverage",
+      "passed": false,
+      "required": true,
+      "detail": "0.0% valid exact closes; required >= 90%"
+    },
+    {
+      "name": "stale_close_rate",
+      "passed": false,
+      "required": true,
+      "detail": "0.0% stale closes; required <= 2%"
+    },
+    {
+      "name": "targeted_close_captures",
+      "passed": false,
+      "required": true,
+      "detail": "0/0 events have T-120/T-60/T-20 captures"
+    },
+    {
+      "name": "hitter_anchor_settled_or_voided",
+      "passed": false,
+      "required": true,
+      "detail": "missing hitter anchor row"
+    },
+    {
+      "name": "pitcher_anchor_settled_or_voided",
+      "passed": false,
+      "required": true,
+      "detail": "missing pitcher anchor row"
+    }
+  ],
+  "close_summary": {
+    "locked_offer_rows": 0,
+    "valid_closes": 0,
+    "valid_close_coverage": null,
+    "stale_close_rate": null,
+    "failure_reasons": {}
+  },
+  "checkpoint_summary": {
+    "status": "evaluation_ready_no_micro_buckets",
+    "hitter_completed_dates": 21,
+    "hitter_dates_remaining": 0,
+    "hitter_micro_ready_buckets": 0,
+    "pitcher_completed_dates": 23,
+    "pitcher_dates_remaining": 0,
+    "pitcher_micro_ready_buckets": 0
+  },
+  "decision": "wait_for_final_results_or_repair_failed_checks"
+}

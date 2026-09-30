@@ -1,0 +1,28 @@
+{
+  "day": "2026-09-24",
+  "built_at": "2026-09-27T00:06:44.690573+00:00",
+  "effective_date": "2026-09-24",
+  "status": "needs_attention",
+  "games": [
+    {
+      "game_id": "2026_03_ATL_GB",
+      "kickoff": "2026-09-25T00:15:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 36,
+      "challenger_captures": 36,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.5555555555555556,
+      "unknown_closes": 16,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    }
+  ],
+  "blockers": [
+    "2026_03_ATL_GB:valid_exact_close_coverage_below_90_percent"
+  ],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval."
+}

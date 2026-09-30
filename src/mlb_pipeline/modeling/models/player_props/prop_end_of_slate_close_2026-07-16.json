@@ -1,0 +1,318 @@
+{
+  "generated_at_utc": "2026-07-17T03:12:28Z",
+  "slate_date": "2026-07-16",
+  "evaluation_status": "final",
+  "games": 1,
+  "final_games": 1,
+  "statuses": {
+    "final": 1
+  },
+  "slate_final": true,
+  "locked_offer_rows": 178,
+  "valid_closes": 0,
+  "valid_close_coverage": 0.0,
+  "valid_closes_needed_for_90": 161,
+  "stale_close_rate": 0.0,
+  "strict_clean_slate": false,
+  "failure_reasons": {
+    "close_outside_two_hour_window": 176,
+    "no_valid_close_snapshot": 2
+  },
+  "target_capture": {
+    "events": 1,
+    "all_targets_captured_events": 0,
+    "required_target_misses": {
+      "events_with_misses": 1,
+      "by_window": {
+        "t_minus_120": 1,
+        "t_minus_60": 0,
+        "t_minus_20": 0
+      },
+      "missed_events": [
+        {
+          "event_id": "7ad2e88701ead09625333188a5b653b2",
+          "event": "NYM @ PHI",
+          "commence_time_utc": "2026-07-16T23:11:00+00:00",
+          "missing_windows": [
+            "t_minus_120"
+          ],
+          "close_observations": 29
+        }
+      ]
+    },
+    "rows": [
+      {
+        "event_id": "7ad2e88701ead09625333188a5b653b2",
+        "event": "NYM @ PHI",
+        "commence_time_utc": "2026-07-16T23:11:00+00:00",
+        "close_observations": 29,
+        "targets": {
+          "t_minus_120": {
+            "captured": false,
+            "nearest_minutes": null
+          },
+          "t_minus_60": {
+            "captured": true,
+            "nearest_minutes": 4.726328016666667
+          },
+          "t_minus_20": {
+            "captured": true,
+            "nearest_minutes": 5.483449516666667
+          }
+        },
+        "all_targets_captured": false
+      }
+    ]
+  },
+  "outside_window_diagnostic": {
+    "rows": 176,
+    "reason_counts": {
+      "event_close_window_captured_but_exact_offer_unmatched": 176
+    },
+    "by_book_market": [
+      {
+        "bookmaker_key": "fanduel",
+        "market": "batter_total_bases",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 60
+      },
+      {
+        "bookmaker_key": "draftkings",
+        "market": "batter_hits",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 32
+      },
+      {
+        "bookmaker_key": "fanduel",
+        "market": "batter_hits",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 30
+      },
+      {
+        "bookmaker_key": "fanduel",
+        "market": "batter_home_runs",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 30
+      },
+      {
+        "bookmaker_key": "draftkings",
+        "market": "batter_total_bases",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 20
+      },
+      {
+        "bookmaker_key": "draftkings",
+        "market": "pitcher_strikeouts",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 2
+      },
+      {
+        "bookmaker_key": "fanduel",
+        "market": "pitcher_strikeouts",
+        "diagnostic": "event_close_window_captured_but_exact_offer_unmatched",
+        "rows": 2
+      }
+    ]
+  },
+  "action_plan": [
+    {
+      "area": "coverage_gap_to_90",
+      "rows": 161,
+      "diagnosis": "additional valid exact closes needed for this slate to clear the clean-promotion threshold",
+      "next_action": "supplemental T-90/T-45/T-30/T-10 captures are enabled; keep the targeted-close task running through every game start"
+    },
+    {
+      "area": "required_target_windows",
+      "rows": 1,
+      "diagnosis": "events missing at least one required T-120/T-60/T-20 capture",
+      "next_action": "verify Task Scheduler history and mutex skips for those event windows"
+    },
+    {
+      "area": "close_outside_two_hour_window",
+      "rows": 176,
+      "diagnosis": "close was captured too early or after first pitch",
+      "next_action": "scheduler timing problem; targeted captures should reduce this"
+    }
+  ],
+  "by_event": [
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "game_slug": "20260716-NYM-PHI",
+      "rows": 178,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 178,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 176,
+        "no_valid_close_snapshot": 2
+      }
+    }
+  ],
+  "by_book": [
+    {
+      "bookmaker_key": "fanduel",
+      "rows": 122,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 122,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 122
+      }
+    },
+    {
+      "bookmaker_key": "draftkings",
+      "rows": 56,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 56,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 54,
+        "no_valid_close_snapshot": 2
+      }
+    }
+  ],
+  "by_market": [
+    {
+      "market": "batter_total_bases",
+      "rows": 80,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 80,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 80
+      }
+    },
+    {
+      "market": "batter_hits",
+      "rows": 62,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 62,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 62
+      }
+    },
+    {
+      "market": "batter_home_runs",
+      "rows": 30,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 30,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 30
+      }
+    },
+    {
+      "market": "pitcher_strikeouts",
+      "rows": 6,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 6,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 4,
+        "no_valid_close_snapshot": 2
+      }
+    }
+  ],
+  "by_event_book_market": [
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "fanduel",
+      "market": "batter_total_bases",
+      "rows": 60,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 60,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 60
+      }
+    },
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "draftkings",
+      "market": "batter_hits",
+      "rows": 32,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 32,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 32
+      }
+    },
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "fanduel",
+      "market": "batter_hits",
+      "rows": 30,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 30,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 30
+      }
+    },
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "fanduel",
+      "market": "batter_home_runs",
+      "rows": 30,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 30,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 30
+      }
+    },
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "draftkings",
+      "market": "batter_total_bases",
+      "rows": 20,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 20,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 20
+      }
+    },
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "draftkings",
+      "market": "pitcher_strikeouts",
+      "rows": 4,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 4,
+      "failure_reasons": {
+        "no_valid_close_snapshot": 2,
+        "close_outside_two_hour_window": 2
+      }
+    },
+    {
+      "event_id": "7ad2e88701ead09625333188a5b653b2",
+      "bookmaker_key": "fanduel",
+      "market": "pitcher_strikeouts",
+      "rows": 2,
+      "valid_closes": 0,
+      "valid_close_coverage": 0.0,
+      "stale_close_rate": 0.0,
+      "failed_rows": 2,
+      "failure_reasons": {
+        "close_outside_two_hour_window": 2
+      }
+    }
+  ]
+}

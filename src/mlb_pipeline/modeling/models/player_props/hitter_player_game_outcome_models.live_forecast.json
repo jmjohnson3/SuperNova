@@ -1,0 +1,13 @@
+{
+  "model_release_id": "hitter-pg-2026-07-06-r2",
+  "artifact_role": "live_forecast_frozen",
+  "live_forecast_frozen_at_utc": "2026-07-16T00:09:44Z",
+  "source_artifact": "hitter_player_game_outcome_models.challenger.joblib",
+  "accepted_heads": [
+    "hits",
+    "hr"
+  ],
+  "sha256": "23126fb05cfc08067c6d8cf8d74e63e7d3fe42d3cc743f6a21891cb6574f06cb",
+  "usage": "live_forecast_scoring_only",
+  "betting_promotion": "separate_exact_bucket_micro_gates_required"
+}

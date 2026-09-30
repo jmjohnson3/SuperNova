@@ -1,0 +1,2809 @@
+{
+  "model_version": "mlb_ai_bet_selection_v2_20260826T094535Z",
+  "generated_at_utc": "2026-08-26T09:45:35.166701+00:00",
+  "lookback_days": 120,
+  "include_gbm": false,
+  "max_rows": 12000,
+  "max_market_families": 8,
+  "serious_true_pairs_only": true,
+  "raw_rows": 295467,
+  "rows": 12000,
+  "deduped_rows_removed": 283467,
+  "numeric_features": [
+    "model_prob_side",
+    "market_prob_side",
+    "raw_market_prob",
+    "no_vig_market_prob",
+    "prob_edge_vs_market",
+    "model_market_gap_abs",
+    "model_market_gap_signed",
+    "market_price_prob_gap",
+    "no_vig_prob_gap",
+    "market_line",
+    "market_price",
+    "price_implied_prob",
+    "paired_price",
+    "paired_price_implied_prob",
+    "pred_value",
+    "pred_count",
+    "count_edge_side",
+    "abs_count_edge_side",
+    "ev",
+    "model_confidence",
+    "plus_money_flag",
+    "favorite_price_flag",
+    "book_is_fanduel",
+    "book_is_draftkings",
+    "line_tb15_flag",
+    "line_hits05_flag",
+    "line_hr05_flag",
+    "line_k_common_flag",
+    "same_book_pair_flag",
+    "cross_book_pair_flag",
+    "synthetic_pair_flag",
+    "clean_market_pair_flag",
+    "true_pair_flag",
+    "minutes_to_first_pitch_at_lock",
+    "lock_price_age_minutes",
+    "confirmed_batting_order",
+    "projected_pa",
+    "pa_low_probability",
+    "pa_normal_mean",
+    "pa_games",
+    "projected_ip",
+    "projected_bf",
+    "projected_pitch_count",
+    "pitcher_starts",
+    "is_home",
+    "team_implied_runs",
+    "opponent_implied_runs",
+    "game_total_line",
+    "opp_sp_k_pct_10",
+    "opp_sp_bb_pct",
+    "opp_sp_xwoba",
+    "opp_sp_hard_hit_pct",
+    "opp_sp_whiff_pct",
+    "opp_bp_era_10",
+    "opp_bp_whip_10",
+    "opp_bp_k9_10",
+    "opp_bp_ip_last_3",
+    "opp_bp_ip_last_7",
+    "opp_team_k_pct_10",
+    "opp_team_avg_10",
+    "opp_team_obp_10",
+    "opp_team_slg_10",
+    "batter_vs_hand_hits_avg_10",
+    "batter_vs_hand_tb_avg_10",
+    "batter_vs_hand_hr_avg_10",
+    "batter_vs_hand_iso_avg_10",
+    "batter_vs_hand_k_rate_10",
+    "batter_vs_hand_games_10",
+    "batter_vs_rp_ba_30",
+    "batter_vs_rp_slg_30",
+    "batter_vs_rp_hr_rate_30",
+    "batter_vs_rp_k_rate_30",
+    "pinch_hit_risk",
+    "clv_beat_prob",
+    "expected_clv_price",
+    "residual_clv_beat_prob",
+    "event_side_line_clv_beat_prob",
+    "bookable_prob",
+    "line_available_prob",
+    "close_capture_prob",
+    "bucket_roi",
+    "bucket_clv_beat_rate",
+    "bucket_avg_clv",
+    "micro_clv_beat_prob",
+    "exact_bucket_clv_beat_prob",
+    "exact_bucket_avg_clv",
+    "micro_truth_filter_roi",
+    "micro_truth_filter_graded",
+    "micro_truth_filter_clv_beat_rate",
+    "micro_truth_filter_avg_clv",
+    "external_agreement_count",
+    "external_disagreement_count",
+    "external_agreement_strength"
+  ],
+  "categorical_features": [
+    "market",
+    "side",
+    "bookmaker_key",
+    "source",
+    "paired_bookmaker_key",
+    "paired_price_source",
+    "pair_quality",
+    "market_prob_source",
+    "ai_market_family",
+    "book_market_side",
+    "clean_evidence_tier",
+    "fanduel_evidence_tier",
+    "price_bucket",
+    "line_bucket",
+    "line_surface",
+    "model_family",
+    "edge_type",
+    "confirmed_lineup_source",
+    "team_abbr",
+    "opponent_abbr",
+    "opp_sp_hand",
+    "external_match_level",
+    "clv_status",
+    "clv_unknown_reason"
+  ],
+  "good_bet": {
+    "status": "enabled",
+    "enabled": true,
+    "rows": 4936,
+    "dates": 6,
+    "positive_rate": 0.21657212317666127,
+    "target": "target_good_bet",
+    "selected_model": "regularized_logistic",
+    "split_strategy": "temporal_row_80_20_player_game_purged_0",
+    "folds": [
+      {
+        "fold_index": 1,
+        "train_rows": 3560,
+        "holdout_rows": 1376,
+        "train_start": "None",
+        "train_end": "None",
+        "holdout_start": "None",
+        "holdout_end": "None",
+        "purged_rows": 0
+      }
+    ],
+    "grouping": {
+      "rows": 4936,
+      "player_games": 970,
+      "max_rows_per_player_game": 11,
+      "mean_rows_per_player_game": 5.088659793814433,
+      "effective_weight": 4971.190590271249
+    },
+    "baseline_best": {
+      "name": "market_prob_side",
+      "brier": 0.23545608343688515
+    },
+    "model_best": {
+      "name": "regularized_logistic",
+      "brier": 0.15995716930647483
+    },
+    "brier_gain": 0.07549891413041032,
+    "calibration_bins": [
+      {
+        "left": 0.0,
+        "right": 0.16666666666666666,
+        "rows": 584,
+        "weight": 583.4103017537536,
+        "predicted": 0.0695470494370058,
+        "actual": 0.08686813107253008
+      },
+      {
+        "left": 0.16666666666666666,
+        "right": 0.3333333333333333,
+        "rows": 517,
+        "weight": 504.0323943186042,
+        "predicted": 0.24190855897363966,
+        "actual": 0.27369409030470293
+      },
+      {
+        "left": 0.3333333333333333,
+        "right": 0.5,
+        "rows": 202,
+        "weight": 203.06315540487265,
+        "predicted": 0.3980784145123251,
+        "actual": 0.3037582891200706
+      },
+      {
+        "left": 0.5,
+        "right": 0.6666666666666666,
+        "rows": 56,
+        "weight": 58.73328752773679,
+        "predicted": 0.5618028707513668,
+        "actual": 0.3544799018103713
+      },
+      {
+        "left": 0.6666666666666666,
+        "right": 0.8333333333333333,
+        "rows": 16,
+        "weight": 20.121422376409367,
+        "predicted": 0.7611550325016171,
+        "actual": 0.14655172413793105
+      },
+      {
+        "left": 0.8333333333333333,
+        "right": 1.0,
+        "rows": 1,
+        "weight": 2.6019080659150045,
+        "predicted": 0.8423203189760947,
+        "actual": 0.0
+      }
+    ],
+    "metrics": {
+      "model_prob_side": {
+        "rows": 1376,
+        "positive_rate": 0.19977307843243503,
+        "brier": 0.25607171340482104,
+        "log_loss": 0.7145353864934921,
+        "auc": 0.5818313570487483,
+        "calibration_error": 0.29999391363352,
+        "selection": null
+      },
+      "market_prob_side": {
+        "rows": 1376,
+        "positive_rate": 0.19977307843243503,
+        "brier": 0.23545608343688515,
+        "log_loss": 0.6631408229026035,
+        "auc": 0.6100428194993412,
+        "calibration_error": 0.27698501673930026,
+        "selection": null
+      },
+      "model_market_blend": {
+        "rows": 1376,
+        "positive_rate": 0.19977307843243503,
+        "brier": 0.2456899994696273,
+        "log_loss": 0.6845765704474385,
+        "auc": 0.5973418972332016,
+        "calibration_error": 0.2896471175822565,
+        "selection": null
+      },
+      "regularized_logistic": {
+        "rows": 1376,
+        "positive_rate": 0.19977307843243503,
+        "brier": 0.15995716930647483,
+        "log_loss": 0.4778063421430225,
+        "auc": 0.681340579710145,
+        "calibration_error": 0.06011424051706471,
+        "selection": null
+      }
+    }
+  },
+  "win": {
+    "status": "shadow_brier_not_better",
+    "enabled": false,
+    "rows": 5755,
+    "dates": 6,
+    "positive_rate": 0.4898349261511729,
+    "target": "target_win",
+    "selected_model": "regularized_logistic",
+    "split_strategy": "temporal_row_80_20_player_game_purged_0",
+    "folds": [
+      {
+        "fold_index": 1,
+        "train_rows": 5029,
+        "holdout_rows": 726,
+        "train_start": "None",
+        "train_end": "None",
+        "holdout_start": "None",
+        "holdout_end": "None",
+        "purged_rows": 0
+      }
+    ],
+    "grouping": {
+      "rows": 5755,
+      "player_games": 1104,
+      "max_rows_per_player_game": 13,
+      "mean_rows_per_player_game": 5.21286231884058,
+      "effective_weight": 5886.014188182445
+    },
+    "baseline_best": {
+      "name": "market_prob_side",
+      "brier": 0.24556598212228728
+    },
+    "model_best": {
+      "name": "regularized_logistic",
+      "brier": 0.2516047689831343
+    },
+    "brier_gain": -0.006038786860846995,
+    "calibration_bins": [
+      {
+        "left": 0.16666666666666666,
+        "right": 0.3333333333333333,
+        "rows": 85,
+        "weight": 77.75650195424696,
+        "predicted": 0.28171516051249307,
+        "actual": 0.406168064548839
+      },
+      {
+        "left": 0.3333333333333333,
+        "right": 0.5,
+        "rows": 238,
+        "weight": 244.0387019745216,
+        "predicted": 0.4260873558892269,
+        "actual": 0.3787685774946921
+      },
+      {
+        "left": 0.5,
+        "right": 0.6666666666666666,
+        "rows": 239,
+        "weight": 243.8077967132607,
+        "predicted": 0.5771148225478088,
+        "actual": 0.5417985262525699
+      },
+      {
+        "left": 0.6666666666666666,
+        "right": 0.8333333333333333,
+        "rows": 145,
+        "weight": 138.59496964440586,
+        "predicted": 0.7331719840931147,
+        "actual": 0.5733953155730378
+      },
+      {
+        "left": 0.8333333333333333,
+        "right": 1.0,
+        "rows": 19,
+        "weight": 16.602651468219552,
+        "predicted": 0.8708962354354884,
+        "actual": 0.44776119402985065
+      }
+    ],
+    "metrics": {
+      "model_prob_side": {
+        "rows": 726,
+        "positive_rate": 0.47588032515853196,
+        "brier": 0.2507541508082084,
+        "log_loss": 0.6952531817064082,
+        "auc": 0.5651789996117806,
+        "calibration_error": 0.08802271953045157,
+        "selection": {
+          "selected": 82,
+          "roi": -0.18460365853658536,
+          "win_rate": 0.4024390243902439,
+          "avg_ev": 0.002462396724776837
+        }
+      },
+      "market_prob_side": {
+        "rows": 726,
+        "positive_rate": 0.47588032515853196,
+        "brier": 0.24556598212228728,
+        "log_loss": 0.6842800253207146,
+        "auc": 0.581940944971797,
+        "calibration_error": 0.059118551194753136,
+        "selection": {
+          "selected": 19,
+          "roi": 0.29473684210526313,
+          "win_rate": 0.3684210526315789,
+          "avg_ev": 0.16548656032787137
+        }
+      },
+      "model_market_blend": {
+        "rows": 726,
+        "positive_rate": 0.47588032515853196,
+        "brier": 0.24800436964229555,
+        "log_loss": 0.6892871716833328,
+        "auc": 0.5744239508559859,
+        "calibration_error": 0.06192549922401651,
+        "selection": {
+          "selected": 19,
+          "roi": 0.29473684210526313,
+          "win_rate": 0.3684210526315789,
+          "avg_ev": 0.07594945566195115
+        }
+      },
+      "regularized_logistic": {
+        "rows": 726,
+        "positive_rate": 0.47588032515853196,
+        "brier": 0.2516047689831343,
+        "log_loss": 0.7026275282575724,
+        "auc": 0.5926664586013444,
+        "calibration_error": 0.06923730428491352,
+        "selection": {
+          "selected": 341,
+          "roi": -0.022747507331378293,
+          "win_rate": 0.5043988269794721,
+          "avg_ev": 0.20926633605874764
+        }
+      }
+    }
+  },
+  "clv": {
+    "status": "enabled",
+    "enabled": true,
+    "rows": 4936,
+    "dates": 6,
+    "positive_rate": 0.4228119935170178,
+    "target": "target_clv",
+    "selected_model": "regularized_logistic",
+    "split_strategy": "temporal_row_80_20_player_game_purged_0",
+    "folds": [
+      {
+        "fold_index": 1,
+        "train_rows": 3560,
+        "holdout_rows": 1376,
+        "train_start": "None",
+        "train_end": "None",
+        "holdout_start": "None",
+        "holdout_end": "None",
+        "purged_rows": 0
+      }
+    ],
+    "grouping": {
+      "rows": 4936,
+      "player_games": 970,
+      "max_rows_per_player_game": 11,
+      "mean_rows_per_player_game": 5.088659793814433,
+      "effective_weight": 4971.190590271249
+    },
+    "baseline_best": {
+      "name": "global_mean",
+      "brier": 0.24443760033638437
+    },
+    "model_best": {
+      "name": "regularized_logistic",
+      "brier": 0.22155963499867773
+    },
+    "brier_gain": 0.02287796533770664,
+    "calibration_bins": [
+      {
+        "left": 0.0,
+        "right": 0.16666666666666666,
+        "rows": 228,
+        "weight": 226.73094468411034,
+        "predicted": 0.013790426311114254,
+        "actual": 0.019126253142170157
+      },
+      {
+        "left": 0.16666666666666666,
+        "right": 0.3333333333333333,
+        "rows": 213,
+        "weight": 219.04630495263626,
+        "predicted": 0.2675306478858455,
+        "actual": 0.39769066418472626
+      },
+      {
+        "left": 0.3333333333333333,
+        "right": 0.5,
+        "rows": 442,
+        "weight": 436.327592615537,
+        "predicted": 0.41739897567579215,
+        "actual": 0.5141129032258065
+      },
+      {
+        "left": 0.5,
+        "right": 0.6666666666666666,
+        "rows": 349,
+        "weight": 349.3055946655253,
+        "predicted": 0.5723439937276132,
+        "actual": 0.5530106379205267
+      },
+      {
+        "left": 0.6666666666666666,
+        "right": 0.8333333333333333,
+        "rows": 138,
+        "weight": 134.2578930176502,
+        "predicted": 0.7360680303275685,
+        "actual": 0.528941948311807
+      },
+      {
+        "left": 0.8333333333333333,
+        "right": 1.0,
+        "rows": 6,
+        "weight": 6.294139511832486,
+        "predicted": 0.850976791977535,
+        "actual": 0.578740157480315
+      }
+    ],
+    "metrics": {
+      "global_mean": {
+        "rows": 1376,
+        "positive_rate": 0.42537449447555997,
+        "brier": 0.24443760033638437,
+        "log_loss": 0.6819809705617561,
+        "auc": 0.5,
+        "calibration_error": 0.0025625009585421576,
+        "selection": null
+      },
+      "regularized_logistic": {
+        "rows": 1376,
+        "positive_rate": 0.42537449447555997,
+        "brier": 0.22155963499867773,
+        "log_loss": 0.6112327461896769,
+        "auc": 0.6790788881970389,
+        "calibration_error": 0.08120229963892715,
+        "selection": null
+      }
+    }
+  },
+  "line_available": {
+    "status": "enabled",
+    "enabled": true,
+    "rows": 5317,
+    "dates": 6,
+    "positive_rate": 0.9283430505924394,
+    "target": "target_line_available_at_close",
+    "selected_model": "regularized_logistic",
+    "split_strategy": "temporal_row_80_20_player_game_purged_0",
+    "folds": [
+      {
+        "fold_index": 1,
+        "train_rows": 3840,
+        "holdout_rows": 1477,
+        "train_start": "None",
+        "train_end": "None",
+        "holdout_start": "None",
+        "holdout_end": "None",
+        "purged_rows": 0
+      }
+    ],
+    "grouping": {
+      "rows": 5317,
+      "player_games": 1024,
+      "max_rows_per_player_game": 13,
+      "mean_rows_per_player_game": 5.1923828125,
+      "effective_weight": 5447.393312094093
+    },
+    "baseline_best": {
+      "name": "global_mean",
+      "brier": 0.07361442100560163
+    },
+    "model_best": {
+      "name": "regularized_logistic",
+      "brier": 5.726315106853477e-05
+    },
+    "brier_gain": 0.0735571578545331,
+    "calibration_bins": [
+      {
+        "left": 0.0,
+        "right": 0.16666666666666666,
+        "rows": 101,
+        "weight": 119.19667496423784,
+        "predicted": 0.02035873401318871,
+        "actual": 0.0
+      },
+      {
+        "left": 0.8333333333333333,
+        "right": 1.0,
+        "rows": 1376,
+        "weight": 1371.9624694472916,
+        "predicted": 0.9984263953321364,
+        "actual": 1.0
+      }
+    ],
+    "metrics": {
+      "global_mean": {
+        "rows": 1477,
+        "positive_rate": 0.9200644173957184,
+        "brier": 0.07361442100560163,
+        "log_loss": 0.279109837275804,
+        "auc": 0.5,
+        "calibration_error": 0.008278633196721175,
+        "selection": null
+      },
+      "regularized_logistic": {
+        "rows": 1477,
+        "positive_rate": 0.9200644173957184,
+        "brier": 5.726315106853477e-05,
+        "log_loss": 0.0031046029685762736,
+        "auc": 1.0,
+        "calibration_error": 0.003075204926378956,
+        "selection": null
+      }
+    }
+  },
+  "daily_rank": {
+    "status": "enabled",
+    "enabled": true,
+    "rows": 5755,
+    "dates": 6,
+    "positive_rate": 0.2217202432667246,
+    "target": "target_daily_top_pick",
+    "selected_model": "regularized_logistic",
+    "split_strategy": "temporal_row_80_20_player_game_purged_0",
+    "folds": [
+      {
+        "fold_index": 1,
+        "train_rows": 5029,
+        "holdout_rows": 726,
+        "train_start": "None",
+        "train_end": "None",
+        "holdout_start": "None",
+        "holdout_end": "None",
+        "purged_rows": 0
+      }
+    ],
+    "grouping": {
+      "rows": 5755,
+      "player_games": 1104,
+      "max_rows_per_player_game": 13,
+      "mean_rows_per_player_game": 5.21286231884058,
+      "effective_weight": 5886.014188182445
+    },
+    "baseline_best": {
+      "name": "market_prob_side",
+      "brier": 0.2919459237736707
+    },
+    "model_best": {
+      "name": "regularized_logistic",
+      "brier": 0.1500910304338076
+    },
+    "brier_gain": 0.1418548933398631,
+    "calibration_bins": [
+      {
+        "left": 0.0,
+        "right": 0.16666666666666666,
+        "rows": 380,
+        "weight": 373.5810590103738,
+        "predicted": 0.0504871057344368,
+        "actual": 0.07483364438642141
+      },
+      {
+        "left": 0.16666666666666666,
+        "right": 0.3333333333333333,
+        "rows": 181,
+        "weight": 184.52146292562594,
+        "predicted": 0.25071053148744693,
+        "actual": 0.3208277377609572
+      },
+      {
+        "left": 0.3333333333333333,
+        "right": 0.5,
+        "rows": 121,
+        "weight": 117.34605377276668,
+        "predicted": 0.4040135071938508,
+        "actual": 0.4161123429416113
+      },
+      {
+        "left": 0.5,
+        "right": 0.6666666666666666,
+        "rows": 36,
+        "weight": 37.02143476644778,
+        "predicted": 0.5762339586786905,
+        "actual": 0.44779116465863444
+      },
+      {
+        "left": 0.6666666666666666,
+        "right": 0.8333333333333333,
+        "rows": 7,
+        "weight": 7.587208974893276,
+        "predicted": 0.7068312832915087,
+        "actual": 0.4970308788598576
+      },
+      {
+        "left": 0.8333333333333333,
+        "right": 1.0,
+        "rows": 1,
+        "weight": 0.7434023045471441,
+        "predicted": 0.8622163958532252,
+        "actual": 1.0
+      }
+    ],
+    "metrics": {
+      "model_prob_side": {
+        "rows": 726,
+        "positive_rate": 0.21792091059390503,
+        "brier": 0.30703212853716166,
+        "log_loss": 0.8117348492540354,
+        "auc": 0.22562415654520918,
+        "calibration_error": 0.3238350226742133,
+        "selection": null
+      },
+      "market_prob_side": {
+        "rows": 726,
+        "positive_rate": 0.21792091059390503,
+        "brier": 0.2919459237736707,
+        "log_loss": 0.7792534945238495,
+        "auc": 0.23268668466036888,
+        "calibration_error": 0.2971046567464357,
+        "selection": null
+      },
+      "model_market_blend": {
+        "rows": 726,
+        "positive_rate": 0.21792091059390503,
+        "brier": 0.2998282311363424,
+        "log_loss": 0.7957876360159767,
+        "auc": 0.2270973909131804,
+        "calibration_error": 0.31261834878134664,
+        "selection": null
+      },
+      "regularized_logistic": {
+        "rows": 726,
+        "positive_rate": 0.21792091059390503,
+        "brier": 0.1500910304338076,
+        "log_loss": 0.4516828808904506,
+        "auc": 0.7760121457489879,
+        "calibration_error": 0.05465152283460653,
+        "selection": null
+      }
+    }
+  },
+  "market_families": {
+    "draftkings|pitcher_strikeouts|under|k_low": {
+      "rows": 27,
+      "dates": 6,
+      "book": "draftkings",
+      "clean_evidence": {
+        "true_same_book_pair": 27
+      },
+      "enabled": false,
+      "enabled_targets": [],
+      "targets": {
+        "target_good_bet": {
+          "status": "insufficient_rows",
+          "rows": 15,
+          "positive_rate": 0.26666666666666666,
+          "enabled": false
+        },
+        "target_win": {
+          "status": "insufficient_rows",
+          "rows": 27,
+          "positive_rate": 0.5925925925925926,
+          "enabled": false
+        },
+        "target_clv": {
+          "status": "insufficient_rows",
+          "rows": 15,
+          "positive_rate": 0.5333333333333333,
+          "enabled": false
+        },
+        "target_line_available_at_close": {
+          "status": "insufficient_rows",
+          "rows": 26,
+          "positive_rate": 0.5769230769230769,
+          "enabled": false
+        }
+      }
+    },
+    "draftkings|pitcher_strikeouts|under|k_common": {
+      "rows": 75,
+      "dates": 6,
+      "book": "draftkings",
+      "clean_evidence": {
+        "true_same_book_pair": 75
+      },
+      "enabled": false,
+      "enabled_targets": [],
+      "targets": {
+        "target_good_bet": {
+          "status": "insufficient_rows",
+          "rows": 61,
+          "positive_rate": 0.22950819672131148,
+          "enabled": false
+        },
+        "target_win": {
+          "status": "insufficient_rows",
+          "rows": 75,
+          "positive_rate": 0.5066666666666667,
+          "enabled": false
+        },
+        "target_clv": {
+          "status": "insufficient_rows",
+          "rows": 61,
+          "positive_rate": 0.4098360655737705,
+          "enabled": false
+        },
+        "target_line_available_at_close": {
+          "status": "insufficient_rows",
+          "rows": 70,
+          "positive_rate": 0.8714285714285714,
+          "enabled": false
+        }
+      }
+    },
+    "draftkings|batter_total_bases|over|tb_1.5": {
+      "rows": 527,
+      "dates": 6,
+      "book": "draftkings",
+      "clean_evidence": {
+        "true_same_book_pair": 527
+      },
+      "enabled": true,
+      "enabled_targets": [
+        "target_good_bet",
+        "target_line_available_at_close"
+      ],
+      "targets": {
+        "target_good_bet": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 423,
+          "dates": 6,
+          "positive_rate": 0.2127659574468085,
+          "target": "target_good_bet",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 312,
+              "holdout_rows": 111,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 423,
+            "player_games": 423,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 366.70094866105273
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.2088824087979937
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.16544693397448815
+          },
+          "brier_gain": 0.04343547482350554,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 69,
+              "weight": 56.65345062569694,
+              "predicted": 0.06575771222228372,
+              "actual": 0.15965008201202843
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 36,
+              "weight": 30.014868046090946,
+              "predicted": 0.23015813488699963,
+              "actual": 0.23116615067079463
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 2,
+              "weight": 1.7346053772766696,
+              "predicted": 0.4106999395955877,
+              "actual": 0.0
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 3,
+              "weight": 2.6019080659150045,
+              "predicted": 0.6074521573000362,
+              "actual": 0.3333333333333333
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 1,
+              "weight": 0.8673026886383348,
+              "predicted": 0.741305335110383,
+              "actual": 0.0
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 111,
+              "positive_rate": 0.18341200269723534,
+              "brier": 0.2088837397471342,
+              "log_loss": 0.6101015634835208,
+              "auc": 0.5282967032967033,
+              "calibration_error": 0.24249120026972365,
+              "selection": null
+            },
+            "market_prob_side": {
+              "rows": 111,
+              "positive_rate": 0.18341200269723534,
+              "brier": 0.2088824087979937,
+              "log_loss": 0.6100988431457683,
+              "auc": 0.5282967032967033,
+              "calibration_error": 0.2424934991566484,
+              "selection": null
+            },
+            "model_market_blend": {
+              "rows": 111,
+              "positive_rate": 0.18341200269723534,
+              "brier": 0.2088831406327817,
+              "log_loss": 0.6101003390014045,
+              "auc": 0.5282967032967033,
+              "calibration_error": 0.24249223476883972,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 111,
+              "positive_rate": 0.18341200269723534,
+              "brier": 0.16544693397448815,
+              "log_loss": 0.5361332724974991,
+              "auc": 0.5598901098901099,
+              "calibration_error": 0.12578976531076713,
+              "selection": null
+            }
+          }
+        },
+        "target_win": {
+          "status": "shadow_brier_not_better",
+          "enabled": false,
+          "rows": 527,
+          "dates": 6,
+          "positive_rate": 0.40417457305502846,
+          "target": "target_win",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 452,
+              "holdout_rows": 75,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 527,
+            "player_games": 527,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 463.5009396501157
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.233666186105701
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.26588474092490266
+          },
+          "brier_gain": -0.03221855481920166,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 6,
+              "weight": 5.079915747738818,
+              "predicted": 0.09733604974050149,
+              "actual": 0.34146341463414637
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 15,
+              "weight": 12.637839177301448,
+              "predicted": 0.27449085205032375,
+              "actual": 0.3235294117647059
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 26,
+              "weight": 21.558666831867182,
+              "predicted": 0.4163754600069109,
+              "actual": 0.2701149425287355
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 18,
+              "weight": 15.487548011398836,
+              "predicted": 0.5940209494664103,
+              "actual": 0.448
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 10,
+              "weight": 8.425226118200966,
+              "predicted": 0.7344506391399883,
+              "actual": 0.29411764705882354
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 75,
+              "positive_rate": 0.3333333333333334,
+              "brier": 0.2336691749215687,
+              "log_loss": 0.6603518054442947,
+              "auc": 0.4384,
+              "calibration_error": 0.14848686274509812,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "market_prob_side": {
+              "rows": 75,
+              "positive_rate": 0.3333333333333334,
+              "brier": 0.233666186105701,
+              "log_loss": 0.6603457137650929,
+              "auc": 0.4384,
+              "calibration_error": 0.14848694946847021,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "model_market_blend": {
+              "rows": 75,
+              "positive_rate": 0.3333333333333334,
+              "brier": 0.23366782975413522,
+              "log_loss": 0.6603490637879055,
+              "auc": 0.4384,
+              "calibration_error": 0.14848690177061558,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "regularized_logistic": {
+              "rows": 75,
+              "positive_rate": 0.3333333333333334,
+              "brier": 0.26588474092490266,
+              "log_loss": 0.7399147342528446,
+              "auc": 0.5184000000000001,
+              "calibration_error": 0.2022964151065918,
+              "selection": {
+                "selected": 36,
+                "roi": -0.21481666666666666,
+                "win_rate": 0.3611111111111111,
+                "avg_ev": 0.3061549397749465
+              }
+            }
+          }
+        },
+        "target_clv": {
+          "status": "shadow_brier_not_better",
+          "enabled": false,
+          "rows": 423,
+          "dates": 6,
+          "positive_rate": 0.48936170212765956,
+          "target": "target_clv",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 312,
+              "holdout_rows": 111,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 423,
+            "player_games": 423,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 366.70094866105273
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.25001991790465483
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.29456373877884834
+          },
+          "brier_gain": -0.04454382087419351,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 40,
+              "weight": 32.98847726427952,
+              "predicted": 0.06931099632658114,
+              "actual": 0.3802816901408451
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 24,
+              "weight": 19.70016107049932,
+              "predicted": 0.2483696286149104,
+              "actual": 0.4591194968553459
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 18,
+              "weight": 14.991946475034073,
+              "predicted": 0.414113819852495,
+              "actual": 0.6611570247933884
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 11,
+              "weight": 8.827902366497336,
+              "predicted": 0.5724574952249296,
+              "actual": 0.4385964912280702
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 7,
+              "weight": 5.823318052285961,
+              "predicted": 0.7461149918771983,
+              "actual": 0.5531914893617023
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 11,
+              "weight": 9.540329575021682,
+              "predicted": 0.9350888305060455,
+              "actual": 0.7272727272727272
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 111,
+              "positive_rate": 0.49561699258260294,
+              "brier": 0.25001991790465483,
+              "log_loss": 0.6931870394658319,
+              "auc": 0.5,
+              "calibration_error": 0.006255290454943163,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 111,
+              "positive_rate": 0.49561699258260294,
+              "brier": 0.29456373877884834,
+              "log_loss": 0.8683373549211727,
+              "auc": 0.6376623376623376,
+              "calibration_error": 0.253421717824412,
+              "selection": null
+            }
+          }
+        },
+        "target_line_available_at_close": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 437,
+          "dates": 6,
+          "positive_rate": 0.9679633867276888,
+          "target": "target_line_available_at_close",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 322,
+              "holdout_rows": 115,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 437,
+            "player_games": 437,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 382.31239705654275
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.03508215960847889
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.014999993808153037
+          },
+          "brier_gain": 0.02008216580032585,
+          "calibration_bins": [
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 2,
+              "weight": 1.7346053772766696,
+              "predicted": 0.5584331963479992,
+              "actual": 0.0
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 3,
+              "weight": 2.6019080659150045,
+              "predicted": 0.7416698203743718,
+              "actual": 0.3333333333333333
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 110,
+              "weight": 91.00483211497955,
+              "predicted": 0.9942106020558088,
+              "actual": 1.0
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 115,
+              "positive_rate": 0.9636127355425602,
+              "brier": 0.03508215960847889,
+              "log_loss": 0.1565802698297781,
+              "auc": 0.5,
+              "calibration_error": 0.004350651185128784,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 115,
+              "positive_rate": 0.9636127355425602,
+              "brier": 0.014999993808153037,
+              "log_loss": 0.04417544140529103,
+              "auc": 1.0,
+              "calibration_error": 0.029977837161991892,
+              "selection": null
+            }
+          }
+        }
+      }
+    },
+    "fanduel|pitcher_strikeouts|under|k_low": {
+      "rows": 22,
+      "dates": 6,
+      "book": "fanduel",
+      "clean_evidence": {
+        "true_same_book_pair": 22
+      },
+      "enabled": false,
+      "enabled_targets": [],
+      "targets": {
+        "target_good_bet": {
+          "status": "insufficient_rows",
+          "rows": 18,
+          "positive_rate": 0.1111111111111111,
+          "enabled": false
+        },
+        "target_win": {
+          "status": "insufficient_rows",
+          "rows": 22,
+          "positive_rate": 0.6363636363636364,
+          "enabled": false
+        },
+        "target_clv": {
+          "status": "insufficient_rows",
+          "rows": 18,
+          "positive_rate": 0.2777777777777778,
+          "enabled": false
+        },
+        "target_line_available_at_close": {
+          "status": "insufficient_rows",
+          "rows": 21,
+          "positive_rate": 0.8571428571428571,
+          "enabled": false
+        }
+      }
+    },
+    "fanduel|pitcher_strikeouts|under|k_common": {
+      "rows": 65,
+      "dates": 6,
+      "book": "fanduel",
+      "clean_evidence": {
+        "true_same_book_pair": 65
+      },
+      "enabled": false,
+      "enabled_targets": [],
+      "targets": {
+        "target_good_bet": {
+          "status": "insufficient_rows",
+          "rows": 56,
+          "positive_rate": 0.17857142857142858,
+          "enabled": false
+        },
+        "target_win": {
+          "status": "insufficient_rows",
+          "rows": 65,
+          "positive_rate": 0.5076923076923077,
+          "enabled": false
+        },
+        "target_clv": {
+          "status": "insufficient_rows",
+          "rows": 56,
+          "positive_rate": 0.375,
+          "enabled": false
+        },
+        "target_line_available_at_close": {
+          "status": "insufficient_rows",
+          "rows": 61,
+          "positive_rate": 0.9180327868852459,
+          "enabled": false
+        }
+      }
+    },
+    "fanduel|batter_total_bases|over|tb_1.5": {
+      "rows": 631,
+      "dates": 6,
+      "book": "fanduel",
+      "clean_evidence": {
+        "true_pair": 631
+      },
+      "enabled": true,
+      "enabled_targets": [
+        "target_good_bet",
+        "target_clv",
+        "target_line_available_at_close"
+      ],
+      "targets": {
+        "target_good_bet": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 574,
+          "dates": 6,
+          "positive_rate": 0.14982578397212543,
+          "target": "target_good_bet",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 419,
+              "holdout_rows": 155,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 574,
+            "player_games": 574,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 495.6264319664146
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.19460721891979674
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.11256327276663891
+          },
+          "brier_gain": 0.08204394615315783,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 112,
+              "weight": 96.18386816999133,
+              "predicted": 0.04396887114957559,
+              "actual": 0.09583923740821847
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 23,
+              "weight": 19.724941147317555,
+              "predicted": 0.23823390409563824,
+              "actual": 0.11306532663316583
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 11,
+              "weight": 10.073101226613803,
+              "predicted": 0.3879506799993441,
+              "actual": 0.24600246002460024
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 2,
+              "weight": 1.7346053772766696,
+              "predicted": 0.5269492567419269,
+              "actual": 0.5
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 7,
+              "weight": 6.467600049560154,
+              "predicted": 0.7351767297054039,
+              "actual": 0.4559386973180077
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 155,
+              "positive_rate": 0.13222530009233613,
+              "brier": 0.20511414541505085,
+              "log_loss": 0.6022524004169472,
+              "auc": 0.48418621179815213,
+              "calibration_error": 0.2960277885503233,
+              "selection": null
+            },
+            "market_prob_side": {
+              "rows": 155,
+              "positive_rate": 0.13222530009233613,
+              "brier": 0.19460721891979674,
+              "log_loss": 0.5802677925730788,
+              "auc": 0.568407960199005,
+              "calibration_error": 0.283935679063298,
+              "selection": null
+            },
+            "model_market_blend": {
+              "rows": 155,
+              "positive_rate": 0.13222530009233613,
+              "brier": 0.2001162081225998,
+              "log_loss": 0.5919203047847176,
+              "auc": 0.5200781805259417,
+              "calibration_error": 0.29058633928116195,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 155,
+              "positive_rate": 0.13222530009233613,
+              "brier": 0.11256327276663891,
+              "log_loss": 0.37797410454666414,
+              "auc": 0.7213930348258706,
+              "calibration_error": 0.08957494849908645,
+              "selection": null
+            }
+          }
+        },
+        "target_win": {
+          "status": "shadow_brier_not_better",
+          "enabled": false,
+          "rows": 631,
+          "dates": 6,
+          "positive_rate": 0.39461172741679873,
+          "target": "target_win",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 550,
+              "holdout_rows": 81,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 631,
+            "player_games": 631,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 545.298095948573
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.23022718820620994
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.3062744772972405
+          },
+          "brier_gain": -0.07604728909103056,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 1,
+              "weight": 0.8673026886383348,
+              "predicted": 0.08236556756706409,
+              "actual": 0.0
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 18,
+              "weight": 15.846859125263288,
+              "predicted": 0.2718451596643408,
+              "actual": 0.30101641907740423
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 16,
+              "weight": 13.604262173212739,
+              "predicted": 0.4329029873246048,
+              "actual": 0.36429872495446264
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 17,
+              "weight": 14.793705860488169,
+              "predicted": 0.592805267506742,
+              "actual": 0.1675041876046901
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 20,
+              "weight": 17.023912774129602,
+              "predicted": 0.7398582142855258,
+              "actual": 0.4512372634643377
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 9,
+              "weight": 7.557923429562631,
+              "predicted": 0.8742187281439001,
+              "actual": 0.3278688524590164
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 81,
+              "positive_rate": 0.32088888888888883,
+              "brier": 0.23190422024355553,
+              "log_loss": 0.6565866658733625,
+              "auc": 0.5062937062937063,
+              "calibration_error": 0.1252238755555556,
+              "selection": {
+                "selected": 5,
+                "roi": -0.5,
+                "win_rate": 0.2,
+                "avg_ev": 5.700000000001815e-05
+              }
+            },
+            "market_prob_side": {
+              "rows": 81,
+              "positive_rate": 0.32088888888888883,
+              "brier": 0.23022718820620994,
+              "log_loss": 0.6531501842147553,
+              "auc": 0.501048951048951,
+              "calibration_error": 0.13088143063938731,
+              "selection": {
+                "selected": 3,
+                "roi": 0.5,
+                "win_rate": 0.6666666666666666,
+                "avg_ev": 0.042441489622687865
+              }
+            },
+            "model_market_blend": {
+              "rows": 81,
+              "positive_rate": 0.32088888888888883,
+              "brier": 0.23106406739521446,
+              "log_loss": 0.6548782601548069,
+              "auc": 0.5143356643356642,
+              "calibration_error": 0.13492869989903417,
+              "selection": {
+                "selected": 2,
+                "roi": 1.25,
+                "win_rate": 1.0,
+                "avg_ev": 0.006043005495314391
+              }
+            },
+            "regularized_logistic": {
+              "rows": 81,
+              "positive_rate": 0.32088888888888883,
+              "brier": 0.3062744772972405,
+              "log_loss": 0.8376051829755813,
+              "auc": 0.544055944055944,
+              "calibration_error": 0.26504106099521263,
+              "selection": {
+                "selected": 52,
+                "roi": -0.3165884615384615,
+                "win_rate": 0.3269230769230769,
+                "avg_ev": 0.4139205059242939
+              }
+            }
+          }
+        },
+        "target_clv": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 574,
+          "dates": 6,
+          "positive_rate": 0.3606271777003484,
+          "target": "target_clv",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 419,
+              "holdout_rows": 155,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 574,
+            "player_games": 574,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 495.6264319664146
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.22878402894920524
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.1882678180891739
+          },
+          "brier_gain": 0.04051621086003135,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 58,
+              "weight": 49.23801263783918,
+              "predicted": 0.061800616737504616,
+              "actual": 0.11575239053850024
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 28,
+              "weight": 24.061454590509236,
+              "predicted": 0.23090157288530816,
+              "actual": 0.34500514933058696
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 32,
+              "weight": 27.877586420517904,
+              "predicted": 0.4156464593087394,
+              "actual": 0.46577777777777774
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 9,
+              "weight": 7.557923429562631,
+              "predicted": 0.5849961272495514,
+              "actual": 0.4426229508196722
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 14,
+              "weight": 12.563498946846737,
+              "predicted": 0.7401531623590332,
+              "actual": 0.5404339250493096
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 14,
+              "weight": 12.885639945483831,
+              "predicted": 0.9228044278019127,
+              "actual": 0.8076923076923076
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 155,
+              "positive_rate": 0.35420129270544787,
+              "brier": 0.22878402894920524,
+              "log_loss": 0.650098458530128,
+              "auc": 0.5,
+              "calibration_error": 0.006425884994900655,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 155,
+              "positive_rate": 0.35420129270544787,
+              "brier": 0.1882678180891739,
+              "log_loss": 0.5373491867524127,
+              "auc": 0.774,
+              "calibration_error": 0.09780662800055083,
+              "selection": null
+            }
+          }
+        },
+        "target_line_available_at_close": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 586,
+          "dates": 6,
+          "positive_rate": 0.9795221843003413,
+          "target": "target_line_available_at_close",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 427,
+              "holdout_rows": 159,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 586,
+            "player_games": 586,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 506.03406423007465
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.024589676058078602
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.01129666894551863
+          },
+          "brier_gain": 0.013293007112559973,
+          "calibration_bins": [
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 2,
+              "weight": 1.7346053772766696,
+              "predicted": 0.4497534788127065,
+              "actual": 0.0
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 1,
+              "weight": 0.8673026886383348,
+              "predicted": 0.7863640188374057,
+              "actual": 0.0
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 156,
+              "weight": 135.05141865939783,
+              "predicted": 0.9943414514039203,
+              "actual": 0.993577981651376
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 159,
+              "positive_rate": 0.9747974797479745,
+              "brier": 0.024589676058078602,
+              "log_loss": 0.11816675410612658,
+              "auc": 0.5,
+              "calibration_error": 0.004724704552366732,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 159,
+              "positive_rate": 0.9747974797479745,
+              "brier": 0.01129666894551863,
+              "log_loss": 0.03479109131910869,
+              "auc": 1.0,
+              "calibration_error": 0.020803217845639675,
+              "selection": null
+            }
+          }
+        }
+      }
+    },
+    "fanduel|batter_hits|over|hits_0.5": {
+      "rows": 938,
+      "dates": 6,
+      "book": "fanduel",
+      "clean_evidence": {
+        "true_pair": 938
+      },
+      "enabled": true,
+      "enabled_targets": [
+        "target_good_bet",
+        "target_clv",
+        "target_line_available_at_close"
+      ],
+      "targets": {
+        "target_good_bet": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 835,
+          "dates": 6,
+          "positive_rate": 0.26706586826347306,
+          "target": "target_good_bet",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 585,
+              "holdout_rows": 250,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 835,
+            "player_games": 835,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 752.1099888836229
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.2523864065395603
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.17286854479719005
+          },
+          "brier_gain": 0.07951786174237024,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 117,
+              "weight": 107.20931280341513,
+              "predicted": 0.06107876133321222,
+              "actual": 0.13317714051575152
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 62,
+              "weight": 56.87928723488133,
+              "predicted": 0.23569869142680872,
+              "actual": 0.25232682482474555
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 34,
+              "weight": 29.920253207330397,
+              "predicted": 0.40805970247592366,
+              "actual": 0.3646168614828618
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 24,
+              "weight": 22.562259943005824,
+              "predicted": 0.5730211265669984,
+              "actual": 0.6617243272926964
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 11,
+              "weight": 10.11027134184116,
+              "predicted": 0.6924181137651244,
+              "actual": 0.4509803921568627
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 2,
+              "weight": 2.0815264527320037,
+              "predicted": 0.8804153746217961,
+              "actual": 0.0
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 250,
+              "positive_rate": 0.2580355296457868,
+              "brier": 0.3567547858570001,
+              "log_loss": 0.9193558118647119,
+              "auc": 0.48805994729907776,
+              "calibration_error": 0.40155258077381367,
+              "selection": null
+            },
+            "market_prob_side": {
+              "rows": 250,
+              "positive_rate": 0.2580355296457868,
+              "brier": 0.2523864065395603,
+              "log_loss": 0.6985139728051599,
+              "auc": 0.6630846508563899,
+              "calibration_error": 0.26746585174385756,
+              "selection": null
+            },
+            "model_market_blend": {
+              "rows": 250,
+              "positive_rate": 0.2580355296457868,
+              "brier": 0.3045130574592259,
+              "log_loss": 0.8054104529251295,
+              "auc": 0.5911149538866931,
+              "calibration_error": 0.3412135527103335,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 250,
+              "positive_rate": 0.2580355296457868,
+              "brier": 0.17286854479719005,
+              "log_loss": 0.530144632347858,
+              "auc": 0.7306488801054019,
+              "calibration_error": 0.08022023171460763,
+              "selection": null
+            }
+          }
+        },
+        "target_win": {
+          "status": "shadow_brier_not_better",
+          "enabled": false,
+          "rows": 938,
+          "dates": 6,
+          "positive_rate": 0.5874200426439232,
+          "target": "target_win",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 819,
+              "holdout_rows": 119,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 938,
+            "player_games": 938,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 851.391366655894
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.2506911751428222
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.26807670267096456
+          },
+          "brier_gain": -0.017385527528142375,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 3,
+              "weight": 2.854214302609793,
+              "predicted": 0.08864157460654783,
+              "actual": 0.3314917127071823
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 13,
+              "weight": 13.443191673894189,
+              "predicted": 0.2634070400529695,
+              "actual": 0.23870967741935487
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 13,
+              "weight": 12.48915871639202,
+              "predicted": 0.42968003313065595,
+              "actual": 0.4861111111111112
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 21,
+              "weight": 19.824061454590513,
+              "predicted": 0.5854841846903963,
+              "actual": 0.3849999999999999
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 47,
+              "weight": 42.423491512823674,
+              "predicted": 0.7670991147507654,
+              "actual": 0.5957943925233647
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 22,
+              "weight": 18.931978689133942,
+              "predicted": 0.8852060474819297,
+              "actual": 0.6400523560209421
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 119,
+              "positive_rate": 0.5024429216728636,
+              "brier": 0.27859459500117806,
+              "log_loss": 0.7545820494983076,
+              "auc": 0.5206214689265536,
+              "calibration_error": 0.16124624752891048,
+              "selection": {
+                "selected": 55,
+                "roi": -0.4324854545454546,
+                "win_rate": 0.38181818181818183,
+                "avg_ev": 4.1239033023918936e-05
+              }
+            },
+            "market_prob_side": {
+              "rows": 119,
+              "positive_rate": 0.5024429216728636,
+              "brier": 0.2506911751428222,
+              "log_loss": 0.6949899237434304,
+              "auc": 0.5836158192090396,
+              "calibration_error": 0.07708223767510994,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "model_market_blend": {
+              "rows": 119,
+              "positive_rate": 0.5024429216728636,
+              "brier": 0.2636480955749608,
+              "log_loss": 0.7217713172417072,
+              "auc": 0.5659604519774012,
+              "calibration_error": 0.13227427475411416,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "regularized_logistic": {
+              "rows": 119,
+              "positive_rate": 0.5024429216728636,
+              "brier": 0.26807670267096456,
+              "log_loss": 0.7803333487247117,
+              "auc": 0.6384180790960452,
+              "calibration_error": 0.17057135491034536,
+              "selection": {
+                "selected": 67,
+                "roi": -0.11915074626865671,
+                "win_rate": 0.5970149253731343,
+                "avg_ev": 0.18297705874379808
+              }
+            }
+          }
+        },
+        "target_clv": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 835,
+          "dates": 6,
+          "positive_rate": 0.42035928143712575,
+          "target": "target_clv",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 585,
+              "holdout_rows": 250,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 835,
+            "player_games": 835,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 752.1099888836229
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.24146132927186853
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.22205013631847856
+          },
+          "brier_gain": 0.019411192953389972,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 71,
+              "weight": 63.73435757650848,
+              "predicted": 0.06693958287914974,
+              "actual": 0.1621306376360809
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 44,
+              "weight": 40.96597244906006,
+              "predicted": 0.2543739337790277,
+              "actual": 0.3623315919714049
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 47,
+              "weight": 43.21645397100732,
+              "predicted": 0.41209212110882243,
+              "actual": 0.46100917431192656
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 39,
+              "weight": 36.0285421430261,
+              "predicted": 0.581570348439614,
+              "actual": 0.5577509261719789
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 26,
+              "weight": 23.745508611076694,
+              "predicted": 0.7560393379650581,
+              "actual": 0.5648317244977825
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 23,
+              "weight": 21.07207623252723,
+              "predicted": 0.9192496010760903,
+              "actual": 0.6834509300833868
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 250,
+              "positive_rate": 0.4065721966735271,
+              "brier": 0.24146132927186853,
+              "log_loss": 0.6759779295717995,
+              "auc": 0.5,
+              "calibration_error": 0.013787084763598634,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 250,
+              "positive_rate": 0.4065721966735271,
+              "brier": 0.22205013631847856,
+              "log_loss": 0.6467163049722218,
+              "auc": 0.7231358562842612,
+              "calibration_error": 0.10988855244133146,
+              "selection": null
+            }
+          }
+        },
+        "target_line_available_at_close": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 875,
+          "dates": 6,
+          "positive_rate": 0.9542857142857143,
+          "target": "target_line_available_at_close",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 614,
+              "holdout_rows": 261,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 875,
+            "player_games": 875,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 791.6589914855309
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.042885484527605246
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.0018308846383000854
+          },
+          "brier_gain": 0.04105459988930516,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 6,
+              "weight": 6.071118820468344,
+              "predicted": 0.11238025558505069,
+              "actual": 0.0
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 4,
+              "weight": 3.8161318300086733,
+              "predicted": 0.24288286025566105,
+              "actual": 0.0
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 1,
+              "weight": 0.8673026886383348,
+              "predicted": 0.3543574022816481,
+              "actual": 0.0
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 250,
+              "weight": 228.76291098320587,
+              "predicted": 0.996159545330043,
+              "actual": 1.0
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 261,
+              "positive_rate": 0.9550990848640465,
+              "brier": 0.042885484527605246,
+              "log_loss": 0.18322593915127666,
+              "auc": 0.5,
+              "calibration_error": 0.0008133705783319733,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 261,
+              "positive_rate": 0.9550990848640465,
+              "brier": 0.0018308846383000854,
+              "log_loss": 0.01277923771416946,
+              "auc": 1.0,
+              "calibration_error": 0.011669443913665874,
+              "selection": null
+            }
+          }
+        }
+      }
+    },
+    "draftkings|batter_hits|over|hits_0.5": {
+      "rows": 885,
+      "dates": 6,
+      "book": "draftkings",
+      "clean_evidence": {
+        "true_same_book_pair": 885
+      },
+      "enabled": true,
+      "enabled_targets": [
+        "target_good_bet",
+        "target_clv",
+        "target_line_available_at_close"
+      ],
+      "targets": {
+        "target_good_bet": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 749,
+          "dates": 6,
+          "positive_rate": 0.2883845126835781,
+          "target": "target_good_bet",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 518,
+              "holdout_rows": 231,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 749,
+            "player_games": 749,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 695.7370036728232
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.313038915082401
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.1804668114744874
+          },
+          "brier_gain": 0.1325721036079136,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 101,
+              "weight": 94.02462238542029,
+              "predicted": 0.0896616763622308,
+              "actual": 0.14626958646796687
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 46,
+              "weight": 42.81997274191551,
+              "predicted": 0.252904190776876,
+              "actual": 0.21469907407407401
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 46,
+              "weight": 42.05629582906251,
+              "predicted": 0.41733681832182323,
+              "actual": 0.3288874604960095
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 18,
+              "weight": 15.561888241853552,
+              "predicted": 0.5644818520403071,
+              "actual": 0.3487261146496815
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 18,
+              "weight": 16.032709701400076,
+              "predicted": 0.7314488629149276,
+              "actual": 0.49613601236476046
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 2,
+              "weight": 1.9080659150043366,
+              "predicted": 0.8433514947159559,
+              "actual": 1.0
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 231,
+              "positive_rate": 0.2451345360442055,
+              "brier": 0.31304065565401384,
+              "log_loss": 0.8228096530631648,
+              "auc": 0.5248033877797943,
+              "calibration_error": 0.35663463361863246,
+              "selection": null
+            },
+            "market_prob_side": {
+              "rows": 231,
+              "positive_rate": 0.2451345360442055,
+              "brier": 0.313038915082401,
+              "log_loss": 0.8228059863477525,
+              "auc": 0.5248033877797943,
+              "calibration_error": 0.35663272617031017,
+              "selection": null
+            },
+            "model_market_blend": {
+              "rows": 231,
+              "positive_rate": 0.2451345360442055,
+              "brier": 0.3130398721808345,
+              "log_loss": 0.8228080024145081,
+              "auc": 0.5248033877797943,
+              "calibration_error": 0.35663377526688744,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 231,
+              "positive_rate": 0.2451345360442055,
+              "brier": 0.1804668114744874,
+              "log_loss": 0.5463599571911139,
+              "auc": 0.6718088324258923,
+              "calibration_error": 0.09035509658577881,
+              "selection": null
+            }
+          }
+        },
+        "target_win": {
+          "status": "shadow_brier_not_better",
+          "enabled": false,
+          "rows": 885,
+          "dates": 6,
+          "positive_rate": 0.584180790960452,
+          "target": "target_win",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 767,
+              "holdout_rows": 118,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 885,
+            "player_games": 885,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 838.8650378242746
+          },
+          "baseline_best": {
+            "name": "market_prob_side",
+            "brier": 0.2631119423315453
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.3104089874810719
+          },
+          "brier_gain": -0.047297045149526595,
+          "calibration_bins": [
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 3,
+              "weight": 2.854214302609793,
+              "predicted": 0.2821195523275842,
+              "actual": 0.3314917127071823
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 10,
+              "weight": 9.540329575021682,
+              "predicted": 0.43166697218936045,
+              "actual": 0.29090909090909095
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 32,
+              "weight": 30.504274563251148,
+              "predicted": 0.5997631875596788,
+              "actual": 0.47928513403736794
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 25,
+              "weight": 21.856027753686032,
+              "predicted": 0.7403868021605191,
+              "actual": 0.48979591836734704
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 48,
+              "weight": 43.91029612191798,
+              "predicted": 0.9228129407269411,
+              "actual": 0.567155756207675
+            }
+          ],
+          "metrics": {
+            "model_prob_side": {
+              "rows": 118,
+              "positive_rate": 0.4964860998818335,
+              "brier": 0.2631193104268509,
+              "log_loss": 0.7203644257732322,
+              "auc": 0.5376328641195058,
+              "calibration_error": 0.11525108112030182,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "market_prob_side": {
+              "rows": 118,
+              "positive_rate": 0.4964860998818335,
+              "brier": 0.2631119423315453,
+              "log_loss": 0.7203485309313156,
+              "auc": 0.5376328641195058,
+              "calibration_error": 0.11524882729752914,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "model_market_blend": {
+              "rows": 118,
+              "positive_rate": 0.4964860998818335,
+              "brier": 0.26311599457071333,
+              "log_loss": 0.7203572725843065,
+              "auc": 0.5376328641195058,
+              "calibration_error": 0.11525006690005409,
+              "selection": {
+                "selected": 0,
+                "roi": null,
+                "win_rate": null,
+                "avg_ev": null
+              }
+            },
+            "regularized_logistic": {
+              "rows": 118,
+              "positive_rate": 0.4964860998818335,
+              "brier": 0.3104089874810719,
+              "log_loss": 0.9537906618253121,
+              "auc": 0.6081585751220914,
+              "calibration_error": 0.25244264410352724,
+              "selection": {
+                "selected": 74,
+                "roi": -0.159022972972973,
+                "win_rate": 0.5540540540540541,
+                "avg_ev": 0.29210502471646077
+              }
+            }
+          }
+        },
+        "target_clv": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 749,
+          "dates": 6,
+          "positive_rate": 0.472630173564753,
+          "target": "target_clv",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 518,
+              "holdout_rows": 231,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 749,
+            "player_games": 749,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 695.7370036728232
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.24872090650922665
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.23956198605377868
+          },
+          "brier_gain": 0.009158920455447972,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 47,
+              "weight": 41.808495060880134,
+              "predicted": 0.08070843674808616,
+              "actual": 0.30405733067514423
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 56,
+              "weight": 52.36480778544959,
+              "predicted": 0.2574294193645471,
+              "actual": 0.304753710475371
+            },
+            {
+              "left": 0.3333333333333333,
+              "right": 0.5,
+              "rows": 26,
+              "weight": 24.854417048692856,
+              "predicted": 0.42077302361657587,
+              "actual": 0.4626121635094715
+            },
+            {
+              "left": 0.5,
+              "right": 0.6666666666666666,
+              "rows": 35,
+              "weight": 31.52025771279891,
+              "predicted": 0.5872116250567275,
+              "actual": 0.5055031446540881
+            },
+            {
+              "left": 0.6666666666666666,
+              "right": 0.8333333333333333,
+              "rows": 33,
+              "weight": 30.603394870524102,
+              "predicted": 0.7474222424203509,
+              "actual": 0.6809716599190283
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 34,
+              "weight": 31.252182336310696,
+              "predicted": 0.9059899149210883,
+              "actual": 0.684422979888993
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 231,
+              "positive_rate": 0.46294823252410194,
+              "brier": 0.24872090650922665,
+              "log_loss": 0.6905871838461372,
+              "auc": 0.5,
+              "calibration_error": 0.00968194104065101,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 231,
+              "positive_rate": 0.46294823252410194,
+              "brier": 0.23956198605377868,
+              "log_loss": 0.7005690631996111,
+              "auc": 0.6869158878504673,
+              "calibration_error": 0.12453850731648736,
+              "selection": null
+            }
+          }
+        },
+        "target_line_available_at_close": {
+          "status": "enabled",
+          "enabled": true,
+          "rows": 818,
+          "dates": 6,
+          "positive_rate": 0.9156479217603912,
+          "target": "target_line_available_at_close",
+          "selected_model": "regularized_logistic",
+          "split_strategy": "temporal_row_80_20_player_game_purged_0",
+          "folds": [
+            {
+              "fold_index": 1,
+              "train_rows": 569,
+              "holdout_rows": 249,
+              "train_start": "None",
+              "train_end": "None",
+              "holdout_start": "None",
+              "holdout_end": "None",
+              "purged_rows": 0
+            }
+          ],
+          "grouping": {
+            "rows": 818,
+            "player_games": 818,
+            "max_rows_per_player_game": 1,
+            "mean_rows_per_player_game": 1.0,
+            "effective_weight": 776.1421579288015
+          },
+          "baseline_best": {
+            "name": "global_mean",
+            "brier": 0.09408266412212678
+          },
+          "model_best": {
+            "name": "regularized_logistic",
+            "brier": 0.001071733400881976
+          },
+          "brier_gain": 0.0930109307212448,
+          "calibration_bins": [
+            {
+              "left": 0.0,
+              "right": 0.16666666666666666,
+              "rows": 17,
+              "weight": 23.776483707099494,
+              "predicted": 0.0850511556864364,
+              "actual": 0.0
+            },
+            {
+              "left": 0.16666666666666666,
+              "right": 0.3333333333333333,
+              "rows": 1,
+              "weight": 1.0407632263660018,
+              "predicted": 0.16740248466361557,
+              "actual": 0.0
+            },
+            {
+              "left": 0.8333333333333333,
+              "right": 1.0,
+              "rows": 231,
+              "weight": 212.40355481465627,
+              "predicted": 0.9937197621866314,
+              "actual": 1.0
+            }
+          ],
+          "metrics": {
+            "global_mean": {
+              "rows": 249,
+              "positive_rate": 0.8953833443332841,
+              "brier": 0.09408266412212678,
+              "log_loss": 0.33759562802436377,
+              "auc": 0.5,
+              "calibration_error": 0.020264577427107078,
+              "selection": null
+            },
+            "regularized_logistic": {
+              "rows": 249,
+              "positive_rate": 0.8953833443332841,
+              "brier": 0.001071733400881976,
+              "log_loss": 0.01546414693893321,
+              "auc": 1.0,
+              "calibration_error": 0.014882289319122062,
+              "selection": null
+            }
+          }
+        }
+      }
+    }
+  },
+  "enabled": true,
+  "date_min": "2026-07-25",
+  "date_max": "2026-07-30",
+  "by_market": {
+    "batter_total_bases": 4951,
+    "batter_hits": 4640,
+    "batter_home_runs": 1935,
+    "pitcher_strikeouts": 474
+  },
+  "by_pair_quality": {
+    "one_sided": 6245,
+    "same_book": 3556,
+    "cross_book": 2199
+  },
+  "evidence": {
+    "by_evidence_tier": {
+      "fanduel_one_sided_display_only": 6245,
+      "true_same_book_pair": 3556,
+      "true_pair": 2199
+    },
+    "by_book": {
+      "fanduel": 8666,
+      "draftkings": 3334
+    },
+    "fanduel": {
+      "rows": 8666,
+      "by_evidence_tier": {
+        "fanduel_one_sided_display_only": 6245,
+        "fanduel_true_pair": 2421
+      },
+      "by_market": {
+        "batter_total_bases": 3897,
+        "batter_hits": 2612,
+        "batter_home_runs": 1935,
+        "pitcher_strikeouts": 222
+      }
+    }
+  },
+  "serious_rows": 5755,
+  "serious_evidence": {
+    "by_evidence_tier": {
+      "true_same_book_pair": 3556,
+      "true_pair": 2199
+    },
+    "by_book": {
+      "draftkings": 3334,
+      "fanduel": 2421
+    },
+    "fanduel": {
+      "rows": 2421,
+      "by_evidence_tier": {
+        "fanduel_true_pair": 2421
+      },
+      "by_market": {
+        "batter_hits": 1388,
+        "batter_total_bases": 811,
+        "pitcher_strikeouts": 222
+      }
+    }
+  },
+  "status": "enabled"
+}

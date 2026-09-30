@@ -3,6 +3,8 @@
 This is a saved-prediction audit, not a locked-ledger walk-forward. Rows can be
 overwritten by reruns, so use this only as a gate-health diagnostic. Use
 bankroll_ledger_report for bankroll evidence.
+
+Manual-only tool; see docs/manual_mlb_diagnostics.md for ownership and limits.
 """
 from __future__ import annotations
 

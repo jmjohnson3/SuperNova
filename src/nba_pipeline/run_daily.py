@@ -3,13 +3,13 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import time
-import subprocess
 from dataclasses import dataclass
 from datetime import datetime, date
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from typing import Optional
+
+from mlb_pipeline.subprocess_utils import run_subprocess_tree
 
 _ET = ZoneInfo("America/New_York")
 
@@ -104,30 +104,30 @@ def _tail(s: str, n_lines: int = 60) -> str:
 
 
 def _run_step(step: Step, extra_env: Optional[dict[str, str]] = None) -> StepResult:
-    t0 = time.perf_counter()
-
     cmd = [sys.executable, "-m", step.module, *step.args]
     env = os.environ.copy()
     if extra_env:
         env.update(extra_env)
+    repo_root = Path(__file__).resolve().parents[2]
+    src_dir = str(repo_root / "src")
+    env["PYTHONPATH"] = src_dir + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    env["PYTHONIOENCODING"] = "utf-8"
 
-    proc = subprocess.run(
+    rc, stdout, stderr, secs = run_subprocess_tree(
         cmd,
-        text=True,
-        capture_output=True,
-        timeout=step.timeout_s,
-        check=False,
+        timeout_s=step.timeout_s,
+        cwd=str(repo_root),
         env=env,
+        encoding="utf-8",
     )
 
-    secs = time.perf_counter() - t0
     return StepResult(
         name=step.name,
-        ok=(proc.returncode == 0),
-        rc=proc.returncode,
+        ok=(rc == 0),
+        rc=rc,
         secs=secs,
-        stdout=(proc.stdout or "").strip(),
-        stderr=(proc.stderr or "").strip(),
+        stdout=stdout.strip(),
+        stderr=stderr.strip(),
     )
 
 
@@ -282,17 +282,7 @@ def main() -> None:
         _rule(console, f"[bold]{step.name}[/bold]" if console else step.name)
         _p(console, f"[dim]python -m {step.module} {' '.join(step.args)}[/dim]" if console else f"python -m {step.module}")
 
-        try:
-            r = _run_step(step, extra_env=extra_env)
-        except subprocess.TimeoutExpired:
-            r = StepResult(
-                name=step.name,
-                ok=False,
-                rc=124,
-                secs=float(step.timeout_s or 0),
-                stdout="",
-                stderr=f"Timeout after {step.timeout_s}s",
-            )
+        r = _run_step(step, extra_env=extra_env)
 
         results.append(r)
 

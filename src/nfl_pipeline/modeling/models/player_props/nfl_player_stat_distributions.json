@@ -1,0 +1,1174 @@
+{
+  "trained_at_utc": "2026-09-17T16:07:04Z",
+  "status": "ready",
+  "rows": 29073,
+  "model_artifact_status": "ready",
+  "distributions": {
+    "passing_yards": {
+      "status": "trained",
+      "kind": "normal_residual",
+      "holdout_rows": 33,
+      "model_used": false,
+      "model_mae": 63.206514566552315,
+      "best_baseline": "qb_role_recent_bias_adjusted",
+      "best_baseline_mae": 63.206514566552315,
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 83.08484848484848
+        },
+        "rolling_10": {
+          "mae": 83.41818181818182
+        },
+        "position_mean": {
+          "mae": 67.10384527409968
+        },
+        "position_role_rank_mean": {
+          "mae": 67.20370260838705
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 82.97727135278924
+        },
+        "qb_role_recent_bias_adjusted": {
+          "mae": 63.206514566552315
+        },
+        "qb_contextual_baseline": {
+          "mae": 84.3961548660793
+        }
+      },
+      "residual_bias": -3.41634347495442,
+      "residual_sigma": 84.22410134603345,
+      "abs_residual_p50": 48.3538910337526,
+      "abs_residual_p75": 89.6461089662474,
+      "abs_residual_p90": 148.47034327628626,
+      "accepted_distribution": false,
+      "synthetic_line_brier": 0.25,
+      "baseline_synthetic_line_brier": 0.25,
+      "mixture_line_brier": 0.25,
+      "mixture_brier_gain_vs_normal": 0.0,
+      "mixture_state_bias_weight": 0.0,
+      "mixture_params": {
+        "states": {
+          "low": {
+            "rows": 1026,
+            "bias": -35.0,
+            "sigma": 73.29457223578999
+          },
+          "normal": {
+            "rows": 1785,
+            "bias": 16.63522845724532,
+            "sigma": 68.52217446482433
+          },
+          "high": {
+            "rows": 766,
+            "bias": 35.0,
+            "sigma": 71.09077131201451
+          }
+        },
+        "state_label_method": "actual_opportunity_vs_rolling_prior_v3_target_route_air_yards_spike",
+        "state_bias_weight": 0.0,
+        "state_bias_weight_selection": {
+          "metric": "holdout_synthetic_line_brier",
+          "candidates": [
+            {
+              "state_bias_weight": 0.0,
+              "brier": 0.25
+            },
+            {
+              "state_bias_weight": 0.15,
+              "brier": 0.2545850539273862
+            },
+            {
+              "state_bias_weight": 0.25,
+              "brier": 0.2580053023135768
+            },
+            {
+              "state_bias_weight": 0.35,
+              "brier": 0.2617058477569678
+            },
+            {
+              "state_bias_weight": 0.5,
+              "brier": 0.26775671743791035
+            },
+            {
+              "state_bias_weight": 0.65,
+              "brier": 0.2743654515202827
+            }
+          ]
+        }
+      },
+      "mixture_accepted": false,
+      "qb_volume_line_brier": 0.25,
+      "qb_volume_brier_gain_vs_best": 0.0,
+      "qb_volume_params": {
+        "status": "trained",
+        "kind": "qb_attempt_ypa_mixture",
+        "attempt_model_used": true,
+        "attempt_rows": 3428,
+        "attempt_states": {
+          "low": {
+            "rows": 877,
+            "bias": -3.3473373132126283,
+            "sigma": 4.291054009508262
+          },
+          "normal": {
+            "rows": 1785,
+            "bias": -0.21801866431550948,
+            "sigma": 3.3319931447466438
+          },
+          "high": {
+            "rows": 766,
+            "bias": 4.892766612782467,
+            "sigma": 3.4600634209799535
+          }
+        },
+        "ypa": {
+          "rows": 3428,
+          "bias": -0.07542816513352779,
+          "sigma": 2.1754806411056613,
+          "prior": "rolling_5_10_passing_yards_per_attempt"
+        },
+        "yard_mean_blend_weight": 1.0,
+        "attempt_bias_weight": 0.0,
+        "ypa_bias_weight": 0.0,
+        "selection": {
+          "metric": "holdout_synthetic_line_brier",
+          "candidates": [
+            {
+              "yard_mean_blend_weight": 0.0,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.33594919508092547
+            },
+            {
+              "yard_mean_blend_weight": 0.0,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.3344833725527912
+            },
+            {
+              "yard_mean_blend_weight": 0.0,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.33909367012119157
+            },
+            {
+              "yard_mean_blend_weight": 0.0,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.3375584623141122
+            },
+            {
+              "yard_mean_blend_weight": 0.0,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.34198640513575423
+            },
+            {
+              "yard_mean_blend_weight": 0.0,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.3403949960756646
+            },
+            {
+              "yard_mean_blend_weight": 0.25,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.33425566074563734
+            },
+            {
+              "yard_mean_blend_weight": 0.25,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.33278866551813635
+            },
+            {
+              "yard_mean_blend_weight": 0.25,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.33753285828015456
+            },
+            {
+              "yard_mean_blend_weight": 0.25,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.33599883527129815
+            },
+            {
+              "yard_mean_blend_weight": 0.25,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.3405322641787354
+            },
+            {
+              "yard_mean_blend_weight": 0.25,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.33894419790984465
+            },
+            {
+              "yard_mean_blend_weight": 0.5,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.32464775410144897
+            },
+            {
+              "yard_mean_blend_weight": 0.5,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.323251392835302
+            },
+            {
+              "yard_mean_blend_weight": 0.5,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.3283053328906761
+            },
+            {
+              "yard_mean_blend_weight": 0.5,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.3268496396318601
+            },
+            {
+              "yard_mean_blend_weight": 0.5,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.33172226773371594
+            },
+            {
+              "yard_mean_blend_weight": 0.5,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.33021872814354264
+            },
+            {
+              "yard_mean_blend_weight": 0.75,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.2932905609103598
+            },
+            {
+              "yard_mean_blend_weight": 0.75,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.2923893671653349
+            },
+            {
+              "yard_mean_blend_weight": 0.75,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.29632662377956503
+            },
+            {
+              "yard_mean_blend_weight": 0.75,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.2953868136042819
+            },
+            {
+              "yard_mean_blend_weight": 0.75,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.29938284663349524
+            },
+            {
+              "yard_mean_blend_weight": 0.75,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.29840786039803
+            },
+            {
+              "yard_mean_blend_weight": 1.0,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.25
+            },
+            {
+              "yard_mean_blend_weight": 1.0,
+              "attempt_bias_weight": 0.0,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.25
+            },
+            {
+              "yard_mean_blend_weight": 1.0,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.25
+            },
+            {
+              "yard_mean_blend_weight": 1.0,
+              "attempt_bias_weight": 0.25,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.25
+            },
+            {
+              "yard_mean_blend_weight": 1.0,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.0,
+              "brier": 0.25
+            },
+            {
+              "yard_mean_blend_weight": 1.0,
+              "attempt_bias_weight": 0.5,
+              "ypa_bias_weight": 0.35,
+              "brier": 0.25
+            }
+          ]
+        }
+      },
+      "qb_volume_accepted": false
+    },
+    "rushing_yards": {
+      "status": "trained",
+      "kind": "normal_residual",
+      "holdout_rows": 86,
+      "model_used": true,
+      "model_mae": 15.802680137848713,
+      "best_baseline": "rolling_10",
+      "best_baseline_mae": 18.612790697674424,
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 19.783333333333328
+        },
+        "rolling_10": {
+          "mae": 18.612790697674424
+        },
+        "position_mean": {
+          "mae": 22.753560453041768
+        },
+        "position_role_rank_mean": {
+          "mae": 19.628844114515083
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 19.591088988427103
+        }
+      },
+      "residual_bias": 1.6294168446533408,
+      "residual_sigma": 24.158236312751562,
+      "abs_residual_p50": 10.542180655637189,
+      "abs_residual_p75": 20.17654676872789,
+      "abs_residual_p90": 39.97682595300842,
+      "accepted_distribution": true,
+      "synthetic_line_brier": 0.21782540460111824,
+      "baseline_synthetic_line_brier": 0.25,
+      "mixture_line_brier": 0.21829623379838894,
+      "mixture_brier_gain_vs_normal": -0.0004708291972707057,
+      "mixture_state_bias_weight": 0.0,
+      "mixture_params": {
+        "states": {
+          "low": {
+            "rows": 4408,
+            "bias": -5.8992567523262185,
+            "sigma": 12.092267772552896
+          },
+          "normal": {
+            "rows": 5446,
+            "bias": 5.71751487420226,
+            "sigma": 17.170241911782757
+          },
+          "high": {
+            "rows": 1217,
+            "bias": 27.620824954669953,
+            "sigma": 30.835779326578773
+          }
+        },
+        "state_label_method": "actual_opportunity_vs_rolling_prior_v3_target_route_air_yards_spike",
+        "state_bias_weight": 0.0,
+        "state_bias_weight_selection": {
+          "metric": "holdout_synthetic_line_brier",
+          "candidates": [
+            {
+              "state_bias_weight": 0.0,
+              "brier": 0.21829623379838894
+            },
+            {
+              "state_bias_weight": 0.15,
+              "brier": 0.22128527460901215
+            },
+            {
+              "state_bias_weight": 0.25,
+              "brier": 0.22408573642443652
+            },
+            {
+              "state_bias_weight": 0.35,
+              "brier": 0.2275027613395476
+            },
+            {
+              "state_bias_weight": 0.5,
+              "brier": 0.23369403195288144
+            },
+            {
+              "state_bias_weight": 0.65,
+              "brier": 0.24099901536203241
+            }
+          ]
+        }
+      },
+      "mixture_accepted": false
+    },
+    "passing_tds": {
+      "status": "trained",
+      "kind": "poisson_count",
+      "holdout_rows": 33,
+      "model_used": true,
+      "model_mae": 0.8989722912971999,
+      "best_baseline": "position_role_rank_mean",
+      "best_baseline_mae": 0.9212259222018493,
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 1.1333333333333333
+        },
+        "rolling_10": {
+          "mae": 0.9727272727272728
+        },
+        "position_mean": {
+          "mae": 0.9244499792444999
+        },
+        "position_role_rank_mean": {
+          "mae": 0.9212259222018493
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 1.1183993443148914
+        },
+        "td_role_team_total_adjusted": {
+          "mae": 0.9386809039262257
+        }
+      },
+      "residual_bias": 0.2390773041826037,
+      "residual_sigma": 1.1493315266410808,
+      "abs_residual_p50": 0.6313361979498213,
+      "abs_residual_p75": 1.2738043899916474,
+      "abs_residual_p90": 1.983839051739693,
+      "accepted_distribution": true,
+      "line_0_5_brier": 0.18514267860951486,
+      "baseline_line_0_5_brier": 0.18236588927330105,
+      "td_probability_distribution_pass": false
+    },
+    "rushing_tds": {
+      "status": "trained",
+      "kind": "poisson_count",
+      "holdout_rows": 53,
+      "model_used": true,
+      "model_mae": 0.4356861491791464,
+      "best_baseline": "rolling_5_team_total_adjusted",
+      "best_baseline_mae": 0.4453761362000047,
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 0.460377358490566
+        },
+        "rolling_10": {
+          "mae": 0.46960167714884704
+        },
+        "position_mean": {
+          "mae": 0.537453862461038
+        },
+        "position_role_rank_mean": {
+          "mae": 0.49330193489664576
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 0.4453761362000047
+        },
+        "td_role_team_total_adjusted": {
+          "mae": 0.45840837591800876
+        }
+      },
+      "residual_bias": 0.18949370463420756,
+      "residual_sigma": 1.0,
+      "abs_residual_p50": 0.21977906345310508,
+      "abs_residual_p75": 0.5616188144490748,
+      "abs_residual_p90": 0.937826353585654,
+      "accepted_distribution": true,
+      "line_0_5_brier": 0.173061542828667,
+      "baseline_line_0_5_brier": 0.1927808899232184,
+      "td_probability_distribution_pass": true
+    },
+    "receiving_yards": {
+      "status": "trained",
+      "kind": "mixture_yardage_residual",
+      "holdout_rows": 194,
+      "model_used": true,
+      "model_mae": 18.499952447185294,
+      "best_baseline": "position_role_rank_mean",
+      "best_baseline_mae": 21.425918280912242,
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 21.627233676975944
+        },
+        "rolling_10": {
+          "mae": 21.565337097038125
+        },
+        "position_mean": {
+          "mae": 22.19633629483694
+        },
+        "position_role_rank_mean": {
+          "mae": 21.425918280912242
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 21.611205459139327
+        }
+      },
+      "residual_bias": 3.2668763700648964,
+      "residual_sigma": 29.14308091052765,
+      "abs_residual_p50": 10.782648491728738,
+      "abs_residual_p75": 23.49491299834306,
+      "abs_residual_p90": 45.956630793273916,
+      "accepted_distribution": true,
+      "synthetic_line_brier": 0.21180539382759278,
+      "baseline_synthetic_line_brier": 0.25,
+      "mixture_line_brier": 0.20550448347131992,
+      "mixture_brier_gain_vs_normal": 0.006300910356272865,
+      "mixture_state_bias_weight": 0.0,
+      "mixture_params": {
+        "states": {
+          "low": {
+            "rows": 8347,
+            "bias": -7.315527537308136,
+            "sigma": 14.190080129527951
+          },
+          "normal": {
+            "rows": 13804,
+            "bias": 5.609023651592617,
+            "sigma": 20.82924533026409
+          },
+          "high": {
+            "rows": 315,
+            "bias": 23.101133594714604,
+            "sigma": 23.11070757406599
+          },
+          "spike": {
+            "rows": 2803,
+            "bias": 31.618433352305843,
+            "sigma": 32.92122181254074
+          }
+        },
+        "state_label_method": "actual_opportunity_vs_rolling_prior_v3_target_route_air_yards_spike",
+        "state_bias_weight": 0.0,
+        "state_bias_weight_selection": {
+          "metric": "holdout_synthetic_line_brier",
+          "candidates": [
+            {
+              "state_bias_weight": 0.0,
+              "brier": 0.20550448347131992
+            },
+            {
+              "state_bias_weight": 0.15,
+              "brier": 0.20579299169495313
+            },
+            {
+              "state_bias_weight": 0.25,
+              "brier": 0.20712373205078288
+            },
+            {
+              "state_bias_weight": 0.35,
+              "brier": 0.2093486697488454
+            },
+            {
+              "state_bias_weight": 0.5,
+              "brier": 0.2142596920204887
+            },
+            {
+              "state_bias_weight": 0.65,
+              "brier": 0.22082935220401792
+            }
+          ]
+        }
+      },
+      "mixture_accepted": true,
+      "receiver_spike_mixture_line_brier": 0.20703838099819166,
+      "receiver_spike_current_line_brier": 0.20522614119539181,
+      "receiver_spike_mixture_brier_gain_vs_current": -0.0018122398027998476,
+      "receiver_spike_mixture_mean_mae": 18.559611281939357,
+      "receiver_spike_mixture_mae_gain_vs_current": -0.05965883475406386,
+      "receiver_spike_mixture_bias": -2.736059066342281,
+      "receiver_spike_mixture_params": {
+        "kind": "receiver_spike_mixture_v1",
+        "states": {
+          "low": {
+            "rows": 10266,
+            "bias": -5.55735684731027,
+            "sigma": 15.505572834267225
+          },
+          "normal": {
+            "rows": 8729,
+            "bias": 0.12440343679376661,
+            "sigma": 14.74495089269637
+          },
+          "target_spike": {
+            "rows": 3699,
+            "bias": 28.980911029555283,
+            "sigma": 31.25138099920781
+          },
+          "air_yards_spike": {
+            "rows": 3589,
+            "bias": 26.878897106548425,
+            "sigma": 34.73831271398675
+          },
+          "ypt_tail": {
+            "rows": 2392,
+            "bias": 41.196201168172976,
+            "sigma": 29.79734194216323
+          }
+        },
+        "calibrators": {
+          "target_spike": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.14638489849222366,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 3458,
+                "raw_rate": 0.030364372469635626,
+                "probability": 0.03116405444107219
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 8004,
+                "raw_rate": 0.08595702148925537,
+                "probability": 0.0861376728405348
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 4300,
+                "raw_rate": 0.1516279069767442,
+                "probability": 0.15159880609708912
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 4285,
+                "raw_rate": 0.20303383897316218,
+                "probability": 0.2027183192304046
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 2898,
+                "raw_rate": 0.23809523809523808,
+                "probability": 0.23734197041882732
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 2324,
+                "raw_rate": 0.29862306368330466,
+                "probability": 0.2970669665944691
+              }
+            ]
+          },
+          "air_yards_spike": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.14203173849380665,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 2479,
+                "raw_rate": 0.004033884630899556,
+                "probability": 0.00535707619810282
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 9293,
+                "raw_rate": 0.044119229527601424,
+                "probability": 0.04437144592936046
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 4695,
+                "raw_rate": 0.14206602768903087,
+                "probability": 0.14206585330024396
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 3095,
+                "raw_rate": 0.23618739903069466,
+                "probability": 0.23546289250524252
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 2778,
+                "raw_rate": 0.31569474442044637,
+                "probability": 0.31420726685362294
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 2929,
+                "raw_rate": 0.30522362581085694,
+                "probability": 0.3038973117927028
+              }
+            ]
+          },
+          "ypt_tail": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.09466144287466857,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 1533,
+                "raw_rate": 0.04370515329419439,
+                "probability": 0.04449060669813234
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 6877,
+                "raw_rate": 0.07081576268721826,
+                "probability": 0.07089869216475757
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 6340,
+                "raw_rate": 0.10757097791798108,
+                "probability": 0.10752229331065243
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 5323,
+                "raw_rate": 0.11854217546496337,
+                "probability": 0.11843498683916065
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 3025,
+                "raw_rate": 0.12462809917355372,
+                "probability": 0.12439221863856742
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 2171,
+                "raw_rate": 0.06817134960847536,
+                "probability": 0.06846099071935856
+              }
+            ]
+          },
+          "low_workload": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.40626855039772053,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 784,
+                "raw_rate": 0.39285714285714285,
+                "probability": 0.39325550149696203
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 9171,
+                "raw_rate": 0.2927706902191691,
+                "probability": 0.29306693259483907
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 6193,
+                "raw_rate": 0.403035685451316,
+                "probability": 0.4030481655476187
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 5602,
+                "raw_rate": 0.4850053552302749,
+                "probability": 0.484669471242365
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 2913,
+                "raw_rate": 0.5835907998626845,
+                "probability": 0.5821417927169033
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 606,
+                "raw_rate": 0.594059405940594,
+                "probability": 0.5869054685865799
+              }
+            ]
+          }
+        },
+        "state_label_method": "conditional_target_air_yards_ypt_tail_v1",
+        "state_bias_weight": 0.25,
+        "spike_weight_scale": 0.65,
+        "low_weight_scale": 1.2,
+        "spike_weight_cap": 0.5,
+        "status": "trained",
+        "selection": {
+          "metric": "earlier_validation_proxy_line_brier_with_mae_constraint",
+          "fit_rows": 24014,
+          "validation_rows": 1036,
+          "fit_last_season_week": [
+            2024,
+            14
+          ],
+          "validation_season_weeks": [
+            [
+              2024,
+              15
+            ],
+            [
+              2024,
+              16
+            ],
+            [
+              2024,
+              17
+            ],
+            [
+              2024,
+              18
+            ]
+          ],
+          "current_mae": 14.088392967551522,
+          "selected": {
+            "state_bias_weight": 0.25,
+            "spike_weight_scale": 0.65,
+            "low_weight_scale": 1.2,
+            "spike_weight_cap": 0.5,
+            "brier": 0.18671580575805158,
+            "mean_mae": 14.203404610471141
+          },
+          "mae_improving_candidates": 0,
+          "candidate_count": 315,
+          "holdout_used_for_selection": false,
+          "upstream_models": "fixed_existing_artifacts"
+        }
+      },
+      "receiver_spike_challenger_params": {
+        "kind": "receiver_spike_mixture_v1",
+        "states": {
+          "low": {
+            "rows": 10266,
+            "bias": -5.55735684731027,
+            "sigma": 15.505572834267225
+          },
+          "normal": {
+            "rows": 8729,
+            "bias": 0.12440343679376661,
+            "sigma": 14.74495089269637
+          },
+          "target_spike": {
+            "rows": 3699,
+            "bias": 28.980911029555283,
+            "sigma": 31.25138099920781
+          },
+          "air_yards_spike": {
+            "rows": 3589,
+            "bias": 26.878897106548425,
+            "sigma": 34.73831271398675
+          },
+          "ypt_tail": {
+            "rows": 2392,
+            "bias": 41.196201168172976,
+            "sigma": 29.79734194216323
+          }
+        },
+        "calibrators": {
+          "target_spike": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.14638489849222366,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 3458,
+                "raw_rate": 0.030364372469635626,
+                "probability": 0.03116405444107219
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 8004,
+                "raw_rate": 0.08595702148925537,
+                "probability": 0.0861376728405348
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 4300,
+                "raw_rate": 0.1516279069767442,
+                "probability": 0.15159880609708912
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 4285,
+                "raw_rate": 0.20303383897316218,
+                "probability": 0.2027183192304046
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 2898,
+                "raw_rate": 0.23809523809523808,
+                "probability": 0.23734197041882732
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 2324,
+                "raw_rate": 0.29862306368330466,
+                "probability": 0.2970669665944691
+              }
+            ]
+          },
+          "air_yards_spike": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.14203173849380665,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 2479,
+                "raw_rate": 0.004033884630899556,
+                "probability": 0.00535707619810282
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 9293,
+                "raw_rate": 0.044119229527601424,
+                "probability": 0.04437144592936046
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 4695,
+                "raw_rate": 0.14206602768903087,
+                "probability": 0.14206585330024396
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 3095,
+                "raw_rate": 0.23618739903069466,
+                "probability": 0.23546289250524252
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 2778,
+                "raw_rate": 0.31569474442044637,
+                "probability": 0.31420726685362294
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 2929,
+                "raw_rate": 0.30522362581085694,
+                "probability": 0.3038973117927028
+              }
+            ]
+          },
+          "ypt_tail": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.09466144287466857,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 1533,
+                "raw_rate": 0.04370515329419439,
+                "probability": 0.04449060669813234
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 6877,
+                "raw_rate": 0.07081576268721826,
+                "probability": 0.07089869216475757
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 6340,
+                "raw_rate": 0.10757097791798108,
+                "probability": 0.10752229331065243
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 5323,
+                "raw_rate": 0.11854217546496337,
+                "probability": 0.11843498683916065
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 3025,
+                "raw_rate": 0.12462809917355372,
+                "probability": 0.12439221863856742
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 2171,
+                "raw_rate": 0.06817134960847536,
+                "probability": 0.06846099071935856
+              }
+            ]
+          },
+          "low_workload": {
+            "status": "trained",
+            "rows": 25269,
+            "global_rate": 0.40626855039772053,
+            "bins": [
+              {
+                "lo": 0.0,
+                "hi": 0.16666666666666666,
+                "rows": 784,
+                "raw_rate": 0.39285714285714285,
+                "probability": 0.39325550149696203
+              },
+              {
+                "lo": 0.16666666666666666,
+                "hi": 0.3333333333333333,
+                "rows": 9171,
+                "raw_rate": 0.2927706902191691,
+                "probability": 0.29306693259483907
+              },
+              {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "rows": 6193,
+                "raw_rate": 0.403035685451316,
+                "probability": 0.4030481655476187
+              },
+              {
+                "lo": 0.5,
+                "hi": 0.6666666666666666,
+                "rows": 5602,
+                "raw_rate": 0.4850053552302749,
+                "probability": 0.484669471242365
+              },
+              {
+                "lo": 0.6666666666666666,
+                "hi": 0.8333333333333333,
+                "rows": 2913,
+                "raw_rate": 0.5835907998626845,
+                "probability": 0.5821417927169033
+              },
+              {
+                "lo": 0.8333333333333333,
+                "hi": 1.0,
+                "rows": 606,
+                "raw_rate": 0.594059405940594,
+                "probability": 0.5869054685865799
+              }
+            ]
+          }
+        },
+        "state_label_method": "conditional_target_air_yards_ypt_tail_v1",
+        "state_bias_weight": 0.25,
+        "spike_weight_scale": 0.65,
+        "low_weight_scale": 1.2,
+        "spike_weight_cap": 0.5,
+        "status": "trained",
+        "selection": {
+          "metric": "earlier_validation_proxy_line_brier_with_mae_constraint",
+          "fit_rows": 24014,
+          "validation_rows": 1036,
+          "fit_last_season_week": [
+            2024,
+            14
+          ],
+          "validation_season_weeks": [
+            [
+              2024,
+              15
+            ],
+            [
+              2024,
+              16
+            ],
+            [
+              2024,
+              17
+            ],
+            [
+              2024,
+              18
+            ]
+          ],
+          "current_mae": 14.088392967551522,
+          "selected": {
+            "state_bias_weight": 0.25,
+            "spike_weight_scale": 0.65,
+            "low_weight_scale": 1.2,
+            "spike_weight_cap": 0.5,
+            "brier": 0.18671580575805158,
+            "mean_mae": 14.203404610471141
+          },
+          "mae_improving_candidates": 0,
+          "candidate_count": 315,
+          "holdout_used_for_selection": false,
+          "upstream_models": "fixed_existing_artifacts"
+        }
+      },
+      "receiver_spike_mixture_accepted": false,
+      "receiver_spike_line_evidence": "three_pregame_baseline_proxy_lines_per_player_game_not_book_odds",
+      "receiver_spike_comparison_kind": "mixture_yardage_residual"
+    },
+    "receiving_tds": {
+      "status": "trained",
+      "kind": "poisson_count",
+      "holdout_rows": 141,
+      "model_used": true,
+      "model_mae": 0.35050229658700893,
+      "best_baseline": "td_role_team_total_adjusted",
+      "best_baseline_mae": 0.38210342719296536,
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 0.3858156028368795
+        },
+        "rolling_10": {
+          "mae": 0.39959473150962516
+        },
+        "position_mean": {
+          "mae": 0.38831545968087955
+        },
+        "position_role_rank_mean": {
+          "mae": 0.38421733412176573
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 0.38624329009903274
+        },
+        "td_role_team_total_adjusted": {
+          "mae": 0.38210342719296536
+        }
+      },
+      "residual_bias": 0.039605841993200885,
+      "residual_sigma": 1.0,
+      "abs_residual_p50": 0.21682672694153646,
+      "abs_residual_p75": 0.4106725264321054,
+      "abs_residual_p90": 0.7684990764007602,
+      "accepted_distribution": true,
+      "line_0_5_brier": 0.15238644402962792,
+      "baseline_line_0_5_brier": 0.17567046916622034,
+      "td_probability_distribution_pass": true
+    }
+  }
+}

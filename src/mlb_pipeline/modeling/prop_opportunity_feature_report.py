@@ -24,9 +24,19 @@ import psycopg2
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, log_loss
 
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
 from .prop_market_training import PropMarketTrainingConfig, refresh_prop_market_training_examples
 from .prop_replay import ev_per_unit
 from .side_recalibration import prop_line_surface
+from .prop_training_groups import dedupe_locked_offer_rows, expanding_player_game_folds
+from .train_prop_opportunity_models import (
+    HITTER_PA_V2_NUMERIC,
+    HITTER_PA_V3_NUMERIC,
+    OPPORTUNITY_V3_NUMERIC,
+    PITCHER_K_OPPORTUNITY_V2_NUMERIC,
+    PITCHER_LEASH_V2_NUMERIC,
+    add_hitter_pa_v2_features,
+)
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
@@ -70,6 +80,11 @@ _OPPORTUNITY_NUMERIC = [
     "batter_vs_rp_slg_30",
     "batter_vs_rp_hr_rate_30",
     "pinch_hit_risk",
+    *HITTER_PA_V2_NUMERIC,
+    *HITTER_PA_V3_NUMERIC,
+    *OPPORTUNITY_V3_NUMERIC,
+    *PITCHER_LEASH_V2_NUMERIC,
+    *PITCHER_K_OPPORTUNITY_V2_NUMERIC,
 ]
 
 _CATEGORICAL = [
@@ -92,7 +107,9 @@ class OpportunityReportConfig:
     out_file: str = "prop_opportunity_feature_report.json"
     report_file: str | None = None
     lookback_days: int = 365
-    holdout_days: int = 28
+    walk_forward_test_days: int = 7
+    walk_forward_min_train_dates: int = 9
+    max_walk_forward_folds: int = 3
     min_train_rows: int = 150
     min_holdout_rows: int = 40
     min_selected_rows: int = 10
@@ -103,8 +120,14 @@ class OpportunityReportConfig:
 
 SQL = """
 SELECT
+    id,
     replay_id,
+    source_created_at,
+    prop_offer_id,
     game_date_et,
+    game_slug,
+    player_id,
+    player_name_norm,
     market,
     side,
     COALESCE(line_bucket, 'unknown') AS line_bucket,
@@ -230,8 +253,15 @@ def _load(cfg: OpportunityReportConfig) -> pd.DataFrame:
             "actual_pa", "actual_bf", "actual_pitch_count_proxy",
         ]
     )
+    missing_numeric = [col for col in numeric if col not in df.columns]
+    if missing_numeric:
+        df = pd.concat(
+            [df, pd.DataFrame(np.nan, index=df.index, columns=missing_numeric)],
+            axis=1,
+        )
     for col in numeric:
         df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = add_hitter_pa_v2_features(df)
     df["line_surface"] = [
         prop_line_surface(market, side, line)
         for market, side, line in zip(df["market"], df["side"], df["market_line"])
@@ -240,7 +270,8 @@ def _load(cfg: OpportunityReportConfig) -> pd.DataFrame:
     df["push"] = df["push"].fillna(False).astype(bool)
     for col in _CATEGORICAL:
         df[col] = df[col].fillna("unknown").astype(str)
-    return df.replace([np.inf, -np.inf], np.nan)
+    df = df.replace([np.inf, -np.inf], np.nan)
+    return dedupe_locked_offer_rows(df)
 
 
 def _prepare_matrix(
@@ -283,23 +314,6 @@ def _prepare_matrix(
     if not parts:
         return np.zeros((len(df), 0)), numeric_means, numeric_scales, cat_values
     return np.hstack(parts), numeric_means, numeric_scales, cat_values
-
-
-def _split(df: pd.DataFrame, cfg: OpportunityReportConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train = df.loc[df["game_date_et"] < split].copy()
-    holdout = df.loc[df["game_date_et"] >= split].copy()
-    if len(train) >= cfg.min_train_rows and len(holdout) >= cfg.min_holdout_rows:
-        return train, holdout, f"last_{cfg.holdout_days}_days"
-    dates = sorted(df["game_date_et"].unique())
-    if len(dates) > 1:
-        holdout_date = dates[-1]
-        return (
-            df.loc[df["game_date_et"] < holdout_date].copy(),
-            df.loc[df["game_date_et"] >= holdout_date].copy(),
-            "last_available_date",
-        )
-    return train, holdout, f"last_{cfg.holdout_days}_days"
 
 
 def _mean(series: pd.Series) -> float | None:
@@ -550,7 +564,11 @@ def _fit_variant(
     X_train, means, scales, categories = _prepare_matrix(train, numeric_features)
     y_train = train["target"].astype(int).to_numpy()
     model = LogisticRegression(max_iter=3000, solver="lbfgs")
-    model.fit(X_train, y_train)
+    train_weights = pd.to_numeric(
+        train.get("player_game_weight", pd.Series(1.0, index=train.index)),
+        errors="coerce",
+    ).fillna(1.0).to_numpy(dtype=float)
+    model.fit(X_train, y_train, sample_weight=train_weights)
     X_hold, _, _, _ = _prepare_matrix(
         holdout,
         numeric_features,
@@ -560,49 +578,116 @@ def _fit_variant(
     )
     probs = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
     y_hold = holdout["target"].astype(int).to_numpy()
+    holdout_weights = pd.to_numeric(
+        holdout.get("player_game_weight", pd.Series(1.0, index=holdout.index)),
+        errors="coerce",
+    ).fillna(1.0).to_numpy(dtype=float)
+    weight_total = float(holdout_weights.sum()) or 1.0
+    actual_rate = float(np.dot(y_hold, holdout_weights) / weight_total)
+    avg_prob = float(np.dot(probs, holdout_weights) / weight_total)
     return probs, {
         "status": "ready",
         "rows": int(len(holdout)),
-        "actual_rate": float(np.mean(y_hold)),
-        "avg_prob": float(np.mean(probs)),
-        "calibration_error": float(np.mean(y_hold) - np.mean(probs)),
-        "brier": float(brier_score_loss(y_hold, probs)),
-        "log_loss": float(log_loss(y_hold, probs, labels=[0, 1])),
+        "actual_rate": actual_rate,
+        "avg_prob": avg_prob,
+        "calibration_error": actual_rate - avg_prob,
+        "brier": float(brier_score_loss(y_hold, probs, sample_weight=holdout_weights)),
+        "log_loss": float(log_loss(y_hold, probs, labels=[0, 1], sample_weight=holdout_weights)),
+    }
+
+
+def _forecast_metrics(holdout: pd.DataFrame, probabilities: np.ndarray) -> dict[str, Any]:
+    y = holdout["target"].astype(int).to_numpy()
+    weights = pd.to_numeric(
+        holdout.get("player_game_weight", pd.Series(1.0, index=holdout.index)),
+        errors="coerce",
+    ).fillna(1.0).to_numpy(dtype=float)
+    total = float(weights.sum()) or 1.0
+    actual_rate = float(np.dot(y, weights) / total)
+    avg_prob = float(np.dot(probabilities, weights) / total)
+    return {
+        "status": "ready",
+        "rows": int(len(holdout)),
+        "player_games": int(holdout.get("player_game_group", pd.Series(dtype=object)).nunique()),
+        "actual_rate": actual_rate,
+        "avg_prob": avg_prob,
+        "calibration_error": actual_rate - avg_prob,
+        "brier": float(brier_score_loss(y, probabilities, sample_weight=weights)),
+        "log_loss": float(log_loss(y, probabilities, labels=[0, 1], sample_weight=weights)),
     }
 
 
 def _compare_group(df: pd.DataFrame, cfg: OpportunityReportConfig) -> dict[str, Any]:
-    train, holdout, split_method = _split(df.loc[~df["push"]].copy(), cfg)
+    work = df.loc[~df["push"]].copy()
+    folds = expanding_player_game_folds(
+        work,
+        test_window_days=cfg.walk_forward_test_days,
+        step_days=cfg.walk_forward_test_days,
+        min_train_dates=cfg.walk_forward_min_train_dates,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+        max_folds=cfg.max_walk_forward_folds,
+    )
     record: dict[str, Any] = {
         "rows": int(len(df)),
-        "train_rows": int(len(train)),
-        "holdout_rows": int(len(holdout)),
-        "split_method": split_method,
+        "train_rows": max((len(fold.train) for fold in folds), default=0),
+        "holdout_rows": sum(len(fold.holdout) for fold in folds),
+        "split_method": f"expanding_{cfg.walk_forward_test_days}_day_player_game_purged",
+        "fold_count": len(folds),
+        "folds": [],
         "coverage": _coverage(df),
         "baseline": {},
         "opportunity": {},
         "decision": "insufficient_rows",
         "reasons": [],
     }
-    if len(train) < cfg.min_train_rows:
+    if not folds:
+        record["reasons"].append("no_complete_walk_forward_folds")
+        return record
+    if record["train_rows"] < cfg.min_train_rows:
         record["reasons"].append(f"train_rows<{cfg.min_train_rows}")
-    if len(holdout) < cfg.min_holdout_rows:
+    if record["holdout_rows"] < cfg.min_holdout_rows:
         record["reasons"].append(f"holdout_rows<{cfg.min_holdout_rows}")
     if record["reasons"]:
         return record
 
-    base_probs, base_forecast = _fit_variant(train, holdout, _BASE_NUMERIC)
-    opp_probs, opp_forecast = _fit_variant(train, holdout, _BASE_NUMERIC + _OPPORTUNITY_NUMERIC)
+    oof_parts: list[pd.DataFrame] = []
+    for fold in folds:
+        base_probs, base_fold = _fit_variant(fold.train, fold.holdout, _BASE_NUMERIC)
+        opp_probs, opp_fold = _fit_variant(fold.train, fold.holdout, _BASE_NUMERIC + _OPPORTUNITY_NUMERIC)
+        record["folds"].append({
+            "fold": fold.fold_index,
+            "train_start": str(fold.train_start),
+            "train_end": str(fold.train_end),
+            "holdout_start": str(fold.holdout_start),
+            "holdout_end": str(fold.holdout_end),
+            "train_rows": int(len(fold.train)),
+            "holdout_rows": int(len(fold.holdout)),
+            "train_player_games": int(fold.train["player_game_group"].nunique()),
+            "holdout_player_games": int(fold.holdout["player_game_group"].nunique()),
+            "purged_rows": int(fold.purged_rows),
+            "baseline": base_fold,
+            "opportunity": opp_fold,
+        })
+        if base_probs is None or opp_probs is None:
+            continue
+        part = fold.holdout.copy()
+        part["__base_probability"] = base_probs
+        part["__opportunity_probability"] = opp_probs
+        oof_parts.append(part)
+    if not oof_parts:
+        record["decision"] = "skipped"
+        record["reasons"].append("all_walk_forward_folds_skipped")
+        return record
+
+    holdout = pd.concat(oof_parts, ignore_index=True)
+    base_probs = holdout.pop("__base_probability").to_numpy(dtype=float)
+    opp_probs = holdout.pop("__opportunity_probability").to_numpy(dtype=float)
+    base_forecast = _forecast_metrics(holdout, base_probs)
+    opp_forecast = _forecast_metrics(holdout, opp_probs)
+    record["holdout_rows"] = int(len(holdout))
     record["baseline"]["forecast"] = base_forecast
     record["opportunity"]["forecast"] = opp_forecast
-    if base_probs is None or opp_probs is None:
-        record["decision"] = "skipped"
-        record["reasons"].extend([
-            base_forecast.get("reason") or "",
-            opp_forecast.get("reason") or "",
-        ])
-        record["reasons"] = [reason for reason in record["reasons"] if reason]
-        return record
 
     record["baseline"]["selection"] = _selected_summary(holdout, base_probs, cfg)
     record["opportunity"]["selection"] = _selected_summary(holdout, opp_probs, cfg)
@@ -735,11 +820,11 @@ def _write_report(payload: dict[str, Any], cfg: OpportunityReportConfig) -> str:
     report_name = cfg.report_file or "mlb_prop_opportunity_feature_latest.md"
     path = _REPORT_DIR / report_name
     if payload.get("status") != "ready":
-        path.write_text(
+        atomic_write_text(
+            path,
             "# MLB Prop Opportunity Feature Report\n\n"
             "No graded prop market-training rows were available. "
             "The report tried to rebuild `features.mlb_prop_market_training_examples` first.\n",
-            encoding="utf-8",
         )
         return str(path)
     lines = [
@@ -750,10 +835,11 @@ def _write_report(payload: dict[str, Any], cfg: OpportunityReportConfig) -> str:
         f"- Date range: {payload['date_min']} to {payload['date_max']}",
         f"- Rows: {payload['rows']}",
         f"- Unique dates: {payload['unique_dates']}",
-        f"- Holdout days: {payload['holdout_days']}",
+        f"- Evaluation: grouped expanding {payload['walk_forward_test_days']}-day walk-forward folds",
+        f"- Maximum folds: {payload['max_walk_forward_folds']}",
         f"- Minimum Brier gain: {cfg.min_brier_gain:.3f}",
         "",
-        "This is a holdout diagnostic. It does not reopen bankroll buckets by itself.",
+        "This is a grouped out-of-fold diagnostic. One player-game has equal total weight regardless of offer count. It does not reopen bankroll buckets by itself.",
         "",
         "## Projection Accuracy",
         "",
@@ -781,7 +867,7 @@ def _write_report(payload: dict[str, Any], cfg: OpportunityReportConfig) -> str:
         "",
         "Opportunity features are favored only when they improve holdout Brier and do not make ROI/CLV worse on enough selected rows.",
     ]
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(path, "\n".join(lines) + "\n")
     return str(path)
 
 
@@ -791,7 +877,9 @@ def build_payload(cfg: OpportunityReportConfig) -> dict[str, Any]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source": "features.mlb_prop_market_training_examples",
         "lookback_days": cfg.lookback_days,
-        "holdout_days": cfg.holdout_days,
+        "walk_forward_test_days": cfg.walk_forward_test_days,
+        "walk_forward_min_train_dates": cfg.walk_forward_min_train_dates,
+        "max_walk_forward_folds": cfg.max_walk_forward_folds,
         "rows": int(len(df)),
         "date_min": str(min(df["game_date_et"])) if not df.empty else None,
         "date_max": str(max(df["game_date_et"])) if not df.empty else None,
@@ -821,7 +909,9 @@ def main() -> None:
     parser.add_argument("--out-file", default="prop_opportunity_feature_report.json")
     parser.add_argument("--report-file", default=None)
     parser.add_argument("--lookback-days", type=int, default=365)
-    parser.add_argument("--holdout-days", type=int, default=28)
+    parser.add_argument("--walk-forward-test-days", type=int, default=7)
+    parser.add_argument("--walk-forward-min-train-dates", type=int, default=9)
+    parser.add_argument("--max-walk-forward-folds", type=int, default=3)
     parser.add_argument("--min-train-rows", type=int, default=150)
     parser.add_argument("--min-holdout-rows", type=int, default=40)
     parser.add_argument("--min-selected-rows", type=int, default=10)
@@ -835,7 +925,9 @@ def main() -> None:
         out_file=args.out_file,
         report_file=args.report_file,
         lookback_days=args.lookback_days,
-        holdout_days=args.holdout_days,
+        walk_forward_test_days=max(1, args.walk_forward_test_days),
+        walk_forward_min_train_dates=max(2, args.walk_forward_min_train_dates),
+        max_walk_forward_folds=max(1, args.max_walk_forward_folds),
         min_train_rows=args.min_train_rows,
         min_holdout_rows=args.min_holdout_rows,
         min_selected_rows=args.min_selected_rows,
@@ -847,7 +939,7 @@ def main() -> None:
     payload = build_payload(cfg)
     report_path = _write_report(payload, cfg)
     json_path = cfg.model_dir / cfg.out_file
-    json_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    atomic_write_json(json_path, payload)
     print(json.dumps({
         "status": payload.get("status"),
         "rows": payload.get("rows", 0),

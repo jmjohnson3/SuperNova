@@ -11,6 +11,8 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import requests
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.crawler_oddsapi_backfill")
 
 # NBA regular season runs Oct–Jun. Skip these months entirely (no games).
@@ -63,7 +65,7 @@ LIMIT 1;
 
 @dataclass(frozen=True)
 class BackfillConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     oddsapi_key: str = os.getenv("ODDS_API_KEY", "")
 
     sport: str = "basketball_nba"

@@ -1,6 +1,7 @@
 param(
     [string]$LockName = "SuperNovaBets_MLB_Operational",
-    [string]$CommandText
+    [string]$CommandText,
+    [int]$WaitSeconds = 3600
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,15 +11,20 @@ if ([string]::IsNullOrWhiteSpace($CommandText)) {
     exit 64
 }
 
-$createdNew = $false
-$mutex = [System.Threading.Mutex]::new($true, $LockName, [ref]$createdNew)
-
-if (-not $createdNew) {
-    Write-Host "Another MLB operational task is already running under mutex '$LockName'. Skipping this scheduled run."
-    exit 0
-}
+$mutex = [System.Threading.Mutex]::new($false, $LockName)
+$acquired = $false
 
 try {
+    try {
+        $acquired = $mutex.WaitOne([TimeSpan]::FromSeconds([Math]::Max(0, $WaitSeconds)))
+    } catch [System.Threading.AbandonedMutexException] {
+        $acquired = $true
+        Write-Warning "Recovered abandoned MLB task mutex '$LockName'."
+    }
+    if (-not $acquired) {
+        [Console]::Error.WriteLine("Timed out after ${WaitSeconds}s waiting for MLB task mutex '$LockName'.")
+        exit 75
+    }
     Write-Host "Acquired MLB task mutex '$LockName'."
     cmd.exe /d /s /c $CommandText
     $code = if ($LASTEXITCODE -ne $null) { [int]$LASTEXITCODE } else { 0 }
@@ -26,7 +32,9 @@ try {
 }
 finally {
     try {
-        $mutex.ReleaseMutex() | Out-Null
+        if ($acquired) {
+            $mutex.ReleaseMutex() | Out-Null
+        }
     } finally {
         $mutex.Dispose()
     }

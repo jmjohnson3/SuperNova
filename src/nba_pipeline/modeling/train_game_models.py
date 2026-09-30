@@ -19,6 +19,8 @@ from pandas.api.types import (
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
+from nba_pipeline.db import PG_DSN
+
 try:
     import lightgbm as lgb
     _HAS_LGB = True
@@ -30,7 +32,7 @@ log = logging.getLogger("nba_pipeline.modeling.train_game_models")
 
 @dataclass(frozen=True)
 class TrainConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
 
     # Minimum number of market rows required to train residual models
     min_market_rows: int = 15

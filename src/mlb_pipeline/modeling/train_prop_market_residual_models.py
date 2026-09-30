@@ -17,11 +17,17 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import psycopg2
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
-from .prop_market_training import ensure_prop_market_training_schema
 from .prop_replay import ev_per_unit
+from .prop_training_groups import (
+    dedupe_locked_offer_rows,
+    expanding_player_game_folds,
+    grouping_summary,
+    sample_weights,
+    temporal_player_game_split,
+)
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
@@ -94,6 +100,49 @@ _CLV_V1_NUMERIC = [
     }
 ]
 
+_CLV_V3_EXTRA_NUMERIC = [
+    "open_to_lock_minutes",
+    "minutes_to_first_pitch_log",
+    "lock_price_age_log",
+    "open_to_lock_move_per_hour",
+    "consensus_range",
+    "book_lead_lag_z",
+    "model_market_abs_disagreement",
+    "model_move_agreement",
+    "line_price_move_agreement",
+    "recent_book_clv_mean",
+    "recent_book_clv_beat_rate",
+    "recent_book_clv_rows",
+]
+_CLV_V3_NUMERIC = [*_NUMERIC, *_CLV_V3_EXTRA_NUMERIC]
+
+_CLV_V4_EXTRA_NUMERIC = [
+    "lock_consensus_gap",
+    "open_consensus_gap",
+    "movement_dispersion_ratio",
+    "time_pressure",
+    "consensus_book_count_log",
+    "availability_pair_interaction",
+]
+_CLV_V4_NUMERIC = [*_CLV_V3_NUMERIC, *_CLV_V4_EXTRA_NUMERIC]
+
+_CLV_V5_EXTRA_NUMERIC = [
+    "price_move_abs",
+    "line_move_abs",
+    "lead_lag_abs",
+    "consensus_depth_score",
+    "market_pressure_score",
+    "model_edge_times_move",
+    "model_edge_times_lead_lag",
+    "edge_consensus_gap",
+    "book_lagging_market_flag",
+    "one_hour_move_pressure",
+    "dispersion_x_time_pressure",
+    "available_consensus_depth",
+    "same_book_consensus_depth",
+]
+_CLV_V5_NUMERIC = [*_CLV_V4_NUMERIC, *_CLV_V5_EXTRA_NUMERIC]
+
 _CATEGORICAL = [
     "market",
     "side",
@@ -133,6 +182,8 @@ class MarketResidualConfig:
     min_residual_clv_beat_rate: float = 0.55
     max_residual_calibration_error: float = 0.05
     min_ev: float = 0.02
+    walk_forward_test_days: int = 7
+    walk_forward_min_train_dates: int = 9
 
 
 SQL = """
@@ -176,7 +227,13 @@ lock_consensus AS (
 SELECT
     e.id,
     e.replay_id,
+    e.source_created_at,
+    e.prop_offer_id,
+    e.lock_snapshot_id,
     e.game_date_et,
+    e.game_slug,
+    e.player_id,
+    e.player_name_norm,
     e.market,
     e.side,
     COALESCE(e.line_surface, 'unknown') AS line_surface,
@@ -211,6 +268,7 @@ SELECT
         WHEN e.side = 'under' THEN (e.market_line - open_snap.open_line)::float
         ELSE NULL
     END AS open_to_lock_line_move_side,
+    EXTRACT(EPOCH FROM (lock_row.snapshot_at_utc - open_snap.open_snapshot_at_utc)) / 60.0 AS open_to_lock_minutes,
     consensus.consensus_prob::float AS consensus_prob_at_lock,
     consensus.price_dispersion::float AS consensus_price_dispersion,
     consensus.book_count::float AS consensus_book_count,
@@ -261,6 +319,9 @@ SELECT
     e.clv_price::float AS clv_price,
     CASE WHEN e.beat_clv_price IS TRUE THEN 1 WHEN e.beat_clv_price IS FALSE THEN 0 ELSE NULL END AS beat_clv_price
 FROM features.mlb_prop_market_training_examples e
+JOIN raw.mlb_games g_final
+  ON g_final.game_slug = e.game_slug
+ AND g_final.status = 'final'
 LEFT JOIN lock_prices lock_row ON lock_row.id = e.lock_snapshot_id
 LEFT JOIN lock_consensus consensus
   ON consensus.run_id IS NOT DISTINCT FROM lock_row.run_id
@@ -273,6 +334,7 @@ LEFT JOIN lock_consensus consensus
 LEFT JOIN LATERAL (
     SELECT
         os.line::float AS open_line,
+        os.snapshot_at_utc AS open_snapshot_at_utc,
         CASE
             WHEN e.side = 'over' AND os.over_price > 0 THEN 100.0 / (os.over_price + 100.0)
             WHEN e.side = 'over' AND os.over_price < 0 THEN -os.over_price / (-os.over_price + 100.0)
@@ -294,6 +356,7 @@ LEFT JOIN LATERAL (
     LIMIT 1
 ) open_snap ON TRUE
 WHERE e.game_date_et >= %(cutoff)s
+  AND e.result_status = 'graded'
   AND e.market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
   AND e.side IN ('over','under')
   AND e.model_prob_side IS NOT NULL
@@ -352,20 +415,108 @@ def _load(cfg: MarketResidualConfig) -> pd.DataFrame:
     with psycopg2.connect(cfg.pg_dsn) as conn:
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
             return pd.DataFrame()
-        ensure_prop_market_training_schema(conn)
         df = _query_df(conn, SQL, {"cutoff": cutoff})
     if df.empty:
         return df
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
-    for col in _NUMERIC + ["market_price", "target", "profit_units", "clv_price", "beat_clv_price"]:
+    for col in _CLV_V5_NUMERIC + ["market_price", "target", "profit_units", "clv_price", "beat_clv_price"]:
+        if col not in df.columns:
+            df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.replace([np.inf, -np.inf], np.nan)
     df["push"] = df["push"].fillna(False).astype(bool)
     df = df.loc[~df["push"]].dropna(subset=["target", "model_prob_side", "market_prob_side"])
     df["target"] = df["target"].astype(int)
+    df = dedupe_locked_offer_rows(df)
+    dedupe_attrs = dict(df.attrs)
     for col in _CATEGORICAL:
         df[col] = df[col].fillna("unknown").astype(str)
-    return df
+    out = _add_clv_v3_features(df)
+    out.attrs.update(dedupe_attrs)
+    return out
+
+
+def _add_clv_v3_features(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out = out.drop(
+        columns=["recent_book_clv_mean", "recent_book_clv_beat_rate", "recent_book_clv_rows"],
+        errors="ignore",
+    )
+    minutes = pd.to_numeric(out["minutes_to_first_pitch_at_lock"], errors="coerce").clip(lower=0.0)
+    age = pd.to_numeric(out["lock_price_age_minutes"], errors="coerce").clip(lower=0.0)
+    elapsed = pd.to_numeric(out["open_to_lock_minutes"], errors="coerce").clip(lower=1.0)
+    move = pd.to_numeric(out["open_to_lock_prob_move"], errors="coerce")
+    line_move = pd.to_numeric(out["open_to_lock_line_move_side"], errors="coerce")
+    lead_lag = pd.to_numeric(out["book_lead_lag_prob"], errors="coerce")
+    dispersion = pd.to_numeric(out["consensus_price_dispersion"], errors="coerce").abs()
+    model_prob = pd.to_numeric(out["model_prob_side"], errors="coerce")
+    market_prob = pd.to_numeric(out["market_prob_side"], errors="coerce")
+    out["minutes_to_first_pitch_log"] = np.log1p(minutes)
+    out["lock_price_age_log"] = np.log1p(age)
+    out["open_to_lock_move_per_hour"] = move / (elapsed / 60.0).clip(lower=1.0 / 60.0)
+    out["consensus_range"] = (
+        pd.to_numeric(out["worst_consensus_prob"], errors="coerce")
+        - pd.to_numeric(out["best_consensus_prob"], errors="coerce")
+    ).abs()
+    out["book_lead_lag_z"] = lead_lag / dispersion.clip(lower=0.005)
+    out["model_market_abs_disagreement"] = (model_prob - market_prob).abs()
+    out["model_move_agreement"] = np.sign(model_prob - market_prob) * np.sign(move)
+    out["line_price_move_agreement"] = np.sign(line_move) * np.sign(move)
+    lock_implied = pd.to_numeric(out["lock_price_implied"], errors="coerce")
+    open_implied = pd.to_numeric(out["open_price_implied"], errors="coerce")
+    consensus = pd.to_numeric(out["consensus_prob_at_lock"], errors="coerce")
+    book_count = pd.to_numeric(out["consensus_book_count"], errors="coerce").clip(lower=0.0)
+    available = pd.to_numeric(out["lock_offer_available"], errors="coerce").fillna(0.0)
+    paired = pd.to_numeric(out["lock_same_book_pair_available"], errors="coerce").fillna(0.0)
+    out["lock_consensus_gap"] = lock_implied - consensus
+    out["open_consensus_gap"] = open_implied - consensus
+    out["movement_dispersion_ratio"] = move / dispersion.clip(lower=0.005)
+    out["time_pressure"] = 1.0 / (1.0 + minutes / 60.0)
+    out["consensus_book_count_log"] = np.log1p(book_count)
+    out["availability_pair_interaction"] = available * paired
+    out["clv_abs_prob_points"] = pd.to_numeric(out["clv_price"], errors="coerce").abs()
+    model_edge = model_prob - market_prob
+    out["price_move_abs"] = move.abs()
+    out["line_move_abs"] = line_move.abs()
+    out["lead_lag_abs"] = lead_lag.abs()
+    out["consensus_depth_score"] = np.log1p(book_count) * (1.0 - dispersion.fillna(0.0).clip(0.0, 0.25))
+    out["market_pressure_score"] = move.fillna(0.0).abs() * out["time_pressure"]
+    out["model_edge_times_move"] = model_edge * move
+    out["model_edge_times_lead_lag"] = model_edge * lead_lag
+    out["edge_consensus_gap"] = model_prob - consensus
+    out["book_lagging_market_flag"] = (
+        np.sign(model_edge.fillna(0.0)) == np.sign((-lead_lag).fillna(0.0))
+    ).astype(float)
+    out["one_hour_move_pressure"] = out["open_to_lock_move_per_hour"].fillna(0.0) * out["time_pressure"]
+    out["dispersion_x_time_pressure"] = dispersion.fillna(0.0) * out["time_pressure"]
+    out["available_consensus_depth"] = available * out["consensus_depth_score"]
+    out["same_book_consensus_depth"] = paired * out["consensus_depth_score"]
+
+    group_cols = ["bookmaker_key", "market", "side"]
+    history = out.loc[out["clv_price"].notna(), [*group_cols, "game_date_et", "clv_price", "beat_clv_price"]].copy()
+    if history.empty:
+        out["recent_book_clv_mean"] = np.nan
+        out["recent_book_clv_beat_rate"] = np.nan
+        out["recent_book_clv_rows"] = 0.0
+        return out
+    history["beat_known"] = history["beat_clv_price"].notna().astype(float)
+    history["beat_value"] = history["beat_clv_price"].fillna(0.0)
+    daily = history.groupby([*group_cols, "game_date_et"], as_index=False).agg(
+        clv_sum=("clv_price", "sum"),
+        clv_rows=("clv_price", "count"),
+        beat_sum=("beat_value", "sum"),
+        beat_rows=("beat_known", "sum"),
+    ).sort_values([*group_cols, "game_date_et"])
+    for value in ("clv_sum", "clv_rows", "beat_sum", "beat_rows"):
+        daily[f"prior_{value}"] = daily.groupby(group_cols, sort=False)[value].cumsum() - daily[value]
+    daily["recent_book_clv_mean"] = daily["prior_clv_sum"] / daily["prior_clv_rows"].replace(0.0, np.nan)
+    daily["recent_book_clv_beat_rate"] = daily["prior_beat_sum"] / daily["prior_beat_rows"].replace(0.0, np.nan)
+    daily["recent_book_clv_rows"] = daily["prior_clv_rows"].astype(float)
+    return out.merge(
+        daily[[*group_cols, "game_date_et", "recent_book_clv_mean", "recent_book_clv_beat_rate", "recent_book_clv_rows"]],
+        on=[*group_cols, "game_date_et"],
+        how="left",
+    )
 
 
 def _prepare(
@@ -424,7 +575,11 @@ def _fit_logistic_record(
         categorical_features=categorical_features,
     )
     model = LogisticRegression(max_iter=3000, solver="lbfgs")
-    model.fit(X_train, train[target].astype(int).to_numpy())
+    model.fit(
+        X_train,
+        train[target].astype(int).to_numpy(),
+        sample_weight=sample_weights(train),
+    )
     X_hold, _, _, _, _ = _prepare(
         holdout,
         means=means,
@@ -446,22 +601,238 @@ def _fit_logistic_record(
     }, probability
 
 
+def _fit_linear_record(
+    train: pd.DataFrame,
+    holdout: pd.DataFrame,
+    target: str,
+    numeric_features: list[str],
+    categorical_features: list[str],
+    method: str,
+) -> tuple[dict[str, Any], np.ndarray]:
+    X_train, names, means, scales, cats = _prepare(
+        train,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+    )
+    model = Ridge(alpha=20.0)
+    model.fit(X_train, train[target].astype(float).to_numpy(), sample_weight=sample_weights(train))
+    X_hold, _, _, _, _ = _prepare(
+        holdout,
+        means=means,
+        scales=scales,
+        cats=cats,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+    )
+    prediction = model.predict(X_hold)
+    return {
+        "method": method,
+        "intercept": float(model.intercept_),
+        "coef": {name: float(value) for name, value in zip(names, model.coef_) if abs(float(value)) > 1e-12},
+        "numeric_means": means,
+        "numeric_scales": scales,
+        "categorical_values": cats,
+        "numeric_features": numeric_features,
+        "categorical_features": categorical_features,
+    }, np.asarray(prediction, dtype=float)
+
+
+def _clv_magnitude_summary(
+    holdout: pd.DataFrame,
+    prediction: np.ndarray,
+    baseline: float,
+) -> dict[str, Any]:
+    target = pd.to_numeric(holdout["clv_price"], errors="coerce").to_numpy(dtype=float)
+    weights = sample_weights(holdout)
+    model_mae = float(np.average(np.abs(target - prediction), weights=weights))
+    baseline_mae = float(np.average(np.abs(target - baseline), weights=weights))
+    sign_accuracy = float(np.average((np.sign(prediction) == np.sign(target)).astype(float), weights=weights))
+    positive = (target > 0).astype(int)
+    auc = None
+    if len(np.unique(positive)) == 2:
+        try:
+            auc = float(roc_auc_score(positive, prediction, sample_weight=weights))
+        except Exception:
+            auc = None
+    return {
+        "rows": int(len(holdout)),
+        "player_games": int(grouping_summary(holdout).get("player_games") or 0),
+        "model_mae": model_mae,
+        "baseline_mae": baseline_mae,
+        "mae_gain": baseline_mae - model_mae,
+        "sign_accuracy": sign_accuracy,
+        "positive_clv_auc": auc,
+        "actual_mean": float(np.average(target, weights=weights)),
+        "predicted_mean": float(np.average(prediction, weights=weights)),
+    }
+
+
+def _fit_conditional_clv_v4(
+    train: pd.DataFrame,
+    holdout: pd.DataFrame,
+    direction_probability: np.ndarray,
+) -> tuple[dict[str, Any], np.ndarray]:
+    """Predict signed CLV from direction probability and conditional size.
+
+    ``clv_price`` is already an implied-probability movement in percentage
+    points. Modeling its absolute size separately on positive and negative
+    rows avoids asking one ridge model to learn a discontinuous signed target.
+    """
+    train = train.dropna(subset=["clv_price", "clv_abs_prob_points"]).copy()
+    holdout = holdout.dropna(subset=["clv_price"]).copy()
+    positive = train.loc[train["clv_price"] > 0].copy()
+    non_positive = train.loc[train["clv_price"] <= 0].copy()
+    minimum = 40
+    if len(positive) < minimum or len(non_positive) < minimum or holdout.empty:
+        return {
+            "method": "conditional_probability_space_clv_v4",
+            "enabled": False,
+            "reason": "insufficient_direction_rows",
+            "positive_rows": int(len(positive)),
+            "non_positive_rows": int(len(non_positive)),
+        }, np.full(len(holdout), np.nan)
+
+    positive_record, positive_size = _fit_linear_record(
+        positive, holdout, "clv_abs_prob_points", _CLV_V4_NUMERIC, _CATEGORICAL,
+        "positive_clv_abs_ridge_v4",
+    )
+    negative_record, negative_size = _fit_linear_record(
+        non_positive, holdout, "clv_abs_prob_points", _CLV_V4_NUMERIC, _CATEGORICAL,
+        "non_positive_clv_abs_ridge_v4",
+    )
+    positive_size = np.clip(positive_size, 0.0, 25.0)
+    negative_size = np.clip(negative_size, 0.0, 25.0)
+    direction = np.clip(np.asarray(direction_probability, dtype=float), 1e-6, 1.0 - 1e-6)
+    expected = direction * positive_size - (1.0 - direction) * negative_size
+    baseline_direction = float(np.average(
+        (train["clv_price"] > 0).astype(float), weights=sample_weights(train)
+    ))
+    positive_mean = float(np.average(
+        positive["clv_abs_prob_points"], weights=sample_weights(positive)
+    ))
+    negative_mean = float(np.average(
+        non_positive["clv_abs_prob_points"], weights=sample_weights(non_positive)
+    ))
+    baseline = baseline_direction * positive_mean - (1.0 - baseline_direction) * negative_mean
+    metrics = _clv_magnitude_summary(holdout, expected, baseline)
+    enabled = bool(
+        (metrics.get("mae_gain") or 0.0) > 0.0
+        and (metrics.get("sign_accuracy") or 0.0) >= 0.50
+    )
+    return {
+        "method": "conditional_probability_space_clv_v4",
+        "enabled": enabled,
+        "reason": "holdout_mae_and_direction_improved" if enabled else "holdout_gate_failed",
+        "probability_space_target": "close_implied_probability_minus_lock_implied_probability_pp",
+        "positive_rows": int(len(positive)),
+        "non_positive_rows": int(len(non_positive)),
+        "positive_magnitude": positive_record,
+        "non_positive_magnitude": negative_record,
+        "baseline_direction_probability": baseline_direction,
+        "baseline_positive_magnitude": positive_mean,
+        "baseline_non_positive_magnitude": negative_mean,
+        "holdout": metrics,
+    }, expected
+
+
+def _expanding_residual_oof(
+    df: pd.DataFrame,
+    cfg: MarketResidualConfig,
+) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
+    folds = expanding_player_game_folds(
+        df,
+        test_window_days=cfg.walk_forward_test_days,
+        min_train_dates=cfg.walk_forward_min_train_dates,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    outputs: list[pd.DataFrame] = []
+    summaries: list[dict[str, Any]] = []
+    for fold in folds:
+        holdout = fold.holdout.copy()
+        global_record, global_probability = _fit_logistic_record(
+            fold.train, holdout, "target", _NUMERIC, _CATEGORICAL, "market_residual_logistic"
+        )
+        holdout["p_market_residual"] = global_probability
+        clv_train = fold.train.dropna(subset=["beat_clv_price", "clv_price"]).copy()
+        clv_holdout = holdout.dropna(subset=["beat_clv_price", "clv_price"]).copy()
+        clv_rows = 0
+        if (
+            len(clv_train) >= max(120, cfg.min_train_rows // 2)
+            and len(clv_holdout) >= 25
+            and clv_train["beat_clv_price"].nunique() == 2
+        ):
+            for name, features in (
+                ("p_clv_v1", _CLV_V1_NUMERIC),
+                ("p_clv_v2", _NUMERIC),
+                ("p_clv_v3", _CLV_V3_NUMERIC),
+                ("p_clv_v4", _CLV_V4_NUMERIC),
+                ("p_clv_v5", _CLV_V5_NUMERIC),
+            ):
+                _, probability = _fit_logistic_record(
+                    clv_train, clv_holdout, "beat_clv_price", features, _CATEGORICAL, name
+                )
+                holdout.loc[clv_holdout.index, name] = probability
+            _, expected = _fit_conditional_clv_v4(
+                clv_train,
+                clv_holdout,
+                holdout.loc[clv_holdout.index, "p_clv_v4"].to_numpy(dtype=float),
+            )
+            holdout.loc[clv_holdout.index, "expected_clv_v4"] = expected
+            clv_rows = int(len(clv_holdout))
+        holdout["walk_forward_fold"] = fold.fold_index
+        outputs.append(holdout)
+        summaries.append({
+            "fold": fold.fold_index,
+            "train_start": str(fold.train_start),
+            "train_end": str(fold.train_end),
+            "holdout_start": str(fold.holdout_start),
+            "holdout_end": str(fold.holdout_end),
+            "train_rows": int(len(fold.train)),
+            "holdout_rows": int(len(fold.holdout)),
+            "clv_holdout_rows": clv_rows,
+            "purged_rows": int(fold.purged_rows),
+            "global_feature_count": len(global_record.get("coef") or {}),
+        })
+    return (pd.concat(outputs, ignore_index=False), summaries) if outputs else (pd.DataFrame(), summaries)
+
+
+def _clv_history_state(df: pd.DataFrame) -> dict[str, dict[str, float]]:
+    state: dict[str, dict[str, float]] = {}
+    work = df.dropna(subset=["clv_price"]).copy()
+    for key, group in work.groupby(["bookmaker_key", "market", "side"], dropna=False):
+        key = key if isinstance(key, tuple) else (key,)
+        beats = pd.to_numeric(group["beat_clv_price"], errors="coerce").dropna()
+        state["|".join(str(value) for value in key)] = {
+            "recent_book_clv_mean": float(pd.to_numeric(group["clv_price"], errors="coerce").mean()),
+            "recent_book_clv_beat_rate": float(beats.mean()) if not beats.empty else 0.5,
+            "recent_book_clv_rows": float(len(group)),
+        }
+    return state
+
+
 def _split(df: pd.DataFrame, cfg: MarketResidualConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train = df.loc[df["game_date_et"] < split].copy()
-    holdout = df.loc[df["game_date_et"] >= split].copy()
-    if len(train) >= cfg.min_train_rows and len(holdout) >= cfg.min_holdout_rows:
-        return train, holdout, f"last_{cfg.holdout_days}_days"
-    dates = sorted(df["game_date_et"].unique())
-    if len(dates) > 1:
-        holdout_date = dates[-1]
-        return df.loc[df["game_date_et"] < holdout_date].copy(), df.loc[df["game_date_et"] >= holdout_date].copy(), "last_available_date"
-    return train, holdout, f"last_{cfg.holdout_days}_days"
+    split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    return split.train, split.holdout, split.strategy
 
 
 def _mean(series: pd.Series) -> float | None:
     values = pd.to_numeric(series, errors="coerce").dropna()
     return float(values.mean()) if not values.empty else None
+
+
+def _weighted_mean(df: pd.DataFrame, column: str) -> float | None:
+    values = pd.to_numeric(df.get(column), errors="coerce")
+    valid = values.notna()
+    if not valid.any():
+        return None
+    weights = sample_weights(df.loc[valid])
+    return float(np.average(values.loc[valid], weights=weights))
 
 
 def _ev(prob: Any, price: Any) -> float | None:
@@ -477,14 +848,18 @@ def _forecast_summary(df: pd.DataFrame, prob_col: str) -> dict[str, Any]:
         return {"rows": 0}
     p = work[prob_col].astype(float).clip(1e-6, 1 - 1e-6)
     y = work["target"].astype(int)
+    weights = sample_weights(work)
+    actual_rate = float(np.average(y, weights=weights))
+    avg_prob = float(np.average(p, weights=weights))
     return {
         "rows": int(len(work)),
-        "actual_rate": float(y.mean()),
-        "avg_prob": float(p.mean()),
-        "calibration_error": float(y.mean() - p.mean()),
-        "brier": float(brier_score_loss(y, p)),
-        "log_loss": float(log_loss(y, p, labels=[0, 1])) if y.nunique() == 2 else None,
-        "auc": float(roc_auc_score(y, p)) if y.nunique() == 2 else None,
+        "player_games": int(work["player_game_group"].nunique()),
+        "actual_rate": actual_rate,
+        "avg_prob": avg_prob,
+        "calibration_error": actual_rate - avg_prob,
+        "brier": float(brier_score_loss(y, p, sample_weight=weights)),
+        "log_loss": float(log_loss(y, p, labels=[0, 1], sample_weight=weights)) if y.nunique() == 2 else None,
+        "auc": float(roc_auc_score(y, p, sample_weight=weights)) if y.nunique() == 2 else None,
     }
 
 
@@ -494,14 +869,18 @@ def _binary_forecast_summary(df: pd.DataFrame, prob_col: str, target_col: str) -
         return {"rows": 0}
     p = work[prob_col].astype(float).clip(1e-6, 1 - 1e-6)
     y = work[target_col].astype(int)
+    weights = sample_weights(work)
+    actual_rate = float(np.average(y, weights=weights))
+    avg_prob = float(np.average(p, weights=weights))
     return {
         "rows": int(len(work)),
-        "actual_rate": float(y.mean()),
-        "avg_prob": float(p.mean()),
-        "calibration_error": float(y.mean() - p.mean()),
-        "brier": float(brier_score_loss(y, p)),
-        "log_loss": float(log_loss(y, p, labels=[0, 1])) if y.nunique() == 2 else None,
-        "auc": float(roc_auc_score(y, p)) if y.nunique() == 2 else None,
+        "player_games": int(work["player_game_group"].nunique()),
+        "actual_rate": actual_rate,
+        "avg_prob": avg_prob,
+        "calibration_error": actual_rate - avg_prob,
+        "brier": float(brier_score_loss(y, p, sample_weight=weights)),
+        "log_loss": float(log_loss(y, p, labels=[0, 1], sample_weight=weights)) if y.nunique() == 2 else None,
+        "auc": float(roc_auc_score(y, p, sample_weight=weights)) if y.nunique() == 2 else None,
     }
 
 
@@ -514,11 +893,12 @@ def _selection_summary(df: pd.DataFrame, prob_col: str, cfg: MarketResidualConfi
     clv = selected.dropna(subset=["beat_clv_price"])
     return {
         "selected_rows": int(len(selected)),
-        "roi": _mean(selected["profit_units"]),
-        "win_rate": _mean(selected["target"]),
-        "avg_ev": _mean(selected["variant_ev"]),
-        "clv_beat_rate": _mean(clv["beat_clv_price"]) if not clv.empty else None,
-        "avg_clv_price": _mean(clv["clv_price"]) if not clv.empty else None,
+        "selected_player_games": int(selected["player_game_group"].nunique()),
+        "roi": _weighted_mean(selected, "profit_units"),
+        "win_rate": _weighted_mean(selected, "target"),
+        "avg_ev": _weighted_mean(selected, "variant_ev"),
+        "clv_beat_rate": _weighted_mean(clv, "beat_clv_price") if not clv.empty else None,
+        "avg_clv_price": _weighted_mean(clv, "clv_price") if not clv.empty else None,
     }
 
 
@@ -545,7 +925,7 @@ def _best_bucket_variant(group: pd.DataFrame, cfg: MarketResidualConfig) -> dict
         if best_brier is None or brier < best_brier:
             best_brier = brier
             best_name = name
-    roi = _mean(group["profit_units"])
+    roi = _weighted_mean(group, "profit_units")
     best_selection = variants.get(best_name or "", {}).get("selection", {})
     best_selected_roi = best_selection.get("roi")
     best_selected_clv_beat = best_selection.get("clv_beat_rate")
@@ -659,10 +1039,12 @@ def _write_report(payload: dict[str, Any], cfg: MarketResidualConfig) -> str:
         "",
         f"Generated UTC: {payload['generated_at_utc']}",
         f"Rows: {payload.get('rows', 0)}",
+        f"Raw rows before locked-offer dedupe: {payload.get('raw_rows', payload.get('rows', 0))}",
+        f"Collapsed duplicate locked-offer rows: {payload.get('deduped_rows', 0)}",
         f"Date range: {payload.get('date_min')} to {payload.get('date_max')}",
         f"Status: {payload.get('status')}",
         "",
-        "## Holdout Variants",
+        "## Expanding Walk-Forward OOF Variants",
         "",
         "| Variant | Rows | Brier | Cal Err | Selected | ROI | CLV Beat |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -705,10 +1087,24 @@ def _write_report(payload: dict[str, Any], cfg: MarketResidualConfig) -> str:
             coverage = clv_target.get("feature_coverage") or {}
             lines.extend([
                 "",
-                "CLV v2 features are trained only from true, non-synthetic paired offers.",
+                "CLV direction variants are evaluated with expanding walk-forward folds and trained only from true, non-synthetic paired offers.",
                 f"Open-to-lock coverage: {_fmt_pct(coverage.get('open_to_lock_prob_move'))}; "
                 f"consensus coverage: {_fmt_pct(coverage.get('consensus_prob_at_lock'))}; "
                 f"true multi-book consensus: {_fmt_pct(coverage.get('consensus_multibook_rate'))}.",
+            ])
+        magnitude = clv_target.get("magnitude") or {}
+        if magnitude:
+            lines.extend([
+                "",
+                "## Expected CLV Magnitude v4",
+                "",
+                f"- Enabled: {clv_target.get('magnitude_enabled', False)}",
+                f"- Holdout rows: {magnitude.get('rows', 0)}",
+                f"- Model MAE / baseline MAE: {_fmt_num(magnitude.get('model_mae'))} / {_fmt_num(magnitude.get('baseline_mae'))}",
+                f"- MAE gain: {_fmt_num(magnitude.get('mae_gain'))}",
+                f"- Sign accuracy: {_fmt_pct(magnitude.get('sign_accuracy'))}",
+                f"- Positive-CLV AUC: {_fmt_num(magnitude.get('positive_clv_auc'))}",
+                "- Target: implied-probability movement; positive and non-positive movement sizes are modeled separately.",
             ])
     lines.extend([
         "",
@@ -739,10 +1135,13 @@ def train(cfg: MarketResidualConfig) -> dict[str, Any]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source": "features.mlb_prop_market_training_examples",
         "usage": "shadow_only",
+        "raw_rows": int(df.attrs.get("raw_rows", len(df))) if not df.empty else 0,
+        "deduped_rows": int(df.attrs.get("deduped_rows", 0)) if not df.empty else 0,
         "rows": int(len(df)),
         "date_min": str(min(df["game_date_et"])) if not df.empty else None,
         "date_max": str(max(df["game_date_et"])) if not df.empty else None,
         "models": {},
+        "grouped_player_game_training": grouping_summary(df),
     }
     if df.empty or df["target"].nunique() < 2:
         payload["status"] = "insufficient_rows"
@@ -753,33 +1152,46 @@ def train(cfg: MarketResidualConfig) -> dict[str, Any]:
     payload["split_strategy"] = split
     payload["train_rows"] = int(len(train_df))
     payload["holdout_rows"] = int(len(holdout_df))
+    payload["train_grouping"] = grouping_summary(train_df)
+    payload["holdout_grouping"] = grouping_summary(holdout_df)
     if len(train_df) < cfg.min_train_rows or len(holdout_df) < cfg.min_holdout_rows or train_df["target"].nunique() < 2:
         payload["status"] = "insufficient_rows"
         payload["report_path"] = _write_report(payload, cfg)
         (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return payload
 
-    X_train, names, means, scales, cats = _prepare(train_df)
-    y_train = train_df["target"].astype(int).to_numpy()
-    model = LogisticRegression(max_iter=3000, solver="lbfgs")
-    model.fit(X_train, y_train)
-    X_hold, _, _, _, _ = _prepare(holdout_df, means=means, scales=scales, cats=cats)
-    holdout_df = holdout_df.copy()
-    holdout_df["p_market_residual"] = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
-    payload["holdout_variants"] = _variant_summary(holdout_df, cfg)
-    payload["bucket_recommendations"] = _bucket_recommendations(holdout_df, cfg)
-    payload["models"]["global"] = {
-        "method": "market_residual_logistic",
-        "intercept": float(model.intercept_[0]),
-        "coef": {name: float(value) for name, value in zip(names, model.coef_[0]) if abs(float(value)) > 1e-12},
-        "numeric_means": means,
-        "numeric_scales": scales,
-        "categorical_values": cats,
-        "numeric_features": _NUMERIC,
-        "categorical_features": _CATEGORICAL,
+    evaluation, fold_summaries = _expanding_residual_oof(df, cfg)
+    if evaluation.empty:
+        evaluation = holdout_df.copy()
+        _, probability = _fit_logistic_record(
+            train_df, evaluation, "target", _NUMERIC, _CATEGORICAL, "market_residual_logistic"
+        )
+        evaluation["p_market_residual"] = probability
+    payload["split_strategy"] = (
+        f"expanding_{cfg.walk_forward_test_days}_day_player_game_purged"
+        if fold_summaries else split
+    )
+    payload["walk_forward"] = {
+        "method": "expanding_window",
+        "test_window_days": cfg.walk_forward_test_days,
+        "fold_count": int(len(fold_summaries)),
+        "oof_rows": int(len(evaluation)),
+        "folds": fold_summaries,
+        "fallback_used": not bool(fold_summaries),
     }
-    clv_train = train_df.dropna(subset=["beat_clv_price"]).copy()
-    clv_holdout = holdout_df.dropna(subset=["beat_clv_price"]).copy()
+    payload["holdout_rows"] = int(len(evaluation))
+    payload["holdout_grouping"] = grouping_summary(evaluation)
+    payload["holdout_variants"] = _variant_summary(evaluation, cfg)
+    payload["bucket_recommendations"] = _bucket_recommendations(evaluation, cfg)
+    production_global, _ = _fit_logistic_record(
+        df, df.iloc[:1], "target", _NUMERIC, _CATEGORICAL, "market_residual_logistic"
+    )
+    production_global["trained_on_all_settled_rows"] = True
+    production_global["selected_by"] = "expanding_walk_forward_brier"
+    payload["models"]["global"] = production_global
+
+    clv_train = df.dropna(subset=["beat_clv_price", "clv_price"]).copy()
+    clv_holdout = evaluation.dropna(subset=["beat_clv_price", "clv_price"]).copy()
     payload["clv_target"] = {
         "target": "beat_clv_price",
         "train_rows": int(len(clv_train)),
@@ -792,32 +1204,72 @@ def train(cfg: MarketResidualConfig) -> dict[str, Any]:
         and clv_train["beat_clv_price"].nunique() == 2
     ):
         clv_holdout = clv_holdout.copy()
-        v1_record, v1_probability = _fit_logistic_record(
-            clv_train, clv_holdout, "beat_clv_price", _CLV_V1_NUMERIC, _CATEGORICAL, "clv_beat_logistic_v1"
-        )
-        v2_record, v2_probability = _fit_logistic_record(
-            clv_train, clv_holdout, "beat_clv_price", _NUMERIC, _CATEGORICAL, "clv_beat_logistic_v2"
-        )
-        clv_holdout["p_clv_v1"] = v1_probability
-        clv_holdout["p_clv_v2"] = v2_probability
+        feature_sets = {
+            "clv_v1": ("p_clv_v1", _CLV_V1_NUMERIC, "clv_beat_logistic_v1"),
+            "clv_v2": ("p_clv_v2", _NUMERIC, "clv_beat_logistic_v2"),
+            "clv_v3": ("p_clv_v3", _CLV_V3_NUMERIC, "clv_beat_logistic_v3"),
+            "clv_v4": ("p_clv_v4", _CLV_V4_NUMERIC, "clv_direction_logistic_v4"),
+            "clv_v5": ("p_clv_v5", _CLV_V5_NUMERIC, "clv_direction_logistic_v5"),
+        }
+        if not fold_summaries:
+            fallback_train = train_df.dropna(subset=["beat_clv_price", "clv_price"]).copy()
+            for probability_col, features, method in feature_sets.values():
+                _, probability = _fit_logistic_record(
+                    fallback_train, clv_holdout, "beat_clv_price", features, _CATEGORICAL, method
+                )
+                clv_holdout[probability_col] = probability
+        for probability_col, features, method in feature_sets.values():
+            if probability_col not in clv_holdout.columns or clv_holdout[probability_col].isna().all():
+                _, probability = _fit_logistic_record(
+                    clv_train, clv_holdout, "beat_clv_price", features, _CATEGORICAL, method
+                )
+                clv_holdout[probability_col] = probability
+        if "expected_clv_v4" not in clv_holdout.columns or clv_holdout["expected_clv_v4"].isna().all():
+            _, expected = _fit_conditional_clv_v4(
+                clv_train,
+                clv_holdout,
+                clv_holdout["p_clv_v4"].to_numpy(dtype=float),
+            )
+            clv_holdout["expected_clv_v4"] = expected
         v1_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v1", "beat_clv_price")
         v2_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v2", "beat_clv_price")
-        v1_brier = v1_metrics.get("brier")
-        v2_brier = v2_metrics.get("brier")
-        v1_auc = v1_metrics.get("auc")
-        v2_auc = v2_metrics.get("auc")
-        use_v2 = bool(
-            v1_brier is not None and v2_brier is not None and v2_brier < v1_brier
-            and (v1_auc is None or v2_auc is None or v2_auc >= v1_auc)
+        v3_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v3", "beat_clv_price")
+        v4_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v4", "beat_clv_price")
+        v5_metrics = _binary_forecast_summary(clv_holdout, "p_clv_v5", "beat_clv_price")
+        candidates = {
+            "clv_v1": v1_metrics,
+            "clv_v2": v2_metrics,
+            "clv_v3": v3_metrics,
+            "clv_v4": v4_metrics,
+            "clv_v5": v5_metrics,
+        }
+        best_auc = max(
+            (float(rec["auc"]) for rec in candidates.values() if rec.get("auc") is not None),
+            default=None,
         )
-        selected_variant = "clv_v2" if use_v2 else "clv_v1"
-        selected_record = v2_record if use_v2 else v1_record
-        clv_holdout["p_clv_beat"] = v2_probability if use_v2 else v1_probability
+        eligible = {
+            name: rec for name, rec in candidates.items()
+            if rec.get("brier") is not None
+            and (best_auc is None or rec.get("auc") is None or float(rec["auc"]) >= best_auc - 0.01)
+        }
+        selected_variant, _selected_metrics = min(
+            eligible.items() if eligible else candidates.items(),
+            key=lambda item: float(item[1].get("brier") or 1.0),
+        )
+        selected_probability_col, selected_features, selected_method = feature_sets[selected_variant]
+        clv_holdout["p_clv_beat"] = clv_holdout[selected_probability_col]
+        selected_record, _ = _fit_logistic_record(
+            clv_train, clv_train.iloc[:1], "beat_clv_price", selected_features, _CATEGORICAL, selected_method
+        )
         coverage = {
             feature: float(clv_train[feature].notna().mean()) if feature in clv_train else 0.0
             for feature in [
                 "open_to_lock_prob_move", "open_to_lock_line_move_side", "consensus_prob_at_lock",
                 "consensus_price_dispersion", "book_lead_lag_prob", "lock_offer_available",
+                "open_to_lock_minutes", "open_to_lock_move_per_hour", "book_lead_lag_z",
+                "recent_book_clv_mean", "recent_book_clv_beat_rate",
+                "price_move_abs", "lead_lag_abs", "consensus_depth_score",
+                "market_pressure_score", "model_edge_times_move",
             ]
         }
         coverage["consensus_multibook_rate"] = float(
@@ -831,15 +1283,46 @@ def train(cfg: MarketResidualConfig) -> dict[str, Any]:
             "train_rows": int(len(clv_train)),
             "holdout_rows": int(len(clv_holdout)),
             "status": "ready",
-            "evidence": "true_pair_non_synthetic_only",
+            "evidence": "expanding_walk_forward_true_pair_non_synthetic_only",
             "selected_variant": selected_variant,
-            "variant_comparison": {"clv_v1": v1_metrics, "clv_v2": v2_metrics},
+            "variant_comparison": candidates,
             "feature_coverage": coverage,
             "holdout": _binary_forecast_summary(clv_holdout, "p_clv_beat", "beat_clv_price"),
         }
         selected_record["selected_by_holdout"] = selected_variant
+        selected_record["selected_by"] = "expanding_walk_forward_brier_with_auc_guard"
+        selected_record["trained_on_all_settled_rows"] = True
         selected_record["true_pair_only"] = True
         payload["models"]["clv_beat"] = selected_record
+        magnitude_holdout = clv_holdout.dropna(subset=["expected_clv_v4"]).copy()
+        if len(magnitude_holdout) >= max(30, cfg.min_holdout_rows // 2):
+            baseline_clv = _weighted_mean(clv_train, "clv_price") or 0.0
+            magnitude_metrics = _clv_magnitude_summary(
+                magnitude_holdout,
+                magnitude_holdout["expected_clv_v4"].to_numpy(dtype=float),
+                baseline_clv,
+            )
+            production_magnitude, _ = _fit_conditional_clv_v4(
+                clv_train,
+                clv_train.iloc[:1],
+                np.asarray([float(clv_train["beat_clv_price"].mean())]),
+            )
+            magnitude_enabled = bool(
+                (magnitude_metrics.get("mae_gain") or 0.0) > 0.0
+                and (magnitude_metrics.get("sign_accuracy") or 0.0) >= 0.50
+            )
+            production_magnitude.update({
+                "enabled": magnitude_enabled,
+                "reason": "walk_forward_gate_passed" if magnitude_enabled else "walk_forward_gate_failed",
+                "true_pair_only": True,
+                "trained_on_all_settled_rows": True,
+                "holdout": magnitude_metrics,
+            })
+            magnitude_record = production_magnitude
+            payload["models"]["clv_magnitude"] = magnitude_record
+            payload["clv_target"]["magnitude"] = magnitude_metrics
+            payload["clv_target"]["magnitude_enabled"] = magnitude_enabled
+        payload["clv_history_state"] = _clv_history_state(df)
     payload["status"] = "ready"
     payload["report_path"] = _write_report(payload, cfg)
     (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")

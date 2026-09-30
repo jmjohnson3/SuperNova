@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from .features import add_game_derived_features
+from mlb_pipeline.atomic_io import atomic_save_lightgbm_booster, atomic_write_json
 from mlb_pipeline.db import PG_DSN
 
 import numpy as np
@@ -672,8 +673,9 @@ def _select_top_features(
     avg   = {f: float((imp_s[i] + imp_t[i]) / 2.0) for i, f in enumerate(feature_cols)}
 
     sorted_imp = sorted(avg.items(), key=lambda x: -x[1])
-    (model_dir / "feature_importance.json").write_text(
-        json.dumps({k: round(v, 6) for k, v in sorted_imp}, indent=2), encoding="utf-8"
+    atomic_write_json(
+        model_dir / "feature_importance.json",
+        {k: round(v, 6) for k, v in sorted_imp},
     )
 
     # Always keep season dummies and market line anchors; the latter have deceptively
@@ -1196,7 +1198,7 @@ def main() -> None:
             r_mae = r_rmse = rt_mae = rt_rmse = None
 
         calib_path = model_dir / "calibration.json"
-        calib_path.write_text(json.dumps(calib, indent=2), encoding="utf-8")
+        atomic_write_json(calib_path, calib)
         log.info("Saved CI calibration to %s", calib_path)
 
         # Derive final model depth from CV best_iteration statistics
@@ -1268,7 +1270,7 @@ def main() -> None:
                 try:
                     _lgb_m = lgb.LGBMRegressor(**_lgb_params)
                     _lgb_m.fit(X_all, _lgb_y)
-                    _lgb_m.booster_.save_model(str(model_dir / _lgb_name))
+                    atomic_save_lightgbm_booster(_lgb_m.booster_, model_dir / _lgb_name)
                     log.info("Saved LGB %s model → %s", _lgb_target, _lgb_name)
                 except Exception as _exc:
                     log.warning("LGB %s training failed: %s", _lgb_target, _exc)
@@ -1295,7 +1297,7 @@ def main() -> None:
                         _qm = lgb.LGBMRegressor(**_q_params)
                         _qm.fit(X_all, _lgb_y)
                         _fname = f"{_lgb_stem}_q{_q_int:02d}_lgb.txt"
-                        _qm.booster_.save_model(str(model_dir / _fname))
+                        atomic_save_lightgbm_booster(_qm.booster_, model_dir / _fname)
                         log.info("Saved LGB quantile q%02d %s → %s", _q_int, _lgb_target, _fname)
                     except Exception as _exc:
                         log.warning("LGB quantile q%02d %s failed: %s", _q_int, _lgb_target, _exc)
@@ -1318,7 +1320,9 @@ def main() -> None:
                 try:
                     _f5_lgb = lgb.LGBMRegressor(**_lgb_params)
                     _f5_lgb.fit(X_f5_all, y_f5_all)
-                    _f5_lgb.booster_.save_model(str(model_dir / "total_f5_direct_lgb.txt"))
+                    atomic_save_lightgbm_booster(
+                        _f5_lgb.booster_, model_dir / "total_f5_direct_lgb.txt"
+                    )
                     log.info("Saved F5 LGB model → total_f5_direct_lgb.txt")
                 except Exception as _exc:
                     log.warning("F5 LGB training failed: %s", _exc)
@@ -1376,8 +1380,8 @@ def main() -> None:
 
         # Save schema artifacts
         selected_medians = {c: medians_all[c] for c in feature_cols}
-        (model_dir / "feature_columns.json").write_text(json.dumps(feature_cols), encoding="utf-8")
-        (model_dir / "feature_medians.json").write_text(json.dumps(selected_medians), encoding="utf-8")
+        atomic_write_json(model_dir / "feature_columns.json", feature_cols, indent=None)
+        atomic_write_json(model_dir / "feature_medians.json", selected_medians, indent=None)
 
         # Save Optuna best params for reproducibility
         if best_run_line_params or best_total_params:
@@ -1385,9 +1389,7 @@ def main() -> None:
                 "run_line_params": best_run_line_params,
                 "total_params":    best_total_params,
             }
-            (model_dir / "optuna_best_params.json").write_text(
-                json.dumps(optuna_results, indent=2), encoding="utf-8"
-            )
+            atomic_write_json(model_dir / "optuna_best_params.json", optuna_results)
             log.info("Saved Optuna best params to %s", model_dir / "optuna_best_params.json")
 
         log.info("Saved models + feature schema to %s", model_dir)

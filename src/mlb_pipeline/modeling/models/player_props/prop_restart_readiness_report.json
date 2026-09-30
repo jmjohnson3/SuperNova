@@ -1,0 +1,228 @@
+{
+  "generated_at_utc": "2026-07-15T01:29:57Z",
+  "status": "pass",
+  "checks": [
+    {
+      "name": "task_registered_MLB-Morning",
+      "passed": true,
+      "required": true,
+      "detail": "registered under \\SuperNovaBets\\"
+    },
+    {
+      "name": "task_registered_MLB-PreGame-Day",
+      "passed": true,
+      "required": true,
+      "detail": "registered under \\SuperNovaBets\\"
+    },
+    {
+      "name": "task_registered_MLB-PreGame-Evening",
+      "passed": true,
+      "required": true,
+      "detail": "registered under \\SuperNovaBets\\"
+    },
+    {
+      "name": "task_registered_MLB-Prop-Targeted-Close",
+      "passed": true,
+      "required": true,
+      "detail": "registered under \\SuperNovaBets\\"
+    },
+    {
+      "name": "task_registered_MLB-Close",
+      "passed": true,
+      "required": true,
+      "detail": "registered under \\SuperNovaBets\\"
+    },
+    {
+      "name": "task_registered_MLB-Training",
+      "passed": true,
+      "required": true,
+      "detail": "registered under \\SuperNovaBets\\"
+    },
+    {
+      "name": "scheduled_task_last_results",
+      "passed": false,
+      "required": false,
+      "detail": "MLB-Training=1"
+    },
+    {
+      "name": "targeted_close_interval_pt10m",
+      "passed": true,
+      "required": true,
+      "detail": "interval='PT10M'"
+    },
+    {
+      "name": "targeted_close_duration_present",
+      "passed": true,
+      "required": false,
+      "detail": "duration='PT15H'"
+    },
+    {
+      "name": "targeted_close_limit_not_too_long",
+      "passed": true,
+      "required": false,
+      "detail": "execution_time_limit='PT15M'"
+    },
+    {
+      "name": "targeted_close_command_exists",
+      "passed": true,
+      "required": true,
+      "detail": "command='C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\scripts\\\\mlb_prop_targeted_close.bat'"
+    },
+    {
+      "name": "database_connectivity",
+      "passed": true,
+      "required": true,
+      "detail": "connected"
+    },
+    {
+      "name": "table_exists_bets_mlb_bankroll_ledger",
+      "passed": true,
+      "required": true,
+      "detail": "bets.mlb_bankroll_ledger"
+    },
+    {
+      "name": "table_exists_bets_mlb_model_pick_ledger",
+      "passed": true,
+      "required": true,
+      "detail": "bets.mlb_model_pick_ledger"
+    },
+    {
+      "name": "table_exists_bets_mlb_daily_forecast_ledger",
+      "passed": true,
+      "required": true,
+      "detail": "bets.mlb_daily_forecast_ledger"
+    },
+    {
+      "name": "table_exists_odds_mlb_player_prop_line_snapshots",
+      "passed": true,
+      "required": true,
+      "detail": "odds.mlb_player_prop_line_snapshots"
+    },
+    {
+      "name": "table_exists_features_mlb_prop_market_training_examples",
+      "passed": true,
+      "required": true,
+      "detail": "features.mlb_prop_market_training_examples"
+    },
+    {
+      "name": "webhook_present_MLB_DISCORD_WEBHOOK_URL",
+      "passed": true,
+      "required": true,
+      "detail": "set in process/user environment"
+    },
+    {
+      "name": "webhook_present_MLB_RECORD_LEDGER_DISCORD_WEBHOOK_URL",
+      "passed": true,
+      "required": true,
+      "detail": "set in process/user environment"
+    },
+    {
+      "name": "optional_webhook_present_MLB_PROP_RESEARCH_DISCORD_WEBHOOK_URL",
+      "passed": true,
+      "required": false,
+      "detail": "set in process/user environment"
+    },
+    {
+      "name": "optional_webhook_present_MLB_OPS_DISCORD_WEBHOOK_URL",
+      "passed": true,
+      "required": false,
+      "detail": "set in process/user environment"
+    },
+    {
+      "name": "optional_webhook_present_MLB_ALERTS_DISCORD_WEBHOOK_URL",
+      "passed": true,
+      "required": false,
+      "detail": "set in process/user environment"
+    },
+    {
+      "name": "frozen_hitter_artifact_valid",
+      "passed": true,
+      "required": true,
+      "detail": "sha256 matched"
+    },
+    {
+      "name": "checkpoint_ran",
+      "passed": true,
+      "required": true,
+      "detail": "2026-07-15T00:55:46Z"
+    },
+    {
+      "name": "micro_report_ran",
+      "passed": true,
+      "required": true,
+      "detail": "2026-07-15T00:55:46Z"
+    },
+    {
+      "name": "backdated_audit_has_promotion_slates",
+      "passed": true,
+      "required": false,
+      "detail": "4 prop-promotion backdated slates"
+    },
+    {
+      "name": "micro_buckets_not_forced",
+      "passed": true,
+      "required": false,
+      "detail": "0 micro-ready buckets"
+    }
+  ],
+  "required_failures": [],
+  "scheduled_tasks": [
+    {
+      "Name": "MLB-Morning",
+      "Exists": true,
+      "State": "Ready",
+      "LastTaskResult": 0,
+      "LastRunTime": "/Date(1784030400000)/",
+      "NextRunTime": "/Date(1784116800000)/"
+    },
+    {
+      "Name": "MLB-PreGame-Day",
+      "Exists": true,
+      "State": "Ready",
+      "LastTaskResult": 0,
+      "LastRunTime": "/Date(1784039430000)/",
+      "NextRunTime": "/Date(1784125830000)/"
+    },
+    {
+      "Name": "MLB-PreGame-Evening",
+      "Exists": true,
+      "State": "Ready",
+      "LastTaskResult": 0,
+      "LastRunTime": "/Date(1784061030000)/",
+      "NextRunTime": "/Date(1784147430000)/"
+    },
+    {
+      "Name": "MLB-Prop-Targeted-Close",
+      "Exists": true,
+      "State": "Ready",
+      "LastTaskResult": 0,
+      "LastRunTime": "/Date(1784078725000)/",
+      "NextRunTime": "/Date(1784079335000)/"
+    },
+    {
+      "Name": "MLB-Close",
+      "Exists": true,
+      "State": "Ready",
+      "LastTaskResult": 0,
+      "LastRunTime": "/Date(1784076345000)/",
+      "NextRunTime": "/Date(1784079945000)/"
+    },
+    {
+      "Name": "MLB-Training",
+      "Exists": true,
+      "State": "Ready",
+      "LastTaskResult": 1,
+      "LastRunTime": "/Date(1784003430000)/",
+      "NextRunTime": "/Date(1784089830000)/"
+    }
+  ],
+  "checkpoint_status": "evaluation_ready_no_micro_buckets",
+  "micro_ready_count": 0,
+  "backdated_prop_promotion_count": 4,
+  "backdated_prop_promotion_dates": [
+    "2026-07-02",
+    "2026-07-03",
+    "2026-07-04",
+    "2026-07-05"
+  ]
+}

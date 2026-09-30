@@ -1,0 +1,1835 @@
+{
+  "date": "2026-09-27",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 2291,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-26 07:30:44,931 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-26 07:30:57,082 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2999\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 567492,\n      \"rows_selected\": 2232,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 733\n    }\n  ],\n  \"roster_rows_upserted\": 2997,\n  \"depth_rows_upserted\": 2229,\n  \"injury_rows_upserted\": 733\n}\n",
+      "stderr_tail": "2026-09-26 07:31:24,821 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-26 07:31:31,736 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-26 07:32:07,853 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "\": \"advanced_route_usage\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2294,\n      \"rows_matched\": 2291,\n      \"rows_updated\": 668\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 5662,\n      \"player_usage_rows\": 657,\n      \"player_usage_rows_updated\": 652,\n      \"player_game_rows\": 322,\n      \"rows_updated\": 322,\n      \"zero_filled_rows\": 0\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 78\n    }\n  ],\n  \"snap_rows_matched\": 3051,\n  \"snap_rows_updated\": 1493,\n  \"advanced_usage_rows_matched\": 2291,\n  \"advanced_usage_rows_updated\": 668,\n  \"pbp_usage_player_game_rows\": 657,\n  \"pbp_usage_rows_updated\": 652,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 78,\n  \"red_zone_player_game_rows\": 322,\n  \"red_zone_rows_updated\": 322\n}\n",
+      "stderr_tail": "2026-09-26 07:32:14,795 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-26 07:32:15,934 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-09-26 07:32:19,680 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-09-26 07:32:19,919 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-09-27\",\n  \"built_at\": \"2026-09-26T13:32:34.590793+00:00\",\n  \"games\": 14,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 513,\n      \"fresh_rows\": 266,\n      \"latest_quote\": \"2026-09-26 06:32:47.107387-07:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 28,\n      \"fresh_rows\": 14,\n      \"latest_quote\": \"2026-09-26 06:32:47.093387-07:00\"\n    }\n  },\n  \"game_ids\": null,\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "# NFL Snapshot Health - 2026-09-27\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 2 | 2026-09-26 06:32:47.093387-07:00 |\n| nfl_player_props | lock | 2 | 2026-09-26 06:32:47.107387-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 2 | 2026-09-26 06:32:45.598009-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| lock | 56 | 14 | 2026-09-26 06:32:47.093387-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| lock | 948 | 184 | 2026-09-26 06:32:47.107387-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 28 | 0 | 0.0% |\n| prop | 636 | 0 | 0.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "ne_home_margin\": 2.5,\n      \"baseline_total_points\": 38.5,\n      \"probability\": 0.5,\n      \"ev\": -0.028301886792452824,\n      \"edge\": -0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"4386e3a877454948c0ca6ca138c431d3475b7ecd370ce9c636526b29c90523d0\"\n    },\n    {\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"quote_fetched_at_utc\": \"2026-09-26 13:32:47.093387+00:00\",\n      \"prediction_context_cutoff_utc\": \"2026-09-26T13:33:26.128522+00:00\",\n      \"start_ts_utc\": \"2026-09-27 17:00:00+00:00\",\n      \"game_date_et\": \"2026-09-27\",\n      \"season\": 2026,\n      \"week\": 3,\n      \"game_id\": \"2026_03_TEN_NYG\",\n      \"home_team_abbr\": \"NYG\",\n      \"away_team_abbr\": \"TEN\",\n      \"market\": \"total\",\n      \"side\": \"over\",\n      \"book\": \"fanduel\",\n      \"line\": 38.5,\n      \"price\": -106,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675854&selectionId=7017916\",\n      \"predicted_home_margin\": 2.5,\n      \"predicted_total_points\": 38.5,\n      \"baseline_home_margin\": 2.5,\n      \"baseline_total_points\": 38.5,\n      \"probability\": 0.49246231155778897,\n      \"ev\": -0.042950602066938404,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"45ed9d5eb57ad96e351b1d162c4aa28438c36ac5c54bd69838e2533e6b0310e1\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"no_accepted_team_component\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "exact_line_model_version\": null,\n      \"usage_context_quality\": 0.7844012743676662,\n      \"limited_usage_risk\": 0.21083333333333357,\n      \"spike_usage_probability\": 0.27706687100100125,\n      \"tier\": \"paper\",\n      \"reasons\": \"nfl_v1_projection_only_no_bankroll_gates;clv_history_guard_failed;probability_calibrated_by_market_usage_context\",\n      \"prediction_key\": \"4cb57c4c08030a120a5479ff151d19f608732992666b75b8226c21bf8c3ff1f7\",\n      \"prediction_context_cutoff_utc\": \"2026-09-26T13:34:12.960926+00:00\",\n      \"context_evidence\": {\n        \"contract\": \"nfl-context-evidence-v1\",\n        \"cutoff\": \"2026-09-26T13:34:12.960926+00:00\",\n        \"injury_status\": null,\n        \"practice_status\": null,\n        \"injury_observed_at\": null,\n        \"injury_missing\": true,\n        \"depth_rank\": 1.0,\n        \"depth_movement\": 0.0,\n        \"expected_starter_from_depth\": true,\n        \"depth_observed_at\": \"2026-09-26T13:31:36.094895+00:00\",\n        \"roster_observed_at\": \"2026-09-26T13:31:27.795805+00:00\",\n        \"teammate_injury_count\": null,\n        \"teammate_coverage\": \"unknown\",\n        \"routes_run_history\": null,\n        \"routes_source\": \"proxy_only\",\n        \"route_participation_proxy\": 0.8460000000000001,\n        \"first_read_history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"quote_fetched_at_utc\": \"2026-09-26 06:32:47.107387-07:00\",\n      \"projection_semantics\": \"central_forecast_not_certified_mean\"\n    }\n  ]\n}\n",
+      "stderr_tail": "PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"receiver_spike_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1284: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_carry_under_correction_v4_score\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1296: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_rush_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1305: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"yardage_projection_volatility_v4_score\"] = pd.concat([\n"
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 5,\n  \"prop_locked\": 56,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 936,\n  \"run_id\": \"benchmark-20260921T230305171980Z\",\n  \"eligible_original_locks\": 427,\n  \"missing_forecast_ids\": [],\n  \"missing_variants\": [],\n  \"capture_errors\": {},\n  \"receiving_research_trial\": {\n    \"status\": \"research_only\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"outside_trial\": 808,\n      \"original_drift_guard_not_passed\": 60,\n      \"nonpositive_current_locked_ev\": 30,\n      \"fixed_cap_or_duplicate\": 38\n    },\n    \"betting_approved\": false\n  },\n  \"exclusions\": {\n    \"not_an_offered_line\": 279\n  },\n  \"production_changed\": false,\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Receiving Trial Checkpoint",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": " \"clv\": null}, {\"forecast_id\": 8159, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 24.5, \"side\": \"over\", \"locked_at\": \"2026-09-26T13:35:47.006028+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 8164, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 38.5, \"side\": \"under\", \"locked_at\": \"2026-09-26T13:35:47.006028+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}], \"average_clv\": null}, \"fixed_research\": {\"started\": 0, \"valid\": 0, \"unknown\": 0, \"valid_coverage\": null, \"required_coverage\": 0.9, \"target_met\": null, \"unknown_reasons\": {}, \"observations\": [{\"forecast_id\": 7362, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 38.5, \"side\": \"under\", \"locked_at\": \"2026-09-25T13:34:53.568418+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 7398, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 14.5, \"side\": \"over\", \"locked_at\": \"2026-09-25T13:34:53.568418+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 7446, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 21.5, \"side\": \"under\", \"locked_at\": \"2026-09-25T13:34:53.568418+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}], \"average_clv\": null}}, \"forecast_next_action\": \"keep_frozen_collect_evidence\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Locked Micro Uncertainty",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 0,\n  \"exclusions\": {\n    \"crossed_kickoff_during_scoring\": 0\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 223,\n    \"qb_tail\": 29\n  },\n  \"excluded\": {},\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 2 | 2026-09-26 06:32:47.093387-07:00 |\n| nfl_player_props | lock | 2 | 2026-09-26 06:32:47.107387-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 2 | 2026-09-26 06:32:45.598009-07:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 56 | 14 |\n| player props | 948 | 184 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 28 | 0 | 0.0% |\n| prop | 636 | 0 | 0.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 948 | raw parser output |\n| true paired over/under offers | 926 | 97.7% |\n| lock markets | 636 | exact book/player/stat/line locked |\n| close markets | 0 | exact book/player/stat/line closed |\n| lock-close exact matches | 0 | 0.0% |\n| CLV labels | 0 | valid: 0 |\n| graded prop predictions | 0 | line-level result rows |\n| prop ledger rows | 291 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| none | 0 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 33 |\n| prop | paper | 291 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "esearch only: B.Nix (DEN vs LA) Rushing Yards OVER16.5 -114 proj=22.83 range=0.0-56.5 | P(over)=53% | Mkt=50% | Edge=+3.5% | EV=+0.4% | Cur=-114 Min=-115 Drift=OK [ctx=81% spike=55% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610414931&selectionId=41331175>)\\n\\n**PAPER - RB Receiving Yards**\\n- Research only: K.Williams (LA vs DEN) Receiving Yards OVER12.5 -114 proj=18.60 range=0.0-50.0 | P(over)=57% | Mkt=50% | Edge=+6.9% | EV=+6.8% | Cur=-114 Min=-131 Drift=OK [ctx=90% spike=48% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188370102&selectionId=37541915>)\\n- Research only: R.Harvey (DEN vs LA) Receiving Yards OVER16.5 -114 proj=21.62 range=0.0-53.0 | P(over)=55% | Mkt=50% | Edge=+5.3% | EV=+3.7% | Cur=-114 Min=-123 Drift=OK [ctx=90% spike=41% depth=2 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.611409208&selectionId=50744298>)\\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188370102&selectionId[0]=37541915&marketId[1]=42.611409208&selectionId[1]=50744298>)\\n\\n**PAPER - RB Rushing TDs**\\n- Research only: K.Williams (LA vs DEN) Rushing TDs proj=0.47 range=0.0-1.0 [ctx=90% spike=100% depth=1]\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"quote_exclusions\": [], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_CAR_CLE",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "CAR @ CLE | NFL 2026-09-27 (1/2)",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- UNDER 41.5 -105 | total=41.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675477&selectionId=7017917>)\n- CLE +2.5 -110 | home margin=-2.5 | P=50% | EV=-4.5% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675478&selectionId=50209>)\n\n**PAPER - QB Rushing Yards**\n- Research only: D.Watson (CLE vs CAR) Rushing Yards UNDER25.5 -114 proj=17.63 range=0.0-51.4 | P(under)=59% | Mkt=50% | Edge=+9.4% | EV=+11.5% | Cur=-114 Min=-146 Drift=OK [ctx=79% spike=30% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188172319&selectionId=12302596>)\n- Research only: B.Young (CAR vs CLE) Rushing Yards UNDER14.5 -114 proj=12.80 range=0.0-46.5 | P(under)=55% | Mkt=50% | Edge=+5.0% | EV=+3.2% | Cur=-114 Min=-122 Drift=OK [ctx=81% spike=50% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188172388&selectionId=41172023>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188172319&selectionId[0]=12302596&marketId[1]=717.188172388&selectionId[1]=41172023>)\n\n**PAPER - QB Passing TDs**\n- Research only: D.Watson (CLE vs CAR) QB Passing TDs UNDER1.5 -230 proj=0.80 range=0.0-2.0 | P(under)=74% | Mkt=65% | Edge=+8.7% | EV=+5.9% | Cur=-230 Min=-281 Drift=OK [ctx=79% spike=40% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188170543&selectionId=12302596>)\n\n**PAPER - RB Rushing Yards**\n- Research only: A.Dillon (CAR vs CLE) Rushing Yards UNDER13.5 -114 proj=7.51 range=0.0-41.2 | P(under)=58% | Mkt=50% | Edge=+8.3% | EV=+9.4% | Cur=-114 Min=-139 Drift=OK [ctx=90% spike=30% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188562381&selectionId=16545790>)\n- Research only: C.Hubbard (CAR vs CLE) Rushing Yards UNDER71.5 -114 proj=34.11 range=9.6-67.8 | P(under)=58% | Mkt=50% | Edge=+7.7% | EV=+8.3% | Cur=-114 Min=-136 Drift=OK [ctx=90% spike=72% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188172393&selectionId=40913711>)\n- Research only: Q.Judkins (CLE vs CAR) Rushing Yards UNDER59.5 -114 proj=25.86 range=1.4-59.6 | P(under)=58% | Mkt=50% | Edge=+7.7% | EV=+8.3% | Cur=-114 Min=-136 Drift=OK [ctx=90% spike=54% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188172369&selectionId=48906496>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188562381&selectionId[0]=16545790&marketId[1]=717.188172393&selectionId[1]=40913711&marketId[2]=717.188172369&selectionId[2]=48906496>)\n\n**PAPER - RB Receiving Yards**\n- Research only: Q.Judkins (CLE vs CAR) Receiving Yards OVER12.5 -114 proj=20.27 range=0.0-51.7 | P(over)=58% | Mkt=50% | Edge=+7.8% | EV=+8.6% | Cur=-114 Min=-137 Drift=OK [ctx=90% spike=44% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188172354&selectionId=48906497>)\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: D.Waller (CAR vs CLE) Receiving Yards OVER20.5 -114 proj=28.77 range=6.3-60.2 | P(over)=60% | Mkt=50% | Edge=+9.8% | EV=+12.3% | Cur=-114 Min=-148 Drift=OK [ctx=77% spike=31% depth=2 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188172334&selectionId=26035076>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 936,
+          "book": "fanduel",
+          "side": "under",
+          "line": 41.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 935,
+          "book": "fanduel",
+          "side": "home",
+          "line": 2.5,
+          "price": -110,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7784,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7830,
+          "book": "fanduel",
+          "side": "under",
+          "line": 14.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7884,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": -230,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7799,
+          "book": "fanduel",
+          "side": "under",
+          "line": 13.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7802,
+          "book": "fanduel",
+          "side": "under",
+          "line": 71.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7857,
+          "book": "fanduel",
+          "side": "under",
+          "line": 59.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8152,
+          "book": "fanduel",
+          "side": "over",
+          "line": 12.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7981,
+          "book": "fanduel",
+          "side": "over",
+          "line": 20.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8334,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8303,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:32.287486+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_CAR_CLE",
+      "page": 2,
+      "payload": {
+        "embeds": [
+          {
+            "title": "CAR @ CLE | NFL 2026-09-27 (2/2)",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: D.Boston (CLE vs CAR) Receiving TDs proj=0.46 range=0.0-1.0 [ctx=81% spike=30% depth=1]\n- Research only: J.Coker (CAR vs CLE) Receiving TDs proj=0.44 range=0.0-1.0 [ctx=96% spike=45% limited=45% depth=2 inj=Questionable prac=Limited Participation in Practice]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 936,
+          "book": "fanduel",
+          "side": "under",
+          "line": 41.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 935,
+          "book": "fanduel",
+          "side": "home",
+          "line": 2.5,
+          "price": -110,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7784,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7830,
+          "book": "fanduel",
+          "side": "under",
+          "line": 14.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7884,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": -230,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7799,
+          "book": "fanduel",
+          "side": "under",
+          "line": 13.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7802,
+          "book": "fanduel",
+          "side": "under",
+          "line": 71.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7857,
+          "book": "fanduel",
+          "side": "under",
+          "line": 59.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8152,
+          "book": "fanduel",
+          "side": "over",
+          "line": 12.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7981,
+          "book": "fanduel",
+          "side": "over",
+          "line": 20.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8334,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8303,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:32.892234+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_CIN_PIT",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "CIN @ PIT | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- CIN -3.5 -104 | home margin=-3.5 | P=50% | EV=-1.9% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675734&selectionId=50210>)\n- UNDER 42.5 -105 | total=42.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675735&selectionId=7017917>)\n\n**PAPER - QB Passing TDs**\n- Research only: J.Burrow (CIN vs PIT) QB Passing TDs OVER1.5 +100 proj=2.40 range=1.0-4.0 | P(over)=59% | Mkt=47% | Edge=+12.3% | EV=+18.2% | Cur=+100 Min=-144 Drift=OK [ctx=82% spike=56% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187970604&selectionId=20452292>)\n- Research only: A.Rodgers (PIT vs CIN) QB Passing TDs UNDER1.5 -220 proj=0.40 range=0.0-1.0 | P(under)=74% | Mkt=64% | Edge=+9.7% | EV=+7.6% | Cur=-220 Min=-284 Drift=OK [ctx=82% spike=0% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187970605&selectionId=11925812>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187970604&selectionId[0]=20452292&marketId[1]=717.187970605&selectionId[1]=11925812>)\n\n**PAPER - RB Rushing Yards**\n- Research only: J.Warren (PIT vs CIN) Rushing Yards UNDER57.5 -114 proj=49.93 range=25.4-83.6 | P(under)=58% | Mkt=50% | Edge=+8.5% | EV=+9.8% | Cur=-114 Min=-140 Drift=OK [ctx=95% spike=55% limited=45% depth=1 inj=Questionable prac=Limited Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188334983&selectionId=41173070>)\n\n**PAPER - RB Receiving Yards**\n- Research only: J.Warren (PIT vs CIN) Receiving Yards UNDER25.5 -114 proj=15.90 range=0.0-47.3 | P(under)=60% | Mkt=50% | Edge=+9.9% | EV=+12.5% | Cur=-114 Min=-149 Drift=OK [ctx=95% spike=31% limited=45% depth=1 inj=Questionable prac=Limited Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188378344&selectionId=41173070>)\n- Research only: S.Perine (CIN vs PIT) Receiving Yards OVER7.5 -114 proj=13.49 range=0.0-44.9 | P(over)=55% | Mkt=50% | Edge=+5.5% | EV=+4.2% | Cur=-114 Min=-124 Drift=OK [ctx=90% spike=47% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188377823&selectionId=15499370>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188378344&selectionId[0]=41173070&marketId[1]=717.188377823&selectionId[1]=15499370>)\n\n**PAPER - RB Rushing TDs**\n- Research only: C.Brown (CIN vs PIT) Rushing TDs proj=0.51 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: R.Wilson (PIT vs CIN) Receiving Yards UNDER22.5 -114 proj=14.62 range=0.0-46.0 | P(under)=60% | Mkt=50% | Edge=+9.8% | EV=+12.3% | Cur=-114 Min=-148 Drift=OK [ctx=78% spike=43% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188540661&selectionId=41072435>)\n- Research only: T.Higgins (CIN vs PIT) Receiving Yards OVER53.5 -114 proj=60.80 range=38.3-92.2 | P(over)=59% | Mkt=50% | Edge=+8.5% | EV=+9.9% | Cur=-114 Min=-141 Drift=OK [ctx=79% spike=68% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610497046&selectionId=22336746>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188540661&selectionId[0]=41072435&marketId[1]=42.610497046&selectionId[1]=22336746>)\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: J.Chase (CIN vs PIT) Receiving TDs proj=0.48 range=0.0-1.0 [ctx=81% spike=54% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 943,
+          "book": "fanduel",
+          "side": "away",
+          "line": -3.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 944,
+          "book": "fanduel",
+          "side": "under",
+          "line": 42.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7893,
+          "book": "fanduel",
+          "side": "over",
+          "line": 1.5,
+          "price": 100,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7875,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": -220,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7810,
+          "book": "fanduel",
+          "side": "under",
+          "line": 57.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8047,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7991,
+          "book": "fanduel",
+          "side": "over",
+          "line": 7.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7935,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8112,
+          "book": "fanduel",
+          "side": "under",
+          "line": 22.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8029,
+          "book": "fanduel",
+          "side": "over",
+          "line": 53.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8250,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:33.467983+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_HOU_IND",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "HOU @ IND | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- IND +1.5 -105 | home margin=-1.5 | P=50% | EV=-2.4% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675647&selectionId=50200>)\n- UNDER 42.5 -106 | total=42.5 | P=49% | EV=-4.3% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675648&selectionId=7017917>)\n\n**PAPER - QB Passing Yards**\n- Research only: D.Jones (IND vs HOU) QB Passing Yards UNDER214.5 -114 proj=185.09 range=75.8-289.6 | P(under)=57% | Mkt=50% | Edge=+7.2% | EV=+7.5% | Cur=-114 Min=-133 Drift=OK [ctx=78% spike=42% limited=21% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188190613&selectionId=16544556>)\n\n**PAPER - QB Rushing Yards**\n- Research only: D.Jones (IND vs HOU) Rushing Yards UNDER8.5 -114 proj=6.19 range=0.0-39.9 | P(under)=55% | Mkt=50% | Edge=+5.4% | EV=+4.0% | Cur=-114 Min=-124 Drift=OK [ctx=78% spike=28% limited=21% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188192810&selectionId=16544556>)\n\n**PAPER - RB Rushing TDs**\n- Research only: J.Taylor (IND vs HOU) Rushing TDs proj=0.69 range=0.0-1.0 [ctx=90% spike=100% depth=1 prac=Full Participation in Practice]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 939,
+          "book": "fanduel",
+          "side": "home",
+          "line": 1.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 940,
+          "book": "fanduel",
+          "side": "under",
+          "line": 42.5,
+          "price": -106,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7763,
+          "book": "fanduel",
+          "side": "under",
+          "line": 214.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7796,
+          "book": "fanduel",
+          "side": "under",
+          "line": 8.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7917,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:34.078011+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_KC_MIA",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "KC @ MIA | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- MIA +10.5 -108 | home margin=-10.5 | P=50% | EV=-3.7% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675732&selectionId=50201>)\n- OVER 45.5 -105 | total=45.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.608420618&selectionId=7017916>)\n\n**PAPER - QB Rushing Yards**\n- Research only: M.Willis (MIA vs KC) Rushing Yards UNDER33.5 -114 proj=26.74 range=2.3-60.5 | P(under)=58% | Mkt=50% | Edge=+8.5% | EV=+9.8% | Cur=-114 Min=-140 Drift=OK [ctx=81% spike=32% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188119996&selectionId=41072001>)\n\n**PAPER - QB Passing TDs**\n- Research only: M.Willis (MIA vs KC) QB Passing TDs UNDER0.5 +154 proj=0.60 range=0.0-2.0 | P(under)=47% | Mkt=37% | Edge=+10.0% | EV=+18.7% | Cur=+154 Min=+115 Drift=OK [ctx=81% spike=43% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188119126&selectionId=41072001>)\n- Research only: P.Mahomes (KC vs MIA) QB Passing TDs UNDER1.5 +152 proj=1.80 range=0.0-4.0 | P(under)=42% | Mkt=37% | Edge=+5.0% | EV=+6.2% | Cur=+152 Min=+138 Drift=OK [ctx=81% spike=69% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188119120&selectionId=16593718>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188119126&selectionId[0]=41072001&marketId[1]=717.188119120&selectionId[1]=16593718>)\n\n**PAPER - RB Rushing TDs**\n- Research only: K.Walker (KC vs MIA) Rushing TDs proj=0.59 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: R.Rice (KC vs MIA) Receiving TDs proj=0.45 range=0.0-1.0 [ctx=81% spike=100% depth=1 prac=Full Participation in Practice]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 957,
+          "book": "fanduel",
+          "side": "home",
+          "line": 10.5,
+          "price": -108,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 958,
+          "book": "fanduel",
+          "side": "over",
+          "line": 45.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7818,
+          "book": "fanduel",
+          "side": "under",
+          "line": 33.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7896,
+          "book": "fanduel",
+          "side": "under",
+          "line": 0.5,
+          "price": 154,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7885,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": 152,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7932,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8295,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:34.716311+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_LAC_BUF",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "LAC @ BUF | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- BUF -7.5 -102 | home margin=+7.5 | P=50% | EV=-1.0% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675651&selectionId=50203>)\n- OVER 50.5 -105 | total=50.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675654&selectionId=7017916>)\n\n**PAPER - RB Rushing Yards**\n- Research only: O.Hampton (LAC vs BUF) Rushing Yards UNDER58.5 -114 proj=47.91 range=23.4-81.6 | P(under)=58% | Mkt=50% | Edge=+8.5% | EV=+9.8% | Cur=-114 Min=-140 Drift=OK [ctx=90% spike=64% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187905445&selectionId=48691363>)\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: D.Kincaid (BUF vs LAC) Receiving Yards OVER56.5 -114 proj=64.23 range=41.7-95.6 | P(over)=59% | Mkt=50% | Edge=+9.1% | EV=+11.0% | Cur=-114 Min=-144 Drift=OK [ctx=80% spike=66% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188207812&selectionId=41602583>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 933,
+          "book": "fanduel",
+          "side": "home",
+          "line": -7.5,
+          "price": -102,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 934,
+          "book": "fanduel",
+          "side": "over",
+          "line": 50.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7850,
+          "book": "fanduel",
+          "side": "under",
+          "line": 58.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8086,
+          "book": "fanduel",
+          "side": "over",
+          "line": 56.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:35.334570+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_NE_JAX",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NE @ JAX | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- NE +2.5 -104 | home margin=+2.5 | P=50% | EV=-1.9% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675572&selectionId=50204>)\n- UNDER 45.5 -105 | total=45.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675575&selectionId=7017917>)\n\n**PAPER - QB Passing Yards**\n- Research only: D.Maye (NE vs JAX) QB Passing Yards UNDER222.5 -114 proj=197.30 range=88.0-301.8 | P(under)=57% | Mkt=50% | Edge=+6.5% | EV=+6.1% | Cur=-114 Min=-130 Drift=OK [ctx=82% spike=63% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187965600&selectionId=48103562>)\n\n**PAPER - QB Rushing Yards**\n- Research only: T.Lawrence (JAX vs NE) Rushing Yards UNDER16.5 -114 proj=15.69 range=0.0-49.4 | P(under)=54% | Mkt=50% | Edge=+3.9% | EV=+1.2% | Cur=-114 Min=-116 Drift=OK [ctx=81% spike=45% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187965530&selectionId=22336736>)\n\n**PAPER - RB Rushing Yards**\n- Research only: T.Henderson (NE vs JAX) Rushing Yards UNDER41.5 -114 proj=27.37 range=2.9-61.1 | P(under)=58% | Mkt=50% | Edge=+8.5% | EV=+9.8% | Cur=-114 Min=-140 Drift=OK [ctx=90% spike=38% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187965590&selectionId=41158857>)\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: R.Doubs (NE vs JAX) Receiving Yards OVER42.5 -114 proj=63.02 range=40.5-94.4 | P(over)=71% | Mkt=50% | Edge=+20.5% | EV=+32.4% | Cur=-114 Min=-239 Drift=OK [ctx=80% spike=76% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187965524&selectionId=42169650>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 941,
+          "book": "fanduel",
+          "side": "away",
+          "line": 2.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 942,
+          "book": "fanduel",
+          "side": "under",
+          "line": 45.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7772,
+          "book": "fanduel",
+          "side": "under",
+          "line": 222.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7806,
+          "book": "fanduel",
+          "side": "under",
+          "line": 16.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7855,
+          "book": "fanduel",
+          "side": "under",
+          "line": 41.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8062,
+          "book": "fanduel",
+          "side": "over",
+          "line": 42.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:35.950941+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_NYJ_DET",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NYJ @ DET | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- NYJ +6.5 -105 | home margin=+6.5 | P=50% | EV=-2.4% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675481&selectionId=50202>)\n- OVER 48.5 -106 | total=48.5 | P=49% | EV=-4.3% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675483&selectionId=7017916>)\n\n**PAPER - QB Passing Yards**\n- Research only: G.Smith (NYJ vs DET) QB Passing Yards UNDER225.5 -114 proj=198.15 range=88.8-302.6 | P(under)=57% | Mkt=50% | Edge=+7.1% | EV=+7.1% | Cur=-114 Min=-132 Drift=OK [ctx=81% spike=61% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187993167&selectionId=12004382>)\n\n**PAPER - QB Rushing Yards**\n- Research only: G.Smith (NYJ vs DET) Rushing Yards UNDER11.5 -114 proj=5.78 range=0.0-39.5 | P(under)=58% | Mkt=50% | Edge=+8.0% | EV=+8.9% | Cur=-114 Min=-138 Drift=OK [ctx=81% spike=42% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188401736&selectionId=12004382>)\n\n**PAPER - RB Rushing Yards**\n- Research only: S.Vaki (DET vs NYJ) Rushing Yards UNDER10.5 -114 proj=5.11 range=0.0-38.8 | P(under)=58% | Mkt=50% | Edge=+7.8% | EV=+8.6% | Cur=-114 Min=-137 Drift=OK [ctx=90% spike=38% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188390852&selectionId=73642721>)\n\n**PAPER - RB Receiving Yards**\n- Research only: B.Hall (NYJ vs DET) Receiving Yards UNDER21.5 -114 proj=20.05 range=0.0-51.4 | P(under)=56% | Mkt=50% | Edge=+6.0% | EV=+5.1% | Cur=-114 Min=-127 Drift=OK [ctx=90% spike=57% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610531314&selectionId=41075121>)\n\n**PAPER - RB Rushing TDs**\n- Research only: J.Gibbs (DET vs NYJ) Rushing TDs proj=0.57 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: B.Hall (NYJ vs DET) Rushing TDs proj=0.44 range=0.0-1.0 [ctx=90% spike=84% depth=1]\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: A.St. Brown (DET vs NYJ) Receiving Yards OVER75.5 -114 proj=83.40 range=60.9-114.8 | P(over)=59% | Mkt=50% | Edge=+9.2% | EV=+11.2% | Cur=-114 Min=-145 Drift=OK [ctx=81% spike=92% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610531310&selectionId=40891132>)\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: A.St. Brown (DET vs NYJ) Receiving TDs proj=0.63 range=0.0-1.0 [ctx=81% spike=100% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 937,
+          "book": "fanduel",
+          "side": "away",
+          "line": 6.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 938,
+          "book": "fanduel",
+          "side": "over",
+          "line": 48.5,
+          "price": -106,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7750,
+          "book": "fanduel",
+          "side": "under",
+          "line": 225.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7776,
+          "book": "fanduel",
+          "side": "under",
+          "line": 11.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7833,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8069,
+          "book": "fanduel",
+          "side": "under",
+          "line": 21.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7942,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7931,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8041,
+          "book": "fanduel",
+          "side": "over",
+          "line": 75.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8251,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:36.533605+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_SEA_WAS",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "SEA @ WAS | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- SEA -7.5 -105 | home margin=-7.5 | P=50% | EV=-2.4% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675758&selectionId=50213>)\n- OVER 40.5 -105 | total=40.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675756&selectionId=7017916>)\n\n**PAPER - QB Passing Yards**\n- Research only: S.Darnold (SEA vs WAS) QB Passing Yards UNDER221.5 -114 proj=182.76 range=73.4-287.3 | P(under)=58% | Mkt=50% | Edge=+8.5% | EV=+9.7% | Cur=-114 Min=-140 Drift=OK [ctx=78% spike=24% limited=23% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188188646&selectionId=16579528>)\n\n**PAPER - QB Rushing Yards**\n- Research only: M.Mariota (WAS vs SEA) Rushing Yards UNDER23.5 -114 proj=18.24 range=0.0-52.0 | P(under)=58% | Mkt=50% | Edge=+8.2% | EV=+9.2% | Cur=-114 Min=-139 Drift=OK [ctx=77% spike=16% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188486864&selectionId=11889966>)\n\n**PAPER - RB Receiving Yards**\n- Research only: R.White (WAS vs SEA) Receiving Yards UNDER16.5 -114 proj=15.20 range=0.0-46.6 | P(under)=56% | Mkt=50% | Edge=+5.9% | EV=+5.0% | Cur=-114 Min=-126 Drift=OK [ctx=90% spike=31% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188486867&selectionId=41161335>)\n\n**PAPER - RB Rushing TDs**\n- Research only: J.Croskey-Merritt (WAS vs SEA) Rushing TDs proj=0.50 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: J.Smith-Njigba (SEA vs WAS) Receiving Yards UNDER90.5 -114 proj=84.63 range=62.1-116.0 | P(under)=60% | Mkt=50% | Edge=+9.8% | EV=+12.2% | Cur=-114 Min=-148 Drift=OK [ctx=80% spike=84% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188189436&selectionId=41158864>)\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: J.Smith-Njigba (SEA vs WAS) Receiving TDs proj=0.58 range=0.0-1.0 [ctx=80% spike=100% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 945,
+          "book": "fanduel",
+          "side": "away",
+          "line": -7.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 946,
+          "book": "fanduel",
+          "side": "over",
+          "line": 40.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7761,
+          "book": "fanduel",
+          "side": "under",
+          "line": 221.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7777,
+          "book": "fanduel",
+          "side": "under",
+          "line": 23.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8053,
+          "book": "fanduel",
+          "side": "under",
+          "line": 16.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7949,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8072,
+          "book": "fanduel",
+          "side": "under",
+          "line": 90.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8273,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:37.121873+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_TEN_NYG",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "TEN @ NYG | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790528400:f> (<t:1790528400:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- TEN +2.5 -106 | home margin=+2.5 | P=50% | EV=-2.8% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675851&selectionId=50206>)\n- OVER 38.5 -106 | total=38.5 | P=49% | EV=-4.3% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675854&selectionId=7017916>)\n\n**PAPER - QB Passing Yards**\n- Research only: J.Winston (NYG vs TEN) QB Passing Yards UNDER203.5 -114 proj=178.85 range=69.5-283.3 | P(under)=56% | Mkt=50% | Edge=+6.1% | EV=+5.3% | Cur=-114 Min=-127 Drift=OK [ctx=78% spike=29% limited=32% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610835665&selectionId=11802505>)\n- Research only: C.Ward (TEN vs NYG) QB Passing Yards UNDER187.5 -114 proj=178.63 range=69.3-283.1 | P(under)=53% | Mkt=50% | Edge=+2.7% | EV=-1.0% | Cur=-114 Min=-111 Drift=CHECK [ctx=78% spike=43% limited=25% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610835666&selectionId=87765263>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=42.610835665&selectionId[0]=11802505&marketId[1]=42.610835666&selectionId[1]=87765263>)\n\n**PAPER - QB Rushing Yards**\n- Research only: C.Ward (TEN vs NYG) Rushing Yards UNDER11.5 -114 proj=10.57 range=0.0-44.3 | P(under)=54% | Mkt=50% | Edge=+3.8% | EV=+0.9% | Cur=-114 Min=-116 Drift=OK [ctx=78% spike=23% limited=25% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188204746&selectionId=87765263>)\n\n**PAPER - QB Passing TDs**\n- Research only: J.Winston (NYG vs TEN) QB Passing TDs UNDER0.5 +188 proj=0.40 range=0.0-1.0 | P(under)=51% | Mkt=32% | Edge=+19.0% | EV=+48.3% | Cur=+188 Min=-106 Drift=OK [ctx=78% spike=28% limited=32% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188201351&selectionId=11802505>)\n\n**PAPER - RB Rushing TDs**\n- Research only: C.Skattebo (NYG vs TEN) Rushing TDs proj=0.47 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: G.Helm (TEN vs NYG) Receiving Yards UNDER21.5 -114 proj=17.30 range=0.0-48.7 | P(under)=59% | Mkt=50% | Edge=+8.6% | EV=+10.0% | Cur=-114 Min=-141 Drift=OK [ctx=81% spike=39% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188204744&selectionId=89546948>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 959,
+          "book": "fanduel",
+          "side": "away",
+          "line": 2.5,
+          "price": -106,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 960,
+          "book": "fanduel",
+          "side": "over",
+          "line": 38.5,
+          "price": -106,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7751,
+          "book": "fanduel",
+          "side": "under",
+          "line": 203.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7773,
+          "book": "fanduel",
+          "side": "under",
+          "line": 187.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7851,
+          "book": "fanduel",
+          "side": "under",
+          "line": 11.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7879,
+          "book": "fanduel",
+          "side": "under",
+          "line": 0.5,
+          "price": 188,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7953,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8137,
+          "book": "fanduel",
+          "side": "under",
+          "line": 21.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:37.708219+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_ARI_SF",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "ARI @ SF | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790539500:f> (<t:1790539500:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- UNDER 47.5 -104 | total=47.5 | P=49% | EV=-4.5% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675994&selectionId=7017917>)\n- SF -8.5 -110 | home margin=+8.5 | P=50% | EV=-4.5% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675979&selectionId=43010249>)\n\n**PAPER - QB Passing Yards**\n- Research only: B.Purdy (SF vs ARI) QB Passing Yards UNDER235.5 -114 proj=214.32 range=105.0-318.8 | P(under)=52% | Mkt=50% | Edge=+2.0% | EV=-2.4% | Cur=-114 Min=-108 Drift=CHECK [ctx=81% spike=38% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188065607&selectionId=41074309>)\n\n**PAPER - QB Passing TDs**\n- Research only: B.Purdy (SF vs ARI) QB Passing TDs UNDER1.5 +128 proj=1.40 range=0.0-3.0 | P(under)=51% | Mkt=41% | Edge=+10.0% | EV=+16.2% | Cur=+128 Min=-103 Drift=OK [ctx=81% spike=33% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188065598&selectionId=41074309>)\n\n**PAPER - RB Receiving Yards**\n- Research only: C.McCaffrey (SF vs ARI) Receiving Yards UNDER38.5 -114 proj=37.34 range=14.9-68.7 | P(under)=56% | Mkt=50% | Edge=+5.8% | EV=+4.7% | Cur=-114 Min=-126 Drift=OK [ctx=90% spike=58% limited=25% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188394660&selectionId=14807736>)\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: K.Bourne (ARI vs SF) Receiving Yards UNDER23.5 -114 proj=18.79 range=0.0-50.2 | P(under)=59% | Mkt=50% | Edge=+8.7% | EV=+10.2% | Cur=-114 Min=-142 Drift=OK [ctx=76% spike=54% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188361154&selectionId=27362691>)\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: T.McBride (ARI vs SF) Receiving TDs proj=0.54 range=0.0-1.0 [ctx=81% spike=100% depth=1]\n- Research only: M.Evans (SF vs ARI) Receiving TDs proj=0.44 range=0.0-1.0 [ctx=97% spike=100% limited=45% depth=1 inj=Questionable prac=Limited Participation in Practice]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 948,
+          "book": "fanduel",
+          "side": "under",
+          "line": 47.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 947,
+          "book": "fanduel",
+          "side": "home",
+          "line": -8.5,
+          "price": -110,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7767,
+          "book": "fanduel",
+          "side": "under",
+          "line": 235.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7895,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": 128,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7987,
+          "book": "fanduel",
+          "side": "under",
+          "line": 38.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7990,
+          "book": "fanduel",
+          "side": "under",
+          "line": 23.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8264,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8201,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:38.309944+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_MIN_TB",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "MIN @ TB | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790539500:f> (<t:1790539500:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- UNDER 42.5 -105 | total=42.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186676073&selectionId=7017917>)\n- TB +1.5 -110 | home margin=-1.5 | P=50% | EV=-4.5% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186676074&selectionId=50190>)\n\n**PAPER - QB Passing Yards**\n- Research only: K.Murray (MIN vs TB) QB Passing Yards UNDER209.5 -114 proj=167.84 range=58.5-272.3 | P(under)=59% | Mkt=50% | Edge=+9.1% | EV=+11.0% | Cur=-114 Min=-144 Drift=OK [ctx=78% spike=39% limited=23% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188083435&selectionId=25938061>)\n\n**PAPER - QB Passing TDs**\n- Research only: K.Murray (MIN vs TB) QB Passing TDs UNDER1.5 -178 proj=0.80 range=0.0-2.0 | P(under)=71% | Mkt=60% | Edge=+11.6% | EV=+11.5% | Cur=-178 Min=-249 Drift=OK [ctx=78% spike=37% limited=23% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188083451&selectionId=25938061>)\n\n**PAPER - RB Receiving Yards**\n- Research only: K.Gainwell (TB vs MIN) Receiving Yards OVER9.5 -114 proj=18.40 range=0.0-49.8 | P(over)=59% | Mkt=50% | Edge=+8.7% | EV=+10.3% | Cur=-114 Min=-142 Drift=OK [ctx=90% spike=37% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188306103&selectionId=73564593>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 950,
+          "book": "fanduel",
+          "side": "under",
+          "line": 42.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 949,
+          "book": "fanduel",
+          "side": "home",
+          "line": 1.5,
+          "price": -110,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7762,
+          "book": "fanduel",
+          "side": "under",
+          "line": 209.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7890,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": -178,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8040,
+          "book": "fanduel",
+          "side": "over",
+          "line": 9.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:39.227453+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_BAL_DAL",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "BAL @ DAL | NFL 2026-09-27 (1/2)",
+            "description": "Kickoff: <t:1790540700:f> (<t:1790540700:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- BAL -3.5 -104 | home margin=-3.5 | P=50% | EV=-1.9% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.168833125&selectionId=50205>)\n- UNDER 52.5 -104 | total=52.5 | P=49% | EV=-4.5% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.168833124&selectionId=7017917>)\n\n**PAPER - QB Passing Yards**\n- Research only: L.Jackson (BAL vs DAL) QB Passing Yards UNDER239.5 -114 proj=211.43 range=102.1-315.9 | P(under)=57% | Mkt=50% | Edge=+7.1% | EV=+7.1% | Cur=-114 Min=-132 Drift=OK [ctx=81% spike=25% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187831965&selectionId=16579680>)\n- Research only: D.Prescott (DAL vs BAL) QB Passing Yards UNDER263.5 -114 proj=238.86 range=129.5-343.4 | P(under)=56% | Mkt=50% | Edge=+6.3% | EV=+5.7% | Cur=-114 Min=-128 Drift=OK [ctx=80% spike=58% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187831938&selectionId=11889992>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187831965&selectionId[0]=16579680&marketId[1]=717.187831938&selectionId[1]=11889992>)\n\n**PAPER - QB Rushing Yards**\n- Research only: L.Jackson (BAL vs DAL) Rushing Yards UNDER38.5 -114 proj=20.90 range=0.0-54.6 | P(under)=58% | Mkt=50% | Edge=+7.7% | EV=+8.3% | Cur=-114 Min=-136 Drift=OK [ctx=81% spike=33% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187838733&selectionId=16579680>)\n\n**PAPER - QB Passing TDs**\n- Research only: L.Jackson (BAL vs DAL) QB Passing TDs UNDER1.5 +114 proj=1.40 range=0.0-3.0 | P(under)=52% | Mkt=44% | Edge=+8.5% | EV=+11.7% | Cur=+114 Min=-109 Drift=OK [ctx=81% spike=32% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187831927&selectionId=16579680>)\n\n**PAPER - RB Rushing Yards**\n- Research only: D.Henry (BAL vs DAL) Rushing Yards OVER89.5 -114 proj=127.68 range=103.2-161.4 | P(over)=70% | Mkt=50% | Edge=+20.0% | EV=+31.4% | Cur=-114 Min=-233 Drift=OK [ctx=90% spike=92% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187838723&selectionId=12073825>)\n- Research only: J.Williams (DAL vs BAL) Rushing Yards UNDER58.5 -114 proj=47.81 range=23.3-81.5 | P(under)=58% | Mkt=50% | Edge=+8.5% | EV=+9.8% | Cur=-114 Min=-140 Drift=OK [ctx=90% spike=58% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187839417&selectionId=40891107>)\n- Research only: J.Hill (BAL vs DAL) Rushing Yards UNDER14.5 -114 proj=5.75 range=0.0-39.5 | P(under)=58% | Mkt=50% | Edge=+7.7% | EV=+8.3% | Cur=-114 Min=-136 Drift=OK [ctx=90% spike=35% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188331441&selectionId=16552643>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187838723&selectionId[0]=12073825&marketId[1]=717.187839417&selectionId[1]=40891107&marketId[2]=717.188331441&selectionId[2]=16552643>)\n\n**PAPER - RB Receiving Yards**\n- Research only: D.Henry (BAL vs DAL) Receiving Yards UNDER10.5 -114 proj=7.35 range=0.0-38.7 | P(under)=56% | Mkt=50% | Edge=+5.9% | EV=+4.9% | Cur=-114 Min=-126 Drift=OK [ctx=90% spike=92% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188331451&selectionId=12073826>)\n\n**PAPER - RB Rushing TDs**\n- Research only: D.Henry (BAL vs DAL) Rushing TDs proj=0.76 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: J.Williams (DAL vs BAL) Rushing TDs proj=0.44 range=0.0-1.0 [ctx=90% spike=100% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 951,
+          "book": "fanduel",
+          "side": "away",
+          "line": -3.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 952,
+          "book": "fanduel",
+          "side": "under",
+          "line": 52.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7758,
+          "book": "fanduel",
+          "side": "under",
+          "line": 239.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7753,
+          "book": "fanduel",
+          "side": "under",
+          "line": 263.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7787,
+          "book": "fanduel",
+          "side": "under",
+          "line": 38.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7886,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": 114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7778,
+          "book": "fanduel",
+          "side": "over",
+          "line": 89.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7808,
+          "book": "fanduel",
+          "side": "under",
+          "line": 58.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7790,
+          "book": "fanduel",
+          "side": "under",
+          "line": 14.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7983,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7905,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7924,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8292,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:39.990503+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_BAL_DAL",
+      "page": 2,
+      "payload": {
+        "embeds": [
+          {
+            "title": "BAL @ DAL | NFL 2026-09-27 (2/2)",
+            "description": "Kickoff: <t:1790540700:f> (<t:1790540700:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: Z.Flowers (BAL vs DAL) Receiving TDs proj=0.45 range=0.0-1.0 [ctx=96% spike=51% limited=45% depth=1 inj=Questionable prac=Limited Participation in Practice]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 951,
+          "book": "fanduel",
+          "side": "away",
+          "line": -3.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 952,
+          "book": "fanduel",
+          "side": "under",
+          "line": 52.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7758,
+          "book": "fanduel",
+          "side": "under",
+          "line": 239.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7753,
+          "book": "fanduel",
+          "side": "under",
+          "line": 263.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7787,
+          "book": "fanduel",
+          "side": "under",
+          "line": 38.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7886,
+          "book": "fanduel",
+          "side": "under",
+          "line": 1.5,
+          "price": 114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7778,
+          "book": "fanduel",
+          "side": "over",
+          "line": 89.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7808,
+          "book": "fanduel",
+          "side": "under",
+          "line": 58.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7790,
+          "book": "fanduel",
+          "side": "under",
+          "line": 14.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7983,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7905,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7924,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8292,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:40.610162+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_LV_NO",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "LV @ NO | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790540700:f> (<t:1790540700:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- LV +3.0 -102 | home margin=+3.0 | P=50% | EV=-1.0% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186414293&selectionId=27443341>)\n- UNDER 43.5 -108 | total=43.5 | P=50% | EV=-4.4% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186414292&selectionId=7017917>)\n\n**PAPER - QB Passing TDs**\n- Research only: K.Cousins (LV vs NO) QB Passing TDs OVER1.5 +152 proj=2.00 range=0.0-4.0 | P(over)=48% | Mkt=37% | Edge=+10.9% | EV=+21.0% | Cur=+152 Min=+109 Drift=OK [ctx=82% spike=25% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188005342&selectionId=11889829>)\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: J.Johnson (NO vs LV) Receiving Yards OVER35.5 -114 proj=64.04 range=41.6-95.4 | P(over)=70% | Mkt=50% | Edge=+20.4% | EV=+32.2% | Cur=-114 Min=-238 Drift=OK [ctx=81% spike=84% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188181635&selectionId=40916525>)\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: C.Olave (NO vs LV) Receiving TDs proj=0.50 range=0.0-1.0 [ctx=81% spike=34% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 953,
+          "book": "fanduel",
+          "side": "away",
+          "line": 3.0,
+          "price": -102,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 954,
+          "book": "fanduel",
+          "side": "under",
+          "line": 43.5,
+          "price": -108,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7877,
+          "book": "fanduel",
+          "side": "over",
+          "line": 1.5,
+          "price": 152,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8020,
+          "book": "fanduel",
+          "side": "over",
+          "line": 35.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8254,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:41.254403+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_LA_DEN",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "LA @ DEN | NFL 2026-09-27",
+            "description": "Kickoff: <t:1790554800:f> (<t:1790554800:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- LA -2.5 -104 | home margin=-2.5 | P=50% | EV=-1.9% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675956&selectionId=10782388>)\n- OVER 44.5 -105 | total=44.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675973&selectionId=7017916>)\n\n**PAPER - QB Rushing Yards**\n- Research only: B.Nix (DEN vs LA) Rushing Yards OVER16.5 -114 proj=22.83 range=0.0-56.5 | P(over)=53% | Mkt=50% | Edge=+3.5% | EV=+0.4% | Cur=-114 Min=-115 Drift=OK [ctx=81% spike=55% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.610414931&selectionId=41331175>)\n\n**PAPER - RB Receiving Yards**\n- Research only: K.Williams (LA vs DEN) Receiving Yards OVER12.5 -114 proj=18.60 range=0.0-50.0 | P(over)=57% | Mkt=50% | Edge=+6.9% | EV=+6.8% | Cur=-114 Min=-131 Drift=OK [ctx=90% spike=48% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188370102&selectionId=37541915>)\n- Research only: R.Harvey (DEN vs LA) Receiving Yards OVER16.5 -114 proj=21.62 range=0.0-53.0 | P(over)=55% | Mkt=50% | Edge=+5.3% | EV=+3.7% | Cur=-114 Min=-123 Drift=OK [ctx=90% spike=41% depth=2 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.611409208&selectionId=50744298>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188370102&selectionId[0]=37541915&marketId[1]=42.611409208&selectionId[1]=50744298>)\n\n**PAPER - RB Rushing TDs**\n- Research only: K.Williams (LA vs DEN) Rushing TDs proj=0.47 range=0.0-1.0 [ctx=90% spike=100% depth=1]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 955,
+          "book": "fanduel",
+          "side": "away",
+          "line": -2.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 956,
+          "book": "fanduel",
+          "side": "over",
+          "line": 44.5,
+          "price": -105,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7836,
+          "book": "fanduel",
+          "side": "over",
+          "line": 16.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8064,
+          "book": "fanduel",
+          "side": "over",
+          "line": 12.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 8147,
+          "book": "fanduel",
+          "side": "over",
+          "line": 16.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7930,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-26T13:39:41.819985+00:00"
+    }
+  ],
+  "run_id": null,
+  "pregame": false,
+  "game_ids": []
+}

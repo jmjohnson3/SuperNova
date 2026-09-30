@@ -8,6 +8,6 @@ PG_DSN environment variable:
 """
 from __future__ import annotations
 
-import os
+from supernovabets_config import pg_dsn
 
-PG_DSN: str = os.getenv("PG_DSN", "postgresql://josh:password@localhost:5432/nba")
+PG_DSN: str = pg_dsn()

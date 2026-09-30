@@ -1,13 +1,13 @@
 {
-  "generated_at_utc": "2026-06-24T08:03:29.128799+00:00",
+  "generated_at_utc": "2026-09-02T11:17:57.037974+00:00",
   "source": "features.mlb_hitter_player_game_training",
-  "rows": 51119,
+  "rows": 51826,
   "lookback_days": 365,
   "holdout_days": 28,
   "status": "ok",
   "ablation": [],
-  "train_rows": 43360,
-  "holdout_rows": 7759,
+  "train_rows": 43837,
+  "holdout_rows": 7989,
   "method": "head_specific_date_holdout_leave_one_feature_family_out",
   "head_ablation": {
     "full": {
@@ -114,46 +114,46 @@
       ],
       "metrics": {
         "hit": {
-          "rows": 7442,
-          "events": 27548,
-          "actual_rate": 0.22498910991723536,
-          "avg_probability": 0.21286072269177092,
-          "calibration_error": -0.012128387225464443,
-          "brier": 0.17408763630495402,
-          "log_loss": 0.5323725683069754
+          "rows": 7651,
+          "events": 28432,
+          "actual_rate": 0.21627039954980304,
+          "avg_probability": 0.2198253486783192,
+          "calibration_error": 0.0035549491285161716,
+          "brier": 0.1692188888733064,
+          "log_loss": 0.5213204786260877
         },
         "xbh_given_hit": {
-          "rows": 4290,
-          "events": 6198,
-          "actual_rate": 0.3589867699257825,
-          "avg_probability": 0.34697961150973006,
-          "calibration_error": -0.012007158416052433,
-          "brier": 0.22845347387844103,
-          "log_loss": 0.6490925882384335
+          "rows": 4343,
+          "events": 6149,
+          "actual_rate": 0.334525939177102,
+          "avg_probability": 0.3265672389596637,
+          "calibration_error": -0.007958700217438275,
+          "brier": 0.21999086539214846,
+          "log_loss": 0.6313844344488115
         },
         "hr_given_xbh": {
-          "rows": 1940,
-          "events": 2225,
-          "actual_rate": 0.4337078651685393,
-          "avg_probability": 0.38870014444913903,
-          "calibration_error": -0.04500772071940029,
-          "brier": 0.24018776820952564,
-          "log_loss": 0.6734655318492093
+          "rows": 1811,
+          "events": 2057,
+          "actual_rate": 0.39766650461837627,
+          "avg_probability": 0.4316935886373231,
+          "calibration_error": 0.03402708401894683,
+          "brier": 0.23674715500365914,
+          "log_loss": 0.6657175818888276
         },
         "triple_given_non_hr_xbh": {
-          "rows": 1166,
-          "events": 1260,
-          "actual_rate": 0.0865079365079365,
-          "avg_probability": 0.0693942415455313,
-          "calibration_error": -0.01711369496240521,
-          "brier": 0.07890176316781083,
-          "log_loss": 0.296394179367322
+          "rows": 1149,
+          "events": 1239,
+          "actual_rate": 0.08071025020177562,
+          "avg_probability": 0.07511505857234185,
+          "calibration_error": -0.005595191629433768,
+          "brier": 0.07290137541617203,
+          "log_loss": 0.27245035169361714
         },
         "pa": {
-          "rows": 7759,
-          "mae": 0.7056819279979093,
-          "rmse": 1.0180579977318143,
-          "bias": -0.08642574816306427
+          "rows": 7989,
+          "mae": 0.6967218860133574,
+          "rmse": 1.0079809973951774,
+          "bias": -0.0489171178742544
         },
         "trained_heads": [
           "hit",
@@ -271,46 +271,46 @@
       ],
       "metrics": {
         "hit": {
-          "rows": 7442,
-          "events": 27548,
-          "actual_rate": 0.22498910991723536,
-          "avg_probability": 0.21267956538215832,
-          "calibration_error": -0.012309544535077044,
-          "brier": 0.1740625078575184,
-          "log_loss": 0.5322824643964367
+          "rows": 7651,
+          "events": 28432,
+          "actual_rate": 0.21627039954980304,
+          "avg_probability": 0.2193446380725722,
+          "calibration_error": 0.003074238522769168,
+          "brier": 0.16918969528416702,
+          "log_loss": 0.5212249465122177
         },
         "xbh_given_hit": {
-          "rows": 4290,
-          "events": 6198,
-          "actual_rate": 0.3589867699257825,
-          "avg_probability": 0.3480113043112445,
-          "calibration_error": -0.010975465614537994,
-          "brier": 0.22838442294372824,
-          "log_loss": 0.6490043241310189
+          "rows": 4343,
+          "events": 6149,
+          "actual_rate": 0.334525939177102,
+          "avg_probability": 0.3284944439824361,
+          "calibration_error": -0.006031495194665892,
+          "brier": 0.22017872265660832,
+          "log_loss": 0.6317714873105293
         },
         "hr_given_xbh": {
-          "rows": 1940,
-          "events": 2225,
-          "actual_rate": 0.4337078651685393,
-          "avg_probability": 0.39463985354868114,
-          "calibration_error": -0.03906801161985818,
-          "brier": 0.23993044325225557,
-          "log_loss": 0.6730753080018961
+          "rows": 1811,
+          "events": 2057,
+          "actual_rate": 0.39766650461837627,
+          "avg_probability": 0.4331820418129728,
+          "calibration_error": 0.03551553719459655,
+          "brier": 0.23633534725882963,
+          "log_loss": 0.6649694781130695
         },
         "triple_given_non_hr_xbh": {
-          "rows": 1166,
-          "events": 1260,
-          "actual_rate": 0.0865079365079365,
-          "avg_probability": 0.07049077901571627,
-          "calibration_error": -0.01601715749222024,
-          "brier": 0.07910566079610927,
-          "log_loss": 0.29689178376749886
+          "rows": 1149,
+          "events": 1239,
+          "actual_rate": 0.08071025020177562,
+          "avg_probability": 0.07277966940655473,
+          "calibration_error": -0.007930580795220896,
+          "brier": 0.0730533112885259,
+          "log_loss": 0.27406699245466276
         },
         "pa": {
-          "rows": 7759,
-          "mae": 0.6998133749586534,
-          "rmse": 1.0200428973645446,
-          "bias": -0.09013598280925793
+          "rows": 7989,
+          "mae": 0.6936308281541937,
+          "rmse": 1.000260795498006,
+          "bias": -0.054469396123742374
         },
         "trained_heads": [
           "hit",
@@ -428,46 +428,46 @@
       ],
       "metrics": {
         "hit": {
-          "rows": 7442,
-          "events": 27548,
-          "actual_rate": 0.22498910991723536,
-          "avg_probability": 0.2123524004424324,
-          "calibration_error": -0.01263670947480297,
-          "brier": 0.17415839562127264,
-          "log_loss": 0.5325784990856913
+          "rows": 7651,
+          "events": 28432,
+          "actual_rate": 0.21627039954980304,
+          "avg_probability": 0.21912284785791325,
+          "calibration_error": 0.0028524483081102114,
+          "brier": 0.16925206428950673,
+          "log_loss": 0.5214174149498605
         },
         "xbh_given_hit": {
-          "rows": 4290,
-          "events": 6198,
-          "actual_rate": 0.3589867699257825,
-          "avg_probability": 0.34676999174336665,
-          "calibration_error": -0.012216778182415844,
-          "brier": 0.22851742964129737,
-          "log_loss": 0.6492905988451498
+          "rows": 4343,
+          "events": 6149,
+          "actual_rate": 0.334525939177102,
+          "avg_probability": 0.32724252125324393,
+          "calibration_error": -0.00728341792385806,
+          "brier": 0.22037634244288604,
+          "log_loss": 0.6322070893197586
         },
         "hr_given_xbh": {
-          "rows": 1940,
-          "events": 2225,
-          "actual_rate": 0.4337078651685393,
-          "avg_probability": 0.38712352741122724,
-          "calibration_error": -0.04658433775731208,
-          "brier": 0.2405228761971693,
-          "log_loss": 0.674068017172123
+          "rows": 1811,
+          "events": 2057,
+          "actual_rate": 0.39766650461837627,
+          "avg_probability": 0.4318975591700243,
+          "calibration_error": 0.034231054551648044,
+          "brier": 0.2365123304437947,
+          "log_loss": 0.6652775909907561
         },
         "triple_given_non_hr_xbh": {
-          "rows": 1166,
-          "events": 1260,
-          "actual_rate": 0.0865079365079365,
-          "avg_probability": 0.06913640782257237,
-          "calibration_error": -0.017371528685364138,
-          "brier": 0.08005108196882545,
-          "log_loss": 0.3020844909064823
+          "rows": 1149,
+          "events": 1239,
+          "actual_rate": 0.08071025020177562,
+          "avg_probability": 0.07704876947304538,
+          "calibration_error": -0.0036614807287302376,
+          "brier": 0.07325935421701042,
+          "log_loss": 0.27443707914801124
         },
         "pa": {
-          "rows": 7759,
-          "mae": 0.7048770100455928,
-          "rmse": 1.0204871990796789,
-          "bias": -0.09143150690046786
+          "rows": 7989,
+          "mae": 0.6946752896788622,
+          "rmse": 1.0059056846127876,
+          "bias": -0.053865543467823164
         },
         "trained_heads": [
           "hit",
@@ -585,46 +585,46 @@
       ],
       "metrics": {
         "hit": {
-          "rows": 7442,
-          "events": 27548,
-          "actual_rate": 0.22498910991723536,
-          "avg_probability": 0.21328485001992945,
-          "calibration_error": -0.011704259897305919,
-          "brier": 0.1740327545555501,
-          "log_loss": 0.5322117395812329
+          "rows": 7651,
+          "events": 28432,
+          "actual_rate": 0.21627039954980304,
+          "avg_probability": 0.22051513956398758,
+          "calibration_error": 0.004244740014184539,
+          "brier": 0.16928075038607665,
+          "log_loss": 0.5214867120845198
         },
         "xbh_given_hit": {
-          "rows": 4290,
-          "events": 6198,
-          "actual_rate": 0.3589867699257825,
-          "avg_probability": 0.34555839976827485,
-          "calibration_error": -0.01342837015750764,
-          "brier": 0.22949050849508487,
-          "log_loss": 0.6514745388189995
+          "rows": 4343,
+          "events": 6149,
+          "actual_rate": 0.334525939177102,
+          "avg_probability": 0.32819788357661106,
+          "calibration_error": -0.006328055600490934,
+          "brier": 0.2214827259399015,
+          "log_loss": 0.6346959414565707
         },
         "hr_given_xbh": {
-          "rows": 1940,
-          "events": 2225,
-          "actual_rate": 0.4337078651685393,
-          "avg_probability": 0.38666921844065155,
-          "calibration_error": -0.04703864672788777,
-          "brier": 0.2420464267462531,
-          "log_loss": 0.6774060611843903
+          "rows": 1811,
+          "events": 2057,
+          "actual_rate": 0.39766650461837627,
+          "avg_probability": 0.4356027684079238,
+          "calibration_error": 0.03793626378954751,
+          "brier": 0.23957928576806028,
+          "log_loss": 0.6719602361817317
         },
         "triple_given_non_hr_xbh": {
-          "rows": 1166,
-          "events": 1260,
-          "actual_rate": 0.0865079365079365,
-          "avg_probability": 0.06947894551972703,
-          "calibration_error": -0.01702899098820948,
-          "brier": 0.07881888394730154,
-          "log_loss": 0.29382218547826716
+          "rows": 1149,
+          "events": 1239,
+          "actual_rate": 0.08071025020177562,
+          "avg_probability": 0.07147553660849264,
+          "calibration_error": -0.009234713593282984,
+          "brier": 0.07322816838713833,
+          "log_loss": 0.2762863700774926
         },
         "pa": {
-          "rows": 7759,
-          "mae": 0.7028016560549524,
-          "rmse": 1.0233001691399417,
-          "bias": -0.07438791501607628
+          "rows": 7989,
+          "mae": 0.6948107248420565,
+          "rmse": 1.005234281876488,
+          "bias": -0.04184345411818316
         },
         "trained_heads": [
           "hit",
@@ -742,46 +742,46 @@
       ],
       "metrics": {
         "hit": {
-          "rows": 7442,
-          "events": 27548,
-          "actual_rate": 0.22498910991723536,
-          "avg_probability": 0.21383110063057903,
-          "calibration_error": -0.011158009286656334,
-          "brier": 0.17406653309207945,
-          "log_loss": 0.5323024070613696
+          "rows": 7651,
+          "events": 28432,
+          "actual_rate": 0.21627039954980304,
+          "avg_probability": 0.2187012196704163,
+          "calibration_error": 0.0024308201206132696,
+          "brier": 0.16915431224726496,
+          "log_loss": 0.521124642959239
         },
         "xbh_given_hit": {
-          "rows": 4290,
-          "events": 6198,
-          "actual_rate": 0.3589867699257825,
-          "avg_probability": 0.3476661149144485,
-          "calibration_error": -0.011320655011334002,
-          "brier": 0.22868090591179452,
-          "log_loss": 0.6495813758406611
+          "rows": 4343,
+          "events": 6149,
+          "actual_rate": 0.334525939177102,
+          "avg_probability": 0.32836293211356293,
+          "calibration_error": -0.006163007063539061,
+          "brier": 0.22015621490242906,
+          "log_loss": 0.6317452830632063
         },
         "hr_given_xbh": {
-          "rows": 1940,
-          "events": 2225,
-          "actual_rate": 0.4337078651685393,
-          "avg_probability": 0.3886158698270299,
-          "calibration_error": -0.04509199534150943,
-          "brier": 0.2406334208713105,
-          "log_loss": 0.674324316260571
+          "rows": 1811,
+          "events": 2057,
+          "actual_rate": 0.39766650461837627,
+          "avg_probability": 0.4335812154144794,
+          "calibration_error": 0.035914710796103144,
+          "brier": 0.2362395943856349,
+          "log_loss": 0.6648494650642026
         },
         "triple_given_non_hr_xbh": {
-          "rows": 1166,
-          "events": 1260,
-          "actual_rate": 0.0865079365079365,
-          "avg_probability": 0.07030564608213477,
-          "calibration_error": -0.016202290425801735,
-          "brier": 0.07858845349271523,
-          "log_loss": 0.29324672302171606
+          "rows": 1149,
+          "events": 1239,
+          "actual_rate": 0.08071025020177562,
+          "avg_probability": 0.07915261352781956,
+          "calibration_error": -0.0015576366739560588,
+          "brier": 0.07254710457358031,
+          "log_loss": 0.26977300195480164
         },
         "pa": {
-          "rows": 7759,
-          "mae": 0.7122679663874415,
-          "rmse": 1.0347627387313187,
-          "bias": -0.0929537568346655
+          "rows": 7989,
+          "mae": 0.690977364410402,
+          "rmse": 1.0000268806688257,
+          "bias": -0.04810044998296343
         },
         "trained_heads": [
           "hit",
@@ -899,46 +899,46 @@
       ],
       "metrics": {
         "hit": {
-          "rows": 7442,
-          "events": 27548,
-          "actual_rate": 0.22498910991723536,
-          "avg_probability": 0.21392302360855775,
-          "calibration_error": -0.011066086308677614,
-          "brier": 0.17396215115174632,
-          "log_loss": 0.531970729038973
+          "rows": 7651,
+          "events": 28432,
+          "actual_rate": 0.21627039954980304,
+          "avg_probability": 0.21712173619516986,
+          "calibration_error": 0.0008513366453668236,
+          "brier": 0.1692164243693871,
+          "log_loss": 0.5213304874575007
         },
         "xbh_given_hit": {
-          "rows": 4290,
-          "events": 6198,
-          "actual_rate": 0.3589867699257825,
-          "avg_probability": 0.3470318520472947,
-          "calibration_error": -0.011954917878487792,
-          "brier": 0.22877144035365599,
-          "log_loss": 0.6498096680113831
+          "rows": 4343,
+          "events": 6149,
+          "actual_rate": 0.334525939177102,
+          "avg_probability": 0.3278230720454753,
+          "calibration_error": -0.006702867131626711,
+          "brier": 0.22015568665877078,
+          "log_loss": 0.631753493081012
         },
         "hr_given_xbh": {
-          "rows": 1940,
-          "events": 2225,
-          "actual_rate": 0.4337078651685393,
-          "avg_probability": 0.39095719479822116,
-          "calibration_error": -0.042750670370318156,
-          "brier": 0.2397945682064732,
-          "log_loss": 0.6728491378805498
+          "rows": 1811,
+          "events": 2057,
+          "actual_rate": 0.39766650461837627,
+          "avg_probability": 0.42928445890406136,
+          "calibration_error": 0.03161795428568509,
+          "brier": 0.2371913847313751,
+          "log_loss": 0.6666857871227446
         },
         "triple_given_non_hr_xbh": {
-          "rows": 1166,
-          "events": 1260,
-          "actual_rate": 0.0865079365079365,
-          "avg_probability": 0.0685329469027148,
-          "calibration_error": -0.017974989605221703,
-          "brier": 0.07858006926427318,
-          "log_loss": 0.29433883131155886
+          "rows": 1149,
+          "events": 1239,
+          "actual_rate": 0.08071025020177562,
+          "avg_probability": 0.07771298352752985,
+          "calibration_error": -0.0029972666742457688,
+          "brier": 0.07294533029249917,
+          "log_loss": 0.2728392225906039
         },
         "pa": {
-          "rows": 7759,
-          "mae": 0.7030775203018254,
-          "rmse": 1.0268975172147083,
-          "bias": -0.0923618390406597
+          "rows": 7989,
+          "mae": 0.7009714013237099,
+          "rmse": 1.0091946532022982,
+          "bias": -0.08899134064999824
         },
         "trained_heads": [
           "hit",
@@ -952,7 +952,7 @@
   },
   "pruning_policy": {
     "status": "ready",
-    "generated_at_utc": "2026-06-24T08:04:36.868883+00:00",
+    "generated_at_utc": "2026-09-02T11:18:54.257389+00:00",
     "method": "date_holdout_leave_one_feature_family_out",
     "categorical_features": [
       "team_abbr",
@@ -1057,7 +1057,14 @@
         "opp_sp_ch_whiff_pct",
         "opp_sp_ch_k_pct",
         "opp_sp_fastball_family_pct",
-        "opp_sp_pitch_diversity"
+        "opp_sp_pitch_diversity",
+        "batter_disc_oz_swing_pct",
+        "batter_disc_iz_contact_pct",
+        "batter_disc_oz_contact_pct",
+        "batter_disc_whiff_pct",
+        "batter_disc_out_zone_pct",
+        "batter_disc_k_pct",
+        "batter_disc_bb_pct"
       ],
       "xbh_given_hit": [
         "lineup_slot",
@@ -1193,9 +1200,6 @@
         "batter_vs_rp_k_rate_30",
         "projected_pa",
         "pa_games",
-        "park_run_factor",
-        "park_hr_factor",
-        "park_babip_factor",
         "batter_sc_barrel_rate",
         "batter_sc_hard_hit_pct",
         "batter_sc_avg_exit_velo",
@@ -1210,39 +1214,13 @@
         "batter_sc_xiso",
         "batter_sc_brl_pa",
         "batter_sprint_speed",
-        "opp_sp_sc_barrel_rate",
-        "opp_sp_sc_hard_hit_pct",
-        "opp_sp_sc_avg_exit_velo",
-        "opp_sp_sc_avg_launch_angle",
-        "opp_sp_sc_xba",
-        "opp_sp_sc_xslg",
-        "opp_sp_sc_xwoba",
-        "opp_sp_sc_xiso",
-        "opp_sp_fb_pct",
-        "opp_sp_fb_hard_hit_pct",
-        "opp_sp_fb_xwoba",
-        "opp_sp_fb_run_value_per_100",
-        "opp_sp_fb_whiff_pct",
-        "opp_sp_fb_k_pct",
-        "opp_sp_si_pct",
-        "opp_sp_si_hard_hit_pct",
-        "opp_sp_si_xwoba",
-        "opp_sp_si_whiff_pct",
-        "opp_sp_si_k_pct",
-        "opp_sp_sl_pct",
-        "opp_sp_sl_hard_hit_pct",
-        "opp_sp_sl_xwoba",
-        "opp_sp_sl_run_value_per_100",
-        "opp_sp_sl_whiff_pct",
-        "opp_sp_sl_k_pct",
-        "opp_sp_ch_pct",
-        "opp_sp_ch_hard_hit_pct",
-        "opp_sp_ch_xwoba",
-        "opp_sp_ch_run_value_per_100",
-        "opp_sp_ch_whiff_pct",
-        "opp_sp_ch_k_pct",
-        "opp_sp_fastball_family_pct",
-        "opp_sp_pitch_diversity"
+        "batter_disc_oz_swing_pct",
+        "batter_disc_iz_contact_pct",
+        "batter_disc_oz_contact_pct",
+        "batter_disc_whiff_pct",
+        "batter_disc_out_zone_pct",
+        "batter_disc_k_pct",
+        "batter_disc_bb_pct"
       ],
       "triple_given_non_hr_xbh": [
         "lineup_slot",
@@ -1303,7 +1281,14 @@
         "batter_sc_xwoba",
         "batter_sc_xiso",
         "batter_sc_brl_pa",
-        "batter_sprint_speed"
+        "batter_sprint_speed",
+        "batter_disc_oz_swing_pct",
+        "batter_disc_iz_contact_pct",
+        "batter_disc_oz_contact_pct",
+        "batter_disc_whiff_pct",
+        "batter_disc_out_zone_pct",
+        "batter_disc_k_pct",
+        "batter_disc_bb_pct"
       ],
       "pa": [
         "lineup_slot",
@@ -1338,129 +1323,112 @@
         "batter_vs_rp_k_rate_30",
         "projected_pa",
         "pa_games",
-        "park_run_factor",
-        "park_hr_factor",
-        "park_babip_factor",
-        "opp_sp_sc_barrel_rate",
-        "opp_sp_sc_hard_hit_pct",
-        "opp_sp_sc_avg_exit_velo",
-        "opp_sp_sc_avg_launch_angle",
-        "opp_sp_sc_xba",
-        "opp_sp_sc_xslg",
-        "opp_sp_sc_xwoba",
-        "opp_sp_sc_xiso",
-        "opp_sp_fb_pct",
-        "opp_sp_fb_hard_hit_pct",
-        "opp_sp_fb_xwoba",
-        "opp_sp_fb_run_value_per_100",
-        "opp_sp_fb_whiff_pct",
-        "opp_sp_fb_k_pct",
-        "opp_sp_si_pct",
-        "opp_sp_si_hard_hit_pct",
-        "opp_sp_si_xwoba",
-        "opp_sp_si_whiff_pct",
-        "opp_sp_si_k_pct",
-        "opp_sp_sl_pct",
-        "opp_sp_sl_hard_hit_pct",
-        "opp_sp_sl_xwoba",
-        "opp_sp_sl_run_value_per_100",
-        "opp_sp_sl_whiff_pct",
-        "opp_sp_sl_k_pct",
-        "opp_sp_ch_pct",
-        "opp_sp_ch_hard_hit_pct",
-        "opp_sp_ch_xwoba",
-        "opp_sp_ch_run_value_per_100",
-        "opp_sp_ch_whiff_pct",
-        "opp_sp_ch_k_pct",
-        "opp_sp_fastball_family_pct",
-        "opp_sp_pitch_diversity"
+        "batter_sc_barrel_rate",
+        "batter_sc_hard_hit_pct",
+        "batter_sc_avg_exit_velo",
+        "batter_sc_avg_launch_angle",
+        "batter_sc_sweet_spot_pct",
+        "batter_sc_fb_pct",
+        "batter_sc_gb_pct",
+        "batter_sc_ld_pct",
+        "batter_sc_xba",
+        "batter_sc_xslg",
+        "batter_sc_xwoba",
+        "batter_sc_xiso",
+        "batter_sc_brl_pa",
+        "batter_sprint_speed",
+        "batter_disc_oz_swing_pct",
+        "batter_disc_iz_contact_pct",
+        "batter_disc_oz_contact_pct",
+        "batter_disc_whiff_pct",
+        "batter_disc_out_zone_pct",
+        "batter_disc_k_pct",
+        "batter_disc_bb_pct"
       ]
     },
     "recommendations": {
       "hit": {
         "label": "hit",
         "metric": "brier",
-        "full_metric": 0.17408763630495402,
-        "removed_groups": [
-          "+discipline"
-        ],
+        "full_metric": 0.1692188888733064,
+        "removed_groups": [],
         "comparisons": [
           {
             "feature_group": "+lineup",
-            "full_metric": 0.17408763630495402,
-            "without_group_metric": 0.1740625078575184,
-            "gain_when_removed": 2.5128447435629475e-05,
+            "full_metric": 0.1692188888733064,
+            "without_group_metric": 0.16918969528416702,
+            "gain_when_removed": 2.9193589139386855e-05,
             "remove_for_head": false
           },
           {
             "feature_group": "+park",
-            "full_metric": 0.17408763630495402,
-            "without_group_metric": 0.17415839562127264,
-            "gain_when_removed": -7.075931631861376e-05,
+            "full_metric": 0.1692188888733064,
+            "without_group_metric": 0.16925206428950673,
+            "gain_when_removed": -3.3175416200320607e-05,
             "remove_for_head": false
           },
           {
             "feature_group": "+batter_statcast",
-            "full_metric": 0.17408763630495402,
-            "without_group_metric": 0.1740327545555501,
-            "gain_when_removed": 5.488174940393442e-05,
+            "full_metric": 0.1692188888733064,
+            "without_group_metric": 0.16928075038607665,
+            "gain_when_removed": -6.186151277023932e-05,
             "remove_for_head": false
           },
           {
             "feature_group": "+pitcher_statcast",
-            "full_metric": 0.17408763630495402,
-            "without_group_metric": 0.17406653309207945,
-            "gain_when_removed": 2.1103212874573618e-05,
+            "full_metric": 0.1692188888733064,
+            "without_group_metric": 0.16915431224726496,
+            "gain_when_removed": 6.457662604145153e-05,
             "remove_for_head": false
           },
           {
             "feature_group": "+discipline",
-            "full_metric": 0.17408763630495402,
-            "without_group_metric": 0.17396215115174632,
-            "gain_when_removed": 0.00012548515320770504,
-            "remove_for_head": true
+            "full_metric": 0.1692188888733064,
+            "without_group_metric": 0.1692164243693871,
+            "gain_when_removed": 2.464503919302752e-06,
+            "remove_for_head": false
           }
         ]
       },
       "xbh_given_hit": {
         "label": "XBH given hit",
         "metric": "brier",
-        "full_metric": 0.22845347387844103,
+        "full_metric": 0.21999086539214846,
         "removed_groups": [],
         "comparisons": [
           {
             "feature_group": "+lineup",
-            "full_metric": 0.22845347387844103,
-            "without_group_metric": 0.22838442294372824,
-            "gain_when_removed": 6.905093471279433e-05,
+            "full_metric": 0.21999086539214846,
+            "without_group_metric": 0.22017872265660832,
+            "gain_when_removed": -0.0001878572644598564,
             "remove_for_head": false
           },
           {
             "feature_group": "+park",
-            "full_metric": 0.22845347387844103,
-            "without_group_metric": 0.22851742964129737,
-            "gain_when_removed": -6.395576285633808e-05,
+            "full_metric": 0.21999086539214846,
+            "without_group_metric": 0.22037634244288604,
+            "gain_when_removed": -0.000385477050737576,
             "remove_for_head": false
           },
           {
             "feature_group": "+batter_statcast",
-            "full_metric": 0.22845347387844103,
-            "without_group_metric": 0.22949050849508487,
-            "gain_when_removed": -0.0010370346166438393,
+            "full_metric": 0.21999086539214846,
+            "without_group_metric": 0.2214827259399015,
+            "gain_when_removed": -0.0014918605477530489,
             "remove_for_head": false
           },
           {
             "feature_group": "+pitcher_statcast",
-            "full_metric": 0.22845347387844103,
-            "without_group_metric": 0.22868090591179452,
-            "gain_when_removed": -0.00022743203335348627,
+            "full_metric": 0.21999086539214846,
+            "without_group_metric": 0.22015621490242906,
+            "gain_when_removed": -0.00016534951028060463,
             "remove_for_head": false
           },
           {
             "feature_group": "+discipline",
-            "full_metric": 0.22845347387844103,
-            "without_group_metric": 0.22877144035365599,
-            "gain_when_removed": -0.0003179664752149536,
+            "full_metric": 0.21999086539214846,
+            "without_group_metric": 0.22015568665877078,
+            "gain_when_removed": -0.000164821266622317,
             "remove_for_head": false
           }
         ]
@@ -1468,139 +1436,139 @@
       "hr_given_xbh": {
         "label": "HR given XBH",
         "metric": "brier",
-        "full_metric": 0.24018776820952564,
+        "full_metric": 0.23674715500365914,
         "removed_groups": [
           "+lineup",
-          "+discipline"
+          "+park",
+          "+pitcher_statcast"
         ],
         "comparisons": [
           {
             "feature_group": "+lineup",
-            "full_metric": 0.24018776820952564,
-            "without_group_metric": 0.23993044325225557,
-            "gain_when_removed": 0.000257324957270072,
+            "full_metric": 0.23674715500365914,
+            "without_group_metric": 0.23633534725882963,
+            "gain_when_removed": 0.00041180774482951765,
             "remove_for_head": true
           },
           {
             "feature_group": "+park",
-            "full_metric": 0.24018776820952564,
-            "without_group_metric": 0.2405228761971693,
-            "gain_when_removed": -0.00033510798764366245,
-            "remove_for_head": false
+            "full_metric": 0.23674715500365914,
+            "without_group_metric": 0.2365123304437947,
+            "gain_when_removed": 0.00023482455986445494,
+            "remove_for_head": true
           },
           {
             "feature_group": "+batter_statcast",
-            "full_metric": 0.24018776820952564,
-            "without_group_metric": 0.2420464267462531,
-            "gain_when_removed": -0.0018586585367274533,
+            "full_metric": 0.23674715500365914,
+            "without_group_metric": 0.23957928576806028,
+            "gain_when_removed": -0.0028321307644011418,
             "remove_for_head": false
           },
           {
             "feature_group": "+pitcher_statcast",
-            "full_metric": 0.24018776820952564,
-            "without_group_metric": 0.2406334208713105,
-            "gain_when_removed": -0.00044565266178486773,
-            "remove_for_head": false
+            "full_metric": 0.23674715500365914,
+            "without_group_metric": 0.2362395943856349,
+            "gain_when_removed": 0.0005075606180242331,
+            "remove_for_head": true
           },
           {
             "feature_group": "+discipline",
-            "full_metric": 0.24018776820952564,
-            "without_group_metric": 0.2397945682064732,
-            "gain_when_removed": 0.00039320000305242964,
-            "remove_for_head": true
+            "full_metric": 0.23674715500365914,
+            "without_group_metric": 0.2371913847313751,
+            "gain_when_removed": -0.00044422972771596125,
+            "remove_for_head": false
           }
         ]
       },
       "triple_given_non_hr_xbh": {
         "label": "double/triple split",
         "metric": "brier",
-        "full_metric": 0.07890176316781083,
+        "full_metric": 0.07290137541617203,
         "removed_groups": [
-          "+pitcher_statcast",
-          "+discipline"
+          "+pitcher_statcast"
         ],
         "comparisons": [
           {
             "feature_group": "+lineup",
-            "full_metric": 0.07890176316781083,
-            "without_group_metric": 0.07910566079610927,
-            "gain_when_removed": -0.0002038976282984356,
+            "full_metric": 0.07290137541617203,
+            "without_group_metric": 0.0730533112885259,
+            "gain_when_removed": -0.00015193587235386163,
             "remove_for_head": false
           },
           {
             "feature_group": "+park",
-            "full_metric": 0.07890176316781083,
-            "without_group_metric": 0.08005108196882545,
-            "gain_when_removed": -0.0011493188010146121,
+            "full_metric": 0.07290137541617203,
+            "without_group_metric": 0.07325935421701042,
+            "gain_when_removed": -0.0003579788008383905,
             "remove_for_head": false
           },
           {
             "feature_group": "+batter_statcast",
-            "full_metric": 0.07890176316781083,
-            "without_group_metric": 0.07881888394730154,
-            "gain_when_removed": 8.28792205092993e-05,
+            "full_metric": 0.07290137541617203,
+            "without_group_metric": 0.07322816838713833,
+            "gain_when_removed": -0.0003267929709662998,
             "remove_for_head": false
           },
           {
             "feature_group": "+pitcher_statcast",
-            "full_metric": 0.07890176316781083,
-            "without_group_metric": 0.07858845349271523,
-            "gain_when_removed": 0.00031330967509560215,
+            "full_metric": 0.07290137541617203,
+            "without_group_metric": 0.07254710457358031,
+            "gain_when_removed": 0.00035427084259172237,
             "remove_for_head": true
           },
           {
             "feature_group": "+discipline",
-            "full_metric": 0.07890176316781083,
-            "without_group_metric": 0.07858006926427318,
-            "gain_when_removed": 0.00032169390353765925,
-            "remove_for_head": true
+            "full_metric": 0.07290137541617203,
+            "without_group_metric": 0.07294533029249917,
+            "gain_when_removed": -4.3954876327134684e-05,
+            "remove_for_head": false
           }
         ]
       },
       "pa": {
         "label": "PA",
         "metric": "mae",
-        "full_metric": 0.7056819279979093,
+        "full_metric": 0.6967218860133574,
         "removed_groups": [
           "+lineup",
-          "+batter_statcast",
-          "+discipline"
+          "+park",
+          "+pitcher_statcast"
         ],
         "comparisons": [
           {
             "feature_group": "+lineup",
-            "full_metric": 0.7056819279979093,
-            "without_group_metric": 0.6998133749586534,
-            "gain_when_removed": 0.00586855303925593,
+            "full_metric": 0.6967218860133574,
+            "without_group_metric": 0.6936308281541937,
+            "gain_when_removed": 0.0030910578591636373,
             "remove_for_head": true
           },
           {
             "feature_group": "+park",
-            "full_metric": 0.7056819279979093,
-            "without_group_metric": 0.7048770100455928,
-            "gain_when_removed": 0.0008049179523165195,
-            "remove_for_head": false
+            "full_metric": 0.6967218860133574,
+            "without_group_metric": 0.6946752896788622,
+            "gain_when_removed": 0.002046596334495221,
+            "remove_for_head": true
           },
           {
             "feature_group": "+batter_statcast",
-            "full_metric": 0.7056819279979093,
-            "without_group_metric": 0.7028016560549524,
-            "gain_when_removed": 0.0028802719429569246,
-            "remove_for_head": true
-          },
-          {
-            "feature_group": "+pitcher_statcast",
-            "full_metric": 0.7056819279979093,
-            "without_group_metric": 0.7122679663874415,
-            "gain_when_removed": -0.0065860383895322006,
+            "full_metric": 0.6967218860133574,
+            "without_group_metric": 0.6948107248420565,
+            "gain_when_removed": 0.001911161171300857,
             "remove_for_head": false
           },
           {
-            "feature_group": "+discipline",
-            "full_metric": 0.7056819279979093,
-            "without_group_metric": 0.7030775203018254,
-            "gain_when_removed": 0.0026044076960839435,
+            "feature_group": "+pitcher_statcast",
+            "full_metric": 0.6967218860133574,
+            "without_group_metric": 0.690977364410402,
+            "gain_when_removed": 0.005744521602955355,
             "remove_for_head": true
+          },
+          {
+            "feature_group": "+discipline",
+            "full_metric": 0.6967218860133574,
+            "without_group_metric": 0.7009714013237099,
+            "gain_when_removed": -0.0042495153103525585,
+            "remove_for_head": false
           }
         ]
       }

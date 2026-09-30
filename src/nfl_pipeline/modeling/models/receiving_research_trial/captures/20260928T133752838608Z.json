@@ -1,0 +1,52 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-09-28T13:37:52.689829+00:00",
+  "captured_at": "2026-09-28T13:37:52.838608+00:00",
+  "selected": [
+    {
+      "forecast_id": 9622,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-09-28",
+      "game_id": "2026_03_PHI_CHI",
+      "player_id": "00-0036912",
+      "team": "PHI",
+      "season": 2026,
+      "week": 3,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "under",
+      "line": 71.5,
+      "price": -113,
+      "probability": 0.5803315076505435,
+      "market_probability": 0.5,
+      "ev": 0.09389921353598041,
+      "captured_at": "2026-09-28T13:37:52.838608+00:00"
+    },
+    {
+      "forecast_id": 9624,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-09-28",
+      "game_id": "2026_03_PHI_CHI",
+      "player_id": "00-0039919",
+      "team": "CHI",
+      "season": 2026,
+      "week": 3,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 25.5,
+      "price": -113,
+      "probability": 0.5773508115182933,
+      "market_probability": 0.5,
+      "ev": 0.08828073321589791,
+      "captured_at": "2026-09-28T13:37:52.838608+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 62,
+    "original_drift_guard_not_passed": 3,
+    "nonpositive_current_locked_ev": 1,
+    "fixed_cap_or_duplicate": 4
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "status": "component_prospective_only",
+  "rows": [
+    {
+      "forecast_id": 9602,
+      "game_id": "2026_03_PHI_CHI",
+      "player_id": "00-0028986",
+      "stat": "passing_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 60.6230899603515,
+      "challenger_run": "components-20260922T091540317936Z-qb_tail",
+      "component": "qb_tail",
+      "source_context_cutoff": "2026-09-28T13:34:41.078596+00:00",
+      "projection_mean": 109.83006067401102,
+      "distribution_mean": 109.83006067401102,
+      "projection_median": 114.14167183294282,
+      "p10": -29.490703305972247,
+      "p90": 246.2096996410389,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 9603,
+      "game_id": "2026_03_PHI_CHI",
+      "player_id": "00-0036389",
+      "stat": "passing_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 197.60358860545395,
+      "challenger_run": "components-20260922T091540317936Z-qb_tail",
+      "component": "qb_tail",
+      "source_context_cutoff": "2026-09-28T13:34:41.078596+00:00",
+      "projection_mean": 221.80397189909115,
+      "distribution_mean": 221.80397189909115,
+      "projection_median": 225.24283870853344,
+      "p10": 130.37762800218303,
+      "p90": 300.8457533167523,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    }
+  ],
+  "scored_at": "2026-09-28T13:39:43.426647+00:00",
+  "training_end": "2026-09-21",
+  "source_manifest": {
+    "run_id": "components-20260922T091540317936Z",
+    "production_release": "nfl-20260918T143342Z",
+    "sha256": "8606d8044df02b4e11724f5ecb6988098c6ce4ace2e310dd669df6c8f0fefe7d"
+  },
+  "exclusions": {}
+}

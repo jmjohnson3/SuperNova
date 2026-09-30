@@ -1,0 +1,31 @@
+2026-07-28 14:50:39,230 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded threshold overrides from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_thresholds.json | K=999.00(o=999.00/u=999.00) H=999.00 TB=999.00(o=999.00/u=999.00) HR(o/u)=999.00/0.45 CLF=999.000 EV=0.020
+2026-07-28 14:50:41,150 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded pitcher binary CLF model
+2026-07-28 14:50:41,298 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded pitcher alt-line CLF model
+2026-07-28 14:50:41,816 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded batter binary CLF models: ['batter_hits', 'batter_total_bases', 'batter_home_runs']
+2026-07-28 14:50:41,946 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded batter alt-line CLF models: ['batter_hits', 'batter_total_bases']
+2026-07-28 14:50:43,115 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded validated hitter PA model from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\hitter_player_game_outcome_models.production.joblib (PA MAE gain vs slot prior=0.2669)
+2026-07-28 14:50:43,290 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded hitter hits/HR count-repair artifact from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\hitter_player_game_outcome_models.live_forecast.joblib (accepted heads=hits,hr)
+2026-07-28 14:50:43,439 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded accepted TB tail state model from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_tb_tail_state_model.joblib (blend alpha 0.75)
+2026-07-28 14:50:59,944 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded 928 prop line entries for 2026-07-28
+C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\predict_player_props.py:5064: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(SQL_PROP_LINES, conn, params={"game_date": game_date})
+2026-07-28 14:51:06,788 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded alt lines for 624 (player, stat) keys
+2026-07-28 14:51:09,239 | INFO | mlb_pipeline.modeling.predict_player_props | Bias correction batter_hits: n=6273, offset=-0.033
+2026-07-28 14:51:09,256 | INFO | mlb_pipeline.modeling.predict_player_props | Bias correction batter_total_bases: n=6184, offset=-0.052
+2026-07-28 14:51:09,904 | INFO | mlb_pipeline.modeling.predict_player_props | Side penalty batter_total_bases/TB 0.5/over: n=97 wr=0.485 pma=+0.040 pen=0.035
+2026-07-28 14:51:09,928 | INFO | mlb_pipeline.modeling.predict_player_props | Side penalty batter_total_bases/TB 1.5/over: n=3258 wr=0.395 pma=+0.146 pen=0.125
+2026-07-28 14:51:09,928 | INFO | mlb_pipeline.modeling.predict_player_props | Side penalty pitcher_strikeouts/K 6.5-8.0/over: n=58 wr=0.500 pma=+0.577 pen=0.288
+2026-07-28 14:51:09,936 | INFO | mlb_pipeline.modeling.predict_player_props | Side penalty batter_total_bases/all/over: n=3359 wr=0.398 pma=+0.142 pen=0.122
+2026-07-28 14:51:09,936 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded CLF bucket controls from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\clf_bucket_controls.json (1 disabled buckets)
+2026-07-28 14:51:09,940 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded prop side recalibrators from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_side_recalibrators.json (152 buckets)
+2026-07-28 14:51:09,953 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded prop betting layer from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_betting_layer.json (62 models)
+2026-07-28 14:51:09,958 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded prop market-side priors from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_market_side_priors.json (133 models)
+2026-07-28 14:51:09,963 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded prop walk-forward live policy from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_walk_forward_accuracy_report.json (66 buckets)
+2026-07-28 14:51:09,965 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded TB 1.5 line calibrators from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_tb15_line_calibrators.json (6 enabled)
+2026-07-28 14:51:09,993 | INFO | mlb_pipeline.modeling.predict_player_props | Loaded prop bucket reopen policy from C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\models\player_props\prop_bucket_reopen_policy.json (0 reopened buckets)
+C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\predict_player_props.py:8196: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_p = pd.read_sql(SQL_PITCHER_SNAPSHOTS, conn, params={"game_date": et_date})
+2026-07-28 14:51:53,406 | INFO | mlb_pipeline.modeling.predict_player_props | Pitcher snapshots: 21 rows
+2026-07-28 14:51:56,682 | INFO | mlb_pipeline.modeling.predict_player_props | Alt CLF pitcher strikeouts: 22 line-level probabilities
+C:\Users\josh\Git\SuperNovaBets\src\mlb_pipeline\modeling\predict_player_props.py:8492: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_b = pd.read_sql(

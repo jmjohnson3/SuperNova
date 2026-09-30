@@ -1,0 +1,609 @@
+{
+  "generated_at_utc": "2026-07-30T14:38:59Z",
+  "status": "ready",
+  "usage": "k_under_micro_repair_gate",
+  "lookback_days": 365,
+  "rows": 2486,
+  "thresholds": {
+    "min_rows": 75,
+    "min_clv_rows": 25,
+    "min_clv_beat_rate": 0.52,
+    "min_avg_clv_price": 0.0,
+    "max_abs_calibration_error": 0.08
+  },
+  "gates": {
+    "K 4.5-6.0|draftkings": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 858,
+      "clv_rows": 656,
+      "clv_beat_rate": 0.47103658536585363,
+      "avg_clv_price": 0.010030487804878025,
+      "calibration_error": -0.003431002331002353,
+      "level": "line_book"
+    },
+    "K 4.5-6.0|fanduel": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 747,
+      "clv_rows": 637,
+      "clv_beat_rate": 0.41915227629513346,
+      "avg_clv_price": 0.13667189952904243,
+      "calibration_error": -0.006254216867469853,
+      "level": "line_book"
+    },
+    "K 6.5-8.0|draftkings": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "rows": 203,
+      "clv_rows": 152,
+      "clv_beat_rate": 0.34868421052631576,
+      "avg_clv_price": -0.4652631578947368,
+      "calibration_error": 0.0019280788177339359,
+      "level": "line_book"
+    },
+    "K 6.5-8.0|fanduel": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "rows": 167,
+      "clv_rows": 144,
+      "clv_beat_rate": 0.4027777777777778,
+      "avg_clv_price": -0.06666666666666668,
+      "calibration_error": 0.008313173652694739,
+      "level": "line_book"
+    },
+    "K 8.5+|draftkings": {
+      "micro_allowed": false,
+      "blockers": [
+        "rows<75",
+        "clv_rows<25",
+        "clv_beat_below_micro_gate",
+        "calibration_error_above_gate"
+      ],
+      "rows": 10,
+      "clv_rows": 7,
+      "clv_beat_rate": 0.14285714285714285,
+      "avg_clv_price": 0.018571428571428492,
+      "calibration_error": -0.0835499999999999,
+      "level": "line_book"
+    },
+    "K 8.5+|fanduel": {
+      "micro_allowed": false,
+      "blockers": [
+        "rows<75",
+        "clv_rows<25",
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "rows": 9,
+      "clv_rows": 7,
+      "clv_beat_rate": 0.2857142857142857,
+      "avg_clv_price": -0.25142857142857133,
+      "calibration_error": -0.05043333333333344,
+      "level": "line_book"
+    },
+    "K <4.5|draftkings": {
+      "micro_allowed": true,
+      "blockers": [],
+      "rows": 259,
+      "clv_rows": 198,
+      "clv_beat_rate": 0.5555555555555556,
+      "avg_clv_price": 0.7366161616161614,
+      "calibration_error": -0.008584169884169823,
+      "level": "line_book"
+    },
+    "K <4.5|fanduel": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 233,
+      "clv_rows": 198,
+      "clv_beat_rate": 0.4393939393939394,
+      "avg_clv_price": 0.3986868686868687,
+      "calibration_error": 0.004681974248927079,
+      "level": "line_book"
+    },
+    "K 4.5-6.0|*": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 1605,
+      "clv_rows": 1293,
+      "clv_beat_rate": 0.44547563805104406,
+      "avg_clv_price": 0.07242072699149264,
+      "calibration_error": -0.004744984423675991,
+      "level": "line"
+    },
+    "K 6.5-8.0|*": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "rows": 370,
+      "clv_rows": 296,
+      "clv_beat_rate": 0.375,
+      "avg_clv_price": -0.27135135135135136,
+      "calibration_error": 0.004809999999999981,
+      "level": "line"
+    },
+    "K 8.5+|*": {
+      "micro_allowed": false,
+      "blockers": [
+        "rows<75",
+        "clv_rows<25",
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "rows": 19,
+      "clv_rows": 14,
+      "clv_beat_rate": 0.21428571428571427,
+      "avg_clv_price": -0.11642857142857148,
+      "calibration_error": -0.06786315789473685,
+      "level": "line"
+    },
+    "K <4.5|*": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 492,
+      "clv_rows": 396,
+      "clv_beat_rate": 0.49747474747474746,
+      "avg_clv_price": 0.5676515151515152,
+      "calibration_error": -0.002301626016260161,
+      "level": "line"
+    },
+    "*|draftkings": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 1330,
+      "clv_rows": 1013,
+      "clv_beat_rate": 0.46692991115498517,
+      "avg_clv_price": 0.0807897334649556,
+      "calibration_error": -0.004218947368420989,
+      "level": "book"
+    },
+    "*|fanduel": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 1156,
+      "clv_rows": 986,
+      "clv_beat_rate": 0.4198782961460446,
+      "avg_clv_price": 0.15683569979716022,
+      "calibration_error": -0.002289446366782022,
+      "level": "book"
+    },
+    "*|*": {
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "rows": 2486,
+      "clv_rows": 1999,
+      "clv_beat_rate": 0.44372186093046523,
+      "avg_clv_price": 0.11829914957478742,
+      "calibration_error": -0.0033217216411907113,
+      "level": "global"
+    }
+  },
+  "groups": [
+    {
+      "rows": 1330,
+      "dates": 54,
+      "win_rate": 0.5097744360902255,
+      "avg_model_prob": 0.5055554887218046,
+      "calibration_error": -0.004218947368420989,
+      "brier": 0.24732972664661654,
+      "clv_rows": 1013,
+      "clv_beat_rate": 0.46692991115498517,
+      "avg_clv_price": 0.0807897334649556,
+      "opportunity": {
+        "projected_bf_mae": 2.8841873901029893,
+        "projected_bf_bias": 0.3326927907560914,
+        "pitch_count_mae": 10.995360085405677,
+        "pitch_count_bias": 1.1761517206731977,
+        "avg_projection_vs_line": 0.03514812030075188
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "book",
+      "key": "*|draftkings",
+      "line_bucket": "*",
+      "bookmaker_key": "draftkings"
+    },
+    {
+      "rows": 1156,
+      "dates": 52,
+      "win_rate": 0.5008650519031141,
+      "avg_model_prob": 0.4985756055363321,
+      "calibration_error": -0.002289446366782022,
+      "brier": 0.24664997019031143,
+      "clv_rows": 986,
+      "clv_beat_rate": 0.4198782961460446,
+      "avg_clv_price": 0.15683569979716022,
+      "opportunity": {
+        "projected_bf_mae": 2.906426920854997,
+        "projected_bf_bias": 0.3906268053148469,
+        "pitch_count_mae": 11.134535456383595,
+        "pitch_count_bias": 1.3795769064124783,
+        "avg_projection_vs_line": 0.1104576124567474
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "book",
+      "key": "*|fanduel",
+      "line_bucket": "*",
+      "bookmaker_key": "fanduel"
+    },
+    {
+      "rows": 2486,
+      "dates": 54,
+      "win_rate": 0.5056315366049879,
+      "avg_model_prob": 0.5023098149637972,
+      "calibration_error": -0.0033217216411907113,
+      "brier": 0.24701363716009656,
+      "clv_rows": 1999,
+      "clv_beat_rate": 0.44372186093046523,
+      "avg_clv_price": 0.11829914957478742,
+      "opportunity": {
+        "projected_bf_mae": 2.8945317748219805,
+        "projected_bf_bias": 0.35963993013569795,
+        "pitch_count_mae": 11.060095425231761,
+        "pitch_count_bias": 1.2707718997715975,
+        "avg_projection_vs_line": 0.07016733708769106
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "global",
+      "key": "*|*",
+      "line_bucket": "*",
+      "bookmaker_key": "*"
+    },
+    {
+      "rows": 1605,
+      "dates": 54,
+      "win_rate": 0.514018691588785,
+      "avg_model_prob": 0.509273707165109,
+      "calibration_error": -0.004744984423675991,
+      "brier": 0.24725948925233646,
+      "clv_rows": 1293,
+      "clv_beat_rate": 0.44547563805104406,
+      "avg_clv_price": 0.07242072699149264,
+      "opportunity": {
+        "projected_bf_mae": 2.8557704304429197,
+        "projected_bf_bias": 0.25023913495529215,
+        "pitch_count_mae": 10.928100592638803,
+        "pitch_count_bias": 0.792721927635683,
+        "avg_projection_vs_line": 0.04530155763239874
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "line",
+      "key": "K 4.5-6.0|*",
+      "line_bucket": "K 4.5-6.0",
+      "bookmaker_key": "*"
+    },
+    {
+      "rows": 370,
+      "dates": 51,
+      "win_rate": 0.5054054054054054,
+      "avg_model_prob": 0.5102154054054053,
+      "calibration_error": 0.004809999999999981,
+      "brier": 0.24822928754054058,
+      "clv_rows": 296,
+      "clv_beat_rate": 0.375,
+      "avg_clv_price": -0.27135135135135136,
+      "opportunity": {
+        "projected_bf_mae": 2.711891891891892,
+        "projected_bf_bias": 0.5162162162162162,
+        "pitch_count_mae": 9.715864864864864,
+        "pitch_count_bias": 2.0037891891891895,
+        "avg_projection_vs_line": -0.030905405405405394
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "level": "line",
+      "key": "K 6.5-8.0|*",
+      "line_bucket": "K 6.5-8.0",
+      "bookmaker_key": "*"
+    },
+    {
+      "rows": 19,
+      "dates": 8,
+      "win_rate": 0.5789473684210527,
+      "avg_model_prob": 0.5110842105263158,
+      "calibration_error": -0.06786315789473685,
+      "brier": 0.24956049473684205,
+      "clv_rows": 14,
+      "clv_beat_rate": 0.21428571428571427,
+      "avg_clv_price": -0.11642857142857148,
+      "opportunity": {
+        "projected_bf_mae": 3.694736842105263,
+        "projected_bf_bias": 1.9052631578947374,
+        "pitch_count_mae": 18.54326315789473,
+        "pitch_count_bias": 13.957999999999993,
+        "avg_projection_vs_line": 0.3192105263157895
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "rows<75",
+        "clv_rows<25",
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "level": "line",
+      "key": "K 8.5+|*",
+      "line_bucket": "K 8.5+",
+      "bookmaker_key": "*"
+    },
+    {
+      "rows": 492,
+      "dates": 52,
+      "win_rate": 0.47560975609756095,
+      "avg_model_prob": 0.4733081300813008,
+      "calibration_error": -0.002301626016260161,
+      "brier": 0.2451990567886179,
+      "clv_rows": 396,
+      "clv_beat_rate": 0.49747474747474746,
+      "avg_clv_price": 0.5676515151515152,
+      "opportunity": {
+        "projected_bf_mae": 3.128698023176551,
+        "projected_bf_bias": 0.5397409679618268,
+        "pitch_count_mae": 12.21914008179959,
+        "pitch_count_bias": 1.790281867757328,
+        "avg_projection_vs_line": 0.2176768292682927
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "line",
+      "key": "K <4.5|*",
+      "line_bucket": "K <4.5",
+      "bookmaker_key": "*"
+    },
+    {
+      "rows": 858,
+      "dates": 54,
+      "win_rate": 0.5174825174825175,
+      "avg_model_prob": 0.5140515151515151,
+      "calibration_error": -0.003431002331002353,
+      "brier": 0.24622041932400932,
+      "clv_rows": 656,
+      "clv_beat_rate": 0.47103658536585363,
+      "avg_clv_price": 0.010030487804878025,
+      "opportunity": {
+        "projected_bf_mae": 2.8398483080513417,
+        "projected_bf_bias": 0.23257487359004275,
+        "pitch_count_mae": 10.828098697005055,
+        "pitch_count_bias": 0.6811644301828081,
+        "avg_projection_vs_line": 0.004905594405594392
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "line_book",
+      "key": "K 4.5-6.0|draftkings",
+      "line_bucket": "K 4.5-6.0",
+      "bookmaker_key": "draftkings"
+    },
+    {
+      "rows": 747,
+      "dates": 52,
+      "win_rate": 0.5100401606425703,
+      "avg_model_prob": 0.5037859437751004,
+      "calibration_error": -0.006254216867469853,
+      "brier": 0.24845295912985274,
+      "clv_rows": 637,
+      "clv_beat_rate": 0.41915227629513346,
+      "avg_clv_price": 0.13667189952904243,
+      "opportunity": {
+        "projected_bf_mae": 2.874061662198392,
+        "projected_bf_bias": 0.27053172475424486,
+        "pitch_count_mae": 11.042982126899014,
+        "pitch_count_bias": 0.9208784629133155,
+        "avg_projection_vs_line": 0.09170013386880854
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "line_book",
+      "key": "K 4.5-6.0|fanduel",
+      "line_bucket": "K 4.5-6.0",
+      "bookmaker_key": "fanduel"
+    },
+    {
+      "rows": 203,
+      "dates": 51,
+      "win_rate": 0.5123152709359606,
+      "avg_model_prob": 0.5142433497536946,
+      "calibration_error": 0.0019280788177339359,
+      "brier": 0.24884200128078818,
+      "clv_rows": 152,
+      "clv_beat_rate": 0.34868421052631576,
+      "avg_clv_price": -0.4652631578947368,
+      "opportunity": {
+        "projected_bf_mae": 2.6935960591133004,
+        "projected_bf_bias": 0.4374384236453202,
+        "pitch_count_mae": 9.60196551724138,
+        "pitch_count_bias": 1.8925566502463058,
+        "avg_projection_vs_line": -0.11179802955665023
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "level": "line_book",
+      "key": "K 6.5-8.0|draftkings",
+      "line_bucket": "K 6.5-8.0",
+      "bookmaker_key": "draftkings"
+    },
+    {
+      "rows": 167,
+      "dates": 51,
+      "win_rate": 0.49700598802395207,
+      "avg_model_prob": 0.5053191616766468,
+      "calibration_error": 0.008313173652694739,
+      "brier": 0.2474844917964072,
+      "clv_rows": 144,
+      "clv_beat_rate": 0.4027777777777778,
+      "avg_clv_price": -0.06666666666666668,
+      "opportunity": {
+        "projected_bf_mae": 2.734131736526946,
+        "projected_bf_bias": 0.6119760479041918,
+        "pitch_count_mae": 9.854317365269461,
+        "pitch_count_bias": 2.139,
+        "avg_projection_vs_line": 0.0674251497005988
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "level": "line_book",
+      "key": "K 6.5-8.0|fanduel",
+      "line_bucket": "K 6.5-8.0",
+      "bookmaker_key": "fanduel"
+    },
+    {
+      "rows": 10,
+      "dates": 8,
+      "win_rate": 0.6,
+      "avg_model_prob": 0.5164500000000001,
+      "calibration_error": -0.0835499999999999,
+      "brier": 0.254293189,
+      "clv_rows": 7,
+      "clv_beat_rate": 0.14285714285714285,
+      "avg_clv_price": 0.018571428571428492,
+      "opportunity": {
+        "projected_bf_mae": 3.6799999999999997,
+        "projected_bf_bias": 1.8800000000000003,
+        "pitch_count_mae": 18.112199999999994,
+        "pitch_count_bias": 13.756199999999996,
+        "avg_projection_vs_line": 0.17960000000000004
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "rows<75",
+        "clv_rows<25",
+        "clv_beat_below_micro_gate",
+        "calibration_error_above_gate"
+      ],
+      "level": "line_book",
+      "key": "K 8.5+|draftkings",
+      "line_bucket": "K 8.5+",
+      "bookmaker_key": "draftkings"
+    },
+    {
+      "rows": 9,
+      "dates": 7,
+      "win_rate": 0.5555555555555556,
+      "avg_model_prob": 0.5051222222222221,
+      "calibration_error": -0.05043333333333344,
+      "brier": 0.24430194555555554,
+      "clv_rows": 7,
+      "clv_beat_rate": 0.2857142857142857,
+      "avg_clv_price": -0.25142857142857133,
+      "opportunity": {
+        "projected_bf_mae": 3.7111111111111117,
+        "projected_bf_bias": 1.933333333333334,
+        "pitch_count_mae": 19.022222222222222,
+        "pitch_count_bias": 14.182222222222219,
+        "avg_projection_vs_line": 0.47433333333333333
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "rows<75",
+        "clv_rows<25",
+        "clv_beat_below_micro_gate",
+        "avg_clv_below_micro_gate"
+      ],
+      "level": "line_book",
+      "key": "K 8.5+|fanduel",
+      "line_bucket": "K 8.5+",
+      "bookmaker_key": "fanduel"
+    },
+    {
+      "rows": 259,
+      "dates": 52,
+      "win_rate": 0.47876447876447875,
+      "avg_model_prob": 0.47018030888030893,
+      "calibration_error": -0.008584169884169823,
+      "brier": 0.24955041895752897,
+      "clv_rows": 198,
+      "clv_beat_rate": 0.5555555555555556,
+      "avg_clv_price": 0.7366161616161614,
+      "opportunity": {
+        "projected_bf_mae": 3.151621271076524,
+        "projected_bf_bias": 0.5236057068741893,
+        "pitch_count_mae": 12.376814202334629,
+        "pitch_count_bias": 1.7713790531776912,
+        "avg_projection_vs_line": 0.24493050193050198
+      },
+      "micro_allowed": true,
+      "blockers": [],
+      "level": "line_book",
+      "key": "K <4.5|draftkings",
+      "line_bucket": "K <4.5",
+      "bookmaker_key": "draftkings"
+    },
+    {
+      "rows": 233,
+      "dates": 49,
+      "win_rate": 0.4721030042918455,
+      "avg_model_prob": 0.47678497854077256,
+      "calibration_error": 0.004681974248927079,
+      "brier": 0.2403621348927039,
+      "clv_rows": 198,
+      "clv_beat_rate": 0.4393939393939394,
+      "avg_clv_price": 0.3986868686868687,
+      "opportunity": {
+        "projected_bf_mae": 3.1033045977011495,
+        "projected_bf_bias": 0.5576149425287356,
+        "pitch_count_mae": 12.044475215517242,
+        "pitch_count_bias": 1.8112216235632181,
+        "avg_projection_vs_line": 0.18738197424892705
+      },
+      "micro_allowed": false,
+      "blockers": [
+        "clv_beat_below_micro_gate"
+      ],
+      "level": "line_book",
+      "key": "K <4.5|fanduel",
+      "line_bucket": "K <4.5",
+      "bookmaker_key": "fanduel"
+    }
+  ],
+  "micro_allowed_count": 1
+}

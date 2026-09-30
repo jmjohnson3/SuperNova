@@ -21,6 +21,8 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
+
 from .prop_market_training import ensure_prop_market_training_schema
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
@@ -588,9 +590,9 @@ def write_report(payload: dict[str, Any], cfg: RepairConfig) -> str:
     _REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = _REPORT_DIR / cfg.report_file
     if payload.get("status") != "ready":
-        path.write_text(
+        atomic_write_text(
+            path,
             "# MLB Prop Bucket Repair Report\n\nNo graded prop buckets were available.\n",
-            encoding="utf-8",
         )
         return str(path)
     cols = [
@@ -653,7 +655,7 @@ def write_report(payload: dict[str, Any], cfg: RepairConfig) -> str:
         _table(_display_rows(payload.get("likely_no_bet_buckets") or []), cols),
         "",
     ]
-    path.write_text("\n".join(lines), encoding="utf-8")
+    atomic_write_text(path, "\n".join(lines))
     return str(path)
 
 
@@ -676,7 +678,7 @@ def main() -> None:
     )
     payload = build_payload(cfg)
     cfg.model_dir.mkdir(parents=True, exist_ok=True)
-    (cfg.model_dir / cfg.json_out).write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    atomic_write_json(cfg.model_dir / cfg.json_out, payload, default=str)
     report_path = write_report(payload, cfg)
     print(json.dumps({
         "status": payload.get("status"),

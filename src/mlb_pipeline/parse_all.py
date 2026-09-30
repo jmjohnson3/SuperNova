@@ -1,4 +1,6 @@
 import logging
+import os
+from datetime import date
 from pathlib import Path
 
 import psycopg2
@@ -16,6 +18,28 @@ log = logging.getLogger("mlb_pipeline.parse_all")
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _SQL_DIR = Path(__file__).resolve().parents[2] / "sql"
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        log.warning("Ignoring invalid %s=%r; using %d", name, raw, default)
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        log.warning("Ignoring invalid %s=%r; using %.1f", name, raw, default)
+        return default
 
 _MLB_SQL_VIEWS = [
     "MLB001_mlb_batting_rolling.sql",
@@ -414,7 +438,13 @@ def main() -> None:
     try:
         from mlb_pipeline.crawler_statcast_velocity import fetch_all_sp_velocity
         with psycopg2.connect(_PG_DSN) as _c:
-            n_v = fetch_all_sp_velocity(_c)
+            n_v = fetch_all_sp_velocity(
+                _c,
+                years=[date.today().year],
+                max_pairs=_env_int("MLB_SP_VELOCITY_PARSE_MAX_PAIRS", 12),
+                max_seconds=_env_float("MLB_SP_VELOCITY_PARSE_MAX_SECONDS", 90.0),
+                request_timeout_s=_env_float("MLB_SP_VELOCITY_PARSE_REQUEST_TIMEOUT", 8.0),
+            )
             _c.commit()
             if n_v:
                 log.info("Fetched velocity data for %d pitcher-games", n_v)

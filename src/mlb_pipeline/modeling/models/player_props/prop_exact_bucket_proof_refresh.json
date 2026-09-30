@@ -1,0 +1,57 @@
+{
+  "generated_at_utc": "2026-09-01T10:35:43Z",
+  "status": "ready",
+  "market_refresh_runs": [
+    {
+      "market": "pitcher_strikeouts",
+      "status": "ok",
+      "return_code": 0,
+      "seconds": 27.661793800070882,
+      "started_at_utc": "2026-09-01T10:33:58+00:00",
+      "out_file": "prop_distribution_models.pitcher_strikeouts.json",
+      "report_file": "mlb_prop_distribution_models_pitcher_strikeouts_latest.md",
+      "stdout_tail": "{\n  \"status\": \"ready\",\n  \"rows\": 1072,\n  \"report_path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\reports\\\\mlb_prop_distribution_models_pitcher_strikeouts_latest.md\"\n}",
+      "stderr_tail": ""
+    },
+    {
+      "market": "batter_hits",
+      "status": "ok",
+      "return_code": 0,
+      "seconds": 31.173210799926892,
+      "started_at_utc": "2026-09-01T10:34:26+00:00",
+      "out_file": "prop_distribution_models.batter_hits.json",
+      "report_file": "mlb_prop_distribution_models_batter_hits_latest.md",
+      "stdout_tail": "{\n  \"status\": \"ready\",\n  \"rows\": 10224,\n  \"report_path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\reports\\\\mlb_prop_distribution_models_batter_hits_latest.md\"\n}",
+      "stderr_tail": "C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn("
+    },
+    {
+      "market": "batter_total_bases",
+      "status": "ok",
+      "return_code": 0,
+      "seconds": 34.05016880016774,
+      "started_at_utc": "2026-09-01T10:34:57+00:00",
+      "out_file": "prop_distribution_models.batter_total_bases.json",
+      "report_file": "mlb_prop_distribution_models_batter_total_bases_latest.md",
+      "stdout_tail": "{\n  \"status\": \"ready\",\n  \"rows\": 10756,\n  \"report_path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\reports\\\\mlb_prop_distribution_models_batter_total_bases_latest.md\"\n}",
+      "stderr_tail": "C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn("
+    },
+    {
+      "market": "batter_home_runs",
+      "status": "ok",
+      "return_code": 0,
+      "seconds": 11.429674900136888,
+      "started_at_utc": "2026-09-01T10:35:31+00:00",
+      "out_file": "prop_distribution_models.batter_home_runs.json",
+      "report_file": "mlb_prop_distribution_models_batter_home_runs_latest.md",
+      "stdout_tail": "{\n  \"status\": \"ready\",\n  \"rows\": 4234,\n  \"report_path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\reports\\\\mlb_prop_distribution_models_batter_home_runs_latest.md\"\n}",
+      "stderr_tail": "C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names\n  warnings.warn(\nC:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\sklearn\\utils\\validation.py:2691: UserWarning: X does not have valid feature names, but LGBMClassifier was fitted with feature names\n  warnings.warn("
+    }
+  ],
+  "merged_markets": [
+    "batter_hits",
+    "batter_home_runs",
+    "batter_total_bases",
+    "pitcher_strikeouts"
+  ],
+  "bucket_model_selection_rows": 84
+}

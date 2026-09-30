@@ -1,0 +1,1984 @@
+{
+  "run_id": "workload-repair-20260928T210154323193Z",
+  "contract": "workload-repair-v3-conditional-efficiency-asymmetric",
+  "production_release": "nfl-20260918T143342Z",
+  "training_end": "2026-09-17",
+  "created_at": "2026-09-28T21:01:55.574965+00:00",
+  "cache_sha256": "273b1352d4c2c4739ee9cbab5b7b02cdd54c4d5809c3013f0971befb77efe98c",
+  "stats": {
+    "receiving_yards": {
+      "existing_workload": {
+        "projection": {
+          "rows": 5279,
+          "mae": 17.320668515483245,
+          "rmse": 23.938388457728905,
+          "bias": 0.6227362617857426,
+          "interval_rows": 5279,
+          "coverage_80": 0.9338889941276757,
+          "interval_width": 87.81856971486397
+        },
+        "reference": {
+          "rows": 5279,
+          "mae": 16.63388275261075,
+          "rmse": 24.25188513766359,
+          "bias": -1.6854054491455264
+        },
+        "baseline": {
+          "rows": 5279,
+          "mae": 17.559907179390034,
+          "rmse": 24.990115308175554,
+          "bias": 0.8420313190629539
+        },
+        "median": {
+          "rows": 5279,
+          "mae": 16.586495770681225,
+          "rmse": 24.43662140707814,
+          "bias": -3.9926036785341896
+        },
+        "opportunity": {
+          "rows": 5279,
+          "mae": 1.7453021054295204,
+          "rmse": 2.232578503353146,
+          "bias": 0.26999200309232324
+        },
+        "baseline_opportunity": {
+          "rows": 5279,
+          "mae": 1.6998737134558313,
+          "rmse": 2.2859512988929853,
+          "bias": 0.09604091684031069
+        },
+        "workload_states": {
+          "low": {
+            "rows": 5279,
+            "brier": 0.19221813065326124,
+            "log_loss": 0.5792893010857294,
+            "calibration_error": 0.06253994015762757,
+            "probability_bias": -0.06253994015762758
+          },
+          "normal": {
+            "rows": 5279,
+            "brier": 0.2196054956708399,
+            "log_loss": 0.638390087806487,
+            "calibration_error": 0.060022918383432655,
+            "probability_bias": 0.05118984844665884
+          },
+          "high": {
+            "rows": 5279,
+            "brier": 0.05164900581367403,
+            "log_loss": 0.19383847593808293,
+            "calibration_error": 0.012522511802161927,
+            "probability_bias": 0.011350091710968693
+          }
+        },
+        "probabilities": {
+          "probability": {
+            "rows": 15116,
+            "brier": 0.24194898597966066,
+            "log_loss": 0.6815021206687871,
+            "calibration_error": 0.078648359536863,
+            "probability_bias": 0.0717210553502695
+          },
+          "calibrated_probability": {
+            "rows": 15116,
+            "brier": 0.2317830636019745,
+            "log_loss": 0.6560745230344227,
+            "calibration_error": 0.025889445625879096,
+            "probability_bias": 0.008531817939766125
+          },
+          "reference_probability": {
+            "rows": 15116,
+            "brier": 0.23079948562095354,
+            "log_loss": 0.6548768520652818,
+            "calibration_error": 0.032418130996657246,
+            "probability_bias": 0.017491311548279397
+          },
+          "baseline_probability": {
+            "rows": 15116,
+            "brier": 0.24006583353077596,
+            "log_loss": 0.6762312148471009,
+            "calibration_error": 0.05443856565993785,
+            "probability_bias": 0.025684619986908828
+          }
+        },
+        "output_gates": {
+          "expected_mean": {
+            "pass": true,
+            "metrics": {
+              "rows": 5279,
+              "mae": 17.320668515483245,
+              "rmse": 23.938388457728905,
+              "bias": 0.6227362617857426,
+              "interval_rows": 5279,
+              "coverage_80": 0.9338889941276757,
+              "interval_width": 87.81856971486397
+            },
+            "reference": {
+              "rows": 5279,
+              "mae": 16.63388275261075,
+              "rmse": 24.25188513766359,
+              "bias": -1.6854054491455264
+            },
+            "clustered_squared_error_gain": {
+              "clusters": 24,
+              "lower_95": 6.761936123942281,
+              "upper_95": 24.996555825688375,
+              "mean_gain": 15.107490777299484
+            }
+          },
+          "median": {
+            "pass": false,
+            "metrics": {
+              "rows": 5279,
+              "mae": 16.586495770681225,
+              "rmse": 24.43662140707814,
+              "bias": -3.9926036785341896
+            },
+            "clustered_absolute_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.1240078354883878,
+              "upper_95": 0.2610040160229691,
+              "mean_gain": 0.04738698192952006
+            }
+          },
+          "probability": {
+            "pass": false,
+            "metrics": {
+              "rows": 15116,
+              "brier": 0.2317830636019745,
+              "log_loss": 0.6560745230344227,
+              "calibration_error": 0.025889445625879096,
+              "probability_bias": 0.008531817939766125
+            },
+            "reference": {
+              "rows": 15116,
+              "brier": 0.23079948562095354,
+              "log_loss": 0.6548768520652818,
+              "calibration_error": 0.032418130996657246,
+              "probability_bias": 0.017491311548279397
+            },
+            "coverage_80": 0.9338889941276757,
+            "interval_score_80": 96.34979589585322,
+            "clustered_brier_gain": {
+              "clusters": 24,
+              "lower_95": -0.003228544641871819,
+              "upper_95": 0.0012214125199974796,
+              "mean_gain": -0.0009835779810209967
+            }
+          },
+          "point_forecast_preserved": false,
+          "bankroll_approval": false,
+          "interpretation": "Historical proxy-line screen only; new prospective outcomes are required."
+        },
+        "folds": [
+          {
+            "fold": "2025-W01",
+            "train_end": "2025-02-09",
+            "test_start": "2025-09-04",
+            "train_rows": 25262,
+            "test_rows": 986,
+            "rate_weight": 0.5,
+            "calibration": {
+              "rows": 156,
+              "unique_player_games": 52,
+              "raw_brier": 0.23482194159870481,
+              "calibrated_brier": 0.23572381263948947,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W05",
+            "train_end": "2025-09-29",
+            "test_start": "2025-10-02",
+            "train_rows": 26248,
+            "test_rows": 1011,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 1473,
+              "unique_player_games": 510,
+              "raw_brier": 0.24769190288642565,
+              "calibrated_brier": 0.2214873564161999,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W09",
+            "train_end": "2025-10-27",
+            "test_start": "2025-10-30",
+            "train_rows": 27259,
+            "test_rows": 1037,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 1454,
+              "unique_player_games": 504,
+              "raw_brier": 0.23962947092765982,
+              "calibrated_brier": 0.2296473339835868,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W13",
+            "train_end": "2025-11-24",
+            "test_start": "2025-11-27",
+            "train_rows": 28296,
+            "test_rows": 1148,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1504,
+              "unique_player_games": 526,
+              "raw_brier": 0.23633682656744015,
+              "calibrated_brier": 0.23242010795278964,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W17",
+            "train_end": "2025-12-22",
+            "test_start": "2025-12-25",
+            "train_rows": 29444,
+            "test_rows": 768,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1671,
+              "unique_player_games": 592,
+              "raw_brier": 0.24035382783943585,
+              "calibrated_brier": 0.23359727045935533,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W21",
+            "train_end": "2026-01-18",
+            "test_start": "2026-01-25",
+            "train_rows": 30212,
+            "test_rows": 54,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 543,
+              "unique_player_games": 187,
+              "raw_brier": 0.23043614902144474,
+              "calibrated_brier": 0.22446013502658754,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2026-W01",
+            "train_end": "2026-02-08",
+            "test_start": "2026-09-09",
+            "train_rows": 30266,
+            "test_rows": 275,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 155,
+              "unique_player_games": 54,
+              "raw_brier": 0.2400707409096222,
+              "calibrated_brier": 0.22392088000869756,
+              "enabled": true
+            }
+          }
+        ],
+        "by_workload": {
+          "0": {
+            "rows": 1463,
+            "mae": 16.06122950241323,
+            "rmse": 18.86382207821018,
+            "bias": 15.222565149932096
+          },
+          "1": {
+            "rows": 3504,
+            "mae": 15.62953032957061,
+            "rmse": 21.620728531442744,
+            "bias": -1.8835254664853625
+          },
+          "2": {
+            "rows": 312,
+            "mae": 42.21908992432717,
+            "rmse": 52.70099590796293,
+            "bias": -39.69011171095838
+          }
+        },
+        "context_coverage": {
+          "wd_depth": 0.0,
+          "wd_starter": 0.0,
+          "wd_injury_out": 0.0,
+          "wd_teammate_absences": 0.0
+        },
+        "automatic_promotion": false,
+        "bankroll_approval": false,
+        "interval_contract": "p10/p90 follow the calibrated probability curve; mean and median are tested as separate raw-distribution outputs.",
+        "allocation_contract": "Player opportunity is bounded by predicted team volume, independently of other scored players. This is not a complete-roster allocation model; absent verified pregame rosters, no participant-based normalization is allowed.",
+        "efficiency": {
+          "model": {
+            "rows": 4447,
+            "mae": 4.273149724586672,
+            "rmse": 5.936205636287819,
+            "bias": 0.13608204961088077
+          },
+          "baseline": {
+            "rows": 4447,
+            "mae": 4.634966237583513,
+            "rmse": 6.439662250212968,
+            "bias": 0.07026095106758425
+          },
+          "excluded_unpaired_rows": 832,
+          "interpretation": "Paired rows, conditional on positive realized opportunity; not a feature or selection filter."
+        },
+        "target_depth": {
+          "rows": 4447,
+          "mae": 4.263640863427488,
+          "rmse": 6.027063024914887,
+          "bias": -0.0642725671365389
+        },
+        "target_depth_baseline": {
+          "rows": 4447,
+          "mae": 4.427275660686808,
+          "rmse": 6.308814121911461,
+          "bias": -0.07727204034600162
+        },
+        "target_depth_excluded_unpaired_rows": 832
+      },
+      "conditional_efficiency": {
+        "projection": {
+          "rows": 5279,
+          "mae": 17.59356344838934,
+          "rmse": 24.132548525056684,
+          "bias": 0.7074704759773182,
+          "interval_rows": 5279,
+          "coverage_80": 0.951505967039212,
+          "interval_width": 97.35813098407972
+        },
+        "reference": {
+          "rows": 5279,
+          "mae": 16.63388275261075,
+          "rmse": 24.25188513766359,
+          "bias": -1.6854054491455264
+        },
+        "baseline": {
+          "rows": 5279,
+          "mae": 17.559907179390034,
+          "rmse": 24.990115308175554,
+          "bias": 0.8420313190629539
+        },
+        "median": {
+          "rows": 5279,
+          "mae": 16.84754933201505,
+          "rmse": 24.769204247643085,
+          "bias": -4.329186199109117
+        },
+        "opportunity": {
+          "rows": 5279,
+          "mae": 1.7936639323454446,
+          "rmse": 2.270038685402551,
+          "bias": 0.30574541843888203
+        },
+        "baseline_opportunity": {
+          "rows": 5279,
+          "mae": 1.6998737134558313,
+          "rmse": 2.2859512988929853,
+          "bias": 0.09604091684031069
+        },
+        "workload_states": {
+          "low": {
+            "rows": 5279,
+            "brier": 0.19193169485755365,
+            "log_loss": 0.5781278370135602,
+            "calibration_error": 0.06201958491307084,
+            "probability_bias": -0.06162690828302417
+          },
+          "normal": {
+            "rows": 5279,
+            "brier": 0.21940183151888093,
+            "log_loss": 0.6376365118741836,
+            "calibration_error": 0.060664223566300364,
+            "probability_bias": 0.050350471320299205
+          },
+          "high": {
+            "rows": 5279,
+            "brier": 0.05168442966052109,
+            "log_loss": 0.19377751266604717,
+            "calibration_error": 0.011587658854804327,
+            "probability_bias": 0.011276436962724918
+          }
+        },
+        "probabilities": {
+          "probability": {
+            "rows": 15116,
+            "brier": 0.24723659411129595,
+            "log_loss": 0.6947828810632755,
+            "calibration_error": 0.08640640023927629,
+            "probability_bias": 0.07821039613538679
+          },
+          "calibrated_probability": {
+            "rows": 15116,
+            "brier": 0.23382954607657383,
+            "log_loss": 0.6605850125842126,
+            "calibration_error": 0.023753001111525944,
+            "probability_bias": 0.0031537057918611055
+          },
+          "reference_probability": {
+            "rows": 15116,
+            "brier": 0.23079948562095354,
+            "log_loss": 0.6548768520652818,
+            "calibration_error": 0.032418130996657246,
+            "probability_bias": 0.017491311548279397
+          },
+          "baseline_probability": {
+            "rows": 15116,
+            "brier": 0.24006583353077596,
+            "log_loss": 0.6762312148471009,
+            "calibration_error": 0.05443856565993785,
+            "probability_bias": 0.025684619986908828
+          }
+        },
+        "output_gates": {
+          "expected_mean": {
+            "pass": false,
+            "metrics": {
+              "rows": 5279,
+              "mae": 17.59356344838934,
+              "rmse": 24.132548525056684,
+              "bias": 0.7074704759773182,
+              "interval_rows": 5279,
+              "coverage_80": 0.951505967039212,
+              "interval_width": 97.35813098407972
+            },
+            "reference": {
+              "rows": 5279,
+              "mae": 16.63388275261075,
+              "rmse": 24.25188513766359,
+              "bias": -1.6854054491455264
+            },
+            "clustered_squared_error_gain": {
+              "clusters": 24,
+              "lower_95": -4.324023488968888,
+              "upper_95": 17.132702737424154,
+              "mean_gain": 5.774034416212423
+            }
+          },
+          "median": {
+            "pass": false,
+            "metrics": {
+              "rows": 5279,
+              "mae": 16.84754933201505,
+              "rmse": 24.769204247643085,
+              "bias": -4.329186199109117
+            },
+            "clustered_absolute_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.44185135925761587,
+              "upper_95": 0.056055663959559465,
+              "mean_gain": -0.21366657940430317
+            }
+          },
+          "probability": {
+            "pass": false,
+            "metrics": {
+              "rows": 15116,
+              "brier": 0.23382954607657383,
+              "log_loss": 0.6605850125842126,
+              "calibration_error": 0.023753001111525944,
+              "probability_bias": 0.0031537057918611055
+            },
+            "reference": {
+              "rows": 15116,
+              "brier": 0.23079948562095354,
+              "log_loss": 0.6548768520652818,
+              "calibration_error": 0.032418130996657246,
+              "probability_bias": 0.017491311548279397
+            },
+            "coverage_80": 0.951505967039212,
+            "interval_score_80": 102.64205186137997,
+            "clustered_brier_gain": {
+              "clusters": 24,
+              "lower_95": -0.006376502661627952,
+              "upper_95": -0.000377590311555914,
+              "mean_gain": -0.0030300604556203346
+            }
+          },
+          "point_forecast_preserved": false,
+          "bankroll_approval": false,
+          "interpretation": "Historical proxy-line screen only; new prospective outcomes are required."
+        },
+        "folds": [
+          {
+            "fold": "2025-W01",
+            "train_end": "2025-02-09",
+            "test_start": "2025-09-04",
+            "train_rows": 25262,
+            "test_rows": 986,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 156,
+              "unique_player_games": 52,
+              "raw_brier": 0.23518154914633818,
+              "calibrated_brier": 0.23322311419890546,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W05",
+            "train_end": "2025-09-29",
+            "test_start": "2025-10-02",
+            "train_rows": 26248,
+            "test_rows": 1011,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1473,
+              "unique_player_games": 510,
+              "raw_brier": 0.256553658669017,
+              "calibrated_brier": 0.22372160724644718,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W09",
+            "train_end": "2025-10-27",
+            "test_start": "2025-10-30",
+            "train_rows": 27259,
+            "test_rows": 1037,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 1454,
+              "unique_player_games": 504,
+              "raw_brier": 0.2456520387921003,
+              "calibrated_brier": 0.23106691753833963,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W13",
+            "train_end": "2025-11-24",
+            "test_start": "2025-11-27",
+            "train_rows": 28296,
+            "test_rows": 1148,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1504,
+              "unique_player_games": 526,
+              "raw_brier": 0.2402171580971453,
+              "calibrated_brier": 0.23445942525288704,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W17",
+            "train_end": "2025-12-22",
+            "test_start": "2025-12-25",
+            "train_rows": 29444,
+            "test_rows": 768,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1671,
+              "unique_player_games": 592,
+              "raw_brier": 0.24465435619964887,
+              "calibrated_brier": 0.23451675837693656,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W21",
+            "train_end": "2026-01-18",
+            "test_start": "2026-01-25",
+            "train_rows": 30212,
+            "test_rows": 54,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 543,
+              "unique_player_games": 187,
+              "raw_brier": 0.23656532966327756,
+              "calibrated_brier": 0.22719760547283543,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2026-W01",
+            "train_end": "2026-02-08",
+            "test_start": "2026-09-09",
+            "train_rows": 30266,
+            "test_rows": 275,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 155,
+              "unique_player_games": 54,
+              "raw_brier": 0.2505737320348399,
+              "calibrated_brier": 0.22747095463700473,
+              "enabled": true
+            }
+          }
+        ],
+        "by_workload": {
+          "0": {
+            "rows": 1463,
+            "mae": 16.62594606676393,
+            "rmse": 19.04899471580072,
+            "bias": 15.770626698943868
+          },
+          "1": {
+            "rows": 3504,
+            "mae": 15.728764901473884,
+            "rmse": 21.684359719593274,
+            "bias": -1.8826001283746014
+          },
+          "2": {
+            "rows": 312,
+            "mae": 43.07394273592048,
+            "rmse": 53.58590681508352,
+            "bias": -40.836728743737225
+          }
+        },
+        "context_coverage": {
+          "wd_depth": 0.0,
+          "wd_starter": 0.0,
+          "wd_injury_out": 0.0,
+          "wd_teammate_absences": 0.0
+        },
+        "automatic_promotion": false,
+        "bankroll_approval": false,
+        "interval_contract": "p10/p90 follow the calibrated probability curve; mean and median are tested as separate raw-distribution outputs.",
+        "allocation_contract": "Player opportunity is bounded by predicted team volume, independently of other scored players. This is not a complete-roster allocation model; absent verified pregame rosters, no participant-based normalization is allowed.",
+        "efficiency": {
+          "model": {
+            "rows": 4447,
+            "mae": 4.281493147993965,
+            "rmse": 5.938033391226457,
+            "bias": 0.17779783364199625
+          },
+          "baseline": {
+            "rows": 4447,
+            "mae": 4.634966237583513,
+            "rmse": 6.439662250212968,
+            "bias": 0.07026095106758425
+          },
+          "excluded_unpaired_rows": 832,
+          "interpretation": "Paired rows, conditional on positive realized opportunity; not a feature or selection filter."
+        },
+        "target_depth": {
+          "rows": 4447,
+          "mae": 4.285194630529814,
+          "rmse": 6.045506288578945,
+          "bias": -0.005509625314506269
+        },
+        "target_depth_baseline": {
+          "rows": 4447,
+          "mae": 4.427275660686808,
+          "rmse": 6.308814121911461,
+          "bias": -0.07727204034600162
+        },
+        "target_depth_excluded_unpaired_rows": 832
+      },
+      "asymmetric_repair": {
+        "projection": {
+          "rows": 5279,
+          "mae": 17.501234962986338,
+          "rmse": 23.97141108578208,
+          "bias": 1.138315963635961,
+          "interval_rows": 5279,
+          "coverage_80": 0.9609774578518658,
+          "interval_width": 93.64420521474742
+        },
+        "reference": {
+          "rows": 5279,
+          "mae": 16.63388275261075,
+          "rmse": 24.25188513766359,
+          "bias": -1.6854054491455264
+        },
+        "baseline": {
+          "rows": 5279,
+          "mae": 17.559907179390034,
+          "rmse": 24.990115308175554,
+          "bias": 0.8420313190629539
+        },
+        "median": {
+          "rows": 5279,
+          "mae": 16.75838258619397,
+          "rmse": 24.24675403081783,
+          "bias": -2.7758041321227616
+        },
+        "opportunity": {
+          "rows": 5279,
+          "mae": 1.7936639323454446,
+          "rmse": 2.270038685402551,
+          "bias": 0.30574541843888203
+        },
+        "baseline_opportunity": {
+          "rows": 5279,
+          "mae": 1.6998737134558313,
+          "rmse": 2.2859512988929853,
+          "bias": 0.09604091684031069
+        },
+        "workload_states": {
+          "low": {
+            "rows": 5279,
+            "brier": 0.19193169485755365,
+            "log_loss": 0.5781278370135602,
+            "calibration_error": 0.06201958491307084,
+            "probability_bias": -0.06162690828302417
+          },
+          "normal": {
+            "rows": 5279,
+            "brier": 0.21940183151888093,
+            "log_loss": 0.6376365118741836,
+            "calibration_error": 0.060664223566300364,
+            "probability_bias": 0.050350471320299205
+          },
+          "high": {
+            "rows": 5279,
+            "brier": 0.05168442966052109,
+            "log_loss": 0.19377751266604717,
+            "calibration_error": 0.011587658854804327,
+            "probability_bias": 0.011276436962724918
+          }
+        },
+        "probabilities": {
+          "probability": {
+            "rows": 15116,
+            "brier": 0.24335896973942842,
+            "log_loss": 0.6816897189561342,
+            "calibration_error": 0.09060829893386547,
+            "probability_bias": 0.08558636527866191
+          },
+          "calibrated_probability": {
+            "rows": 15116,
+            "brier": 0.23155917267273268,
+            "log_loss": 0.6549489804147284,
+            "calibration_error": 0.02155051948592924,
+            "probability_bias": 0.001315502932070378
+          },
+          "reference_probability": {
+            "rows": 15116,
+            "brier": 0.23079948562095354,
+            "log_loss": 0.6548768520652818,
+            "calibration_error": 0.032418130996657246,
+            "probability_bias": 0.017491311548279397
+          },
+          "baseline_probability": {
+            "rows": 15116,
+            "brier": 0.24006583353077596,
+            "log_loss": 0.6762312148471009,
+            "calibration_error": 0.05443856565993785,
+            "probability_bias": 0.025684619986908828
+          }
+        },
+        "output_gates": {
+          "expected_mean": {
+            "pass": true,
+            "metrics": {
+              "rows": 5279,
+              "mae": 17.501234962986338,
+              "rmse": 23.97141108578208,
+              "bias": 1.138315963635961,
+              "interval_rows": 5279,
+              "coverage_80": 0.9609774578518658,
+              "interval_width": 93.64420521474742
+            },
+            "reference": {
+              "rows": 5279,
+              "mae": 16.63388275261075,
+              "rmse": 24.25188513766359,
+              "bias": -1.6854054491455264
+            },
+            "clustered_squared_error_gain": {
+              "clusters": 24,
+              "lower_95": 4.965619126478269,
+              "upper_95": 22.4995776331111,
+              "mean_gain": 13.525383286871838
+            }
+          },
+          "median": {
+            "pass": false,
+            "metrics": {
+              "rows": 5279,
+              "mae": 16.75838258619397,
+              "rmse": 24.24675403081783,
+              "bias": -2.7758041321227616
+            },
+            "clustered_absolute_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.2919275264022519,
+              "upper_95": 0.05442026927534761,
+              "mean_gain": -0.124499833583227
+            }
+          },
+          "probability": {
+            "pass": false,
+            "metrics": {
+              "rows": 15116,
+              "brier": 0.23155917267273268,
+              "log_loss": 0.6549489804147284,
+              "calibration_error": 0.02155051948592924,
+              "probability_bias": 0.001315502932070378
+            },
+            "reference": {
+              "rows": 15116,
+              "brier": 0.23079948562095354,
+              "log_loss": 0.6548768520652818,
+              "calibration_error": 0.032418130996657246,
+              "probability_bias": 0.017491311548279397
+            },
+            "coverage_80": 0.9609774578518658,
+            "interval_score_80": 100.25695088079505,
+            "clustered_brier_gain": {
+              "clusters": 24,
+              "lower_95": -0.0038307983096544005,
+              "upper_95": 0.0018093843240609103,
+              "mean_gain": -0.0007596870517791302
+            }
+          },
+          "point_forecast_preserved": false,
+          "bankroll_approval": false,
+          "interpretation": "Historical proxy-line screen only; new prospective outcomes are required."
+        },
+        "folds": [
+          {
+            "fold": "2025-W01",
+            "train_end": "2025-02-09",
+            "test_start": "2025-09-04",
+            "train_rows": 25262,
+            "test_rows": 986,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 156,
+              "unique_player_games": 52,
+              "raw_brier": 0.24316561891880478,
+              "calibrated_brier": 0.23354997537577363,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W05",
+            "train_end": "2025-09-29",
+            "test_start": "2025-10-02",
+            "train_rows": 26248,
+            "test_rows": 1011,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1473,
+              "unique_player_games": 510,
+              "raw_brier": 0.23843020782881755,
+              "calibrated_brier": 0.2196889361101444,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W09",
+            "train_end": "2025-10-27",
+            "test_start": "2025-10-30",
+            "train_rows": 27259,
+            "test_rows": 1037,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 1454,
+              "unique_player_games": 504,
+              "raw_brier": 0.24219309282114473,
+              "calibrated_brier": 0.22896747065602324,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W13",
+            "train_end": "2025-11-24",
+            "test_start": "2025-11-27",
+            "train_rows": 28296,
+            "test_rows": 1148,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1504,
+              "unique_player_games": 526,
+              "raw_brier": 0.24271161242192008,
+              "calibrated_brier": 0.23484215312038173,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W17",
+            "train_end": "2025-12-22",
+            "test_start": "2025-12-25",
+            "train_rows": 29444,
+            "test_rows": 768,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 1671,
+              "unique_player_games": 592,
+              "raw_brier": 0.24368609269866048,
+              "calibrated_brier": 0.23167534197294015,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W21",
+            "train_end": "2026-01-18",
+            "test_start": "2026-01-25",
+            "train_rows": 30212,
+            "test_rows": 54,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 543,
+              "unique_player_games": 187,
+              "raw_brier": 0.23948912444170706,
+              "calibrated_brier": 0.22677746062181675,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2026-W01",
+            "train_end": "2026-02-08",
+            "test_start": "2026-09-09",
+            "train_rows": 30266,
+            "test_rows": 275,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 155,
+              "unique_player_games": 54,
+              "raw_brier": 0.25076783208143083,
+              "calibrated_brier": 0.2277396121364933,
+              "enabled": true
+            }
+          }
+        ],
+        "by_workload": {
+          "0": {
+            "rows": 1463,
+            "mae": 16.476164823287647,
+            "rmse": 19.315869293500224,
+            "bias": 15.69245248148969
+          },
+          "1": {
+            "rows": 3504,
+            "mae": 15.751553730547881,
+            "rmse": 21.58720461713668,
+            "bias": -1.3421333486388625
+          },
+          "2": {
+            "rows": 312,
+            "mae": 41.95816013235666,
+            "rmse": 52.340256536994964,
+            "bias": -39.250169085751935
+          }
+        },
+        "context_coverage": {
+          "wd_depth": 0.0,
+          "wd_starter": 0.0,
+          "wd_injury_out": 0.0,
+          "wd_teammate_absences": 0.0
+        },
+        "automatic_promotion": false,
+        "bankroll_approval": false,
+        "interval_contract": "p10/p90 follow the calibrated probability curve; mean and median are tested as separate raw-distribution outputs.",
+        "allocation_contract": "Player opportunity is bounded by predicted team volume, independently of other scored players. This is not a complete-roster allocation model; absent verified pregame rosters, no participant-based normalization is allowed.",
+        "efficiency": {
+          "model": {
+            "rows": 4447,
+            "mae": 4.281493147993965,
+            "rmse": 5.938033391226457,
+            "bias": 0.17779783364199625
+          },
+          "baseline": {
+            "rows": 4447,
+            "mae": 4.634966237583513,
+            "rmse": 6.439662250212968,
+            "bias": 0.07026095106758425
+          },
+          "excluded_unpaired_rows": 832,
+          "interpretation": "Paired rows, conditional on positive realized opportunity; not a feature or selection filter."
+        },
+        "target_depth": {
+          "rows": 4447,
+          "mae": 4.285194630529814,
+          "rmse": 6.045506288578945,
+          "bias": -0.005509625314506269
+        },
+        "target_depth_baseline": {
+          "rows": 4447,
+          "mae": 4.427275660686808,
+          "rmse": 6.308814121911461,
+          "bias": -0.07727204034600162
+        },
+        "target_depth_excluded_unpaired_rows": 832
+      },
+      "versus_existing_workload": {
+        "clusters": 24,
+        "lower_95": -0.0010534499031567123,
+        "upper_95": 0.0014505205469133862,
+        "mean_gain": 0.0002238909292418669
+      },
+      "uncertainty_increment": {
+        "clusters": 24,
+        "lower_95": 0.0017851604974185593,
+        "upper_95": 0.0027283982086034496,
+        "mean_gain": 0.0022703734038412035
+      },
+      "ready_for_prospective_test": false
+    },
+    "rushing_yards": {
+      "existing_workload": {
+        "projection": {
+          "rows": 2157,
+          "mae": 18.199420259067036,
+          "rmse": 25.90333398092537,
+          "bias": -0.06202683930495503,
+          "interval_rows": 2157,
+          "coverage_80": 0.9225776541492814,
+          "interval_width": 87.25175083880421
+        },
+        "reference": {
+          "rows": 2157,
+          "mae": 17.797843838705997,
+          "rmse": 26.669450239311598,
+          "bias": -2.226766542383398
+        },
+        "baseline": {
+          "rows": 2157,
+          "mae": 18.506019162416937,
+          "rmse": 27.25074269657741,
+          "bias": 0.4630118992427753
+        },
+        "median": {
+          "rows": 2157,
+          "mae": 17.69144414176319,
+          "rmse": 26.402897232380816,
+          "bias": -4.2595748154235835
+        },
+        "opportunity": {
+          "rows": 2157,
+          "mae": 3.1069696623563208,
+          "rmse": 4.122277788062209,
+          "bias": 0.1280634339522341
+        },
+        "baseline_opportunity": {
+          "rows": 2157,
+          "mae": 3.071148199660022,
+          "rmse": 4.2971009407660095,
+          "bias": 0.03979292226858293
+        },
+        "workload_states": {
+          "low": {
+            "rows": 2157,
+            "brier": 0.17042376644364982,
+            "log_loss": 0.5171500065939681,
+            "calibration_error": 0.03283515590956109,
+            "probability_bias": -0.004543294691760613
+          },
+          "normal": {
+            "rows": 2157,
+            "brier": 0.19633915531157475,
+            "log_loss": 0.5796756556806056,
+            "calibration_error": 0.019364622780378666,
+            "probability_bias": 0.002567603269821797
+          },
+          "high": {
+            "rows": 2157,
+            "brier": 0.038180199556855414,
+            "log_loss": 0.14697209981154274,
+            "calibration_error": 0.011660010666903187,
+            "probability_bias": 0.001975691421938755
+          }
+        },
+        "probabilities": {
+          "probability": {
+            "rows": 6138,
+            "brier": 0.2356678541692969,
+            "log_loss": 0.6651784735655775,
+            "calibration_error": 0.0611151994777048,
+            "probability_bias": 0.050066463665975
+          },
+          "calibrated_probability": {
+            "rows": 6138,
+            "brier": 0.23031424773677964,
+            "log_loss": 0.6533381268787205,
+            "calibration_error": 0.02843330012471469,
+            "probability_bias": 0.008306275122668896
+          },
+          "reference_probability": {
+            "rows": 6138,
+            "brier": 0.23485956535724353,
+            "log_loss": 0.6644032213320961,
+            "calibration_error": 0.041277076247263164,
+            "probability_bias": 0.012704817074197114
+          },
+          "baseline_probability": {
+            "rows": 6138,
+            "brier": 0.2400707379568979,
+            "log_loss": 0.677684879581287,
+            "calibration_error": 0.04796953965215719,
+            "probability_bias": 0.026378924401480607
+          }
+        },
+        "output_gates": {
+          "expected_mean": {
+            "pass": true,
+            "metrics": {
+              "rows": 2157,
+              "mae": 18.199420259067036,
+              "rmse": 25.90333398092537,
+              "bias": -0.06202683930495503,
+              "interval_rows": 2157,
+              "coverage_80": 0.9225776541492814,
+              "interval_width": 87.25175083880421
+            },
+            "reference": {
+              "rows": 2157,
+              "mae": 17.797843838705997,
+              "rmse": 26.669450239311598,
+              "bias": -2.226766542383398
+            },
+            "clustered_squared_error_gain": {
+              "clusters": 24,
+              "lower_95": 14.522282985350092,
+              "upper_95": 63.6872972339171,
+              "mean_gain": 40.27686473975437
+            }
+          },
+          "median": {
+            "pass": false,
+            "metrics": {
+              "rows": 2157,
+              "mae": 17.69144414176319,
+              "rmse": 26.402897232380816,
+              "bias": -4.2595748154235835
+            },
+            "clustered_absolute_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.24655354040146224,
+              "upper_95": 0.5325985377455978,
+              "mean_gain": 0.10639969694281098
+            }
+          },
+          "probability": {
+            "pass": false,
+            "metrics": {
+              "rows": 6138,
+              "brier": 0.23031424773677964,
+              "log_loss": 0.6533381268787205,
+              "calibration_error": 0.02843330012471469,
+              "probability_bias": 0.008306275122668896
+            },
+            "reference": {
+              "rows": 6138,
+              "brier": 0.23485956535724353,
+              "log_loss": 0.6644032213320961,
+              "calibration_error": 0.041277076247263164,
+              "probability_bias": 0.012704817074197114
+            },
+            "coverage_80": 0.9225776541492814,
+            "interval_score_80": 103.36052105486435,
+            "clustered_brier_gain": {
+              "clusters": 24,
+              "lower_95": -0.00033954869788154754,
+              "upper_95": 0.01076555602327314,
+              "mean_gain": 0.004545317620463862
+            }
+          },
+          "point_forecast_preserved": false,
+          "bankroll_approval": false,
+          "interpretation": "Historical proxy-line screen only; new prospective outcomes are required."
+        },
+        "folds": [
+          {
+            "fold": "2025-W01",
+            "train_end": "2025-02-09",
+            "test_start": "2025-09-04",
+            "train_rows": 11068,
+            "test_rows": 403,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 70,
+              "unique_player_games": 24,
+              "raw_brier": 0.24834560984163714,
+              "calibrated_brier": 0.22638413616900366,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W05",
+            "train_end": "2025-09-29",
+            "test_start": "2025-10-02",
+            "train_rows": 11471,
+            "test_rows": 422,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 606,
+              "unique_player_games": 208,
+              "raw_brier": 0.21673494454890252,
+              "calibrated_brier": 0.22536101702066677,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W09",
+            "train_end": "2025-10-27",
+            "test_start": "2025-10-30",
+            "train_rows": 11893,
+            "test_rows": 418,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 607,
+              "unique_player_games": 212,
+              "raw_brier": 0.2359074345752261,
+              "calibrated_brier": 0.22900004781410918,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W13",
+            "train_end": "2025-11-24",
+            "test_start": "2025-11-27",
+            "train_rows": 12311,
+            "test_rows": 465,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 600,
+              "unique_player_games": 213,
+              "raw_brier": 0.2365601250028972,
+              "calibrated_brier": 0.23620042209738015,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W17",
+            "train_end": "2025-12-22",
+            "test_start": "2025-12-25",
+            "train_rows": 12776,
+            "test_rows": 316,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 676,
+              "unique_player_games": 241,
+              "raw_brier": 0.23787941360599488,
+              "calibrated_brier": 0.2314989313519013,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W21",
+            "train_end": "2026-01-18",
+            "test_start": "2026-01-25",
+            "train_rows": 13092,
+            "test_rows": 21,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 193,
+              "unique_player_games": 69,
+              "raw_brier": 0.23078450885958499,
+              "calibrated_brier": 0.22504110678349748,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2026-W01",
+            "train_end": "2026-02-08",
+            "test_start": "2026-09-09",
+            "train_rows": 13113,
+            "test_rows": 112,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 58,
+              "unique_player_games": 21,
+              "raw_brier": 0.23310101230500296,
+              "calibrated_brier": 0.2249774655480335,
+              "enabled": false
+            }
+          }
+        ],
+        "by_workload": {
+          "0": {
+            "rows": 520,
+            "mae": 17.40411228894427,
+            "rmse": 20.423266883046722,
+            "bias": 17.145536032454544
+          },
+          "1": {
+            "rows": 1544,
+            "mae": 16.63566866677924,
+            "rmse": 23.88056008302762,
+            "bias": -2.9960896522991605
+          },
+          "2": {
+            "rows": 93,
+            "mae": 48.607942871499205,
+            "rmse": 61.3379937361183,
+            "bias": -47.564604366744604
+          }
+        },
+        "context_coverage": {
+          "wd_depth": 0.0,
+          "wd_starter": 0.0,
+          "wd_injury_out": 0.0,
+          "wd_teammate_absences": 0.0
+        },
+        "automatic_promotion": false,
+        "bankroll_approval": false,
+        "interval_contract": "p10/p90 follow the calibrated probability curve; mean and median are tested as separate raw-distribution outputs.",
+        "allocation_contract": "Player opportunity is bounded by predicted team volume, independently of other scored players. This is not a complete-roster allocation model; absent verified pregame rosters, no participant-based normalization is allowed.",
+        "efficiency": {
+          "model": {
+            "rows": 1923,
+            "mae": 2.1266637182861263,
+            "rmse": 3.106578756794081,
+            "bias": 0.1311462724236592
+          },
+          "baseline": {
+            "rows": 1923,
+            "mae": 2.334333841459711,
+            "rmse": 3.361173230132643,
+            "bias": 0.06496600677457437
+          },
+          "excluded_unpaired_rows": 234,
+          "interpretation": "Paired rows, conditional on positive realized opportunity; not a feature or selection filter."
+        }
+      },
+      "conditional_efficiency": {
+        "projection": {
+          "rows": 2157,
+          "mae": 18.473979623285206,
+          "rmse": 26.131427220846078,
+          "bias": -0.22996990768672929,
+          "interval_rows": 2157,
+          "coverage_80": 0.9360222531293463,
+          "interval_width": 97.49025014364734
+        },
+        "reference": {
+          "rows": 2157,
+          "mae": 17.797843838705997,
+          "rmse": 26.669450239311598,
+          "bias": -2.226766542383398
+        },
+        "baseline": {
+          "rows": 2157,
+          "mae": 18.506019162416937,
+          "rmse": 27.25074269657741,
+          "bias": 0.4630118992427753
+        },
+        "median": {
+          "rows": 2157,
+          "mae": 17.923955525416932,
+          "rmse": 26.76874129591993,
+          "bias": -4.70488414836403
+        },
+        "opportunity": {
+          "rows": 2157,
+          "mae": 3.1941892650895283,
+          "rmse": 4.202647101065324,
+          "bias": 0.10746451045052477
+        },
+        "baseline_opportunity": {
+          "rows": 2157,
+          "mae": 3.071148199660022,
+          "rmse": 4.2971009407660095,
+          "bias": 0.03979292226858293
+        },
+        "workload_states": {
+          "low": {
+            "rows": 2157,
+            "brier": 0.16942522549391173,
+            "log_loss": 0.514905779607227,
+            "calibration_error": 0.03579330251406147,
+            "probability_bias": -0.0037534457163998945
+          },
+          "normal": {
+            "rows": 2157,
+            "brier": 0.1953684588731373,
+            "log_loss": 0.5775736108891338,
+            "calibration_error": 0.0251843644880494,
+            "probability_bias": 0.001960994719688998
+          },
+          "high": {
+            "rows": 2157,
+            "brier": 0.038199316453572225,
+            "log_loss": 0.14720484677935516,
+            "calibration_error": 0.011143379470989225,
+            "probability_bias": 0.0017924509967108292
+          }
+        },
+        "probabilities": {
+          "probability": {
+            "rows": 6138,
+            "brier": 0.23734818610040545,
+            "log_loss": 0.6677672792536445,
+            "calibration_error": 0.06561407793008912,
+            "probability_bias": 0.05246125122138091
+          },
+          "calibrated_probability": {
+            "rows": 6138,
+            "brier": 0.2315637417659502,
+            "log_loss": 0.6554553410218579,
+            "calibration_error": 0.027774100164449627,
+            "probability_bias": 0.007506905145931319
+          },
+          "reference_probability": {
+            "rows": 6138,
+            "brier": 0.23485956535724353,
+            "log_loss": 0.6644032213320961,
+            "calibration_error": 0.041277076247263164,
+            "probability_bias": 0.012704817074197114
+          },
+          "baseline_probability": {
+            "rows": 6138,
+            "brier": 0.2400707379568979,
+            "log_loss": 0.677684879581287,
+            "calibration_error": 0.04796953965215719,
+            "probability_bias": 0.026378924401480607
+          }
+        },
+        "output_gates": {
+          "expected_mean": {
+            "pass": false,
+            "metrics": {
+              "rows": 2157,
+              "mae": 18.473979623285206,
+              "rmse": 26.131427220846078,
+              "bias": -0.22996990768672929,
+              "interval_rows": 2157,
+              "coverage_80": 0.9360222531293463,
+              "interval_width": 97.49025014364734
+            },
+            "reference": {
+              "rows": 2157,
+              "mae": 17.797843838705997,
+              "rmse": 26.669450239311598,
+              "bias": -2.226766542383398
+            },
+            "clustered_squared_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.9501918659417901,
+              "upper_95": 53.257428197946425,
+              "mean_gain": 28.408087468742163
+            }
+          },
+          "median": {
+            "pass": false,
+            "metrics": {
+              "rows": 2157,
+              "mae": 17.923955525416932,
+              "rmse": 26.76874129591993,
+              "bias": -4.70488414836403
+            },
+            "clustered_absolute_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.5174598458546436,
+              "upper_95": 0.33322619972878437,
+              "mean_gain": -0.12611168671093406
+            }
+          },
+          "probability": {
+            "pass": false,
+            "metrics": {
+              "rows": 6138,
+              "brier": 0.2315637417659502,
+              "log_loss": 0.6554553410218579,
+              "calibration_error": 0.027774100164449627,
+              "probability_bias": 0.007506905145931319
+            },
+            "reference": {
+              "rows": 6138,
+              "brier": 0.23485956535724353,
+              "log_loss": 0.6644032213320961,
+              "calibration_error": 0.041277076247263164,
+              "probability_bias": 0.012704817074197114
+            },
+            "coverage_80": 0.9360222531293463,
+            "interval_score_80": 111.17702956568199,
+            "clustered_brier_gain": {
+              "clusters": 24,
+              "lower_95": -0.0017244700540406043,
+              "upper_95": 0.00910622594558939,
+              "mean_gain": 0.0032958235912933275
+            }
+          },
+          "point_forecast_preserved": false,
+          "bankroll_approval": false,
+          "interpretation": "Historical proxy-line screen only; new prospective outcomes are required."
+        },
+        "folds": [
+          {
+            "fold": "2025-W01",
+            "train_end": "2025-02-09",
+            "test_start": "2025-09-04",
+            "train_rows": 11068,
+            "test_rows": 403,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 70,
+              "unique_player_games": 24,
+              "raw_brier": 0.24995110068447712,
+              "calibrated_brier": 0.22784035400934147,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W05",
+            "train_end": "2025-09-29",
+            "test_start": "2025-10-02",
+            "train_rows": 11471,
+            "test_rows": 422,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 606,
+              "unique_player_games": 208,
+              "raw_brier": 0.2196476537451325,
+              "calibrated_brier": 0.225601864628495,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W09",
+            "train_end": "2025-10-27",
+            "test_start": "2025-10-30",
+            "train_rows": 11893,
+            "test_rows": 418,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 607,
+              "unique_player_games": 212,
+              "raw_brier": 0.23724847321074288,
+              "calibrated_brier": 0.23014503814838264,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W13",
+            "train_end": "2025-11-24",
+            "test_start": "2025-11-27",
+            "train_rows": 12311,
+            "test_rows": 465,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 600,
+              "unique_player_games": 213,
+              "raw_brier": 0.23945441860078265,
+              "calibrated_brier": 0.23781572670879325,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W17",
+            "train_end": "2025-12-22",
+            "test_start": "2025-12-25",
+            "train_rows": 12776,
+            "test_rows": 316,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 676,
+              "unique_player_games": 241,
+              "raw_brier": 0.23817164711089356,
+              "calibrated_brier": 0.2318477282857599,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W21",
+            "train_end": "2026-01-18",
+            "test_start": "2026-01-25",
+            "train_rows": 13092,
+            "test_rows": 21,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 193,
+              "unique_player_games": 69,
+              "raw_brier": 0.23628151693592725,
+              "calibrated_brier": 0.22872748795230088,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2026-W01",
+            "train_end": "2026-02-08",
+            "test_start": "2026-09-09",
+            "train_rows": 13113,
+            "test_rows": 112,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 58,
+              "unique_player_games": 21,
+              "raw_brier": 0.23021328634184643,
+              "calibrated_brier": 0.22325241521190314,
+              "enabled": false
+            }
+          }
+        ],
+        "by_workload": {
+          "0": {
+            "rows": 520,
+            "mae": 17.876204946276655,
+            "rmse": 20.40143792657972,
+            "bias": 17.66067038257354
+          },
+          "1": {
+            "rows": 1544,
+            "mae": 16.7424995799669,
+            "rmse": 23.980709838364376,
+            "bias": -3.253689679199774
+          },
+          "2": {
+            "rows": 93,
+            "mae": 50.56266799885405,
+            "rmse": 62.95262006572637,
+            "bias": -50.06340672187169
+          }
+        },
+        "context_coverage": {
+          "wd_depth": 0.0,
+          "wd_starter": 0.0,
+          "wd_injury_out": 0.0,
+          "wd_teammate_absences": 0.0
+        },
+        "automatic_promotion": false,
+        "bankroll_approval": false,
+        "interval_contract": "p10/p90 follow the calibrated probability curve; mean and median are tested as separate raw-distribution outputs.",
+        "allocation_contract": "Player opportunity is bounded by predicted team volume, independently of other scored players. This is not a complete-roster allocation model; absent verified pregame rosters, no participant-based normalization is allowed.",
+        "efficiency": {
+          "model": {
+            "rows": 1923,
+            "mae": 2.1307442352545256,
+            "rmse": 3.1070648681057262,
+            "bias": 0.13769251746180317
+          },
+          "baseline": {
+            "rows": 1923,
+            "mae": 2.334333841459711,
+            "rmse": 3.361173230132643,
+            "bias": 0.06496600677457437
+          },
+          "excluded_unpaired_rows": 234,
+          "interpretation": "Paired rows, conditional on positive realized opportunity; not a feature or selection filter."
+        }
+      },
+      "asymmetric_repair": {
+        "projection": {
+          "rows": 2157,
+          "mae": 18.572938338733564,
+          "rmse": 26.140040743656964,
+          "bias": 0.7681791951241456,
+          "interval_rows": 2157,
+          "coverage_80": 0.9318497913769124,
+          "interval_width": 102.45233070427186
+        },
+        "reference": {
+          "rows": 2157,
+          "mae": 17.797843838705997,
+          "rmse": 26.669450239311598,
+          "bias": -2.226766542383398
+        },
+        "baseline": {
+          "rows": 2157,
+          "mae": 18.506019162416937,
+          "rmse": 27.25074269657741,
+          "bias": 0.4630118992427753
+        },
+        "median": {
+          "rows": 2157,
+          "mae": 17.837460048589154,
+          "rmse": 26.245111783316325,
+          "bias": -2.8743360697619598
+        },
+        "opportunity": {
+          "rows": 2157,
+          "mae": 3.1941892650895283,
+          "rmse": 4.202647101065324,
+          "bias": 0.10746451045052477
+        },
+        "baseline_opportunity": {
+          "rows": 2157,
+          "mae": 3.071148199660022,
+          "rmse": 4.2971009407660095,
+          "bias": 0.03979292226858293
+        },
+        "workload_states": {
+          "low": {
+            "rows": 2157,
+            "brier": 0.16942522549391173,
+            "log_loss": 0.514905779607227,
+            "calibration_error": 0.03579330251406147,
+            "probability_bias": -0.0037534457163998945
+          },
+          "normal": {
+            "rows": 2157,
+            "brier": 0.1953684588731373,
+            "log_loss": 0.5775736108891338,
+            "calibration_error": 0.0251843644880494,
+            "probability_bias": 0.001960994719688998
+          },
+          "high": {
+            "rows": 2157,
+            "brier": 0.038199316453572225,
+            "log_loss": 0.14720484677935516,
+            "calibration_error": 0.011143379470989225,
+            "probability_bias": 0.0017924509967108292
+          }
+        },
+        "probabilities": {
+          "probability": {
+            "rows": 6138,
+            "brier": 0.23740877224012058,
+            "log_loss": 0.6677172662530649,
+            "calibration_error": 0.07945999084935583,
+            "probability_bias": 0.06658846177674253
+          },
+          "calibrated_probability": {
+            "rows": 6138,
+            "brier": 0.23021021138685016,
+            "log_loss": 0.6525333602493927,
+            "calibration_error": 0.02726366646149578,
+            "probability_bias": 0.009596447992614995
+          },
+          "reference_probability": {
+            "rows": 6138,
+            "brier": 0.23485956535724353,
+            "log_loss": 0.6644032213320961,
+            "calibration_error": 0.041277076247263164,
+            "probability_bias": 0.012704817074197114
+          },
+          "baseline_probability": {
+            "rows": 6138,
+            "brier": 0.2400707379568979,
+            "log_loss": 0.677684879581287,
+            "calibration_error": 0.04796953965215719,
+            "probability_bias": 0.026378924401480607
+          }
+        },
+        "output_gates": {
+          "expected_mean": {
+            "pass": true,
+            "metrics": {
+              "rows": 2157,
+              "mae": 18.572938338733564,
+              "rmse": 26.140040743656964,
+              "bias": 0.7681791951241456,
+              "interval_rows": 2157,
+              "coverage_80": 0.9318497913769124,
+              "interval_width": 102.45233070427186
+            },
+            "reference": {
+              "rows": 2157,
+              "mae": 17.797843838705997,
+              "rmse": 26.669450239311598,
+              "bias": -2.226766542383398
+            },
+            "clustered_squared_error_gain": {
+              "clusters": 24,
+              "lower_95": 4.648332887649052,
+              "upper_95": 49.51733923292859,
+              "mean_gain": 27.95784598707135
+            }
+          },
+          "median": {
+            "pass": false,
+            "metrics": {
+              "rows": 2157,
+              "mae": 17.837460048589154,
+              "rmse": 26.245111783316325,
+              "bias": -2.8743360697619598
+            },
+            "clustered_absolute_error_gain": {
+              "clusters": 24,
+              "lower_95": -0.4539093835170594,
+              "upper_95": 0.41533754959975655,
+              "mean_gain": -0.03961620988315899
+            }
+          },
+          "probability": {
+            "pass": false,
+            "metrics": {
+              "rows": 6138,
+              "brier": 0.23021021138685016,
+              "log_loss": 0.6525333602493927,
+              "calibration_error": 0.02726366646149578,
+              "probability_bias": 0.009596447992614995
+            },
+            "reference": {
+              "rows": 6138,
+              "brier": 0.23485956535724353,
+              "log_loss": 0.6644032213320961,
+              "calibration_error": 0.041277076247263164,
+              "probability_bias": 0.012704817074197114
+            },
+            "coverage_80": 0.9318497913769124,
+            "interval_score_80": 117.57331711076561,
+            "clustered_brier_gain": {
+              "clusters": 24,
+              "lower_95": 2.0562211343780872e-05,
+              "upper_95": 0.01006362120852193,
+              "mean_gain": 0.004649353970393354
+            }
+          },
+          "point_forecast_preserved": false,
+          "bankroll_approval": false,
+          "interpretation": "Historical proxy-line screen only; new prospective outcomes are required."
+        },
+        "folds": [
+          {
+            "fold": "2025-W01",
+            "train_end": "2025-02-09",
+            "test_start": "2025-09-04",
+            "train_rows": 11068,
+            "test_rows": 403,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 70,
+              "unique_player_games": 24,
+              "raw_brier": 0.24023799301075147,
+              "calibrated_brier": 0.22455253564716585,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W05",
+            "train_end": "2025-09-29",
+            "test_start": "2025-10-02",
+            "train_rows": 11471,
+            "test_rows": 422,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 606,
+              "unique_player_games": 208,
+              "raw_brier": 0.21962646690163698,
+              "calibrated_brier": 0.225594080456748,
+              "enabled": false
+            }
+          },
+          {
+            "fold": "2025-W09",
+            "train_end": "2025-10-27",
+            "test_start": "2025-10-30",
+            "train_rows": 11893,
+            "test_rows": 418,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 607,
+              "unique_player_games": 212,
+              "raw_brier": 0.23787301993532176,
+              "calibrated_brier": 0.23025060536286257,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W13",
+            "train_end": "2025-11-24",
+            "test_start": "2025-11-27",
+            "train_rows": 12311,
+            "test_rows": 465,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 600,
+              "unique_player_games": 213,
+              "raw_brier": 0.24528611037748688,
+              "calibrated_brier": 0.237040111613689,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W17",
+            "train_end": "2025-12-22",
+            "test_start": "2025-12-25",
+            "train_rows": 12776,
+            "test_rows": 316,
+            "rate_weight": 1.0,
+            "calibration": {
+              "rows": 676,
+              "unique_player_games": 241,
+              "raw_brier": 0.2374760398493684,
+              "calibrated_brier": 0.23109214929716307,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2025-W21",
+            "train_end": "2026-01-18",
+            "test_start": "2026-01-25",
+            "train_rows": 13092,
+            "test_rows": 21,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 193,
+              "unique_player_games": 69,
+              "raw_brier": 0.23600210666321297,
+              "calibrated_brier": 0.22546016828633672,
+              "enabled": true
+            }
+          },
+          {
+            "fold": "2026-W01",
+            "train_end": "2026-02-08",
+            "test_start": "2026-09-09",
+            "train_rows": 13113,
+            "test_rows": 112,
+            "rate_weight": 0.0,
+            "calibration": {
+              "rows": 58,
+              "unique_player_games": 21,
+              "raw_brier": 0.22876705117110224,
+              "calibrated_brier": 0.2224472206632405,
+              "enabled": false
+            }
+          }
+        ],
+        "by_workload": {
+          "0": {
+            "rows": 520,
+            "mae": 18.18460381661573,
+            "rmse": 21.207443924026258,
+            "bias": 17.956818339906878
+          },
+          "1": {
+            "rows": 1544,
+            "mae": 16.855193052728698,
+            "rmse": 23.923066883960555,
+            "bias": -2.076238197091154
+          },
+          "2": {
+            "rows": 93,
+            "mae": 49.26253697413985,
+            "rmse": 61.9015354047154,
+            "bias": -48.116895016774755
+          }
+        },
+        "context_coverage": {
+          "wd_depth": 0.0,
+          "wd_starter": 0.0,
+          "wd_injury_out": 0.0,
+          "wd_teammate_absences": 0.0
+        },
+        "automatic_promotion": false,
+        "bankroll_approval": false,
+        "interval_contract": "p10/p90 follow the calibrated probability curve; mean and median are tested as separate raw-distribution outputs.",
+        "allocation_contract": "Player opportunity is bounded by predicted team volume, independently of other scored players. This is not a complete-roster allocation model; absent verified pregame rosters, no participant-based normalization is allowed.",
+        "efficiency": {
+          "model": {
+            "rows": 1923,
+            "mae": 2.1307442352545256,
+            "rmse": 3.1070648681057262,
+            "bias": 0.13769251746180317
+          },
+          "baseline": {
+            "rows": 1923,
+            "mae": 2.334333841459711,
+            "rmse": 3.361173230132643,
+            "bias": 0.06496600677457437
+          },
+          "excluded_unpaired_rows": 234,
+          "interpretation": "Paired rows, conditional on positive realized opportunity; not a feature or selection filter."
+        }
+      },
+      "versus_existing_workload": {
+        "clusters": 24,
+        "lower_95": -0.0013963850523737973,
+        "upper_95": 0.0014077186835986446,
+        "mean_gain": 0.00010403634992949276
+      },
+      "uncertainty_increment": {
+        "clusters": 24,
+        "lower_95": 0.0003171033950167556,
+        "upper_95": 0.0024286656239900133,
+        "mean_gain": 0.0013535303791000271
+      },
+      "ready_for_prospective_test": false
+    }
+  },
+  "production_changed": false,
+  "betting_approved": false,
+  "limitations": [
+    "Historical player-game refits use date-lagged finalized data, not recreated historical locks.",
+    "Proxy lines screen forecast quality, not betting profitability.",
+    "Actual future lock scoring and independent-week evidence remain necessary.",
+    "No refit after residual/calibration blocks: uncertainty and calibration match the tested model.",
+    "Missing routes/injuries remain unknown; no new data provider is fabricated."
+  ]
+}

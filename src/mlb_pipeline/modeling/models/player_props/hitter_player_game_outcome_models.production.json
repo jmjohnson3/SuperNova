@@ -1,0 +1,9 @@
+{
+  "model_release_id": "hitter-pg-2026-07-06-r2",
+  "artifact_role": "production_frozen",
+  "production_frozen_at_utc": "2026-07-06T03:15:06Z",
+  "source_artifact": "hitter_player_game_outcome_models.joblib",
+  "sha256": "d8f4a079ceef7ad4a45f91e7c07284d9dbef3f26d839b53b8d95974a4218f2f3",
+  "minimum_prospective_dates": 5,
+  "promotion": "manual_after_projection_and_betting_audits"
+}

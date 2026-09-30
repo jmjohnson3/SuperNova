@@ -1,11 +1,11 @@
 {
-  "mae_strikeouts": 1.785271821739333,
-  "ci_strikeouts": 2.2565612513698143,
-  "n_rows": 106303,
-  "mae_hits": 0.6912818865556867,
-  "ci_hits": 0.8395783900374904,
-  "mae_total_bases": 1.2861503933790792,
-  "ci_total_bases": 1.385414251283655,
-  "mae_home_runs": 0.1854143240623631,
-  "ci_home_runs": 0.1153404781541598
+  "mae_strikeouts": null,
+  "ci_strikeouts": null,
+  "mae_hits": 0.6850636149540692,
+  "ci_hits": 0.8574576667431728,
+  "mae_total_bases": 1.2758998707503577,
+  "ci_total_bases": 1.355013678359453,
+  "mae_home_runs": 0.186846881733483,
+  "ci_home_runs": 0.11771341960389976,
+  "n_rows": 114667
 }

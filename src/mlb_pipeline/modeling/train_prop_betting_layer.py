@@ -22,6 +22,12 @@ from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
 from .prop_betting_layer import _CATEGORICAL_FEATURES, _NUMERIC_FEATURES, betting_layer_key
 from .prop_replay import american_to_prob, ensure_prop_replay_schema, no_vig_probs
+from .prop_training_groups import (
+    add_player_game_weights,
+    grouping_summary,
+    sample_weights,
+    temporal_player_game_split,
+)
 from .side_recalibration import price_bucket, prop_line_bucket
 
 log = logging.getLogger("mlb_pipeline.modeling.train_prop_betting_layer")
@@ -45,6 +51,9 @@ class BettingLayerConfig:
 _REPLAY_SQL = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    player_name_norm,
     stat AS market,
     market_line::float AS market_line,
     over_price::float AS over_price,
@@ -65,6 +74,9 @@ WHERE game_date_et >= %(cutoff)s
 _LIVE_SQL = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    LOWER(COALESCE(player_name, '')) AS player_name_norm,
     stat AS market,
     book_line::float AS market_line,
     over_price::float AS over_price,
@@ -84,6 +96,9 @@ WHERE game_date_et >= %(cutoff)s
 _MARKET_TABLE_SQL = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    player_name_norm,
     market,
     side,
     COALESCE(bookmaker_key, 'unknown') AS bookmaker_key,
@@ -221,6 +236,9 @@ def _expand_sides(base: pd.DataFrame) -> pd.DataFrame:
             target = bool(r["over_hit"]) if side == "over" else (not bool(r["over_hit"]))
             rows.append({
                 "game_date_et": r["game_date_et"],
+                "game_slug": r.get("game_slug"),
+                "player_id": r.get("player_id"),
+                "player_name_norm": r.get("player_name_norm"),
                 "market": market,
                 "side": side,
                 "line_bucket": lb,
@@ -249,7 +267,10 @@ def _prepare_matrix(df: pd.DataFrame, *, means=None, scales=None, cats=None):
     numeric_means = {}
     numeric_scales = {}
     for name in _NUMERIC_FEATURES:
-        s = pd.to_numeric(df.get(name), errors="coerce")
+        if name in df.columns:
+            s = pd.to_numeric(df[name], errors="coerce")
+        else:
+            s = pd.Series(np.nan, index=df.index, dtype=float)
         mean = float(means.get(name, s.mean() if not s.dropna().empty else 0.0))
         filled = s.fillna(mean)
         scale = float(scales.get(name, filled.std(ddof=0) if float(filled.std(ddof=0) or 0.0) > 1e-9 else 1.0))
@@ -292,7 +313,7 @@ def _fit_group(
     X_train, feature_names, means, scales, cats = _prepare_matrix(train)
     y_train = train["target"].astype(int).to_numpy()
     lr = LogisticRegression(max_iter=3000, solver="lbfgs")
-    lr.fit(X_train, y_train)
+    lr.fit(X_train, y_train, sample_weight=sample_weights(train))
 
     X_hold, _, _, _, _ = _prepare_matrix(holdout, means=means, scales=scales, cats=cats)
     y_hold = holdout["target"].astype(int).to_numpy()
@@ -306,8 +327,9 @@ def _fit_group(
         baseline_kind = "train_target_rate"
     pred_hold = np.clip(lr.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
 
-    raw_brier = float(brier_score_loss(y_hold, raw))
-    model_brier = float(brier_score_loss(y_hold, pred_hold))
+    holdout_weights = sample_weights(holdout)
+    raw_brier = float(brier_score_loss(y_hold, raw, sample_weight=holdout_weights))
+    model_brier = float(brier_score_loss(y_hold, pred_hold, sample_weight=holdout_weights))
     improvement = raw_brier - model_brier
     base_weight = min(0.85, len(holdout) / (len(holdout) + 160.0))
     if improvement < -0.006:
@@ -320,7 +342,7 @@ def _fit_group(
     X_all, feature_names, means, scales, cats = _prepare_matrix(all_rows)
     y_all = all_rows["target"].astype(int).to_numpy()
     final = LogisticRegression(max_iter=3000, solver="lbfgs")
-    final.fit(X_all, y_all)
+    final.fit(X_all, y_all, sample_weight=sample_weights(all_rows))
     coef = {
         name: float(value)
         for name, value in zip(feature_names, final.coef_[0])
@@ -338,15 +360,17 @@ def _fit_group(
         "baseline_rate_train": baseline_rate,
         "train_rows": int(len(train)),
         "holdout_rows": int(len(holdout)),
-        "actual_rate_holdout": float(np.mean(y_hold)),
-        "avg_raw_holdout": float(np.mean(raw)),
-        "avg_model_holdout": float(np.mean(pred_hold)),
+        "train_player_games": int(train["player_game_group"].nunique()),
+        "holdout_player_games": int(holdout["player_game_group"].nunique()),
+        "actual_rate_holdout": float(np.average(y_hold, weights=holdout_weights)),
+        "avg_raw_holdout": float(np.average(raw, weights=holdout_weights)),
+        "avg_model_holdout": float(np.average(pred_hold, weights=holdout_weights)),
         "brier_raw_holdout": raw_brier,
         "brier_model_holdout": model_brier,
-        "log_loss_raw_holdout": float(log_loss(y_hold, raw, labels=[0, 1])),
-        "log_loss_model_holdout": float(log_loss(y_hold, pred_hold, labels=[0, 1])),
-        "auc_raw_holdout": float(roc_auc_score(y_hold, raw)) if len(np.unique(y_hold)) == 2 else None,
-        "auc_model_holdout": float(roc_auc_score(y_hold, pred_hold)) if len(np.unique(y_hold)) == 2 else None,
+        "log_loss_raw_holdout": float(log_loss(y_hold, raw, labels=[0, 1], sample_weight=holdout_weights)),
+        "log_loss_model_holdout": float(log_loss(y_hold, pred_hold, labels=[0, 1], sample_weight=holdout_weights)),
+        "auc_raw_holdout": float(roc_auc_score(y_hold, raw, sample_weight=holdout_weights)) if len(np.unique(y_hold)) == 2 else None,
+        "auc_model_holdout": float(roc_auc_score(y_hold, pred_hold, sample_weight=holdout_weights)) if len(np.unique(y_hold)) == 2 else None,
     }
 
 
@@ -392,11 +416,14 @@ def train(cfg: BettingLayerConfig) -> dict:
         "backtest": [],
         "clv_models": {},
         "clv_backtest": [],
+        "grouped_player_game_training": grouping_summary(df),
     }
     if df.empty:
         payload["status"] = "no_rows"
         (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return payload
+
+    split_strategies: dict[str, str] = {}
 
     def _train_target_models(
         source_df: pd.DataFrame,
@@ -410,9 +437,16 @@ def train(cfg: BettingLayerConfig) -> dict:
         if work.empty:
             return {}, [], 0
         work["target"] = work[target_col].astype(int)
-        split = max(work["game_date_et"]) - timedelta(days=cfg.holdout_days)
-        train_mask = work["game_date_et"] < split
-        holdout_mask = work["game_date_et"] >= split
+        work = add_player_game_weights(work)
+        split = temporal_player_game_split(
+            work,
+            holdout_days=cfg.holdout_days,
+            min_train_rows=cfg.min_train_rows,
+            min_holdout_rows=cfg.min_holdout_rows,
+        )
+        split_strategies[target_col] = split.strategy
+        train_mask = pd.Series(work.index.isin(split.train.index), index=work.index)
+        holdout_mask = pd.Series(work.index.isin(split.holdout.index), index=work.index)
         models: dict[str, dict] = {}
         backtest: list[dict] = []
         for group_cols, min_train, min_holdout in _group_specs():
@@ -452,6 +486,7 @@ def train(cfg: BettingLayerConfig) -> dict:
     payload["clv_backtest"] = sorted(clv_backtest, key=lambda r: r["key"])
     payload["win_rows"] = int(win_rows)
     payload["clv_rows"] = int(clv_rows)
+    payload["split_strategies"] = split_strategies
     payload["status"] = "trained" if payload["models"] else "no_models"
     payload["clv_status"] = "trained" if payload["clv_models"] else "no_clv_models"
     (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")

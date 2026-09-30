@@ -18,6 +18,7 @@ _MLB_OFF_SEASON_MONTHS = {11, 12, 1, 2}  # November, December, January, February
 _PROP_MARKETS = (
     "pitcher_strikeouts,"
     "batter_hits,batter_hits_alternate,"
+    "batter_hits_runs_rbis,batter_hits_runs_rbis_alternate,"
     "batter_home_runs,batter_home_runs_alternate,"
     "batter_total_bases,batter_total_bases_alternate"
 )

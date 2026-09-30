@@ -1,0 +1,35 @@
+{
+  "generated_at_utc": "2026-07-30T16:00:37Z",
+  "slate_date": "2026-07-30",
+  "lookback_days": 45,
+  "reports": {
+    "close_coverage_dashboard": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_close_coverage_dashboard_latest.md"
+    },
+    "player_game_projection_ledger_v2": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_player_game_projection_ledger_v2_latest.md"
+    },
+    "tb_error_decomposition": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_tb_error_decomposition_latest.md"
+    },
+    "true_pair_coverage_repair": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_true_pair_coverage_repair_latest.md"
+    },
+    "shadow_challenger_promotion": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_shadow_challenger_promotion_latest.md"
+    },
+    "micro_bucket_almost_there": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_micro_bucket_almost_there_latest.md"
+    },
+    "micro_gate_sensitivity": {
+      "status": "ready",
+      "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_prop_micro_gate_sensitivity_latest.md"
+    }
+  }
+}

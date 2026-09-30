@@ -3,6 +3,8 @@
 This report is intentionally diagnostic. It explains which positive-EV prop rows
 the model is selecting, which warnings are attached, and which historical
 buckets have enough evidence to consider recalibration.
+
+Manual-only tool; see docs/manual_mlb_diagnostics.md for ownership and limits.
 """
 from __future__ import annotations
 

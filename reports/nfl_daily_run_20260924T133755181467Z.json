@@ -1,0 +1,1789 @@
+{
+  "date": "2026-09-24",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 2223,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-24 07:30:35,371 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-24 07:30:47,400 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2998\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 558570,\n      \"rows_selected\": 2228,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 692\n    }\n  ],\n  \"roster_rows_upserted\": 2996,\n  \"depth_rows_upserted\": 2225,\n  \"injury_rows_upserted\": 692\n}\n",
+      "stderr_tail": "2026-09-24 07:31:11,806 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-24 07:31:20,956 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-24 07:31:57,729 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "\": \"advanced_route_usage\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2225,\n      \"rows_matched\": 2223,\n      \"rows_updated\": 648\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 5489,\n      \"player_usage_rows\": 636,\n      \"player_usage_rows_updated\": 631,\n      \"player_game_rows\": 310,\n      \"rows_updated\": 310,\n      \"zero_filled_rows\": 0\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 76\n    }\n  ],\n  \"snap_rows_matched\": 2959,\n  \"snap_rows_updated\": 1449,\n  \"advanced_usage_rows_matched\": 2223,\n  \"advanced_usage_rows_updated\": 648,\n  \"pbp_usage_player_game_rows\": 636,\n  \"pbp_usage_rows_updated\": 631,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 76,\n  \"red_zone_player_game_rows\": 310,\n  \"red_zone_rows_updated\": 310\n}\n",
+      "stderr_tail": "2026-09-24 07:32:04,744 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-24 07:32:05,743 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-09-24 07:32:10,150 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-09-24 07:32:10,415 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-09-24\",\n  \"built_at\": \"2026-09-24T13:32:28.712161+00:00\",\n  \"games\": 1,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 105,\n      \"fresh_rows\": 23,\n      \"latest_quote\": \"2026-09-24 06:32:34.947081-07:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 5,\n      \"fresh_rows\": 1,\n      \"latest_quote\": \"2026-09-24 06:32:34.931487-07:00\"\n    }\n  },\n  \"game_ids\": null,\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "# NFL Snapshot Health - 2026-09-24\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 5 | 2026-09-24 06:32:34.931487-07:00 |\n| nfl_player_props | lock | 5 | 2026-09-24 06:32:34.947081-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 5 | 2026-09-24 06:32:34.604391-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| lock | 10 | 1 | 2026-09-24 06:32:34.931487-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| lock | 195 | 17 | 2026-09-24 06:32:34.947081-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 84 | 0 | 0.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "line_home_margin\": 4.5,\n      \"baseline_total_points\": 43.5,\n      \"probability\": 0.5,\n      \"ev\": -0.019230769230769218,\n      \"edge\": -0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"eae28601c8e7bebe58e56255124f5c3c3b9c99d9b7c1d461b2f5e00f05096bb4\"\n    },\n    {\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"quote_fetched_at_utc\": \"2026-09-24 13:32:34.931487+00:00\",\n      \"prediction_context_cutoff_utc\": \"2026-09-24T13:33:08.691663+00:00\",\n      \"start_ts_utc\": \"2026-09-25 00:15:00+00:00\",\n      \"game_date_et\": \"2026-09-24\",\n      \"season\": 2026,\n      \"week\": 3,\n      \"game_id\": \"2026_03_ATL_GB\",\n      \"home_team_abbr\": \"GB\",\n      \"away_team_abbr\": \"ATL\",\n      \"market\": \"total\",\n      \"side\": \"over\",\n      \"book\": \"fanduel\",\n      \"line\": 43.5,\n      \"price\": -104,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675560&selectionId=7017916\",\n      \"predicted_home_margin\": 4.5,\n      \"predicted_total_points\": 43.5,\n      \"baseline_home_margin\": 4.5,\n      \"baseline_total_points\": 43.5,\n      \"probability\": 0.48697158993667633,\n      \"ev\": -0.044786496662673314,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"b191cf9aa5337a0fee4402531026520e0ea08054a44c0ca95bd72c72fd940a31\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"no_accepted_team_component\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "d\",\n      \"market_no_vig_probability\": null,\n      \"model_market_edge\": null,\n      \"projection_confidence\": 0.4959731640382738,\n      \"exact_line_model_probability\": null,\n      \"exact_line_clv_probability\": null,\n      \"exact_line_model_version\": null,\n      \"usage_context_quality\": 0.75,\n      \"limited_usage_risk\": 0.15312100949094046,\n      \"spike_usage_probability\": 0.06788963003442726,\n      \"tier\": \"paper\",\n      \"reasons\": \"cold_start_position_prior_unproven\",\n      \"prediction_key\": \"dc95cec65a66b5e3ed568943f85b03a6c38a2161c95e137f199c03dfe6b7be1e\",\n      \"prediction_context_cutoff_utc\": \"2026-09-24T13:34:08.228430+00:00\",\n      \"context_evidence\": {\n        \"contract\": \"nfl-context-evidence-v1\",\n        \"cutoff\": \"2026-09-24T13:34:08.228430+00:00\",\n        \"injury_status\": null,\n        \"practice_status\": null,\n        \"injury_observed_at\": null,\n        \"injury_missing\": true,\n        \"depth_rank\": null,\n        \"depth_movement\": null,\n        \"expected_starter_from_depth\": null,\n        \"depth_observed_at\": null,\n        \"roster_observed_at\": null,\n        \"teammate_injury_count\": null,\n        \"teammate_coverage\": \"unknown\",\n        \"routes_run_history\": null,\n        \"routes_source\": \"proxy_only\",\n        \"route_participation_proxy\": 0.4416259873054058,\n        \"first_read_history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"projection_semantics\": \"expected_count_or_any_td_head\"\n    }\n  ]\n}\n",
+      "stderr_tail": "PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"receiver_spike_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1284: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_carry_under_correction_v4_score\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1296: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_rush_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1305: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"yardage_projection_volatility_v4_score\"] = pd.concat([\n"
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 1,\n  \"prop_locked\": 9,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 76,\n  \"run_id\": \"benchmark-20260921T230305171980Z\",\n  \"eligible_original_locks\": 83,\n  \"missing_forecast_ids\": [],\n  \"missing_variants\": [],\n  \"capture_errors\": {},\n  \"receiving_research_trial\": {\n    \"status\": \"research_only\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"outside_trial\": 66,\n      \"original_drift_guard_not_passed\": 6,\n      \"nonpositive_current_locked_ev\": 2,\n      \"fixed_cap_or_duplicate\": 2\n    },\n    \"betting_approved\": false\n  },\n  \"exclusions\": {\n    \"not_an_offered_line\": 34\n  },\n  \"production_changed\": false,\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Receiving Trial Checkpoint",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "close_label\", \"clv\": null}, {\"forecast_id\": 7067, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 7.5, \"side\": \"under\", \"locked_at\": \"2026-09-24T13:35:15.713510+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 7068, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 46.5, \"side\": \"over\", \"locked_at\": \"2026-09-24T13:35:15.713510+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 7069, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 54.5, \"side\": \"under\", \"locked_at\": \"2026-09-24T13:35:15.713510+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}], \"average_clv\": null}, \"fixed_research\": {\"started\": 0, \"valid\": 0, \"unknown\": 0, \"valid_coverage\": null, \"required_coverage\": 0.9, \"target_met\": null, \"unknown_reasons\": {}, \"observations\": [{\"forecast_id\": 6984, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 66.5, \"side\": \"under\", \"locked_at\": \"2026-09-23T03:56:58.786789+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close\", \"clv\": null}, {\"forecast_id\": 6986, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 7.5, \"side\": \"under\", \"locked_at\": \"2026-09-23T03:56:58.786789+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close\", \"clv\": null}], \"average_clv\": null}}, \"forecast_next_action\": \"keep_frozen_collect_evidence\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Locked Micro Uncertainty",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 0,\n  \"exclusions\": {\n    \"crossed_kickoff_during_scoring\": 0\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 14,\n    \"qb_tail\": 3\n  },\n  \"excluded\": {},\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": " Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 5 | 2026-09-24 06:32:34.931487-07:00 |\n| nfl_player_props | lock | 5 | 2026-09-24 06:32:34.947081-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 5 | 2026-09-24 06:32:34.604391-07:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 10 | 1 |\n| player props | 195 | 17 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 84 | 0 | 0.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 195 | raw parser output |\n| true paired over/under offers | 191 | 97.9% |\n| lock markets | 84 | exact book/player/stat/line locked |\n| close markets | 0 | exact book/player/stat/line closed |\n| lock-close exact matches | 0 | 0.0% |\n| CLV labels | 73 | valid: 0 |\n| graded prop predictions | 0 | line-level result rows |\n| prop ledger rows | 50 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| missing_close | 73 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 9 |\n| prop | paper | 50 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": " \"line\": null, \"price\": null, \"model_version\": \"nfl-20260918T143342Z\", \"tier\": \"paper\"}], \"payload\": {\"embeds\": [{\"title\": \"ATL @ GB | NFL 2026-09-24 (4/4)\", \"description\": \"Kickoff: <t:1790295300:f> (<t:1790295300:R>)\\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\\n\\n**PAPER - WR/TE Receiving TDs**\\n- Research only: C.Watson (GB vs ATL) Receiving TDs proj=0.52 range=0.0-1.0 [ctx=81% spike=100% depth=1]\\n- Research only: T.Kraft (GB vs ATL) Receiving TDs proj=0.40 range=0.0-1.0 [ctx=79% spike=41% depth=1]\\n- Research only: D.London (ATL vs GB) Receiving TDs proj=0.32 range=0.0-1.0 [ctx=80% spike=17% depth=1]\\n- Research only: K.Pitts (ATL vs GB) Receiving TDs proj=0.26 range=0.0-1.0 [ctx=78% spike=37% limited=23% depth=1]\\n- Research only: M.Golden (GB vs ATL) Receiving TDs proj=0.25 range=0.0-1.0 [ctx=76% spike=10% depth=3]\\n- Research only: Le'Meke Brockington (ATL vs GB) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=7%]\\n- Research only: J.Dotson (ATL vs GB) Receiving TDs proj=0.10 range=0.0-0.0 [ctx=78% spike=8% depth=2]\\n- Research only: J.Smith (GB vs ATL) Receiving TDs proj=0.09 range=0.0-0.0 [ctx=78% spike=15% depth=2]\\n- Research only: C.Woerner (ATL vs GB) Receiving TDs proj=0.05 range=0.0-0.0 [ctx=79% spike=4% depth=2]\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"quote_exclusions\": [], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_ATL_GB",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "ATL @ GB | NFL 2026-09-24 (1/4)",
+            "description": "Kickoff: <t:1790295300:f> (<t:1790295300:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- ATL +4.5 -104 | home margin=+4.5 | P=50% | EV=-1.9% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675559&selectionId=50199>)\n- OVER 43.5 -104 | total=43.5 | P=49% | EV=-4.5% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186675560&selectionId=7017916>)\n\n**PAPER - QB Passing Yards**\n- Research only: M.Penix (ATL vs GB) QB Passing Yards UNDER205.5 -113 proj=195.93 range=86.6-300.4 | P(under)=53% | Mkt=50% | Edge=+2.8% | EV=-0.5% | Cur=-113 Min=-111 Drift=CHECK [ctx=80% spike=66% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187592238&selectionId=41155938>)\n- Research only: J.Love (GB vs ATL) QB Passing Yards OVER226.5 -113 proj=235.83 range=126.5-340.3 | P(over)=51% | Mkt=50% | Edge=+0.9% | EV=-4.0% | Cur=-113 Min=-103 Drift=CHECK [ctx=81% spike=69% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187592181&selectionId=40916512>)\n- Research only: Kyron Drones (GB vs ATL) QB Passing Yards proj=123.38 range=14.1-227.9 [ctx=75% spike=19%]\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187592238&selectionId[0]=41155938&marketId[1]=717.187592181&selectionId[1]=40916512>)\n\n**PAPER - QB Rushing Yards**\n- Research only: M.Penix (ATL vs GB) Rushing Yards OVER4.5 +108 proj=6.53 range=0.0-40.3 | P(over)=49% | Mkt=45% | Edge=+3.7% | EV=+2.0% | Cur=+108 Min=+104 Drift=OK [ctx=80% spike=42% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187686974&selectionId=41155937>)\n- Research only: J.Love (GB vs ATL) Rushing Yards proj=7.71 range=0.0-41.4 [ctx=81% spike=34% depth=1]\n\n**PAPER - QB Passing TDs**\n- Research only: J.Love (GB vs ATL) QB Passing TDs OVER1.5 -114 proj=1.80 range=0.0-4.0 | P(over)=52% | Mkt=50% | Edge=+2.0% | EV=-2.3% | Cur=-114 Min=-108 Drift=CHECK [ctx=81% spike=41% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187592272&selectionId=40916512>)\n- Research only: M.Penix (ATL vs GB) QB Passing TDs OVER0.5 -265 proj=1.20 range=0.0-3.0 | P(over)=60% | Mkt=68% | Edge=-7.7% | EV=-16.7% | Cur=-265 Min=-152 Drift=CHECK [ctx=80% spike=6% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187592266&selectionId=78131680>)\n- Research only: Kyron Drones (GB vs ATL) QB Passing TDs proj=0.64 range=0.0-2.0 [ctx=75% spike=13%]\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187592272&selectionId[0]=40916512&marketId[1]=717.187592266&selectionId[1]=78131680>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 901,
+          "book": "fanduel",
+          "side": "away",
+          "line": 4.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 902,
+          "book": "fanduel",
+          "side": "over",
+          "line": 43.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7043,
+          "book": "fanduel",
+          "side": "under",
+          "line": 205.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7042,
+          "book": "fanduel",
+          "side": "over",
+          "line": 226.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7044,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7050,
+          "book": "fanduel",
+          "side": "over",
+          "line": 4.5,
+          "price": 108,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7045,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7052,
+          "book": "fanduel",
+          "side": "over",
+          "line": 1.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7053,
+          "book": "fanduel",
+          "side": "over",
+          "line": 0.5,
+          "price": -265,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7054,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7051,
+          "book": "fanduel",
+          "side": "under",
+          "line": 34.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7047,
+          "book": "fanduel",
+          "side": "over",
+          "line": 77.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7049,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7048,
+          "book": "fanduel",
+          "side": "over",
+          "line": 14.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7046,
+          "book": "fanduel",
+          "side": "under",
+          "line": 22.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7067,
+          "book": "fanduel",
+          "side": "under",
+          "line": 7.5,
+          "price": -122,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7066,
+          "book": "fanduel",
+          "side": "under",
+          "line": 39.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7055,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7057,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7056,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7058,
+          "book": "fanduel",
+          "side": "over",
+          "line": 6.5,
+          "price": -102,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7059,
+          "book": "fanduel",
+          "side": "over",
+          "line": 7.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7068,
+          "book": "fanduel",
+          "side": "over",
+          "line": 46.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7063,
+          "book": "fanduel",
+          "side": "under",
+          "line": 65.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7065,
+          "book": "fanduel",
+          "side": "under",
+          "line": 70.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7069,
+          "book": "fanduel",
+          "side": "under",
+          "line": 54.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7060,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7064,
+          "book": "fanduel",
+          "side": "under",
+          "line": 19.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7062,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7070,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7077,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7078,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7075,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7074,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7079,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7080,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7076,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7072,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7073,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-24T13:37:53.463026+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_ATL_GB",
+      "page": 2,
+      "payload": {
+        "embeds": [
+          {
+            "title": "ATL @ GB | NFL 2026-09-24 (2/4)",
+            "description": "Kickoff: <t:1790295300:f> (<t:1790295300:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**PAPER - RB Rushing Yards**\n- Research only: K.Johnson (GB vs ATL) Rushing Yards UNDER34.5 -113 proj=10.74 range=0.0-44.5 | P(under)=58% | Mkt=50% | Edge=+7.7% | EV=+8.7% | Cur=-113 Min=-136 Drift=OK [ctx=84% spike=19% limited=21% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187686977&selectionId=48926500>)\n- Research only: Bi.Robinson (ATL vs GB) Rushing Yards OVER77.5 -113 proj=84.23 range=59.8-118.0 | P(over)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-108 Drift=CHECK [ctx=90% spike=86% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187593273&selectionId=41066843>)\n- Research only: M.Lloyd (GB vs ATL) Rushing Yards UNDER25.5 -113 proj=21.89 range=0.0-55.6 | P(under)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-108 Drift=CHECK [ctx=90% spike=33% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187654872&selectionId=48300722>)\n- Research only: C.Brooks (GB vs ATL) Rushing Yards OVER14.5 -113 proj=20.53 range=0.0-54.2 | P(over)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-108 Drift=CHECK [ctx=90% spike=25% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187686978&selectionId=87166179>)\n- Research only: Br.Robinson (ATL vs GB) Rushing Yards UNDER22.5 -113 proj=17.79 range=0.0-51.5 | P(under)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-108 Drift=CHECK [ctx=79% spike=50% depth=1 prac=Full Participation in Practice] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187658585&selectionId=41172135>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187686977&selectionId[0]=48926500&marketId[1]=717.187593273&selectionId[1]=41066843&marketId[2]=717.187654872&selectionId[2]=48300722&marketId[3]=717.187686978&selectionId[3]=87166179&marketId[4]=717.187658585&selectionId[4]=41172135>)\n\n**PAPER - RB Receiving Yards**\n- Research only: C.Brooks (GB vs ATL) Receiving Yards UNDER7.5 -122 proj=7.24 range=0.0-38.6 | P(under)=56% | Mkt=52% | Edge=+3.9% | EV=+1.5% | Cur=-122 Min=-126 Drift=OK [ctx=90% spike=19% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187686979&selectionId=74180816>)\n- Research only: Bi.Robinson (ATL vs GB) Receiving Yards UNDER39.5 -113 proj=40.80 range=18.3-72.2 | P(under)=51% | Mkt=50% | Edge=+0.9% | EV=-4.1% | Cur=-113 Min=-103 Drift=CHECK [ctx=90% spike=66% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187594881&selectionId=41066848>)\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.187686979&selectionId[0]=74180816&marketId[1]=717.187594881&selectionId[1]=41066848>)\n\n**PAPER - RB Rushing TDs**\n- Research only: Bi.Robinson (ATL vs GB) Rushing TDs proj=0.37 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: M.Lloyd (GB vs ATL) Rushing TDs proj=0.15 range=0.0-1.0 [ctx=90% spike=39% depth=1]\n- Research only: C.Brooks (GB vs ATL) Rushing TDs proj=0.08 range=0.0-0.0 [ctx=90% spike=23% depth=2]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 901,
+          "book": "fanduel",
+          "side": "away",
+          "line": 4.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 902,
+          "book": "fanduel",
+          "side": "over",
+          "line": 43.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7043,
+          "book": "fanduel",
+          "side": "under",
+          "line": 205.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7042,
+          "book": "fanduel",
+          "side": "over",
+          "line": 226.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7044,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7050,
+          "book": "fanduel",
+          "side": "over",
+          "line": 4.5,
+          "price": 108,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7045,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7052,
+          "book": "fanduel",
+          "side": "over",
+          "line": 1.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7053,
+          "book": "fanduel",
+          "side": "over",
+          "line": 0.5,
+          "price": -265,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7054,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7051,
+          "book": "fanduel",
+          "side": "under",
+          "line": 34.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7047,
+          "book": "fanduel",
+          "side": "over",
+          "line": 77.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7049,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7048,
+          "book": "fanduel",
+          "side": "over",
+          "line": 14.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7046,
+          "book": "fanduel",
+          "side": "under",
+          "line": 22.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7067,
+          "book": "fanduel",
+          "side": "under",
+          "line": 7.5,
+          "price": -122,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7066,
+          "book": "fanduel",
+          "side": "under",
+          "line": 39.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7055,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7057,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7056,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7058,
+          "book": "fanduel",
+          "side": "over",
+          "line": 6.5,
+          "price": -102,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7059,
+          "book": "fanduel",
+          "side": "over",
+          "line": 7.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7068,
+          "book": "fanduel",
+          "side": "over",
+          "line": 46.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7063,
+          "book": "fanduel",
+          "side": "under",
+          "line": 65.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7065,
+          "book": "fanduel",
+          "side": "under",
+          "line": 70.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7069,
+          "book": "fanduel",
+          "side": "under",
+          "line": 54.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7060,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7064,
+          "book": "fanduel",
+          "side": "under",
+          "line": 19.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7062,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7070,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7077,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7078,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7075,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7074,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7079,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7080,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7076,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7072,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7073,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-24T13:37:54.040819+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_ATL_GB",
+      "page": 3,
+      "payload": {
+        "embeds": [
+          {
+            "title": "ATL @ GB | NFL 2026-09-24 (3/4)",
+            "description": "Kickoff: <t:1790295300:f> (<t:1790295300:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: A.Hooper (ATL vs GB) Receiving Yards OVER6.5 -102 proj=10.80 range=0.0-42.2 | P(over)=52% | Mkt=48% | Edge=+4.6% | EV=+3.5% | Cur=-102 Min=-109 Drift=OK [ctx=75% spike=21% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188258685&selectionId=12103341>)\n- Research only: J.Smith (GB vs ATL) Receiving Yards OVER7.5 -113 proj=12.22 range=0.0-43.6 | P(over)=54% | Mkt=50% | Edge=+4.0% | EV=+1.9% | Cur=-113 Min=-117 Drift=OK [ctx=78% spike=28% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188051128&selectionId=20899329>)\n- Research only: T.Kraft (GB vs ATL) Receiving Yards OVER46.5 -113 proj=50.20 range=27.7-81.6 | P(over)=53% | Mkt=50% | Edge=+3.1% | EV=+0.0% | Cur=-113 Min=-113 Drift=OK [ctx=79% spike=58% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187594877&selectionId=60409170>)\n- Research only: D.London (ATL vs GB) Receiving Yards UNDER65.5 -113 proj=42.72 range=20.2-74.1 | P(under)=52% | Mkt=50% | Edge=+2.3% | EV=-1.5% | Cur=-113 Min=-109 Drift=CHECK [ctx=80% spike=73% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187593873&selectionId=41172405>)\n- Research only: C.Watson (GB vs ATL) Receiving Yards UNDER70.5 -113 proj=64.74 range=42.3-96.1 | P(under)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-108 Drift=CHECK [ctx=81% spike=67% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187593591&selectionId=48400052>)\n- Research only: M.Golden (GB vs ATL) Receiving Yards UNDER54.5 -113 proj=44.26 range=21.8-75.7 | P(under)=52% | Mkt=50% | Edge=+2.0% | EV=-2.0% | Cur=-113 Min=-108 Drift=CHECK [ctx=76% spike=92% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.609928904&selectionId=48504749>)\n- Research only: O.Zaccheaus (ATL vs GB) Receiving Yards UNDER10.5 -113 proj=11.52 range=0.0-42.9 | P(under)=51% | Mkt=50% | Edge=+1.5% | EV=-3.0% | Cur=-113 Min=-106 Drift=CHECK [ctx=76% spike=18% limited=22% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.188052523&selectionId=16552466>)\n- Research only: J.Dotson (ATL vs GB) Receiving Yards UNDER19.5 -113 proj=14.58 range=0.0-46.0 | P(under)=51% | Mkt=50% | Edge=+1.1% | EV=-3.6% | Cur=-113 Min=-104 Drift=CHECK [ctx=78% spike=65% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.187655602&selectionId=41155780>)\n- Research only: K.Pitts (ATL vs GB) Receiving Yards proj=31.66 range=9.2-63.1 [ctx=78% spike=50% limited=23% depth=1]\n- Research only: Le'Meke Brockington (ATL vs GB) Receiving Yards proj=21.06 range=0.0-52.4 [ctx=75% spike=20%]\n- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.188258685&selectionId[0]=12103341&marketId[1]=717.188051128&selectionId[1]=20899329&marketId[2]=717.187594877&selectionId[2]=60409170&marketId[3]=717.187593873&selectionId[3]=41172405&marketId[4]=717.187593591&selectionId[4]=48400052&marketId[5]=42.609928904&selectionId[5]=48504749&marketId[6]=717.188052523&selectionId[6]=16552466&marketId[7]=717.187655602&selectionId[7]=41155780>)",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 901,
+          "book": "fanduel",
+          "side": "away",
+          "line": 4.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 902,
+          "book": "fanduel",
+          "side": "over",
+          "line": 43.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7043,
+          "book": "fanduel",
+          "side": "under",
+          "line": 205.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7042,
+          "book": "fanduel",
+          "side": "over",
+          "line": 226.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7044,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7050,
+          "book": "fanduel",
+          "side": "over",
+          "line": 4.5,
+          "price": 108,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7045,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7052,
+          "book": "fanduel",
+          "side": "over",
+          "line": 1.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7053,
+          "book": "fanduel",
+          "side": "over",
+          "line": 0.5,
+          "price": -265,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7054,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7051,
+          "book": "fanduel",
+          "side": "under",
+          "line": 34.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7047,
+          "book": "fanduel",
+          "side": "over",
+          "line": 77.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7049,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7048,
+          "book": "fanduel",
+          "side": "over",
+          "line": 14.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7046,
+          "book": "fanduel",
+          "side": "under",
+          "line": 22.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7067,
+          "book": "fanduel",
+          "side": "under",
+          "line": 7.5,
+          "price": -122,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7066,
+          "book": "fanduel",
+          "side": "under",
+          "line": 39.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7055,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7057,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7056,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7058,
+          "book": "fanduel",
+          "side": "over",
+          "line": 6.5,
+          "price": -102,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7059,
+          "book": "fanduel",
+          "side": "over",
+          "line": 7.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7068,
+          "book": "fanduel",
+          "side": "over",
+          "line": 46.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7063,
+          "book": "fanduel",
+          "side": "under",
+          "line": 65.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7065,
+          "book": "fanduel",
+          "side": "under",
+          "line": 70.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7069,
+          "book": "fanduel",
+          "side": "under",
+          "line": 54.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7060,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7064,
+          "book": "fanduel",
+          "side": "under",
+          "line": 19.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7062,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7070,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7077,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7078,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7075,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7074,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7079,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7080,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7076,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7072,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7073,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-24T13:37:54.619466+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_03_ATL_GB",
+      "page": 4,
+      "payload": {
+        "embeds": [
+          {
+            "title": "ATL @ GB | NFL 2026-09-24 (4/4)",
+            "description": "Kickoff: <t:1790295300:f> (<t:1790295300:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: C.Watson (GB vs ATL) Receiving TDs proj=0.52 range=0.0-1.0 [ctx=81% spike=100% depth=1]\n- Research only: T.Kraft (GB vs ATL) Receiving TDs proj=0.40 range=0.0-1.0 [ctx=79% spike=41% depth=1]\n- Research only: D.London (ATL vs GB) Receiving TDs proj=0.32 range=0.0-1.0 [ctx=80% spike=17% depth=1]\n- Research only: K.Pitts (ATL vs GB) Receiving TDs proj=0.26 range=0.0-1.0 [ctx=78% spike=37% limited=23% depth=1]\n- Research only: M.Golden (GB vs ATL) Receiving TDs proj=0.25 range=0.0-1.0 [ctx=76% spike=10% depth=3]\n- Research only: Le'Meke Brockington (ATL vs GB) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=7%]\n- Research only: J.Dotson (ATL vs GB) Receiving TDs proj=0.10 range=0.0-0.0 [ctx=78% spike=8% depth=2]\n- Research only: J.Smith (GB vs ATL) Receiving TDs proj=0.09 range=0.0-0.0 [ctx=78% spike=15% depth=2]\n- Research only: C.Woerner (ATL vs GB) Receiving TDs proj=0.05 range=0.0-0.0 [ctx=79% spike=4% depth=2]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "game",
+          "forecast_id": 901,
+          "book": "fanduel",
+          "side": "away",
+          "line": 4.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "game",
+          "forecast_id": 902,
+          "book": "fanduel",
+          "side": "over",
+          "line": 43.5,
+          "price": -104,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7043,
+          "book": "fanduel",
+          "side": "under",
+          "line": 205.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7042,
+          "book": "fanduel",
+          "side": "over",
+          "line": 226.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7044,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7050,
+          "book": "fanduel",
+          "side": "over",
+          "line": 4.5,
+          "price": 108,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7045,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7052,
+          "book": "fanduel",
+          "side": "over",
+          "line": 1.5,
+          "price": -114,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7053,
+          "book": "fanduel",
+          "side": "over",
+          "line": 0.5,
+          "price": -265,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7054,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7051,
+          "book": "fanduel",
+          "side": "under",
+          "line": 34.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7047,
+          "book": "fanduel",
+          "side": "over",
+          "line": 77.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7049,
+          "book": "fanduel",
+          "side": "under",
+          "line": 25.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7048,
+          "book": "fanduel",
+          "side": "over",
+          "line": 14.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7046,
+          "book": "fanduel",
+          "side": "under",
+          "line": 22.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7067,
+          "book": "fanduel",
+          "side": "under",
+          "line": 7.5,
+          "price": -122,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7066,
+          "book": "fanduel",
+          "side": "under",
+          "line": 39.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7055,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7057,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7056,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7058,
+          "book": "fanduel",
+          "side": "over",
+          "line": 6.5,
+          "price": -102,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7059,
+          "book": "fanduel",
+          "side": "over",
+          "line": 7.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7068,
+          "book": "fanduel",
+          "side": "over",
+          "line": 46.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7063,
+          "book": "fanduel",
+          "side": "under",
+          "line": 65.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7065,
+          "book": "fanduel",
+          "side": "under",
+          "line": 70.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7069,
+          "book": "fanduel",
+          "side": "under",
+          "line": 54.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7060,
+          "book": "fanduel",
+          "side": "under",
+          "line": 10.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7064,
+          "book": "fanduel",
+          "side": "under",
+          "line": 19.5,
+          "price": -113,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7062,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7070,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7077,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7078,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7075,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7074,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7079,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7080,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7076,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7072,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 7073,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper"
+        }
+      ],
+      "sent_at": "2026-09-24T13:37:55.181467+00:00"
+    }
+  ],
+  "run_id": null,
+  "pregame": false,
+  "game_ids": []
+}

@@ -1,0 +1,28 @@
+{
+  "built_at": "2026-09-30T18:41:44.568140+00:00",
+  "status": "waiting_for_settled_versioned_forecasts",
+  "records_scanned": 0,
+  "unique_offer_decisions": 0,
+  "settled_offer_decisions": 0,
+  "replay_status": {},
+  "exclusions": {},
+  "probability_stages": {},
+  "projection_scores": {},
+  "limitations": [
+    "Missing old scoring inputs are never replaced with current context or calibration.",
+    "Stored-probability evaluation is separate from exact reproducibility; inspect replay_status.",
+    "Multiple books/lines share one player-game outcome and receive inverse multiplicity weights.",
+    "Intervals without locked bounds cannot establish interval coverage.",
+    "Locked p10/p90 describe the stat forecast, not a distribution inferred from independently adjusted book probabilities."
+  ],
+  "prospective_challengers": {
+    "status": "waiting_for_settled_prospective_challengers",
+    "pending": 0,
+    "unique_pending_player_games": 0,
+    "pending_by_cohort": {},
+    "settled_player_games": 0,
+    "cohorts": {},
+    "exclusions": {},
+    "automatic_promotion": false
+  }
+}

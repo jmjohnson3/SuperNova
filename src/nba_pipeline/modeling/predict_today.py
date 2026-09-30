@@ -20,6 +20,7 @@ except ImportError:
     _HAS_LGB = False
 from sqlalchemy import create_engine, text
 
+from nba_pipeline.db import PG_DSN
 from .features import add_game_derived_features, build_fd_parlay_url
 
 log = logging.getLogger("nba_pipeline.modeling.predict_today")
@@ -29,7 +30,7 @@ _ET = ZoneInfo("America/New_York")
 
 @dataclass(frozen=True)
 class PredictConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     model_dir: Path = Path(__file__).resolve().parent / "models"
     season: str | None = None
     et_date: date | None = None

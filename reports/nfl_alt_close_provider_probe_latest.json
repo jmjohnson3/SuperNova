@@ -1,0 +1,52 @@
+{
+  "built_at": "2026-09-22T16:30:47.577792+00:00",
+  "game_date": "2026-09-24",
+  "provider": "sportsgameodds",
+  "max_api_requests": 1,
+  "valid_clv_evidence": false,
+  "production_changed": false,
+  "close_coverage_target": 0.9,
+  "source": "https://sportsgameodds.com/docs/info/v1-to-v2",
+  "limitation": "A current probe cannot repair a missed historical close or prove all moved lines stay published.",
+  "counts": {
+    "main_side_quotes": 80,
+    "alternate_available": 423,
+    "alternate_inactive_or_unknown": 199
+  },
+  "by_book_market_side": {
+    "fanduel|passing_touchdowns|over|available": 5,
+    "draftkings|passing_touchdowns|over|available": 7,
+    "fanduel|passing_yards|over|available": 18,
+    "draftkings|passing_yards|over|available": 48,
+    "draftkings|passing_yards|over|inactive_or_unknown": 14,
+    "draftkings|passing_yards|under|inactive_or_unknown": 16,
+    "fanduel|receiving_yards|over|available": 93,
+    "draftkings|receiving_yards|over|available": 104,
+    "draftkings|receiving_yards|over|inactive_or_unknown": 37,
+    "draftkings|receiving_yards|under|inactive_or_unknown": 39,
+    "fanduel|receiving_yards|over|inactive_or_unknown": 11,
+    "fanduel|receiving_yards|under|inactive_or_unknown": 10,
+    "draftkings|receiving_yards|under|available": 2,
+    "fanduel|rushing_yards|over|available": 66,
+    "fanduel|rushing_yards|over|inactive_or_unknown": 10,
+    "draftkings|rushing_yards|over|available": 79,
+    "draftkings|rushing_yards|over|inactive_or_unknown": 23,
+    "fanduel|rushing_yards|under|inactive_or_unknown": 9,
+    "draftkings|rushing_yards|under|inactive_or_unknown": 24,
+    "fanduel|passing_touchdowns|under|inactive_or_unknown": 1,
+    "draftkings|passing_touchdowns|under|inactive_or_unknown": 1,
+    "fanduel|passing_yards|over|inactive_or_unknown": 2,
+    "fanduel|passing_yards|under|inactive_or_unknown": 2,
+    "draftkings|rushing_yards|under|available": 1
+  },
+  "normalized_player_side_quotes": 498,
+  "normalized_alternate_side_quotes": 423,
+  "events": 1,
+  "status": "alternate_quotes_observed",
+  "original_lock_rows_for_probed_events": 18,
+  "exact_current_matches": 16,
+  "missing_current_forecast_ids": [
+    6892,
+    6911
+  ]
+}

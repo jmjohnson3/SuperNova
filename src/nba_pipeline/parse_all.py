@@ -3,6 +3,7 @@ from pathlib import Path
 
 import psycopg2
 
+from nba_pipeline.db import PG_DSN as _PG_DSN
 from nba_pipeline.parse_games import main as parse_games, sync_scores_from_boxscores as _sync_scores
 from nba_pipeline.parse_meta import main as parse_meta
 from nba_pipeline.parse_player_gamelogs import main as parse_player_gamelogs
@@ -13,8 +14,6 @@ from nba_pipeline.parse_referees import main as parse_referees
 from nba_pipeline.parse_oddsapi import parse_prop_odds, parse_prop_odds_alt, main as parse_game_odds, parse_game_odds_historical
 
 log = logging.getLogger("nba_pipeline.parse_all")
-
-_PG_DSN = "postgresql://josh:password@localhost:5432/nba"
 _SQL_DIR = Path(__file__).resolve().parents[2] / "sql"
 
 # ---------------------------------------------------------------------------

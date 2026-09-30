@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-20",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 1188,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-18 08:19:58,861 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-18 08:20:10,451 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2980\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 531796,\n      \"rows_selected\": 2207,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 412\n    }\n  ],\n  \"roster_rows_upserted\": 2979,\n  \"depth_rows_upserted\": 2204,\n  \"injury_rows_upserted\": 412\n}\n",
+      "stderr_tail": "2026-09-18 08:20:14,665 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-18 08:20:18,047 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-18 08:20:25,391 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "d\": \"advanced_route_usage\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 1190,\n      \"rows_matched\": 1188,\n      \"rows_updated\": 343\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2940,\n      \"player_usage_rows\": 329,\n      \"player_usage_rows_updated\": 327,\n      \"player_game_rows\": 161,\n      \"rows_updated\": 161,\n      \"zero_filled_rows\": 0\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 39\n    }\n  ],\n  \"snap_rows_matched\": 1569,\n  \"snap_rows_updated\": 687,\n  \"advanced_usage_rows_matched\": 1188,\n  \"advanced_usage_rows_updated\": 343,\n  \"pbp_usage_player_game_rows\": 329,\n  \"pbp_usage_rows_updated\": 327,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 39,\n  \"red_zone_player_game_rows\": 161,\n  \"red_zone_rows_updated\": 161\n}\n",
+      "stderr_tail": "2026-09-18 08:20:29,406 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-18 08:20:29,968 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-09-18 08:20:32,233 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-09-18 08:20:32,483 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Odds Crawl",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"game_date\": \"2026-09-20\",\n  \"snapshot_role\": \"lock\",\n  \"game_odds_saved\": 1,\n  \"player_prop_events_saved\": 1,\n  \"provider_order\": [\n    \"sportsgameodds\",\n    \"therundown\",\n    \"oddsapi\",\n    \"manual_csv\"\n  ],\n  \"provider_attempts\": [\n    {\n      \"provider\": \"sportsgameodds\",\n      \"status\": \"ok\",\n      \"events\": 14,\n      \"game_odds_saved\": 1,\n      \"player_prop_events_saved\": 1,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": null,\n      \"player_prop_fetch_failures\": null\n    }\n  ],\n  \"provider_errors\": [],\n  \"manual_csv_dir\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Odds Parse",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"raw_payloads\": 3,\n  \"raw_game_payloads\": 3,\n  \"prop_lines_upserted\": 1409,\n  \"game_lines_upserted\": 84,\n  \"prop_parse_diagnostic\": {\n    \"raw_payloads\": 3,\n    \"events_seen\": 42,\n    \"events_with_zero_books\": 0,\n    \"bookmaker_entries\": 84,\n    \"market_entries\": 504,\n    \"outcomes_seen\": 2812,\n    \"unknown_markets\": {\n      \"spreads\": 84,\n      \"totals\": 84\n    },\n    \"skipped_outcomes\": {}\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "# NFL Snapshot Health - 2026-09-20\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_events | lock | 2 | 2026-09-18 07:15:04.613499-07:00 |\n| nfl_game_odds | lock | 3 | 2026-09-18 07:20:40.308325-07:00 |\n| nfl_player_props | lock | 3 | 2026-09-18 07:20:40.319293-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 2 | 2026-09-18 07:20:39.505937-07:00 |\n| nfl_therundown_events_raw | lock | 2 | 2026-09-18 07:15:01.743731-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| lock | 84 | 14 | 2026-09-18 07:20:40.308325-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| lock | 1409 | 173 | 2026-09-18 07:20:40.319293-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 28 | 0 | 0.0% |\n| prop | 499 | 0 | 0.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": ": \"home\",\n      \"book\": \"draftkings\",\n      \"line\": -4.5,\n      \"price\": -108,\n      \"link\": \"https://sportsbook.draftkings.com/event/34118014?outcomes=0HC84695447N450_1\",\n      \"predicted_home_margin\": 4.5,\n      \"predicted_total_points\": 47.5,\n      \"baseline_home_margin\": 4.5,\n      \"baseline_total_points\": 47.5,\n      \"probability\": 0.5,\n      \"ev\": -0.037037037037037035,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T141128Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"50a025127723d96598da5db19484121e08e90390411e83a9decd8b4a6f0f0474\"\n    },\n    {\n      \"game_date_et\": \"2026-09-20\",\n      \"season\": 2026,\n      \"week\": 2,\n      \"game_id\": \"2026_02_MIN_CHI\",\n      \"home_team_abbr\": \"CHI\",\n      \"away_team_abbr\": \"MIN\",\n      \"market\": \"total\",\n      \"side\": \"under\",\n      \"book\": \"draftkings\",\n      \"line\": 48.5,\n      \"price\": -110,\n      \"link\": \"https://sportsbook.draftkings.com/event/34118014?outcomes=0OU84695447U4850_3\",\n      \"predicted_home_margin\": 4.5,\n      \"predicted_total_points\": 47.5,\n      \"baseline_home_margin\": 4.5,\n      \"baseline_total_points\": 47.5,\n      \"probability\": 0.5039272324507449,\n      \"ev\": -0.0379571016849416,\n      \"edge\": 1.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T141128Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"e9a6a33acf3d8e143afa948590abe9bc85f42ec45347e335403f335c35b860d8\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 1,
+      "critical": true,
+      "stdout_tail": "",
+      "stderr_tail": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\predict_player_props.py\", line 3602, in <module>\n    if os.getenv(\"DISCORD_FORMAT\") == \"1\":\n    ^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\predict_player_props.py\", line 3594, in main\n    cfg = PredictConfig(\n                 ^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\predict_player_props.py\", line 3289, in build_predictions\n    with psycopg2.connect(cfg.pg_dsn) as conn:\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\predict_player_props.py\", line 1112, in _load_player_context\n    return pd.read_sql(\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\pandas\\io\\sql.py\", line 702, in read_sql\n    return pandas_sql.read_query(\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\pandas\\io\\sql.py\", line 2766, in read_query\n    cursor = self.execute(sql, params)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\pandas\\io\\sql.py\", line 2702, in execute\n    cur.execute(sql, *args)\npsycopg2.errors.QueryCanceled: canceling statement due to user request\n\n"
+    }
+  ],
+  "publications": []
+}

@@ -13,8 +13,21 @@ from zoneinfo import ZoneInfo
 from typing import Optional
 
 from mlb_pipeline.subprocess_utils import kill_process_tree, run_subprocess_tree
+from mlb_pipeline.atomic_io import atomic_write_text
+from mlb_pipeline.modeling.prop_close_capture_schedule import decision_payload, load_due_close_targets
 
 _ET = ZoneInfo("America/New_York")
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+PROP_WALK_FORWARD_TIMEOUT_S = _env_int("MLB_PROP_WALK_FORWARD_TIMEOUT_S", 1800)
+PROP_WALK_FORWARD_FRESH_MINUTES = _env_int("MLB_PROP_WALK_FORWARD_FRESH_MINUTES", 360)
 
 
 # ---------- Optional Rich UI ----------
@@ -188,11 +201,23 @@ def main() -> None:
     parser.add_argument("--skip-train", action="store_true", help="Skip model training steps.")
     parser.add_argument("--skip-predict", action="store_true", help="Skip prediction steps.")
     parser.add_argument(
+        "--full-prop-optuna",
+        action="store_true",
+        help="Run the expensive player-prop Optuna search. Default scheduled training uses --skip-optuna.",
+    )
+    parser.add_argument(
         "--close-only", action="store_true",
         help=(
             "Closing-line run near first pitch. "
             "Re-crawls live game and prop odds, captures immutable prop close snapshots, "
             "then grades outcomes and CLV. Skips train/predict."
+        ),
+    )
+    parser.add_argument(
+        "--prop-close-capture-only", action="store_true",
+        help=(
+            "Lightweight game-aware prop close capture. Runs only when an upcoming event "
+            "is near a required or supplemental close target and that target has not already been captured."
         ),
     )
     parser.add_argument(
@@ -217,13 +242,58 @@ def main() -> None:
     else:
         et_day = datetime.now(tz=_ET).date()
 
+    now_et = datetime.now(tz=_ET)
+    forecast_phase = (
+        args.lock_phase
+        or ("day_pregame" if args.pre_game and now_et.hour < 14 else None)
+        or ("evening_pregame" if args.pre_game else None)
+        or ("targeted_close" if args.prop_close_capture_only else None)
+        or ("close" if args.close_only else "daily")
+    )
     extra_env = {
         "MLB_ET_DATE": et_day.isoformat(),
+        "MLB_FORECAST_PHASE": forecast_phase,
+        "MLB_FORECAST_RUN_ID": (
+            f"{et_day.isoformat()}:{forecast_phase}:"
+            f"{datetime.now(tz=ZoneInfo('UTC')).strftime('%Y%m%dT%H%M%SZ')}"
+        ),
     }
 
     steps: list[Step] = []
 
-    if args.pre_game:
+    if args.prop_close_capture_only:
+        force_capture = os.getenv("MLB_FORCE_TARGETED_CLOSE_CAPTURE", "").strip().lower() in {"1", "true", "yes"}
+        try:
+            due_targets = load_due_close_targets(slate_date=et_day)
+        except Exception as exc:
+            # Missing a close is worse than one redundant API call. A database
+            # decision failure therefore fails open for capture, while the
+            # crawler/parser steps still fail the task if they cannot run.
+            due_targets = []
+            force_capture = True
+            _p(console, f"Targeted close due-check failed; capturing defensively: {exc}")
+        if due_targets:
+            _p(console, f"Targeted prop close windows due: {decision_payload(due_targets)}")
+        if force_capture or due_targets:
+            steps.extend([
+                Step(
+                    name="Targeted prop close capture with quality retry",
+                    module="mlb_pipeline.modeling.targeted_prop_close_capture",
+                    timeout_s=2700,
+                    critical=True,
+                    fail_task_on_error=True,
+                ),
+                Step(
+                    name="Refresh prop replay CLV after targeted close",
+                    module="mlb_pipeline.modeling.refresh_prop_replay_clv",
+                    timeout_s=300,
+                    critical=True,
+                    fail_task_on_error=True,
+                ),
+            ])
+        else:
+            _p(console, "No uncaptured required or supplemental prop close window is due.")
+    elif args.pre_game:
         # ── Pre-game update run (~4:30 PM ET) ────────────────────────────────
         # Re-fetches injuries + latest odds, records a close for the morning
         # lock, re-predicts and locks the refreshed props, then captures a
@@ -233,6 +303,13 @@ def main() -> None:
             "day_pregame" if datetime.now(tz=_ET).hour < 14 else "evening_pregame"
         )
         steps = [
+            Step(
+                name="Grade daily forecast ledger",
+                module="mlb_pipeline.modeling.daily_forecast_ledger",
+                args=("--ensure-schema", "--grade"),
+                timeout_s=300,
+                critical=False,
+            ),
             Step(
                 name="Re-crawl injuries (force-meta)",
                 module="mlb_pipeline.crawler",
@@ -291,10 +368,84 @@ def main() -> None:
                 critical=True,
             ),
             Step(
+                name="Daily forecast projection audit",
+                module="mlb_pipeline.modeling.daily_forecast_projection_audit",
+                timeout_s=300,
+                critical=False,
+            ),
+            Step(
+                name="Player-game bankroll proof",
+                module="mlb_pipeline.modeling.prop_player_game_bankroll_model_proof",
+                timeout_s=360,
+                critical=False,
+            ),
+            Step(
+                name="TB 1.5 line calibration",
+                module="mlb_pipeline.modeling.prop_tb15_line_calibration",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="K-under repair report",
+                module="mlb_pipeline.modeling.prop_k_under_repair_report",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="Exact-bucket CLV priors",
+                module="mlb_pipeline.modeling.prop_exact_bucket_clv_priors",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="Prop micro promotion evaluation",
+                module="mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+                timeout_s=60,
+                critical=False,
+            ),
+            Step(
+                name="Prop micro probability calibrator",
+                module="mlb_pipeline.modeling.prop_micro_probability_calibrator",
+                timeout_s=120,
+                critical=False,
+            ),
+            Step(
+                name="External pick fetch",
+                module="mlb_pipeline.modeling.external_pick_fetcher",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="External pick import",
+                module="mlb_pipeline.modeling.external_pick_ledger",
+                timeout_s=120,
+                critical=False,
+            ),
+            Step(
                 name="Re-predict player props + post to Discord",
                 module="mlb_pipeline.modeling.predict_player_props",
                 timeout_s=300,
                 critical=True,
+            ),
+            Step(
+                name="External model comparison",
+                module="mlb_pipeline.modeling.external_pick_ledger",
+                args=("--skip-import",),
+                timeout_s=120,
+                critical=False,
+            ),
+            Step(
+                name="Train AI bet selection model",
+                module="mlb_pipeline.modeling.ai_bet_selection_model",
+                args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+                timeout_s=300,
+                critical=False,
+            ),
+            Step(
+                name="AI pick engine",
+                module="mlb_pipeline.modeling.ai_pick_engine",
+                timeout_s=300,
+                critical=False,
             ),
             Step(
                 name="Shadow-lock prop predictions",
@@ -337,8 +488,12 @@ def main() -> None:
             Step(
                 name="Prop walk-forward accuracy report",
                 module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
-                args=("--no-refresh-clv",),
-                timeout_s=600,
+                args=(
+                    "--no-refresh-clv",
+                    "--lookback-days", "45",
+                    "--skip-if-fresh-minutes", str(PROP_WALK_FORWARD_FRESH_MINUTES),
+                ),
+                timeout_s=PROP_WALK_FORWARD_TIMEOUT_S,
                 critical=False,
             ),
             Step(
@@ -373,15 +528,114 @@ def main() -> None:
                 critical=False,
             ),
             Step(
+                name="FanDuel one-sided diagnostic",
+                module="mlb_pipeline.modeling.fanduel_one_sided_diagnostic",
+                args=("--lookback-days", "30"),
+                timeout_s=300,
+                critical=False,
+            ),
+            Step(
                 name="Prop snapshot coverage report",
                 module="mlb_pipeline.modeling.prop_snapshot_coverage_report",
                 timeout_s=120,
+                critical=False,
+            ),
+            Step(
+                name="Hitter live-vs-legacy forecast diff",
+                module="mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report",
+                timeout_s=180,
+                critical=False,
+            ),
+            Step(
+                name="Prop micro gate sensitivity report",
+                module="mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+                timeout_s=60,
+                critical=False,
+            ),
+            Step(
+                name="Prop micro bucket repair report",
+                module="mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+                timeout_s=60,
+                critical=False,
+            ),
+            Step(
+                name="Prop trial candidate queue report",
+                module="mlb_pipeline.modeling.prop_trial_candidate_queue_report",
+                timeout_s=60,
+                critical=False,
+            ),
+                Step(
+                    name="Prop drift guard diagnostic",
+                    module="mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Prop bettable-now scan",
+                    module="mlb_pipeline.modeling.prop_bettable_now_scan",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Lock micro projection ledger",
+                    module="mlb_pipeline.modeling.lock_micro_projection_ledger",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Prop micro ledger report",
+                    module="mlb_pipeline.modeling.prop_micro_ledger_report",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Prop micro loss diagnostic",
+                    module="mlb_pipeline.modeling.prop_micro_loss_diagnostic",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Prop micro probability calibrator",
+                    module="mlb_pipeline.modeling.prop_micro_probability_calibrator",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Prop post-gate candidate report",
+                    module="mlb_pipeline.modeling.prop_post_gate_candidate_report",
+                    timeout_s=120,
+                    critical=False,
+                ),
+                Step(
+                    name="Prop layer promotion control",
+                    module="mlb_pipeline.modeling.prop_layer_promotion_report",
+                timeout_s=60,
+                critical=False,
+            ),
+            Step(
+                name="Forecast repair error decomposition",
+                module="mlb_pipeline.modeling.forecast_repair_error_report",
+                timeout_s=600,
                 critical=False,
             ),
         ]
     elif args.close_only:
         # ── Evening closing-line run ─────────────────────────────────────────
         extra_env["DISCORD_FORMAT"] = "1"
+        close_results_hour_et = int(os.getenv("MLB_CLOSE_RESULTS_REFRESH_HOUR_ET", "18"))
+        if now_et.hour >= close_results_hour_et:
+            steps.append(Step(
+                name="Refresh final game results (MLB Stats API)",
+                module="mlb_pipeline.crawler_statsapi",
+                args=(
+                    "--season", f"{et_day.year}-regular",
+                    "--start-date", et_day.isoformat(),
+                    "--end-date", et_day.isoformat(),
+                ),
+                timeout_s=600,
+                critical=False,
+                fail_task_on_error=True,
+            ))
         # Re-crawl live odds so game lines and prop lines get a late-day snapshot.
         # Prop CLV only accepts immutable close-role snapshots that were captured
         # after the prediction lock and within two hours of first pitch.
@@ -423,10 +677,21 @@ def main() -> None:
             critical=False,
         ))
         steps.append(Step(
+            name="Train AI bet selection model",
+            module="mlb_pipeline.modeling.ai_bet_selection_model",
+            args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
             name="Prop walk-forward accuracy report",
             module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
-            args=("--no-refresh-clv",),
-            timeout_s=600,
+            args=(
+                "--no-refresh-clv",
+                "--lookback-days", "45",
+                "--skip-if-fresh-minutes", str(PROP_WALK_FORWARD_FRESH_MINUTES),
+            ),
+            timeout_s=PROP_WALK_FORWARD_TIMEOUT_S,
             critical=False,
         ))
         steps.append(Step(
@@ -461,9 +726,155 @@ def main() -> None:
             critical=False,
         ))
         steps.append(Step(
+            name="FanDuel one-sided diagnostic",
+            module="mlb_pipeline.modeling.fanduel_one_sided_diagnostic",
+            args=("--lookback-days", "30"),
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
             name="Grade outcomes + ledgers",
             module="mlb_pipeline.modeling.update_outcomes",
             timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Grade daily forecast ledger",
+            module="mlb_pipeline.modeling.daily_forecast_ledger",
+            args=("--ensure-schema", "--grade"),
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Daily forecast projection audit",
+            module="mlb_pipeline.modeling.daily_forecast_projection_audit",
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Hitter live-vs-legacy forecast diff",
+            module="mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Player-game bankroll proof",
+            module="mlb_pipeline.modeling.prop_player_game_bankroll_model_proof",
+            timeout_s=360,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="TB 1.5 line calibration",
+            module="mlb_pipeline.modeling.prop_tb15_line_calibration",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="TB 1.5 close repair report",
+            module="mlb_pipeline.modeling.prop_tb15_close_repair_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="K-under repair report",
+            module="mlb_pipeline.modeling.prop_k_under_repair_report",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="DK K 4.5-6.0 under repair diagnostic",
+            module="mlb_pipeline.modeling.prop_k_under_46_repair_diagnostic",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Exact-bucket CLV priors",
+            module="mlb_pipeline.modeling.prop_exact_bucket_clv_priors",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro promotion evaluation",
+            module="mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro gate sensitivity report",
+            module="mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro bucket repair report",
+            module="mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop trial candidate queue report",
+            module="mlb_pipeline.modeling.prop_trial_candidate_queue_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop drift guard diagnostic",
+            module="mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop bettable-now scan",
+            module="mlb_pipeline.modeling.prop_bettable_now_scan",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Lock micro projection ledger",
+            module="mlb_pipeline.modeling.lock_micro_projection_ledger",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro ledger report",
+            module="mlb_pipeline.modeling.prop_micro_ledger_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro loss diagnostic",
+            module="mlb_pipeline.modeling.prop_micro_loss_diagnostic",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro probability calibrator",
+            module="mlb_pipeline.modeling.prop_micro_probability_calibrator",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop post-gate candidate report",
+            module="mlb_pipeline.modeling.prop_post_gate_candidate_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop layer promotion control",
+            module="mlb_pipeline.modeling.prop_layer_promotion_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Forecast repair error decomposition",
+            module="mlb_pipeline.modeling.forecast_repair_error_report",
+            timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="TB tail repair challenger",
+            module="mlb_pipeline.modeling.prop_tb_tail_repair_challenger",
+            timeout_s=600,
             critical=False,
         ))
         steps.append(Step(
@@ -473,6 +884,101 @@ def main() -> None:
             critical=False,
         ))
         steps.append(Step(
+            name="Real-money operational prop reports",
+            module="mlb_pipeline.modeling.prop_real_money_operational_reports",
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Pitcher K-rate challenger diagnostic",
+            module="mlb_pipeline.modeling.pitcher_k_rate_challenger_report",
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="End-of-slate prop close diagnostic",
+            module="mlb_pipeline.modeling.prop_end_of_slate_close_diagnostic",
+            args=("--date", et_day.isoformat()),
+            timeout_s=180,
+            critical=False,
+            fail_task_on_error=True,
+        ))
+        steps.append(Step(
+            name="Frozen-release five-date checkpoint",
+            module="mlb_pipeline.modeling.prop_five_date_checkpoint",
+            timeout_s=180,
+            critical=False,
+            fail_task_on_error=True,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint micro promotion evaluation",
+            module="mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint micro gate sensitivity report",
+            module="mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint micro bucket repair report",
+            module="mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint prop trial candidate queue report",
+            module="mlb_pipeline.modeling.prop_trial_candidate_queue_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint prop drift guard diagnostic",
+            module="mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint lock micro projection ledger",
+            module="mlb_pipeline.modeling.lock_micro_projection_ledger",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint prop micro ledger report",
+            module="mlb_pipeline.modeling.prop_micro_ledger_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint prop micro probability calibrator",
+            module="mlb_pipeline.modeling.prop_micro_probability_calibrator",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint prop layer promotion control",
+            module="mlb_pipeline.modeling.prop_layer_promotion_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Post-checkpoint real-money operational prop reports",
+            module="mlb_pipeline.modeling.prop_real_money_operational_reports",
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Daily slate trust monitor",
+            module="mlb_pipeline.modeling.prop_daily_slate_trust_monitor",
+            args=("--date", et_day.isoformat()),
+            timeout_s=600,
+            critical=False,
+            fail_task_on_error=True,
+        ))
+        steps.append(Step(
             name="Grade shadow prop replay",
             module="mlb_pipeline.modeling.grade_prop_prediction_replay",
             timeout_s=300,
@@ -480,6 +986,13 @@ def main() -> None:
         ))
     else:
         # ── Normal full daily run ────────────────────────────────────────────
+        steps.append(Step(
+            name="Grade daily forecast ledger",
+            module="mlb_pipeline.modeling.daily_forecast_ledger",
+            args=("--ensure-schema", "--grade"),
+            timeout_s=300,
+            critical=False,
+        ))
         if not args.skip_crawl:
             # All four crawlers hit different external APIs and use disjoint
             # (provider, endpoint, url) keys in raw.api_responses, so concurrent
@@ -562,6 +1075,18 @@ def main() -> None:
         ))
 
         if not args.skip_predict:
+            steps.append(Step(
+                name="External pick fetch",
+                module="mlb_pipeline.modeling.external_pick_fetcher",
+                timeout_s=180,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="External pick import",
+                module="mlb_pipeline.modeling.external_pick_ledger",
+                timeout_s=120,
+                critical=False,
+            ))
             # predict_today writes to bets.mlb_game_predictions,
             # predict_player_props writes to bets.mlb_prop_predictions — no overlap.
             steps.append(Step(
@@ -577,6 +1102,26 @@ def main() -> None:
                 timeout_s=900,
                 critical=False,
                 parallel=True,
+            ))
+            steps.append(Step(
+                name="External model comparison",
+                module="mlb_pipeline.modeling.external_pick_ledger",
+                args=("--skip-import",),
+                timeout_s=120,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Train AI bet selection model",
+                module="mlb_pipeline.modeling.ai_bet_selection_model",
+                args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+                timeout_s=300,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="AI pick engine",
+                module="mlb_pipeline.modeling.ai_pick_engine",
+                timeout_s=300,
+                critical=False,
             ))
             steps.append(Step(
                 name="Shadow-lock prop predictions",
@@ -599,6 +1144,7 @@ def main() -> None:
             steps.append(Step(
                 name="Train player prop models",
                 module="mlb_pipeline.modeling.train_player_prop_models",
+                args=() if args.full_prop_optuna else ("--skip-optuna",),
                 timeout_s=21600,
                 critical=False,
                 parallel=True,
@@ -613,10 +1159,17 @@ def main() -> None:
             steps.append(Step(
                 name="Build prop market training table",
                 module="mlb_pipeline.modeling.build_prop_market_training_table",
-                args=("--include-pending", "--ensure-schema"),
-                timeout_s=1800,
+                args=("--lookback-days", "45", "--include-pending", "--ensure-schema", "--no-replace"),
+                timeout_s=3600,
                 critical=False,
                 fail_task_on_error=True,
+            ))
+            steps.append(Step(
+                name="Train AI bet selection model",
+                module="mlb_pipeline.modeling.ai_bet_selection_model",
+                args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
+                timeout_s=300,
+                critical=False,
             ))
             steps.append(Step(
                 name="Build hitter player-game training table",
@@ -697,21 +1250,57 @@ def main() -> None:
                 critical=False,
             ))
             steps.append(Step(
-                name="Train prop distribution models",
-                module="mlb_pipeline.modeling.train_prop_distribution_models",
-                timeout_s=600,
+                name="Refresh prop exact-bucket proof",
+                module="mlb_pipeline.modeling.refresh_prop_exact_bucket_proof",
+                timeout_s=3900,
                 critical=False,
             ))
             steps.append(Step(
                 name="Compare prop probability variants",
                 module="mlb_pipeline.modeling.compare_prop_probability_variants",
-                timeout_s=900,
+                timeout_s=1800,
                 critical=False,
             ))
             steps.append(Step(
                 name="Prop opportunity feature report",
                 module="mlb_pipeline.modeling.prop_opportunity_feature_report",
                 args=("--lookback-days", "30"),
+                timeout_s=1800,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Hitter player-rate challenger diagnostic",
+                module="mlb_pipeline.modeling.hitter_player_rate_diagnostic",
+                timeout_s=300,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Pitcher K-per-BF challenger diagnostic",
+                module="mlb_pipeline.modeling.pitcher_k_rate_challenger_report",
+                timeout_s=300,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Prospective prop opportunity audit",
+                module="mlb_pipeline.modeling.prop_prospective_opportunity_audit",
+                timeout_s=300,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Daily forecast projection audit",
+                module="mlb_pipeline.modeling.daily_forecast_projection_audit",
+                timeout_s=300,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Hitter live-vs-legacy forecast diff",
+                module="mlb_pipeline.modeling.hitter_live_vs_legacy_forecast_diff_report",
+                timeout_s=180,
+                critical=False,
+            ))
+            steps.append(Step(
+                name="Forecast repair error decomposition",
+                module="mlb_pipeline.modeling.forecast_repair_error_report",
                 timeout_s=600,
                 critical=False,
             ))
@@ -758,9 +1347,86 @@ def main() -> None:
             critical=False,
         ))
         steps.append(Step(
+            name="Prop micro promotion evaluation",
+            module="mlb_pipeline.modeling.prop_micro_promotion_evaluation",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro gate sensitivity report",
+            module="mlb_pipeline.modeling.prop_micro_gate_sensitivity_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro bucket repair report",
+            module="mlb_pipeline.modeling.prop_micro_bucket_repair_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop trial candidate queue report",
+            module="mlb_pipeline.modeling.prop_trial_candidate_queue_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop drift guard diagnostic",
+            module="mlb_pipeline.modeling.prop_drift_guard_diagnostic",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop bettable-now scan",
+            module="mlb_pipeline.modeling.prop_bettable_now_scan",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Lock micro projection ledger",
+            module="mlb_pipeline.modeling.lock_micro_projection_ledger",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro ledger report",
+            module="mlb_pipeline.modeling.prop_micro_ledger_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro loss diagnostic",
+            module="mlb_pipeline.modeling.prop_micro_loss_diagnostic",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop micro probability calibrator",
+            module="mlb_pipeline.modeling.prop_micro_probability_calibrator",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop post-gate candidate report",
+            module="mlb_pipeline.modeling.prop_post_gate_candidate_report",
+            timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Prop layer promotion control",
+            module="mlb_pipeline.modeling.prop_layer_promotion_report",
+            timeout_s=60,
+            critical=False,
+        ))
+        steps.append(Step(
             name="Prop walk-forward accuracy report",
             module="mlb_pipeline.modeling.prop_walk_forward_accuracy_report",
-            timeout_s=1200,
+            args=(
+                "--no-refresh-clv",
+                "--lookback-days", "45",
+                "--skip-if-fresh-minutes", str(PROP_WALK_FORWARD_FRESH_MINUTES),
+            ),
+            timeout_s=PROP_WALK_FORWARD_TIMEOUT_S,
             critical=False,
         ))
         steps.append(Step(
@@ -789,15 +1455,48 @@ def main() -> None:
             critical=False,
         ))
         steps.append(Step(
+            name="TB tail repair challenger",
+            module="mlb_pipeline.modeling.prop_tb_tail_repair_challenger",
+            timeout_s=600,
+            critical=False,
+        ))
+        steps.append(Step(
             name="Prop target quality report",
             module="mlb_pipeline.modeling.prop_target_quality_report",
             timeout_s=180,
             critical=False,
         ))
         steps.append(Step(
+            name="FanDuel one-sided diagnostic",
+            module="mlb_pipeline.modeling.fanduel_one_sided_diagnostic",
+            args=("--lookback-days", "30"),
+            timeout_s=300,
+            critical=False,
+        ))
+        steps.append(Step(
             name="Prop snapshot coverage report",
             module="mlb_pipeline.modeling.prop_snapshot_coverage_report",
             timeout_s=120,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="End-of-slate prop close diagnostic",
+            module="mlb_pipeline.modeling.prop_end_of_slate_close_diagnostic",
+            args=("--date", et_day.isoformat()),
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Frozen-release five-date checkpoint",
+            module="mlb_pipeline.modeling.prop_five_date_checkpoint",
+            timeout_s=180,
+            critical=False,
+        ))
+        steps.append(Step(
+            name="Daily slate trust monitor",
+            module="mlb_pipeline.modeling.prop_daily_slate_trust_monitor",
+            args=("--date", et_day.isoformat()),
+            timeout_s=600,
             critical=False,
         ))
         steps.append(Step(
@@ -814,8 +1513,15 @@ def main() -> None:
             timeout_s=120,
             critical=False,
         ))
-
-    _suffix = "_close" if args.close_only else ("_pregame" if args.pre_game else "")
+    _suffix = (
+        "_targeted_close"
+        if args.prop_close_capture_only
+        else "_close"
+        if args.close_only
+        else "_pregame"
+        if args.pre_game
+        else ""
+    )
     report_path = Path("reports") / f"mlb_daily_{et_day.isoformat()}{_suffix}.md"
 
     _p(console, f"[bold]ET date:[/bold] {et_day.isoformat()}" if console else f"ET date: {et_day.isoformat()}")
@@ -923,7 +1629,7 @@ def main() -> None:
             md.append("**stderr (tail)**\n```")
             md.append(_tail(r.stderr, 120))
             md.append("```\n")
-    report_path.write_text("\n".join(md), encoding="utf-8")
+    atomic_write_text(report_path, "\n".join(md))
 
     _p(console, f"\n[green]Saved report:[/green] {report_path}\n" if console else f"\nSaved report: {report_path}\n")
     if pipeline_failed or task_failed:

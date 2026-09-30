@@ -27,6 +27,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
 from .side_recalibration import calibration_key, logit, price_bucket, prop_line_bucket, sigmoid
+from .prop_training_groups import (
+    add_player_game_weights,
+    grouping_summary,
+    sample_weights,
+    temporal_player_game_split,
+)
 
 log = logging.getLogger("mlb_pipeline.modeling.train_prop_side_recalibrators")
 
@@ -48,6 +54,9 @@ class PropSideRecalConfig:
 SQL = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    LOWER(COALESCE(player_name, '')) AS player_name_norm,
     stat,
     bet_side AS selected_side,
     book_line::float AS book_line,
@@ -71,6 +80,9 @@ WHERE game_date_et >= %(cutoff)s
 SQL_REPLAY = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    player_name_norm,
     stat AS stat,
     side AS selected_side,
     market_line::float AS book_line,
@@ -94,6 +106,9 @@ WHERE game_date_et >= %(cutoff)s
 SQL_MARKET_TRAINING = """
 SELECT
     game_date_et,
+    game_slug,
+    player_id,
+    player_name_norm,
     market AS stat,
     side,
     market_line::float AS book_line,
@@ -203,12 +218,12 @@ def _fit_platt(train: pd.DataFrame, fit_all: pd.DataFrame) -> tuple[dict, np.nda
         rate = float(np.mean(y_train)) if len(y_train) else 0.5
         return {"method": "constant", "actual_rate": rate}, np.repeat(rate, len(train))
     lr = LogisticRegression(solver="lbfgs", max_iter=2000)
-    lr.fit(x_train, y_train)
+    lr.fit(x_train, y_train, sample_weight=sample_weights(train))
 
     x_all = np.array([logit(v) for v in fit_all["raw_p_side"]], dtype=float).reshape(-1, 1)
     y_all = fit_all["target"].astype(int).to_numpy()
     lr_all = LogisticRegression(solver="lbfgs", max_iter=2000)
-    lr_all.fit(x_all, y_all)
+    lr_all.fit(x_all, y_all, sample_weight=sample_weights(fit_all))
     cal = {
         "method": "platt",
         "a": float(lr_all.coef_[0][0]),
@@ -228,7 +243,7 @@ def _evaluate(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFrame
     x_train = np.array([logit(v) for v in train["raw_p_side"]], dtype=float).reshape(-1, 1)
     y_train = train["target"].astype(int).to_numpy()
     lr = LogisticRegression(solver="lbfgs", max_iter=2000)
-    lr.fit(x_train, y_train)
+    lr.fit(x_train, y_train, sample_weight=sample_weights(train))
     x_hold = np.array([logit(v) for v in holdout["raw_p_side"]], dtype=float)
     raw = holdout["raw_p_side"].astype(float).to_numpy()
     y = holdout["target"].astype(int).to_numpy()
@@ -236,8 +251,9 @@ def _evaluate(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFrame
     cal_hold = 1.0 / (1.0 + np.exp(-(lr.coef_[0][0] * x_hold + lr.intercept_[0])))
     cal_hold = np.clip(cal_hold, 1e-6, 1 - 1e-6)
 
-    raw_brier = float(brier_score_loss(y, raw))
-    cal_brier = float(brier_score_loss(y, cal_hold))
+    weights = sample_weights(holdout)
+    raw_brier = float(brier_score_loss(y, raw, sample_weight=weights))
+    cal_brier = float(brier_score_loss(y, cal_hold, sample_weight=weights))
     improvement = raw_brier - cal_brier
     base_weight = min(0.85, len(holdout) / (len(holdout) + 120.0))
     if improvement < -0.003:
@@ -251,16 +267,18 @@ def _evaluate(train: pd.DataFrame, holdout: pd.DataFrame, all_rows: pd.DataFrame
         "blend_weight": float(blend),
         "train_rows": int(len(train)),
         "holdout_rows": int(len(holdout)),
-        "actual_rate_train": float(train["target"].mean()),
-        "actual_rate_holdout": float(np.mean(y)),
-        "avg_raw_holdout": float(np.mean(raw)),
-        "avg_cal_holdout": float(np.mean(cal_hold)),
+        "train_player_games": int(train["player_game_group"].nunique()),
+        "holdout_player_games": int(holdout["player_game_group"].nunique()),
+        "actual_rate_train": float(np.average(train["target"], weights=sample_weights(train))),
+        "actual_rate_holdout": float(np.average(y, weights=weights)),
+        "avg_raw_holdout": float(np.average(raw, weights=weights)),
+        "avg_cal_holdout": float(np.average(cal_hold, weights=weights)),
         "brier_raw_holdout": raw_brier,
         "brier_cal_holdout": cal_brier,
-        "log_loss_raw_holdout": float(log_loss(y, np.clip(raw, 1e-6, 1 - 1e-6), labels=[0, 1])),
-        "log_loss_cal_holdout": float(log_loss(y, np.clip(cal_hold, 1e-6, 1 - 1e-6), labels=[0, 1])),
-        "auc_raw_holdout": float(roc_auc_score(y, raw)) if len(np.unique(y)) == 2 else None,
-        "auc_cal_holdout": float(roc_auc_score(y, cal_hold)) if len(np.unique(y)) == 2 else None,
+        "log_loss_raw_holdout": float(log_loss(y, np.clip(raw, 1e-6, 1 - 1e-6), labels=[0, 1], sample_weight=weights)),
+        "log_loss_cal_holdout": float(log_loss(y, np.clip(cal_hold, 1e-6, 1 - 1e-6), labels=[0, 1], sample_weight=weights)),
+        "auc_raw_holdout": float(roc_auc_score(y, raw, sample_weight=weights)) if len(np.unique(y)) == 2 else None,
+        "auc_cal_holdout": float(roc_auc_score(y, cal_hold, sample_weight=weights)) if len(np.unique(y)) == 2 else None,
     })
     return cal
 
@@ -297,13 +315,21 @@ def train(cfg: PropSideRecalConfig) -> dict:
         "rows": int(len(df)),
         "calibrators": {},
         "backtest": [],
+        "grouped_player_game_training": grouping_summary(df),
     }
     if df.empty:
         payload["status"] = "no_rows"
         return payload
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train_mask = df["game_date_et"] < split
-    holdout_mask = df["game_date_et"] >= split
+    df = add_player_game_weights(df)
+    split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    train_mask = pd.Series(df.index.isin(split.train.index), index=df.index)
+    holdout_mask = pd.Series(df.index.isin(split.holdout.index), index=df.index)
+    payload["split_strategy"] = split.strategy
 
     for group_cols, min_train, min_holdout in _group_specs():
         for values, sub in df.groupby(list(group_cols), dropna=False):

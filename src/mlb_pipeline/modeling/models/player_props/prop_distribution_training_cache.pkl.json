@@ -1,0 +1,21 @@
+{
+  "cache_version": 3,
+  "generated_at_utc": "2026-07-15T08:45:51Z",
+  "source": "features.mlb_prop_market_training_examples",
+  "lookback_days": 365,
+  "markets": [
+    "pitcher_strikeouts",
+    "batter_hits",
+    "batter_total_bases",
+    "batter_home_runs"
+  ],
+  "rows": 26286,
+  "raw_rows": 67088,
+  "deduped_rows": 40802,
+  "date_min": "2026-07-02",
+  "date_max": "2026-07-12",
+  "dataframe_attrs": {
+    "raw_rows": 67088,
+    "deduped_rows": 40802
+  }
+}

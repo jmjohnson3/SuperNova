@@ -1,0 +1,13 @@
+{
+  "generated_at_utc": "2026-09-01T11:25:50+00:00",
+  "status": "ready",
+  "game_date": "2026-09-01",
+  "active_rows": 0,
+  "real_candidate_rows": 0,
+  "micro_projection_rows": 0,
+  "positive_projection_rows": 0,
+  "post_gate_near_miss_rows": 0,
+  "blocker_counts": {},
+  "micro_rows": [],
+  "near_misses": []
+}

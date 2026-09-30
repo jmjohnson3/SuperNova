@@ -1,0 +1,7 @@
+{
+  "status": "no_comparable_pairs",
+  "comparable_pairs": 0,
+  "violations": [],
+  "uncheckable_rows": 0,
+  "action": "diagnostic_only_no_historical_probability_rewrite"
+}

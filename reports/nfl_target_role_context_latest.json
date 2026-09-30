@@ -1,0 +1,413 @@
+{
+  "contract": "nfl-player-game-role-asof-v1",
+  "overall": {
+    "rows": 31053,
+    "verified_locks": 561,
+    "status": {
+      "missing_verified_lock": 30492,
+      "no_matching_pregame_observations": 156,
+      "asof_observed": 405
+    },
+    "exclusions": {
+      "nfl_depth_charts:observed_only_after_lock": 156,
+      "nfl_injuries:no_identity_match": 369,
+      "nfl_rosters:observed_only_after_lock": 156,
+      "nfl_injuries:observed_only_after_lock": 89,
+      "nfl_injuries:source_time_week_or_phase_mismatch": 39
+    },
+    "fields": {
+      "depth_rank": {
+        "nonmissing": 405,
+        "distinct": 6
+      },
+      "expected_starter": {
+        "nonmissing": 405,
+        "distinct": 2
+      },
+      "depth_movement": {
+        "nonmissing": 404,
+        "distinct": 3
+      },
+      "injury_status": {
+        "nonmissing": 0,
+        "distinct": 0
+      },
+      "practice_status": {
+        "nonmissing": 64,
+        "distinct": 3
+      },
+      "roster_status": {
+        "nonmissing": 405,
+        "distinct": 1
+      },
+      "teammate_absences": {
+        "nonmissing": 26,
+        "distinct": 3
+      },
+      "teammate_limited": {
+        "nonmissing": 340,
+        "distinct": 5
+      }
+    }
+  },
+  "by_season": {
+    "2019": {
+      "rows": 2920,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 2920
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2020": {
+      "rows": 4229,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 4229
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2021": {
+      "rows": 4513,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 4513
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2022": {
+      "rows": 4519,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 4519
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2023": {
+      "rows": 4568,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 4568
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2024": {
+      "rows": 4513,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 4513
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2025": {
+      "rows": 5004,
+      "verified_locks": 0,
+      "status": {
+        "missing_verified_lock": 5004
+      },
+      "exclusions": {},
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "expected_starter": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "depth_movement": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "roster_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_absences": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "teammate_limited": {
+          "nonmissing": 0,
+          "distinct": 0
+        }
+      }
+    },
+    "2026": {
+      "rows": 787,
+      "verified_locks": 561,
+      "status": {
+        "no_matching_pregame_observations": 156,
+        "missing_verified_lock": 226,
+        "asof_observed": 405
+      },
+      "exclusions": {
+        "nfl_depth_charts:observed_only_after_lock": 156,
+        "nfl_injuries:no_identity_match": 369,
+        "nfl_rosters:observed_only_after_lock": 156,
+        "nfl_injuries:observed_only_after_lock": 89,
+        "nfl_injuries:source_time_week_or_phase_mismatch": 39
+      },
+      "fields": {
+        "depth_rank": {
+          "nonmissing": 405,
+          "distinct": 6
+        },
+        "expected_starter": {
+          "nonmissing": 405,
+          "distinct": 2
+        },
+        "depth_movement": {
+          "nonmissing": 404,
+          "distinct": 3
+        },
+        "injury_status": {
+          "nonmissing": 0,
+          "distinct": 0
+        },
+        "practice_status": {
+          "nonmissing": 64,
+          "distinct": 3
+        },
+        "roster_status": {
+          "nonmissing": 405,
+          "distinct": 1
+        },
+        "teammate_absences": {
+          "nonmissing": 26,
+          "distinct": 3
+        },
+        "teammate_limited": {
+          "nonmissing": 340,
+          "distinct": 5
+        }
+      }
+    }
+  },
+  "rejected_observations": {
+    "unusable_identity_or_timestamp": 118
+  },
+  "limitations": [
+    "No actual lock means role evidence is unknown, not a kickoff reconstruction.",
+    "A source snapshot date alone does not override its first observed timestamp.",
+    "Teammate counts cover observed reports only; absent reports are not proof of health.",
+    "This join does not manufacture measured routes or first-read history."
+  ],
+  "built_at": "2026-09-30T02:24:17.027001+00:00",
+  "through": "2026-09-29",
+  "cache": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\target_role_context\\20260930T022417027001Z\\training.joblib",
+  "production_changed": false,
+  "historical_locks_changed": false
+}

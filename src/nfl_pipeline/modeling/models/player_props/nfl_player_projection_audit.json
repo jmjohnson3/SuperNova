@@ -1,0 +1,4131 @@
+{
+  "built_at_utc": "2026-09-15T23:33:01Z",
+  "status": "ready",
+  "rows": 29073,
+  "model_artifact_status": "ready",
+  "opportunity_artifact_status": "ready",
+  "stats": {
+    "passing_yards": {
+      "status": "ready",
+      "model_used": false,
+      "baseline": "qb_role_recent_bias_adjusted",
+      "best_holdout_baseline": "qb_role_recent_bias_adjusted",
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 83.08484848484848
+        },
+        "rolling_10": {
+          "mae": 83.41818181818182
+        },
+        "position_mean": {
+          "mae": 67.10384527409968
+        },
+        "position_role_rank_mean": {
+          "mae": 67.20370260838705
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 82.97727135278924
+        },
+        "qb_role_recent_bias_adjusted": {
+          "mae": 63.206514566552315
+        },
+        "qb_contextual_baseline": {
+          "mae": 84.3961548660793
+        }
+      },
+      "train_rows": 3577,
+      "holdout_rows": 33,
+      "model_mae": 63.206514566552315,
+      "baseline_mae": 63.206514566552315,
+      "bias": 3.41634347495442,
+      "projection_pass": false,
+      "workload_adjustment_applied": false,
+      "by_position_depth": [
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_1",
+          "rows": 28,
+          "model_mae": 60.29174541892782,
+          "baseline_mae": 60.29174541892782,
+          "gain_vs_baseline": 0.0,
+          "bias": 7.467537537675967
+        },
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_2",
+          "rows": 3,
+          "model_mae": 94.49981877897322,
+          "baseline_mae": 94.49981877897322,
+          "gain_vs_baseline": 0.0,
+          "bias": -70.16612300358632
+        },
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_3",
+          "rows": 2,
+          "model_mae": 57.073326314663866,
+          "baseline_mae": 57.073326314663866,
+          "gain_vs_baseline": 0.0,
+          "bias": 57.073326314663866
+        }
+      ],
+      "by_team": [
+        {
+          "team_abbr": "MIN",
+          "rows": 2,
+          "model_mae": 149.57278265158354,
+          "baseline_mae": 149.57278265158354,
+          "gain_vs_baseline": 0.0,
+          "bias": 53.073326314663866
+        },
+        {
+          "team_abbr": "CAR",
+          "rows": 2,
+          "model_mae": 88.42721734841646,
+          "baseline_mae": 88.42721734841646,
+          "gain_vs_baseline": 0.0,
+          "bias": -51.926673685336134
+        },
+        {
+          "team_abbr": "SEA",
+          "rows": 2,
+          "model_mae": 179.0727826515835,
+          "baseline_mae": 179.0727826515835,
+          "gain_vs_baseline": 0.0,
+          "bias": 28.573326314663873
+        },
+        {
+          "team_abbr": "JAX",
+          "rows": 2,
+          "model_mae": 30.42721734841647,
+          "baseline_mae": 30.42721734841647,
+          "gain_vs_baseline": 0.0,
+          "bias": 6.073326314663866
+        },
+        {
+          "team_abbr": "GB",
+          "rows": 1,
+          "model_mae": 166.3538910337526,
+          "baseline_mae": 166.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -166.3538910337526
+        },
+        {
+          "team_abbr": "BUF",
+          "rows": 1,
+          "model_mae": 113.3538910337526,
+          "baseline_mae": 113.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -113.3538910337526
+        },
+        {
+          "team_abbr": "BAL",
+          "rows": 1,
+          "model_mae": 103.3538910337526,
+          "baseline_mae": 103.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -103.3538910337526
+        },
+        {
+          "team_abbr": "DEN",
+          "rows": 1,
+          "model_mae": 89.6461089662474,
+          "baseline_mae": 89.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 89.6461089662474
+        },
+        {
+          "team_abbr": "ATL",
+          "rows": 1,
+          "model_mae": 77.6461089662474,
+          "baseline_mae": 77.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 77.6461089662474
+        },
+        {
+          "team_abbr": "LA",
+          "rows": 1,
+          "model_mae": 65.6461089662474,
+          "baseline_mae": 65.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 65.6461089662474
+        },
+        {
+          "team_abbr": "LV",
+          "rows": 1,
+          "model_mae": 60.6461089662474,
+          "baseline_mae": 60.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 60.6461089662474
+        },
+        {
+          "team_abbr": "WAS",
+          "rows": 1,
+          "model_mae": 56.6461089662474,
+          "baseline_mae": 56.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 56.6461089662474
+        },
+        {
+          "team_abbr": "ARI",
+          "rows": 1,
+          "model_mae": 56.3538910337526,
+          "baseline_mae": 56.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -56.3538910337526
+        },
+        {
+          "team_abbr": "IND",
+          "rows": 1,
+          "model_mae": 54.6461089662474,
+          "baseline_mae": 54.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 54.6461089662474
+        },
+        {
+          "team_abbr": "HOU",
+          "rows": 1,
+          "model_mae": 53.3538910337526,
+          "baseline_mae": 53.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -53.3538910337526
+        },
+        {
+          "team_abbr": "CHI",
+          "rows": 1,
+          "model_mae": 48.3538910337526,
+          "baseline_mae": 48.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -48.3538910337526
+        },
+        {
+          "team_abbr": "DAL",
+          "rows": 1,
+          "model_mae": 45.6461089662474,
+          "baseline_mae": 45.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 45.6461089662474
+        },
+        {
+          "team_abbr": "NE",
+          "rows": 1,
+          "model_mae": 42.6461089662474,
+          "baseline_mae": 42.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 42.6461089662474
+        },
+        {
+          "team_abbr": "KC",
+          "rows": 1,
+          "model_mae": 36.6461089662474,
+          "baseline_mae": 36.6461089662474,
+          "gain_vs_baseline": 0.0,
+          "bias": 36.6461089662474
+        },
+        {
+          "team_abbr": "CIN",
+          "rows": 1,
+          "model_mae": 33.3538910337526,
+          "baseline_mae": 33.3538910337526,
+          "gain_vs_baseline": 0.0,
+          "bias": -33.3538910337526
+        },
+        {
+          "team_abbr": "PHI",
+          "rows": 1,
+          "model_mae": 17.646108966247397,
+          "baseline_mae": 17.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 17.646108966247397
+        },
+        {
+          "team_abbr": "CLE",
+          "rows": 1,
+          "model_mae": 15.646108966247397,
+          "baseline_mae": 15.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 15.646108966247397
+        },
+        {
+          "team_abbr": "SF",
+          "rows": 1,
+          "model_mae": 15.646108966247397,
+          "baseline_mae": 15.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 15.646108966247397
+        },
+        {
+          "team_abbr": "DET",
+          "rows": 1,
+          "model_mae": 14.646108966247397,
+          "baseline_mae": 14.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 14.646108966247397
+        },
+        {
+          "team_abbr": "LAC",
+          "rows": 1,
+          "model_mae": 11.646108966247397,
+          "baseline_mae": 11.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 11.646108966247397
+        },
+        {
+          "team_abbr": "NYJ",
+          "rows": 1,
+          "model_mae": 5.646108966247397,
+          "baseline_mae": 5.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 5.646108966247397
+        },
+        {
+          "team_abbr": "TB",
+          "rows": 1,
+          "model_mae": 4.646108966247397,
+          "baseline_mae": 4.646108966247397,
+          "gain_vs_baseline": 0.0,
+          "bias": 4.646108966247397
+        },
+        {
+          "team_abbr": "MIA",
+          "rows": 1,
+          "model_mae": 0.6461089662473967,
+          "baseline_mae": 0.6461089662473967,
+          "gain_vs_baseline": 0.0,
+          "bias": 0.6461089662473967
+        },
+        {
+          "team_abbr": "PIT",
+          "rows": 1,
+          "model_mae": 0.35389103375260333,
+          "baseline_mae": 0.35389103375260333,
+          "gain_vs_baseline": 0.0,
+          "bias": -0.35389103375260333
+        }
+      ],
+      "by_week": [
+        {
+          "season": 2026,
+          "week": 1,
+          "rows": 33,
+          "model_mae": 63.206514566552315,
+          "baseline_mae": 63.206514566552315,
+          "gain_vs_baseline": 0.0,
+          "bias": 3.41634347495442
+        }
+      ],
+      "by_error_type": [
+        {
+          "error_type": "player_rate_or_efficiency",
+          "rows": 20,
+          "model_mae": 48.715721851657314,
+          "baseline_mae": 48.715721851657314,
+          "gain_vs_baseline": 0.0,
+          "bias": 6.788830701089043
+        },
+        {
+          "error_type": "opportunity_high",
+          "rows": 8,
+          "model_mae": 59.71347275843815,
+          "baseline_mae": 59.71347275843815,
+          "gain_vs_baseline": 0.0,
+          "bias": -44.4788910337526
+        },
+        {
+          "error_type": "opportunity_low",
+          "rows": 4,
+          "model_mae": 149.3230544831237,
+          "baseline_mae": 149.3230544831237,
+          "gain_vs_baseline": 0.0,
+          "bias": 74.07332631466387
+        },
+        {
+          "error_type": "projected_full_workload_failed",
+          "rows": 1,
+          "model_mae": 36.500543663080336,
+          "baseline_mae": 36.500543663080336,
+          "gain_vs_baseline": 0.0,
+          "bias": 36.500543663080336
+        }
+      ],
+      "top_misses": [
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "S.Darnold",
+          "team": "SEA",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 13.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Murray",
+          "team": "MIN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 18.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Love",
+          "team": "GB",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 387.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Lock",
+          "team": "SEA",
+          "position": "QB",
+          "depth_rank": 2.0,
+          "actual": 187.0,
+          "projection": 36.500543663080336,
+          "baseline": 36.500543663080336,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Young",
+          "team": "CAR",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 361.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Allen",
+          "team": "BUF",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 334.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "L.Jackson",
+          "team": "BAL",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 324.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Wentz",
+          "team": "MIN",
+          "position": "QB",
+          "depth_rank": 2.0,
+          "actual": 133.0,
+          "projection": 36.500543663080336,
+          "baseline": 36.500543663080336,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Nix",
+          "team": "DEN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 131.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Rush",
+          "team": "ATL",
+          "position": "QB",
+          "depth_rank": 3.0,
+          "actual": 143.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "M.Stafford",
+          "team": "LA",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 155.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Cousins",
+          "team": "LV",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 160.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Daniels",
+          "team": "WAS",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 164.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Brissett",
+          "team": "ARI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 277.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Jones",
+          "team": "IND",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 166.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Stroud",
+          "team": "HOU",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 274.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Williams",
+          "team": "CHI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 269.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Prescott",
+          "team": "DAL",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 175.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Maye",
+          "team": "NE",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 178.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "P.Mahomes",
+          "team": "KC",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 184.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Pickett",
+          "team": "CAR",
+          "position": "QB",
+          "depth_rank": 2.0,
+          "actual": 0.0,
+          "projection": 36.500543663080336,
+          "baseline": 36.500543663080336,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "N.Mullens",
+          "team": "JAX",
+          "position": "QB",
+          "depth_rank": 3.0,
+          "actual": 0.0,
+          "projection": 36.500543663080336,
+          "baseline": 36.500543663080336,
+          "error_type": "projected_full_workload_failed"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Burrow",
+          "team": "CIN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 254.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Lawrence",
+          "team": "JAX",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 245.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Hurts",
+          "team": "PHI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 203.0,
+          "projection": 220.6461089662474,
+          "baseline": 220.6461089662474,
+          "error_type": "opportunity_high"
+        }
+      ]
+    },
+    "rushing_yards": {
+      "status": "ready",
+      "model_used": true,
+      "baseline": "rolling_10",
+      "best_holdout_baseline": "rolling_10",
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 19.783333333333328
+        },
+        "rolling_10": {
+          "mae": 18.612790697674424
+        },
+        "position_mean": {
+          "mae": 22.753560453041768
+        },
+        "position_role_rank_mean": {
+          "mae": 19.628844114515083
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 19.591088988427103
+        }
+      },
+      "train_rows": 11071,
+      "holdout_rows": 86,
+      "model_mae": 15.802680137848713,
+      "baseline_mae": 18.612790697674424,
+      "bias": -1.6294168446533408,
+      "projection_pass": true,
+      "workload_adjustment_applied": true,
+      "by_position_depth": [
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_1",
+          "rows": 28,
+          "model_mae": 10.481450104004947,
+          "baseline_mae": 10.782142857142857,
+          "gain_vs_baseline": 0.3006927531379091,
+          "bias": -0.31478260328349555
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_1",
+          "rows": 27,
+          "model_mae": 20.70503139541771,
+          "baseline_mae": 29.333333333333332,
+          "gain_vs_baseline": 8.628301937915623,
+          "bias": -4.04142589547619
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_2",
+          "rows": 20,
+          "model_mae": 20.045919479781894,
+          "baseline_mae": 18.255,
+          "gain_vs_baseline": -1.7909194797818948,
+          "bias": -1.7467724168667218
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_3",
+          "rows": 4,
+          "model_mae": 16.483573211033594,
+          "baseline_mae": 23.15,
+          "gain_vs_baseline": 6.666426788966405,
+          "bias": 10.064363206150622
+        },
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_2",
+          "rows": 3,
+          "model_mae": 10.260310288366304,
+          "baseline_mae": 11.700000000000001,
+          "gain_vs_baseline": 1.4396897116336973,
+          "bias": -9.739334219119646
+        },
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_3",
+          "rows": 2,
+          "model_mae": 2.6447473903499628,
+          "baseline_mae": 2.5,
+          "gain_vs_baseline": -0.14474739034996276,
+          "bias": 2.6447473903499628
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 2,
+          "model_mae": 1.7954665905006806,
+          "baseline_mae": 4.5,
+          "gain_vs_baseline": 2.7045334094993194,
+          "bias": -1.7954665905006806
+        }
+      ],
+      "by_team": [
+        {
+          "team_abbr": "MIN",
+          "rows": 5,
+          "model_mae": 12.457026097460632,
+          "baseline_mae": 12.459999999999999,
+          "gain_vs_baseline": 0.0029739025393666907,
+          "bias": -8.463244266484617
+        },
+        {
+          "team_abbr": "CAR",
+          "rows": 5,
+          "model_mae": 15.904354648620508,
+          "baseline_mae": 17.113333333333333,
+          "gain_vs_baseline": 1.2089786847128252,
+          "bias": -3.3154457994320197
+        },
+        {
+          "team_abbr": "PHI",
+          "rows": 4,
+          "model_mae": 15.743598205315458,
+          "baseline_mae": 30.374999999999996,
+          "gain_vs_baseline": 14.631401794684539,
+          "bias": 9.381987901799766
+        },
+        {
+          "team_abbr": "LA",
+          "rows": 4,
+          "model_mae": 25.187730622550852,
+          "baseline_mae": 23.225,
+          "gain_vs_baseline": -1.9627306225508505,
+          "bias": -4.064763376194346
+        },
+        {
+          "team_abbr": "JAX",
+          "rows": 4,
+          "model_mae": 2.8319110249960247,
+          "baseline_mae": 6.45,
+          "gain_vs_baseline": 3.6180889750039755,
+          "bias": 1.6878723987751503
+        },
+        {
+          "team_abbr": "NYJ",
+          "rows": 3,
+          "model_mae": 20.36307254233926,
+          "baseline_mae": 23.866666666666664,
+          "gain_vs_baseline": 3.503594124327403,
+          "bias": -20.36307254233926
+        },
+        {
+          "team_abbr": "BAL",
+          "rows": 3,
+          "model_mae": 24.96102828668612,
+          "baseline_mae": 14.733333333333333,
+          "gain_vs_baseline": -10.227694953352787,
+          "bias": -20.097038446636006
+        },
+        {
+          "team_abbr": "PIT",
+          "rows": 3,
+          "model_mae": 29.330503776559254,
+          "baseline_mae": 28.0,
+          "gain_vs_baseline": -1.3305037765592544,
+          "bias": 19.71837024917495
+        },
+        {
+          "team_abbr": "DET",
+          "rows": 3,
+          "model_mae": 17.52390602520488,
+          "baseline_mae": 25.36666666666667,
+          "gain_vs_baseline": 7.8427606414617905,
+          "bias": -17.52390602520488
+        },
+        {
+          "team_abbr": "SEA",
+          "rows": 3,
+          "model_mae": 14.178844754899421,
+          "baseline_mae": 12.299999999999999,
+          "gain_vs_baseline": -1.878844754899422,
+          "bias": 10.17920024741347
+        },
+        {
+          "team_abbr": "MIA",
+          "rows": 3,
+          "model_mae": 21.75785772187098,
+          "baseline_mae": 18.866666666666667,
+          "gain_vs_baseline": -2.891191055204313,
+          "bias": 9.535050670656336
+        },
+        {
+          "team_abbr": "CIN",
+          "rows": 3,
+          "model_mae": 16.004101631980692,
+          "baseline_mae": 13.066666666666668,
+          "gain_vs_baseline": -2.937434965314024,
+          "bias": -7.060394192366765
+        },
+        {
+          "team_abbr": "TB",
+          "rows": 3,
+          "model_mae": 10.40258743184733,
+          "baseline_mae": 14.566666666666668,
+          "gain_vs_baseline": 4.164079234819338,
+          "bias": 6.049290624376158
+        },
+        {
+          "team_abbr": "BUF",
+          "rows": 3,
+          "model_mae": 7.826399978870569,
+          "baseline_mae": 17.2,
+          "gain_vs_baseline": 9.37360002112943,
+          "bias": 4.589757178500922
+        },
+        {
+          "team_abbr": "DAL",
+          "rows": 3,
+          "model_mae": 8.050393624795971,
+          "baseline_mae": 11.799999999999999,
+          "gain_vs_baseline": 3.749606375204028,
+          "bias": -2.2376408264585503
+        },
+        {
+          "team_abbr": "ATL",
+          "rows": 3,
+          "model_mae": 3.439712504129343,
+          "baseline_mae": 10.633333333333333,
+          "gain_vs_baseline": 7.19362082920399,
+          "bias": 2.0846997627220545
+        },
+        {
+          "team_abbr": "KC",
+          "rows": 2,
+          "model_mae": 57.15630994989103,
+          "baseline_mae": 63.4,
+          "gain_vs_baseline": 6.243690050108967,
+          "bias": -57.15630994989103
+        },
+        {
+          "team_abbr": "CHI",
+          "rows": 2,
+          "model_mae": 39.97682595300842,
+          "baseline_mae": 55.6,
+          "gain_vs_baseline": 15.62317404699158,
+          "bias": -39.97682595300842
+        },
+        {
+          "team_abbr": "TEN",
+          "rows": 2,
+          "model_mae": 21.325699615626597,
+          "baseline_mae": 24.000000000000004,
+          "gain_vs_baseline": 2.6743003843734066,
+          "bias": 21.325699615626597
+        },
+        {
+          "team_abbr": "LAC",
+          "rows": 2,
+          "model_mae": 31.68746652333346,
+          "baseline_mae": 22.616666666666667,
+          "gain_vs_baseline": -9.070799856666792,
+          "bias": 20.71950503617975
+        },
+        {
+          "team_abbr": "DEN",
+          "rows": 2,
+          "model_mae": 20.627221279184994,
+          "baseline_mae": 21.15,
+          "gain_vs_baseline": 0.5227787208150048,
+          "bias": 20.627221279184994
+        },
+        {
+          "team_abbr": "IND",
+          "rows": 2,
+          "model_mae": 16.265230843353077,
+          "baseline_mae": 16.35,
+          "gain_vs_baseline": 0.08476915664692442,
+          "bias": 11.78184738217119
+        },
+        {
+          "team_abbr": "LV",
+          "rows": 2,
+          "model_mae": 10.80929596829785,
+          "baseline_mae": 0.6,
+          "gain_vs_baseline": -10.20929596829785,
+          "bias": 10.80929596829785
+        },
+        {
+          "team_abbr": "ARI",
+          "rows": 2,
+          "model_mae": 10.677921175533363,
+          "baseline_mae": 17.1,
+          "gain_vs_baseline": 6.422078824466638,
+          "bias": -10.677921175533363
+        },
+        {
+          "team_abbr": "NYG",
+          "rows": 2,
+          "model_mae": 9.860205228478579,
+          "baseline_mae": 25.299999999999997,
+          "gain_vs_baseline": 15.439794771521418,
+          "bias": 8.557349299918966
+        },
+        {
+          "team_abbr": "NE",
+          "rows": 2,
+          "model_mae": 14.434632497035837,
+          "baseline_mae": 9.100000000000001,
+          "gain_vs_baseline": -5.334632497035836,
+          "bias": -8.309452004303468
+        },
+        {
+          "team_abbr": "SF",
+          "rows": 2,
+          "model_mae": 4.874045688393007,
+          "baseline_mae": 7.350000000000001,
+          "gain_vs_baseline": 2.475954311606994,
+          "bias": -4.533545918354374
+        },
+        {
+          "team_abbr": "WAS",
+          "rows": 2,
+          "model_mae": 5.765739843415886,
+          "baseline_mae": 20.950000000000003,
+          "gain_vs_baseline": 15.184260156584116,
+          "bias": 4.42509995403536
+        },
+        {
+          "team_abbr": "GB",
+          "rows": 2,
+          "model_mae": 8.95197676623335,
+          "baseline_mae": 9.8,
+          "gain_vs_baseline": 0.84802323376665,
+          "bias": -3.5744779511192677
+        },
+        {
+          "team_abbr": "NO",
+          "rows": 2,
+          "model_mae": 3.526916800168822,
+          "baseline_mae": 10.149999999999999,
+          "gain_vs_baseline": 6.623083199831177,
+          "bias": -3.526916800168822
+        },
+        {
+          "team_abbr": "HOU",
+          "rows": 2,
+          "model_mae": 2.168727893371025,
+          "baseline_mae": 8.599999999999998,
+          "gain_vs_baseline": 6.431272106628973,
+          "bias": -0.21095092439076968
+        },
+        {
+          "team_abbr": "CLE",
+          "rows": 1,
+          "model_mae": 4.438971824932047,
+          "baseline_mae": 17.3,
+          "gain_vs_baseline": 12.861028175067954,
+          "bias": -4.438971824932047
+        }
+      ],
+      "by_week": [
+        {
+          "season": 2026,
+          "week": 1,
+          "rows": 86,
+          "model_mae": 15.802680137848713,
+          "baseline_mae": 18.612790697674424,
+          "gain_vs_baseline": 2.810110559825711,
+          "bias": -1.6294168446533408
+        }
+      ],
+      "by_error_type": [
+        {
+          "error_type": "player_rate_or_efficiency",
+          "rows": 52,
+          "model_mae": 9.606536003680612,
+          "baseline_mae": 11.426282051282051,
+          "gain_vs_baseline": 1.8197460476014395,
+          "bias": -2.597306023447008
+        },
+        {
+          "error_type": "opportunity_high",
+          "rows": 15,
+          "model_mae": 29.414480393895758,
+          "baseline_mae": 29.540000000000003,
+          "gain_vs_baseline": 0.12551960610424473,
+          "bias": -25.60823918195499
+        },
+        {
+          "error_type": "opportunity_low",
+          "rows": 15,
+          "model_mae": 23.640783657110287,
+          "baseline_mae": 31.488888888888884,
+          "gain_vs_baseline": 7.848105231778597,
+          "bias": 23.042999195619366
+        },
+        {
+          "error_type": "projected_full_workload_failed",
+          "rows": 4,
+          "model_mae": 15.915414724626691,
+          "baseline_mae": 22.775,
+          "gain_vs_baseline": 6.859585275373307,
+          "bias": 8.352166093522849
+        }
+      ],
+      "top_misses": [
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Walker",
+          "team": "KC",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 173.0,
+          "projection": 59.723530654195194,
+          "baseline": 47.0,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "R.Dowdle",
+          "team": "PIT",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 15.0,
+          "projection": 85.44029677535076,
+          "baseline": 83.3,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Henry",
+          "team": "BAL",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 144.0,
+          "projection": 89.19503022300948,
+          "baseline": 113.9,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Mitchell",
+          "team": "LAC",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 9.0,
+          "projection": 61.40697155951321,
+          "baseline": 47.333333333333336,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Mason",
+          "team": "MIN",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 59.0,
+          "projection": 7.072298816398998,
+          "baseline": 54.2,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Gibbs",
+          "team": "DET",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 156.0,
+          "projection": 107.05327977194744,
+          "baseline": 86.1,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Corum",
+          "team": "LA",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 54.0,
+          "projection": 6.632278628100716,
+          "baseline": 13.4,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Hall",
+          "team": "NYJ",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 102.0,
+          "projection": 60.275996023757166,
+          "baseline": 56.6,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Williams",
+          "team": "CHI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 65.0,
+          "projection": 23.89258235662827,
+          "baseline": 27.3,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Swift",
+          "team": "CHI",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 124.0,
+          "projection": 85.15376573735489,
+          "baseline": 50.5,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Williams",
+          "team": "LA",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 41.0,
+          "projection": 78.89146995128968,
+          "baseline": 87.9,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Achane",
+          "team": "MIA",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 36.0,
+          "projection": 70.80886710030448,
+          "baseline": 55.0,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "E.Wilson",
+          "team": "SEA",
+          "position": "RB",
+          "depth_rank": 3.0,
+          "actual": 3.0,
+          "projection": 33.117607107901534,
+          "baseline": 28.2,
+          "error_type": "projected_full_workload_failed"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Pollard",
+          "team": "TEN",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 35.0,
+          "projection": 64.76868919442683,
+          "baseline": 67.9,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Jones",
+          "team": "IND",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 4.0,
+          "projection": 32.04707822552427,
+          "baseline": 26.5,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Nix",
+          "team": "DEN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 29.458047477436974,
+          "baseline": 21.4,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Bigsby",
+          "team": "PHI",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 3.0,
+          "projection": 28.465270708190868,
+          "baseline": 46.9,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Irving",
+          "team": "TB",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 45.0,
+          "projection": 69.57906322030647,
+          "baseline": 80.4,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Pickett",
+          "team": "CAR",
+          "position": "QB",
+          "depth_rank": 2.0,
+          "actual": 24.0,
+          "projection": 0.0,
+          "baseline": 2.5,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Hubbard",
+          "team": "CAR",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 49.0,
+          "projection": 72.1273751772374,
+          "baseline": 80.2,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Maye",
+          "team": "NE",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 47.0,
+          "projection": 24.255915498660695,
+          "baseline": 35.3,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Cousins",
+          "team": "LV",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 20.463851627843187,
+          "baseline": 0.2,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "S.Perine",
+          "team": "CIN",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 20.0,
+          "projection": 0.6853678086180043,
+          "baseline": 4.5,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Allen",
+          "team": "NYJ",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 40.0,
+          "projection": 20.79651115721545,
+          "baseline": 17.9,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Tracy",
+          "team": "NYG",
+          "position": "RB",
+          "depth_rank": 3.0,
+          "actual": 14.0,
+          "projection": 32.417554528397545,
+          "baseline": 60.8,
+          "error_type": "projected_full_workload_failed"
+        }
+      ]
+    },
+    "passing_tds": {
+      "status": "ready",
+      "model_used": true,
+      "baseline": "position_role_rank_mean",
+      "best_holdout_baseline": "position_role_rank_mean",
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 1.1333333333333333
+        },
+        "rolling_10": {
+          "mae": 0.9727272727272728
+        },
+        "position_mean": {
+          "mae": 0.9244499792444999
+        },
+        "position_role_rank_mean": {
+          "mae": 0.9212259222018493
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 1.1183993443148914
+        },
+        "td_role_team_total_adjusted": {
+          "mae": 0.9386809039262257
+        }
+      },
+      "train_rows": 3577,
+      "holdout_rows": 33,
+      "model_mae": 0.8989722912971999,
+      "baseline_mae": 0.9212259222018493,
+      "bias": -0.2390773041826037,
+      "projection_pass": true,
+      "workload_adjustment_applied": true,
+      "by_position_depth": [
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_1",
+          "rows": 28,
+          "model_mae": 0.927044911631063,
+          "baseline_mae": 0.9262013198252624,
+          "gain_vs_baseline": -0.0008435918058005143,
+          "bias": -0.1628405967331948
+        },
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_2",
+          "rows": 3,
+          "model_mae": 1.1403910016522494,
+          "baseline_mae": 1.2358870967741935,
+          "gain_vs_baseline": 0.09549609512194412,
+          "bias": -1.0615295630564976
+        },
+        {
+          "position": "QB",
+          "depth_rank_bucket": "rank_3",
+          "rows": 2,
+          "model_mae": 0.14382754109054136,
+          "baseline_mae": 0.37957859361554763,
+          "gain_vs_baseline": 0.23575105252500628,
+          "bias": -0.07271282016348661
+        }
+      ],
+      "by_team": [
+        {
+          "team_abbr": "JAX",
+          "rows": 2,
+          "model_mae": 1.489991215134109,
+          "baseline_mae": 1.412760116061872,
+          "gain_vs_baseline": -0.07723109907223713,
+          "bias": -1.4188764942070544
+        },
+        {
+          "team_abbr": "CAR",
+          "rows": 2,
+          "model_mae": 0.9342638021224481,
+          "baseline_mae": 0.9127601160618717,
+          "gain_vs_baseline": -0.0215036860605764,
+          "bias": -0.8159716442288205
+        },
+        {
+          "team_abbr": "MIN",
+          "rows": 2,
+          "model_mae": 1.9314790270740505,
+          "baseline_mae": 2.0872398839381283,
+          "gain_vs_baseline": 0.1557608568640778,
+          "bias": -0.740065622039249
+        },
+        {
+          "team_abbr": "SEA",
+          "rows": 2,
+          "model_mae": 0.9489466771251724,
+          "baseline_mae": 1.0872398839381283,
+          "gain_vs_baseline": 0.13829320681295587,
+          "bias": 0.3176104791753511
+        },
+        {
+          "team_abbr": "LV",
+          "rows": 1,
+          "model_mae": 2.1676505938076307,
+          "baseline_mae": 1.533181522446324,
+          "gain_vs_baseline": -0.6344690713613066,
+          "bias": -2.1676505938076307
+        },
+        {
+          "team_abbr": "PHI",
+          "rows": 1,
+          "model_mae": 2.021609408529211,
+          "baseline_mae": 1.533181522446324,
+          "gain_vs_baseline": -0.488427886082887,
+          "bias": -2.021609408529211
+        },
+        {
+          "team_abbr": "SF",
+          "rows": 1,
+          "model_mae": 1.83275762458162,
+          "baseline_mae": 1.533181522446324,
+          "gain_vs_baseline": -0.29957610213529584,
+          "bias": -1.83275762458162
+        },
+        {
+          "team_abbr": "MIA",
+          "rows": 1,
+          "model_mae": 1.4788714853249931,
+          "baseline_mae": 1.466818477553676,
+          "gain_vs_baseline": -0.012053007771317237,
+          "bias": 1.4788714853249931
+        },
+        {
+          "team_abbr": "TB",
+          "rows": 1,
+          "model_mae": 1.3046390584037315,
+          "baseline_mae": 1.466818477553676,
+          "gain_vs_baseline": 0.16217941914994438,
+          "bias": 1.3046390584037315
+        },
+        {
+          "team_abbr": "LA",
+          "rows": 1,
+          "model_mae": 1.2738043899916474,
+          "baseline_mae": 1.466818477553676,
+          "gain_vs_baseline": 0.19301408756202854,
+          "bias": 1.2738043899916474
+        },
+        {
+          "team_abbr": "NYJ",
+          "rows": 1,
+          "model_mae": 1.0309959021547725,
+          "baseline_mae": 1.466818477553676,
+          "gain_vs_baseline": 0.43582257539890334,
+          "bias": 1.0309959021547725
+        },
+        {
+          "team_abbr": "HOU",
+          "rows": 1,
+          "model_mae": 0.9797075815990457,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": -0.4465260591527216,
+          "bias": -0.9797075815990457
+        },
+        {
+          "team_abbr": "GB",
+          "rows": 1,
+          "model_mae": 0.9217456009979261,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": -0.388564078551602,
+          "bias": -0.9217456009979261
+        },
+        {
+          "team_abbr": "LAC",
+          "rows": 1,
+          "model_mae": 0.8966075344118654,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": -0.42978905685818947,
+          "bias": 0.8966075344118654
+        },
+        {
+          "team_abbr": "WAS",
+          "rows": 1,
+          "model_mae": 0.6584476848893484,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": -0.12526616244302424,
+          "bias": -0.6584476848893484
+        },
+        {
+          "team_abbr": "BUF",
+          "rows": 1,
+          "model_mae": 0.559631144318171,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": -0.02644962187184685,
+          "bias": -0.559631144318171
+        },
+        {
+          "team_abbr": "PIT",
+          "rows": 1,
+          "model_mae": 0.47885308208578947,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": -0.01203460453211358,
+          "bias": 0.47885308208578947
+        },
+        {
+          "team_abbr": "DAL",
+          "rows": 1,
+          "model_mae": 0.41576459757593653,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": 0.11741692487038757,
+          "bias": -0.41576459757593653
+        },
+        {
+          "team_abbr": "CHI",
+          "rows": 1,
+          "model_mae": 0.3488441171967107,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": 0.1843374052496134,
+          "bias": -0.3488441171967107
+        },
+        {
+          "team_abbr": "DET",
+          "rows": 1,
+          "model_mae": 0.3356546079498608,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": 0.1975269144964633,
+          "bias": -0.3356546079498608
+        },
+        {
+          "team_abbr": "ARI",
+          "rows": 1,
+          "model_mae": 0.3344063856727857,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.1324120918808902,
+          "bias": 0.3344063856727857
+        },
+        {
+          "team_abbr": "DEN",
+          "rows": 1,
+          "model_mae": 0.31462437272238564,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.15219410483129026,
+          "bias": 0.31462437272238564
+        },
+        {
+          "team_abbr": "CIN",
+          "rows": 1,
+          "model_mae": 0.3132935511338848,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.1535249264197911,
+          "bias": 0.3132935511338848
+        },
+        {
+          "team_abbr": "NE",
+          "rows": 1,
+          "model_mae": 0.31304449570363335,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.15377398185004254,
+          "bias": 0.31304449570363335
+        },
+        {
+          "team_abbr": "BAL",
+          "rows": 1,
+          "model_mae": 0.2773923521445667,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.1894261254091092,
+          "bias": 0.2773923521445667
+        },
+        {
+          "team_abbr": "KC",
+          "rows": 1,
+          "model_mae": 0.26183175179957874,
+          "baseline_mae": 0.5331815224463241,
+          "gain_vs_baseline": 0.27134977064674537,
+          "bias": -0.26183175179957874
+        },
+        {
+          "team_abbr": "IND",
+          "rows": 1,
+          "model_mae": 0.2243572374847731,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.2424612400689028,
+          "bias": 0.2243572374847731
+        },
+        {
+          "team_abbr": "ATL",
+          "rows": 1,
+          "model_mae": 0.21654036125402798,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.2502781162996479,
+          "bias": -0.21654036125402798
+        },
+        {
+          "team_abbr": "CLE",
+          "rows": 1,
+          "model_mae": 0.09564924816213694,
+          "baseline_mae": 0.4668184775536759,
+          "gain_vs_baseline": 0.37116922939153896,
+          "bias": -0.09564924816213694
+        }
+      ],
+      "by_week": [
+        {
+          "season": 2026,
+          "week": 1,
+          "rows": 33,
+          "model_mae": 0.8989722912971999,
+          "baseline_mae": 0.9212259222018493,
+          "gain_vs_baseline": 0.02225363090464938,
+          "bias": -0.2390773041826037
+        }
+      ],
+      "by_error_type": [
+        {
+          "error_type": "td_rate_or_variance",
+          "rows": 15,
+          "model_mae": 0.7097035644813405,
+          "baseline_mae": 0.7600303621774018,
+          "gain_vs_baseline": 0.0503267976960613,
+          "bias": -0.036842252013985784
+        },
+        {
+          "error_type": "opportunity_low",
+          "rows": 9,
+          "model_mae": 0.975149858079337,
+          "baseline_mae": 1.14823248752982,
+          "gain_vs_baseline": 0.17308262945048303,
+          "bias": 0.22242989754716597
+        },
+        {
+          "error_type": "opportunity_high",
+          "rows": 7,
+          "model_mae": 1.3065976690543972,
+          "baseline_mae": 1.120055340015411,
+          "gain_vs_baseline": -0.18654232903898627,
+          "bias": -1.2110529874336016
+        },
+        {
+          "error_type": "td_role_opportunity",
+          "rows": 2,
+          "model_mae": 0.5489998697463366,
+          "baseline_mae": 0.41276011606187174,
+          "gain_vs_baseline": -0.1362397536844649,
+          "bias": -0.43070771185270906
+        }
+      ],
+      "top_misses": [
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Lawrence",
+          "team": "JAX",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 4.0,
+          "projection": 1.0911322906588368,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Wentz",
+          "team": "MIN",
+          "position": "QB",
+          "depth_rank": 2.0,
+          "actual": 3.0,
+          "projection": 0.3284553508867004,
+          "baseline": 0.2923387096774194,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Cousins",
+          "team": "LV",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 3.0,
+          "projection": 0.8323494061923695,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Hurts",
+          "team": "PHI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 3.0,
+          "projection": 0.9783905914707887,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Purdy",
+          "team": "SF",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 3.0,
+          "projection": 1.16724237541838,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Young",
+          "team": "CAR",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 3.0,
+          "projection": 1.2497645536487314,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "M.Willis",
+          "team": "MIA",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 1.4788714853249931,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Mayfield",
+          "team": "TB",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 1.3046390584037315,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "M.Stafford",
+          "team": "LA",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 1.2738043899916474,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "S.Darnold",
+          "team": "SEA",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 1.2665571563005236,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Murray",
+          "team": "MIN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 1.1914134050348015,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "G.Smith",
+          "team": "NYJ",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 1.0309959021547725,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Stroud",
+          "team": "HOU",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.0202924184009543,
+          "baseline": 1.466818477553676,
+          "error_type": "td_role_opportunity"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Love",
+          "team": "GB",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.0782543990020739,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Herbert",
+          "team": "LAC",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 1.8966075344118654,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Daniels",
+          "team": "WAS",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.3415523151106516,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Lock",
+          "team": "SEA",
+          "position": "QB",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.36866380205017873,
+          "baseline": 0.2923387096774194,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Allen",
+          "team": "BUF",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.440368855681829,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "A.Rodgers",
+          "team": "PIT",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 1.4788530820857895,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Prescott",
+          "team": "DAL",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.5842354024240635,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Williams",
+          "team": "CHI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.6511558828032893,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Goff",
+          "team": "DET",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 1.6643453920501392,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Brissett",
+          "team": "ARI",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 1.3344063856727857,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Nix",
+          "team": "DEN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 1.3146243727223856,
+          "baseline": 1.466818477553676,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Burrow",
+          "team": "CIN",
+          "position": "QB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 1.3132935511338848,
+          "baseline": 1.466818477553676,
+          "error_type": "opportunity_low"
+        }
+      ]
+    },
+    "rushing_tds": {
+      "status": "ready",
+      "model_used": true,
+      "baseline": "rolling_5_team_total_adjusted",
+      "best_holdout_baseline": "rolling_5_team_total_adjusted",
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 0.460377358490566
+        },
+        "rolling_10": {
+          "mae": 0.46960167714884704
+        },
+        "position_mean": {
+          "mae": 0.537453862461038
+        },
+        "position_role_rank_mean": {
+          "mae": 0.49330193489664576
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 0.4453761362000047
+        },
+        "td_role_team_total_adjusted": {
+          "mae": 0.45840837591800876
+        }
+      },
+      "train_rows": 7494,
+      "holdout_rows": 53,
+      "model_mae": 0.4356861491791464,
+      "baseline_mae": 0.4453761362000047,
+      "bias": -0.18949370463420756,
+      "projection_pass": true,
+      "workload_adjustment_applied": true,
+      "by_position_depth": [
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_1",
+          "rows": 27,
+          "model_mae": 0.6953880985325375,
+          "baseline_mae": 0.6721851917586403,
+          "gain_vs_baseline": -0.023202906773897136,
+          "bias": -0.4015218171911747
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_2",
+          "rows": 20,
+          "model_mae": 0.17282786306322642,
+          "baseline_mae": 0.20411400343134356,
+          "gain_vs_baseline": 0.03128614036811714,
+          "bias": -0.003070363315150315
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_3",
+          "rows": 4,
+          "model_mae": 0.1387469130808809,
+          "baseline_mae": 0.24994039519611902,
+          "gain_vs_baseline": 0.11119348211523811,
+          "bias": 0.1387469130808809
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 2,
+          "model_mae": 0.1521711662640989,
+          "baseline_mae": 0.1869466958528072,
+          "gain_vs_baseline": 0.034775529588708304,
+          "bias": 0.1521711662640989
+        }
+      ],
+      "by_team": [
+        {
+          "team_abbr": "MIN",
+          "rows": 3,
+          "model_mae": 0.5533596142695573,
+          "baseline_mae": 0.6001636790313357,
+          "gain_vs_baseline": 0.04680406476177845,
+          "bias": -0.5465842302810189
+        },
+        {
+          "team_abbr": "LA",
+          "rows": 3,
+          "model_mae": 0.25843619510204835,
+          "baseline_mae": 0.20328304640201936,
+          "gain_vs_baseline": -0.05515314870002899,
+          "bias": -0.22226614858091712
+        },
+        {
+          "team_abbr": "PHI",
+          "rows": 3,
+          "model_mae": 0.21887730835028804,
+          "baseline_mae": 0.4987724072649826,
+          "gain_vs_baseline": 0.27989509891469455,
+          "bias": 0.21887730835028804
+        },
+        {
+          "team_abbr": "CAR",
+          "rows": 3,
+          "model_mae": 0.19256043258290687,
+          "baseline_mae": 0.10943994162771893,
+          "gain_vs_baseline": -0.08312049095518793,
+          "bias": -0.10643684090272248
+        },
+        {
+          "team_abbr": "BAL",
+          "rows": 2,
+          "model_mae": 1.3618434885131683,
+          "baseline_mae": 0.8948228125184879,
+          "gain_vs_baseline": -0.46702067599468033,
+          "bias": -1.2985951369338256
+        },
+        {
+          "team_abbr": "DET",
+          "rows": 2,
+          "model_mae": 0.7622875468502782,
+          "baseline_mae": 0.24629947346624848,
+          "gain_vs_baseline": -0.5159880733840297,
+          "bias": -0.7564755487774687
+        },
+        {
+          "team_abbr": "DAL",
+          "rows": 2,
+          "model_mae": 0.3970405970209618,
+          "baseline_mae": 0.598646098325741,
+          "gain_vs_baseline": 0.20160550130477922,
+          "bias": -0.3780438638481361
+        },
+        {
+          "team_abbr": "CIN",
+          "rows": 2,
+          "model_mae": 0.37911904447491473,
+          "baseline_mae": 0.2916239720759628,
+          "gain_vs_baseline": -0.08749507239895193,
+          "bias": -0.37009886969159544
+        },
+        {
+          "team_abbr": "TEN",
+          "rows": 2,
+          "model_mae": 0.3247803000112478,
+          "baseline_mae": 0.33694847068567707,
+          "gain_vs_baseline": 0.012168170674429268,
+          "bias": 0.3247803000112478
+        },
+        {
+          "team_abbr": "BUF",
+          "rows": 2,
+          "model_mae": 0.30573318632410246,
+          "baseline_mae": 0.5719256936638466,
+          "gain_vs_baseline": 0.26619250733974414,
+          "bias": 0.30573318632410246
+        },
+        {
+          "team_abbr": "ATL",
+          "rows": 2,
+          "model_mae": 0.2863907195206128,
+          "baseline_mae": 0.9376921256581672,
+          "gain_vs_baseline": 0.6513014061375544,
+          "bias": 0.2863907195206128
+        },
+        {
+          "team_abbr": "NO",
+          "rows": 2,
+          "model_mae": 0.5004826904965612,
+          "baseline_mae": 0.3747527066201266,
+          "gain_vs_baseline": -0.12572998387643464,
+          "bias": -0.28178307190570634
+        },
+        {
+          "team_abbr": "TB",
+          "rows": 2,
+          "model_mae": 0.3013870155036232,
+          "baseline_mae": 0.26058924451280835,
+          "gain_vs_baseline": -0.04079777099081483,
+          "bias": -0.2586566992787737
+        },
+        {
+          "team_abbr": "JAX",
+          "rows": 2,
+          "model_mae": 0.2528261255937226,
+          "baseline_mae": 0.22500000000000003,
+          "gain_vs_baseline": -0.02782612559372255,
+          "bias": 0.2528261255937226
+        },
+        {
+          "team_abbr": "PIT",
+          "rows": 2,
+          "model_mae": 0.22624166619765052,
+          "baseline_mae": 0.07537005265337515,
+          "gain_vs_baseline": -0.15087161354427536,
+          "bias": 0.22624166619765052
+        },
+        {
+          "team_abbr": "MIA",
+          "rows": 2,
+          "model_mae": 0.2036282259936312,
+          "baseline_mae": 0.28928799621368984,
+          "gain_vs_baseline": 0.08565977022005863,
+          "bias": 0.2036282259936312
+        },
+        {
+          "team_abbr": "NYJ",
+          "rows": 2,
+          "model_mae": 0.307439258130573,
+          "baseline_mae": 0.40911258356504765,
+          "gain_vs_baseline": 0.10167332543447466,
+          "bias": -0.18584419666307056
+        },
+        {
+          "team_abbr": "NYG",
+          "rows": 2,
+          "model_mae": 0.14475210474222874,
+          "baseline_mae": 0.2238933917056144,
+          "gain_vs_baseline": 0.07914128696338565,
+          "bias": 0.14475210474222874
+        },
+        {
+          "team_abbr": "CHI",
+          "rows": 1,
+          "model_mae": 2.6394513433405002,
+          "baseline_mae": 2.802707803348518,
+          "gain_vs_baseline": 0.16325646000801797,
+          "bias": -2.6394513433405002
+        },
+        {
+          "team_abbr": "HOU",
+          "rows": 1,
+          "model_mae": 1.7766276396527518,
+          "baseline_mae": 1.5921150091699698,
+          "gain_vs_baseline": -0.184512630482782,
+          "bias": -1.7766276396527518
+        },
+        {
+          "team_abbr": "IND",
+          "rows": 1,
+          "model_mae": 1.138899109261052,
+          "baseline_mae": 0.6300384547121813,
+          "gain_vs_baseline": -0.5088606545488707,
+          "bias": -1.138899109261052
+        },
+        {
+          "team_abbr": "KC",
+          "rows": 1,
+          "model_mae": 0.6537258131321628,
+          "baseline_mae": 0.8182251671300953,
+          "gain_vs_baseline": 0.16449935399793247,
+          "bias": -0.6537258131321628
+        },
+        {
+          "team_abbr": "DEN",
+          "rows": 1,
+          "model_mae": 0.47736548410249385,
+          "baseline_mae": 0.6118274862450452,
+          "gain_vs_baseline": 0.13446200214255138,
+          "bias": 0.47736548410249385
+        },
+        {
+          "team_abbr": "NE",
+          "rows": 1,
+          "model_mae": 0.31475113179289305,
+          "baseline_mae": 0.2105927941785482,
+          "gain_vs_baseline": -0.10415833761434484,
+          "bias": 0.31475113179289305
+        },
+        {
+          "team_abbr": "LAC",
+          "rows": 1,
+          "model_mae": 0.22702646971644813,
+          "baseline_mae": 0.0,
+          "gain_vs_baseline": -0.22702646971644813,
+          "bias": 0.22702646971644813
+        },
+        {
+          "team_abbr": "SEA",
+          "rows": 1,
+          "model_mae": 0.20635534192359703,
+          "baseline_mae": 0.5519747973732473,
+          "gain_vs_baseline": 0.3456194554496502,
+          "bias": 0.20635534192359703
+        },
+        {
+          "team_abbr": "ARI",
+          "rows": 1,
+          "model_mae": 0.2045865904131334,
+          "baseline_mae": 0.24827782050523575,
+          "gain_vs_baseline": 0.04369123009210235,
+          "bias": 0.2045865904131334
+        },
+        {
+          "team_abbr": "SF",
+          "rows": 1,
+          "model_mae": 0.1722152874960557,
+          "baseline_mae": 0.0,
+          "gain_vs_baseline": -0.1722152874960557,
+          "bias": 0.1722152874960557
+        },
+        {
+          "team_abbr": "WAS",
+          "rows": 1,
+          "model_mae": 0.052685452829063305,
+          "baseline_mae": 0.2194598591965923,
+          "gain_vs_baseline": 0.166774406367529,
+          "bias": 0.052685452829063305
+        },
+        {
+          "team_abbr": "GB",
+          "rows": 1,
+          "model_mae": 0.03977698749689282,
+          "baseline_mae": 0.21280956043305924,
+          "gain_vs_baseline": 0.17303257293616642,
+          "bias": 0.03977698749689282
+        },
+        {
+          "team_abbr": "LV",
+          "rows": 1,
+          "model_mae": 0.010294665676762247,
+          "baseline_mae": 0.0,
+          "gain_vs_baseline": -0.010294665676762247,
+          "bias": 0.010294665676762247
+        }
+      ],
+      "by_week": [
+        {
+          "season": 2026,
+          "week": 1,
+          "rows": 53,
+          "model_mae": 0.4356861491791464,
+          "baseline_mae": 0.4453761362000047,
+          "gain_vs_baseline": 0.009689987020858326,
+          "bias": -0.18949370463420756
+        }
+      ],
+      "by_error_type": [
+        {
+          "error_type": "td_rate_or_variance",
+          "rows": 31,
+          "model_mae": 0.23086667919554424,
+          "baseline_mae": 0.2308435036345905,
+          "gain_vs_baseline": -2.317556095374207e-05,
+          "bias": -0.09517859432040943
+        },
+        {
+          "error_type": "opportunity_high",
+          "rows": 8,
+          "model_mae": 1.2426904171646225,
+          "baseline_mae": 1.1189933000059162,
+          "gain_vs_baseline": -0.12369711715870624,
+          "bias": -1.1915437695613391
+        },
+        {
+          "error_type": "opportunity_low",
+          "rows": 7,
+          "model_mae": 0.3745431994758954,
+          "baseline_mae": 0.5776259497468751,
+          "gain_vs_baseline": 0.20308275027097966,
+          "bias": 0.3745431994758954
+        },
+        {
+          "error_type": "td_role_opportunity",
+          "rows": 7,
+          "model_mae": 0.4815961596835202,
+          "baseline_mae": 0.4933512225217839,
+          "gain_vs_baseline": 0.011755062838263719,
+          "bias": -0.026011737360123164
+        }
+      ],
+      "top_misses": [
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Henry",
+          "team": "BAL",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 3.0,
+          "projection": 0.339561374553006,
+          "baseline": 1.2103543749630241,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Swift",
+          "team": "CHI",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 3.0,
+          "projection": 0.36054865665949964,
+          "baseline": 0.197292196651482,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Montgomery",
+          "team": "HOU",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.22337236034724825,
+          "baseline": 0.40788499083003016,
+          "error_type": "td_role_opportunity"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Gibbs",
+          "team": "DET",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.48123690437225297,
+          "baseline": 1.507401053067503,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Taylor",
+          "team": "IND",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.8611008907389478,
+          "baseline": 1.3699615452878187,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Mason",
+          "team": "MIN",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.02328349861850032,
+          "baseline": 0.0,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Miller",
+          "team": "NO",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.2177342375977325,
+          "baseline": 0.2504945867597468,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Williams",
+          "team": "DAL",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.22491553913090206,
+          "baseline": 0.0,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Brown",
+          "team": "CIN",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.2507820858334898,
+          "baseline": 0.41675205584807434,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Williams",
+          "team": "LA",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.2789464844755518,
+          "baseline": 0.3901508607939419,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "A.Jones",
+          "team": "MIN",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.32680073455563546,
+          "baseline": 0.19950896290599304,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Walker",
+          "team": "KC",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.3462741868678371,
+          "baseline": 0.18177483286990476,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Cook",
+          "team": "BUF",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.5765953559815672,
+          "baseline": 0.9532094894397444,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Pollard",
+          "team": "TEN",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.5616188144490748,
+          "baseline": 0.16847423534283856,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Irving",
+          "team": "TB",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.4399562852176031,
+          "baseline": 0.4788215109743833,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Hall",
+          "team": "NYJ",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.5067165452063565,
+          "baseline": 0.18177483286990476,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "S.Barkley",
+          "team": "PHI",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.4837718039119074,
+          "baseline": 0.8312873454416376,
+          "error_type": "td_role_opportunity"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Dobbins",
+          "team": "DEN",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.47736548410249385,
+          "baseline": 0.6118274862450452,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Hubbard",
+          "team": "CAR",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.551504089771556,
+          "baseline": 0.8955735668224576,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "Bi.Robinson",
+          "team": "ATL",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.358721235115748,
+          "baseline": 1.45863219546826,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Achane",
+          "team": "MIA",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.3514969814910041,
+          "baseline": 0.5785759924273797,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "R.Dowdle",
+          "team": "PIT",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 0.0,
+          "projection": 0.34140916898016305,
+          "baseline": 0.1507401053067503,
+          "error_type": "td_role_opportunity"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "R.Stevenson",
+          "team": "NE",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 0.0,
+          "projection": 0.31475113179289305,
+          "baseline": 0.2105927941785482,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Rodriguez",
+          "team": "JAX",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 0.0,
+          "projection": 0.27103506469059974,
+          "baseline": 0.30000000000000004,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "A.Abdullah",
+          "team": "JAX",
+          "position": "RB",
+          "depth_rank": 4.0,
+          "actual": 0.0,
+          "projection": 0.2346171864968454,
+          "baseline": 0.15000000000000002,
+          "error_type": "td_role_opportunity"
+        }
+      ]
+    },
+    "receiving_yards": {
+      "status": "ready",
+      "model_used": true,
+      "baseline": "position_role_rank_mean",
+      "best_holdout_baseline": "position_role_rank_mean",
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 21.627233676975944
+        },
+        "rolling_10": {
+          "mae": 21.565337097038125
+        },
+        "position_mean": {
+          "mae": 22.19633629483694
+        },
+        "position_role_rank_mean": {
+          "mae": 21.425918280912242
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 21.611205459139327
+        }
+      },
+      "train_rows": 25269,
+      "holdout_rows": 194,
+      "model_mae": 18.499952447185294,
+      "baseline_mae": 21.425918280912242,
+      "bias": -3.2668763700648964,
+      "projection_pass": true,
+      "workload_adjustment_applied": true,
+      "by_position_depth": [
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_1",
+          "rows": 38,
+          "model_mae": 34.37544043361464,
+          "baseline_mae": 33.154149334096026,
+          "gain_vs_baseline": -1.2212910995186164,
+          "bias": -2.77477460559399
+        },
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_2",
+          "rows": 28,
+          "model_mae": 23.06923141896814,
+          "baseline_mae": 27.60207797091726,
+          "gain_vs_baseline": 4.53284655194912,
+          "bias": 1.8589945087759925
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_1",
+          "rows": 27,
+          "model_mae": 13.122076402285352,
+          "baseline_mae": 13.77504742564955,
+          "gain_vs_baseline": 0.6529710233641985,
+          "bias": -6.189837050653269
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_1",
+          "rows": 25,
+          "model_mae": 20.555177575324283,
+          "baseline_mae": 23.648060891729653,
+          "gain_vs_baseline": 3.09288331640537,
+          "bias": -10.016378290438336
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_2",
+          "rows": 20,
+          "model_mae": 6.465449964658319,
+          "baseline_mae": 11.87148839853901,
+          "gain_vs_baseline": 5.40603843388069,
+          "bias": -2.593985236234948
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_2",
+          "rows": 20,
+          "model_mae": 7.464323320799473,
+          "baseline_mae": 12.749565741382918,
+          "gain_vs_baseline": 5.285242420583446,
+          "bias": -1.398959668374492
+        },
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_3",
+          "rows": 13,
+          "model_mae": 16.09451241534139,
+          "baseline_mae": 21.84291800623167,
+          "gain_vs_baseline": 5.748405590890279,
+          "bias": -0.6566468294666981
+        },
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 8,
+          "model_mae": 22.247636924681593,
+          "baseline_mae": 24.15924879319472,
+          "gain_vs_baseline": 1.911611868513127,
+          "bias": -10.912403050047782
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_3",
+          "rows": 6,
+          "model_mae": 6.601305988143506,
+          "baseline_mae": 11.448539979647968,
+          "gain_vs_baseline": 4.847233991504463,
+          "bias": -0.6488695981195244
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_3",
+          "rows": 4,
+          "model_mae": 5.367576451260416,
+          "baseline_mae": 13.538472003641271,
+          "gain_vs_baseline": 8.170895552380856,
+          "bias": 5.367576451260416
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 3,
+          "model_mae": 4.668314715338299,
+          "baseline_mae": 11.862579036604174,
+          "gain_vs_baseline": 7.194264321265875,
+          "bias": -0.27288141311571784
+        },
+        {
+          "position": "RB",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 2,
+          "model_mae": 13.860873957353661,
+          "baseline_mae": 16.349306801295374,
+          "gain_vs_baseline": 2.4884328439417125,
+          "bias": -1.956641049244344
+        }
+      ],
+      "by_team": [
+        {
+          "team_abbr": "DAL",
+          "rows": 10,
+          "model_mae": 12.222433650310256,
+          "baseline_mae": 13.101579593573533,
+          "gain_vs_baseline": 0.8791459432632767,
+          "bias": 3.3573700542631024
+        },
+        {
+          "team_abbr": "LA",
+          "rows": 9,
+          "model_mae": 9.678794272697761,
+          "baseline_mae": 17.129769265713023,
+          "gain_vs_baseline": 7.450974993015262,
+          "bias": 5.1514518041126465
+        },
+        {
+          "team_abbr": "BUF",
+          "rows": 8,
+          "model_mae": 23.924855019095357,
+          "baseline_mae": 26.944823555144872,
+          "gain_vs_baseline": 3.0199685360495145,
+          "bias": -19.527529889016133
+        },
+        {
+          "team_abbr": "MIN",
+          "rows": 8,
+          "model_mae": 17.089942719355175,
+          "baseline_mae": 20.598792882765423,
+          "gain_vs_baseline": 3.508850163410248,
+          "bias": 8.538106701795643
+        },
+        {
+          "team_abbr": "CIN",
+          "rows": 8,
+          "model_mae": 21.1030317541588,
+          "baseline_mae": 19.316323360312772,
+          "gain_vs_baseline": -1.7867083938460269,
+          "bias": -1.3101557663888794
+        },
+        {
+          "team_abbr": "CAR",
+          "rows": 7,
+          "model_mae": 29.90867903122596,
+          "baseline_mae": 32.43123459984877,
+          "gain_vs_baseline": 2.52255556862281,
+          "bias": -22.22095522719068
+        },
+        {
+          "team_abbr": "GB",
+          "rows": 7,
+          "model_mae": 25.277062379706706,
+          "baseline_mae": 29.576881868168293,
+          "gain_vs_baseline": 4.299819488461587,
+          "bias": -21.02095904783648
+        },
+        {
+          "team_abbr": "BAL",
+          "rows": 7,
+          "model_mae": 25.710676906834472,
+          "baseline_mae": 26.96077135138888,
+          "gain_vs_baseline": 1.2500944445544064,
+          "bias": -18.6575929277868
+        },
+        {
+          "team_abbr": "HOU",
+          "rows": 7,
+          "model_mae": 10.636541014673039,
+          "baseline_mae": 12.202148225085475,
+          "gain_vs_baseline": 1.565607210412436,
+          "bias": -6.888462391304803
+        },
+        {
+          "team_abbr": "JAX",
+          "rows": 7,
+          "model_mae": 19.439407629249022,
+          "baseline_mae": 20.68267365462077,
+          "gain_vs_baseline": 1.2432660253717494,
+          "bias": 3.914776902757225
+        },
+        {
+          "team_abbr": "IND",
+          "rows": 7,
+          "model_mae": 12.880519524164185,
+          "baseline_mae": 20.036357211373552,
+          "gain_vs_baseline": 7.155837687209367,
+          "bias": 1.15851491643835
+        },
+        {
+          "team_abbr": "NO",
+          "rows": 6,
+          "model_mae": 41.900727619760495,
+          "baseline_mae": 35.8116485607155,
+          "gain_vs_baseline": -6.089079059044998,
+          "bias": -40.27942230047927
+        },
+        {
+          "team_abbr": "DEN",
+          "rows": 6,
+          "model_mae": 18.790716877290464,
+          "baseline_mae": 25.650516320377076,
+          "gain_vs_baseline": 6.859799443086612,
+          "bias": 17.70840242901581
+        },
+        {
+          "team_abbr": "KC",
+          "rows": 6,
+          "model_mae": 21.401027890828374,
+          "baseline_mae": 25.35158792361166,
+          "gain_vs_baseline": 3.9505600327832866,
+          "bias": 11.759073388928135
+        },
+        {
+          "team_abbr": "WAS",
+          "rows": 6,
+          "model_mae": 14.661031109154877,
+          "baseline_mae": 19.444361196034713,
+          "gain_vs_baseline": 4.783330086879836,
+          "bias": 9.034582531978444
+        },
+        {
+          "team_abbr": "PHI",
+          "rows": 6,
+          "model_mae": 14.39557794651927,
+          "baseline_mae": 13.584388673663554,
+          "gain_vs_baseline": -0.8111892728557155,
+          "bias": -7.215673705283755
+        },
+        {
+          "team_abbr": "NYG",
+          "rows": 6,
+          "model_mae": 17.964365721851397,
+          "baseline_mae": 23.12958971722806,
+          "gain_vs_baseline": 5.165223995376664,
+          "bias": -4.683528623642895
+        },
+        {
+          "team_abbr": "DET",
+          "rows": 6,
+          "model_mae": 6.6633163597640035,
+          "baseline_mae": 6.235760390267995,
+          "gain_vs_baseline": -0.4275559694960087,
+          "bias": 3.8361808185976294
+        },
+        {
+          "team_abbr": "SF",
+          "rows": 6,
+          "model_mae": 21.911111419952704,
+          "baseline_mae": 16.64473439501556,
+          "gain_vs_baseline": -5.266377024937142,
+          "bias": -2.696361580552089
+        },
+        {
+          "team_abbr": "PIT",
+          "rows": 6,
+          "model_mae": 6.6242943241190995,
+          "baseline_mae": 5.191735617372399,
+          "gain_vs_baseline": -1.4325587067467005,
+          "bias": -0.7687763027548303
+        },
+        {
+          "team_abbr": "ATL",
+          "rows": 6,
+          "model_mae": 26.730469807090262,
+          "baseline_mae": 35.217770887269445,
+          "gain_vs_baseline": 8.487301080179183,
+          "bias": 0.5598198395924641
+        },
+        {
+          "team_abbr": "NE",
+          "rows": 6,
+          "model_mae": 23.878614847290624,
+          "baseline_mae": 27.39779993215512,
+          "gain_vs_baseline": 3.519185084864496,
+          "bias": 0.20920007273879548
+        },
+        {
+          "team_abbr": "ARI",
+          "rows": 5,
+          "model_mae": 29.106758679235657,
+          "baseline_mae": 25.305734916501827,
+          "gain_vs_baseline": -3.8010237627338306,
+          "bias": -19.12780822570003
+        },
+        {
+          "team_abbr": "NYJ",
+          "rows": 5,
+          "model_mae": 15.466300704425219,
+          "baseline_mae": 16.845058050543493,
+          "gain_vs_baseline": 1.3787573461182738,
+          "bias": -11.822975268152486
+        },
+        {
+          "team_abbr": "LAC",
+          "rows": 5,
+          "model_mae": 9.90045007976481,
+          "baseline_mae": 20.550777245919157,
+          "gain_vs_baseline": 10.650327166154348,
+          "bias": 8.276164634210877
+        },
+        {
+          "team_abbr": "LV",
+          "rows": 5,
+          "model_mae": 10.543938261563305,
+          "baseline_mae": 21.71523390228259,
+          "gain_vs_baseline": 11.171295640719286,
+          "bias": 4.874851889049717
+        },
+        {
+          "team_abbr": "SEA",
+          "rows": 5,
+          "model_mae": 29.15415630568391,
+          "baseline_mae": 27.479433099550164,
+          "gain_vs_baseline": -1.674723206133745,
+          "bias": 0.9693771988259969
+        },
+        {
+          "team_abbr": "CHI",
+          "rows": 4,
+          "model_mae": 19.85230759079323,
+          "baseline_mae": 22.291776463240968,
+          "gain_vs_baseline": 2.439468872447737,
+          "bias": -14.46556957482442
+        },
+        {
+          "team_abbr": "TEN",
+          "rows": 4,
+          "model_mae": 7.017641873918944,
+          "baseline_mae": 22.938689650097153,
+          "gain_vs_baseline": 15.92104777617821,
+          "bias": 7.017641873918944
+        },
+        {
+          "team_abbr": "MIA",
+          "rows": 4,
+          "model_mae": 8.920134013586338,
+          "baseline_mae": 11.164183230544355,
+          "gain_vs_baseline": 2.2440492169580164,
+          "bias": -5.503396992375094
+        },
+        {
+          "team_abbr": "TB",
+          "rows": 4,
+          "model_mae": 16.884531359395417,
+          "baseline_mae": 21.628779450821256,
+          "gain_vs_baseline": 4.744248091425838,
+          "bias": 0.8450658468679375
+        },
+        {
+          "team_abbr": "CLE",
+          "rows": 2,
+          "model_mae": 22.330222704423374,
+          "baseline_mae": 34.90008873778519,
+          "gain_vs_baseline": 12.569866033361816,
+          "bias": 19.24229915837599
+        }
+      ],
+      "by_week": [
+        {
+          "season": 2026,
+          "week": 1,
+          "rows": 194,
+          "model_mae": 18.499952447185294,
+          "baseline_mae": 21.425918280912242,
+          "gain_vs_baseline": 2.9259658337269485,
+          "bias": -3.2668763700648964
+        }
+      ],
+      "by_error_type": [
+        {
+          "error_type": "player_rate_or_efficiency",
+          "rows": 133,
+          "model_mae": 13.250700331061825,
+          "baseline_mae": 16.78642535246113,
+          "gain_vs_baseline": 3.535725021399305,
+          "bias": -4.2719013144114255
+        },
+        {
+          "error_type": "opportunity_low",
+          "rows": 30,
+          "model_mae": 25.142410077294546,
+          "baseline_mae": 30.844518115379458,
+          "gain_vs_baseline": 5.702108038084912,
+          "bias": 23.844915714818004
+        },
+        {
+          "error_type": "opportunity_high",
+          "rows": 21,
+          "model_mae": 44.75231396523742,
+          "baseline_mae": 37.880759097515295,
+          "gain_vs_baseline": -6.871554867722125,
+          "bias": -40.78563787680456
+        },
+        {
+          "error_type": "projected_full_workload_failed",
+          "rows": 9,
+          "model_mae": 14.26409728375284,
+          "baseline_mae": 21.41915354306981,
+          "gain_vs_baseline": 7.1550562593169715,
+          "bias": 8.85996028584573
+        },
+        {
+          "error_type": "model_flagged_limited_usage",
+          "rows": 1,
+          "model_mae": 4.199859580126488,
+          "baseline_mae": 10.42970822281167,
+          "gain_vs_baseline": 6.229848642685181,
+          "bias": -4.199859580126488
+        }
+      ],
+      "top_misses": [
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Olave",
+          "team": "NO",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 182.0,
+          "projection": 29.80864521580388,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Watson",
+          "team": "GB",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 147.0,
+          "projection": 31.156307149927873,
+          "baseline": 30.248575498575498,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Kincaid",
+          "team": "BUF",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 130.0,
+          "projection": 15.877821271434827,
+          "baseline": 22.42970822281167,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Coker",
+          "team": "CAR",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 138.0,
+          "projection": 35.62177533172529,
+          "baseline": 50.6036036036036,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "Z.Flowers",
+          "team": "BAL",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 150.0,
+          "projection": 55.29128557130622,
+          "baseline": 65.62958924027626,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "Bi.Robinson",
+          "team": "ATL",
+          "position": "RB",
+          "depth_rank": 1.0,
+          "actual": 90.0,
+          "projection": 13.83051093181696,
+          "baseline": 15.559782608695652,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Chase",
+          "team": "CIN",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 12.0,
+          "projection": 82.78453055257717,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "R.Shaheed",
+          "team": "SEA",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 4.0,
+          "projection": 69.9671193237768,
+          "baseline": 50.6036036036036,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Raymond",
+          "team": "CHI",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 84.0,
+          "projection": 19.07202677534898,
+          "baseline": 30.248575498575498,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Smith-Njigba",
+          "team": "SEA",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 122.0,
+          "projection": 63.60305894422962,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "K.Bourne",
+          "team": "ARI",
+          "position": "WR",
+          "depth_rank": 3.0,
+          "actual": 75.0,
+          "projection": 17.586605936279717,
+          "baseline": 30.248575498575498,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "P.Washington",
+          "team": "JAX",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 83.0,
+          "projection": 28.66379245727871,
+          "baseline": 30.248575498575498,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "I.Likely",
+          "team": "NYG",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 78.0,
+          "projection": 25.87383197011513,
+          "baseline": 22.42970822281167,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "M.Gesicki",
+          "team": "CIN",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 78.0,
+          "projection": 26.33296029025931,
+          "baseline": 33.752808988764045,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "R.Rice",
+          "team": "KC",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 19.0,
+          "projection": 69.93659814061209,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "Bri.Thomas",
+          "team": "JAX",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 40.0,
+          "projection": 90.74918751171573,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Adams",
+          "team": "LA",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 26.0,
+          "projection": 76.36433931995893,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Vele",
+          "team": "NO",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 69.0,
+          "projection": 19.19047324303578,
+          "baseline": 23.219685039370077,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "A.Mitchell",
+          "team": "NYJ",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 60.0,
+          "projection": 12.501968279207084,
+          "baseline": 30.248575498575498,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Brooks",
+          "team": "CAR",
+          "position": "RB",
+          "depth_rank": 2.0,
+          "actual": 48.0,
+          "projection": 1.6493792526602002,
+          "baseline": 9.631830601092895,
+          "error_type": "player_rate_or_efficiency"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Sutton",
+          "team": "DEN",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 11.0,
+          "projection": 56.037320900453444,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.London",
+          "team": "ATL",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 29.0,
+          "projection": 73.21539449478371,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Addison",
+          "team": "MIN",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 0.0,
+          "projection": 44.10457771130912,
+          "baseline": 38.96763392857143,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Jeudy",
+          "team": "CLE",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 26.0,
+          "projection": 67.57252186279936,
+          "baseline": 65.62958924027626,
+          "error_type": "opportunity_low"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Jennings",
+          "team": "MIN",
+          "position": "WR",
+          "depth_rank": 3.0,
+          "actual": 0.0,
+          "projection": 39.79308408757287,
+          "baseline": 50.6036036036036,
+          "error_type": "projected_full_workload_failed"
+        }
+      ]
+    },
+    "receiving_tds": {
+      "status": "ready",
+      "model_used": true,
+      "baseline": "td_role_team_total_adjusted",
+      "best_holdout_baseline": "td_role_team_total_adjusted",
+      "baseline_suite": {
+        "rolling_5": {
+          "mae": 0.3858156028368795
+        },
+        "rolling_10": {
+          "mae": 0.39959473150962516
+        },
+        "position_mean": {
+          "mae": 0.38831545968087955
+        },
+        "position_role_rank_mean": {
+          "mae": 0.38421733412176573
+        },
+        "rolling_5_team_total_adjusted": {
+          "mae": 0.38624329009903274
+        },
+        "td_role_team_total_adjusted": {
+          "mae": 0.38210342719296536
+        }
+      },
+      "train_rows": 17775,
+      "holdout_rows": 141,
+      "model_mae": 0.35050229658700893,
+      "baseline_mae": 0.38210342719296536,
+      "bias": -0.039605841993200885,
+      "projection_pass": true,
+      "workload_adjustment_applied": true,
+      "by_position_depth": [
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_1",
+          "rows": 38,
+          "model_mae": 0.47701277107009826,
+          "baseline_mae": 0.5036948586666835,
+          "gain_vs_baseline": 0.026682087596585247,
+          "bias": -0.09777538246085768
+        },
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_2",
+          "rows": 28,
+          "model_mae": 0.34453814778583364,
+          "baseline_mae": 0.43715445110046075,
+          "gain_vs_baseline": 0.09261630331462711,
+          "bias": 0.054337990513817554
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_1",
+          "rows": 25,
+          "model_mae": 0.4921089589211673,
+          "baseline_mae": 0.49593872365286173,
+          "gain_vs_baseline": 0.0038297647316944405,
+          "bias": -0.19624843344414827
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_2",
+          "rows": 20,
+          "model_mae": 0.1962713837204575,
+          "baseline_mae": 0.24838649064285026,
+          "gain_vs_baseline": 0.05211510692239277,
+          "bias": 0.04608945861870567
+        },
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_3",
+          "rows": 13,
+          "model_mae": 0.183167556897377,
+          "baseline_mae": 0.19160173075126175,
+          "gain_vs_baseline": 0.008434173853884758,
+          "bias": 0.07224033713342935
+        },
+        {
+          "position": "WR",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 8,
+          "model_mae": 0.2698189829184178,
+          "baseline_mae": 0.2625711061446149,
+          "gain_vs_baseline": -0.007247876773802953,
+          "bias": -0.15306428382127735
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_3",
+          "rows": 6,
+          "model_mae": 0.10907070753473215,
+          "baseline_mae": 0.02435157668265019,
+          "gain_vs_baseline": -0.08471913085208196,
+          "bias": 0.10907070753473215
+        },
+        {
+          "position": "TE",
+          "depth_rank_bucket": "rank_4_plus",
+          "rows": 3,
+          "model_mae": 0.0749881281470714,
+          "baseline_mae": 0.13071842028781921,
+          "gain_vs_baseline": 0.05573029214074782,
+          "bias": 0.0749881281470714
+        }
+      ],
+      "by_team": [
+        {
+          "team_abbr": "DAL",
+          "rows": 8,
+          "model_mae": 0.19610669919092444,
+          "baseline_mae": 0.125,
+          "gain_vs_baseline": -0.07110669919092444,
+          "bias": 0.05745270667509882
+        },
+        {
+          "team_abbr": "LA",
+          "rows": 6,
+          "model_mae": 0.22321177678256035,
+          "baseline_mae": 0.5009467203288039,
+          "gain_vs_baseline": 0.2777349435462436,
+          "bias": 0.22321177678256035
+        },
+        {
+          "team_abbr": "BUF",
+          "rows": 6,
+          "model_mae": 0.3199350726172827,
+          "baseline_mae": 0.30613546846699674,
+          "gain_vs_baseline": -0.013799604150285971,
+          "bias": -0.16668595708291412
+        },
+        {
+          "team_abbr": "IND",
+          "rows": 6,
+          "model_mae": 0.1575243549735685,
+          "baseline_mae": 0.23887737126790184,
+          "gain_vs_baseline": 0.08135301629433334,
+          "bias": 0.1575243549735685
+        },
+        {
+          "team_abbr": "GB",
+          "rows": 6,
+          "model_mae": 0.4097547205860365,
+          "baseline_mae": 0.475015234032389,
+          "gain_vs_baseline": 0.06526051344635247,
+          "bias": -0.14858530612141665
+        },
+        {
+          "team_abbr": "CIN",
+          "rows": 6,
+          "model_mae": 0.3318099401129992,
+          "baseline_mae": 0.5134921527528966,
+          "gain_vs_baseline": 0.18168221263989742,
+          "bias": 0.05146623559806856
+        },
+        {
+          "team_abbr": "HOU",
+          "rows": 6,
+          "model_mae": 0.25712203052662846,
+          "baseline_mae": 0.25395283763304916,
+          "gain_vs_baseline": -0.003169192893579309,
+          "bias": 0.031081942961006758
+        },
+        {
+          "team_abbr": "SF",
+          "rows": 5,
+          "model_mae": 0.5274292306640935,
+          "baseline_mae": 0.4193555766087041,
+          "gain_vs_baseline": -0.10807365405538943,
+          "bias": -0.39758721836863675
+        },
+        {
+          "team_abbr": "JAX",
+          "rows": 5,
+          "model_mae": 0.5681113997103563,
+          "baseline_mae": 0.5838077827772508,
+          "gain_vs_baseline": 0.01569638306689447,
+          "bias": -0.34916397457228204
+        },
+        {
+          "team_abbr": "MIN",
+          "rows": 5,
+          "model_mae": 0.5537716222532806,
+          "baseline_mae": 0.5430742363262724,
+          "gain_vs_baseline": -0.010697385927008196,
+          "bias": -0.32024024202196266
+        },
+        {
+          "team_abbr": "NE",
+          "rows": 5,
+          "model_mae": 0.20179036769614508,
+          "baseline_mae": 0.32447685294024803,
+          "gain_vs_baseline": 0.12268648524410294,
+          "bias": 0.20179036769614508
+        },
+        {
+          "team_abbr": "BAL",
+          "rows": 5,
+          "model_mae": 0.27824449303305576,
+          "baseline_mae": 0.3611631620451758,
+          "gain_vs_baseline": 0.08291866901212003,
+          "bias": 0.024135807624429885
+        },
+        {
+          "team_abbr": "WAS",
+          "rows": 5,
+          "model_mae": 0.31706774030528173,
+          "baseline_mae": 0.4629970281726221,
+          "gain_vs_baseline": 0.14592928786734038,
+          "bias": -0.017922614130265836
+        },
+        {
+          "team_abbr": "KC",
+          "rows": 5,
+          "model_mae": 0.2451660928466682,
+          "baseline_mae": 0.41783592232479805,
+          "gain_vs_baseline": 0.17266982947812984,
+          "bias": 0.017595702305792493
+        },
+        {
+          "team_abbr": "DEN",
+          "rows": 5,
+          "model_mae": 0.2917054434525004,
+          "baseline_mae": 0.339657873546212,
+          "gain_vs_baseline": 0.04795243009371164,
+          "bias": 0.01035734649819213
+        },
+        {
+          "team_abbr": "NO",
+          "rows": 4,
+          "model_mae": 0.6141522909169967,
+          "baseline_mae": 0.6606581764565106,
+          "gain_vs_baseline": 0.04650588553951385,
+          "bias": -0.5307807163284248
+        },
+        {
+          "team_abbr": "NYG",
+          "rows": 4,
+          "model_mae": 0.5551357386383532,
+          "baseline_mae": 0.6597083925290694,
+          "gain_vs_baseline": 0.10457265389071624,
+          "bias": -0.30843433426835
+        },
+        {
+          "team_abbr": "CAR",
+          "rows": 4,
+          "model_mae": 0.5488552537788272,
+          "baseline_mae": 0.5319416785058139,
+          "gain_vs_baseline": -0.016913575273013293,
+          "bias": -0.29395415794827273
+        },
+        {
+          "team_abbr": "ATL",
+          "rows": 4,
+          "model_mae": 0.2186541859682869,
+          "baseline_mae": 0.3270068868813025,
+          "gain_vs_baseline": 0.10835270091301563,
+          "bias": 0.2186541859682869
+        },
+        {
+          "team_abbr": "DET",
+          "rows": 4,
+          "model_mae": 0.5380164864617043,
+          "baseline_mae": 0.45967758406444287,
+          "gain_vs_baseline": -0.07833890239726143,
+          "bias": -0.2069780163745653
+        },
+        {
+          "team_abbr": "LV",
+          "rows": 4,
+          "model_mae": 0.195046158543463,
+          "baseline_mae": 0.03557860229607983,
+          "gain_vs_baseline": -0.15946755624738318,
+          "bias": 0.195046158543463
+        },
+        {
+          "team_abbr": "SEA",
+          "rows": 4,
+          "model_mae": 0.27541443465791243,
+          "baseline_mae": 0.3418718574845439,
+          "gain_vs_baseline": 0.06645742282663147,
+          "bias": 0.07007817144185975
+        },
+        {
+          "team_abbr": "ARI",
+          "rows": 4,
+          "model_mae": 0.3465864252661066,
+          "baseline_mae": 0.157335464509785,
+          "gain_vs_baseline": -0.1892509607563216,
+          "bias": 0.010163555978377509
+        },
+        {
+          "team_abbr": "LAC",
+          "rows": 4,
+          "model_mae": 0.30417931197563164,
+          "baseline_mae": 0.4966783092528201,
+          "gain_vs_baseline": 0.19249899727718844,
+          "bias": -0.007400496755299885
+        },
+        {
+          "team_abbr": "PIT",
+          "rows": 4,
+          "model_mae": 0.34769342613673393,
+          "baseline_mae": 0.2822579327484457,
+          "gain_vs_baseline": -0.06543549338828825,
+          "bias": 0.005137565866478518
+        },
+        {
+          "team_abbr": "PHI",
+          "rows": 3,
+          "model_mae": 1.012877086137914,
+          "baseline_mae": 0.9367491514736358,
+          "gain_vs_baseline": -0.07612793466427814,
+          "bias": -0.6533446989420659
+        },
+        {
+          "team_abbr": "NYJ",
+          "rows": 3,
+          "model_mae": 0.2098893490137347,
+          "baseline_mae": 0.1383085221109829,
+          "gain_vs_baseline": -0.0715808269027518,
+          "bias": 0.2098893490137347
+        },
+        {
+          "team_abbr": "CHI",
+          "rows": 3,
+          "model_mae": 0.4037570988295822,
+          "baseline_mae": 0.3896265885217974,
+          "gain_vs_baseline": -0.014130510307784838,
+          "bias": -0.04586553249779366
+        },
+        {
+          "team_abbr": "TB",
+          "rows": 2,
+          "model_mae": 0.3869022912171325,
+          "baseline_mae": 0.40986549845083964,
+          "gain_vs_baseline": 0.02296320723370715,
+          "bias": 0.3869022912171325
+        },
+        {
+          "team_abbr": "MIA",
+          "rows": 2,
+          "model_mae": 0.24686299752653446,
+          "baseline_mae": 0.027514119108968397,
+          "gain_vs_baseline": -0.21934887841756606,
+          "bias": 0.24686299752653446
+        },
+        {
+          "team_abbr": "TEN",
+          "rows": 2,
+          "model_mae": 0.208793271028277,
+          "baseline_mae": 0.2163179019601653,
+          "gain_vs_baseline": 0.007524630931888293,
+          "bias": 0.208793271028277
+        },
+        {
+          "team_abbr": "CLE",
+          "rows": 2,
+          "model_mae": 0.19988416548792926,
+          "baseline_mae": 0.18595749466751052,
+          "gain_vs_baseline": -0.013926670820418735,
+          "bias": 0.19988416548792926
+        }
+      ],
+      "by_week": [
+        {
+          "season": 2026,
+          "week": 1,
+          "rows": 141,
+          "model_mae": 0.35050229658700893,
+          "baseline_mae": 0.38210342719296536,
+          "gain_vs_baseline": 0.03160113060595643,
+          "bias": -0.039605841993200885
+        }
+      ],
+      "by_error_type": [
+        {
+          "error_type": "td_rate_or_variance",
+          "rows": 125,
+          "model_mae": 0.32132600232649194,
+          "baseline_mae": 0.3268762401111608,
+          "gain_vs_baseline": 0.005550237784668843,
+          "bias": -0.011421764713844592
+        },
+        {
+          "error_type": "opportunity_high",
+          "rows": 6,
+          "model_mae": 0.7352225567181838,
+          "baseline_mae": 0.6580223840347301,
+          "gain_vs_baseline": -0.0772001726834537,
+          "bias": -0.6817980714548382
+        },
+        {
+          "error_type": "td_role_opportunity",
+          "rows": 6,
+          "model_mae": 0.5916867689753184,
+          "baseline_mae": 0.8306965197120072,
+          "gain_vs_baseline": 0.23900975073668884,
+          "bias": -0.22658871281291315
+        },
+        {
+          "error_type": "opportunity_low",
+          "rows": 4,
+          "model_mae": 0.3234043934489391,
+          "baseline_mae": 1.0211849494581489,
+          "gain_vs_baseline": 0.6977805560092097,
+          "bias": 0.3234043934489391
+        }
+      ],
+      "top_misses": [
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Goedert",
+          "team": "PHI",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.2710546064999148,
+          "baseline": 0.0474381363947731,
+          "error_type": "td_role_opportunity"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "I.Likely",
+          "team": "NYG",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.2728598541865935,
+          "baseline": 0.25553342804651114,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Coker",
+          "team": "CAR",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 2.0,
+          "projection": 0.3143811765458002,
+          "baseline": 0.38330014206976665,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Watson",
+          "team": "GB",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.3249799198776404,
+          "baseline": 0.18216244375592866,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "A.St. Brown",
+          "team": "DET",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.5100109943274608,
+          "baseline": 1.0752644249481902,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Jefferson",
+          "team": "MIN",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 2.0,
+          "projection": 0.5408513911765012,
+          "baseline": 0.6831091640847325,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Palmer",
+          "team": "BUF",
+          "position": "WR",
+          "depth_rank": 4.0,
+          "actual": 1.0,
+          "projection": 0.10526600784330635,
+          "baseline": 0.32637437839603894,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "M.Gesicki",
+          "team": "CIN",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.15896888645520815,
+          "baseline": 0.2972789880739114,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "S.Diggs",
+          "team": "WAS",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.16252411391113114,
+          "baseline": 0.12523668008220099,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "N.Fant",
+          "team": "NO",
+          "position": "TE",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.17261469597354573,
+          "baseline": 0.21442037650437437,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "B.Strange",
+          "team": "JAX",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.17301850397730356,
+          "baseline": 0.0809610861137461,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Robinson",
+          "team": "SF",
+          "position": "WR",
+          "depth_rank": 4.0,
+          "actual": 1.0,
+          "projection": 0.20320092519791308,
+          "baseline": 0.38709519298134853,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Wicks",
+          "team": "PHI",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.22961271588011517,
+          "baseline": 0.2846288183686386,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Vele",
+          "team": "NO",
+          "position": "WR",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.23067979185472848,
+          "baseline": 0.2144203765043744,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "M.Evans",
+          "team": "SF",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.23150092359923977,
+          "baseline": 0.5806427894720227,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "D.Samuel",
+          "team": "SF",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.2527570286210214,
+          "baseline": 0.2580634619875657,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "P.Washington",
+          "team": "JAX",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.25481998878176026,
+          "baseline": 0.2428832583412383,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.Hockenson",
+          "team": "MIN",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.27411894813539067,
+          "baseline": 0.17077729102118316,
+          "error_type": "td_role_opportunity"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Meyers",
+          "team": "JAX",
+          "position": "WR",
+          "depth_rank": 3.0,
+          "actual": 1.0,
+          "projection": 0.2789730715343402,
+          "baseline": 0.2833638013981113,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "E.Engram",
+          "team": "DEN",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.2966297576142294,
+          "baseline": 0.407335464509785,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "J.Johnson",
+          "team": "NO",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.30683949768088287,
+          "baseline": 0.2858938353391659,
+          "error_type": "opportunity_high"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "P.Freiermuth",
+          "team": "PIT",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.3148882794594893,
+          "baseline": 0.21505288498963804,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "N.Collins",
+          "team": "HOU",
+          "position": "WR",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.321879737303135,
+          "baseline": 0.290953903221275,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "C.Kmet",
+          "team": "CHI",
+          "position": "TE",
+          "depth_rank": 2.0,
+          "actual": 1.0,
+          "projection": 0.3255660530089362,
+          "baseline": 0.3377595311307845,
+          "error_type": "td_rate_or_variance"
+        },
+        {
+          "season": 2026,
+          "week": 1,
+          "player": "T.McBride",
+          "team": "ARI",
+          "position": "TE",
+          "depth_rank": 1.0,
+          "actual": 1.0,
+          "projection": 0.32715426142454185,
+          "baseline": 1.0626142552429174,
+          "error_type": "opportunity_high"
+        }
+      ]
+    }
+  }
+}

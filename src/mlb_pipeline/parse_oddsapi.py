@@ -102,6 +102,8 @@ _PROP_MARKET_MAP: dict[str, str] = {
     "pitcher_strikeouts":           "pitcher_strikeouts",
     "batter_hits":                  "batter_hits",
     "batter_hits_alternate":        "batter_hits",
+    "batter_hits_runs_rbis":         "batter_hits_runs_rbis",
+    "batter_hits_runs_rbis_alternate": "batter_hits_runs_rbis",
     "batter_home_runs":             "batter_home_runs",
     "batter_home_runs_alternate":   "batter_home_runs",
     "batter_total_bases":           "batter_total_bases",
@@ -115,6 +117,7 @@ _PROP_MARKET_MAP: dict[str, str] = {
 # are skipped for alternate markets to avoid overwriting the cleaner standard Over/Under row.
 _ALTERNATE_MARKETS = frozenset({
     "batter_hits_alternate",
+    "batter_hits_runs_rbis_alternate",
     "batter_home_runs_alternate",
     "batter_total_bases_alternate",
     "batter_walks_alternate",

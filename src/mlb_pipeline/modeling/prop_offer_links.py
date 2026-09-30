@@ -417,6 +417,7 @@ def _canonical_line(key: tuple[str, str], offers: list[dict[str, Any]]) -> float
         return None
     preferred = {
         "batter_hits": 0.5,
+        "batter_hits_runs_rbis": 1.5,
         "batter_total_bases": 1.5,
         "batter_home_runs": 0.5,
     }.get(stat)

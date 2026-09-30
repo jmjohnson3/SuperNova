@@ -26,6 +26,7 @@ import psycopg2
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 
+from .prop_training_groups import grouping_summary, sample_weights, temporal_player_game_split
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
@@ -71,6 +72,9 @@ _LINE_UNAVAILABLE_REASONS = {
     "offer_unavailable_at_close",
     "same_book_line_unavailable",
     "book_line_removed",
+    "exact_line_unavailable_at_close",
+    "player_market_unavailable_at_close",
+    "player_prop_unavailable_at_close",
 }
 
 
@@ -91,6 +95,9 @@ SELECT
     e.id,
     e.replay_id,
     e.game_date_et,
+    e.game_slug,
+    e.player_id,
+    e.player_name_norm,
     e.market,
     e.side,
     COALESCE(e.line_surface, 'unknown') AS line_surface,
@@ -221,16 +228,13 @@ def _prepare(df: pd.DataFrame, *, means=None, scales=None, cats=None):
 
 
 def _split(df: pd.DataFrame, cfg: BookabilityConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train = df.loc[df["game_date_et"] < split].copy()
-    holdout = df.loc[df["game_date_et"] >= split].copy()
-    if len(train) >= cfg.min_train_rows and len(holdout) >= cfg.min_holdout_rows:
-        return train, holdout, f"last_{cfg.holdout_days}_days"
-    dates = sorted(df["game_date_et"].unique())
-    if len(dates) > 1:
-        holdout_date = dates[-1]
-        return df.loc[df["game_date_et"] < holdout_date].copy(), df.loc[df["game_date_et"] >= holdout_date].copy(), "last_available_date"
-    return train, holdout, f"last_{cfg.holdout_days}_days"
+    split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    return split.train, split.holdout, split.strategy
 
 
 def _mean(series: pd.Series) -> float | None:
@@ -559,22 +563,25 @@ def _fit_target_model(
     X_train, names, means, scales, cats = _prepare(train_df)
     y_train = train_df[target_col].astype(int).to_numpy()
     model = LogisticRegression(max_iter=3000, solver="lbfgs")
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weights(train_df))
     X_hold, _, _, _, _ = _prepare(holdout_df, means=means, scales=scales, cats=cats)
     y_hold = holdout_df[target_col].astype(int).to_numpy()
     pred = np.clip(model.predict_proba(X_hold)[:, 1], 1e-6, 1 - 1e-6)
     holdout_scored = holdout_df.copy()
     holdout_scored[pred_col] = pred
-    base_rate = float(np.clip(y_train.mean(), 1e-6, 1 - 1e-6))
+    train_weights = sample_weights(train_df)
+    holdout_weights = sample_weights(holdout_df)
+    base_rate = float(np.clip(np.average(y_train, weights=train_weights), 1e-6, 1 - 1e-6))
     base = np.repeat(base_rate, len(y_hold))
     out["holdout"] = {
         "rows": int(len(holdout_df)),
-        "actual_bookable_rate": float(y_hold.mean()),
-        "avg_pred_bookable": float(pred.mean()),
-        "brier_baseline": float(brier_score_loss(y_hold, base)),
-        "brier_model": float(brier_score_loss(y_hold, pred)),
-        "log_loss_model": float(log_loss(y_hold, pred, labels=[0, 1])),
-        "auc_model": float(roc_auc_score(y_hold, pred)) if len(np.unique(y_hold)) == 2 else None,
+        "player_games": int(holdout_df["player_game_group"].nunique()),
+        "actual_bookable_rate": float(np.average(y_hold, weights=holdout_weights)),
+        "avg_pred_bookable": float(np.average(pred, weights=holdout_weights)),
+        "brier_baseline": float(brier_score_loss(y_hold, base, sample_weight=holdout_weights)),
+        "brier_model": float(brier_score_loss(y_hold, pred, sample_weight=holdout_weights)),
+        "log_loss_model": float(log_loss(y_hold, pred, labels=[0, 1], sample_weight=holdout_weights)),
+        "auc_model": float(roc_auc_score(y_hold, pred, sample_weight=holdout_weights)) if len(np.unique(y_hold)) == 2 else None,
     }
     out["holdout"]["model_usable"] = bool(
         out["holdout"]["brier_model"] <= out["holdout"]["brier_baseline"]
@@ -612,6 +619,7 @@ def train(cfg: BookabilityConfig) -> dict[str, Any]:
         "models": {},
         "buckets": _bucket_rows(df) if not df.empty else [],
         "empirical_bookability_rates": _empirical_rate_rows(df) if not df.empty else {},
+        "grouped_player_game_training": grouping_summary(df),
     }
     if df.empty or df["target"].nunique() < 2:
         payload["status"] = "insufficient_rows"

@@ -1,14 +1,15 @@
 {
-  "generated_at_utc": "2026-06-24T14:23:58+00:00",
+  "generated_at_utc": "2026-09-01T11:21:41+00:00",
   "status": "disabled",
   "active": true,
   "blockers": [
-    "no_open_prop_buckets"
+    "artifact_stale:reopen_policy",
+    "artifact_stale:shadow_selector",
+    "artifact_stale:target_quality",
+    "no_open_prop_buckets",
+    "valid_close_coverage<0.90"
   ],
   "warnings": [
-    "fanduel_synthetic_evidence_display_only:batter_hits",
-    "fanduel_synthetic_evidence_display_only:batter_home_runs",
-    "fanduel_synthetic_evidence_display_only:batter_total_bases",
     "hitter_event_model_not_ready_for_distribution"
   ],
   "thresholds": {
@@ -19,18 +20,20 @@
     "require_open_bucket": true
   },
   "close_quality": {
-    "rows": 12021,
-    "valid_close_rows": 11294,
-    "valid_close_coverage": 0.9395225022876632,
-    "stale_close_rate": 0.009150653023874886,
-    "line_disappeared_rate": 0.034606105981199564,
+    "rows": 107606,
+    "valid_close_rows": 96312,
+    "valid_close_coverage": 0.8950430273404829,
+    "stale_close_rate": 0.010510566325297847,
+    "line_disappeared_rate": 0.03449621768302883,
     "missing_lock_rate": 0.0,
     "unknown_counts": {
-      "line_disappeared_at_close": 416,
-      "stale_close_before_lock": 110,
-      "close_outside_two_hour_window": 109,
-      "fallback_other_book_only": 70,
-      "no_valid_close_snapshot": 22
+      "line_disappeared_at_close": 3712,
+      "player_prop_unavailable_at_close": 3009,
+      "close_outside_two_hour_window": 1872,
+      "stale_close_before_lock": 1131,
+      "fallback_other_book_only": 783,
+      "player_market_unavailable_at_close": 773,
+      "no_valid_close_snapshot": 14
     }
   },
   "open_reopen_buckets": 0,
@@ -39,51 +42,51 @@
     "readiness": {
       "file": "prop_bucket_trust_scores.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T14:23:52+00:00",
-      "age_hours": 0.0017465041666666666,
+      "generated_at_utc": "2026-09-01T11:21:20+00:00",
+      "age_hours": 0.005919875555555555,
       "status": "fresh"
     },
     "reopen_policy": {
       "file": "prop_bucket_reopen_policy.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T08:32:54Z",
-      "age_hours": 5.851195401666667,
-      "status": "fresh"
+      "generated_at_utc": "2026-08-26T11:12:46Z",
+      "age_hours": 144.14870673166666,
+      "status": "stale"
     },
     "shadow_selector": {
       "file": "prop_shadow_selector_report.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T08:41:44+00:00",
-      "age_hours": 5.703989514444444,
-      "status": "fresh"
+      "generated_at_utc": "2026-08-29T12:46:39+00:00",
+      "age_hours": 70.58401631416666,
+      "status": "stale"
     },
     "distribution": {
       "file": "prop_distribution_models.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T08:17:11Z",
-      "age_hours": 6.113161458055555,
+      "generated_at_utc": "2026-09-01T10:35:43Z",
+      "age_hours": 0.7662410372222221,
       "status": "fresh"
     },
     "opportunity": {
       "file": "prop_opportunity_models.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T08:14:20Z",
-      "age_hours": 6.1607339350000005,
+      "generated_at_utc": "2026-09-01T10:22:42Z",
+      "age_hours": 0.9831860375,
       "status": "fresh"
     },
     "hitter_outcome": {
       "file": "hitter_player_game_outcome_models.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T08:05:33.150921+00:00",
-      "age_hours": 6.307091543055556,
+      "generated_at_utc": "2026-09-01T10:03:08.975173+00:00",
+      "age_hours": 1.309026545,
       "status": "fresh"
     },
     "target_quality": {
       "file": "prop_target_quality_report.json",
       "exists": true,
-      "generated_at_utc": "2026-06-24T08:43:33Z",
-      "age_hours": 5.673815962222223,
-      "status": "fresh"
+      "generated_at_utc": "2026-08-29T12:55:04Z",
+      "age_hours": 70.44376885999999,
+      "status": "stale"
     }
   }
 }

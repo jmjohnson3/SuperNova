@@ -1,0 +1,1392 @@
+{
+  "generated_at_utc": "2026-09-01T11:08:19Z",
+  "status": "ready",
+  "usage": "challenger_diagnostic_only",
+  "rows": 1110,
+  "offer_rows": 11809,
+  "dates": 55,
+  "evaluation_rows": 1017,
+  "baseline_all_rows": {
+    "rows": 1110,
+    "mae": 1.7998243243243242,
+    "rmse": 2.249075995054754,
+    "bias": -0.02384414414414415
+  },
+  "baseline": {
+    "rows": 1017,
+    "mae": 1.8135693215339235,
+    "rmse": 2.268387329296494,
+    "bias": -0.023085545722713863
+  },
+  "raw_boosted": {
+    "rows": 1017,
+    "mae": 2.0571412338597583,
+    "rmse": 2.613385847038448,
+    "bias": -0.021219152404314805
+  },
+  "residual_v2": {
+    "rows": 1017,
+    "mae": 1.8502490162483605,
+    "rmse": 2.3293188477251228,
+    "bias": -0.0563926975928383
+  },
+  "residual_v3": {
+    "rows": 1017,
+    "mae": 1.8224571611961593,
+    "rmse": 2.28159492684765,
+    "bias": -0.028130399287165042
+  },
+  "challenger": {
+    "rows": 1017,
+    "mae": 1.8135693215339235,
+    "rmse": 2.268387329296494,
+    "bias": -0.023085545722713863
+  },
+  "line_brier": {
+    "baseline": {
+      "rows": 11370,
+      "brier": 0.2522830078871909,
+      "player_games": 1017
+    },
+    "raw_boosted": {
+      "rows": 11370,
+      "brier": 0.29151033145237065,
+      "player_games": 1017
+    },
+    "residual_v2": {
+      "rows": 11370,
+      "brier": 0.25796149708109095,
+      "player_games": 1017
+    },
+    "residual_v3": {
+      "rows": 11370,
+      "brier": 0.2543022051162103,
+      "player_games": 1017
+    },
+    "challenger": {
+      "rows": 11370,
+      "brier": 0.2522830078871909,
+      "player_games": 1017
+    }
+  },
+  "mae_gain": 0.0,
+  "line_brier_gain": 0.0,
+  "selected_challenger_variant": "baseline",
+  "raw_boosted_meta": {
+    "enabled": true,
+    "folds": [
+      {
+        "holdout_date": "2026-06-06",
+        "train_rows": 93,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-08",
+        "train_rows": 116,
+        "holdout_rows": 13
+      },
+      {
+        "holdout_date": "2026-06-09",
+        "train_rows": 129,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-06-10",
+        "train_rows": 155,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-06-11",
+        "train_rows": 179,
+        "holdout_rows": 14
+      },
+      {
+        "holdout_date": "2026-06-12",
+        "train_rows": 193,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-06-13",
+        "train_rows": 219,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-06-14",
+        "train_rows": 245,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-15",
+        "train_rows": 268,
+        "holdout_rows": 15
+      },
+      {
+        "holdout_date": "2026-06-16",
+        "train_rows": 283,
+        "holdout_rows": 27
+      },
+      {
+        "holdout_date": "2026-06-18",
+        "train_rows": 310,
+        "holdout_rows": 15
+      },
+      {
+        "holdout_date": "2026-06-19",
+        "train_rows": 325,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-06-20",
+        "train_rows": 347,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-06-21",
+        "train_rows": 372,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-22",
+        "train_rows": 395,
+        "holdout_rows": 19
+      },
+      {
+        "holdout_date": "2026-06-23",
+        "train_rows": 414,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-24",
+        "train_rows": 437,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-25",
+        "train_rows": 460,
+        "holdout_rows": 9
+      },
+      {
+        "holdout_date": "2026-06-26",
+        "train_rows": 469,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-06-27",
+        "train_rows": 493,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-06-28",
+        "train_rows": 515,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-06-29",
+        "train_rows": 537,
+        "holdout_rows": 21
+      },
+      {
+        "holdout_date": "2026-06-30",
+        "train_rows": 558,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-01",
+        "train_rows": 581,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-07-02",
+        "train_rows": 605,
+        "holdout_rows": 14
+      },
+      {
+        "holdout_date": "2026-07-03",
+        "train_rows": 619,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-04",
+        "train_rows": 641,
+        "holdout_rows": 20
+      },
+      {
+        "holdout_date": "2026-07-05",
+        "train_rows": 661,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-07-06",
+        "train_rows": 685,
+        "holdout_rows": 14
+      },
+      {
+        "holdout_date": "2026-07-07",
+        "train_rows": 699,
+        "holdout_rows": 20
+      },
+      {
+        "holdout_date": "2026-07-08",
+        "train_rows": 719,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-09",
+        "train_rows": 741,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-10",
+        "train_rows": 763,
+        "holdout_rows": 20
+      },
+      {
+        "holdout_date": "2026-07-11",
+        "train_rows": 783,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-12",
+        "train_rows": 806,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-07-16",
+        "train_rows": 831,
+        "holdout_rows": 1
+      },
+      {
+        "holdout_date": "2026-07-17",
+        "train_rows": 832,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-18",
+        "train_rows": 855,
+        "holdout_rows": 18
+      },
+      {
+        "holdout_date": "2026-07-19",
+        "train_rows": 873,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-07-20",
+        "train_rows": 898,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-07-21",
+        "train_rows": 922,
+        "holdout_rows": 21
+      },
+      {
+        "holdout_date": "2026-07-22",
+        "train_rows": 943,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-07-23",
+        "train_rows": 969,
+        "holdout_rows": 6
+      },
+      {
+        "holdout_date": "2026-07-24",
+        "train_rows": 975,
+        "holdout_rows": 17
+      },
+      {
+        "holdout_date": "2026-07-25",
+        "train_rows": 992,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-26",
+        "train_rows": 1015,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-07-27",
+        "train_rows": 1040,
+        "holdout_rows": 16
+      },
+      {
+        "holdout_date": "2026-07-28",
+        "train_rows": 1056,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-29",
+        "train_rows": 1078,
+        "holdout_rows": 19
+      },
+      {
+        "holdout_date": "2026-07-30",
+        "train_rows": 1097,
+        "holdout_rows": 13
+      }
+    ]
+  },
+  "boosted_rate_v1_meta": {
+    "accepted": false,
+    "selected_alpha": 0.0,
+    "reason": "mae_not_improved,line_brier_not_improved",
+    "candidate_records": [
+      {
+        "alpha": 0.0,
+        "rows": 1017,
+        "mae": 1.8135693215339235,
+        "rmse": 2.268387329296494,
+        "bias": -0.023085545722713863,
+        "mae_gain": 0.0,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522830078871909,
+        "line_brier_gain": 0.0,
+        "mean_shift_vs_baseline": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "rows": 1017,
+        "mae": 1.8130814749505322,
+        "rmse": 2.267345495009406,
+        "bias": -0.0229922260567939,
+        "mae_gain": 0.0004878465833912937,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2520711353533941,
+        "line_brier_gain": 0.0002118725337967864,
+        "mean_shift_vs_baseline": 9.331966591996479e-05
+      },
+      {
+        "alpha": 0.1,
+        "rows": 1017,
+        "mae": 1.8141248044810923,
+        "rmse": 2.268367643302812,
+        "bias": -0.022898906390873965,
+        "mae_gain": -0.0005554829471687839,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2521591330084383,
+        "line_brier_gain": 0.0001238748787525945,
+        "mean_shift_vs_baseline": 0.00018663933183991126
+      },
+      {
+        "alpha": 0.2,
+        "rows": 1017,
+        "mae": 1.8207539956134258,
+        "rmse": 2.2765871536846523,
+        "bias": -0.022712267059034053,
+        "mae_gain": -0.007184674079502296,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25321206011780795,
+        "line_brier_gain": -0.0009290522306170668,
+        "mean_shift_vs_baseline": 0.000373278663679812
+      },
+      {
+        "alpha": 0.35,
+        "rows": 1017,
+        "mae": 1.8414458815847472,
+        "rmse": 2.3041478736528154,
+        "bias": -0.0224323080612742,
+        "mae_gain": -0.02787656005082373,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25683563914328467,
+        "line_brier_gain": -0.0045526312560937865,
+        "mean_shift_vs_baseline": 0.0006532376614396741
+      },
+      {
+        "alpha": 0.5,
+        "rows": 1017,
+        "mae": 1.8726444785439846,
+        "rmse": 2.34938303810806,
+        "bias": -0.022152349063514338,
+        "mae_gain": -0.05907515701006116,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2625887395495055,
+        "line_brier_gain": -0.010305731662314632,
+        "mean_shift_vs_baseline": 0.0009331966591995274
+      }
+    ],
+    "baseline_line_brier": {
+      "rows": 11370,
+      "brier": 0.2522830078871909,
+      "player_games": 1017
+    }
+  },
+  "residual_v2_meta": {
+    "enabled": true,
+    "model": "small_baseline_residual_hist_gradient_boosting",
+    "features": [
+      "baseline_k",
+      "baseline_k_rate",
+      "projected_bf",
+      "projected_pitch_count",
+      "pitcher_starts",
+      "is_home",
+      "opp_team_k_pct_10",
+      "opp_team_obp_10",
+      "opp_team_slg_10",
+      "opp_bp_ip_last_3",
+      "opp_bp_ip_last_7",
+      "team_implied_runs",
+      "opponent_implied_runs",
+      "game_total_line",
+      "minutes_to_first_pitch_at_lock",
+      "pitch_count_per_bf",
+      "opponent_k_delta"
+    ],
+    "folds": [
+      {
+        "holdout_date": "2026-06-06",
+        "train_rows": 93,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-08",
+        "train_rows": 116,
+        "holdout_rows": 13
+      },
+      {
+        "holdout_date": "2026-06-09",
+        "train_rows": 129,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-06-10",
+        "train_rows": 155,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-06-11",
+        "train_rows": 179,
+        "holdout_rows": 14
+      },
+      {
+        "holdout_date": "2026-06-12",
+        "train_rows": 193,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-06-13",
+        "train_rows": 219,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-06-14",
+        "train_rows": 245,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-15",
+        "train_rows": 268,
+        "holdout_rows": 15
+      },
+      {
+        "holdout_date": "2026-06-16",
+        "train_rows": 283,
+        "holdout_rows": 27
+      },
+      {
+        "holdout_date": "2026-06-18",
+        "train_rows": 310,
+        "holdout_rows": 15
+      },
+      {
+        "holdout_date": "2026-06-19",
+        "train_rows": 325,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-06-20",
+        "train_rows": 347,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-06-21",
+        "train_rows": 372,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-22",
+        "train_rows": 395,
+        "holdout_rows": 19
+      },
+      {
+        "holdout_date": "2026-06-23",
+        "train_rows": 414,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-24",
+        "train_rows": 437,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-06-25",
+        "train_rows": 460,
+        "holdout_rows": 9
+      },
+      {
+        "holdout_date": "2026-06-26",
+        "train_rows": 469,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-06-27",
+        "train_rows": 493,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-06-28",
+        "train_rows": 515,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-06-29",
+        "train_rows": 537,
+        "holdout_rows": 21
+      },
+      {
+        "holdout_date": "2026-06-30",
+        "train_rows": 558,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-01",
+        "train_rows": 581,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-07-02",
+        "train_rows": 605,
+        "holdout_rows": 14
+      },
+      {
+        "holdout_date": "2026-07-03",
+        "train_rows": 619,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-04",
+        "train_rows": 641,
+        "holdout_rows": 20
+      },
+      {
+        "holdout_date": "2026-07-05",
+        "train_rows": 661,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-07-06",
+        "train_rows": 685,
+        "holdout_rows": 14
+      },
+      {
+        "holdout_date": "2026-07-07",
+        "train_rows": 699,
+        "holdout_rows": 20
+      },
+      {
+        "holdout_date": "2026-07-08",
+        "train_rows": 719,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-09",
+        "train_rows": 741,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-10",
+        "train_rows": 763,
+        "holdout_rows": 20
+      },
+      {
+        "holdout_date": "2026-07-11",
+        "train_rows": 783,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-12",
+        "train_rows": 806,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-07-16",
+        "train_rows": 831,
+        "holdout_rows": 1
+      },
+      {
+        "holdout_date": "2026-07-17",
+        "train_rows": 832,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-18",
+        "train_rows": 855,
+        "holdout_rows": 18
+      },
+      {
+        "holdout_date": "2026-07-19",
+        "train_rows": 873,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-07-20",
+        "train_rows": 898,
+        "holdout_rows": 24
+      },
+      {
+        "holdout_date": "2026-07-21",
+        "train_rows": 922,
+        "holdout_rows": 21
+      },
+      {
+        "holdout_date": "2026-07-22",
+        "train_rows": 943,
+        "holdout_rows": 26
+      },
+      {
+        "holdout_date": "2026-07-23",
+        "train_rows": 969,
+        "holdout_rows": 6
+      },
+      {
+        "holdout_date": "2026-07-24",
+        "train_rows": 975,
+        "holdout_rows": 17
+      },
+      {
+        "holdout_date": "2026-07-25",
+        "train_rows": 992,
+        "holdout_rows": 23
+      },
+      {
+        "holdout_date": "2026-07-26",
+        "train_rows": 1015,
+        "holdout_rows": 25
+      },
+      {
+        "holdout_date": "2026-07-27",
+        "train_rows": 1040,
+        "holdout_rows": 16
+      },
+      {
+        "holdout_date": "2026-07-28",
+        "train_rows": 1056,
+        "holdout_rows": 22
+      },
+      {
+        "holdout_date": "2026-07-29",
+        "train_rows": 1078,
+        "holdout_rows": 19
+      },
+      {
+        "holdout_date": "2026-07-30",
+        "train_rows": 1097,
+        "holdout_rows": 13
+      }
+    ],
+    "target": "actual_k_minus_baseline_k",
+    "residual_clip": [
+      -3.0,
+      3.0
+    ]
+  },
+  "residual_v2_selection_meta": {
+    "accepted": false,
+    "selected_alpha": 0.0,
+    "reason": "mae_not_improved,line_brier_not_improved",
+    "candidate_records": [
+      {
+        "alpha": 0.0,
+        "rows": 1017,
+        "mae": 1.8135693215339235,
+        "rmse": 2.268387329296494,
+        "bias": -0.023085545722713863,
+        "mae_gain": 0.0,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522830078871909,
+        "line_brier_gain": 0.0,
+        "mean_shift_vs_baseline": 0.0
+      },
+      {
+        "alpha": 0.02,
+        "rows": 1017,
+        "mae": 1.8134485172685197,
+        "rmse": 2.2685409599137567,
+        "bias": -0.023751688760116355,
+        "mae_gain": 0.0001208042654037289,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25225522816664964,
+        "line_brier_gain": 2.7779720541243336e-05,
+        "mean_shift_vs_baseline": -0.0006661430374024851
+      },
+      {
+        "alpha": 0.05,
+        "rows": 1017,
+        "mae": 1.8133488617332731,
+        "rmse": 2.268854128070609,
+        "bias": -0.024750903316220107,
+        "mae_gain": 0.00022045980065033,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522247333341257,
+        "line_brier_gain": 5.827455306517404e-05,
+        "mean_shift_vs_baseline": -0.0016653575935062302
+      },
+      {
+        "alpha": 0.1,
+        "rows": 1017,
+        "mae": 1.8133898273297473,
+        "rmse": 2.2695965581135433,
+        "bias": -0.026416260909726295,
+        "mae_gain": 0.00017949420417617823,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522037188789788,
+        "line_brier_gain": 7.928900821208007e-05,
+        "mean_shift_vs_baseline": -0.003330715187012438
+      },
+      {
+        "alpha": 0.15,
+        "rows": 1017,
+        "mae": 1.8135488412600749,
+        "rmse": 2.270614349053199,
+        "bias": -0.02808161850323252,
+        "mae_gain": 2.048027384859985e-05,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522199549783754,
+        "line_brier_gain": 6.30529088154752e-05,
+        "mean_shift_vs_baseline": -0.00499607278051867
+      },
+      {
+        "alpha": 0.2,
+        "rows": 1017,
+        "mae": 1.8138402496336845,
+        "rmse": 2.271907130813089,
+        "bias": -0.029746976096738736,
+        "mae_gain": -0.0002709280997610364,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25227338573830377,
+        "line_brier_gain": 9.62214888711177e-06,
+        "mean_shift_vs_baseline": -0.0066614303740248895
+      }
+    ],
+    "baseline_line_brier": {
+      "rows": 11370,
+      "brier": 0.2522830078871909,
+      "player_games": 1017
+    }
+  },
+  "residual_v3_meta": {
+    "enabled": true,
+    "model": "empirical_bayes_baseline_residual_v4_leash_context",
+    "target": "actual_k_minus_baseline_k",
+    "folds": [
+      {
+        "holdout_date": "2026-06-06",
+        "train_rows": 93,
+        "holdout_rows": 23,
+        "global_residual": 0.024946236559139787
+      },
+      {
+        "holdout_date": "2026-06-08",
+        "train_rows": 116,
+        "holdout_rows": 13,
+        "global_residual": -0.11247413793103447
+      },
+      {
+        "holdout_date": "2026-06-09",
+        "train_rows": 129,
+        "holdout_rows": 26,
+        "global_residual": -0.10018604651162794
+      },
+      {
+        "holdout_date": "2026-06-10",
+        "train_rows": 155,
+        "holdout_rows": 24,
+        "global_residual": -0.16154193548387094
+      },
+      {
+        "holdout_date": "2026-06-11",
+        "train_rows": 179,
+        "holdout_rows": 14,
+        "global_residual": -0.10354748603351953
+      },
+      {
+        "holdout_date": "2026-06-12",
+        "train_rows": 193,
+        "holdout_rows": 26,
+        "global_residual": -0.15630051813471496
+      },
+      {
+        "holdout_date": "2026-06-13",
+        "train_rows": 219,
+        "holdout_rows": 26,
+        "global_residual": -0.16804566210045666
+      },
+      {
+        "holdout_date": "2026-06-14",
+        "train_rows": 245,
+        "holdout_rows": 23,
+        "global_residual": -0.14087755102040816
+      },
+      {
+        "holdout_date": "2026-06-15",
+        "train_rows": 268,
+        "holdout_rows": 15,
+        "global_residual": -0.16972014925373133
+      },
+      {
+        "holdout_date": "2026-06-16",
+        "train_rows": 283,
+        "holdout_rows": 27,
+        "global_residual": -0.13970318021201414
+      },
+      {
+        "holdout_date": "2026-06-18",
+        "train_rows": 310,
+        "holdout_rows": 15,
+        "global_residual": -0.12231290322580646
+      },
+      {
+        "holdout_date": "2026-06-19",
+        "train_rows": 325,
+        "holdout_rows": 22,
+        "global_residual": -0.07562153846153845
+      },
+      {
+        "holdout_date": "2026-06-20",
+        "train_rows": 347,
+        "holdout_rows": 25,
+        "global_residual": -0.05758501440922188
+      },
+      {
+        "holdout_date": "2026-06-21",
+        "train_rows": 372,
+        "holdout_rows": 23,
+        "global_residual": -0.016000000000000004
+      },
+      {
+        "holdout_date": "2026-06-22",
+        "train_rows": 395,
+        "holdout_rows": 19,
+        "global_residual": -0.02258481012658224
+      },
+      {
+        "holdout_date": "2026-06-23",
+        "train_rows": 414,
+        "holdout_rows": 23,
+        "global_residual": 0.010852657004830924
+      },
+      {
+        "holdout_date": "2026-06-24",
+        "train_rows": 437,
+        "holdout_rows": 23,
+        "global_residual": 0.05669565217391302
+      },
+      {
+        "holdout_date": "2026-06-25",
+        "train_rows": 460,
+        "holdout_rows": 9,
+        "global_residual": 0.06167826086956522
+      },
+      {
+        "holdout_date": "2026-06-26",
+        "train_rows": 469,
+        "holdout_rows": 24,
+        "global_residual": 0.08156289978678039
+      },
+      {
+        "holdout_date": "2026-06-27",
+        "train_rows": 493,
+        "holdout_rows": 22,
+        "global_residual": 0.06299797160243406
+      },
+      {
+        "holdout_date": "2026-06-28",
+        "train_rows": 515,
+        "holdout_rows": 22,
+        "global_residual": 0.0447728155339806
+      },
+      {
+        "holdout_date": "2026-06-29",
+        "train_rows": 537,
+        "holdout_rows": 21,
+        "global_residual": 0.030523277467411528
+      },
+      {
+        "holdout_date": "2026-06-30",
+        "train_rows": 558,
+        "holdout_rows": 23,
+        "global_residual": 0.008937275985663112
+      },
+      {
+        "holdout_date": "2026-07-01",
+        "train_rows": 581,
+        "holdout_rows": 24,
+        "global_residual": 0.026414802065404478
+      },
+      {
+        "holdout_date": "2026-07-02",
+        "train_rows": 605,
+        "holdout_rows": 14,
+        "global_residual": 0.0580214876033058
+      },
+      {
+        "holdout_date": "2026-07-03",
+        "train_rows": 619,
+        "holdout_rows": 22,
+        "global_residual": 0.028441033925686598
+      },
+      {
+        "holdout_date": "2026-07-04",
+        "train_rows": 641,
+        "holdout_rows": 20,
+        "global_residual": 0.005887675507020288
+      },
+      {
+        "holdout_date": "2026-07-05",
+        "train_rows": 661,
+        "holdout_rows": 24,
+        "global_residual": 0.025762481089258698
+      },
+      {
+        "holdout_date": "2026-07-06",
+        "train_rows": 685,
+        "holdout_rows": 14,
+        "global_residual": -0.0023649635036496262
+      },
+      {
+        "holdout_date": "2026-07-07",
+        "train_rows": 699,
+        "holdout_rows": 20,
+        "global_residual": 0.010464949928469238
+      },
+      {
+        "holdout_date": "2026-07-08",
+        "train_rows": 719,
+        "holdout_rows": 22,
+        "global_residual": 0.007926286509040321
+      },
+      {
+        "holdout_date": "2026-07-09",
+        "train_rows": 741,
+        "holdout_rows": 22,
+        "global_residual": 0.0016626180836707288
+      },
+      {
+        "holdout_date": "2026-07-10",
+        "train_rows": 763,
+        "holdout_rows": 20,
+        "global_residual": 0.0069436435124508545
+      },
+      {
+        "holdout_date": "2026-07-11",
+        "train_rows": 783,
+        "holdout_rows": 23,
+        "global_residual": -0.01377777777777777
+      },
+      {
+        "holdout_date": "2026-07-12",
+        "train_rows": 806,
+        "holdout_rows": 25,
+        "global_residual": -0.012775434243176145
+      },
+      {
+        "holdout_date": "2026-07-16",
+        "train_rows": 831,
+        "holdout_rows": 1,
+        "global_residual": -0.022919374247894097
+      },
+      {
+        "holdout_date": "2026-07-17",
+        "train_rows": 832,
+        "holdout_rows": 23,
+        "global_residual": -0.022135817307692304
+      },
+      {
+        "holdout_date": "2026-07-18",
+        "train_rows": 855,
+        "holdout_rows": 18,
+        "global_residual": 0.006618713450292392
+      },
+      {
+        "holdout_date": "2026-07-19",
+        "train_rows": 873,
+        "holdout_rows": 25,
+        "global_residual": 0.031959908361970234
+      },
+      {
+        "holdout_date": "2026-07-20",
+        "train_rows": 898,
+        "holdout_rows": 24,
+        "global_residual": 0.029703786191536755
+      },
+      {
+        "holdout_date": "2026-07-21",
+        "train_rows": 922,
+        "holdout_rows": 21,
+        "global_residual": 0.020024945770065083
+      },
+      {
+        "holdout_date": "2026-07-22",
+        "train_rows": 943,
+        "holdout_rows": 26,
+        "global_residual": 0.019398727465535528
+      },
+      {
+        "holdout_date": "2026-07-23",
+        "train_rows": 969,
+        "holdout_rows": 6,
+        "global_residual": 0.026495356037151696
+      },
+      {
+        "holdout_date": "2026-07-24",
+        "train_rows": 975,
+        "holdout_rows": 17,
+        "global_residual": 0.03441846153846153
+      },
+      {
+        "holdout_date": "2026-07-25",
+        "train_rows": 992,
+        "holdout_rows": 23,
+        "global_residual": 0.022267137096774185
+      },
+      {
+        "holdout_date": "2026-07-26",
+        "train_rows": 1015,
+        "holdout_rows": 25,
+        "global_residual": 0.025205911330049246
+      },
+      {
+        "holdout_date": "2026-07-27",
+        "train_rows": 1040,
+        "holdout_rows": 16,
+        "global_residual": 0.019262500000000023
+      },
+      {
+        "holdout_date": "2026-07-28",
+        "train_rows": 1056,
+        "holdout_rows": 22,
+        "global_residual": 0.012792613636363644
+      },
+      {
+        "holdout_date": "2026-07-29",
+        "train_rows": 1078,
+        "holdout_rows": 19,
+        "global_residual": 0.010355287569573273
+      },
+      {
+        "holdout_date": "2026-07-30",
+        "train_rows": 1097,
+        "holdout_rows": 13,
+        "global_residual": 0.004199635369188693
+      }
+    ],
+    "residual_clip": [
+      -1.5,
+      1.5
+    ],
+    "shrinkage": {
+      "pitcher_rows": 5.0,
+      "core_context_rows": 25.0,
+      "leash_context_rows": 35.0,
+      "script_context_rows": 45.0
+    },
+    "context_buckets": {
+      "opponent_k": "opp_team_k_pct_10",
+      "bf": "projected_bf",
+      "pitch_count": "projected_pitch_count",
+      "leash": "projected_pitch_count|projected_bf",
+      "pitch_efficiency": "projected_pitch_count/projected_bf",
+      "game_script": "team_implied_runs_minus_opponent_implied_runs",
+      "opponent_contact": "opp_team_obp_10_plus_opp_team_slg_10"
+    }
+  },
+  "residual_v3_selection_meta": {
+    "accepted": false,
+    "selected_alpha": 0.0,
+    "reason": "mae_not_improved,line_brier_not_improved",
+    "candidate_records": [
+      {
+        "alpha": 0.0,
+        "rows": 1017,
+        "mae": 1.8135693215339235,
+        "rmse": 2.268387329296494,
+        "bias": -0.023085545722713863,
+        "mae_gain": 0.0,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522830078871909,
+        "line_brier_gain": 0.0,
+        "mean_shift_vs_baseline": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "rows": 1017,
+        "mae": 1.8137928750103731,
+        "rmse": 2.2687583636143565,
+        "bias": -0.02333778840093644,
+        "mae_gain": -0.00022355347644964496,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2523436655419971,
+        "line_brier_gain": -6.0657654806228756e-05,
+        "mean_shift_vs_baseline": -0.00025224267822256563
+      },
+      {
+        "alpha": 0.1,
+        "rows": 1017,
+        "mae": 1.814016428486823,
+        "rmse": 2.269159983634737,
+        "bias": -0.02359003107915896,
+        "mae_gain": -0.00044710695289951197,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25240860971384516,
+        "line_brier_gain": -0.00012560182665427577,
+        "mean_shift_vs_baseline": -0.0005044853564451069
+      },
+      {
+        "alpha": 0.15,
+        "rows": 1017,
+        "mae": 1.8142446125912544,
+        "rmse": 2.2695921731205804,
+        "bias": -0.02384227375738155,
+        "mae_gain": -0.0006752910573308846,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25247783576563243,
+        "line_brier_gain": -0.00019482787844155025,
+        "mean_shift_vs_baseline": -0.0007567280346676943
+      },
+      {
+        "alpha": 0.2,
+        "rows": 1017,
+        "mae": 1.8144971949009896,
+        "rmse": 2.270054914611779,
+        "bias": -0.0240945164356041,
+        "mae_gain": -0.0009278733670661232,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2525513384325705,
+        "line_brier_gain": -0.00026833054537961365,
+        "mean_shift_vs_baseline": -0.0010089707128902426
+      },
+      {
+        "alpha": 0.3,
+        "rows": 1017,
+        "mae": 1.8150709102969438,
+        "rmse": 2.271071977675864,
+        "bias": -0.024599001792049217,
+        "mae_gain": -0.0015015887630203117,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25271114938621836,
+        "line_brier_gain": -0.000428141499027479,
+        "mean_shift_vs_baseline": -0.0015134560693353598
+      }
+    ],
+    "baseline_line_brier": {
+      "rows": 11370,
+      "brier": 0.2522830078871909,
+      "player_games": 1017
+    }
+  },
+  "challenger_meta": {
+    "accepted": false,
+    "selected_alpha": 0.0,
+    "reason": "no_challenger_variant_improved",
+    "candidate_records": [
+      {
+        "alpha": 0.0,
+        "rows": 1017,
+        "mae": 1.8135693215339235,
+        "rmse": 2.268387329296494,
+        "bias": -0.023085545722713863,
+        "mae_gain": 0.0,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2522830078871909,
+        "line_brier_gain": 0.0,
+        "mean_shift_vs_baseline": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "rows": 1017,
+        "mae": 1.8130814749505322,
+        "rmse": 2.267345495009406,
+        "bias": -0.0229922260567939,
+        "mae_gain": 0.0004878465833912937,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2520711353533941,
+        "line_brier_gain": 0.0002118725337967864,
+        "mean_shift_vs_baseline": 9.331966591996479e-05
+      },
+      {
+        "alpha": 0.1,
+        "rows": 1017,
+        "mae": 1.8141248044810923,
+        "rmse": 2.268367643302812,
+        "bias": -0.022898906390873965,
+        "mae_gain": -0.0005554829471687839,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2521591330084383,
+        "line_brier_gain": 0.0001238748787525945,
+        "mean_shift_vs_baseline": 0.00018663933183991126
+      },
+      {
+        "alpha": 0.2,
+        "rows": 1017,
+        "mae": 1.8207539956134258,
+        "rmse": 2.2765871536846523,
+        "bias": -0.022712267059034053,
+        "mae_gain": -0.007184674079502296,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25321206011780795,
+        "line_brier_gain": -0.0009290522306170668,
+        "mean_shift_vs_baseline": 0.000373278663679812
+      },
+      {
+        "alpha": 0.35,
+        "rows": 1017,
+        "mae": 1.8414458815847472,
+        "rmse": 2.3041478736528154,
+        "bias": -0.0224323080612742,
+        "mae_gain": -0.02787656005082373,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.25683563914328467,
+        "line_brier_gain": -0.0045526312560937865,
+        "mean_shift_vs_baseline": 0.0006532376614396741
+      },
+      {
+        "alpha": 0.5,
+        "rows": 1017,
+        "mae": 1.8726444785439846,
+        "rmse": 2.34938303810806,
+        "bias": -0.022152349063514338,
+        "mae_gain": -0.05907515701006116,
+        "line_brier_rows": 11370,
+        "line_brier_player_games": 1017,
+        "line_brier": 0.2625887395495055,
+        "line_brier_gain": -0.010305731662314632,
+        "mean_shift_vs_baseline": 0.0009331966591995274
+      }
+    ],
+    "baseline_line_brier": {
+      "rows": 11370,
+      "brier": 0.2522830078871909,
+      "player_games": 1017
+    }
+  },
+  "by_bf_error_bucket": [
+    {
+      "bf_error_bucket": "near_bf",
+      "rows": 614,
+      "dates": 49,
+      "baseline_mae": 1.7498387622149834,
+      "challenger_mae": 1.7498387622149834,
+      "mae_gain": 0.0,
+      "baseline_bias": -0.18978013029315963,
+      "challenger_bias": -0.18978013029315963
+    },
+    {
+      "bf_error_bucket": "over_bf_by_3_plus",
+      "rows": 216,
+      "dates": 49,
+      "baseline_mae": 2.0197361111111114,
+      "challenger_mae": 2.0197361111111114,
+      "mae_gain": 0.0,
+      "baseline_bias": 0.8083564814814814,
+      "challenger_bias": 0.8083564814814814
+    },
+    {
+      "bf_error_bucket": "under_bf_by_3_plus",
+      "rows": 187,
+      "dates": 50,
+      "baseline_mae": 1.7846844919786096,
+      "challenger_mae": 1.7846844919786096,
+      "mae_gain": 0.0,
+      "baseline_bias": -0.43613903743315513,
+      "challenger_bias": -0.43613903743315513
+    }
+  ],
+  "by_pitch_count_error_bucket": [
+    {
+      "pitch_count_error_bucket": "near_pitches",
+      "rows": 651,
+      "dates": 50,
+      "baseline_mae": 1.732732718894009,
+      "challenger_mae": 1.732732718894009,
+      "mae_gain": 0.0,
+      "baseline_bias": -0.22903993855606758,
+      "challenger_bias": -0.22903993855606758
+    },
+    {
+      "pitch_count_error_bucket": "over_pitches_by_12_plus",
+      "rows": 200,
+      "dates": 47,
+      "baseline_mae": 2.0694649999999997,
+      "challenger_mae": 2.0694649999999997,
+      "mae_gain": 0.0,
+      "baseline_bias": 1.310685,
+      "challenger_bias": 1.310685
+    },
+    {
+      "pitch_count_error_bucket": "under_pitches_by_12_plus",
+      "rows": 166,
+      "dates": 48,
+      "baseline_mae": 1.8222771084337348,
+      "challenger_mae": 1.8222771084337348,
+      "mae_gain": 0.0,
+      "baseline_bias": -0.8223493975903615,
+      "challenger_bias": -0.8223493975903615
+    }
+  ],
+  "by_opponent_k_bucket": [
+    {
+      "opp_k_bucket": "high_opp_k",
+      "rows": 491,
+      "dates": 48,
+      "baseline_mae": 1.8080794297352343,
+      "challenger_mae": 1.8080794297352343,
+      "mae_gain": 0.0,
+      "baseline_bias": -0.08492260692464362,
+      "challenger_bias": -0.08492260692464362
+    },
+    {
+      "opp_k_bucket": "low_opp_k",
+      "rows": 60,
+      "dates": 33,
+      "baseline_mae": 1.8848166666666668,
+      "challenger_mae": 1.8848166666666668,
+      "mae_gain": 0.0,
+      "baseline_bias": 0.6328166666666668,
+      "challenger_bias": 0.6328166666666668
+    },
+    {
+      "opp_k_bucket": "mid_opp_k",
+      "rows": 453,
+      "dates": 49,
+      "baseline_mae": 1.8166732891832231,
+      "challenger_mae": 1.8166732891832231,
+      "mae_gain": 0.0,
+      "baseline_bias": -0.03501324503311259,
+      "challenger_bias": -0.03501324503311259
+    }
+  ]
+}

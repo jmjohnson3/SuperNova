@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo
 import hashlib, json, logging, os, time
 import psycopg2, requests
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.crawler_oddsapi")
 
 _ET = ZoneInfo("America/New_York")
@@ -22,7 +24,7 @@ _PROP_ENDPOINT_TMPL = "https://api.the-odds-api.com/v4/sports/{sport}/events/{ev
 
 @dataclass(frozen=True)
 class OddsCrawlerConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     oddsapi_key: str = os.getenv("ODDS_API_KEY", "")
     sport: str = "basketball_nba"
     regions: str = "us"

@@ -1,0 +1,28 @@
+{
+  "day": "2026-09-28",
+  "built_at": "2026-09-29T23:50:04.295070+00:00",
+  "effective_date": "2026-09-24",
+  "status": "needs_attention",
+  "games": [
+    {
+      "game_id": "2026_03_PHI_CHI",
+      "kickoff": "2026-09-29T00:15:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 21,
+      "challenger_captures": 21,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8095238095238095,
+      "unknown_closes": 4,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    }
+  ],
+  "blockers": [
+    "2026_03_PHI_CHI:valid_exact_close_coverage_below_90_percent"
+  ],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval."
+}

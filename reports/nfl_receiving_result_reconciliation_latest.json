@@ -1,0 +1,12 @@
+{
+  "built_at": "2026-09-30T18:41:29.444402+00:00",
+  "counts": {},
+  "unresolved_final_rows": 0,
+  "rows": [],
+  "unique_unresolved_player_games": 0,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

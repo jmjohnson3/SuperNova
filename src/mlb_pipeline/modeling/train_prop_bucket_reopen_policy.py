@@ -11,7 +11,7 @@ import json
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import numpy as np
 import pandas as pd
@@ -24,11 +24,88 @@ from .prop_real_money_eligibility import (
     PROP_REAL_MONEY_ELIGIBILITY_START_DATE,
     parse_eligibility_start_date,
 )
+from .prop_training_groups import dedupe_locked_offer_rows, temporal_player_game_split
 from .side_recalibration import price_bucket, prop_line_bucket, prop_line_surface
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _MARKETS = ("pitcher_strikeouts", "batter_hits", "batter_total_bases", "batter_home_runs")
+_LINE_UNAVAILABLE_REASONS = {
+    "line_unavailable_at_close",
+    "line_disappeared_at_close",
+    "offer_unavailable_at_close",
+    "same_book_line_unavailable",
+    "book_line_removed",
+    "exact_line_unavailable_at_close",
+    "player_market_unavailable_at_close",
+    "player_prop_unavailable_at_close",
+}
+
+
+def _load_projection_gates(model_dir: Path) -> dict[str, dict]:
+    gates: dict[str, dict] = {}
+    path = model_dir / "daily_forecast_projection_audit.json"
+    try:
+        if path.exists():
+            gates.update(dict((json.loads(path.read_text(encoding="utf-8")).get("projection_gates") or {})))
+    except (OSError, ValueError):
+        pass
+
+    checkpoint_path = model_dir / "prop_five_date_checkpoint.json"
+    try:
+        checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8")) if checkpoint_path.exists() else {}
+    except (OSError, ValueError):
+        checkpoint = {}
+    min_dates = int(checkpoint.get("minimum_completed_dates") or 5)
+    artifact_valid = bool((checkpoint.get("artifact_integrity") or {}).get("valid", True))
+    for section in ("hitter_release", "pitcher_release"):
+        release = checkpoint.get(section) or {}
+        release_id = release.get("release_id")
+        completed_dates = int(release.get("completed_date_count") or 0)
+        for stat, metric in (release.get("metrics") or {}).items():
+            blockers: list[str] = []
+            if completed_dates < min_dates:
+                blockers.append("dates<5")
+            if not metric.get("projection_pass"):
+                blockers.append("model_not_better_than_simple_baseline")
+            if section == "hitter_release" and not artifact_valid:
+                blockers.append("frozen_hitter_artifact_integrity_failed")
+            gates[str(stat)] = {
+                "eligible": not blockers,
+                "blockers": blockers,
+                "active_model_family": "five_date_checkpoint",
+                "active_model_version": release_id,
+                "graded_rows": int(metric.get("rows") or 0),
+                "graded_dates": completed_dates,
+                "dates_remaining_to_minimum": max(0, min_dates - completed_dates),
+                "source": "prop_five_date_checkpoint",
+                "mae": metric.get("mae"),
+                "baseline_mae": metric.get("baseline_mae"),
+                "mae_gain_vs_baseline": metric.get("mae_gain_vs_baseline"),
+            }
+    return gates
+
+
+def _load_backdated_prop_promotion_dates(
+    model_dir: Path,
+    *,
+    cutoff: date,
+    end_date: date,
+) -> set[date]:
+    path = model_dir / "prop_backdated_slate_eligibility_audit.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, ValueError):
+        return set()
+    dates: set[date] = set()
+    for value in payload.get("prop_promotion_countable_dates") or []:
+        try:
+            slate_date = date.fromisoformat(str(value))
+        except ValueError:
+            continue
+        if cutoff <= slate_date <= end_date:
+            dates.add(slate_date)
+    return dates
 
 
 @dataclass(frozen=True)
@@ -103,6 +180,10 @@ class PropBucketReopenConfig:
 
 SQL = """
 SELECT
+    id,
+    prop_offer_id,
+    lock_snapshot_id,
+    source_created_at,
     game_date_et,
     game_slug,
     player_id,
@@ -140,6 +221,7 @@ SELECT
     clv_unknown_reason
 FROM features.mlb_prop_market_training_examples
 WHERE game_date_et >= %(cutoff)s
+  AND result_status = 'graded'
   AND market = ANY(%(markets)s)
   AND model_prob_side IS NOT NULL
   AND market_prob_side IS NOT NULL
@@ -248,7 +330,8 @@ def _load(cfg: PropBucketReopenConfig) -> pd.DataFrame:
     ):
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df["push"] = df["push"].fillna(False).astype(bool)
-    return df.replace([np.inf, -np.inf], np.nan)
+    df = df.replace([np.inf, -np.inf], np.nan)
+    return dedupe_locked_offer_rows(df)
 
 
 def _load_history(cfg: PropBucketReopenConfig) -> pd.DataFrame:
@@ -298,7 +381,35 @@ def _load_clean_dates(cfg: PropBucketReopenConfig, *, date_to: date | None = Non
             date_to=end_date,
             thresholds=thresholds,
         )
-    return clean_date_set(rows), rows
+    strict_dates = clean_date_set(rows)
+    backdated_dates = _load_backdated_prop_promotion_dates(
+        cfg.model_dir,
+        cutoff=cutoff,
+        end_date=end_date,
+    )
+    if not backdated_dates:
+        return strict_dates, rows
+
+    combined_dates = set(strict_dates) | set(backdated_dates)
+    by_date: dict[date, dict[str, Any]] = {}
+    for row in rows:
+        slate_value = row.get("slate_date")
+        try:
+            slate_date = slate_value if isinstance(slate_value, date) else date.fromisoformat(str(slate_value))
+        except (TypeError, ValueError):
+            continue
+        by_date[slate_date] = dict(row)
+    for slate_date in sorted(backdated_dates):
+        row = dict(by_date.get(slate_date) or {"slate_date": slate_date})
+        row["clean_slate"] = True
+        row["promotion_clean_slate"] = True
+        row["prop_promotion_backdate"] = True
+        row["clean_slate_reasons"] = []
+        by_date[slate_date] = row
+    augmented_rows = [
+        row for _, row in sorted(by_date.items(), key=lambda item: item[0], reverse=True)
+    ]
+    return combined_dates, augmented_rows
 
 
 def _mean(series: pd.Series) -> float | None:
@@ -348,6 +459,7 @@ def _summary(rows: pd.DataFrame) -> dict:
             "clv_price_rows": 0,
             "clv_line_rows": 0,
             "valid_close_coverage": None,
+            "line_unavailable_rate": None,
             "stale_close_rate": None,
             "unique_players": 0,
             "unique_teams": 0,
@@ -363,6 +475,8 @@ def _summary(rows: pd.DataFrame) -> dict:
     clv_price = rows["beat_clv_price"].notna()
     clv_line = rows["beat_clv_line"].notna()
     valid_close = rows["clv_valid"].fillna(False).astype(bool)
+    line_unavailable = rows["clv_unknown_reason"].fillna("").astype(str).isin(_LINE_UNAVAILABLE_REASONS)
+    close_capture_evaluable = ~line_unavailable
     units = _sum(rows.loc[priced, "profit_units"])
     row_count = int(len(rows))
     priced_rows = int(priced.sum())
@@ -390,7 +504,11 @@ def _summary(rows: pd.DataFrame) -> dict:
         "clv_line_beat_rate": _mean(rows.loc[clv_line, "beat_clv_line"]) if clv_line.any() else None,
         "clv_price_rows": int(clv_price.sum()),
         "clv_line_rows": int(clv_line.sum()),
-        "valid_close_coverage": float(valid_close.mean()) if row_count else None,
+        "valid_close_coverage": (
+            float(valid_close.loc[close_capture_evaluable].mean())
+            if close_capture_evaluable.any() else None
+        ),
+        "line_unavailable_rate": float(line_unavailable.mean()) if row_count else None,
         "stale_close_rate": float(
             (rows["clv_unknown_reason"] == "stale_close_before_lock").mean()
         ) if row_count else None,
@@ -692,6 +810,7 @@ def train(cfg: PropBucketReopenConfig) -> dict:
         legacy_df["game_date_et"] >= cfg.eligibility_start_date
     ].copy() if not legacy_df.empty else legacy_df.copy()
     history_by_level = _history_index(history_df)
+    projection_gates = _load_projection_gates(cfg.model_dir)
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source": "features.mlb_prop_market_training_examples",
@@ -775,15 +894,25 @@ def train(cfg: PropBucketReopenConfig) -> dict:
         "ladder_buckets": {},
         "closed_buckets": {},
         "diagnostics": [],
+        "projection_gates": projection_gates,
     }
     if df.empty:
         payload["status"] = "no_rows"
         output_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
         return payload
 
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train_mask = df["game_date_et"] < split
-    holdout_mask = df["game_date_et"] >= split
+    temporal_split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    train_mask = pd.Series(df.index.isin(temporal_split.train.index), index=df.index)
+    holdout_mask = pd.Series(df.index.isin(temporal_split.holdout.index), index=df.index)
+    payload["split_strategy"] = temporal_split.strategy
+    payload["train_rows"] = int(train_mask.sum())
+    payload["holdout_rows"] = int(holdout_mask.sum())
+    payload["deduped_rows"] = int(df.attrs.get("deduped_rows", 0))
 
     for level, group_cols in _group_specs():
         for values, sub in df.groupby(list(group_cols), dropna=False):
@@ -793,6 +922,11 @@ def train(cfg: PropBucketReopenConfig) -> dict:
             holdout_summary = _summary(sub.loc[holdout_mask.loc[sub.index]])
             all_summary = _summary(sub)
             reasons = _policy_reasons(train_summary, holdout_summary, cfg)
+            market = str(value_dict.get("market") or "")
+            projection_gate = projection_gates.get(market) or {}
+            projection_proven = bool(projection_gate.get("eligible"))
+            if not projection_proven:
+                reasons.append("underlying_projection_not_proven")
             history_summary = history_by_level.get(
                 (level, _bucket_key(value_dict)),
                 _history_summary(pd.DataFrame()),
@@ -814,6 +948,11 @@ def train(cfg: PropBucketReopenConfig) -> dict:
                 if level == "bucket"
                 else ["bootstrap_exact_bucket_only"]
             )
+            if not projection_proven:
+                bootstrap_reasons = sorted(set([
+                    *bootstrap_reasons,
+                    "underlying_projection_not_proven",
+                ]))
             bootstrap_micro_eligible = (
                 level == "bucket"
                 and cfg.enable_bootstrap_micro
@@ -832,7 +971,7 @@ def train(cfg: PropBucketReopenConfig) -> dict:
                     list(reasons_by_tier.get("bankroll") or []) + ["bootstrap_micro_only"]
                 ))
                 promotion_source = "bootstrap_micro"
-            if cfg.force_reopen_all and not cfg.research_only:
+            if cfg.force_reopen_all and not cfg.research_only and projection_proven:
                 desired_tier = "bankroll"
                 promotion_source = "forced"
             previous_record = previous_ladder.get(key, {})

@@ -1,0 +1,911 @@
+{
+  "built_at": "2026-09-21T05:01:16.276781+00:00",
+  "status": "evaluated",
+  "records_scanned": 3181,
+  "unique_offer_decisions": 376,
+  "settled_offer_decisions": 364,
+  "replay_status": {
+    "missing_lock_time_scoring_inputs": 247,
+    "matched": 129
+  },
+  "exclusions": {
+    "later_revision_same_decision": 923
+  },
+  "probability_stages": {
+    "nfl-20260918T143342Z|passing_tds": {
+      "raw": {
+        "rows": 30,
+        "brier": 0.25303045293078086,
+        "log_loss": 0.7293891460572415,
+        "calibration_error": 0.12883610778012483,
+        "probability_bias": 0.03648152443254914
+      },
+      "heuristic": {
+        "rows": 2,
+        "brier": 0.16515618174107247,
+        "log_loss": 0.521529030802165,
+        "calibration_error": 0.40637407268027403,
+        "probability_bias": -0.004036681102073808
+      },
+      "post_exact": {
+        "rows": 2,
+        "brier": 0.16515618174107247,
+        "log_loss": 0.521529030802165,
+        "calibration_error": 0.40637407268027403,
+        "probability_bias": -0.004036681102073808
+      },
+      "final": {
+        "rows": 30,
+        "brier": 0.23691434805628403,
+        "log_loss": 0.6689323442690761,
+        "calibration_error": 0.1476192037418884,
+        "probability_bias": -0.03350333012798244
+      },
+      "market": {
+        "rows": 30,
+        "brier": 0.24401829297007113,
+        "log_loss": 0.6822703800229457,
+        "calibration_error": 0.15337787148062437,
+        "probability_bias": -0.11403296701219476
+      },
+      "final_vs_raw_clustered_brier_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      }
+    },
+    "nfl-20260918T143342Z|passing_yards": {
+      "raw": {
+        "rows": 41,
+        "brier": 0.2809933099251433,
+        "log_loss": 0.789201083993616,
+        "calibration_error": 0.24469912343046676,
+        "probability_bias": 0.1796671404880361
+      },
+      "heuristic": {
+        "rows": 13,
+        "brier": 0.2429248669445637,
+        "log_loss": 0.6787117745304972,
+        "calibration_error": 0.07269136725690105,
+        "probability_bias": 0.024313968132341636
+      },
+      "post_exact": {
+        "rows": 13,
+        "brier": 0.2429248669445637,
+        "log_loss": 0.6787117745304972,
+        "calibration_error": 0.07269136725690105,
+        "probability_bias": 0.024313968132341636
+      },
+      "final": {
+        "rows": 41,
+        "brier": 0.254306638783852,
+        "log_loss": 0.7017522087682937,
+        "calibration_error": 0.1116893907674391,
+        "probability_bias": 0.1116893907674391
+      },
+      "market": {
+        "rows": 41,
+        "brier": 0.24987785139398147,
+        "log_loss": 0.6929028766167814,
+        "calibration_error": 0.07090208146025034,
+        "probability_bias": 0.07090208146025033
+      },
+      "final_vs_raw_clustered_brier_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      }
+    },
+    "nfl-20260918T143342Z|receiving_yards": {
+      "raw": {
+        "rows": 192,
+        "brier": 0.2909289107275999,
+        "log_loss": 0.7951539166362979,
+        "calibration_error": 0.17923851918353093,
+        "probability_bias": 0.14330914350552998
+      },
+      "heuristic": {
+        "rows": 74,
+        "brier": 0.2544916113841525,
+        "log_loss": 0.7024579059326167,
+        "calibration_error": 0.045910609184268425,
+        "probability_bias": 0.04591060918426841
+      },
+      "post_exact": {
+        "rows": 74,
+        "brier": 0.2544916113841525,
+        "log_loss": 0.7024579059326167,
+        "calibration_error": 0.045910609184268425,
+        "probability_bias": 0.04591060918426841
+      },
+      "final": {
+        "rows": 192,
+        "brier": 0.2587033246460261,
+        "log_loss": 0.7112059653743514,
+        "calibration_error": 0.07274901437284592,
+        "probability_bias": 0.058936918480307875
+      },
+      "market": {
+        "rows": 186,
+        "brier": 0.25007211952293373,
+        "log_loss": 0.6932913950410239,
+        "calibration_error": 0.028294270857361283,
+        "probability_bias": -0.02829427085736128
+      },
+      "final_vs_raw_clustered_brier_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      }
+    },
+    "nfl-20260918T143342Z|rushing_yards": {
+      "raw": {
+        "rows": 101,
+        "brier": 0.31051317769750414,
+        "log_loss": 0.8619736040893928,
+        "calibration_error": 0.20565676519363965,
+        "probability_bias": 0.1915605794556629
+      },
+      "heuristic": {
+        "rows": 36,
+        "brier": 0.29724255413172457,
+        "log_loss": 0.7919111023194896,
+        "calibration_error": 0.2765695889633855,
+        "probability_bias": 0.11116915959010407
+      },
+      "post_exact": {
+        "rows": 36,
+        "brier": 0.29724255413172457,
+        "log_loss": 0.7919111023194896,
+        "calibration_error": 0.2765695889633855,
+        "probability_bias": 0.11116915959010407
+      },
+      "final": {
+        "rows": 101,
+        "brier": 0.26557820460578685,
+        "log_loss": 0.7255619391531878,
+        "calibration_error": 0.11362596800614878,
+        "probability_bias": 0.102383576271237
+      },
+      "market": {
+        "rows": 94,
+        "brier": 0.25107152519071113,
+        "log_loss": 0.6952903617669425,
+        "calibration_error": 0.10139470030931788,
+        "probability_bias": 0.025381922813730966
+      },
+      "final_vs_raw_clustered_brier_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      }
+    }
+  },
+  "projection_scores": {
+    "nfl-20260918T143342Z|passing_tds": {
+      "rows": 28,
+      "mae": 0.9142857142857144,
+      "rmse": 1.245563555756418,
+      "bias": 0.07142857142857142,
+      "interval_rows": 28,
+      "coverage_80": 0.8928571428571429,
+      "interval_width": 2.9642857142857144
+    },
+    "nfl-20260918T143342Z|passing_yards": {
+      "rows": 28,
+      "mae": 66.0048112163545,
+      "rmse": 79.21093407425022,
+      "bias": -5.209608729553684,
+      "interval_rows": 28,
+      "coverage_80": 0.8214285714285714,
+      "interval_width": 212.35950976895063
+    },
+    "nfl-20260918T143342Z|receiving_tds": {
+      "rows": 126,
+      "mae": 0.3507874400088603,
+      "rmse": 0.5093578904392839,
+      "bias": 0.03207821663214722,
+      "interval_rows": 126,
+      "coverage_80": 0.9444444444444444,
+      "interval_width": 0.8412698412698413
+    },
+    "nfl-20260918T143342Z|receiving_yards": {
+      "rows": 172,
+      "mae": 19.968360395672608,
+      "rmse": 28.775637433832745,
+      "bias": -2.0983652696923016,
+      "interval_rows": 172,
+      "coverage_80": 0.7267441860465116,
+      "interval_width": 49.5606665933239
+    },
+    "nfl-20260918T143342Z|rushing_tds": {
+      "rows": 60,
+      "mae": 0.35547347182632777,
+      "rmse": 0.45883400650236694,
+      "bias": 0.12700377169869786,
+      "interval_rows": 60,
+      "coverage_80": 0.9666666666666667,
+      "interval_width": 0.8666666666666667
+    },
+    "nfl-20260918T143342Z|rushing_yards": {
+      "rows": 90,
+      "mae": 18.85583200363213,
+      "rmse": 24.68760188144694,
+      "bias": 4.76369498825926,
+      "interval_rows": 90,
+      "coverage_80": 0.7333333333333333,
+      "interval_width": 54.01626937595243
+    }
+  },
+  "limitations": [
+    "Missing old scoring inputs are never replaced with current context or calibration.",
+    "Stored-probability evaluation is separate from exact reproducibility; inspect replay_status.",
+    "Multiple books/lines share one player-game outcome and receive inverse multiplicity weights.",
+    "Intervals without locked bounds cannot establish interval coverage.",
+    "Locked p10/p90 describe the stat forecast, not a distribution inferred from independently adjusted book probabilities."
+  ],
+  "prospective_challengers": {
+    "status": "evaluated",
+    "pending": 330,
+    "unique_pending_player_games": 82,
+    "pending_by_cohort": {
+      "accuracy-20260919T014345564689Z|nfl-20260918T143342Z|passing_yards": 5,
+      "accuracy-20260919T014345564689Z|nfl-20260918T143342Z|rushing_yards": 17,
+      "accuracy-20260919T014345564689Z|nfl-20260918T143342Z|receiving_yards": 59,
+      "accuracy-20260919T015147331816Z|nfl-20260918T143342Z|passing_yards": 5,
+      "accuracy-20260919T015147331816Z|nfl-20260918T143342Z|rushing_yards": 17,
+      "accuracy-20260919T015147331816Z|nfl-20260918T143342Z|receiving_yards": 59,
+      "components-20260919T035631590394Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": 60,
+      "components-20260920T005350695557Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": 53,
+      "components-20260920T010253075132Z-qb_tail|nfl-20260918T143342Z|passing_yards": 2,
+      "components-20260920T010253075132Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": 53
+    },
+    "settled_player_games": 1109,
+    "cohorts": {
+      "accuracy-20260919T014345564689Z|nfl-20260918T143342Z|passing_yards": {
+        "projection": {
+          "rows": 28,
+          "mae": 60.516787984003145,
+          "rmse": 75.94988080086415,
+          "bias": -7.547822024910343,
+          "interval_rows": 28,
+          "coverage_80": 0.7857142857142857,
+          "interval_width": 181.0932950070684
+        },
+        "production": {
+          "rows": 28,
+          "mae": 66.0048112163545,
+          "rmse": 79.21093407425022,
+          "bias": -5.209608729553684
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 28,
+          "mae": 62.23142712114962,
+          "rmse": 78.13258671919951,
+          "bias": -5.044664808513402
+        },
+        "distribution_mean": {
+          "rows": 0
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 28,
+          "brier": 0.26729414738854607,
+          "log_loss": 0.747716112819614,
+          "calibration_error": 0.08607833624889454,
+          "probability_bias": -0.0005735468493590833
+        },
+        "production_probability": {
+          "rows": 28,
+          "brier": 0.25402084768353694,
+          "log_loss": 0.7011749616305288,
+          "calibration_error": 0.10467979479339438,
+          "probability_bias": -0.015368797806689304
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "raw_challenger": 28
+        }
+      },
+      "accuracy-20260919T014345564689Z|nfl-20260918T143342Z|receiving_yards": {
+        "projection": {
+          "rows": 169,
+          "mae": 19.98897422897923,
+          "rmse": 28.744077946676697,
+          "bias": -5.699841138369752,
+          "interval_rows": 169,
+          "coverage_80": 0.8579881656804734,
+          "interval_width": 63.20858800459394
+        },
+        "production": {
+          "rows": 169,
+          "mae": 20.20431641808148,
+          "rmse": 29.015813662795207,
+          "bias": -2.2541262709289605
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 169,
+          "mae": 20.564305104130373,
+          "rmse": 30.415861747179935,
+          "bias": -11.136118934457771
+        },
+        "distribution_mean": {
+          "rows": 0
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 123,
+          "brier": 0.2746155310297865,
+          "log_loss": 0.7442732458427508,
+          "calibration_error": 0.15878043596462388,
+          "probability_bias": -0.15216780796040708
+        },
+        "production_probability": {
+          "rows": 123,
+          "brier": 0.26090413227817205,
+          "log_loss": 0.7156721220454162,
+          "calibration_error": 0.10985967718652692,
+          "probability_bias": -0.03946444309713134
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "raw_challenger": 123
+        }
+      },
+      "accuracy-20260919T014345564689Z|nfl-20260918T143342Z|rushing_yards": {
+        "projection": {
+          "rows": 87,
+          "mae": 18.71268111730695,
+          "rmse": 23.31976224724438,
+          "bias": 3.8521234229004677,
+          "interval_rows": 87,
+          "coverage_80": 0.8160919540229885,
+          "interval_width": 55.75793249307842
+        },
+        "production": {
+          "rows": 87,
+          "mae": 19.110337950600414,
+          "rmse": 24.98049827425356,
+          "bias": 4.613498382399648
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 87,
+          "mae": 18.47250887894865,
+          "rmse": 23.24670431929851,
+          "bias": 3.4713329978202565
+        },
+        "distribution_mean": {
+          "rows": 0
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 65,
+          "brier": 0.2775395302832405,
+          "log_loss": 0.7618793592923292,
+          "calibration_error": 0.19027189119468235,
+          "probability_bias": 0.12443178131968315
+        },
+        "production_probability": {
+          "rows": 65,
+          "brier": 0.2619959775443701,
+          "log_loss": 0.7181224475994684,
+          "calibration_error": 0.17701135046318875,
+          "probability_bias": 0.13917245712953752
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "raw_challenger": 65
+        }
+      },
+      "accuracy-20260919T015147331816Z|nfl-20260918T143342Z|passing_yards": {
+        "projection": {
+          "rows": 28,
+          "mae": 60.516787984003145,
+          "rmse": 75.94988080086415,
+          "bias": -7.547822024910343,
+          "interval_rows": 28,
+          "coverage_80": 0.7857142857142857,
+          "interval_width": 181.0932950070684
+        },
+        "production": {
+          "rows": 28,
+          "mae": 66.0048112163545,
+          "rmse": 79.21093407425022,
+          "bias": -5.209608729553684
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 28,
+          "mae": 62.23142712114962,
+          "rmse": 78.13258671919951,
+          "bias": -5.044664808513402
+        },
+        "distribution_mean": {
+          "rows": 0
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 28,
+          "brier": 0.26729414738854607,
+          "log_loss": 0.747716112819614,
+          "calibration_error": 0.08607833624889454,
+          "probability_bias": -0.0005735468493590833
+        },
+        "production_probability": {
+          "rows": 28,
+          "brier": 0.25402084768353694,
+          "log_loss": 0.7011749616305288,
+          "calibration_error": 0.10467979479339438,
+          "probability_bias": -0.015368797806689304
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "raw_challenger": 28
+        }
+      },
+      "accuracy-20260919T015147331816Z|nfl-20260918T143342Z|receiving_yards": {
+        "projection": {
+          "rows": 169,
+          "mae": 19.98897422897923,
+          "rmse": 28.744077946676697,
+          "bias": -5.699841138369752,
+          "interval_rows": 169,
+          "coverage_80": 0.8579881656804734,
+          "interval_width": 63.20858800459394
+        },
+        "production": {
+          "rows": 169,
+          "mae": 20.20431641808148,
+          "rmse": 29.015813662795207,
+          "bias": -2.2541262709289605
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 169,
+          "mae": 20.564305104130373,
+          "rmse": 30.415861747179935,
+          "bias": -11.136118934457771
+        },
+        "distribution_mean": {
+          "rows": 0
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 123,
+          "brier": 0.27313282467566724,
+          "log_loss": 0.7413137701526988,
+          "calibration_error": 0.14218165773952218,
+          "probability_bias": -0.14218165773952218
+        },
+        "production_probability": {
+          "rows": 123,
+          "brier": 0.26090413227817205,
+          "log_loss": 0.7156721220454162,
+          "calibration_error": 0.10985967718652692,
+          "probability_bias": -0.03946444309713134
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "raw_challenger": 123
+        }
+      },
+      "accuracy-20260919T015147331816Z|nfl-20260918T143342Z|rushing_yards": {
+        "projection": {
+          "rows": 87,
+          "mae": 18.71268111730695,
+          "rmse": 23.31976224724438,
+          "bias": 3.8521234229004677,
+          "interval_rows": 87,
+          "coverage_80": 0.8160919540229885,
+          "interval_width": 55.75793249307842
+        },
+        "production": {
+          "rows": 87,
+          "mae": 19.110337950600414,
+          "rmse": 24.98049827425356,
+          "bias": 4.613498382399648
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 87,
+          "mae": 18.47250887894865,
+          "rmse": 23.24670431929851,
+          "bias": 3.4713329978202565
+        },
+        "distribution_mean": {
+          "rows": 0
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 65,
+          "brier": 0.2775395302832405,
+          "log_loss": 0.7618793592923292,
+          "calibration_error": 0.19027189119468235,
+          "probability_bias": 0.12443178131968315
+        },
+        "production_probability": {
+          "rows": 65,
+          "brier": 0.2619959775443701,
+          "log_loss": 0.7181224475994684,
+          "calibration_error": 0.17701135046318875,
+          "probability_bias": 0.13917245712953752
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "raw_challenger": 65
+        }
+      },
+      "components-20260919T035631590394Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": {
+        "projection": {
+          "rows": 171,
+          "mae": 20.049741367904115,
+          "rmse": 28.855942659397673,
+          "bias": -2.1460294767904124,
+          "interval_rows": 171,
+          "coverage_80": 0.7309941520467836,
+          "interval_width": 59.25053205506119
+        },
+        "production": {
+          "rows": 171,
+          "mae": 20.049741367904115,
+          "rmse": 28.855942659397673,
+          "bias": -2.1460294767904124
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 171,
+          "mae": 19.922824987135787,
+          "rmse": 29.2996084429545,
+          "bias": -5.561431053004269
+        },
+        "distribution_mean": {
+          "rows": 171,
+          "mae": 20.63594319877421,
+          "rmse": 28.836619570691173,
+          "bias": 0.881645234480424
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 124,
+          "brier": 0.2595011864439228,
+          "log_loss": 0.7125237964294788,
+          "calibration_error": 0.06470728731625597,
+          "probability_bias": -0.04743212148836608
+        },
+        "production_probability": {
+          "rows": 124,
+          "brier": 0.26095907824962516,
+          "log_loss": 0.7157763509553613,
+          "calibration_error": 0.10480101705514784,
+          "probability_bias": -0.034973486466473205
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "complete_live_path": 124
+        }
+      },
+      "components-20260920T005350695557Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": {
+        "projection": {
+          "rows": 170,
+          "mae": 20.132079763338346,
+          "rmse": 28.936965843661802,
+          "bias": -2.1942544392661483,
+          "interval_rows": 170,
+          "coverage_80": 0.7294117647058823,
+          "interval_width": 59.38435687713433
+        },
+        "production": {
+          "rows": 170,
+          "mae": 20.132079763338346,
+          "rmse": 28.936965843661802,
+          "bias": -2.1942544392661483
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 170,
+          "mae": 20.014528942637487,
+          "rmse": 29.38377805551194,
+          "bias": -5.619634485973984
+        },
+        "distribution_mean": {
+          "rows": 170,
+          "mae": 20.712765672940463,
+          "rmse": 28.915471108221745,
+          "bias": 0.8422659559155323
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 131,
+          "brier": 0.2593621608291423,
+          "log_loss": 0.7122409702912348,
+          "calibration_error": 0.06041738646091739,
+          "probability_bias": -0.04235057391889724
+        },
+        "production_probability": {
+          "rows": 131,
+          "brier": 0.2597038452388537,
+          "log_loss": 0.7132134331408201,
+          "calibration_error": 0.09954428790116189,
+          "probability_bias": -0.030354384372386887
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "complete_live_path": 131
+        }
+      },
+      "components-20260920T010253075132Z-qb_tail|nfl-20260918T143342Z|passing_yards": {
+        "projection": {
+          "rows": 28,
+          "mae": 60.516787984003145,
+          "rmse": 75.94988080086415,
+          "bias": -7.547822024910343,
+          "interval_rows": 28,
+          "coverage_80": 0.7857142857142857,
+          "interval_width": 181.0932950070684
+        },
+        "production": {
+          "rows": 28,
+          "mae": 66.0048112163545,
+          "rmse": 79.21093407425022,
+          "bias": -5.209608729553684
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 28,
+          "mae": 62.23142712114962,
+          "rmse": 78.13258671919951,
+          "bias": -5.044664808513402
+        },
+        "distribution_mean": {
+          "rows": 28,
+          "mae": 60.516787984003145,
+          "rmse": 75.94988080086415,
+          "bias": -7.547822024910343
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 0
+        },
+        "production_probability": {
+          "rows": 0
+        },
+        "clustered_brier_gain": {
+          "clusters": 0,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {}
+      },
+      "components-20260920T010253075132Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": {
+        "projection": {
+          "rows": 172,
+          "mae": 19.968360395672608,
+          "rmse": 28.77563743383275,
+          "bias": -2.0983652696923025,
+          "interval_rows": 172,
+          "coverage_80": 0.7325581395348837,
+          "interval_width": 59.0332018374209
+        },
+        "production": {
+          "rows": 172,
+          "mae": 19.968360395672608,
+          "rmse": 28.77563743383275,
+          "bias": -2.0983652696923025
+        },
+        "clustered_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "median": {
+          "rows": 172,
+          "mae": 19.832895939942116,
+          "rmse": 29.216285844673394,
+          "bias": -5.503195820894802
+        },
+        "distribution_mean": {
+          "rows": 172,
+          "mae": 20.55938586649095,
+          "rmse": 28.758308170910116,
+          "bias": 0.9199384717570073
+        },
+        "clustered_squared_error_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "weeks": 1,
+        "clustered_median_mae_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "challenger_probability": {
+          "rows": 131,
+          "brier": 0.2593621608291423,
+          "log_loss": 0.7122409702912348,
+          "calibration_error": 0.06041738646091739,
+          "probability_bias": -0.04235057391889724
+        },
+        "production_probability": {
+          "rows": 131,
+          "brier": 0.2597038452388537,
+          "log_loss": 0.7132134331408201,
+          "calibration_error": 0.09954428790116189,
+          "probability_bias": -0.030354384372386887
+        },
+        "clustered_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "probability_scoring_stages": {
+          "complete_live_path": 131
+        }
+      }
+    },
+    "exclusions": {},
+    "automatic_promotion": false
+  }
+}

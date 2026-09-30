@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-01",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 124,
+      "critical": true,
+      "stdout_tail": "",
+      "stderr_tail": "Timed out after 90s; killed process tree rooted at PID 9692"
+    }
+  ],
+  "publications": [],
+  "run_id": null,
+  "pregame": false,
+  "game_ids": []
+}

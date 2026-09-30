@@ -1,0 +1,537 @@
+{
+  "built_at": "2026-09-23T03:56:12.946788+00:00",
+  "day": "2026-09-21",
+  "status": "evaluated",
+  "predictions": 23,
+  "valid": 19,
+  "valid_coverage": 0.8260869565217391,
+  "required_coverage": 0.9,
+  "scopes": {
+    "all_locked": {
+      "predictions": 23,
+      "completed_window_rows": 23,
+      "valid": 19,
+      "valid_coverage": 0.8260869565217391,
+      "coverage_pass": false,
+      "phases": {
+        "completed_window": 23
+      },
+      "completed_statuses": {
+        "exact_line_unavailable_in_captured_feed": 4,
+        "valid_close": 19
+      }
+    },
+    "current_fanduel": {
+      "predictions": 4,
+      "completed_window_rows": 4,
+      "valid": 4,
+      "valid_coverage": 1.0,
+      "coverage_pass": true,
+      "phases": {
+        "completed_window": 4
+      },
+      "completed_statuses": {
+        "valid_close": 4
+      }
+    },
+    "selected_real_tier": {
+      "predictions": 0,
+      "completed_window_rows": 0,
+      "valid": 0,
+      "valid_coverage": null,
+      "coverage_pass": null,
+      "phases": {},
+      "completed_statuses": {}
+    },
+    "draftkings": {
+      "predictions": 19,
+      "completed_window_rows": 19,
+      "valid": 15,
+      "valid_coverage": 0.7894736842105263,
+      "coverage_pass": false,
+      "phases": {
+        "completed_window": 19
+      },
+      "completed_statuses": {
+        "exact_line_unavailable_in_captured_feed": 4,
+        "valid_close": 15
+      }
+    },
+    "fanduel": {
+      "predictions": 4,
+      "completed_window_rows": 4,
+      "valid": 4,
+      "valid_coverage": 1.0,
+      "coverage_pass": true,
+      "phases": {
+        "completed_window": 4
+      },
+      "completed_statuses": {
+        "valid_close": 4
+      }
+    }
+  },
+  "statuses": {
+    "exact_line_unavailable_in_captured_feed": 4,
+    "valid_close": 19
+  },
+  "rows": [
+    {
+      "prediction_id": 6842,
+      "player": "M.Stafford",
+      "stat": "passing_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 238.5,
+      "status": "exact_line_unavailable_in_captured_feed",
+      "valid": false,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 11,
+      "observed_lines": [
+        "239.5",
+        "240.5"
+      ],
+      "last_exact_snapshot": null,
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6843,
+      "player": "J.Dart",
+      "stat": "passing_yards",
+      "side": "under",
+      "book": "draftkings",
+      "line": 213.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 9,
+      "observed_lines": [
+        "213.5",
+        "214.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6844,
+      "player": "D.Singletary",
+      "stat": "rushing_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 14.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 5,
+      "observed_lines": [
+        "11.5",
+        "12.5",
+        "14.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:20:22.805442-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6846,
+      "player": "K.Williams",
+      "stat": "rushing_yards",
+      "side": "under",
+      "book": "draftkings",
+      "line": 61.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "61.5",
+        "63.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:30:27.605672-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6847,
+      "player": "B.Corum",
+      "stat": "rushing_yards",
+      "side": "under",
+      "book": "fanduel",
+      "line": 47.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 294,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "47.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6848,
+      "player": "J.Dart",
+      "stat": "rushing_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 35.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "34.5",
+        "35.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6849,
+      "player": "C.Skattebo",
+      "stat": "rushing_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 51.5,
+      "status": "exact_line_unavailable_in_captured_feed",
+      "valid": false,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "52.5"
+      ],
+      "last_exact_snapshot": null,
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6850,
+      "player": "M.Stafford",
+      "stat": "passing_tds",
+      "side": "under",
+      "book": "draftkings",
+      "line": 1.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "1.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6851,
+      "player": "J.Dart",
+      "stat": "passing_tds",
+      "side": "over",
+      "book": "draftkings",
+      "line": 1.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "1.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6857,
+      "player": "O.Beckham",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "fanduel",
+      "line": 5.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 294,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "5.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6858,
+      "player": "D.Adams",
+      "stat": "receiving_yards",
+      "side": "under",
+      "book": "draftkings",
+      "line": 62.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 10,
+      "observed_lines": [
+        "61.5",
+        "62.5",
+        "63.5",
+        "64.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:50:21.220332-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6859,
+      "player": "T.Higbee",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 13.5,
+      "status": "exact_line_unavailable_in_captured_feed",
+      "valid": false,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "10.5",
+        "11.5",
+        "12.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:10:32.379262-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6860,
+      "player": "D.Singletary",
+      "stat": "receiving_yards",
+      "side": "under",
+      "book": "draftkings",
+      "line": 7.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "7.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6861,
+      "player": "C.Parkinson",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 28.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 7,
+      "observed_lines": [
+        "27.5",
+        "28.5",
+        "29.5",
+        "30.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:50:21.220332-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6862,
+      "player": "D.Mooney",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "fanduel",
+      "line": 19.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 294,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "19.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6864,
+      "player": "I.Likely",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 44.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 7,
+      "observed_lines": [
+        "44.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 16:20:17.687243-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6865,
+      "player": "K.Williams",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 17.5,
+      "status": "exact_line_unavailable_in_captured_feed",
+      "valid": false,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 10,
+      "observed_lines": [
+        "16.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:10:32.379262-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6867,
+      "player": "M.Nabers",
+      "stat": "receiving_yards",
+      "side": "under",
+      "book": "draftkings",
+      "line": 61.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 10,
+      "observed_lines": [
+        "61.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6868,
+      "player": "B.Corum",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 3.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 11,
+      "observed_lines": [
+        "2.5",
+        "3.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 16:10:36.271059-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6869,
+      "player": "T.Johnson",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 8.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "8.5",
+        "9.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 16:10:36.271059-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6870,
+      "player": "K.Mumpfield",
+      "stat": "receiving_yards",
+      "side": "under",
+      "book": "fanduel",
+      "line": 14.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 294,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "14.5",
+        "17.5",
+        "18.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 15:40:18.947780-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6871,
+      "player": "C.Skattebo",
+      "stat": "receiving_yards",
+      "side": "over",
+      "book": "draftkings",
+      "line": 11.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 12,
+      "observed_lines": [
+        "10.5",
+        "11.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    },
+    {
+      "prediction_id": 6872,
+      "player": "T.Ferguson",
+      "stat": "receiving_yards",
+      "side": "under",
+      "book": "draftkings",
+      "line": 34.5,
+      "status": "valid_close",
+      "valid": true,
+      "fresh_book_rows": 249,
+      "fresh_market_rows": 10,
+      "observed_lines": [
+        "34.5"
+      ],
+      "last_exact_snapshot": "2026-09-21 17:10:16.956898-07:00",
+      "phase": "completed_window",
+      "is_current": true,
+      "selected_real_tier": false
+    }
+  ],
+  "note": "Observed alternative lines do not establish availability or price CLV at the locked line. Unknown CLV stays null."
+}

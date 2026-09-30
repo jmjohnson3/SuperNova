@@ -1,0 +1,40 @@
+{
+  "generated_at_utc": "2026-07-16T03:53:01Z",
+  "slate_date": "2026-07-15",
+  "evaluation_status": "provisional",
+  "games": 0,
+  "final_games": 0,
+  "statuses": {},
+  "slate_final": false,
+  "locked_offer_rows": 0,
+  "valid_closes": 0,
+  "valid_close_coverage": null,
+  "valid_closes_needed_for_90": 0,
+  "stale_close_rate": null,
+  "strict_clean_slate": false,
+  "failure_reasons": {},
+  "target_capture": {
+    "events": 0,
+    "all_targets_captured_events": 0,
+    "required_target_misses": {
+      "events_with_misses": 0,
+      "by_window": {
+        "t_minus_120": 0,
+        "t_minus_60": 0,
+        "t_minus_20": 0
+      },
+      "missed_events": []
+    },
+    "rows": []
+  },
+  "outside_window_diagnostic": {
+    "rows": 0,
+    "reason_counts": {},
+    "by_book_market": []
+  },
+  "action_plan": [],
+  "by_event": [],
+  "by_book": [],
+  "by_market": [],
+  "by_event_book_market": []
+}

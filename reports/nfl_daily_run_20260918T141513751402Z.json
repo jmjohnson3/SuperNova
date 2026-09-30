@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-20",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 1188,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-18 08:13:42,852 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-18 08:13:54,389 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2980\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 531796,\n      \"rows_selected\": 2207,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 412\n    }\n  ],\n  \"roster_rows_upserted\": 2979,\n  \"depth_rows_upserted\": 2204,\n  \"injury_rows_upserted\": 412\n}\n",
+      "stderr_tail": "2026-09-18 08:13:58,633 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-18 08:14:02,548 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-18 08:14:47,697 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 1,
+      "critical": false,
+      "stdout_tail": "",
+      "stderr_tail": "FO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-18 08:14:52,193 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\nTraceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\import_usage_context.py\", line 1031, in <module>\n    main()\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\import_usage_context.py\", line 1015, in main\n    result = import_usage(UsageImportConfig(\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\import_usage_context.py\", line 910, in import_usage\n    updated = _update_advanced_usage(conn, rows)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\import_usage_context.py\", line 178, in _update_advanced_usage\n    psycopg2.extras.execute_values(\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\.venv\\Lib\\site-packages\\psycopg2\\extras.py\", line 1299, in execute_values\n    cur.execute(b''.join(parts))\npsycopg2.errors.DatatypeMismatch: COALESCE types text and numeric cannot be matched\nLINE 4: ...              routes_run = COALESCE(v.routes_run, g.routes_r...\n                                                             ^\n\n"
+    },
+    {
+      "step": "NFL Odds Crawl",
+      "returncode": 1,
+      "critical": true,
+      "stdout_tail": "\n      \"player_prop_fetch_failures\": null\n    },\n    {\n      \"provider\": \"therundown\",\n      \"status\": \"partial\",\n      \"events\": 13,\n      \"game_odds_saved\": 0,\n      \"player_prop_events_saved\": 0,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": \"TheRundown raw payload saved; normalizer is waiting for a live sample before trusting game-line mapping\",\n      \"player_prop_fetch_failures\": null\n    },\n    {\n      \"provider\": \"oddsapi\",\n      \"status\": \"failed\",\n      \"events\": 14,\n      \"game_odds_saved\": 0,\n      \"player_prop_events_saved\": 0,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": \"401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\",\n      \"player_prop_fetch_failures\": 14\n    },\n    {\n      \"provider\": \"manual_csv\",\n      \"status\": \"skipped\",\n      \"events\": 0,\n      \"game_odds_saved\": 0,\n      \"player_prop_events_saved\": 0,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": \"no manual CSV files found in C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\",\n      \"player_prop_fetch_failures\": null\n    }\n  ],\n  \"provider_errors\": [\n    {\n      \"provider\": \"sportsgameodds\",\n      \"error\": \"400 from The Odds API: bookmakerID contains invalid value: FANDUEL\"\n    }\n  ],\n  \"manual_csv_dir\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\"\n}\n",
+      "stderr_tail": " API fetch failed (401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com); not retrying\n2026-09-18 08:15:11,926 | WARNING | nfl_pipeline.crawler_oddsapi | Skipping NFL player props for event 85ef85098ddd22fe4ecf45e7e3c0a9c0 (Washington Commanders at Dallas Cowboys): 401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\n2026-09-18 08:15:12,519 | WARNING | nfl_pipeline.crawler_oddsapi | Odds API fetch failed (401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com); not retrying\n2026-09-18 08:15:12,519 | WARNING | nfl_pipeline.crawler_oddsapi | Skipping NFL player props for event 68bc55903f50af4af4766adcc89fcc61 (Miami Dolphins at San Francisco 49ers): 401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\n2026-09-18 08:15:13,069 | WARNING | nfl_pipeline.crawler_oddsapi | Odds API fetch failed (401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com); not retrying\n2026-09-18 08:15:13,069 | WARNING | nfl_pipeline.crawler_oddsapi | Skipping NFL player props for event 50bc247030707d823b9c3581d7eb5760 (Indianapolis Colts at Kansas City Chiefs): 401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\n"
+    }
+  ],
+  "publications": []
+}

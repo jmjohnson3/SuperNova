@@ -1,0 +1,2647 @@
+{
+  "generated_at_utc": "2026-09-01T11:14:02Z",
+  "source": "bets.mlb_daily_forecast_ledger",
+  "canonical_forecast_phase": "day_pregame",
+  "ledger_status": {
+    "total": 45717,
+    "by_status": {
+      "graded": 34120,
+      "pending": 28,
+      "void": 11569
+    },
+    "by_type": {
+      "opportunity": 14801,
+      "player": 30916
+    }
+  },
+  "ledger_model_cohorts": [
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_rate_shadow_direct_player_game_blend",
+      "model_version": "hitter-rate-shadow-2026-07-09-r1",
+      "rows": 4780,
+      "pending_rows": 0,
+      "graded_rows": 3476,
+      "dates": 18,
+      "graded_dates": 17,
+      "latest_lock": "2026-07-30T07:44:17.798588-07:00"
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_rate_shadow_direct_player_game_blend",
+      "model_version": "hitter-rate-shadow-2026-07-09-r1",
+      "rows": 4780,
+      "pending_rows": 0,
+      "graded_rows": 3476,
+      "dates": 18,
+      "graded_dates": 17,
+      "latest_lock": "2026-07-30T07:44:17.798588-07:00"
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_count_regression",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 4190,
+      "pending_rows": 0,
+      "graded_rows": 3045,
+      "dates": 16,
+      "graded_dates": 15,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 4907,
+      "pending_rows": 0,
+      "graded_rows": 3602,
+      "dates": 19,
+      "graded_dates": 18,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_component_rebuild_from_rate_challengers",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 3841,
+      "pending_rows": 0,
+      "graded_rows": 2779,
+      "dates": 15,
+      "graded_dates": 14,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_baseline",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 5846,
+      "pending_rows": 0,
+      "graded_rows": 4299,
+      "dates": 22,
+      "graded_dates": 21,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "hitter_plate_appearances_challenger",
+      "model_family": "hitter_pa_v3_challenger",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 5635,
+      "pending_rows": 0,
+      "graded_rows": 4136,
+      "dates": 22,
+      "graded_dates": 21,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "pitcher_batters_faced",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 500,
+      "pending_rows": 14,
+      "graded_rows": 456,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "pitcher_innings",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 494,
+      "pending_rows": 0,
+      "graded_rows": 464,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "pitcher_pitch_count",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 494,
+      "pending_rows": 12,
+      "graded_rows": 452,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "pitcher_strikeouts",
+      "model_family": "pitcher_k_regression",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 507,
+      "pending_rows": 0,
+      "graded_rows": 476,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 1656,
+      "pending_rows": 0,
+      "graded_rows": 1254,
+      "dates": 6,
+      "graded_dates": 6,
+      "latest_lock": "2026-07-25T07:43:46.811425-07:00"
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 2005,
+      "pending_rows": 0,
+      "graded_rows": 1520,
+      "dates": 7,
+      "graded_dates": 7,
+      "latest_lock": "2026-07-12T07:39:38.610414-07:00"
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_count_regression",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 939,
+      "pending_rows": 0,
+      "graded_rows": 697,
+      "dates": 3,
+      "graded_dates": 3,
+      "latest_lock": "2026-07-12T07:39:38.610414-07:00"
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "rows": 630,
+      "pending_rows": 0,
+      "graded_rows": 481,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-05T07:36:36.639660-07:00"
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "rows": 630,
+      "pending_rows": 0,
+      "graded_rows": 481,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-05T07:36:36.639660-07:00"
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_baseline",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "rows": 630,
+      "pending_rows": 0,
+      "graded_rows": 481,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-05T07:36:36.639660-07:00"
+    },
+    {
+      "stat": "hitter_plate_appearances_challenger",
+      "model_family": "hitter_pa_v3_challenger",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "rows": 630,
+      "pending_rows": 0,
+      "graded_rows": 481,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-05T07:36:36.639660-07:00"
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "rows": 630,
+      "pending_rows": 0,
+      "graded_rows": 481,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-05T07:36:36.639660-07:00"
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "rows": 270,
+      "pending_rows": 0,
+      "graded_rows": 210,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "rows": 270,
+      "pending_rows": 0,
+      "graded_rows": 210,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "pitcher_batters_faced",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "current",
+      "rows": 37,
+      "pending_rows": 1,
+      "graded_rows": 36,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "pitcher_innings",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "current",
+      "rows": 37,
+      "pending_rows": 0,
+      "graded_rows": 37,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_v3",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "rows": 270,
+      "pending_rows": 0,
+      "graded_rows": 210,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "rows": 270,
+      "pending_rows": 0,
+      "graded_rows": 210,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "pitcher_strikeouts",
+      "model_family": "pitcher_k_regression",
+      "model_version": "current",
+      "rows": 38,
+      "pending_rows": 0,
+      "graded_rows": 38,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "pitcher_pitch_count",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "current",
+      "rows": 37,
+      "pending_rows": 1,
+      "graded_rows": 36,
+      "dates": 2,
+      "graded_dates": 2,
+      "latest_lock": "2026-07-03T07:37:02.846146-07:00"
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "rows": 191,
+      "pending_rows": 0,
+      "graded_rows": 149,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-02T07:38:26.421928-07:00"
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "rows": 191,
+      "pending_rows": 0,
+      "graded_rows": 149,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-02T07:38:26.421928-07:00"
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "rows": 191,
+      "pending_rows": 0,
+      "graded_rows": 149,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-02T07:38:26.421928-07:00"
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_v3",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "rows": 191,
+      "pending_rows": 0,
+      "graded_rows": 149,
+      "dates": 1,
+      "graded_dates": 1,
+      "latest_lock": "2026-07-02T07:38:26.421928-07:00"
+    }
+  ],
+  "rows": 34120,
+  "date_min": "2026-07-02",
+  "date_max": "2026-07-29",
+  "stats": {
+    "batter_hits": {
+      "forecast_type": "player",
+      "model": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 0.7243705165649823,
+        "rmse": 0.9008731378897733,
+        "bias": -0.06978231844413962,
+        "mean_prediction": 0.7694860216998572,
+        "mean_actual": 0.8392683401439969,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 0.7259101733707688,
+        "rmse": 0.9046666828841309,
+        "bias": 0.028099469663976386,
+        "mean_prediction": 0.8673678098079733,
+        "mean_actual": 0.8392683401439969,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0015396568057864934,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "batter_home_runs": {
+      "forecast_type": "player",
+      "model": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 0.2505414022347503,
+        "rmse": 0.35802798217344367,
+        "bias": 0.05360298714754415,
+        "mean_prediction": 0.17541656955657314,
+        "mean_actual": 0.121813582409029,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 0.21952992522169407,
+        "rmse": 0.3705373729297799,
+        "bias": 0.010820924335226731,
+        "mean_prediction": 0.13263450674425573,
+        "mean_actual": 0.121813582409029,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.031011477013056232,
+      "projection_eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    "batter_total_bases": {
+      "forecast_type": "player",
+      "model": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 1.3836749184669157,
+        "rmse": 1.7856429620189966,
+        "bias": 0.1602415934383434,
+        "mean_prediction": 1.5581789353336537,
+        "mean_actual": 1.3979373418953103,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 1.3921679685690194,
+        "rmse": 1.8243902278918214,
+        "bias": 0.05883957721377454,
+        "mean_prediction": 1.456776919109085,
+        "mean_actual": 1.3979373418953103,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.00849305010210366,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "hitter_plate_appearances": {
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 0.7574537840362892,
+        "rmse": 1.048170480432448,
+        "bias": 0.071725388649799,
+        "mean_prediction": 3.797936713810336,
+        "mean_actual": 3.726211325160537,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 5139,
+        "dates": 25,
+        "player_games": 5139,
+        "mae": 0.7631464338994987,
+        "rmse": 1.0231687216953733,
+        "bias": 0.07709516705430305,
+        "mean_prediction": 3.8033064922148396,
+        "mean_actual": 3.726211325160537,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.005692649863209498,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "hitter_plate_appearances_challenger": {
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 4617,
+        "dates": 23,
+        "player_games": 4617,
+        "mae": 0.7491771842322529,
+        "rmse": 1.0755817089387356,
+        "bias": 0.05801622176905892,
+        "mean_prediction": 3.781429693720542,
+        "mean_actual": 3.7234134719514835,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 4617,
+        "dates": 23,
+        "player_games": 4617,
+        "mae": 0.765142107669723,
+        "rmse": 1.0271552948736409,
+        "bias": 0.08285545826156612,
+        "mean_prediction": 3.8062689302130495,
+        "mean_actual": 3.7234134719514835,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.015964923437470135,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "pitcher_batters_faced": {
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 492,
+        "dates": 25,
+        "player_games": 492,
+        "mae": 3.0958672086720864,
+        "rmse": 4.07698859985657,
+        "bias": 0.5840785907859077,
+        "mean_prediction": 22.80765582655826,
+        "mean_actual": 22.223577235772357,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 492,
+        "dates": 25,
+        "player_games": 492,
+        "mae": 3.0958672086720864,
+        "rmse": 4.07698859985657,
+        "bias": 0.5840785907859077,
+        "mean_prediction": 22.80765582655826,
+        "mean_actual": 22.223577235772357,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "pitcher_innings": {
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 501,
+        "dates": 25,
+        "player_games": 501,
+        "mae": 1.0009787092481703,
+        "rmse": 1.3072285783710522,
+        "bias": 0.11039587491683298,
+        "mean_prediction": 5.299936793080506,
+        "mean_actual": 5.189540918163673,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 501,
+        "dates": 25,
+        "player_games": 501,
+        "mae": 1.2194610778443116,
+        "rmse": 1.6149137151517505,
+        "bias": 0.08852295409181637,
+        "mean_prediction": 5.278063872255489,
+        "mean_actual": 5.189540918163673,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.21848236859614123,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "pitcher_pitch_count": {
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 488,
+        "dates": 25,
+        "player_games": 488,
+        "mae": 12.524103995901639,
+        "rmse": 16.46073617851906,
+        "bias": 1.8619349385245902,
+        "mean_prediction": 88.31685297131148,
+        "mean_actual": 86.45491803278688,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 488,
+        "dates": 25,
+        "player_games": 488,
+        "mae": 17.600184426229507,
+        "rmse": 23.03258053467013,
+        "bias": 1.4542418032786886,
+        "mean_prediction": 87.90915983606557,
+        "mean_actual": 86.45491803278688,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 5.076080430327869,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    "pitcher_strikeouts": {
+      "forecast_type": "player",
+      "model": {
+        "rows": 514,
+        "dates": 25,
+        "player_games": 514,
+        "mae": 1.8451261490469826,
+        "rmse": 2.2787742885128632,
+        "bias": 0.182265955173606,
+        "mean_prediction": 5.013005254784502,
+        "mean_actual": 4.830739299610895,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 501,
+        "dates": 25,
+        "player_games": 501,
+        "mae": 1.9373401096753913,
+        "rmse": 2.4199702017332454,
+        "bias": 0.08577579376179223,
+        "mean_prediction": 4.968011322703908,
+        "mean_actual": 4.8822355289421155,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0922139606284087,
+      "projection_eligible": true,
+      "blockers": []
+    }
+  },
+  "offer_translation": {
+    "status": "ready",
+    "rows": 130475,
+    "raw_rows": 295467,
+    "deduped_rows": 164992,
+    "markets": {
+      "batter_hits": {
+        "rows": 52147,
+        "true_pair_rows": 36815,
+        "true_pair_rate": 0.7059850039311945,
+        "model_brier": 0.18521602277791627,
+        "paired_model_brier": 0.23939194632867036,
+        "market_brier": 0.22888033399499158,
+        "model_brier_gain_vs_market": -0.010511612333678783
+      },
+      "batter_home_runs": {
+        "rows": 20713,
+        "true_pair_rows": 0,
+        "true_pair_rate": 0.0,
+        "model_brier": 0.05900910232317868,
+        "paired_model_brier": null,
+        "market_brier": null,
+        "model_brier_gain_vs_market": null
+      },
+      "batter_total_bases": {
+        "rows": 52574,
+        "true_pair_rows": 19819,
+        "true_pair_rate": 0.37697340890934683,
+        "model_brier": 0.16869018324533042,
+        "paired_model_brier": 0.24724474784903372,
+        "market_brier": 0.24232663058550985,
+        "model_brier_gain_vs_market": -0.004918117263523869
+      },
+      "pitcher_strikeouts": {
+        "rows": 5041,
+        "true_pair_rows": 5041,
+        "true_pair_rate": 1.0,
+        "model_brier": 0.2467903777187066,
+        "paired_model_brier": 0.2467903777187066,
+        "market_brier": 0.2447239665780554,
+        "model_brier_gain_vs_market": -0.002066411140651203
+      }
+    }
+  },
+  "status": "ready",
+  "cohorts": [
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_rate_shadow_direct_player_game_blend",
+      "model_version": "hitter-rate-shadow-2026-07-09-r1",
+      "latest_lock": "2026-07-29T14:49:16.283837+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "player",
+      "model": {
+        "rows": 3476,
+        "dates": 17,
+        "player_games": 3476,
+        "mae": 0.7303520934613627,
+        "rmse": 0.9248245096658307,
+        "bias": -0.3100377860675639,
+        "mean_prediction": 0.5193638249796168,
+        "mean_actual": 0.8294016110471807,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 3476,
+        "dates": 17,
+        "player_games": 3476,
+        "mae": 0.7140008632750029,
+        "rmse": 0.8801159702388011,
+        "bias": 0.10302506045680285,
+        "mean_prediction": 0.9324266715039835,
+        "mean_actual": 0.8294016110471807,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 3476,
+        "dates": 17,
+        "player_games": 3476,
+        "mae": 0.8208478297673627,
+        "rmse": 1.1857248883811526,
+        "bias": -0.799146786237752,
+        "mean_prediction": 0.030254824809428683,
+        "mean_actual": 0.8294016110471807,
+        "brier": null
+      },
+      "mae_gain_vs_baseline": -0.016351230186359755,
+      "projection_eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_rate_shadow_direct_player_game_blend",
+      "model_version": "hitter-rate-shadow-2026-07-09-r1",
+      "latest_lock": "2026-07-29T14:49:16.283837+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "player",
+      "model": {
+        "rows": 3476,
+        "dates": 17,
+        "player_games": 3476,
+        "mae": 0.23848077119881977,
+        "rmse": 0.34911488365916626,
+        "bias": 0.05014946352336487,
+        "mean_prediction": 0.16493657514591953,
+        "mean_actual": 0.11478711162255466,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 3476,
+        "dates": 17,
+        "player_games": 3476,
+        "mae": 0.30564354648531433,
+        "rmse": 0.38664825482963505,
+        "bias": 0.14096448954532975,
+        "mean_prediction": 0.2557516011678844,
+        "mean_actual": 0.11478711162255466,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 3476,
+        "dates": 17,
+        "player_games": 3476,
+        "mae": 0.1713179959123253,
+        "rmse": 0.34581084274567214,
+        "bias": -0.040665562498600004,
+        "mean_prediction": 0.07412154912395466,
+        "mean_actual": 0.11478711162255466,
+        "brier": null
+      },
+      "mae_gain_vs_baseline": 0.06716277528649456,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_count_regression",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "player",
+      "model": {
+        "rows": 3045,
+        "dates": 15,
+        "player_games": 3045,
+        "mae": 0.712168298003933,
+        "rmse": 0.8779073694887782,
+        "bias": 0.10355423151798847,
+        "mean_prediction": 0.9344245106641297,
+        "mean_actual": 0.8308702791461412,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 3045,
+        "dates": 15,
+        "player_games": 3045,
+        "mae": 0.7266699246748508,
+        "rmse": 0.9066906197317868,
+        "bias": 0.03637279432845935,
+        "mean_prediction": 0.8672430734746005,
+        "mean_actual": 0.8308702791461412,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.014501626670917811,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "player",
+      "model": {
+        "rows": 3602,
+        "dates": 18,
+        "player_games": 3602,
+        "mae": 0.2378113774972014,
+        "rmse": 0.35184940317515745,
+        "bias": 0.04809220679342965,
+        "mean_prediction": 0.16330597692113646,
+        "mean_actual": 0.11521377012770682,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 3602,
+        "dates": 18,
+        "player_games": 3602,
+        "mae": 0.21441626345152165,
+        "rmse": 0.3666434096755427,
+        "bias": 0.015958616465279435,
+        "mean_prediction": 0.13117238659298627,
+        "mean_actual": 0.11521377012770682,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.02339511404567976,
+      "projection_eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_component_rebuild_from_rate_challengers",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "player",
+      "model": {
+        "rows": 2779,
+        "dates": 14,
+        "player_games": 2779,
+        "mae": 1.4570243433519199,
+        "rmse": 1.8058038772568137,
+        "bias": 0.4495347089269461,
+        "mean_prediction": 1.830607037102549,
+        "mean_actual": 1.3810723281756028,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 2779,
+        "dates": 14,
+        "player_games": 2779,
+        "mae": 1.36918198849649,
+        "rmse": 1.802869848087271,
+        "bias": 0.06272597200089104,
+        "mean_prediction": 1.443798300176494,
+        "mean_actual": 1.3810723281756028,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.0878423548554299,
+      "projection_eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_baseline",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 4299,
+        "dates": 21,
+        "player_games": 4299,
+        "mae": 0.7532817484374339,
+        "rmse": 1.0476018814691475,
+        "bias": 0.08177268767800741,
+        "mean_prediction": 3.797985760485637,
+        "mean_actual": 3.7162130728076295,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 4299,
+        "dates": 21,
+        "player_games": 4299,
+        "mae": 0.7572885167093122,
+        "rmse": 1.0190424790611092,
+        "bias": 0.09219696717952125,
+        "mean_prediction": 3.8084100399871508,
+        "mean_actual": 3.7162130728076295,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0040067682718782915,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "hitter_plate_appearances_challenger",
+      "model_family": "hitter_pa_v3_challenger",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 4136,
+        "dates": 21,
+        "player_games": 4136,
+        "mae": 0.749347182839262,
+        "rmse": 1.0764033500021548,
+        "bias": 0.04908938492935059,
+        "mean_prediction": 3.7727354197455982,
+        "mean_actual": 3.7236460348162477,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 4136,
+        "dates": 21,
+        "player_games": 4136,
+        "mae": 0.760158768536428,
+        "rmse": 1.0233057513381114,
+        "bias": 0.08302420097632864,
+        "mean_prediction": 3.806670235792576,
+        "mean_actual": 3.7236460348162477,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.010811585697166004,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "pitcher_batters_faced",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 456,
+        "dates": 23,
+        "player_games": 456,
+        "mae": 3.0847953216374266,
+        "rmse": 4.0794234772125275,
+        "bias": 0.5264619883040935,
+        "mean_prediction": 22.826900584795318,
+        "mean_actual": 22.30043859649123,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 456,
+        "dates": 23,
+        "player_games": 456,
+        "mae": 3.0847953216374266,
+        "rmse": 4.0794234772125275,
+        "bias": 0.5264619883040935,
+        "mean_prediction": 22.826900584795318,
+        "mean_actual": 22.30043859649123,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "pitcher_innings",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 464,
+        "dates": 23,
+        "player_games": 464,
+        "mae": 0.989260775862069,
+        "rmse": 1.281972653927012,
+        "bias": 0.07595474137931034,
+        "mean_prediction": 5.299984913793104,
+        "mean_actual": 5.224030172413793,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 464,
+        "dates": 23,
+        "player_games": 464,
+        "mae": 1.1967456896551723,
+        "rmse": 1.5702535897767902,
+        "bias": 0.024504310344827564,
+        "mean_prediction": 5.24853448275862,
+        "mean_actual": 5.224030172413793,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.2074849137931033,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "pitcher_pitch_count",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 452,
+        "dates": 23,
+        "player_games": 452,
+        "mae": 12.335006084070796,
+        "rmse": 16.12444368217385,
+        "bias": 1.5911332964601772,
+        "mean_prediction": 88.35883241150442,
+        "mean_actual": 86.76769911504425,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 452,
+        "dates": 23,
+        "player_games": 452,
+        "mae": 17.366028761061948,
+        "rmse": 22.49603011560905,
+        "bias": 0.6600331858407082,
+        "mean_prediction": 87.42773230088495,
+        "mean_actual": 86.76769911504425,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 5.031022676991151,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "pitcher_strikeouts",
+      "model_family": "pitcher_k_regression",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "latest_lock": "2026-07-29T14:49:10.421634+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0,
+      "forecast_type": "player",
+      "model": {
+        "rows": 476,
+        "dates": 23,
+        "player_games": 476,
+        "mae": 1.8311031037091503,
+        "rmse": 2.270420789728969,
+        "bias": 0.12847845558301257,
+        "mean_prediction": 5.012932237095618,
+        "mean_actual": 4.8844537815126055,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 464,
+        "dates": 23,
+        "player_games": 464,
+        "mae": 1.918483413790424,
+        "rmse": 2.4028930371691746,
+        "bias": 0.02344846806002611,
+        "mean_prediction": 4.96310364047382,
+        "mean_actual": 4.939655172413793,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.08738031008127378,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-25T14:43:46.811425+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 4,
+      "forecast_type": "player",
+      "model": {
+        "rows": 1254,
+        "dates": 6,
+        "player_games": 1254,
+        "mae": 0.7397421297900759,
+        "rmse": 0.9284025359335288,
+        "bias": -0.26841090616248214,
+        "mean_prediction": 0.5713020124978049,
+        "mean_actual": 0.8397129186602871,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1254,
+        "dates": 6,
+        "player_games": 1254,
+        "mae": 0.7299568365357839,
+        "rmse": 0.9062489913592494,
+        "bias": 0.021557049188628143,
+        "mean_prediction": 0.8612699678489152,
+        "mean_actual": 0.8397129186602871,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.009785293254292005,
+      "projection_eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_count_regression",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-12T14:39:38.610414+00:00",
+      "dates_remaining_to_minimum": 2,
+      "dates_remaining_to_target": 7,
+      "forecast_type": "player",
+      "model": {
+        "rows": 697,
+        "dates": 3,
+        "player_games": 697,
+        "mae": 0.3043589258177753,
+        "rmse": 0.36713832643986244,
+        "bias": 0.119041393948603,
+        "mean_prediction": 0.24673149437901903,
+        "mean_actual": 0.12769010043041606,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 697,
+        "dates": 3,
+        "player_games": 697,
+        "mae": 0.22859021657443468,
+        "rmse": 0.35670134228941297,
+        "bias": 0.016921158707385395,
+        "mean_prediction": 0.14461125913780148,
+        "mean_actual": 0.12769010043041606,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.07576870924334062,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "latest_lock": "2026-07-12T14:39:38.610414+00:00",
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 3,
+      "forecast_type": "player",
+      "model": {
+        "rows": 1520,
+        "dates": 7,
+        "player_games": 1520,
+        "mae": 1.2911668855075975,
+        "rmse": 1.7281039003037926,
+        "bias": -0.15927190410173175,
+        "mean_prediction": 1.219675464319321,
+        "mean_actual": 1.3789473684210527,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1520,
+        "dates": 7,
+        "player_games": 1520,
+        "mae": 1.414453842940685,
+        "rmse": 1.8210148725340969,
+        "bias": 0.10124477861319969,
+        "mean_prediction": 1.4801921470342525,
+        "mean_actual": 1.3789473684210527,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.12328695743308749,
+      "projection_eligible": true,
+      "blockers": []
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "latest_lock": "2026-07-05T14:36:36.639660+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "player",
+      "model": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.7205943942157345,
+        "rmse": 0.8992913184415962,
+        "bias": -0.38130287583364736,
+        "mean_prediction": 0.4648509703201988,
+        "mean_actual": 0.8461538461538461,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.7078251328251327,
+        "rmse": 0.8696132501111464,
+        "bias": 0.03167590667590668,
+        "mean_prediction": 0.8778297528297527,
+        "mean_actual": 0.8461538461538461,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.01276926139060175,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "latest_lock": "2026-07-05T14:36:36.639660+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "player",
+      "model": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.2558998409999007,
+        "rmse": 0.3658781712549559,
+        "bias": 0.02300632281660273,
+        "mean_prediction": 0.16645746626774616,
+        "mean_actual": 0.14345114345114346,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.2363074613074613,
+        "rmse": 0.39211865844245275,
+        "bias": -0.010215985215985211,
+        "mean_prediction": 0.13323515823515822,
+        "mean_actual": 0.14345114345114346,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.019592379692439404,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "latest_lock": "2026-07-05T14:36:36.639660+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "player",
+      "model": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 1.2574879692424177,
+        "rmse": 1.7598402341912471,
+        "bias": -0.1993642815554009,
+        "mean_prediction": 1.24138415919304,
+        "mean_actual": 1.4407484407484408,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 1.4264091014091016,
+        "rmse": 1.8786534480527388,
+        "bias": 0.03031300531300532,
+        "mean_prediction": 1.471061446061446,
+        "mean_actual": 1.4407484407484408,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.16892113216668392,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_baseline",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "latest_lock": "2026-07-05T14:36:36.639660+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.8079926079926079,
+        "rmse": 1.0596796070452315,
+        "bias": 0.08140448140448142,
+        "mean_prediction": 3.802818202818203,
+        "mean_actual": 3.7214137214137213,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.8079926079926079,
+        "rmse": 1.0596796070452315,
+        "bias": 0.08140448140448142,
+        "mean_prediction": 3.802818202818203,
+        "mean_actual": 3.7214137214137213,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "hitter_plate_appearances_challenger",
+      "model_family": "hitter_pa_v3_challenger",
+      "model_version": "hitter-pg-2026-07-03-r1",
+      "latest_lock": "2026-07-05T14:36:36.639660+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.7477154082684471,
+        "rmse": 1.068490546656346,
+        "bias": 0.13477588324314135,
+        "mean_prediction": 3.8561896046568624,
+        "mean_actual": 3.7214137214137213,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 481,
+        "dates": 2,
+        "player_games": 481,
+        "mae": 0.8079926079926079,
+        "rmse": 1.0596796070452315,
+        "bias": 0.08140448140448142,
+        "mean_prediction": 3.802818202818203,
+        "mean_actual": 3.7214137214137213,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.06027719972416079,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "player",
+      "model": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 0.7808618211139619,
+        "rmse": 0.9868998374191238,
+        "bias": -0.42300253482165606,
+        "mean_prediction": 0.45794984613072487,
+        "mean_actual": 0.8809523809523809,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 0.756885865457294,
+        "rmse": 0.9445200780198253,
+        "bias": -0.03359032501889646,
+        "mean_prediction": 0.8473620559334845,
+        "mean_actual": 0.8809523809523809,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.02397595565666788,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "player",
+      "model": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 0.2730005275086335,
+        "rmse": 0.4181400086616507,
+        "bias": 0.0058985390259801975,
+        "mean_prediction": 0.16780330093074208,
+        "mean_actual": 0.1619047619047619,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 0.23609032501889646,
+        "rmse": 0.43066050512847426,
+        "bias": -0.039147770219198796,
+        "mean_prediction": 0.12275699168556314,
+        "mean_actual": 0.1619047619047619,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.03691020248973706,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "player",
+      "model": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 1.4123882931924407,
+        "rmse": 2.0041290376380942,
+        "bias": -0.2808177437300087,
+        "mean_prediction": 1.2763251134128484,
+        "mean_actual": 1.5571428571428572,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 1.4792573696145122,
+        "rmse": 2.041365630676199,
+        "bias": -0.14836167800453515,
+        "mean_prediction": 1.408781179138322,
+        "mean_actual": 1.5571428571428572,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0668690764220714,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_v3",
+      "model_version": "hitter_pg:2026-07-03T08:22:56.064748+00:00",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 0.7241559544088437,
+        "rmse": 1.0218778497490035,
+        "bias": -0.11721796823404895,
+        "mean_prediction": 3.71135346033738,
+        "mean_actual": 3.8285714285714287,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 210,
+        "dates": 1,
+        "player_games": 210,
+        "mae": 0.7848337112622826,
+        "rmse": 1.0364343173275876,
+        "bias": -0.1137377173091459,
+        "mean_prediction": 3.7148337112622825,
+        "mean_actual": 3.8285714285714287,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0606777568534389,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "pitcher_batters_faced",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "current",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 36,
+        "dates": 2,
+        "player_games": 36,
+        "mae": 3.2361111111111116,
+        "rmse": 4.046019992261257,
+        "bias": 1.3138888888888889,
+        "mean_prediction": 22.563888888888886,
+        "mean_actual": 21.25,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 36,
+        "dates": 2,
+        "player_games": 36,
+        "mae": 3.2361111111111116,
+        "rmse": 4.046019992261257,
+        "bias": 1.3138888888888889,
+        "mean_prediction": 22.563888888888886,
+        "mean_actual": 21.25,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.0,
+      "projection_eligible": false,
+      "blockers": [
+        "rows<50",
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "pitcher_innings",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "current",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 37,
+        "dates": 2,
+        "player_games": 37,
+        "mae": 1.1479279279279277,
+        "rmse": 1.5902534370325987,
+        "bias": 0.5423063063063065,
+        "mean_prediction": 5.299333333333332,
+        "mean_actual": 4.757027027027027,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 37,
+        "dates": 2,
+        "player_games": 37,
+        "mae": 1.5043243243243243,
+        "rmse": 2.0956712141549874,
+        "bias": 0.8913513513513515,
+        "mean_prediction": 5.648378378378378,
+        "mean_actual": 4.757027027027027,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.35639639639639653,
+      "projection_eligible": false,
+      "blockers": [
+        "rows<50",
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "pitcher_pitch_count",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "current",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 36,
+        "dates": 2,
+        "player_games": 36,
+        "mae": 14.898333333333333,
+        "rmse": 20.212409931084963,
+        "bias": 5.261999999999999,
+        "mean_prediction": 87.78977777777777,
+        "mean_actual": 82.52777777777777,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 36,
+        "dates": 2,
+        "player_games": 36,
+        "mae": 20.54013888888889,
+        "rmse": 28.93461315093818,
+        "bias": 11.425972222222223,
+        "mean_prediction": 93.95374999999999,
+        "mean_actual": 82.52777777777777,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 5.641805555555557,
+      "projection_eligible": false,
+      "blockers": [
+        "rows<50",
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "pitcher_strikeouts",
+      "model_family": "pitcher_k_regression",
+      "model_version": "current",
+      "latest_lock": "2026-07-03T14:37:02.846146+00:00",
+      "dates_remaining_to_minimum": 3,
+      "dates_remaining_to_target": 8,
+      "forecast_type": "player",
+      "model": {
+        "rows": 38,
+        "dates": 2,
+        "player_games": 38,
+        "mae": 2.0207832432787747,
+        "rmse": 2.380931224758396,
+        "bias": 0.8560251605715656,
+        "mean_prediction": 5.013919897413672,
+        "mean_actual": 4.157894736842105,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 37,
+        "dates": 2,
+        "player_games": 37,
+        "mae": 2.173813268881463,
+        "rmse": 2.624710478285426,
+        "bias": 0.8673941485082647,
+        "mean_prediction": 5.029556310670426,
+        "mean_actual": 4.162162162162162,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.1530300256026882,
+      "projection_eligible": false,
+      "blockers": [
+        "rows<100",
+        "dates<5",
+        "baseline_coverage"
+      ]
+    },
+    {
+      "stat": "batter_hits",
+      "model_family": "hitter_hits_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "latest_lock": "2026-07-02T14:38:26.421928+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "player",
+      "model": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 0.7769402711208888,
+        "rmse": 1.0014474833377238,
+        "bias": -0.43697635933170315,
+        "mean_prediction": 0.48919813731259215,
+        "mean_actual": 0.9261744966442953,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 0.6910514541387025,
+        "rmse": 0.9034897955091207,
+        "bias": -0.010514541387024595,
+        "mean_prediction": 0.9156599552572707,
+        "mean_actual": 0.9261744966442953,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.08588881698218631,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "latest_lock": "2026-07-02T14:38:26.421928+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "player",
+      "model": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 0.2575810654141455,
+        "rmse": 0.34526295715875843,
+        "bias": 0.04671836260991803,
+        "mean_prediction": 0.17423514113340796,
+        "mean_actual": 0.12751677852348994,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 0.22326621923937365,
+        "rmse": 0.3643305691391361,
+        "bias": -0.003579418344519016,
+        "mean_prediction": 0.12393736017897093,
+        "mean_actual": 0.12751677852348994,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.034314846174771846,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5",
+        "model_not_better_than_simple_baseline"
+      ]
+    },
+    {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_direct_player_game_blend",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "latest_lock": "2026-07-02T14:38:26.421928+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "player",
+      "model": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 1.3262270810666534,
+        "rmse": 1.7403652892550394,
+        "bias": -0.19339709786747988,
+        "mean_prediction": 1.3502270632063458,
+        "mean_actual": 1.5436241610738255,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 1.3602535421327369,
+        "rmse": 1.7547041517127935,
+        "bias": -0.06211782252050709,
+        "mean_prediction": 1.4815063385533185,
+        "mean_actual": 1.5436241610738255,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": 0.034026461066083424,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    },
+    {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_v3",
+      "model_version": "hitter_pg:2026-07-02T14:31:24.102972+00:00",
+      "latest_lock": "2026-07-02T14:38:26.421928+00:00",
+      "dates_remaining_to_minimum": 4,
+      "dates_remaining_to_target": 9,
+      "forecast_type": "opportunity",
+      "model": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 0.7616078171789316,
+        "rmse": 1.0636908958450377,
+        "bias": 0.016887286692335194,
+        "mean_prediction": 3.902793326960791,
+        "mean_actual": 3.8859060402684564,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 149,
+        "dates": 1,
+        "player_games": 149,
+        "mae": 0.7568232662192392,
+        "rmse": 1.0029970004185558,
+        "bias": -0.10357941834451906,
+        "mean_prediction": 3.782326621923937,
+        "mean_actual": 3.8859060402684564,
+        "brier": null
+      },
+      "model_only": {
+        "rows": 0
+      },
+      "mae_gain_vs_baseline": -0.004784550959692324,
+      "projection_eligible": false,
+      "blockers": [
+        "dates<5"
+      ]
+    }
+  ],
+  "walk_forward": [
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "batter_hits",
+      "metrics": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 0.7195465723120814,
+        "rmse": 0.8873058319380306,
+        "bias": -0.10066752651187211,
+        "mean_prediction": 0.6971972421714019,
+        "mean_actual": 0.797864768683274,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 0.7182695023442355,
+        "rmse": 0.8843099282982052,
+        "bias": 0.08176495509235723,
+        "mean_prediction": 0.8796297237756312,
+        "mean_actual": 0.797864768683274,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "batter_home_runs",
+      "metrics": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 0.2732636090398932,
+        "rmse": 0.35888929399648506,
+        "bias": 0.07731475536005236,
+        "mean_prediction": 0.20329340304688515,
+        "mean_actual": 0.12597864768683273,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 0.22501157995819918,
+        "rmse": 0.3619652564939603,
+        "bias": 0.013244082923798226,
+        "mean_prediction": 0.13922273061063098,
+        "mean_actual": 0.12597864768683273,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "batter_total_bases",
+      "metrics": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 1.2844312411366878,
+        "rmse": 1.7007791832038999,
+        "bias": -0.12466334273228537,
+        "mean_prediction": 1.228361568299743,
+        "mean_actual": 1.3530249110320285,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 1.4011964073885783,
+        "rmse": 1.7847844251572647,
+        "bias": 0.1316590408405355,
+        "mean_prediction": 1.484683951872564,
+        "mean_actual": 1.3530249110320285,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "hitter_plate_appearances",
+      "metrics": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 0.7280556292611854,
+        "rmse": 0.9923242282635089,
+        "bias": 0.12712650832300335,
+        "mean_prediction": 3.8196531987144624,
+        "mean_actual": 3.692526690391459,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1405,
+        "dates": 7,
+        "player_games": 1405,
+        "mae": 0.7293746822572444,
+        "rmse": 0.9927846630297973,
+        "bias": 0.1287900355871886,
+        "mean_prediction": 3.8213167259786482,
+        "mean_actual": 3.692526690391459,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "hitter_plate_appearances_challenger",
+      "metrics": {
+        "rows": 1357,
+        "dates": 7,
+        "player_games": 1357,
+        "mae": 0.7027896652307727,
+        "rmse": 1.0292358128414123,
+        "bias": 0.07980205340320376,
+        "mean_prediction": 3.7754542273162475,
+        "mean_actual": 3.6956521739130435,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1357,
+        "dates": 7,
+        "player_games": 1357,
+        "mae": 0.7273923570902199,
+        "rmse": 0.9907709900427255,
+        "bias": 0.12649226234340458,
+        "mean_prediction": 3.8221444362564476,
+        "mean_actual": 3.6956521739130435,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "pitcher_batters_faced",
+      "metrics": {
+        "rows": 133,
+        "dates": 7,
+        "player_games": 133,
+        "mae": 3.3365914786967417,
+        "rmse": 4.613069407317123,
+        "bias": 1.0333333333333334,
+        "mean_prediction": 22.9280701754386,
+        "mean_actual": 21.894736842105264,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 133,
+        "dates": 7,
+        "player_games": 133,
+        "mae": 3.3365914786967417,
+        "rmse": 4.613069407317123,
+        "bias": 1.0333333333333334,
+        "mean_prediction": 22.9280701754386,
+        "mean_actual": 21.894736842105264,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "pitcher_innings",
+      "metrics": {
+        "rows": 135,
+        "dates": 7,
+        "player_games": 135,
+        "mae": 1.0527296296296296,
+        "rmse": 1.377657063633553,
+        "bias": 0.1959888888888889,
+        "mean_prediction": 5.306877777777777,
+        "mean_actual": 5.110888888888889,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 135,
+        "dates": 7,
+        "player_games": 135,
+        "mae": 1.2491851851851852,
+        "rmse": 1.610032435836137,
+        "bias": 0.2521481481481481,
+        "mean_prediction": 5.363037037037037,
+        "mean_actual": 5.110888888888889,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "pitcher_pitch_count",
+      "metrics": {
+        "rows": 132,
+        "dates": 7,
+        "player_games": 132,
+        "mae": 12.786412878787878,
+        "rmse": 17.383617750831025,
+        "bias": 3.688530303030304,
+        "mean_prediction": 88.38550000000001,
+        "mean_actual": 84.6969696969697,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 132,
+        "dates": 7,
+        "player_games": 132,
+        "mae": 17.887613636363636,
+        "rmse": 22.769839363928128,
+        "bias": 4.8042803030303025,
+        "mean_prediction": 89.50125000000001,
+        "mean_actual": 84.6969696969697,
+        "brier": null
+      }
+    },
+    {
+      "fold": 1,
+      "holdout_start": "2026-07-07",
+      "holdout_end": "2026-07-16",
+      "stat": "pitcher_strikeouts",
+      "metrics": {
+        "rows": 138,
+        "dates": 7,
+        "player_games": 138,
+        "mae": 1.9451547304285974,
+        "rmse": 2.3686945672006487,
+        "bias": 0.2626462641944532,
+        "mean_prediction": 4.936559307672714,
+        "mean_actual": 4.673913043478261,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 135,
+        "dates": 7,
+        "player_games": 135,
+        "mae": 1.959929700660201,
+        "rmse": 2.4671872768687333,
+        "bias": 0.2408539973832335,
+        "mean_prediction": 4.951965108494345,
+        "mean_actual": 4.711111111111111,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "batter_hits",
+      "metrics": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 0.7147221249786341,
+        "rmse": 0.8894535714315169,
+        "bias": 0.061586470487727564,
+        "mean_prediction": 0.9187293276305848,
+        "mean_actual": 0.8571428571428571,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 0.7142478292129859,
+        "rmse": 0.9024553935185149,
+        "bias": 0.0016893424036281315,
+        "mean_prediction": 0.8588321995464854,
+        "mean_actual": 0.8571428571428571,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "batter_home_runs",
+      "metrics": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 0.24951362815923867,
+        "rmse": 0.37952945218496226,
+        "bias": 0.03244808185527329,
+        "mean_prediction": 0.16415539892844402,
+        "mean_actual": 0.13170731707317074,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 0.23134505834854266,
+        "rmse": 0.39705743810309285,
+        "bias": 0.003207234113157461,
+        "mean_prediction": 0.13491455118632822,
+        "mean_actual": 0.13170731707317074,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "batter_total_bases",
+      "metrics": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 1.49500241568052,
+        "rmse": 1.8706586221108386,
+        "bias": 0.39162241725174535,
+        "mean_prediction": 1.842493497391118,
+        "mean_actual": 1.4508710801393727,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 1.396520657043305,
+        "rmse": 1.8721773189464757,
+        "bias": 0.00229522703390299,
+        "mean_prediction": 1.4531663071732757,
+        "mean_actual": 1.4508710801393727,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "hitter_plate_appearances",
+      "metrics": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 0.7457003663449417,
+        "rmse": 1.074627085146888,
+        "bias": 0.05575350528155526,
+        "mean_prediction": 3.8013981045846905,
+        "mean_actual": 3.745644599303136,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1435,
+        "dates": 7,
+        "player_games": 1435,
+        "mae": 0.7699358442564016,
+        "rmse": 1.0243088290526823,
+        "bias": 0.0683778552071235,
+        "mean_prediction": 3.8140224545102592,
+        "mean_actual": 3.745644599303136,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "hitter_plate_appearances_challenger",
+      "metrics": {
+        "rows": 1344,
+        "dates": 7,
+        "player_games": 1344,
+        "mae": 0.7549950588082772,
+        "rmse": 1.0911771080234318,
+        "bias": 0.03976161712229548,
+        "mean_prediction": 3.798690188550867,
+        "mean_actual": 3.7589285714285716,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 1344,
+        "dates": 7,
+        "player_games": 1344,
+        "mae": 0.780871480536659,
+        "rmse": 1.038220441179674,
+        "bias": 0.053240740740740734,
+        "mean_prediction": 3.8121693121693117,
+        "mean_actual": 3.7589285714285716,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "pitcher_batters_faced",
+      "metrics": {
+        "rows": 143,
+        "dates": 7,
+        "player_games": 143,
+        "mae": 3.128205128205128,
+        "rmse": 3.8938937713307875,
+        "bias": 0.1878787878787879,
+        "mean_prediction": 22.698368298368298,
+        "mean_actual": 22.51048951048951,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 143,
+        "dates": 7,
+        "player_games": 143,
+        "mae": 3.128205128205128,
+        "rmse": 3.8938937713307875,
+        "bias": 0.1878787878787879,
+        "mean_prediction": 22.698368298368298,
+        "mean_actual": 22.51048951048951,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "pitcher_innings",
+      "metrics": {
+        "rows": 145,
+        "dates": 7,
+        "player_games": 145,
+        "mae": 0.9577218390804597,
+        "rmse": 1.248804130180372,
+        "bias": 0.01570344827586208,
+        "mean_prediction": 5.27315172413793,
+        "mean_actual": 5.257448275862068,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 145,
+        "dates": 7,
+        "player_games": 145,
+        "mae": 1.174551724137931,
+        "rmse": 1.5707843417464606,
+        "bias": -0.03468965517241379,
+        "mean_prediction": 5.222758620689655,
+        "mean_actual": 5.257448275862068,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "pitcher_pitch_count",
+      "metrics": {
+        "rows": 141,
+        "dates": 7,
+        "player_games": 141,
+        "mae": 12.011099290780143,
+        "rmse": 15.04649092594008,
+        "bias": 1.0114539007092203,
+        "mean_prediction": 88.15329787234043,
+        "mean_actual": 87.1418439716312,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 141,
+        "dates": 7,
+        "player_games": 141,
+        "mae": 17.045709219858157,
+        "rmse": 22.10460528137497,
+        "bias": 0.03549645390070954,
+        "mean_prediction": 87.17734042553192,
+        "mean_actual": 87.1418439716312,
+        "brier": null
+      }
+    },
+    {
+      "fold": 2,
+      "holdout_start": "2026-07-17",
+      "holdout_end": "2026-07-23",
+      "stat": "pitcher_strikeouts",
+      "metrics": {
+        "rows": 150,
+        "dates": 7,
+        "player_games": 150,
+        "mae": 1.6426608096867308,
+        "rmse": 2.065017438362011,
+        "bias": -0.21683136734650768,
+        "mean_prediction": 4.969835299320159,
+        "mean_actual": 5.1866666666666665,
+        "brier": null
+      },
+      "baseline": {
+        "rows": 145,
+        "dates": 7,
+        "player_games": 145,
+        "mae": 1.758704600462115,
+        "rmse": 2.219973326077849,
+        "bias": -0.2721140492663946,
+        "mean_prediction": 4.962368709354295,
+        "mean_actual": 5.23448275862069,
+        "brier": null
+      }
+    }
+  ],
+  "active_model_cohorts": {
+    "batter_hits": {
+      "stat": "batter_hits",
+      "model_family": "hitter_count_regression",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 4190,
+      "pending_rows": 0,
+      "graded_rows": 3045,
+      "dates": 16,
+      "graded_dates": 15,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "batter_home_runs": {
+      "stat": "batter_home_runs",
+      "model_family": "hitter_hr_direct_player_game_blend",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 4907,
+      "pending_rows": 0,
+      "graded_rows": 3602,
+      "dates": 19,
+      "graded_dates": 18,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "batter_total_bases": {
+      "stat": "batter_total_bases",
+      "model_family": "hitter_tb_component_rebuild_from_rate_challengers",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 3841,
+      "pending_rows": 0,
+      "graded_rows": 2779,
+      "dates": 15,
+      "graded_dates": 14,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "hitter_plate_appearances": {
+      "stat": "hitter_plate_appearances",
+      "model_family": "hitter_pa_baseline",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 5846,
+      "pending_rows": 0,
+      "graded_rows": 4299,
+      "dates": 22,
+      "graded_dates": 21,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "hitter_plate_appearances_challenger": {
+      "stat": "hitter_plate_appearances_challenger",
+      "model_family": "hitter_pa_v3_challenger",
+      "model_version": "hitter-pg-2026-07-06-r2",
+      "rows": 5635,
+      "pending_rows": 0,
+      "graded_rows": 4136,
+      "dates": 22,
+      "graded_dates": 21,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "pitcher_batters_faced": {
+      "stat": "pitcher_batters_faced",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 500,
+      "pending_rows": 14,
+      "graded_rows": 456,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "pitcher_innings": {
+      "stat": "pitcher_innings",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 494,
+      "pending_rows": 0,
+      "graded_rows": 464,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "pitcher_pitch_count": {
+      "stat": "pitcher_pitch_count",
+      "model_family": "pitcher_opportunity_v3",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 494,
+      "pending_rows": 12,
+      "graded_rows": 452,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    },
+    "pitcher_strikeouts": {
+      "stat": "pitcher_strikeouts",
+      "model_family": "pitcher_k_regression",
+      "model_version": "pitcher-k-2026-07-03-r1",
+      "rows": 507,
+      "pending_rows": 0,
+      "graded_rows": 476,
+      "dates": 24,
+      "graded_dates": 23,
+      "latest_lock": "2026-07-30T07:44:11.457782-07:00"
+    }
+  },
+  "shadow_model_cohorts": {
+    "batter_hits": [
+      {
+        "stat": "batter_hits",
+        "model_family": "hitter_rate_shadow_direct_player_game_blend",
+        "model_version": "hitter-rate-shadow-2026-07-09-r1",
+        "rows": 4780,
+        "pending_rows": 0,
+        "graded_rows": 3476,
+        "dates": 18,
+        "graded_dates": 17,
+        "latest_lock": "2026-07-30T07:44:17.798588-07:00"
+      }
+    ],
+    "batter_home_runs": [
+      {
+        "stat": "batter_home_runs",
+        "model_family": "hitter_rate_shadow_direct_player_game_blend",
+        "model_version": "hitter-rate-shadow-2026-07-09-r1",
+        "rows": 4780,
+        "pending_rows": 0,
+        "graded_rows": 3476,
+        "dates": 18,
+        "graded_dates": 17,
+        "latest_lock": "2026-07-30T07:44:17.798588-07:00"
+      }
+    ]
+  },
+  "projection_gates": {
+    "batter_hits": {
+      "eligible": true,
+      "blockers": [
+        "active_model_cohort_ungraded"
+      ],
+      "active_model_family": "hitter_count_regression",
+      "active_model_version": "hitter-pg-2026-07-06-r2",
+      "graded_rows": 3045,
+      "graded_dates": 15,
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0
+    },
+    "batter_home_runs": {
+      "eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ],
+      "active_model_family": "hitter_hr_direct_player_game_blend",
+      "active_model_version": "hitter-pg-2026-07-06-r2",
+      "graded_rows": 3602,
+      "graded_dates": 18,
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0
+    },
+    "batter_total_bases": {
+      "eligible": false,
+      "blockers": [
+        "model_not_better_than_simple_baseline"
+      ],
+      "active_model_family": "hitter_tb_component_rebuild_from_rate_challengers",
+      "active_model_version": "hitter-pg-2026-07-06-r2",
+      "graded_rows": 2779,
+      "graded_dates": 14,
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0
+    },
+    "game_home_win": {
+      "eligible": false,
+      "blockers": [
+        "no_prospective_rows"
+      ],
+      "active_model_family": null,
+      "active_model_version": null,
+      "graded_rows": 0,
+      "graded_dates": 0,
+      "dates_remaining_to_minimum": 5,
+      "dates_remaining_to_target": 10
+    },
+    "game_run_diff": {
+      "eligible": false,
+      "blockers": [
+        "no_prospective_rows"
+      ],
+      "active_model_family": null,
+      "active_model_version": null,
+      "graded_rows": 0,
+      "graded_dates": 0,
+      "dates_remaining_to_minimum": 5,
+      "dates_remaining_to_target": 10
+    },
+    "game_total": {
+      "eligible": false,
+      "blockers": [
+        "no_prospective_rows"
+      ],
+      "active_model_family": null,
+      "active_model_version": null,
+      "graded_rows": 0,
+      "graded_dates": 0,
+      "dates_remaining_to_minimum": 5,
+      "dates_remaining_to_target": 10
+    },
+    "hitter_plate_appearances_challenger": {
+      "eligible": true,
+      "blockers": [
+        "active_model_cohort_ungraded"
+      ],
+      "active_model_family": "hitter_pa_v3_challenger",
+      "active_model_version": "hitter-pg-2026-07-06-r2",
+      "graded_rows": 4136,
+      "graded_dates": 21,
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0
+    },
+    "pitcher_strikeouts": {
+      "eligible": true,
+      "blockers": [
+        "active_model_cohort_ungraded"
+      ],
+      "active_model_family": "pitcher_k_regression",
+      "active_model_version": "pitcher-k-2026-07-03-r1",
+      "graded_rows": 476,
+      "graded_dates": 23,
+      "dates_remaining_to_minimum": 0,
+      "dates_remaining_to_target": 0
+    }
+  },
+  "walk_forward_fold_count": 2,
+  "report_path": "C:\\Users\\josh\\Git\\SuperNovaBets\\reports\\mlb_daily_forecast_projection_audit_latest.md"
+}

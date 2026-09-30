@@ -9,6 +9,8 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from zoneinfo import ZoneInfo
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.modeling.filter_alt_line_candidates")
 
 _ET = ZoneInfo("America/New_York")
@@ -17,7 +19,7 @@ _ET = ZoneInfo("America/New_York")
 # --- Tune these thresholds however you want ---
 @dataclass(frozen=True)
 class FilterConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     et_date: date | None = None
 
     last_n: int = 10

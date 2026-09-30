@@ -26,6 +26,8 @@ from dataclasses import dataclass
 import pandas as pd
 import psycopg2
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.compute_elo")
 
 INIT_ELO: float = 1500.0
@@ -58,7 +60,7 @@ ON CONFLICT (game_slug, team_abbr) DO UPDATE SET
 
 @dataclass(frozen=True)
 class EloConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
 
 
 def _expected_home_win(home_elo: float, away_elo: float) -> float:

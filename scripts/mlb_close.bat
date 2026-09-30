@@ -3,6 +3,14 @@
 :: Re-crawls closing odds, grades outcomes + CLV. No Discord needed.
 cd /d C:\Users\josh\Git\SuperNovaBets
 set PYTHONIOENCODING=utf-8
+if not exist logs mkdir logs
+if "%SUPERNOVA_DISABLE_MLB%"=="" (
+    for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v SUPERNOVA_DISABLE_MLB 2^>nul ^| findstr SUPERNOVA_DISABLE_MLB') do set "SUPERNOVA_DISABLE_MLB=%%B"
+)
+if /I "%SUPERNOVA_DISABLE_MLB%"=="1" (
+    echo MLB Close skipped because SUPERNOVA_DISABLE_MLB=1. >> logs\mlb_disabled_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%.log 2>&1
+    exit /b 0
+)
 
 set LOGFILE=logs\mlb_close_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%.log
 

@@ -1,0 +1,28 @@
+{
+  "built_at": "2026-09-29T05:01:04.392809+00:00",
+  "counts": {
+    "missing_participation_evidence": 1
+  },
+  "unresolved_final_rows": 1,
+  "rows": [
+    {
+      "forecast_id": 9664,
+      "game_id": "2026_03_PHI_CHI",
+      "player_id": "00-0040024",
+      "player": "D.Cooper",
+      "team": "PHI",
+      "state": "missing_participation_evidence",
+      "snap_source_status": "game_not_published",
+      "snap_source_observed_at": "2026-09-29T05:00:48.783927+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    }
+  ],
+  "unique_unresolved_player_games": 1,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

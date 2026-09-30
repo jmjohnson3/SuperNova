@@ -1,0 +1,66 @@
+⚾ **MLB Props — Jul 28**
+
+
+**DATA HEALTH**
+- Offers: 1214 markets, 6106 normalized offers, 6106 linked sides
+- AI pick source: bets.mlb_ai_pick_engine; display pool 968 rows; clean pair 28% / synthetic 72% / CLV model coverage 100%
+
+**BANKROLL PROP BETS**
+- No bankroll-qualified player props today
+- Real-money blockers: unclassified 248
+
+**$1 MICRO TEST - BETTABLE NOW (1 shown / 1 live / 1 qualified)**
+- $1 flat only. Only bet if Cur is still at or better than Min.
+- $1 Michael Lorenzen (COL vs SD) K U3.5 -> 0.5 P=57.5% EV=+6.2% CLV=22% Lock=-118 Cur=-118 Min=-135 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355077866%232226225239_13L84240Q11084165140Q20>)
+
+**AI TOP 5 FAVORITES (2 shown)**
+- Headline ranking only. The AI FanDuel parlay below excludes plain hits.
+- Diversified headline view: hit unders limited to one; strikeouts capped at three.
+- $1 Michael Lorenzen (COL vs SD) K U3.5 -> 0.5 P=57.5% EV=+6.2% CLV=22% Lock=-118 Cur=-118 Min=-135 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355077866%232226225239_13L84240Q11084165140Q20>)
+- Jarren Duran (BOS vs ATH) H U0.5 -> 0.61 P=39.3% EV=+3.8% CLV=31% Lock=+164 Cur=+164 Min=+160 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355084106%232226246726_13L84240Q1268089707Q20>)
+- AI FanDuel Parlay: not built - only one-sided FanDuel HR legs had positive EV, so they stay in research
+
+**PAPER PLAYER PROPS (247 research rows)**
+
+**Top 5 Paper Strikeouts**
+- Luis Castillo (SEA vs LAD) K U4.5 -> 0.4 P=57.0% EV=-1.6% CLV=19% Lock=-138 Cur=-138 Min=-126 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595111769&selectionId=18042446>) | block: current_ev_not_positive, price_below_minimum
+- Jake Bennett (BOS vs ATH) K O3.5 -> 0.6 P=59.7% EV=-5.6% CLV=18% Lock=-172 Cur=-172 Min=-140 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355083756%232226425374_13L84240Q12119796993Q20>) | block: current_ev_not_positive, price_below_minimum
+- Logan Henderson (MIL vs SF) K O4.5 -> 0.6 P=59.4% EV=-5.7% CLV=10% Lock=-170 Cur=-170 Min=-139 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595111651&selectionId=82752907>) | block: current_ev_not_positive, price_below_minimum
+- Luis Castillo (SEA vs LAD) K U4.5 -> 0.4 P=58.4% EV=-5.6% CLV=15% Lock=-162 Cur=-162 Min=-133 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355126419%232226395258_13L84240Q1377382592Q20>) | block: current_ev_not_positive, price_below_minimum
+- Jake Bennett (BOS vs ATH) K O3.5 -> 0.6 P=58.0% EV=-5.8% CLV=20% Lock=-160 Cur=-160 Min=-131 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595111486&selectionId=98030406>) | block: current_ev_not_positive, price_below_minimum
+- Top 5 Paper Strikeouts Parlay: [FD](https://sportsbook.fanduel.com/addToBetslip?marketId[0]=42.595111769&selectionId[0]=18042446&marketId[1]=42.595111651&selectionId[1]=82752907&marketId[2]=42.595111486&selectionId[2]=98030406)
+
+**Top 5 Paper Total Bases**
+- Jake McCarthy (COL vs SD) TB U1.5 -> 0.37 P=63.3% EV=-6.3% CLV=20% Lock=-208 Cur=-208 Min=-163 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355078112%232226225104_13L84240Q146447124Q20>) | block: current_ev_not_positive, price_below_minimum
+- Josh Naylor (SEA vs LAD) TB U1.5 -> 0.37 P=63.1% EV=-6.3% CLV=20% Lock=-206 Cur=-206 Min=-162 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355190773%232226628523_13L84240Q146447124Q20>) | block: current_ev_not_positive, price_below_minimum
+- Andrew Vaughn (MIL vs SF) TB U1.5 -> 0.37 P=63.1% EV=-6.4% CLV=22% Lock=-207 Cur=-207 Min=-162 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355085569%232226252231_13L84240Q146447124Q20>) | block: current_ev_not_positive, price_below_minimum
+- Luis Rengifo (SD vs COL) TB U1.5 -> 0.37 P=62.7% EV=-6.3% CLV=24% Lock=-202 Cur=-202 Min=-159 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355078019%232226225626_13L84240Q146447124Q20>) | block: current_ev_not_positive, price_below_minimum
+- Cole Young (SEA vs LAD) TB U1.5 -> 0.37 P=62.6% EV=-6.4% CLV=20% Lock=-202 Cur=-202 Min=-158 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355227860%232226756300_13L84240Q146447124Q20>) | block: current_ev_not_positive, price_below_minimum
+
+**Top 5 Paper Hits + Runs + RBIs**
+- No qualifying rows
+
+**Top 5 Paper Hits**
+- Andy Pages (LAD vs SEA) H O0.5 -> 0.69 P=68.7% EV=-6.1% CLV=28% Lock=-273 Cur=-273 Min=-206 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355190757%232226628898_13L84240Q1-1570309299Q20>) | block: current_ev_not_positive, price_below_minimum
+- Caleb Durbin (BOS vs ATH) H O0.5 -> 0.68 P=68.3% EV=-6.1% CLV=15% Lock=-267 Cur=-267 Min=-202 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355084023%232226246303_13L84240Q1-1570309299Q20>) | block: current_ev_not_positive, price_below_minimum
+- Jackson Chourio (MIL vs SF) H O0.5 -> 0.68 P=68.1% EV=-6.1% CLV=37% Lock=-264 Cur=-264 Min=-200 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355084871%232226249326_13L84240Q1-1570309299Q20>) | block: current_ev_not_positive, price_below_minimum
+- Julio Rodríguez (SEA vs LAD) H O0.5 -> 0.68 P=68.1% EV=-6.1% CLV=32% Lock=-264 Cur=-264 Min=-200 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355190749%232226628885_13L84240Q1-1570309299Q20>) | block: current_ev_not_positive, price_below_minimum
+- Ty France (SD vs COL) H O0.5 -> 0.68 P=67.9% EV=-6.1% CLV=22% Lock=-261 Cur=-261 Min=-198 [alt_clf] [Bet draftkings](<https://sportsbook.draftkings.com/?outcomes=0QA355078156%232226224689_13L84240Q1-1570309299Q20>) | block: current_ev_not_positive, price_below_minimum
+
+**Top 5 Paper Home Runs**
+- No qualifying rows
+
+- Showing 15 of 247 paper/research rows
+
+**ONE-SIDED FANDUEL RESEARCH (10 shown / 694)**
+- Freddie Freeman (LAD vs SEA) H O0.5 -> 0.76 P=75.6% EV=+0.0% CLV=27% Lock=-310 Cur=-310 Min=-286 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595194818&selectionId=10885578>) | block: price_below_minimum
+- Shohei Ohtani (LAD vs SEA) H O0.5 -> 0.76 P=75.6% EV=+0.0% CLV=28% Lock=-310 Cur=-310 Min=-286 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595194818&selectionId=17511224>) | block: price_below_minimum
+- Yordan Alvarez (HOU vs LAA) H O0.5 -> 0.74 P=74.4% EV=+0.0% CLV=27% Lock=-290 Cur=-290 Min=-269 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595154050&selectionId=24676176>) | block: price_below_minimum
+- Ceddanne Rafaela (BOS vs ATH) H O0.5 -> 0.74 P=74.4% EV=+0.0% CLV=29% Lock=-290 Cur=-290 Min=-269 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595153055&selectionId=59980159>) | block: price_below_minimum
+- Luis Arraez (SF vs MIL) H O0.5 -> 0.74 P=74.4% EV=+0.0% CLV=29% Lock=-290 Cur=-290 Min=-269 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595150449&selectionId=24946426>) | block: price_below_minimum
+- Jackson Chourio (MIL vs SF) H O0.5 -> 0.74 P=74.4% EV=+0.0% CLV=27% Lock=-290 Cur=-290 Min=-269 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595150449&selectionId=64795488>) | block: price_below_minimum
+- Nick Kurtz (ATH vs BOS) HR O0.5 -> 0.353 P=35.3% EV=+35.8% CLV=23% Lock=+285 Cur=+285 Min=+190 [clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595153051&selectionId=65312398>)
+- Max Muncy (LAD vs SEA) HR O0.5 -> 0.352 P=35.2% EV=+35.7% CLV=24% Lock=+285 Cur=+285 Min=+190 [clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595194815&selectionId=19180730>)
+- Mike Trout (LAA vs HOU) HR O0.5 -> 0.341 P=34.1% EV=+36.3% CLV=24% Lock=+300 Cur=+300 Min=+200 [clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595154046&selectionId=10885571>)
+- Fernando Tatis Jr. (SD vs COL) H O0.5 -> 0.77 P=76.7% EV=-0.0% CLV=28% Lock=-330 Cur=-330 Min=-303 [alt_clf] [Bet fanduel](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.595151809&selectionId=23494151>) | block: current_ev_not_positive, price_below_minimum
+

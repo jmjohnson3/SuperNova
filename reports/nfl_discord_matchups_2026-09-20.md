@@ -1,0 +1,92 @@
+# NFL Matchup Cards - 2026-09-20
+
+1 games / 3 messages
+
+## IND @ KC | NFL 2026-09-20 (1/3)
+
+Kickoff: <t:1789950000:f> (<t:1789950000:R>)
+Quotes are from locked forecasts; verify the price at the book.
+
+**BANKROLL**
+- No qualifying bankroll bets for this matchup.
+
+**PAPER GAME PICKS**
+- KC -6.0 -108 | home margin=+6.5 | P=52% | EV=-0.6% [Bet DRAFTKINGS](<https://sportsbook.draftkings.com/event/34118260?outcomes=0HC84695703N600_1>)
+- KC -6.5 -102 | home margin=+6.5 | P=50% | EV=-1.0% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476516&selectionId=50214>)
+- UNDER 46.5 -118 | total=45.5 | P=52% | EV=-4.1% [Bet DRAFTKINGS](<https://sportsbook.draftkings.com/event/34118260?outcomes=0OU84695703U4650_3>)
+- UNDER 45.5 -105 | total=45.5 | P=49% | EV=-4.2% [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.185476519&selectionId=7017917>)
+
+**PAPER - QB Passing Yards**
+- Research only: D.Jones (IND vs KC) QB Passing Yards UNDER216.5 -112 proj=184.05 range=74.7-288.5 | P(under)=58% | Mkt=50% | Edge=+7.6% | EV=+9.0% | Cur=-112 Min=-136 Drift=OK [ctx=79% spike=47% depth=1]
+- Research only: P.Mahomes (KC vs IND) QB Passing Yards OVER221.5 -112 proj=247.34 range=138.0-351.8 | P(over)=54% | Mkt=50% | Edge=+3.8% | EV=+1.9% | Cur=-112 Min=-117 Drift=OK [ctx=82% spike=63% depth=1 prac=Full Participation in Practice]
+
+**PAPER - QB Rushing Yards**
+- Research only: P.Mahomes (KC vs IND) Rushing Yards OVER17.5 -108 proj=27.78 range=3.3-61.5 | P(over)=60% | Mkt=49% | Edge=+11.0% | EV=+15.9% | Cur=-108 Min=-152 Drift=OK [ctx=82% spike=53% depth=1 prac=Full Participation in Practice]
+- Research only: D.Jones (IND vs KC) Rushing Yards OVER8.5 -113 proj=12.61 range=0.0-46.3 | P(over)=55% | Mkt=50% | Edge=+4.7% | EV=+3.5% | Cur=-113 Min=-122 Drift=OK [ctx=79% spike=28% depth=1]
+
+**PAPER - QB Passing TDs**
+- Research only: P.Mahomes (KC vs IND) QB Passing TDs UNDER1.5 -111 proj=1.20 range=0.0-3.0 | P(under)=59% | Mkt=50% | Edge=+9.2% | EV=+11.7% | Cur=-111 Min=-143 Drift=OK [ctx=82% spike=73% depth=1 prac=Full Participation in Practice]
+- Research only: D.Jones (IND vs KC) QB Passing TDs UNDER1.5 -204 proj=1.20 range=0.0-3.0 | P(under)=65% | Mkt=63% | Edge=+1.6% | EV=-3.2% | Cur=-204 Min=-186 Drift=CHECK [ctx=79% spike=23% depth=1]
+
+**PAPER - RB Rushing Yards**
+- Research only: J.Taylor (IND vs KC) Rushing Yards UNDER79.5 -113 proj=63.73 range=39.3-97.5 | P(under)=66% | Mkt=50% | Edge=+16.4% | EV=+25.2% | Cur=-113 Min=-198 Drift=OK [ctx=90% spike=89% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728593&selectionId=16593214>)
+- Research only: K.Walker (KC vs IND) Rushing Yards proj=109.50 range=85.0-143.2 [ctx=90% spike=92% depth=1]
+- Research only: E.Johnson (KC vs IND) Rushing Yards proj=23.35 range=0.0-57.1 [ctx=90% spike=31% depth=2]
+- Research only: Lincoln Pare (IND vs KC) Rushing Yards proj=21.49 range=0.0-55.2 [ctx=90% spike=19%]
+- Research only: D.Giddens (IND vs KC) Rushing Yards proj=15.31 range=0.0-49.0 [ctx=92% spike=18% limited=45% depth=3 inj=Questionable prac=Full Participation in Practice]
+
+**PAPER - RB Receiving Yards**
+- Research only: J.Taylor (IND vs KC) Receiving Yards UNDER17.5 -114 proj=17.37 range=0.0-48.8 | P(under)=55% | Mkt=50% | Edge=+4.9% | EV=+3.1% | Cur=-114 Min=-122 Drift=OK [ctx=90% spike=74% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728617&selectionId=16593214>)
+- Research only: E.Johnson (KC vs IND) Receiving Yards proj=33.27 range=10.8-64.7 [ctx=90% spike=27% depth=2]
+- Research only: K.Walker (KC vs IND) Receiving Yards proj=26.00 range=3.5-57.4 [ctx=90% spike=75% depth=1]
+- Research only: Lincoln Pare (IND vs KC) Receiving Yards proj=8.05 range=0.0-39.4 [ctx=90% spike=19%]
+
+Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.
+
+## IND @ KC | NFL 2026-09-20 (2/3)
+
+Kickoff: <t:1789950000:f> (<t:1789950000:R>)
+Quotes are from locked forecasts; verify the price at the book.
+
+**PAPER - RB Rushing TDs**
+- Research only: J.Taylor (IND vs KC) Rushing TDs proj=0.64 range=0.0-1.0 [ctx=90% spike=100% depth=1]
+- Research only: K.Walker (KC vs IND) Rushing TDs proj=0.59 range=0.0-1.0 [ctx=90% spike=100% depth=1]
+- Research only: E.Johnson (KC vs IND) Rushing TDs proj=0.22 range=0.0-1.0 [ctx=90% spike=20% depth=2]
+- Research only: Lincoln Pare (IND vs KC) Rushing TDs proj=0.14 range=0.0-1.0 [ctx=90% spike=18%]
+- Research only: B.VanSumeren (KC vs IND) Rushing TDs proj=0.05 range=0.0-0.0 [ctx=78% spike=0% depth=1]
+- Research only: S.McGowan (IND vs KC) Rushing TDs proj=0.04 range=0.0-0.0 [ctx=76% spike=0% depth=2]
+
+**PAPER - WR/TE Receiving Yards**
+- Research only: T.Warren (IND vs KC) Receiving Yards UNDER42.5 -109 proj=28.74 range=6.2-60.1 | P(under)=63% | Mkt=49% | Edge=+13.5% | EV=+20.6% | Cur=-109 Min=-170 Drift=OK [ctx=81% spike=72% depth=1]
+- Research only: X.Worthy (KC vs IND) Receiving Yards UNDER37.5 -113 proj=28.70 range=6.2-60.1 | P(under)=62% | Mkt=50% | Edge=+12.0% | EV=+16.9% | Cur=-113 Min=-164 Drift=OK [ctx=79% spike=72% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728598&selectionId=41066847>)
+- Research only: A.Pierce (IND vs KC) Receiving Yards OVER45.5 -109 proj=54.53 range=32.0-85.9 | P(over)=61% | Mkt=49% | Edge=+11.3% | EV=+16.4% | Cur=-109 Min=-155 Drift=OK [ctx=79% spike=67% depth=1 prac=Full Participation in Practice]
+- Research only: R.Rice (KC vs IND) Receiving Yards OVER53.5 -114 proj=60.24 range=37.8-91.6 | P(over)=58% | Mkt=50% | Edge=+7.6% | EV=+8.9% | Cur=-114 Min=-139 Drift=OK [ctx=81% spike=80% depth=1 prac=Full Participation in Practice]
+- Research only: J.Downs (IND vs KC) Receiving Yards UNDER39.5 -113 proj=37.10 range=14.6-68.5 | P(under)=57% | Mkt=50% | Edge=+6.9% | EV=+7.3% | Cur=-113 Min=-133 Drift=OK [ctx=79% spike=45% depth=2] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728642&selectionId=41178411>)
+- Research only: T.Kelce (KC vs IND) Receiving Yards UNDER41.5 -113 proj=39.43 range=16.9-70.8 | P(under)=57% | Mkt=50% | Edge=+6.7% | EV=+6.8% | Cur=-113 Min=-131 Drift=OK [ctx=81% spike=69% depth=1] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728658&selectionId=11802405>)
+- Research only: T.Thornton (KC vs IND) Receiving Yards UNDER14.5 -113 proj=13.67 range=0.0-45.1 | P(under)=55% | Mkt=50% | Edge=+5.5% | EV=+4.6% | Cur=-113 Min=-125 Drift=OK [ctx=75% spike=47% depth=3] [Bet FANDUEL](<https://sportsbook.fanduel.com/addToBetslip?marketId=717.186728669&selectionId=41074863>)
+- Research only: K.Allen (IND vs KC) Receiving Yards UNDER29.5 -112 proj=28.91 range=6.4-60.3 | P(under)=55% | Mkt=50% | Edge=+5.2% | EV=+4.6% | Cur=-112 Min=-124 Drift=OK [ctx=76% spike=92% depth=3 prac=Full Participation in Practice]
+- Research only: N.Gray (KC vs IND) Receiving Yards UNDER10.5 -112 proj=10.98 range=0.0-42.4 | P(under)=53% | Mkt=50% | Edge=+2.8% | EV=+0.0% | Cur=-112 Min=-113 Drift=OK [ctx=78% spike=31% depth=2]
+- Research only: Deion Burks (IND vs KC) Receiving Yards proj=21.07 range=0.0-52.5 [ctx=75% spike=20% limited=24% depth=4]
+- Research parlay: [FanDuel](<https://sportsbook.fanduel.com/addToBetslip?marketId[0]=717.186728598&selectionId[0]=41066847&marketId[1]=717.186728642&selectionId[1]=41178411&marketId[2]=717.186728658&selectionId[2]=11802405&marketId[3]=717.186728669&selectionId[3]=41074863>)
+
+Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.
+
+## IND @ KC | NFL 2026-09-20 (3/3)
+
+Kickoff: <t:1789950000:f> (<t:1789950000:R>)
+Quotes are from locked forecasts; verify the price at the book.
+
+**PAPER - WR/TE Receiving TDs**
+- Research only: R.Rice (KC vs IND) Receiving TDs proj=0.47 range=0.0-1.0 [ctx=81% spike=100% depth=1 prac=Full Participation in Practice]
+- Research only: A.Pierce (IND vs KC) Receiving TDs proj=0.41 range=0.0-1.0 [ctx=79% spike=29% depth=1 prac=Full Participation in Practice]
+- Research only: T.Warren (IND vs KC) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=81% spike=24% depth=1]
+- Research only: T.Kelce (KC vs IND) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=81% spike=8% depth=1]
+- Research only: J.Downs (IND vs KC) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=79% spike=8% depth=2]
+- Research only: X.Worthy (KC vs IND) Receiving TDs proj=0.16 range=0.0-1.0 [ctx=79% spike=6% depth=2]
+- Research only: K.Allen (IND vs KC) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=76% spike=15% depth=3 prac=Full Participation in Practice]
+- Research only: M.Alie-Cox (IND vs KC) Receiving TDs proj=0.14 range=0.0-1.0 [ctx=77% spike=18% depth=2]
+- Research only: Deion Burks (IND vs KC) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=3% limited=24% depth=4]
+- Research only: E.J. Horton (IND vs KC) Receiving TDs proj=0.12 range=0.0-1.0 [ctx=75% spike=7%]
+
+Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers.
+

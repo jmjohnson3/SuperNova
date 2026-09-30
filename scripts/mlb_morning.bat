@@ -4,6 +4,14 @@
 :: Training runs separately overnight so it cannot delay today's slate.
 cd /d C:\Users\josh\Git\SuperNovaBets
 set PYTHONIOENCODING=utf-8
+if not exist logs mkdir logs
+if "%SUPERNOVA_DISABLE_MLB%"=="" (
+    for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v SUPERNOVA_DISABLE_MLB 2^>nul ^| findstr SUPERNOVA_DISABLE_MLB') do set "SUPERNOVA_DISABLE_MLB=%%B"
+)
+if /I "%SUPERNOVA_DISABLE_MLB%"=="1" (
+    echo MLB Morning skipped because SUPERNOVA_DISABLE_MLB=1. >> logs\mlb_disabled_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%.log 2>&1
+    exit /b 0
+)
 if "%MLB_DISCORD_WEBHOOK_URL%"=="" (
     for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v MLB_DISCORD_WEBHOOK_URL 2^>nul ^| findstr MLB_DISCORD_WEBHOOK_URL') do set "MLB_DISCORD_WEBHOOK_URL=%%B"
 )

@@ -1,0 +1,51 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-09-29T13:37:04.385512+00:00",
+  "captured_at": "2026-09-29T13:37:05.248855+00:00",
+  "selected": [
+    {
+      "forecast_id": 9706,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-01",
+      "game_id": "2026_04_PIT_CLE",
+      "player_id": "00-0037228",
+      "team": "PIT",
+      "season": 2026,
+      "week": 4,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "under",
+      "line": 22.5,
+      "price": -114,
+      "probability": 0.5792163255590275,
+      "market_probability": 0.5,
+      "ev": 0.08730082166343767,
+      "captured_at": "2026-09-29T13:37:05.248855+00:00"
+    },
+    {
+      "forecast_id": 9714,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-01",
+      "game_id": "2026_04_PIT_CLE",
+      "player_id": "00-0041037",
+      "team": "CLE",
+      "season": 2026,
+      "week": 4,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 35.5,
+      "price": -114,
+      "probability": 0.5616040495211551,
+      "market_probability": 0.5,
+      "ev": 0.05423918068006306,
+      "captured_at": "2026-09-29T13:37:05.248855+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 58,
+    "original_drift_guard_not_passed": 6,
+    "nonpositive_current_locked_ev": 2
+  }
+}

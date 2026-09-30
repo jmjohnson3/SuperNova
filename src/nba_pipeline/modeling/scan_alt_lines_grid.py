@@ -36,6 +36,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from zoneinfo import ZoneInfo
 
+from nba_pipeline.db import PG_DSN
 from .features import build_fd_parlay_url
 
 log = logging.getLogger("nba_pipeline.modeling.scan_alt_lines_grid")
@@ -82,7 +83,7 @@ _INJURY_KILL_STRINGS = {"OUT", "DOUBTFUL", "QUESTIONABLE"}
 
 @dataclass(frozen=True)
 class GridScanConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
 
     stats: Sequence[Stat] = ("points", "rebounds", "assists")
     side: Side = "over"

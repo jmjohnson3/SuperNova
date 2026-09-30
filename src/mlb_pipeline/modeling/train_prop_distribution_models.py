@@ -31,7 +31,17 @@ except Exception:  # pragma: no cover - optional runtime dependency
     joblib = None
 
 from .prop_replay import ev_per_unit
+from .prop_k_distribution import score_k_v3_over_probability
 from .prop_market_training import ensure_prop_market_training_schema
+from .prop_training_groups import (
+    add_player_game_weights,
+    dedupe_locked_offer_rows,
+    expanding_player_game_folds,
+    player_game_group_key,
+    purge_player_game_overlap,
+    temporal_player_game_split,
+)
+from .model_release import ensure_hitter_production_artifact, hitter_production_artifact_path
 from .train_hitter_player_game_outcome_models import (
     apply_player_prior_state,
     CATEGORICAL_FEATURES as HITTER_OUTCOME_CATEGORICAL,
@@ -39,6 +49,8 @@ from .train_hitter_player_game_outcome_models import (
     EVENT_CLASSES,
     TB_STATE_NAMES,
     NUMERIC_FEATURES as HITTER_OUTCOME_NUMERIC,
+    _apply_event_class_log_offsets,
+    _apply_conditional_xbh_logit_offsets,
     _apply_tb_hr_tail_logit_offset,
     _pa_uncertainty_key,
     _predict_hierarchical_tb_state_models,
@@ -55,10 +67,18 @@ from .train_prop_opportunity_models import (
     add_pitcher_history_features,
     _score_linear as _score_opportunity_linear,
 )
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
+_CACHE_VERSION = 3
+_DEFAULT_MARKETS = (
+    "pitcher_strikeouts",
+    "batter_hits",
+    "batter_total_bases",
+    "batter_home_runs",
+)
 
 _SIDE_LINE_NUMERIC = [
     "model_prob_side",
@@ -91,6 +111,35 @@ _SIDE_LINE_CATEGORICAL = [
     "market_prob_source",
 ]
 
+_K_V3_NUMERIC = [
+    "baseline_k_rate",
+    "projected_bf",
+    "projected_pitch_count",
+    "projected_ip",
+    "pitcher_k_pct_5",
+    "pitcher_k_pct_10",
+    "pitcher_k9_5",
+    "pitcher_bb_pct_5",
+    "pitcher_sc_k_pct",
+    "pitcher_sc_whiff_pct",
+    "pitcher_sc_oz_swing_pct",
+    "pitcher_fb_put_away",
+    "pitcher_sl_whiff_pct",
+    "pitcher_ch_whiff_pct",
+    "pitcher_days_rest",
+    "pitcher_short_rest",
+    "pitcher_last_ip",
+    "pitcher_last_k",
+    "pitcher_recent_k_per_ip",
+    "opp_team_k_pct_10",
+    "opp_team_obp_10",
+    "opp_team_slg_10",
+    "team_bullpen_ip_last_3",
+    "team_bullpen_ip_last_7",
+    "game_total_line",
+    "is_home",
+]
+
 
 @dataclass(frozen=True)
 class DistributionConfig:
@@ -99,11 +148,17 @@ class DistributionConfig:
     out_file: str = "prop_distribution_models.json"
     report_file: str = "mlb_prop_distribution_models_latest.md"
     opportunity_file: str = "prop_opportunity_models.json"
+    cache_file: str = "prop_distribution_training_cache.pkl"
+    markets: tuple[str, ...] = _DEFAULT_MARKETS
+    refresh_cache: bool = False
+    max_walk_forward_folds: int = 1
     lookback_days: int = 365
     holdout_days: int = 28
     min_train_rows: int = 150
     min_holdout_rows: int = 40
     min_ev: float = 0.02
+    walk_forward_test_days: int = 7
+    walk_forward_min_train_dates: int = 9
 
 
 SQL = """
@@ -111,6 +166,9 @@ SELECT
     e.id,
     e.replay_id,
     e.run_id,
+    e.source_created_at,
+    e.prop_offer_id,
+    e.lock_snapshot_id,
     e.game_slug,
     e.player_id,
     e.game_date_et,
@@ -149,6 +207,8 @@ SELECT
     e.projected_ip::float AS projected_ip,
     e.projected_pitch_count::float AS projected_pitch_count,
     e.pitcher_starts::float AS pitcher_starts,
+    e.actual_bf::float AS actual_bf,
+    e.actual_pitch_count_proxy::float AS actual_pitch_count,
     e.is_home::float AS is_home,
     e.team_abbr,
     e.opponent_abbr,
@@ -193,6 +253,22 @@ SELECT
     e.opp_team_avg_10::float AS opp_team_avg_10,
     e.opp_team_obp_10::float AS opp_team_obp_10,
     e.opp_team_slg_10::float AS opp_team_slg_10,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_k_pct_5 ELSE gf.away_sp_k_pct_5 END::float AS pitcher_k_pct_5,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_k_pct_10 ELSE gf.away_sp_k_pct_10 END::float AS pitcher_k_pct_10,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_k9_5 ELSE gf.away_sp_k9_5 END::float AS pitcher_k9_5,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_bb_pct_5 ELSE gf.away_sp_bb_pct_5 END::float AS pitcher_bb_pct_5,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_sc_k_pct ELSE gf.away_sp_sc_k_pct END::float AS pitcher_sc_k_pct,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_sc_whiff_pct ELSE gf.away_sp_sc_whiff_pct END::float AS pitcher_sc_whiff_pct,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_sc_oz_swing_pct ELSE gf.away_sp_sc_oz_swing_pct END::float AS pitcher_sc_oz_swing_pct,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_fb_put_away ELSE gf.away_sp_fb_put_away END::float AS pitcher_fb_put_away,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_sl_whiff_pct ELSE gf.away_sp_sl_whiff_pct END::float AS pitcher_sl_whiff_pct,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_ch_whiff_pct ELSE gf.away_sp_ch_whiff_pct END::float AS pitcher_ch_whiff_pct,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_days_rest ELSE gf.away_sp_days_rest END::float AS pitcher_days_rest,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_is_short_rest ELSE gf.away_sp_is_short_rest END::float AS pitcher_short_rest,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_last_ip ELSE gf.away_sp_last_ip END::float AS pitcher_last_ip,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_sp_last_k ELSE gf.away_sp_last_k END::float AS pitcher_last_k,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_bullpen_ip_last_3 ELSE gf.away_bullpen_ip_last_3 END::float AS team_bullpen_ip_last_3,
+    CASE WHEN e.is_home::float >= 0.5 THEN gf.home_bullpen_ip_last_7 ELSE gf.away_bullpen_ip_last_7 END::float AS team_bullpen_ip_last_7,
     e.batter_vs_hand_hits_avg_10::float AS batter_vs_hand_hits_avg_10,
     e.batter_vs_hand_tb_avg_10::float AS batter_vs_hand_tb_avg_10,
     e.batter_vs_hand_hr_avg_10::float AS batter_vs_hand_hr_avg_10,
@@ -275,10 +351,16 @@ SELECT
     e.clv_price::float AS clv_price,
     CASE WHEN e.beat_clv_price IS TRUE THEN 1 WHEN e.beat_clv_price IS FALSE THEN 0 ELSE NULL END AS beat_clv_price
 FROM features.mlb_prop_market_training_examples e
+JOIN raw.mlb_games g_final
+  ON g_final.game_slug = e.game_slug
+ AND g_final.status = 'final'
 LEFT JOIN features.mlb_hitter_player_game_training h
   ON h.game_slug = e.game_slug
  AND h.player_id = e.player_id
+LEFT JOIN features.mlb_game_training_features gf
+  ON gf.game_slug = e.game_slug
 WHERE e.game_date_et >= %(cutoff)s
+  AND e.result_status = 'graded'
   AND e.market IN ('pitcher_strikeouts','batter_hits','batter_total_bases','batter_home_runs')
   AND e.side IN ('over','under')
   AND e.market_line IS NOT NULL
@@ -311,7 +393,77 @@ def _query_df(conn, sql: str, params: dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=cols)
 
 
+def _selected_markets(cfg: DistributionConfig) -> tuple[str, ...]:
+    requested = tuple(str(market).strip() for market in cfg.markets if str(market).strip())
+    valid = tuple(market for market in requested if market in _DEFAULT_MARKETS)
+    return valid or _DEFAULT_MARKETS
+
+
+def _cache_paths(cfg: DistributionConfig) -> tuple[Path, Path]:
+    cache_path = cfg.model_dir / cfg.cache_file
+    meta_path = Path(str(cache_path) + ".json")
+    return cache_path, meta_path
+
+
+def _read_training_cache(cfg: DistributionConfig) -> pd.DataFrame | None:
+    if cfg.refresh_cache:
+        return None
+    cache_path, meta_path = _cache_paths(cfg)
+    if not cache_path.exists() or not meta_path.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if int(meta.get("cache_version") or -1) != _CACHE_VERSION:
+        return None
+    if int(meta.get("lookback_days") or -1) != int(cfg.lookback_days):
+        return None
+    try:
+        df = pd.read_pickle(cache_path)
+    except Exception:
+        return None
+    df.attrs.update(meta.get("dataframe_attrs") or {})
+    df.attrs["cache_used"] = True
+    df.attrs["cache_path"] = str(cache_path)
+    df.attrs["cache_generated_at_utc"] = meta.get("generated_at_utc")
+    return df
+
+
+def _write_training_cache(cfg: DistributionConfig, df: pd.DataFrame) -> None:
+    if df.empty:
+        return
+    cache_path, meta_path = _cache_paths(cfg)
+    cfg.model_dir.mkdir(parents=True, exist_ok=True)
+    tmp_cache = Path(str(cache_path) + ".tmp")
+    tmp_meta = Path(str(meta_path) + ".tmp")
+    meta = {
+        "cache_version": _CACHE_VERSION,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "source": "features.mlb_prop_market_training_examples",
+        "lookback_days": int(cfg.lookback_days),
+        "markets": list(_DEFAULT_MARKETS),
+        "rows": int(len(df)),
+        "raw_rows": int(df.attrs.get("raw_rows", len(df))),
+        "deduped_rows": int(df.attrs.get("deduped_rows", 0)),
+        "date_min": str(min(df["game_date_et"])) if "game_date_et" in df and not df.empty else None,
+        "date_max": str(max(df["game_date_et"])) if "game_date_et" in df and not df.empty else None,
+        "dataframe_attrs": {
+            key: value
+            for key, value in df.attrs.items()
+            if key in {"raw_rows", "deduped_rows"}
+        },
+    }
+    df.to_pickle(tmp_cache)
+    tmp_meta.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    tmp_cache.replace(cache_path)
+    tmp_meta.replace(meta_path)
+
+
 def _load(cfg: DistributionConfig) -> pd.DataFrame:
+    cached = _read_training_cache(cfg)
+    if cached is not None:
+        return cached
     cutoff = datetime.now(timezone.utc).date() - timedelta(days=max(1, cfg.lookback_days))
     with psycopg2.connect(cfg.pg_dsn) as conn:
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
@@ -320,6 +472,7 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
         df = _query_df(conn, SQL, {"cutoff": cutoff})
     if df.empty:
         return df
+    df = df.loc[:, ~df.columns.duplicated()].copy()
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
     numeric = [
         "market_line", "market_price", "model_prob_side", "market_prob_side",
@@ -330,10 +483,15 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
         "clean_market_pair_flag", "true_pair_flag",
         "component_hits", "component_singles", "component_doubles", "component_triples",
         "component_home_runs", "component_total_bases",
-    ] + HITTER_NUMERIC + HITTER_OUTCOME_NUMERIC + PITCHER_NUMERIC
+    ] + HITTER_NUMERIC + HITTER_OUTCOME_NUMERIC + PITCHER_NUMERIC + _K_V3_NUMERIC
+    numeric = list(dict.fromkeys(numeric))
+    missing_numeric = [col for col in numeric if col not in df.columns]
+    if missing_numeric:
+        df = pd.concat(
+            [df, pd.DataFrame(np.nan, index=df.index, columns=missing_numeric)],
+            axis=1,
+        )
     for col in numeric:
-        if col not in df.columns:
-            df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
     for col in sorted(set(HITTER_CATEGORICAL + PITCHER_CATEGORICAL)):
         df[col] = df[col].fillna("unknown").astype(str)
@@ -342,10 +500,20 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
             df[col] = "unknown"
         df[col] = df[col].fillna("unknown").astype(str)
     df = add_hitter_pa_v2_features(df)
+    projected_bf = pd.to_numeric(df["projected_bf"], errors="coerce").replace(0.0, np.nan)
+    df["baseline_k_rate"] = (
+        pd.to_numeric(df["pred_count"], errors="coerce") / projected_bf
+    ).clip(0.02, 0.65)
+    last_ip = pd.to_numeric(df["pitcher_last_ip"], errors="coerce").replace(0.0, np.nan)
+    df["pitcher_recent_k_per_ip"] = (
+        pd.to_numeric(df["pitcher_last_k"], errors="coerce") / last_ip
+    ).clip(0.0, 4.0)
     df = df.replace([np.inf, -np.inf], np.nan)
     df["push"] = df["push"].fillna(False).astype(bool)
     df = df.loc[~df["push"]].dropna(subset=["target", "model_prob_side", "market_line"])
     df["target"] = df["target"].astype(int)
+    df = dedupe_locked_offer_rows(df)
+    dedupe_attrs = dict(df.attrs)
     if {"run_id", "game_slug", "player_id", "market", "pred_count"}.issubset(df.columns):
         keys = ["run_id", "game_slug", "player_id"]
         sibling = (
@@ -376,6 +544,9 @@ def _load(cfg: DistributionConfig) -> pd.DataFrame:
         df = df.join(actual_sibling, on=keys)
         for col in ["actual_hits", "actual_total_bases", "actual_home_runs"]:
             df[col] = pd.to_numeric(df.get(col), errors="coerce")
+    df.attrs.update(dedupe_attrs)
+    df.attrs["cache_used"] = False
+    _write_training_cache(cfg, df)
     return df
 
 
@@ -1281,8 +1452,9 @@ def _score_opportunity(df: pd.DataFrame, cfg: DistributionConfig) -> pd.DataFram
                         baseline = pd.to_numeric(
                             source.get(target_runtime.get("baseline_feature")), errors="coerce"
                         )
+                        opportunity_alpha = float(runtime.get("k_opportunity_alpha", 1.0))
                         out.loc[source.index, out_col] = np.clip(
-                            baseline + model.predict(source[feature_cols]), 0.0, hi
+                            baseline + opportunity_alpha * model.predict(source[feature_cols]), 0.0, hi
                         )
             except Exception:
                 pass
@@ -1302,7 +1474,7 @@ def _score_opportunity(df: pd.DataFrame, cfg: DistributionConfig) -> pd.DataFram
 def _load_hitter_event_artifact(cfg: DistributionConfig) -> dict[str, Any]:
     if joblib is None:
         return {}
-    path = cfg.model_dir / "hitter_player_game_outcome_models.joblib"
+    path = ensure_hitter_production_artifact(cfg.model_dir) or hitter_production_artifact_path(cfg.model_dir)
     if not path.exists():
         return {}
     try:
@@ -1371,7 +1543,14 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
     hr_any_model = models.get("hr_any_model")
     pa_low_model = models.get("pa_low_model")
     pa_normal_model = models.get("pa_normal_model")
-    use_two_part_pa = bool(models.get("pa_two_part_use") and pa_low_model is not None and pa_normal_model is not None)
+    event_class_log_offsets = models.get("event_class_log_offsets") or {}
+    conditional_xbh_logit_offsets = models.get("conditional_xbh_logit_offsets") or {}
+    use_pa_distribution = bool(
+        models.get("pa_distribution_use")
+        and pa_low_model is not None
+        and pa_normal_model is not None
+    )
+    use_two_part_pa = bool(models.get("pa_two_part_use") and use_pa_distribution)
     tb_state_models = models.get("tb_state_models") or {}
     tb_state_model_kind = str(models.get("tb_state_model_kind") or "one_vs_rest")
     if model is None and not binary_models and not hierarchical_models:
@@ -1390,7 +1569,7 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
         features = prepare_hitter_outcome_features(source, numeric, categorical)
         X = features[numeric + categorical]
 
-        if use_two_part_pa:
+        if use_pa_distribution:
             low_prob = np.clip(pa_low_model.predict_proba(X)[:, 1], 1e-5, 1.0 - 1e-5)
             normal_pa = np.clip(pa_normal_model.predict(X), 3.0, 7.0)
             out.loc[source.index, "p_event_low_pa"] = low_prob
@@ -1400,7 +1579,8 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
             low_states = ((((artifact or {}).get("pa_uncertainty") or {}).get("global") or {}).get("low_pa_state_probs")) or {"0": 0.05, "1": 0.20, "2": 0.75}
             low_total = sum(float(low_states.get(str(n), 0.0)) for n in range(3)) or 1.0
             low_mean = sum(n * float(low_states.get(str(n), 0.0)) for n in range(3)) / low_total
-            out.loc[source.index, "opp_model_pa"] = low_prob * low_mean + (1.0 - low_prob) * normal_pa
+            if use_two_part_pa:
+                out.loc[source.index, "opp_model_pa"] = low_prob * low_mean + (1.0 - low_prob) * normal_pa
 
         expected_tb_heads = 4 if tb_state_model_kind == "hierarchical_hr_tail" else len(TB_STATE_NAMES)
         if len(tb_state_models) == expected_tb_heads:
@@ -1431,24 +1611,30 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
             except Exception:
                 return
 
-        if active == "hierarchical_conditional_lgbm" and hierarchical_models:
+        if active.startswith("hierarchical_conditional_lgbm") and hierarchical_models:
             hierarchical = _predict_hierarchical_event_probabilities(
                 hierarchical_models,
                 source,
                 numeric,
                 categorical,
             )
+            hierarchical = _apply_event_class_log_offsets(hierarchical, event_class_log_offsets)
+            hierarchical = _apply_conditional_xbh_logit_offsets(hierarchical, conditional_xbh_logit_offsets)
             for cls in EVENT_CLASSES:
                 out.loc[hierarchical.index, f"p_event_{cls}"] = hierarchical[f"p_{cls}"]
             score_hr_any()
             return out
-        if active == "boosted_binary_calibrated" and binary_models:
+        if active.startswith("boosted_binary_calibrated") and binary_models:
             raw_probs = pd.DataFrame(0.0, index=source.index, columns=[f"p_event_{cls}" for cls in EVENT_CLASSES])
             for cls, cls_model in binary_models.items():
                 if cls in EVENT_CLASSES:
                     raw_probs[f"p_event_{cls}"] = cls_model.predict_proba(X)[:, 1]
             row_sum = raw_probs.sum(axis=1).replace(0.0, np.nan)
             probs = raw_probs.div(row_sum, axis=0).fillna(1.0 / float(len(EVENT_CLASSES)))
+            event_probs = probs.rename(columns={f"p_event_{cls}": f"p_{cls}" for cls in EVENT_CLASSES})
+            event_probs = _apply_event_class_log_offsets(event_probs, event_class_log_offsets)
+            event_probs = _apply_conditional_xbh_logit_offsets(event_probs, conditional_xbh_logit_offsets)
+            probs = event_probs.rename(columns={f"p_{cls}": f"p_event_{cls}" for cls in EVENT_CLASSES})
             for col in probs.columns:
                 out.loc[probs.index, col] = probs[col]
             score_hr_any()
@@ -1462,6 +1648,10 @@ def _score_hitter_event_model(df: pd.DataFrame, outcome_calibrators: dict[str, A
             probs[f"p_event_{cls}"] = raw[:, i]
     row_sum = probs.sum(axis=1).replace(0.0, np.nan)
     probs = probs.div(row_sum, axis=0).fillna(np.nan)
+    event_probs = probs.rename(columns={f"p_event_{cls}": f"p_{cls}" for cls in EVENT_CLASSES})
+    event_probs = _apply_event_class_log_offsets(event_probs, event_class_log_offsets)
+    event_probs = _apply_conditional_xbh_logit_offsets(event_probs, conditional_xbh_logit_offsets)
+    probs = event_probs.rename(columns={f"p_{cls}": f"p_event_{cls}" for cls in EVENT_CLASSES})
     for col in probs.columns:
         out.loc[probs.index, col] = probs[col]
     if hr_any_model is not None:
@@ -1683,49 +1873,26 @@ def _distribution_over(
 
 
 def _player_game_group_key(df: pd.DataFrame) -> pd.Series:
-    game = df.get("game_slug", pd.Series("unknown_game", index=df.index)).fillna("unknown_game").astype(str)
-    player = df.get("player_id", pd.Series("unknown_player", index=df.index)).fillna("unknown_player").astype(str)
-    return game + "|" + player
+    return player_game_group_key(df)
 
 
 def _add_offer_group_weights(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-    if out.empty:
-        out["offer_group_weight"] = pd.Series(dtype="float64")
-        out["player_game_group"] = pd.Series(dtype="object")
-        return out
-    out["player_game_group"] = _player_game_group_key(out)
-    counts = out.groupby("player_game_group")["player_game_group"].transform("size").clip(lower=1)
-    raw = 1.0 / counts.astype(float)
-    out["offer_group_weight"] = raw * (float(len(raw)) / float(raw.sum()))
-    return out
+    return add_player_game_weights(df, weight_col="offer_group_weight")
 
 
 def _purge_player_game_overlap(train: pd.DataFrame, holdout: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, int]:
-    if train.empty or holdout.empty:
-        return train, holdout, 0
-    holdout_keys = set(_player_game_group_key(holdout))
-    train_keys = _player_game_group_key(train)
-    keep = ~train_keys.isin(holdout_keys)
-    return train.loc[keep].copy(), holdout.copy(), int((~keep).sum())
+    return purge_player_game_overlap(train, holdout)
 
 
 def _split(df: pd.DataFrame, cfg: DistributionConfig) -> tuple[pd.DataFrame, pd.DataFrame, str]:
-    split = max(df["game_date_et"]) - timedelta(days=cfg.holdout_days)
-    train = df.loc[df["game_date_et"] < split].copy()
-    holdout = df.loc[df["game_date_et"] >= split].copy()
-    if len(train) >= cfg.min_train_rows and len(holdout) >= cfg.min_holdout_rows:
-        train, holdout, purged = _purge_player_game_overlap(train, holdout)
-        return _add_offer_group_weights(train), _add_offer_group_weights(holdout), f"last_{cfg.holdout_days}_days_purged_{purged}"
-    dates = sorted(df["game_date_et"].unique())
-    if len(dates) > 1:
-        holdout_date = dates[-1]
-        train = df.loc[df["game_date_et"] < holdout_date].copy()
-        holdout = df.loc[df["game_date_et"] >= holdout_date].copy()
-        train, holdout, purged = _purge_player_game_overlap(train, holdout)
-        return _add_offer_group_weights(train), _add_offer_group_weights(holdout), f"last_available_date_purged_{purged}"
-    train, holdout, purged = _purge_player_game_overlap(train, holdout)
-    return _add_offer_group_weights(train), _add_offer_group_weights(holdout), f"last_{cfg.holdout_days}_days_purged_{purged}"
+    split = temporal_player_game_split(
+        df,
+        holdout_days=cfg.holdout_days,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+        weight_col="offer_group_weight",
+    )
+    return split.train, split.holdout, split.strategy
 
 
 def _weighted_mean(values: pd.Series, weights: pd.Series | None = None) -> float:
@@ -2038,6 +2205,20 @@ def _hitter_line_calibration_key(row: pd.Series) -> str | None:
     return "|".join([market, str(row.get("side") or "unknown"), surface])
 
 
+def _hitter_line_calibration_keys(row: pd.Series) -> list[str]:
+    exact = _hitter_line_calibration_key(row)
+    if exact is None:
+        return []
+    keys = [exact]
+    market = str(row.get("market") or "")
+    line = _safe_float(row.get("market_line"))
+    if market == "batter_total_bases" and line is not None and line >= 3.5:
+        pooled = "|".join([market, str(row.get("side") or "unknown"), "TB 3.5+"])
+        if pooled not in keys:
+            keys.append(pooled)
+    return keys
+
+
 def _true_pair_hitter_mask(df: pd.DataFrame) -> pd.Series:
     true_pair = pd.to_numeric(df.get("true_pair_flag", pd.Series(0.0, index=df.index)), errors="coerce").fillna(0.0) > 0.5
     synthetic = pd.to_numeric(df.get("synthetic_pair_flag", pd.Series(0.0, index=df.index)), errors="coerce").fillna(0.0) > 0.5
@@ -2052,7 +2233,8 @@ def _fit_true_pair_hitter_line_calibrators(
     mask = _true_pair_hitter_mask(scored_train)
     work = scored_train.loc[mask].dropna(subset=[probability_col, "target"]).copy()
     work = work.loc[work["market"].isin(["batter_total_bases", "batter_home_runs"])]
-    work["event_line_key"] = work.apply(_hitter_line_calibration_key, axis=1)
+    work["event_line_key"] = work.apply(_hitter_line_calibration_keys, axis=1)
+    work = work.explode("event_line_key")
     groups: dict[str, Any] = {}
     for key, group in work.dropna(subset=["event_line_key"]).groupby("event_line_key"):
         rec = _fit_walk_forward_calibrator(group, probability_col, min_rows=80)
@@ -2082,11 +2264,12 @@ def _apply_true_pair_hitter_line_calibrators(
     for idx, row in df.iterrows():
         if not bool(true_pair_mask.loc[idx]):
             continue
-        key = _hitter_line_calibration_key(row)
-        rec = groups.get(str(key)) or {}
-        raw_probability = row.get(rec.get("probability_col") or "p_distribution_side")
-        if rec.get("enabled") and rec.get("holdout_enabled") is not False and rec.get("model") and pd.notna(raw_probability):
-            values.loc[idx] = float(_apply_serialized_calibrator([raw_probability], rec["model"])[0])
+        for key in _hitter_line_calibration_keys(row):
+            rec = groups.get(str(key)) or {}
+            raw_probability = row.get(rec.get("probability_col") or "p_distribution_side")
+            if rec.get("enabled") and rec.get("holdout_enabled") is not False and rec.get("model") and pd.notna(raw_probability):
+                values.loc[idx] = float(_apply_serialized_calibrator([raw_probability], rec["model"])[0])
+                break
     return values.clip(1e-6, 1.0 - 1e-6)
 
 
@@ -2097,13 +2280,13 @@ def _gate_true_pair_hitter_line_calibrators(
     baseline_col: str | None = None,
 ) -> dict[str, Any]:
     true_pairs = holdout.loc[_true_pair_hitter_mask(holdout)].copy()
-    true_pairs["event_line_key"] = true_pairs.apply(_hitter_line_calibration_key, axis=1)
+    true_pairs["event_line_keys"] = true_pairs.apply(_hitter_line_calibration_keys, axis=1)
     for key, rec in (calibrators.get("groups") or {}).items():
         if not rec.get("enabled") or not rec.get("model"):
             rec["holdout_enabled"] = False
             continue
         required = [probability_col, "target", *([baseline_col] if baseline_col else [])]
-        group = true_pairs.loc[true_pairs["event_line_key"] == key].dropna(subset=required)
+        group = true_pairs.loc[true_pairs["event_line_keys"].apply(lambda keys: key in keys)].dropna(subset=required)
         if len(group) < 30:
             rec.update({"holdout_enabled": False, "holdout_reason": "insufficient_rows", "holdout_rows": int(len(group))})
             continue
@@ -2377,6 +2560,210 @@ def _apply_outcome_policy(uncalibrated: pd.DataFrame, learned: pd.DataFrame, pol
     return out
 
 
+def _k_player_games(df: pd.DataFrame) -> pd.DataFrame:
+    work = df.loc[df["market"].eq("pitcher_strikeouts")].copy()
+    if work.empty:
+        return work
+    work["actual_bf"] = pd.to_numeric(work["actual_bf"], errors="coerce")
+    work["actual_value"] = pd.to_numeric(work["actual_value"], errors="coerce")
+    work = work.loc[
+        work["actual_bf"].between(8.0, 45.0)
+        & work["actual_value"].ge(0.0)
+        & work["actual_value"].le(work["actual_bf"])
+    ]
+    return work.sort_values(["game_date_et", "game_slug", "player_id"]).drop_duplicates(
+        ["game_slug", "player_id"], keep="last"
+    )
+
+
+_K_RATE_SQUARE_FEATURES = (
+    "baseline_k_rate",
+    "pitcher_k_pct_10",
+    "pitcher_sc_whiff_pct",
+    "opp_team_k_pct_10",
+    "projected_bf",
+)
+_K_RATE_INTERACTIONS = (
+    ("baseline_k_rate", "opp_team_k_pct_10"),
+    ("pitcher_sc_whiff_pct", "opp_team_k_pct_10"),
+    ("pitcher_k_pct_10", "projected_bf"),
+    ("projected_pitch_count", "projected_bf"),
+    ("pitcher_recent_k_per_ip", "projected_ip"),
+)
+
+
+def _fit_k_rate_record(games: pd.DataFrame, *, nonlinear: bool = False) -> dict[str, Any]:
+    if len(games) < 80:
+        return {}
+    features = [col for col in _K_V3_NUMERIC if col in games.columns]
+    numeric = games[features].apply(pd.to_numeric, errors="coerce")
+    medians = numeric.median().fillna(0.0)
+    filled = numeric.fillna(medians)
+    scales = filled.std(ddof=0).replace(0.0, 1.0).fillna(1.0)
+    standardized = (filled - medians) / scales
+    derived_terms: list[dict[str, str]] = []
+    design = standardized.copy()
+    if nonlinear:
+        for feature in _K_RATE_SQUARE_FEATURES:
+            if feature not in design:
+                continue
+            name = f"square:{feature}"
+            design[name] = standardized[feature] ** 2
+            derived_terms.append({"name": name, "kind": "square", "left": feature})
+        for left, right in _K_RATE_INTERACTIONS:
+            if left not in design or right not in design:
+                continue
+            name = f"interaction:{left}:{right}"
+            design[name] = standardized[left] * standardized[right]
+            derived_terms.append({"name": name, "kind": "interaction", "left": left, "right": right})
+    actual_bf = pd.to_numeric(games["actual_bf"], errors="coerce").clip(lower=1.0)
+    actual_k = pd.to_numeric(games["actual_value"], errors="coerce").clip(lower=0.0)
+    success_weight = (actual_k / actual_bf).clip(0.0, 1.0)
+    failure_weight = 1.0 - success_weight
+    x = pd.concat([design, design], ignore_index=True)
+    y = np.concatenate([np.ones(len(games), dtype=int), np.zeros(len(games), dtype=int)])
+    weights = np.concatenate([success_weight.to_numpy(), failure_weight.to_numpy()])
+    keep = weights > 1e-9
+    model = LogisticRegression(C=0.20 if nonlinear else 0.35, max_iter=1500, solver="lbfgs")
+    model.fit(x.loc[keep], y[keep], sample_weight=weights[keep])
+    return {
+        "numeric_features": features,
+        "variant": "regularized_nonlinear_per_bf" if nonlinear else "regularized_linear_per_bf",
+        "derived_terms": derived_terms,
+        "numeric_means": {col: float(medians[col]) for col in features},
+        "numeric_scales": {col: float(scales[col]) for col in features},
+        "intercept": float(model.intercept_[0]),
+        "coef": {col: float(model.coef_[0][idx]) for idx, col in enumerate(design.columns)},
+    }
+
+
+def _score_k_v3_rows(df: pd.DataFrame, artifact: dict[str, Any]) -> pd.Series:
+    probabilities: list[float | None] = []
+    for _, row in df.iterrows():
+        if str(row.get("market") or "") != "pitcher_strikeouts":
+            probabilities.append(None)
+            continue
+        p_over = score_k_v3_over_probability(row.to_dict(), row.get("market_line"), artifact)
+        if p_over is None:
+            probabilities.append(None)
+        elif str(row.get("side") or "").lower() == "under":
+            probabilities.append(1.0 - p_over)
+        else:
+            probabilities.append(p_over)
+    return pd.Series(probabilities, index=df.index, dtype="float64")
+
+
+def _fit_k_v3(train: pd.DataFrame, holdout: pd.DataFrame) -> dict[str, Any]:
+    games = _k_player_games(train)
+    if len(games) < 120:
+        return {"status": "insufficient_rows", "player_games": int(len(games)), "enabled": False}
+    dates = sorted(games["game_date_et"].dropna().unique())
+    validation_dates = max(3, min(10, int(math.ceil(len(dates) * 0.20))))
+    if len(dates) <= validation_dates:
+        return {"status": "insufficient_dates", "player_games": int(len(games)), "enabled": False}
+    validation_start = dates[-validation_dates]
+    fit_games = games.loc[games["game_date_et"] < validation_start]
+    validation_games = games.loc[games["game_date_et"] >= validation_start]
+    if len(fit_games) < 80 or len(validation_games) < 25:
+        return {
+            "status": "insufficient_validation_rows",
+            "player_games": int(len(games)),
+            "fit_player_games": int(len(fit_games)),
+            "validation_player_games": int(len(validation_games)),
+            "enabled": False,
+        }
+    rate_models = {
+        "linear": _fit_k_rate_record(fit_games, nonlinear=False),
+        "nonlinear": _fit_k_rate_record(fit_games, nonlinear=True),
+    }
+    if not any(rate_models.values()):
+        return {"status": "fit_failed", "player_games": int(len(games)), "enabled": False}
+    projected_bf = pd.to_numeric(fit_games["projected_bf"], errors="coerce")
+    bf_error = pd.to_numeric(fit_games["actual_bf"], errors="coerce") - projected_bf
+    bf_bias = float(bf_error.mean()) if bf_error.notna().any() else 0.0
+    bf_sigma = float(bf_error.std(ddof=0)) if bf_error.notna().sum() > 1 else 3.5
+    validation_offers = train.loc[
+        train["market"].eq("pitcher_strikeouts") & train["game_date_et"].ge(validation_start)
+    ].copy()
+    candidates = [20.0, 40.0, 80.0, 160.0, 500.0]
+    candidate_scores: list[dict[str, Any]] = []
+    for rate_variant, rate_model in rate_models.items():
+        if not rate_model:
+            continue
+        for concentration in candidates:
+            candidate = {
+                "status": "trained",
+                "rate_model": rate_model,
+                "bf_bias": bf_bias,
+                "bf_sigma": max(1.25, min(8.0, bf_sigma)),
+                "beta_concentration": concentration,
+            }
+            probability = _score_k_v3_rows(validation_offers, candidate)
+            valid = probability.notna() & validation_offers["target"].notna()
+            brier = _weighted_brier(
+                validation_offers.loc[valid, "target"],
+                probability.loc[valid],
+                validation_offers.loc[valid].get("offer_group_weight"),
+            ) if valid.any() else None
+            candidate_scores.append({
+                "rate_variant": rate_variant,
+                "beta_concentration": concentration,
+                "brier": brier,
+                "rows": int(valid.sum()),
+            })
+    usable = [rec for rec in candidate_scores if rec.get("brier") is not None]
+    best = min(usable, key=lambda rec: float(rec["brier"])) if usable else {
+        "rate_variant": "linear", "beta_concentration": 80.0,
+    }
+    selected_rate_variant = str(best.get("rate_variant") or "linear")
+    production_rate_model = _fit_k_rate_record(games, nonlinear=selected_rate_variant == "nonlinear")
+    full_bf_error = (
+        pd.to_numeric(games["actual_bf"], errors="coerce")
+        - pd.to_numeric(games["projected_bf"], errors="coerce")
+    )
+    artifact = {
+        "status": "trained",
+        "version": "k_v4_nonlinear_rate_bf_mixture_beta_binomial",
+        "enabled": False,
+        "player_games": int(len(games)),
+        "fit_player_games": int(len(fit_games)),
+        "validation_player_games": int(len(validation_games)),
+        "validation_start": str(validation_start),
+        "rate_model": production_rate_model,
+        "rate_model_variant": selected_rate_variant,
+        "bf_bias": float(full_bf_error.mean()) if full_bf_error.notna().any() else 0.0,
+        "bf_sigma": max(1.25, min(8.0, float(full_bf_error.std(ddof=0)))) if full_bf_error.notna().sum() > 1 else 3.5,
+        "beta_concentration": float(best.get("beta_concentration") or 80.0),
+        "concentration_validation": candidate_scores,
+    }
+    holdout_probability = _score_k_v3_rows(holdout, artifact)
+    mask = holdout["market"].eq("pitcher_strikeouts") & holdout_probability.notna() & holdout["target"].notna()
+    if not mask.any():
+        artifact["holdout"] = {"rows": 0}
+        return artifact
+    weights = holdout.loc[mask].get("offer_group_weight")
+    challenger_brier = _weighted_brier(holdout.loc[mask, "target"], holdout_probability.loc[mask], weights)
+    baseline_brier = _weighted_brier(holdout.loc[mask, "target"], holdout.loc[mask, "p_distribution_side"], weights)
+    model_brier = _weighted_brier(holdout.loc[mask, "target"], holdout.loc[mask, "model_prob_side"], weights)
+    market_mask = mask & holdout["market_prob_side"].notna()
+    market_brier = _weighted_brier(
+        holdout.loc[market_mask, "target"], holdout.loc[market_mask, "market_prob_side"],
+        holdout.loc[market_mask].get("offer_group_weight"),
+    ) if market_mask.any() else None
+    gain = baseline_brier - challenger_brier
+    artifact["holdout"] = {
+        "rows": int(mask.sum()),
+        "player_games": int(holdout.loc[mask, "player_game_group"].nunique()),
+        "challenger_brier": challenger_brier,
+        "poisson_brier": baseline_brier,
+        "model_brier": model_brier,
+        "market_brier": market_brier,
+        "brier_gain_vs_poisson": gain,
+    }
+    artifact["enabled"] = bool(gain >= 0.001)
+    return artifact
+
+
 def _score_probabilities(train: pd.DataFrame, holdout: pd.DataFrame, cfg: DistributionConfig) -> tuple[pd.DataFrame, dict[str, Any]]:
     rates = _empirical_rates(train)
     scored_train_uncalibrated = _score_distribution_base(train, cfg)
@@ -2395,6 +2782,16 @@ def _score_probabilities(train: pd.DataFrame, holdout: pd.DataFrame, cfg: Distri
     outcome_gate["bucket_policy"] = _outcome_bucket_policy(scored_train_uncalibrated, scored_train_learned)
     scored_train = _apply_outcome_policy(scored_train_uncalibrated, scored_train_learned, outcome_gate)
     out = _apply_outcome_policy(holdout_uncalibrated, holdout_learned, outcome_gate)
+    scored_train["p_distribution_poisson_side"] = scored_train["p_distribution_side"]
+    out["p_distribution_poisson_side"] = out["p_distribution_side"]
+    k_v3 = _fit_k_v3(scored_train, out)
+    scored_train["p_k_v3_side"] = _score_k_v3_rows(scored_train, k_v3)
+    out["p_k_v3_side"] = _score_k_v3_rows(out, k_v3)
+    if k_v3.get("enabled"):
+        train_k = scored_train["market"].eq("pitcher_strikeouts") & scored_train["p_k_v3_side"].notna()
+        holdout_k = out["market"].eq("pitcher_strikeouts") & out["p_k_v3_side"].notna()
+        scored_train.loc[train_k, "p_distribution_side"] = scored_train.loc[train_k, "p_k_v3_side"]
+        out.loc[holdout_k, "p_distribution_side"] = out.loc[holdout_k, "p_k_v3_side"]
     probability_calibrators = _fit_distribution_calibrators(scored_train)
     probability_calibrators = _gate_distribution_calibrators(probability_calibrators, out)
     train_generic = _apply_distribution_calibrators(scored_train, probability_calibrators)
@@ -2458,6 +2855,72 @@ def _score_probabilities(train: pd.DataFrame, holdout: pd.DataFrame, cfg: Distri
         "probability": probability_calibrators,
         "true_pair_hitter_line_calibration": line_calibrators,
         "side_line_models": side_line_models,
+        "k_v3": k_v3,
+    }
+
+
+def _expanding_walk_forward_scores(
+    df: pd.DataFrame,
+    cfg: DistributionConfig,
+) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
+    folds = expanding_player_game_folds(
+        df,
+        test_window_days=cfg.walk_forward_test_days,
+        min_train_dates=cfg.walk_forward_min_train_dates,
+        min_train_rows=cfg.min_train_rows,
+        min_holdout_rows=cfg.min_holdout_rows,
+    )
+    if cfg.max_walk_forward_folds > 0 and len(folds) > cfg.max_walk_forward_folds:
+        folds = folds[-cfg.max_walk_forward_folds:]
+    scored_parts: list[pd.DataFrame] = []
+    summaries: list[dict[str, Any]] = []
+    for fold in folds:
+        scored, artifacts = _score_probabilities(fold.train, fold.holdout, cfg)
+        scored = scored.copy()
+        scored["walk_forward_fold"] = fold.fold_index
+        scored_parts.append(scored)
+        k_record = artifacts.get("k_v3") or {}
+        summaries.append({
+            "fold": fold.fold_index,
+            "train_start": str(fold.train_start),
+            "train_end": str(fold.train_end),
+            "holdout_start": str(fold.holdout_start),
+            "holdout_end": str(fold.holdout_end),
+            "train_rows": int(len(fold.train)),
+            "holdout_rows": int(len(fold.holdout)),
+            "train_player_games": int(fold.train["player_game_group"].nunique()),
+            "holdout_player_games": int(fold.holdout["player_game_group"].nunique()),
+            "purged_rows": int(fold.purged_rows),
+            "k_enabled_in_fold": bool(k_record.get("enabled")),
+            "k_holdout": k_record.get("holdout") or {},
+        })
+    if not scored_parts:
+        return pd.DataFrame(), summaries
+    return pd.concat(scored_parts, ignore_index=False), summaries
+
+
+def _walk_forward_k_metrics(scored: pd.DataFrame) -> dict[str, Any]:
+    required = ["target", "p_k_v3_side", "p_distribution_poisson_side"]
+    if scored.empty or any(col not in scored for col in required):
+        return {"rows": 0, "enabled": False, "reason": "no_walk_forward_k_rows"}
+    work = scored.loc[scored["market"].eq("pitcher_strikeouts")].dropna(subset=required).copy()
+    if work.empty:
+        return {"rows": 0, "enabled": False, "reason": "no_walk_forward_k_rows"}
+    weights = work.get("offer_group_weight")
+    challenger = _weighted_brier(work["target"], work["p_k_v3_side"], weights)
+    poisson = _weighted_brier(work["target"], work["p_distribution_poisson_side"], weights)
+    model = _weighted_brier(work["target"], work["model_prob_side"], weights)
+    gain = poisson - challenger
+    return {
+        "rows": int(len(work)),
+        "player_games": int(work["player_game_group"].nunique()),
+        "folds": int(work["walk_forward_fold"].nunique()) if "walk_forward_fold" in work else 0,
+        "challenger_brier": challenger,
+        "poisson_brier": poisson,
+        "model_brier": model,
+        "brier_gain_vs_poisson": gain,
+        "enabled": bool(gain >= 0.001),
+        "selection_basis": "projection_brier_only",
     }
 
 
@@ -2469,11 +2932,14 @@ def _bucket_model_selection(df: pd.DataFrame, cfg: DistributionConfig) -> list[d
         "distribution_calibrated": "p_distribution_calibrated",
         "distribution_blend": "p_distribution_blend",
         "event_side_line": "p_event_side_line",
+        "k_v3": "p_k_v3_side",
     }
     rows = []
     group_cols = ["market", "side", "line_surface", "line_bucket", "price_bucket", "bookmaker_key"]
     for key, group in df.groupby(group_cols, dropna=False):
         key = key if isinstance(key, tuple) else (key,)
+        raw_group_rows = int(len(group))
+        true_pair_rows = int(_true_pair_hitter_mask(group).sum())
         if str(key[0]) in {"batter_hits", "batter_total_bases", "batter_home_runs"}:
             group = group.loc[_true_pair_hitter_mask(group)]
             if group.empty:
@@ -2505,6 +2971,8 @@ def _bucket_model_selection(df: pd.DataFrame, cfg: DistributionConfig) -> list[d
             decision = "use_distribution"
         elif best_name == "event_side_line":
             decision = "use_event_curve_side_line"
+        elif best_name == "k_v3":
+            decision = "use_k_v3"
         elif best_name == "model_only":
             decision = "keep_model_only"
         else:
@@ -2512,6 +2980,12 @@ def _bucket_model_selection(df: pd.DataFrame, cfg: DistributionConfig) -> list[d
         rows.append({
             "bucket": "|".join(str(v) for v in key),
             "rows": int(len(group)),
+            "raw_rows": raw_group_rows,
+            "true_pair_rows": true_pair_rows,
+            "true_pair_only": bool(
+                str(key[0]) in {"batter_hits", "batter_total_bases", "batter_home_runs"}
+                or (true_pair_rows > 0 and true_pair_rows == raw_group_rows)
+            ),
             "decision": decision,
             "best_variant": best_name,
             "best_brier": best_brier,
@@ -2522,6 +2996,7 @@ def _bucket_model_selection(df: pd.DataFrame, cfg: DistributionConfig) -> list[d
             "calibrated_distribution_brier": (summaries.get("distribution_calibrated", {}).get("forecast") or {}).get("brier"),
             "blend_brier": (summaries.get("distribution_blend", {}).get("forecast") or {}).get("brier"),
             "event_side_line_brier": (summaries.get("event_side_line", {}).get("forecast") or {}).get("brier"),
+            "k_v3_brier": (summaries.get("k_v3", {}).get("forecast") or {}).get("brier"),
         })
     rows.sort(key=lambda rec: (rec["decision"].startswith("no_bet"), -(rec.get("rows") or 0)))
     return rows
@@ -2637,6 +3112,7 @@ def _summaries(df: pd.DataFrame, cfg: DistributionConfig) -> dict[str, Any]:
         "distribution_calibrated": "p_distribution_calibrated",
         "distribution_empirical_blend": "p_distribution_blend",
         "event_side_line": "p_event_side_line",
+        "k_v3": "p_k_v3_side",
     }
     return {
         name: {"forecast": _forecast(df, col), "selection": _selection(df, col, cfg)}
@@ -2674,10 +3150,12 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
         "",
         f"Generated UTC: {payload['generated_at_utc']}",
         f"Rows: {payload.get('rows', 0)}",
+        f"Raw rows before locked-offer dedupe: {payload.get('raw_rows', payload.get('rows', 0))}",
+        f"Collapsed duplicate locked-offer rows: {payload.get('deduped_rows', 0)}",
         f"Date range: {payload.get('date_min')} to {payload.get('date_max')}",
         f"Status: {payload.get('status')}",
         "",
-        "## Overall Holdout",
+        "## Expanding Walk-Forward OOF",
         "",
         "| Variant | Rows | Brier | Log Loss | Cal Err | Selected | ROI | CLV Beat |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
@@ -2690,6 +3168,22 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
             f"{_fmt_pct(f.get('calibration_error'))} | "
             f"{s.get('selected_rows', 0)} | {_fmt_pct(s.get('roi'))} | {_fmt_pct(s.get('clv_beat_rate'))} |"
         )
+    k_v3 = payload.get("k_v3") or {}
+    k_holdout = k_v3.get("holdout") or {}
+    lines.extend([
+        "",
+        "## Pitcher K v3",
+        "",
+        f"- Status: {k_v3.get('status', 'missing')}",
+        f"- Enabled: {bool(k_v3.get('enabled'))}",
+        f"- Player-games: {k_v3.get('player_games', 0)}",
+        f"- Holdout offers: {k_holdout.get('rows', 0)}",
+        f"- K v3 Brier: {_fmt_num(k_holdout.get('challenger_brier'))}",
+        f"- Poisson Brier: {_fmt_num(k_holdout.get('poisson_brier'))}",
+        f"- Gain vs Poisson: {_fmt_num(k_holdout.get('brier_gain_vs_poisson'))}",
+        f"- BF bias / sigma: {_fmt_num(k_v3.get('bf_bias'))} / {_fmt_num(k_v3.get('bf_sigma'))}",
+        f"- Beta-binomial concentration: {_fmt_num(k_v3.get('beta_concentration'), 1)}",
+    ])
     lines.extend([
         "",
         "## Market Holdout",
@@ -2890,8 +3384,8 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
         "",
         "## Exact Bucket Model Selection",
         "",
-        "| Bucket | Rows | Decision | Best | Best Brier | ROI | Model | Market | Distribution | Cal Dist | Blend | Side-Line |",
-        "|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Bucket | Rows | Decision | Best | Best Brier | ROI | Model | Market | Distribution | Cal Dist | Blend | Side-Line | K v3 |",
+        "|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ])
     for rec in payload.get("bucket_model_selection", [])[:60]:
         lines.append(
@@ -2899,19 +3393,158 @@ def _write_report(payload: dict[str, Any], cfg: DistributionConfig) -> str:
             f"{_fmt_num(rec.get('best_brier'))} | {_fmt_pct(rec.get('best_selected_roi'))} | "
             f"{_fmt_num(rec.get('model_brier'))} | {_fmt_num(rec.get('market_brier'))} | "
             f"{_fmt_num(rec.get('distribution_brier'))} | {_fmt_num(rec.get('calibrated_distribution_brier'))} | "
-            f"{_fmt_num(rec.get('blend_brier'))} | {_fmt_num(rec.get('event_side_line_brier'))} |"
+            f"{_fmt_num(rec.get('blend_brier'))} | {_fmt_num(rec.get('event_side_line_brier'))} | "
+            f"{_fmt_num(rec.get('k_v3_brier'))} |"
         )
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(path, "\n".join(lines) + "\n")
     return str(path)
+
+
+def _merge_group_maps(
+    market_artifacts: dict[str, dict[str, Any]],
+    section: str,
+    group_key: str = "groups",
+) -> dict[str, Any]:
+    groups: dict[str, Any] = {}
+    for market, artifacts in market_artifacts.items():
+        record = artifacts.get(section) or {}
+        for key, value in (record.get(group_key) or {}).items():
+            groups[f"{market}|{key}"] = value
+    return {group_key: groups}
+
+
+def _merge_market_calibrators(market_artifacts: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    merged: dict[str, Any] = {"by_market": market_artifacts}
+    if not market_artifacts:
+        return merged
+
+    outcome = _merge_group_maps(market_artifacts, "outcome")
+    if outcome.get("groups"):
+        merged["outcome"] = outcome
+
+    tb_structure = _merge_group_maps(market_artifacts, "tb_structure")
+    if tb_structure.get("groups"):
+        merged["tb_structure"] = tb_structure
+
+    probability = _merge_group_maps(market_artifacts, "probability")
+    if probability.get("groups"):
+        merged["probability"] = probability
+
+    line_calibration = {
+        "status": "trained" if any(
+            ((artifacts.get("true_pair_hitter_line_calibration") or {}).get("groups") or {})
+            for artifacts in market_artifacts.values()
+        ) else "insufficient_true_pair_rows",
+        "evidence": "market_split_temporal_train_true_pair_non_synthetic_only",
+        "groups": {},
+        "enabled_groups": [],
+    }
+    for market, artifacts in market_artifacts.items():
+        record = artifacts.get("true_pair_hitter_line_calibration") or {}
+        for key, value in (record.get("groups") or {}).items():
+            line_calibration["groups"][f"{market}|{key}"] = value
+        line_calibration["enabled_groups"].extend(
+            f"{market}|{key}" for key in (record.get("enabled_groups") or [])
+        )
+    merged["true_pair_hitter_line_calibration"] = line_calibration
+
+    outcome_policy = {"markets": {}, "bucket_policy": {"buckets": {}}}
+    for market, artifacts in market_artifacts.items():
+        record = artifacts.get("outcome_policy") or {}
+        outcome_policy["markets"].update(record.get("markets") or {})
+        outcome_policy["bucket_policy"]["buckets"].update(
+            (record.get("bucket_policy") or {}).get("buckets") or {}
+        )
+    merged["outcome_policy"] = outcome_policy
+
+    side_line_by_market = {
+        market: artifacts.get("side_line_models") or {}
+        for market, artifacts in market_artifacts.items()
+        if artifacts.get("side_line_models")
+    }
+    side_line_models: dict[str, Any] = {"by_market": side_line_by_market}
+    for target in ("win_probability", "clv_beat_probability"):
+        candidates = []
+        for market, record in side_line_by_market.items():
+            model = record.get(target) or {}
+            candidates.append((int(model.get("holdout_rows") or 0), market, model))
+        if candidates:
+            candidates.sort(reverse=True, key=lambda item: item[0])
+            selected = dict(candidates[0][2])
+            selected["selected_market"] = candidates[0][1]
+            side_line_models[target] = selected
+    merged["side_line_models"] = side_line_models
+
+    for market in ("batter_total_bases", "batter_hits", "batter_home_runs"):
+        event_model = (market_artifacts.get(market) or {}).get("event_model")
+        if event_model:
+            merged["event_model"] = event_model
+            break
+
+    k_v3 = (market_artifacts.get("pitcher_strikeouts") or {}).get("k_v3")
+    if k_v3:
+        merged["k_v3"] = k_v3
+    return merged
+
+
+def _train_market(
+    df: pd.DataFrame,
+    cfg: DistributionConfig,
+    market: str,
+) -> tuple[pd.DataFrame, dict[str, Any], dict[str, Any]]:
+    market_df = df.loc[df["market"].eq(market)].copy()
+    record: dict[str, Any] = {
+        "market": market,
+        "rows": int(len(market_df)),
+        "status": "no_rows" if market_df.empty else "loaded",
+    }
+    if market_df.empty:
+        return pd.DataFrame(), {}, record
+
+    train_df, holdout_df, split = _split(market_df, cfg)
+    record.update({
+        "production_split_strategy": split,
+        "train_rows": int(len(train_df)),
+        "holdout_rows": int(len(holdout_df)),
+        "train_player_games": int(train_df.get("player_game_group", pd.Series(dtype=object)).nunique()),
+        "holdout_player_games": int(holdout_df.get("player_game_group", pd.Series(dtype=object)).nunique()),
+    })
+    if len(train_df) < cfg.min_train_rows or len(holdout_df) < cfg.min_holdout_rows:
+        record["status"] = "insufficient_rows"
+        return pd.DataFrame(), {}, record
+
+    production_scored, calibrators = _score_probabilities(train_df, holdout_df, cfg)
+    walk_forward_scored, fold_summaries = _expanding_walk_forward_scores(market_df, cfg)
+    for fold in fold_summaries:
+        fold["market"] = market
+    scored = walk_forward_scored if not walk_forward_scored.empty else production_scored
+    record.update({
+        "status": "ready",
+        "fold_count": int(len(fold_summaries)),
+        "oof_rows": int(len(walk_forward_scored)),
+        "fallback_used": bool(walk_forward_scored.empty),
+        "folds": fold_summaries,
+    })
+    return scored, calibrators, record
 
 
 def train(cfg: DistributionConfig) -> dict[str, Any]:
     cfg.model_dir.mkdir(parents=True, exist_ok=True)
+    markets = _selected_markets(cfg)
     df = _load(cfg)
+    if not df.empty:
+        df = df.loc[df["market"].isin(markets)].copy()
     payload: dict[str, Any] = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source": "features.mlb_prop_market_training_examples",
         "usage": "shadow_only",
+        "markets": list(markets),
+        "cache_used": bool(df.attrs.get("cache_used")) if not df.empty else False,
+        "cache_path": df.attrs.get("cache_path") if not df.empty else None,
+        "cache_generated_at_utc": df.attrs.get("cache_generated_at_utc") if not df.empty else None,
+        "max_walk_forward_folds_per_market": int(cfg.max_walk_forward_folds),
+        "raw_rows": int(df.attrs.get("raw_rows", len(df))) if not df.empty else 0,
+        "deduped_rows": int(df.attrs.get("deduped_rows", 0)) if not df.empty else 0,
         "rows": int(len(df)),
         "date_min": str(min(df["game_date_et"])) if not df.empty else None,
         "date_max": str(max(df["game_date_et"])) if not df.empty else None,
@@ -2919,25 +3552,73 @@ def train(cfg: DistributionConfig) -> dict[str, Any]:
     if df.empty:
         payload["status"] = "no_rows"
         payload["report_path"] = _write_report(payload, cfg)
-        (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        atomic_write_json(cfg.model_dir / cfg.out_file, payload, default=str)
         return payload
-    train_df, holdout_df, split = _split(df, cfg)
-    payload["split_strategy"] = split
-    payload["train_rows"] = int(len(train_df))
-    payload["holdout_rows"] = int(len(holdout_df))
+
+    scored_parts: list[pd.DataFrame] = []
+    market_artifacts: dict[str, dict[str, Any]] = {}
+    market_training: list[dict[str, Any]] = []
+    for market in markets:
+        market_scored, calibrators, record = _train_market(df, cfg, market)
+        market_training.append(record)
+        if calibrators:
+            market_artifacts[market] = calibrators
+        if not market_scored.empty:
+            scored_parts.append(market_scored)
+
+    payload["market_training"] = market_training
+    payload["production_split_strategy"] = "market_split_temporal_player_game"
+    payload["split_strategy"] = "market_split_temporal_player_game"
+    payload["train_rows"] = int(sum(row.get("train_rows", 0) for row in market_training))
+    payload["holdout_rows"] = int(sum(row.get("holdout_rows", 0) for row in market_training))
     payload["grouped_walk_forward"] = {
+        "method": "market_split_expanding_window",
         "weighting": "inverse_offer_rows_per_player_game_normalized_to_mean_one",
         "purge_key": "game_slug|player_id",
         "strict_date_split": True,
-        "train_player_games": int(train_df.get("player_game_group", pd.Series(dtype=object)).nunique()),
-        "holdout_player_games": int(holdout_df.get("player_game_group", pd.Series(dtype=object)).nunique()),
+        "test_window_days": cfg.walk_forward_test_days,
+        "max_folds_per_market": int(cfg.max_walk_forward_folds),
+        "fold_count": int(sum(row.get("fold_count", 0) for row in market_training)),
+        "oof_rows": int(sum(row.get("oof_rows", 0) for row in market_training)),
+        "folds": [
+            fold
+            for row in market_training
+            for fold in (row.get("folds") or [])
+        ],
+        "fallback_used": bool(any(row.get("fallback_used") for row in market_training)),
+        "train_player_games": int(sum(row.get("train_player_games", 0) for row in market_training)),
+        "holdout_player_games": int(sum(row.get("holdout_player_games", 0) for row in market_training)),
     }
-    if len(train_df) < cfg.min_train_rows or len(holdout_df) < cfg.min_holdout_rows:
+    if not scored_parts:
         payload["status"] = "insufficient_rows"
         payload["report_path"] = _write_report(payload, cfg)
-        (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        atomic_write_json(cfg.model_dir / cfg.out_file, payload, default=str)
         return payload
-    scored, calibrators = _score_probabilities(train_df, holdout_df, cfg)
+
+    scored = pd.concat(scored_parts, ignore_index=False)
+    if int(payload["grouped_walk_forward"]["oof_rows"]) > 0:
+        payload["split_strategy"] = f"market_split_expanding_{cfg.walk_forward_test_days}_day_player_game_purged"
+    calibrators = _merge_market_calibrators(market_artifacts)
+    k_walk_forward = _walk_forward_k_metrics(scored)
+    if int(k_walk_forward.get("rows") or 0) > 0 and "pitcher_strikeouts" in markets:
+        learned = {
+            "outcome": calibrators.get("outcome") or {},
+            "tb_structure": calibrators.get("tb_structure") or {},
+            "event_model": _load_hitter_event_artifact(cfg),
+        }
+        k_rows = df.loc[df["market"].eq("pitcher_strikeouts")].copy()
+        full_scored = _add_offer_group_weights(_score_distribution_base(k_rows, cfg, learned))
+        full_scored["p_distribution_poisson_side"] = full_scored["p_distribution_side"]
+        k_eval = scored.loc[scored["market"].eq("pitcher_strikeouts")].copy()
+        k_eval["p_distribution_side"] = k_eval["p_distribution_poisson_side"]
+        production_k = _fit_k_v3(full_scored, k_eval)
+        production_k["holdout"] = k_walk_forward
+        production_k["walk_forward"] = k_walk_forward
+        production_k["enabled"] = bool(k_walk_forward.get("enabled"))
+        production_k["trained_on_all_settled_rows"] = True
+        calibrators["k_v3"] = production_k
+        market_artifacts.setdefault("pitcher_strikeouts", {})["k_v3"] = production_k
+        calibrators["by_market"] = market_artifacts
     payload["overall"] = _summaries(scored, cfg)
     payload["market"] = _group_summaries(scored, cfg, ["market"])
     payload["market_side"] = _group_summaries(scored, cfg, ["market", "side"])
@@ -2951,15 +3632,20 @@ def train(cfg: DistributionConfig) -> dict[str, Any]:
     payload["tb_hr_line_production_gates"] = _tb_hr_line_production_gates(scored, cfg)
     payload["bucket_model_selection"] = _bucket_model_selection(scored, cfg)
     payload["distribution_calibrators"] = calibrators
+    payload["k_v3"] = calibrators.get("k_v3") or {}
     payload["models"] = {
-        "pitcher_strikeouts": {"distribution": "poisson_from_opportunity_adjusted_k_mean"},
+        "pitcher_strikeouts": {
+            "distribution": "learned_k_per_bf_mixed_over_bf_uncertainty",
+            "fallback": "poisson_from_opportunity_adjusted_k_mean",
+            "k_v3_enabled": bool((calibrators.get("k_v3") or {}).get("enabled")),
+        },
         "batter_hits": {"distribution": "nonlinear_event_curve_mixed_over_projected_pa_distribution"},
         "batter_total_bases": {"distribution": "explicit_0_1_2_3_4plus_hr_nonhr_states_from_nonlinear_event_curve"},
         "batter_home_runs": {"distribution": "separate_rare_event_head_with_pa_mixture"},
     }
     payload["status"] = "ready"
     payload["report_path"] = _write_report(payload, cfg)
-    (cfg.model_dir / cfg.out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    atomic_write_json(cfg.model_dir / cfg.out_file, payload, default=str)
     return payload
 
 
@@ -2967,12 +3653,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train/evaluate MLB prop distribution shadow models")
     parser.add_argument("--pg-dsn", default=_PG_DSN)
     parser.add_argument("--model-dir", default=str(_MODEL_DIR))
+    parser.add_argument("--markets", default=",".join(_DEFAULT_MARKETS), help="Comma-separated prop markets to train")
+    parser.add_argument("--out-file", default="prop_distribution_models.json")
+    parser.add_argument("--report-file", default="mlb_prop_distribution_models_latest.md")
+    parser.add_argument("--cache-file", default="prop_distribution_training_cache.pkl")
+    parser.add_argument("--refresh-cache", action="store_true")
+    parser.add_argument("--max-walk-forward-folds", type=int, default=1)
     parser.add_argument("--lookback-days", type=int, default=365)
     parser.add_argument("--holdout-days", type=int, default=28)
     args = parser.parse_args()
+    markets = tuple(market.strip() for market in str(args.markets).split(",") if market.strip())
     payload = train(DistributionConfig(
         pg_dsn=args.pg_dsn,
         model_dir=Path(args.model_dir),
+        out_file=args.out_file,
+        report_file=args.report_file,
+        markets=markets,
+        cache_file=args.cache_file,
+        refresh_cache=bool(args.refresh_cache),
+        max_walk_forward_folds=int(args.max_walk_forward_folds),
         lookback_days=args.lookback_days,
         holdout_days=args.holdout_days,
     ))

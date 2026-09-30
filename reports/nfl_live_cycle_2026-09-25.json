@@ -1,0 +1,11 @@
+{
+  "day": "2026-09-25",
+  "built_at": "2026-09-26T03:53:36.960784+00:00",
+  "effective_date": "2026-09-24",
+  "status": "no_games",
+  "games": [],
+  "blockers": [],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval."
+}

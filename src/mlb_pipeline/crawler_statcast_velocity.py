@@ -14,6 +14,7 @@ Usage:
 import argparse
 import io
 import logging
+import math
 import time
 from datetime import date, timedelta
 
@@ -55,7 +56,7 @@ def _ensure_schema(conn) -> None:
         """)
 
 
-def _fetch_savant_csv(player_id: int, year: int) -> bytes | None:
+def _fetch_savant_csv(player_id: int, year: int, *, timeout_s: float = 30.0) -> bytes | None:
     """Fetch statcast CSV for a pitcher+year. Returns raw CSV bytes or None on failure."""
     params = {
         "all":               "true",
@@ -67,7 +68,7 @@ def _fetch_savant_csv(player_id: int, year: int) -> bytes | None:
         "year":              str(year),
     }
     try:
-        resp = requests.get(_SAVANT_URL, params=params, timeout=30)
+        resp = requests.get(_SAVANT_URL, params=params, timeout=timeout_s)
         if resp.status_code == 429:
             log.warning("Rate-limited by Baseball Savant (429) for player_id=%d year=%d", player_id, year)
             time.sleep(30)
@@ -197,9 +198,19 @@ def _get_stale_pitcher_years(conn, years: list[int]) -> list[tuple[int, int]]:
     return result
 
 
-def fetch_all_sp_velocity(conn, years: list[int] | None = None) -> int:
+def fetch_all_sp_velocity(
+    conn,
+    years: list[int] | None = None,
+    *,
+    max_pairs: int | None = None,
+    max_seconds: float | None = None,
+    request_timeout_s: float = 30.0,
+) -> int:
     """
-    Fetch velocity data for all SPs in mlb_starting_pitchers.
+    Fetch velocity data for SPs in mlb_starting_pitchers.
+
+    ``max_pairs`` and ``max_seconds`` keep live pipeline refreshes bounded.
+    Leave them unset for a full manual backfill.
     Returns total number of pitcher-game rows upserted.
     """
     if years is None:
@@ -208,18 +219,37 @@ def fetch_all_sp_velocity(conn, years: list[int] | None = None) -> int:
     _ensure_schema(conn)
     conn.commit()   # commit the CREATE TABLE before querying
 
-    to_fetch = _get_stale_pitcher_years(conn, years)
-    log.info("SP velocity: %d pitcher×year combos to fetch", len(to_fetch))
+    to_fetch = sorted(_get_stale_pitcher_years(conn, years), key=lambda r: (-int(r[1]), int(r[0])))
+    total_to_fetch = len(to_fetch)
+    if max_pairs is not None and max_pairs >= 0:
+        to_fetch = to_fetch[:max_pairs]
+    log.info(
+        "SP velocity: %d pitcher-year combos selected (%d total stale/missing)",
+        len(to_fetch),
+        total_to_fetch,
+    )
 
     total_rows = 0
+    t0 = time.monotonic()
     for idx, (player_id, season_year) in enumerate(to_fetch):
+        if max_seconds is not None and math.isfinite(max_seconds) and max_seconds >= 0:
+            elapsed = time.monotonic() - t0
+            if elapsed >= max_seconds:
+                log.warning(
+                    "SP velocity refresh stopped after %.1fs budget (%d/%d combos processed)",
+                    elapsed,
+                    idx,
+                    len(to_fetch),
+                )
+                break
+
         if idx > 0:
             time.sleep(_REQUEST_DELAY)
 
         log.debug("Fetching velocity: player_id=%d year=%d (%d/%d)",
                   player_id, season_year, idx + 1, len(to_fetch))
 
-        csv_bytes = _fetch_savant_csv(player_id, season_year)
+        csv_bytes = _fetch_savant_csv(player_id, season_year, timeout_s=request_timeout_s)
         if csv_bytes is None:
             continue
 
@@ -229,9 +259,9 @@ def fetch_all_sp_velocity(conn, years: list[int] | None = None) -> int:
 
         n = _upsert_rows(conn, rows)
         total_rows += n
+        conn.commit()
 
         if (idx + 1) % 50 == 0:
-            conn.commit()
             log.info("SP velocity progress: %d/%d fetched, %d rows upserted so far",
                      idx + 1, len(to_fetch), total_rows)
 

@@ -1,13 +1,15 @@
 import logging
-import json
 from nba_pipeline.fetcher import MySportsFeedsClient
+from supernovabets_config import mysportsfeeds_api_key
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
-API_KEY = "4359aa1b-cc29-4647-a3e5-7314e2"
+API_KEY = mysportsfeeds_api_key()
+if not API_KEY:
+    raise RuntimeError("Missing MYSPORTSFEEDS_API_KEY or MSF_API_KEY")
 
 client = MySportsFeedsClient(api_key=API_KEY)
 

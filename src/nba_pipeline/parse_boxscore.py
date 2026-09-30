@@ -7,6 +7,8 @@ from typing import Any, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.parse_boxscore")
 
 
@@ -318,16 +320,14 @@ def build_raw_boxscores(conn, *, commit_every: int = 250) -> None:
 
 
 def main() -> None:
-    import os
-
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
-    dsn = "postgresql://josh:password@localhost:5432/nba"
+    dsn = PG_DSN
     if not dsn:
-        raise RuntimeError("Set PG_DSN, e.g. postgresql://user:pass@localhost:5432/nba")
+        raise RuntimeError("Set PG_DSN or SUPERNOVABETS_PG_DSN")
 
     conn = psycopg2.connect(dsn)
     conn.autocommit = False

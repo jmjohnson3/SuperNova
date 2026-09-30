@@ -47,6 +47,13 @@ class PropMarketTrainingConfig:
     require_lock: bool = True
     replace: bool = True
     ensure_schema: bool = False
+    markets: tuple[str, ...] = ()
+    sides: tuple[str, ...] = ()
+    bookmakers: tuple[str, ...] = ()
+    line_buckets: tuple[str, ...] = ()
+    limit: int | None = None
+    statement_timeout_ms: int = 300_000
+    lock_timeout_ms: int = 5_000
 
 
 def _clean_float(value: Any) -> float | None:
@@ -57,6 +64,29 @@ def _clean_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return v if math.isfinite(v) else None
+
+
+def _clean_filter_values(values: tuple[str, ...] | list[str] | None, *, lower: bool = False) -> list[str]:
+    cleaned: list[str] = []
+    for value in values or ():
+        text = str(value or "").strip()
+        if not text:
+            continue
+        cleaned.append(text.lower() if lower else text)
+    return cleaned
+
+
+def _cfg_markets(cfg: PropMarketTrainingConfig) -> list[str]:
+    values = _clean_filter_values(cfg.markets)
+    return values or list(_MARKETS)
+
+
+def _set_session_timeout(conn, setting: str, value_ms: int | None) -> None:
+    if value_ms is None or int(value_ms) <= 0:
+        return
+    with conn.cursor() as cur:
+        cur.execute(f"SET SESSION {setting} = %s", (f"{int(value_ms)}ms",))
+    conn.commit()
 
 
 def _kelly_from_price(p_win: Any, price: Any) -> float | None:
@@ -101,6 +131,14 @@ def _pair_quality(paired_price_source: Any, paired_price: Any) -> str:
     if "synthetic" in source:
         return "synthetic"
     return "unknown"
+
+
+def _is_fanduel_hitter_over_only(row: dict[str, Any]) -> bool:
+    return (
+        str(row.get("bookmaker_key") or "").strip().lower() == "fanduel"
+        and str(row.get("stat") or "").strip().lower()
+        in {"batter_hits", "batter_total_bases", "batter_home_runs"}
+    )
 
 
 def ensure_prop_market_training_schema(conn) -> None:
@@ -166,6 +204,8 @@ def ensure_prop_market_training_schema(conn) -> None:
                 confirmed_batting_order NUMERIC,
                 confirmed_lineup_source TEXT,
                 projected_pa NUMERIC,
+                pa_low_probability NUMERIC,
+                pa_normal_mean NUMERIC,
                 pa_games INTEGER,
                 projected_ip NUMERIC,
                 projected_bf NUMERIC,
@@ -261,6 +301,8 @@ def ensure_prop_market_training_schema(conn) -> None:
                 ADD COLUMN IF NOT EXISTS confirmed_batting_order NUMERIC,
                 ADD COLUMN IF NOT EXISTS confirmed_lineup_source TEXT,
                 ADD COLUMN IF NOT EXISTS projected_pa NUMERIC,
+                ADD COLUMN IF NOT EXISTS pa_low_probability NUMERIC,
+                ADD COLUMN IF NOT EXISTS pa_normal_mean NUMERIC,
                 ADD COLUMN IF NOT EXISTS pa_games INTEGER,
                 ADD COLUMN IF NOT EXISTS projected_ip NUMERIC,
                 ADD COLUMN IF NOT EXISTS projected_bf NUMERIC,
@@ -389,7 +431,7 @@ def _market_training_has_required_columns(conn) -> bool:
         "clean_market_pair_flag", "true_pair_flag", "minutes_to_first_pitch_at_lock",
         "lock_price_age_minutes",
         "no_vig_market_prob", "market_prob_side", "market_prob_source",
-        "line_surface", "projected_pa", "projected_bf",
+        "line_surface", "projected_pa", "pa_low_probability", "pa_normal_mean", "projected_bf",
         "projected_pitch_count", "actual_pa", "actual_bf",
         "actual_pitch_count_proxy", "clv_valid", "beat_clv_price",
         "result_status",
@@ -559,28 +601,56 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
     cutoff = datetime.now(timezone.utc).date() - timedelta(days=cfg.lookback_days)
     date_from = cfg.date_from or cutoff
     date_to = cfg.date_to
-    filters = [
+    replay_filters = [
         "r.game_date_et >= %s",
         "r.stat = ANY(%s)",
         "r.model_prob_over IS NOT NULL",
         "r.market_line IS NOT NULL",
     ]
-    params: list[Any] = [date_from, list(_MARKETS)]
+    post_filters: list[str] = []
+    params: list[Any] = [date_from, _cfg_markets(cfg)]
     if date_to is not None:
-        filters.append("r.game_date_et <= %s")
+        replay_filters.append("r.game_date_et <= %s")
         params.append(date_to)
     if cfg.run_ids:
-        filters.append("r.run_id = ANY(%s)")
+        replay_filters.append("r.run_id = ANY(%s)")
         params.append(list(cfg.run_ids))
+    side_values = _clean_filter_values(cfg.sides, lower=True)
+    if side_values:
+        replay_filters.append("r.side = ANY(%s)")
+        params.append(side_values)
+    bookmaker_values = _clean_filter_values(cfg.bookmakers, lower=True)
+    if bookmaker_values:
+        replay_filters.append("LOWER(r.bookmaker_key) = ANY(%s)")
+        params.append(bookmaker_values)
+    line_bucket_values = _clean_filter_values(cfg.line_buckets)
+    if line_bucket_values:
+        replay_filters.append("r.line_bucket = ANY(%s)")
+        params.append(line_bucket_values)
     if cfg.require_lock:
-        filters.append("r.lock_snapshot_id IS NOT NULL")
+        replay_filters.append("r.lock_snapshot_id IS NOT NULL")
     if not cfg.include_pending:
-        filters.append("r.actual_value IS NOT NULL")
+        replay_filters.append("r.result_status = 'graded'")
+        replay_filters.append("r.actual_value IS NOT NULL")
+        post_filters.append("g.status = 'final'")
+    limit_sql = ""
+    if cfg.limit is not None and int(cfg.limit) > 0:
+        limit_sql = "LIMIT %s"
+        params.append(int(cfg.limit))
+    post_where_sql = f"WHERE {' AND '.join(post_filters)}" if post_filters else ""
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             f"""
+            WITH replay_base AS MATERIALIZED (
+                SELECT *
+                FROM bets.mlb_prop_prediction_replay r
+                WHERE {' AND '.join(replay_filters)}
+                ORDER BY r.game_date_et, r.game_slug, r.stat, r.player_id, r.run_id, r.id
+                {limit_sql}
+            )
             SELECT
                 r.*,
+                g.status AS game_status,
                 CASE
                     WHEN r.side = 'over' THEN COALESCE(r.over_price::float, selected_offer.price::float, r.market_price::float)
                     WHEN r.side = 'under' THEN COALESCE(
@@ -588,8 +658,7 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                         pair_same.price::float,
                         pair_fallback_same.price::float,
                         pair_cross.price::float,
-                        pair_fallback_cross.price::float,
-                        synthetic_pair.price
+                        pair_fallback_cross.price::float
                     )
                     ELSE r.over_price::float
                 END AS resolved_over_price,
@@ -600,8 +669,7 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                         pair_same.price::float,
                         pair_fallback_same.price::float,
                         pair_cross.price::float,
-                        pair_fallback_cross.price::float,
-                        synthetic_pair.price
+                        pair_fallback_cross.price::float
                     )
                     ELSE r.under_price::float
                 END AS resolved_under_price,
@@ -612,7 +680,6 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                     WHEN pair_fallback_same.price IS NOT NULL THEN LOWER(pair_fallback_same.bookmaker_key)
                     WHEN pair_cross.price IS NOT NULL THEN LOWER(pair_cross.bookmaker_key)
                     WHEN pair_fallback_cross.price IS NOT NULL THEN LOWER(pair_fallback_cross.bookmaker_key)
-                    WHEN synthetic_pair.price IS NOT NULL THEN LOWER(synthetic_pair.bookmaker_key)
                     ELSE NULL
                 END AS paired_bookmaker_key_resolved,
                 CASE
@@ -622,27 +689,42 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                     WHEN pair_fallback_same.price IS NOT NULL THEN 'same_book_exact_line_fallback'
                     WHEN pair_cross.price IS NOT NULL THEN 'cross_book_exact_line'
                     WHEN pair_fallback_cross.price IS NOT NULL THEN 'cross_book_exact_line_fallback'
-                    WHEN synthetic_pair.price IS NOT NULL THEN 'synthetic_fanduel_over_only_complement'
                     ELSE NULL
                 END AS paired_price_source_resolved,
+                fd_ladder.fanduel_ladder_line_count,
+                fd_ladder.fanduel_ladder_prob,
                 EXTRACT(EPOCH FROM (
                     g.start_ts_utc - COALESCE(r.locked_at_utc, r.source_created_at, r.run_started_at_utc)
                 )) / 60.0 AS minutes_to_first_pitch_at_lock,
                 EXTRACT(EPOCH FROM (
                     COALESCE(r.locked_at_utc, r.source_created_at, r.run_started_at_utc) - selected_offer.fetched_at_utc
                 )) / 60.0 AS lock_price_age_minutes,
-                COALESCE(bps.batting_order, lu.batting_order, lu_name.batting_order) AS confirmed_batting_order,
+                COALESCE(
+                    NULLIF(r.opportunity_context ->> 'confirmed_batting_order', '')::float,
+                    lu.batting_order,
+                    lu_name.batting_order,
+                    bps.batting_order
+                ) AS confirmed_batting_order,
                 CASE
-                    WHEN bps.batting_order IS NOT NULL THEN 'boxscore_actual'
+                    WHEN NULLIF(r.opportunity_context ->> 'confirmed_batting_order', '') IS NOT NULL THEN 'lock_context'
                     WHEN lu.batting_order IS NOT NULL THEN lu.lineup_source
                     WHEN lu_name.batting_order IS NOT NULL THEN lu_name.lineup_source
+                    WHEN bps.batting_order IS NOT NULL THEN 'boxscore_actual_proxy'
                     ELSE NULL
                 END AS confirmed_lineup_source,
-                bat_opp.projected_pa,
+                COALESCE(
+                    NULLIF(r.opportunity_context ->> 'projected_pa', '')::float,
+                    bat_opp.projected_pa
+                ) AS projected_pa,
+                NULLIF(r.opportunity_context ->> 'low_pa_probability', '')::float AS pa_low_probability,
+                NULLIF(r.opportunity_context ->> 'normal_projected_pa', '')::float AS pa_normal_mean,
                 bat_opp.pa_games,
-                pit_opp.projected_ip,
-                pit_opp.projected_bf,
-                pit_opp.projected_pitch_count,
+                COALESCE(NULLIF(r.opportunity_context ->> 'projected_ip', '')::float, pit_opp.projected_ip) AS projected_ip,
+                COALESCE(NULLIF(r.opportunity_context ->> 'projected_bf', '')::float, pit_opp.projected_bf) AS projected_bf,
+                COALESCE(
+                    NULLIF(r.opportunity_context ->> 'projected_pitch_count', '')::float,
+                    pit_opp.projected_pitch_count
+                ) AS projected_pitch_count,
                 pit_opp.pitcher_starts,
                 CASE
                     WHEN r.team_abbr = g.home_team_abbr THEN 1.0
@@ -708,23 +790,30 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                 END AS actual_pa,
                 CASE
                     WHEN r.stat = 'pitcher_strikeouts' THEN
-                        GREATEST(
-                            ROUND(COALESCE(actual_gl.innings_pitched, 0) * 3)
-                            + COALESCE(actual_gl.hits_allowed, 0)
-                            + COALESCE(actual_gl.walks_allowed, 0),
-                            0
+                        COALESCE(
+                            NULLIF(bps.stats #>> '{{pitching,battersFaced}}', '')::float,
+                            GREATEST(
+                                ROUND(COALESCE(actual_gl.innings_pitched, 0) * 3)
+                                + COALESCE(actual_gl.hits_allowed, 0)
+                                + COALESCE(actual_gl.walks_allowed, 0),
+                                0
+                            )
                         )
                     ELSE NULL
                 END AS actual_bf,
                 CASE WHEN r.stat = 'pitcher_strikeouts' THEN actual_gl.innings_pitched ELSE NULL END AS actual_ip,
                 CASE
                     WHEN r.stat = 'pitcher_strikeouts' THEN
-                        GREATEST(
-                            ROUND(COALESCE(actual_gl.innings_pitched, 0) * 3)
-                            + COALESCE(actual_gl.hits_allowed, 0)
-                            + COALESCE(actual_gl.walks_allowed, 0),
-                            0
-                        ) * 3.85
+                        COALESCE(
+                            NULLIF(bps.stats #>> '{{pitching,numberOfPitches}}', '')::float,
+                            NULLIF(bps.stats #>> '{{pitching,pitchesThrown}}', '')::float,
+                            GREATEST(
+                                ROUND(COALESCE(actual_gl.innings_pitched, 0) * 3)
+                                + COALESCE(actual_gl.hits_allowed, 0)
+                                + COALESCE(actual_gl.walks_allowed, 0),
+                                0
+                            ) * 3.85
+                        )
                     ELSE NULL
                 END AS actual_pitch_count_proxy,
                 CASE
@@ -741,12 +830,14 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                 END AS low_pa_flag,
                 CASE
                     WHEN r.stat = 'pitcher_strikeouts' THEN NULL
-                    WHEN COALESCE(bps.batting_order, lu.batting_order, lu_name.batting_order) IS NULL THEN 0.35
-                    WHEN COALESCE(bps.batting_order, lu.batting_order, lu_name.batting_order) >= 8 THEN 0.25
-                    WHEN COALESCE(bps.batting_order, lu.batting_order, lu_name.batting_order) >= 6 THEN 0.15
+                    WHEN NULLIF(r.opportunity_context ->> 'pinch_hit_removal_risk', '') IS NOT NULL
+                        THEN NULLIF(r.opportunity_context ->> 'pinch_hit_removal_risk', '')::float
+                    WHEN COALESCE(lu.batting_order, lu_name.batting_order, bps.batting_order) IS NULL THEN 0.35
+                    WHEN COALESCE(lu.batting_order, lu_name.batting_order, bps.batting_order) >= 8 THEN 0.25
+                    WHEN COALESCE(lu.batting_order, lu_name.batting_order, bps.batting_order) >= 6 THEN 0.15
                     ELSE 0.05
                 END AS pinch_hit_risk
-            FROM bets.mlb_prop_prediction_replay r
+            FROM replay_base r
             LEFT JOIN raw.mlb_games g
               ON g.game_slug = r.game_slug
             LEFT JOIN LATERAL (
@@ -857,40 +948,47 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                 LIMIT 1
             ) pair_fallback_cross ON TRUE
             LEFT JOIN LATERAL (
-                SELECT
-                    CASE
-                        WHEN p.complement_prob > 0.5 THEN
-                            ROUND(-100.0 * p.complement_prob / NULLIF(1.0 - p.complement_prob, 0.0))::float
-                        ELSE
-                            ROUND(100.0 * (1.0 - p.complement_prob) / NULLIF(p.complement_prob, 0.0))::float
-                    END AS price,
-                    LOWER(COALESCE(selected_offer.bookmaker_key, r.bookmaker_key)) AS bookmaker_key
-                FROM (
+                WITH ladder AS (
                     SELECT
-                        1.0 - CASE
-                            WHEN src.side_price > 0 THEN 100.0 / (src.side_price + 100.0)
-                            ELSE ABS(src.side_price) / (ABS(src.side_price) + 100.0)
-                        END AS complement_prob
-                    FROM (
-                        SELECT COALESCE(
-                            selected_offer.price::float,
-                            r.market_price::float,
-                            CASE WHEN r.side = 'over' THEN r.over_price::float ELSE r.under_price::float END
-                        ) AS side_price
-                    ) src
-                    WHERE src.side_price IS NOT NULL
-                      AND src.side_price <> 0
-                ) p
-                WHERE pair_same.id IS NULL
-                  AND pair_fallback_same.id IS NULL
-                  AND pair_cross.id IS NULL
-                  AND pair_fallback_cross.id IS NULL
-                  AND LOWER(COALESCE(selected_offer.bookmaker_key, r.bookmaker_key)) = 'fanduel'
-                  AND r.stat IN ('batter_hits', 'batter_total_bases', 'batter_home_runs')
-                  AND p.complement_prob > 0.0
-                  AND p.complement_prob < 1.0
-                LIMIT 1
-            ) synthetic_pair ON TRUE
+                        o.line::float AS line,
+                        CASE
+                            WHEN o.price::float > 0 THEN 100.0 / (o.price::float + 100.0)
+                            ELSE ABS(o.price::float) / (ABS(o.price::float) + 100.0)
+                        END AS raw_prob
+                    FROM features.mlb_prop_offer_links o
+                    WHERE selected_offer.id IS NOT NULL
+                      AND LOWER(selected_offer.bookmaker_key) = 'fanduel'
+                      AND r.side = 'over'
+                      AND r.stat IN ('batter_hits', 'batter_total_bases', 'batter_home_runs')
+                      AND o.as_of_date = selected_offer.as_of_date
+                      AND o.event_id = selected_offer.event_id
+                      AND o.player_name_norm = selected_offer.player_name_norm
+                      AND o.stat = selected_offer.stat
+                      AND LOWER(o.bookmaker_key) = 'fanduel'
+                      AND o.side = 'over'
+                      AND o.price IS NOT NULL
+                      AND o.price <> 0
+                ),
+                bounds AS (
+                    SELECT
+                        COUNT(*)::int AS ladder_line_count,
+                        MAX(raw_prob) FILTER (WHERE line > selected_offer.line::float) AS higher_line_prob,
+                        MIN(raw_prob) FILTER (WHERE line < selected_offer.line::float) AS lower_line_prob,
+                        MAX(raw_prob) FILTER (WHERE ABS(line - selected_offer.line::float) <= 1e-9) AS exact_line_prob
+                    FROM ladder
+                )
+                SELECT
+                    ladder_line_count AS fanduel_ladder_line_count,
+                    GREATEST(
+                        COALESCE(higher_line_prob, 0.000001),
+                        LEAST(
+                            COALESCE(exact_line_prob, 0.5),
+                            COALESCE(lower_line_prob, 0.999999)
+                        )
+                    )::float AS fanduel_ladder_prob
+                FROM bounds
+                WHERE ladder_line_count >= 2
+            ) fd_ladder ON TRUE
             LEFT JOIN features.mlb_game_training_features gf
               ON gf.game_slug = r.game_slug
             LEFT JOIN raw.mlb_lineups lu
@@ -957,7 +1055,7 @@ def _load_replay_rows(conn, cfg: PropMarketTrainingConfig) -> list[dict[str, Any
                     LIMIT 5
                 ) recent_starts
             ) pit_opp ON r.stat = 'pitcher_strikeouts'
-            WHERE {' AND '.join(filters)}
+            {post_where_sql}
             ORDER BY r.game_date_et, r.game_slug, r.stat, r.player_id, r.run_id, r.id
             """,
             params,
@@ -978,10 +1076,15 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
         under_price = _clean_float(row.get("under_price"))
     nv_over, nv_under = no_vig_probs(over_price, under_price)
     actual = _clean_float(row.get("actual_value"))
+    game_final = str(row.get("game_status") or "").strip().lower() == "final"
+    if not game_final:
+        actual = None
     push = bool(actual is not None and abs(actual - line) <= 1e-9)
     over_hit = row.get("over_hit")
     if over_hit is None and actual is not None:
         over_hit = actual > line
+    if actual is None:
+        over_hit = None
     market = str(row.get("stat") or "")
     lb = row.get("line_bucket") or prop_line_bucket(market, line)
     if lb == "unknown":
@@ -996,17 +1099,27 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
         paired = under_price if side == "over" else over_price
         raw_mkt = american_to_prob(price)
         no_vig = nv_over if side == "over" else nv_under
-        market_prob = no_vig if no_vig is not None else raw_mkt
+        ladder_prob = _clean_float(row.get("fanduel_ladder_prob"))
+        ladder_count = _clean_float(row.get("fanduel_ladder_line_count")) or 0.0
+        use_fanduel_ladder = (
+            no_vig is None
+            and paired is None
+            and side == "over"
+            and _is_fanduel_hitter_over_only(row)
+            and ladder_prob is not None
+            and ladder_count >= 2
+        )
+        market_prob = no_vig if no_vig is not None else (ladder_prob if use_fanduel_ladder else raw_mkt)
         paired_price_source = row.get("paired_price_source_resolved") if paired is not None else None
         paired_bookmaker_key = row.get("paired_bookmaker_key_resolved") if paired is not None else None
-        if paired_price_source == "synthetic_fanduel_over_only_complement":
-            market_prob_source = "synthetic_fanduel_over_only"
+        if use_fanduel_ladder:
+            market_prob_source = "one_sided_fanduel_ladder"
         elif no_vig is not None and paired_price_source in {"cross_book_exact_line", "cross_book_exact_line_fallback"}:
             market_prob_source = "no_vig_cross_book_exact_line"
         elif no_vig is not None:
             market_prob_source = "no_vig_same_book"
         else:
-            market_prob_source = "raw_implied"
+            market_prob_source = "raw_implied_one_sided" if paired is None else "raw_implied"
         pair_quality = _pair_quality(paired_price_source, paired)
         same_book_pair_flag = 1.0 if pair_quality == "same_book" else 0.0
         cross_book_pair_flag = 1.0 if pair_quality == "cross_book" else 0.0
@@ -1026,6 +1139,11 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
         if pred_count is not None:
             count_edge = pred_count - line if side == "over" else line - pred_count
         prob_edge = p_side - market_prob if market_prob is not None else None
+        actual_pa = _clean_float(row.get("actual_pa")) if actual is not None else None
+        actual_bf = _clean_float(row.get("actual_bf")) if actual is not None else None
+        actual_ip = _clean_float(row.get("actual_ip")) if actual is not None else None
+        actual_pitch_count = _clean_float(row.get("actual_pitch_count_proxy")) if actual is not None else None
+        low_pa_flag = _clean_float(row.get("low_pa_flag")) if actual is not None else None
 
         clv_valid = bool(row.get("clv_valid")) and selected_side == side
         closing_line = _clean_float(row.get("closing_line")) if clv_valid else None
@@ -1092,6 +1210,8 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
             "confirmed_batting_order": _clean_float(row.get("confirmed_batting_order")),
             "confirmed_lineup_source": row.get("confirmed_lineup_source"),
             "projected_pa": _clean_float(row.get("projected_pa")),
+            "pa_low_probability": _clean_float(row.get("pa_low_probability")),
+            "pa_normal_mean": _clean_float(row.get("pa_normal_mean")),
             "pa_games": row.get("pa_games"),
             "projected_ip": _clean_float(row.get("projected_ip")),
             "projected_bf": _clean_float(row.get("projected_bf")),
@@ -1130,11 +1250,11 @@ def _example_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
             "team_implied_runs": _clean_float(row.get("team_implied_runs")),
             "opponent_implied_runs": _clean_float(row.get("opponent_implied_runs")),
             "game_total_line": _clean_float(row.get("game_total_line")),
-            "actual_pa": _clean_float(row.get("actual_pa")),
-            "actual_bf": _clean_float(row.get("actual_bf")),
-            "actual_ip": _clean_float(row.get("actual_ip")),
-            "actual_pitch_count_proxy": _clean_float(row.get("actual_pitch_count_proxy")),
-            "low_pa_flag": _clean_float(row.get("low_pa_flag")),
+            "actual_pa": actual_pa,
+            "actual_bf": actual_bf,
+            "actual_ip": actual_ip,
+            "actual_pitch_count_proxy": actual_pitch_count,
+            "low_pa_flag": low_pa_flag,
             "ev": ev,
             "kelly_fraction": _kelly_from_price(p_side, price),
             "actual_value": actual,
@@ -1174,7 +1294,7 @@ INSERT INTO features.mlb_prop_market_training_examples (
     market_prob_source, price_bucket, line_bucket, line_surface,
     model_family, edge_type, pred_value, pred_count, model_prob_over,
     model_prob_side, count_edge_side, prob_edge_vs_market, confirmed_batting_order,
-    confirmed_lineup_source, projected_pa, pa_games, projected_ip, projected_bf,
+    confirmed_lineup_source, projected_pa, pa_low_probability, pa_normal_mean, pa_games, projected_ip, projected_bf,
     projected_pitch_count, pitcher_starts, is_home, opponent_abbr, opp_sp_id,
     opp_sp_hand, opp_sp_hand_l, opp_sp_k_pct_10, opp_sp_bb_pct, opp_sp_xwoba,
     opp_sp_hard_hit_pct, opp_sp_whiff_pct, opp_bp_era_10, opp_bp_whip_10,
@@ -1205,7 +1325,8 @@ INSERT INTO features.mlb_prop_market_training_examples (
     %(market_prob_source)s, %(price_bucket)s, %(line_bucket)s, %(line_surface)s,
     %(model_family)s, %(edge_type)s, %(pred_value)s, %(pred_count)s, %(model_prob_over)s,
     %(model_prob_side)s, %(count_edge_side)s, %(prob_edge_vs_market)s, %(confirmed_batting_order)s,
-    %(confirmed_lineup_source)s, %(projected_pa)s, %(pa_games)s, %(projected_ip)s, %(projected_bf)s,
+    %(confirmed_lineup_source)s, %(projected_pa)s, %(pa_low_probability)s, %(pa_normal_mean)s,
+    %(pa_games)s, %(projected_ip)s, %(projected_bf)s,
     %(projected_pitch_count)s, %(pitcher_starts)s, %(is_home)s, %(opponent_abbr)s, %(opp_sp_id)s,
     %(opp_sp_hand)s, %(opp_sp_hand_l)s, %(opp_sp_k_pct_10)s, %(opp_sp_bb_pct)s, %(opp_sp_xwoba)s,
     %(opp_sp_hard_hit_pct)s, %(opp_sp_whiff_pct)s, %(opp_bp_era_10)s, %(opp_bp_whip_10)s,
@@ -1254,6 +1375,8 @@ ON CONFLICT (run_id, replay_id, side) DO UPDATE SET
     confirmed_batting_order = EXCLUDED.confirmed_batting_order,
     confirmed_lineup_source = EXCLUDED.confirmed_lineup_source,
     projected_pa = EXCLUDED.projected_pa,
+    pa_low_probability = EXCLUDED.pa_low_probability,
+    pa_normal_mean = EXCLUDED.pa_normal_mean,
     pa_games = EXCLUDED.pa_games,
     projected_ip = EXCLUDED.projected_ip,
     projected_bf = EXCLUDED.projected_bf,
@@ -1335,6 +1458,22 @@ def _delete_existing(conn, cfg: PropMarketTrainingConfig) -> int:
     if cfg.run_ids:
         filters.append("run_id = ANY(%s)")
         params.append(list(cfg.run_ids))
+    market_values = _cfg_markets(cfg)
+    if market_values:
+        filters.append("market = ANY(%s)")
+        params.append(market_values)
+    side_values = _clean_filter_values(cfg.sides, lower=True)
+    if side_values:
+        filters.append("side = ANY(%s)")
+        params.append(side_values)
+    bookmaker_values = _clean_filter_values(cfg.bookmakers, lower=True)
+    if bookmaker_values:
+        filters.append("LOWER(bookmaker_key) = ANY(%s)")
+        params.append(bookmaker_values)
+    line_bucket_values = _clean_filter_values(cfg.line_buckets)
+    if line_bucket_values:
+        filters.append("line_bucket = ANY(%s)")
+        params.append(line_bucket_values)
     with conn.cursor() as cur:
         cur.execute(
             f"DELETE FROM features.mlb_prop_market_training_examples WHERE {' AND '.join(filters)}",
@@ -1358,6 +1497,8 @@ def refresh_prop_market_training_examples(cfg: PropMarketTrainingConfig) -> dict
                     + ". Run `python -m mlb_pipeline.modeling.build_prop_market_training_table --ensure-schema` "
                     + "from a non-live maintenance window."
                 )
+        _set_session_timeout(conn, "statement_timeout", cfg.statement_timeout_ms)
+        _set_session_timeout(conn, "lock_timeout", cfg.lock_timeout_ms)
         deleted = _delete_existing(conn, cfg) if cfg.replace else 0
         if not _table_exists(conn, "bets", "mlb_prop_prediction_replay"):
             return {"deleted": deleted, "replay_rows": 0, "examples": 0}

@@ -1,0 +1,23 @@
+{
+  "sources": [
+    {
+      "platform": "outlier",
+      "format": "csv",
+      "url": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0"
+    },
+    {
+      "platform": "edge_terminal",
+      "format": "json",
+      "url": "https://example.com/api/mlb/value-picks",
+      "json_path": "data.picks",
+      "headers": {
+        "Authorization": "Bearer ${EDGE_TERMINAL_API_TOKEN}"
+      }
+    },
+    {
+      "platform": "edge_ai",
+      "format": "html_table",
+      "url": "https://example.com/public/mlb-value-bets"
+    }
+  ]
+}

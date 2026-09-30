@@ -38,6 +38,8 @@ from .build_hitter_player_game_training_table import (
     HitterPlayerGameTrainingConfig,
     refresh_hitter_player_game_training,
 )
+from mlb_pipeline.atomic_io import atomic_write_via
+from .model_release import HITTER_CHALLENGER_ARTIFACT, ensure_hitter_production_artifact, hitter_model_release_id
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _MODEL_DIR = Path(__file__).resolve().parent / "models" / "player_props"
@@ -334,7 +336,9 @@ def _load(cfg: HitterOutcomeModelConfig) -> pd.DataFrame:
         "model_pred_home_runs",
         "prop_example_rows",
     }
-    df["confirmed_starter_num"] = df["confirmed_starter"].fillna(False).astype(bool).astype(float)
+    lineup_slot = pd.to_numeric(df.get("lineup_slot"), errors="coerce")
+    stored_starter = df["confirmed_starter"].fillna(False).astype(bool).astype(float)
+    df["confirmed_starter_num"] = np.where(lineup_slot.between(1, 9), 1.0, stored_starter)
     for col in numeric:
         if col not in df:
             df[col] = np.nan
@@ -405,13 +409,13 @@ def prepare_hitter_outcome_features(
     }
     for canonical, aliases in alias_map.items():
         out[canonical] = _coalesce_column(out, canonical, aliases)
-    if "confirmed_starter_num" not in out:
-        if "confirmed_starter" in out:
-            out["confirmed_starter_num"] = out["confirmed_starter"].fillna(False).astype(bool).astype(float)
-        else:
-            slot = _numeric_column(out, "lineup_slot")
-            out["confirmed_starter_num"] = slot.between(1, 9).astype(float)
     slot = _numeric_column(out, "lineup_slot")
+    stored_starter = (
+        out["confirmed_starter"].fillna(False).astype(bool).astype(float)
+        if "confirmed_starter" in out
+        else pd.Series(0.0, index=out.index)
+    )
+    out["confirmed_starter_num"] = np.where(slot.between(1, 9), 1.0, stored_starter)
     if "lineup_confirmed_flag" not in out:
         source = out.get("lineup_source", pd.Series([""] * len(out), index=out.index)).fillna("").astype(str)
         out["lineup_confirmed_flag"] = source.str.contains("lineup|raw_lineups", case=False, regex=True).astype(float)
@@ -1351,7 +1355,13 @@ def _fit_tb_state_models(
         if positives < 25 or negatives < 25:
             continue
         model = _boosted_binary_pipeline(numeric_features, categorical_features)
-        model.fit(features[numeric_features + categorical_features], target)
+        positive_weight = min(4.0, math.sqrt(negatives / max(positives, 1)))
+        sample_weight = np.where(target.to_numpy() == 1, positive_weight, 1.0)
+        model.fit(
+            features[numeric_features + categorical_features],
+            target,
+            model__sample_weight=sample_weight,
+        )
         models[state] = model
     return models
 
@@ -1410,7 +1420,15 @@ def _fit_hierarchical_tb_state_models(
         if len(y) < 100 or int(y.sum()) < 25 or int((1 - y).sum()) < 25:
             continue
         model = _boosted_binary_pipeline(numeric_features, categorical_features)
-        model.fit(features.loc[eligible, feature_cols], y)
+        positives = int(y.sum())
+        negatives = int((1 - y).sum())
+        positive_weight = min(4.0, math.sqrt(negatives / max(positives, 1)))
+        sample_weight = np.where(y.to_numpy() == 1, positive_weight, 1.0)
+        model.fit(
+            features.loc[eligible, feature_cols],
+            y,
+            model__sample_weight=sample_weight,
+        )
         models[head] = model
     return models
 
@@ -1678,6 +1696,281 @@ def _event_projection_metrics(
     }
 
 
+def _select_count_repair(
+    holdout: pd.DataFrame,
+    direct_prediction: np.ndarray,
+    *,
+    actual_column: str,
+    base_column: str,
+    repair_name: str,
+    minimum_gain: float = 0.002,
+    max_bias_offset: float = 0.75,
+    require_any_brier_gain: bool = False,
+) -> dict[str, Any]:
+    """Gate a direct count blend with expanding, date-purged folds."""
+    work = pd.DataFrame({
+        "game_date_et": pd.to_datetime(holdout["game_date_et"]).dt.date,
+        "actual": pd.to_numeric(holdout[actual_column], errors="coerce"),
+        "base": pd.to_numeric(holdout[base_column], errors="coerce"),
+        "direct": np.asarray(direct_prediction, dtype=float),
+    }, index=holdout.index).dropna(subset=["actual", "base", "direct"])
+    dates = sorted(work["game_date_et"].unique())
+    if len(work) < 200 or len(dates) < 4:
+        return {
+            "enabled": False,
+            "reason": "insufficient_temporal_rows",
+            "rows": int(len(work)),
+            "dates": int(len(dates)),
+            "alpha": 0.0,
+        }
+    def fit_calibration(prior: pd.DataFrame) -> tuple[float, float, list[dict[str, float]]]:
+        offset = float(np.clip(
+            (prior["actual"] - prior["direct"]).mean(),
+            -max_bias_offset,
+            max_bias_offset,
+        ))
+        adjusted = np.clip(prior["direct"] + offset, 0.0, 8.0)
+        candidates = []
+        for candidate_alpha in np.linspace(0.0, 1.0, 11):
+            prediction = (1.0 - candidate_alpha) * prior["base"] + candidate_alpha * adjusted
+            candidates.append({
+                "alpha": float(candidate_alpha),
+                "mae": float(mean_absolute_error(prior["actual"], prediction)),
+                "rmse": _rmse(prior["actual"], prediction),
+            })
+        selected = min(candidates, key=lambda row: (row["mae"], row["rmse"], row["alpha"]))
+        return float(selected["alpha"]), offset, candidates
+
+    min_train_dates = max(4, min(7, len(dates) // 3))
+    test_window_dates = max(2, min(7, len(dates) // 4))
+    fold_frames: list[pd.DataFrame] = []
+    folds: list[dict[str, Any]] = []
+    repair_alpha = 0.5
+    for start in range(min_train_dates, len(dates), test_window_dates):
+        test_dates = dates[start:start + test_window_dates]
+        if not test_dates:
+            continue
+        prior = work[work["game_date_et"] < test_dates[0]]
+        test = work[work["game_date_et"].isin(test_dates)].copy()
+        if len(prior) < 100 or len(test) < 30:
+            continue
+        _, offset, _ = fit_calibration(prior)
+        alpha = repair_alpha
+        test["direct_adjusted"] = np.clip(test["direct"] + offset, 0.0, 8.0)
+        test["blended"] = (1.0 - alpha) * test["base"] + alpha * test["direct_adjusted"]
+        base_metrics = _count_metrics(test["actual"], test["base"])
+        direct_metrics = _count_metrics(test["actual"], test["direct_adjusted"])
+        blend_metrics = _count_metrics(test["actual"], test["blended"])
+        base_any = 1.0 - np.exp(-np.clip(test["base"].to_numpy(dtype=float), 0.0, 8.0))
+        blend_any = 1.0 - np.exp(-np.clip(test["blended"].to_numpy(dtype=float), 0.0, 8.0))
+        actual_any = test["actual"].gt(0).astype(int).to_numpy()
+        base_any_brier = float(brier_score_loss(actual_any, base_any))
+        blend_any_brier = float(brier_score_loss(actual_any, blend_any))
+        folds.append({
+            "test_start": str(test_dates[0]),
+            "test_end": str(test_dates[-1]),
+            "train_rows": int(len(prior)),
+            "test_rows": int(len(test)),
+            "alpha": alpha,
+            "bias_offset": offset,
+            "base": base_metrics,
+            "direct": direct_metrics,
+            "blended": blend_metrics,
+            "mae_gain": float(base_metrics["mae"] - blend_metrics["mae"]),
+            "base_any_brier": base_any_brier,
+            "blended_any_brier": blend_any_brier,
+            "any_brier_gain": base_any_brier - blend_any_brier,
+        })
+        fold_frames.append(test)
+    if not fold_frames:
+        return {
+            "enabled": False,
+            "reason": "insufficient_walk_forward_folds",
+            "rows": int(len(work)),
+            "dates": int(len(dates)),
+            "alpha": 0.0,
+            "folds": [],
+        }
+    oof = pd.concat(fold_frames, ignore_index=True)
+    base_validation = _count_metrics(oof["actual"], oof["base"])
+    direct_validation = _count_metrics(oof["actual"], oof["direct_adjusted"])
+    blended_validation = _count_metrics(oof["actual"], oof["blended"])
+    mae_gain = float(base_validation["mae"] - blended_validation["mae"])
+    positive_folds = sum(float(fold["mae_gain"]) > minimum_gain for fold in folds)
+    base_any_oof = 1.0 - np.exp(-np.clip(oof["base"].to_numpy(dtype=float), 0.0, 8.0))
+    blend_any_oof = 1.0 - np.exp(-np.clip(oof["blended"].to_numpy(dtype=float), 0.0, 8.0))
+    actual_any_oof = oof["actual"].gt(0).astype(int).to_numpy()
+    base_any_brier = float(brier_score_loss(actual_any_oof, base_any_oof))
+    blended_any_brier = float(brier_score_loss(actual_any_oof, blend_any_oof))
+    any_brier_gain = base_any_brier - blended_any_brier
+    _, production_bias_offset, production_candidates = fit_calibration(work)
+    production_alpha = repair_alpha
+    enabled = bool(
+        production_alpha > 0.0
+        and mae_gain > minimum_gain
+        and blended_validation["rmse"] <= base_validation["rmse"] + 0.005
+        and abs(blended_validation["bias"]) <= abs(base_validation["bias"]) + 0.02
+        and positive_folds >= max(1, math.ceil(len(folds) * 0.5))
+        and (not require_any_brier_gain or any_brier_gain > 0.0002)
+    )
+    return {
+        "method": f"expanding_walk_forward_gated_direct_player_game_{repair_name}_blend",
+        "enabled": enabled,
+        "reason": "repeated_oof_gain" if enabled else "no_repeated_joint_oof_gain",
+        "rows": int(len(work)),
+        "dates": int(len(dates)),
+        "walk_forward_folds": int(len(folds)),
+        "positive_folds": int(positive_folds),
+        "folds": folds,
+        "validation_rows": int(len(oof)),
+        "production_bias_offset": production_bias_offset if enabled else 0.0,
+        "production_candidate_metrics": production_candidates,
+        "predeclared_repair_alpha": repair_alpha,
+        "alpha": production_alpha if enabled else 0.0,
+        "candidate_alpha": production_alpha,
+        "base_validation": base_validation,
+        "direct_validation": direct_validation,
+        "blended_validation": blended_validation,
+        "validation_mae_gain": mae_gain,
+        "base_any_brier": base_any_brier,
+        "blended_any_brier": blended_any_brier,
+        "any_brier_gain": any_brier_gain,
+    }
+
+
+def _select_tb_count_repair(
+    holdout: pd.DataFrame,
+    direct_prediction: np.ndarray,
+    *,
+    minimum_gain: float = 0.002,
+) -> dict[str, Any]:
+    return _select_count_repair(
+        holdout,
+        direct_prediction,
+        actual_column="actual_total_bases",
+        base_column="model_pred_total_bases",
+        repair_name="tb",
+        minimum_gain=minimum_gain,
+        max_bias_offset=0.75,
+    )
+
+
+def _fit_event_class_log_offsets(df: pd.DataFrame, probs: pd.DataFrame) -> dict[str, float]:
+    """Fit shrunk multinomial intercept offsets from a past calibration block."""
+    counts = _event_count_matrix(df)
+    total_events = float(counts.sum(axis=1).sum())
+    if total_events <= 0 or len(probs) != len(df):
+        return {cls: 0.0 for cls in EVENT_CLASSES}
+    weights = pd.to_numeric(df.get("actual_pa"), errors="coerce").fillna(0.0).to_numpy(dtype=float)
+    if float(weights.sum()) <= 0:
+        weights = np.ones(len(df), dtype=float)
+    shrink = total_events / (total_events + 2000.0)
+    offsets: dict[str, float] = {}
+    for cls in EVENT_CLASSES:
+        actual_rate = float(counts[cls].sum()) / total_events
+        predicted_rate = float(np.average(probs[f"p_{cls}"].to_numpy(dtype=float), weights=weights))
+        ratio = max(1e-6, actual_rate) / max(1e-6, predicted_rate)
+        offsets[cls] = float(np.clip(math.log(ratio) * shrink, -0.45, 0.45))
+    return offsets
+
+
+def _apply_event_class_log_offsets(probs: pd.DataFrame, offsets: dict[str, float] | None) -> pd.DataFrame:
+    if not offsets:
+        return probs.copy()
+    cols = [f"p_{cls}" for cls in EVENT_CLASSES]
+    values = np.clip(probs[cols].to_numpy(dtype=float), 1e-9, 1.0)
+    logits = np.log(values) + np.asarray([float(offsets.get(cls, 0.0)) for cls in EVENT_CLASSES])
+    logits -= logits.max(axis=1, keepdims=True)
+    calibrated = np.exp(logits)
+    calibrated /= calibrated.sum(axis=1, keepdims=True)
+    return pd.DataFrame(calibrated, index=probs.index, columns=cols)
+
+
+def _logit(value: float) -> float:
+    value = float(np.clip(value, 1e-6, 1.0 - 1e-6))
+    return math.log(value / (1.0 - value))
+
+
+def _sigmoid_array(values: np.ndarray) -> np.ndarray:
+    values = np.clip(values, -35.0, 35.0)
+    return 1.0 / (1.0 + np.exp(-values))
+
+
+def _fit_conditional_xbh_logit_offsets(df: pd.DataFrame, probs: pd.DataFrame) -> dict[str, float]:
+    """Calibrate the conditional XBH hierarchy on an earlier date block."""
+    counts = _event_count_matrix(df)
+    hit_count = counts[["single", "double", "triple", "hr"]].sum(axis=1)
+    xbh_count = counts[["double", "triple", "hr"]].sum(axis=1)
+    non_hr_xbh_count = counts[["double", "triple"]].sum(axis=1)
+    specs = {
+        "xbh_given_hit": (xbh_count, hit_count, 500.0),
+        "hr_given_xbh": (counts["hr"], xbh_count, 250.0),
+        "triple_given_non_hr_xbh": (counts["triple"], non_hr_xbh_count, 120.0),
+    }
+    p_hit = probs[["p_single", "p_double", "p_triple", "p_hr"]].sum(axis=1).clip(1e-6)
+    p_xbh = probs[["p_double", "p_triple", "p_hr"]].sum(axis=1).clip(1e-6)
+    p_non_hr_xbh = probs[["p_double", "p_triple"]].sum(axis=1).clip(1e-6)
+    predicted = {
+        "xbh_given_hit": (p_xbh / p_hit).clip(1e-6, 1.0 - 1e-6),
+        "hr_given_xbh": (probs["p_hr"] / p_xbh).clip(1e-6, 1.0 - 1e-6),
+        "triple_given_non_hr_xbh": (probs["p_triple"] / p_non_hr_xbh).clip(1e-6, 1.0 - 1e-6),
+    }
+    offsets: dict[str, float] = {}
+    for name, (positive, denominator, prior_strength) in specs.items():
+        total = float(denominator.sum())
+        if total <= 0:
+            offsets[name] = 0.0
+            continue
+        actual_rate = float(positive.sum()) / total
+        predicted_rate = float(np.average(predicted[name].to_numpy(dtype=float), weights=denominator))
+        shrink = total / (total + prior_strength)
+        offsets[name] = float(np.clip((_logit(actual_rate) - _logit(predicted_rate)) * shrink, -1.25, 1.25))
+    return offsets
+
+
+def _apply_conditional_xbh_logit_offsets(
+    probs: pd.DataFrame,
+    offsets: dict[str, float] | None,
+) -> pd.DataFrame:
+    if not offsets:
+        return probs.copy()
+    out = probs.copy()
+    p_hit = out[["p_single", "p_double", "p_triple", "p_hr"]].sum(axis=1).to_numpy(dtype=float)
+    p_non_hit = np.clip(1.0 - p_hit, 0.0, 1.0)
+    p_walk_share = (
+        out["p_walk"].to_numpy(dtype=float) / np.clip(p_non_hit, 1e-8, None)
+    ).clip(0.0, 1.0)
+    p_xbh_raw = out[["p_double", "p_triple", "p_hr"]].sum(axis=1).to_numpy(dtype=float)
+    p_xbh_given_hit = p_xbh_raw / np.clip(p_hit, 1e-8, None)
+    p_hr_given_xbh = out["p_hr"].to_numpy(dtype=float) / np.clip(p_xbh_raw, 1e-8, None)
+    p_non_hr_xbh_raw = out[["p_double", "p_triple"]].sum(axis=1).to_numpy(dtype=float)
+    p_triple_given_non_hr = out["p_triple"].to_numpy(dtype=float) / np.clip(p_non_hr_xbh_raw, 1e-8, None)
+    p_xbh_given_hit = _sigmoid_array(
+        np.log(np.clip(p_xbh_given_hit, 1e-6, 1 - 1e-6) / np.clip(1.0 - p_xbh_given_hit, 1e-6, 1.0))
+        + float(offsets.get("xbh_given_hit", 0.0))
+    )
+    p_hr_given_xbh = _sigmoid_array(
+        np.log(np.clip(p_hr_given_xbh, 1e-6, 1 - 1e-6) / np.clip(1.0 - p_hr_given_xbh, 1e-6, 1.0))
+        + float(offsets.get("hr_given_xbh", 0.0))
+    )
+    p_triple_given_non_hr = _sigmoid_array(
+        np.log(np.clip(p_triple_given_non_hr, 1e-6, 1 - 1e-6) / np.clip(1.0 - p_triple_given_non_hr, 1e-6, 1.0))
+        + float(offsets.get("triple_given_non_hr_xbh", 0.0))
+    )
+    p_xbh = p_hit * p_xbh_given_hit
+    p_hr = p_xbh * p_hr_given_xbh
+    p_non_hr_xbh = p_xbh - p_hr
+    p_triple = p_non_hr_xbh * p_triple_given_non_hr
+    p_double = p_non_hr_xbh - p_triple
+    out["p_single"] = p_hit - p_xbh
+    out["p_double"] = p_double
+    out["p_triple"] = p_triple
+    out["p_hr"] = p_hr
+    out["p_walk"] = p_non_hit * p_walk_share
+    out["p_out"] = p_non_hit - out["p_walk"].to_numpy(dtype=float)
+    return out[[f"p_{cls}" for cls in EVENT_CLASSES]].clip(1e-9, 1.0)
+
+
 def _mae_from_metric(metrics: dict[str, Any], key: str) -> float | None:
     try:
         value = ((metrics.get(key) or {}).get("mae"))
@@ -1746,6 +2039,7 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
     df = _load(cfg)
     payload: dict[str, Any] = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "model_release_id": hitter_model_release_id(),
         "source": "features.mlb_hitter_player_game_training",
         "rows": int(len(df)),
         "status": "ok",
@@ -1850,25 +2144,33 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
     low_model_brier = float(brier_score_loss(low_target_holdout, pa_low_prob))
     low_base_brier = float(brier_score_loss(low_target_holdout, np.full(len(holdout), low_base_prob)))
     lineup_source = holdout.get("lineup_source", pd.Series("unknown", index=holdout.index)).fillna("unknown").astype(str).str.lower()
-    leakage_safe_low_pa_mask = ~lineup_source.str.contains("boxscore|postgame|actual", regex=True)
-    safe_low_pa_rows = int(leakage_safe_low_pa_mask.sum())
-    if safe_low_pa_rows >= 200 and low_target_holdout.loc[leakage_safe_low_pa_mask].nunique() >= 2:
-        safe_low_brier = float(brier_score_loss(
-            low_target_holdout.loc[leakage_safe_low_pa_mask],
-            pa_low_prob[leakage_safe_low_pa_mask.to_numpy()],
+    immutable_low_pa_mask = ~lineup_source.str.contains("boxscore|postgame|actual", regex=True)
+    lineup_proxy_mask = lineup_source.str.contains("boxscore", regex=False) & pd.to_numeric(
+        holdout.get("lineup_slot"), errors="coerce"
+    ).between(1, 9)
+    distribution_validation_mask = immutable_low_pa_mask | lineup_proxy_mask
+    safe_low_pa_rows = int(immutable_low_pa_mask.sum())
+    distribution_rows = int(distribution_validation_mask.sum())
+    if distribution_rows >= 200 and low_target_holdout.loc[distribution_validation_mask].nunique() >= 2:
+        distribution_low_brier = float(brier_score_loss(
+            low_target_holdout.loc[distribution_validation_mask],
+            pa_low_prob[distribution_validation_mask.to_numpy()],
         ))
-        safe_low_base_brier = float(brier_score_loss(
-            low_target_holdout.loc[leakage_safe_low_pa_mask],
-            np.full(safe_low_pa_rows, low_base_prob),
+        distribution_low_base_brier = float(brier_score_loss(
+            low_target_holdout.loc[distribution_validation_mask],
+            np.full(distribution_rows, low_base_prob),
         ))
     else:
-        safe_low_brier = None
-        safe_low_base_brier = None
+        distribution_low_brier = None
+        distribution_low_base_brier = None
+    pa_distribution_use = bool(
+        distribution_low_brier is not None
+        and distribution_low_base_brier is not None
+        and distribution_low_brier < distribution_low_base_brier
+    )
     pa_two_part_use = bool(
         two_part_mae < single_mae
-        and safe_low_brier is not None
-        and safe_low_base_brier is not None
-        and safe_low_brier < safe_low_base_brier
+        and pa_distribution_use
     )
     pa_pred = pa_two_part_pred if pa_two_part_use else pa_single_pred
     holdout["pa_low_probability"] = pa_low_prob
@@ -1888,13 +2190,16 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
             "low_pa_rate": float(low_target_holdout.mean()),
             "low_pa_model_brier": low_model_brier,
             "low_pa_baseline_brier": low_base_brier,
-            "leakage_safe_low_pa_rows": safe_low_pa_rows,
-            "leakage_safe_low_pa_brier": safe_low_brier,
-            "leakage_safe_low_pa_baseline_brier": safe_low_base_brier,
+            "distribution_enabled": pa_distribution_use,
+            "immutable_lock_low_pa_rows": safe_low_pa_rows,
+            "distribution_validation_rows": distribution_rows,
+            "distribution_validation_brier": distribution_low_brier,
+            "distribution_validation_baseline_brier": distribution_low_base_brier,
             "activation_reason": (
-                "leakage_safe_holdout_gain" if pa_two_part_use
-                else "insufficient_pregame_low_pa_rows" if safe_low_pa_rows < 200
-                else "no_leakage_safe_brier_gain"
+                "two_part_mean_and_distribution_gain" if pa_two_part_use
+                else "distribution_only_gain" if pa_distribution_use
+                else "insufficient_temporal_lineup_rows" if distribution_rows < 200
+                else "no_temporal_distribution_brier_gain"
             ),
             "normal_pa_rows": int(normal_holdout_mask.sum()),
             "normal_pa_mae": float(mean_absolute_error(
@@ -1916,6 +2221,7 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
     models["pa_low_model"] = pa_low_model
     models["pa_normal_model"] = pa_normal_model
     models["pa_two_part_use"] = pa_two_part_use
+    models["pa_distribution_use"] = pa_distribution_use
 
     rate_train = train[train["actual_pa"] > 0].copy()
     rate_holdout = holdout[holdout["actual_pa"] > 0].copy()
@@ -1966,6 +2272,48 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
             _rate_prior(train, rate_holdout, "actual_home_runs", pa_pred_rates),
         ),
     }
+
+    # Test direct player-game count challengers against the exact legacy
+    # forecasts used live. They activate independently after date-purged OOF
+    # gains; a failed head remains diagnostic and receives zero blend weight.
+    direct_specs = (
+        ("hits", "actual_hits", "model_pred_hits", _boosted_count_pipeline, 0.002, 0.40, False, 4.0),
+        ("tb", "actual_total_bases", "model_pred_total_bases", _boosted_count_pipeline, 0.002, 0.75, False, 8.0),
+        ("hr", "actual_home_runs", "model_pred_home_runs", _boosted_poisson_count_pipeline, 0.0002, 0.15, True, 3.0),
+    )
+    for prefix, actual_col, base_col, factory, minimum_gain, max_offset, require_brier, upper in direct_specs:
+        numeric_features = list(head_numeric_features.get(f"{prefix}_count") or NUMERIC_FEATURES)
+        count_model = factory(numeric_features, head_categorical_features)
+        count_model.fit(
+            train_features[numeric_features + head_categorical_features],
+            train[actual_col],
+        )
+        direct_prediction = np.clip(
+            count_model.predict(holdout_features[numeric_features + head_categorical_features]),
+            0.0,
+            upper,
+        )
+        policy = _select_count_repair(
+            holdout,
+            direct_prediction,
+            actual_column=actual_col,
+            base_column=base_col,
+            repair_name=prefix,
+            minimum_gain=minimum_gain,
+            max_bias_offset=max_offset,
+            require_any_brier_gain=require_brier,
+        )
+        metrics[f"direct_{prefix}_count_repair"] = {
+            **policy,
+            "all_holdout": _count_metrics(holdout[actual_col], direct_prediction),
+            "numeric_features": numeric_features,
+            "categorical_features": head_categorical_features,
+        }
+        models[f"{prefix}_count_model"] = count_model
+        models[f"{prefix}_count_numeric_features"] = numeric_features
+        models[f"{prefix}_count_categorical_features"] = head_categorical_features
+        models[f"{prefix}_count_blend_alpha"] = float(policy.get("alpha") or 0.0)
+        models[f"{prefix}_count_bias_offset"] = float(policy.get("production_bias_offset") or 0.0)
 
     event_train = train[train["actual_pa"] > 0].copy()
     event_holdout = holdout[holdout["actual_pa"] > 0].copy()
@@ -2048,6 +2396,112 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
                 models["event_binary_models"] = boosted_models
 
         if active_event_probs is not None:
+            event_dates = pd.to_datetime(event_holdout["game_date_et"]).dt.date
+            unique_event_dates = sorted(event_dates.unique())
+            if len(unique_event_dates) >= 4:
+                calibration_start = unique_event_dates[max(1, len(unique_event_dates) // 2)]
+                event_calibration_mask = event_dates < calibration_start
+                event_validation_mask = ~event_calibration_mask
+                calibration_offsets = _fit_event_class_log_offsets(
+                    event_holdout.loc[event_calibration_mask],
+                    active_event_probs.loc[event_calibration_mask],
+                )
+                calibrated_event_probs = _apply_event_class_log_offsets(active_event_probs, calibration_offsets)
+                validation_positions = event_validation_mask.to_numpy()
+                base_event_validation = _event_projection_metrics(
+                    event_holdout.loc[event_validation_mask],
+                    active_event_probs.loc[event_validation_mask],
+                    event_pa_pred[validation_positions],
+                )
+                calibrated_event_validation = _event_projection_metrics(
+                    event_holdout.loc[event_validation_mask],
+                    calibrated_event_probs.loc[event_validation_mask],
+                    event_pa_pred[validation_positions],
+                )
+                base_tb_mae = _mae_from_metric(base_event_validation, "total_bases")
+                calibrated_tb_mae = _mae_from_metric(calibrated_event_validation, "total_bases")
+                base_hr_mae = _mae_from_metric(base_event_validation, "home_runs")
+                calibrated_hr_mae = _mae_from_metric(calibrated_event_validation, "home_runs")
+                base_event_brier = base_event_validation.get("weighted_event_brier")
+                calibrated_event_brier = calibrated_event_validation.get("weighted_event_brier")
+                event_calibration_enabled = bool(
+                    base_tb_mae is not None
+                    and calibrated_tb_mae is not None
+                    and calibrated_tb_mae < base_tb_mae
+                    and base_hr_mae is not None
+                    and calibrated_hr_mae is not None
+                    and calibrated_hr_mae <= base_hr_mae
+                    and base_event_brier is not None
+                    and calibrated_event_brier is not None
+                    and calibrated_event_brier <= base_event_brier
+                )
+                event_metrics["event_class_calibration"] = {
+                    "method": "temporal_multinomial_intercept_offsets",
+                    "calibration_end": str(unique_event_dates[max(0, len(unique_event_dates) // 2 - 1)]),
+                    "validation_start": str(calibration_start),
+                    "calibration_rows": int(event_calibration_mask.sum()),
+                    "validation_rows": int(event_validation_mask.sum()),
+                    "candidate_offsets": calibration_offsets,
+                    "base_validation": base_event_validation,
+                    "calibrated_validation": calibrated_event_validation,
+                    "enabled": event_calibration_enabled,
+                    "reason": "tb_hr_and_event_brier_improved" if event_calibration_enabled else "no_joint_validation_gain",
+                }
+                if event_calibration_enabled:
+                    production_offsets = _fit_event_class_log_offsets(event_holdout, active_event_probs)
+                    active_event_probs = calibrated_event_probs
+                    models["event_class_log_offsets"] = production_offsets
+                    event_metrics["event_class_calibration"]["production_offsets"] = production_offsets
+                    event_metrics["active_event_model"] = f"{event_metrics.get('active_event_model')}_event_rate_calibrated"
+
+                xbh_offsets = _fit_conditional_xbh_logit_offsets(
+                    event_holdout.loc[event_calibration_mask],
+                    active_event_probs.loc[event_calibration_mask],
+                )
+                xbh_candidate = _apply_conditional_xbh_logit_offsets(active_event_probs, xbh_offsets)
+                xbh_base_validation = _event_projection_metrics(
+                    event_holdout.loc[event_validation_mask],
+                    active_event_probs.loc[event_validation_mask],
+                    event_pa_pred[validation_positions],
+                )
+                xbh_candidate_validation = _event_projection_metrics(
+                    event_holdout.loc[event_validation_mask],
+                    xbh_candidate.loc[event_validation_mask],
+                    event_pa_pred[validation_positions],
+                )
+                base_xbh_tb_mae = _mae_from_metric(xbh_base_validation, "total_bases")
+                candidate_xbh_tb_mae = _mae_from_metric(xbh_candidate_validation, "total_bases")
+                base_xbh_brier = xbh_base_validation.get("weighted_event_brier")
+                candidate_xbh_brier = xbh_candidate_validation.get("weighted_event_brier")
+                base_xbh_hr_mae = _mae_from_metric(xbh_base_validation, "home_runs")
+                candidate_xbh_hr_mae = _mae_from_metric(xbh_candidate_validation, "home_runs")
+                xbh_enabled = bool(
+                    base_xbh_tb_mae is not None
+                    and candidate_xbh_tb_mae is not None
+                    and candidate_xbh_tb_mae < base_xbh_tb_mae
+                    and base_xbh_brier is not None
+                    and candidate_xbh_brier is not None
+                    and candidate_xbh_brier <= base_xbh_brier
+                    and base_xbh_hr_mae is not None
+                    and candidate_xbh_hr_mae is not None
+                    and candidate_xbh_hr_mae <= base_xbh_hr_mae + 0.002
+                )
+                event_metrics["conditional_xbh_calibration"] = {
+                    "method": "temporal_empirical_bayes_conditional_logit_offsets",
+                    "calibration_rows": int(event_calibration_mask.sum()),
+                    "validation_rows": int(event_validation_mask.sum()),
+                    "candidate_offsets": xbh_offsets,
+                    "base_validation": xbh_base_validation,
+                    "candidate_validation": xbh_candidate_validation,
+                    "enabled": xbh_enabled,
+                    "reason": "tb_mae_and_event_brier_improved" if xbh_enabled else "no_joint_validation_gain",
+                }
+                if xbh_enabled:
+                    production_xbh_offsets = _fit_conditional_xbh_logit_offsets(event_holdout, active_event_probs)
+                    active_event_probs = xbh_candidate
+                    models["conditional_xbh_logit_offsets"] = production_xbh_offsets
+                    event_metrics["conditional_xbh_calibration"]["production_offsets"] = production_xbh_offsets
+                    event_metrics["active_event_model"] = f"{event_metrics.get('active_event_model')}_conditional_xbh_calibrated"
             try:
                 tb_state_models = _fit_tb_state_models(
                     event_train,
@@ -2113,8 +2567,8 @@ def train_hitter_player_game_outcomes(cfg: HitterOutcomeModelConfig) -> dict[str
                         active_event_probs,
                         event_pa_pred,
                         pa_uncertainty,
-                        event_low_pa_prob if pa_two_part_use else None,
-                        event_normal_pa_pred if pa_two_part_use else None,
+                        event_low_pa_prob if pa_distribution_use else None,
+                        event_normal_pa_pred if pa_distribution_use else None,
                     )
                     blend_policy = _select_tb_state_blend(event_holdout, base_state_probs, direct_candidates)
                     candidate_metrics = {
@@ -2220,6 +2674,9 @@ def _recommend(metrics: dict[str, Any], holdout_rows: int, cfg: HitterOutcomeMod
     )
     hr_any = metrics.get("hr_any_model", {})
     direct = metrics.get("direct_event_model", {})
+    hits_count_repair = metrics.get("direct_hits_count_repair", {})
+    tb_count_repair = metrics.get("direct_tb_count_repair", {})
+    hr_count_repair = metrics.get("direct_hr_count_repair", {})
     event_tb_gain = _gain(
         direct.get("total_bases", {}),
         metrics.get("structured_counts", {}).get("total_bases", {}),
@@ -2270,6 +2727,16 @@ def _recommend(metrics: dict[str, Any], holdout_rows: int, cfg: HitterOutcomeMod
         "direct_event_hits_mae_gain_vs_slot_prior": event_hits_gain_vs_prior,
         "direct_event_tb_mae_gain_vs_slot_prior": event_tb_gain_vs_prior,
         "hr_any_brier_gain_vs_prior": hr_any_gain,
+        "direct_tb_count_repair_enabled": bool(tb_count_repair.get("enabled")),
+        "direct_tb_count_repair_mae_gain": tb_count_repair.get("validation_mae_gain"),
+        "direct_tb_count_repair_alpha": tb_count_repair.get("alpha"),
+        "direct_hits_count_repair_enabled": bool(hits_count_repair.get("enabled")),
+        "direct_hits_count_repair_mae_gain": hits_count_repair.get("validation_mae_gain"),
+        "direct_hits_count_repair_alpha": hits_count_repair.get("alpha"),
+        "direct_hr_count_repair_enabled": bool(hr_count_repair.get("enabled")),
+        "direct_hr_count_repair_mae_gain": hr_count_repair.get("validation_mae_gain"),
+        "direct_hr_count_repair_brier_gain": hr_count_repair.get("any_brier_gain"),
+        "direct_hr_count_repair_alpha": hr_count_repair.get("alpha"),
         "passes_basic_gate": passes_basic_gate,
     }
 
@@ -2279,21 +2746,36 @@ def _write_outputs(payload: dict[str, Any], cfg: HitterOutcomeModelConfig, model
     json_path = cfg.model_dir / "hitter_player_game_outcome_models.json"
     json_path.write_text(json.dumps(payload, indent=2, default=_json_default), encoding="utf-8")
     if models:
-        joblib.dump(
-            {
-                "models": models,
-                "numeric_features": NUMERIC_FEATURES,
-                "categorical_features": CATEGORICAL_FEATURES,
-                "event_classes": EVENT_CLASSES,
-                "active_event_model": ((payload.get("metrics") or {}).get("direct_event_model") or {}).get("active_event_model"),
-                "trained_at_utc": payload.get("generated_at_utc"),
-                "recommendation": payload.get("recommendation"),
-                "metrics": payload.get("metrics") or {},
-                "player_prior_state": models.get("player_prior_state") or {},
-                "pa_uncertainty": models.get("pa_uncertainty") or {},
-            },
-            cfg.model_dir / "hitter_player_game_outcome_models.joblib",
+        artifact = {
+            "models": models,
+            "numeric_features": NUMERIC_FEATURES,
+            "categorical_features": CATEGORICAL_FEATURES,
+            "event_classes": EVENT_CLASSES,
+            "active_event_model": ((payload.get("metrics") or {}).get("direct_event_model") or {}).get("active_event_model"),
+            "trained_at_utc": payload.get("generated_at_utc"),
+            "model_release_id": payload.get("model_release_id"),
+            "artifact_role": "nightly_challenger",
+            "recommendation": payload.get("recommendation"),
+            "metrics": payload.get("metrics") or {},
+            "player_prior_state": models.get("player_prior_state") or {},
+            "pa_uncertainty": models.get("pa_uncertainty") or {},
+        }
+        atomic_write_via(
+            cfg.model_dir / HITTER_CHALLENGER_ARTIFACT,
+            lambda temp: joblib.dump(artifact, temp),
+            attempts=6,
+            retry_all_errors=True,
         )
+        # Keep the legacy filename as the latest challenger for diagnostics and
+        # compatibility. Prediction and distribution pricing load the separately
+        # pinned production artifact.
+        atomic_write_via(
+            cfg.model_dir / "hitter_player_game_outcome_models.joblib",
+            lambda temp: joblib.dump(artifact, temp),
+            attempts=6,
+            retry_all_errors=True,
+        )
+        ensure_hitter_production_artifact(cfg.model_dir)
     _write_report(payload, cfg.report_file)
 
 
@@ -2314,6 +2796,9 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
     pa = metrics.get("pa_model", {})
     structured = metrics.get("structured_counts", {})
     direct = metrics.get("direct_event_model", {})
+    hits_count_repair = metrics.get("direct_hits_count_repair", {})
+    tb_count_repair = metrics.get("direct_tb_count_repair", {})
+    hr_count_repair = metrics.get("direct_hr_count_repair", {})
     hr_any = metrics.get("hr_any_model", {})
     prop = metrics.get("existing_prop_projection_holdout", {})
 
@@ -2321,6 +2806,7 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         "# MLB Hitter Player-Game Outcome Models",
         "",
         f"Generated: {payload.get('generated_at_utc')}",
+        f"Model release: {payload.get('model_release_id', '-')}",
         f"Rows: {payload.get('rows', 0)} | Train: {payload.get('train_rows', 0)} | Holdout: {payload.get('holdout_rows', 0)}",
         f"Holdout: {payload.get('holdout_start')} to {payload.get('holdout_end')}",
         f"Status: {payload.get('status')}",
@@ -2336,6 +2822,12 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         f"- Direct event hits MAE gain vs slot prior: {num(rec.get('direct_event_hits_mae_gain_vs_slot_prior'))}",
         f"- Direct event TB MAE gain vs slot prior: {num(rec.get('direct_event_tb_mae_gain_vs_slot_prior'))}",
         f"- Direct event TB MAE gain vs independent rates: {num(rec.get('direct_event_tb_mae_gain_vs_independent_rates'))}",
+        f"- Direct hits count repair enabled / MAE gain: {bool(hits_count_repair.get('enabled'))} / {num(hits_count_repair.get('validation_mae_gain'))}",
+        f"- Direct TB count repair enabled: {bool(tb_count_repair.get('enabled'))}",
+        f"- Direct TB count repair alpha: {num(tb_count_repair.get('alpha'))}",
+        f"- Direct TB count validation MAE gain: {num(tb_count_repair.get('validation_mae_gain'))}",
+        f"- Direct HR count repair enabled / MAE gain: {bool(hr_count_repair.get('enabled'))} / {num(hr_count_repair.get('validation_mae_gain'))}",
+        f"- Direct HR any-event Brier gain: {num(hr_count_repair.get('any_brier_gain'), 5)}",
         f"- HR-any Brier gain vs prior: {num(rec.get('hr_any_brier_gain_vs_prior'), 5)}",
         "",
         "## Feature Coverage",
@@ -2397,8 +2889,11 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
     lines.extend([
         "",
         f"- Two-part PA enabled: {two_part.get('enabled', False)}",
+        f"- Low-PA distribution enabled: {two_part.get('distribution_enabled', False)}",
         f"- Low-PA Brier: {num(two_part.get('low_pa_model_brier'), 5)} vs baseline {num(two_part.get('low_pa_baseline_brier'), 5)}",
-        f"- Leakage-safe pregame low-PA rows: {two_part.get('leakage_safe_low_pa_rows', 0)}",
+        f"- Immutable lock-context low-PA rows: {two_part.get('immutable_lock_low_pa_rows', 0)}",
+        f"- Temporal lineup/proxy validation rows: {two_part.get('distribution_validation_rows', 0)}",
+        f"- Temporal distribution Brier: {num(two_part.get('distribution_validation_brier'), 5)} vs baseline {num(two_part.get('distribution_validation_baseline_brier'), 5)}",
         f"- Activation reason: {two_part.get('activation_reason', '-')}",
         f"- Conditional normal-play PA MAE: {num(two_part.get('normal_pa_mae'))}",
     ])
@@ -2491,6 +2986,46 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
                 f"| {cls} | {num(rec_rate.get('actual_per_pa'), 4)} | "
                 f"{num(rec_rate.get('pred_mean_prob'), 4)} | {num(rec_rate.get('bias_per_pa'), 4)} |"
             )
+    xbh_calibration = direct.get("conditional_xbh_calibration") or {}
+    xbh_base = xbh_calibration.get("base_validation") or {}
+    xbh_candidate = xbh_calibration.get("candidate_validation") or {}
+    lines.extend([
+        "",
+        "## Conditional XBH Calibration",
+        "",
+        f"- Enabled: {xbh_calibration.get('enabled', False)}",
+        f"- Method: {xbh_calibration.get('method', '-')}",
+        f"- Validation rows: {xbh_calibration.get('validation_rows', 0)}",
+        f"- TB MAE before / after: {num((xbh_base.get('total_bases') or {}).get('mae'))} / "
+        f"{num((xbh_candidate.get('total_bases') or {}).get('mae'))}",
+        f"- Event Brier before / after: {num(xbh_base.get('weighted_event_brier'), 5)} / "
+        f"{num(xbh_candidate.get('weighted_event_brier'), 5)}",
+        f"- Offsets: {json.dumps(xbh_calibration.get('production_offsets') or xbh_calibration.get('candidate_offsets') or {}, sort_keys=True)}",
+    ])
+
+
+def _boosted_poisson_count_pipeline(
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> Pipeline:
+    return Pipeline([
+        ("features", _preprocessor(numeric_features, categorical_features)),
+        ("model", LGBMRegressor(
+            objective="poisson",
+            n_estimators=240,
+            learning_rate=0.03,
+            num_leaves=15,
+            max_depth=6,
+            min_child_samples=100,
+            subsample=0.85,
+            colsample_bytree=0.80,
+            reg_alpha=0.20,
+            reg_lambda=1.50,
+            random_state=44,
+            n_jobs=-1,
+            verbosity=-1,
+        )),
+    ])
     lines.extend([
         "",
         "## HR Rare Event",

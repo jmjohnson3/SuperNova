@@ -1,0 +1,30 @@
+{
+  "generated_at_utc": "2026-09-01T11:24:26+00:00",
+  "game_date": "2026-09-01",
+  "source_label": "AI pick engine prop rows",
+  "target_micro_buckets": [
+    "batter_total_bases|over|common|TB 1.5|plus_100_149|draftkings",
+    "batter_total_bases|over|common|TB 1.5|plus_150_249|draftkings",
+    "pitcher_strikeouts|under|common|K <4.5|plus_100_149|draftkings"
+  ],
+  "selector_error": null,
+  "active_prediction_rows": 0,
+  "micro_cap": 5,
+  "micro_stake_usd": 1.0,
+  "micro_min_ev": 0.03,
+  "locked_rows_inserted": 0,
+  "ledger_before": [],
+  "ledger_after": [],
+  "status_counts": {},
+  "target_rows": 0,
+  "target_micro_candidates": 0,
+  "target_lockable_now": 0,
+  "target_inside_cap": 0,
+  "target_ledger_locked": 0,
+  "micro_projection_rows": 0,
+  "micro_external_agreement_rows": 0,
+  "micro_lockable_now": 0,
+  "micro_inside_cap": 0,
+  "micro_ledger_locked": 0,
+  "rows": []
+}

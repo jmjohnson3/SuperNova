@@ -5,6 +5,8 @@ from typing import Literal
 import pandas as pd
 from sqlalchemy import create_engine, text
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.modeling.scan_alt_hit_rate")
 
 Stat = Literal["points", "rebounds", "assists"]
@@ -25,7 +27,7 @@ SIDE_OP = {
 
 @dataclass(frozen=True)
 class ScanConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
 
     stat: Stat = "points"
     side: Side = "over"

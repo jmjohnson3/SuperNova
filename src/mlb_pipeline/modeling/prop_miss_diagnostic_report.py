@@ -20,9 +20,11 @@ import numpy as np
 import pandas as pd
 import psycopg2
 import psycopg2.extras
+
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
 from sklearn.metrics import brier_score_loss
 
-from .prop_market_training import ensure_prop_market_training_schema
+from .prop_ledger_classification import PROP_LEDGER_LABELS, classify_prop_ledger
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
 _REPORT_DIR = Path(__file__).resolve().parents[3] / "reports"
@@ -46,6 +48,8 @@ SELECT
     id,
     run_id,
     replay_id,
+    prediction_key,
+    prop_offer_id,
     game_date_et,
     game_slug,
     player_id,
@@ -58,6 +62,8 @@ SELECT
     COALESCE(line_bucket, 'unknown') AS line_bucket,
     COALESCE(price_bucket, 'missing_price') AS price_bucket,
     COALESCE(model_family, 'unknown') AS model_family,
+    COALESCE(pair_quality, 'unknown') AS pair_quality,
+    COALESCE(market_prob_source, 'unknown') AS market_prob_source,
     market_line::float AS market_line,
     market_price::float AS market_price,
     market_prob_side::float AS market_prob_side,
@@ -99,7 +105,34 @@ WHERE game_date_et >= %(cutoff)s
   AND market_line IS NOT NULL
   AND actual_value IS NOT NULL
   AND won IS NOT NULL
+  AND (
+        CARDINALITY(%(prediction_keys)s::text[]) = 0
+        OR prediction_key = ANY(%(prediction_keys)s::text[])
+      )
 ORDER BY game_date_et, market, side, player_name
+"""
+
+
+LEDGER_SQL = """
+SELECT
+    id AS ledger_id,
+    inserted_at_utc,
+    prediction_key,
+    prop_offer_id,
+    game_date_et,
+    player_id,
+    player_name,
+    COALESCE(stat, market) AS market,
+    side,
+    bookmaker_key,
+    COALESCE(market_line, bet_line)::float AS market_line,
+    model_tier,
+    warning_reasons,
+    model_meta
+FROM bets.mlb_model_pick_ledger
+WHERE source = 'prop'
+  AND game_date_et >= %(cutoff)s
+ORDER BY inserted_at_utc, id
 """
 
 
@@ -126,12 +159,43 @@ def _query_df(conn, sql: str, params: dict[str, Any]) -> pd.DataFrame:
 def _load(cfg: MissDiagnosticConfig) -> pd.DataFrame:
     cutoff = datetime.now(timezone.utc).date() - timedelta(days=max(1, cfg.lookback_days))
     with psycopg2.connect(cfg.pg_dsn) as conn:
-        ensure_prop_market_training_schema(conn)
         if not _table_exists(conn, "features", "mlb_prop_market_training_examples"):
             return pd.DataFrame()
-        df = _query_df(conn, SQL, {"cutoff": cutoff})
+        ledger = (
+            _query_df(conn, LEDGER_SQL, {"cutoff": cutoff})
+            if _table_exists(conn, "bets", "mlb_model_pick_ledger")
+            else pd.DataFrame()
+        )
+        prediction_keys = (
+            ledger["prediction_key"].dropna().astype(str).unique().tolist()
+            if not ledger.empty
+            else []
+        )
+        df = _query_df(conn, SQL, {"cutoff": cutoff, "prediction_keys": prediction_keys})
     if df.empty:
         return df
+    if not ledger.empty:
+        ledger = ledger.copy()
+        ledger["ledger"] = [classify_prop_ledger(row) for row in ledger.to_dict("records")]
+        ledger = ledger.loc[ledger["prediction_key"].notna()].copy()
+        ledger["prediction_key"] = ledger["prediction_key"].astype(str)
+        ledger["side"] = ledger["side"].fillna("").astype(str).str.lower()
+        ledger = ledger.drop_duplicates(["prediction_key", "side"], keep="last")
+        df["prediction_key"] = df["prediction_key"].astype(str)
+        df["side"] = df["side"].fillna("").astype(str).str.lower()
+        df = df.merge(
+            ledger[["prediction_key", "side", "ledger", "ledger_id", "model_tier"]],
+            on=["prediction_key", "side"],
+            how="inner",
+            validate="many_to_one",
+        )
+        df = df.sort_values(["game_date_et", "id"]).drop_duplicates(
+            ["prediction_key", "side"], keep="last"
+        )
+    else:
+        df["ledger"] = "paper_common"
+        df["ledger_id"] = np.nan
+        df["model_tier"] = None
     df["game_date_et"] = pd.to_datetime(df["game_date_et"]).dt.date
     numeric = [
         "market_line", "market_price", "market_prob_side", "model_prob_side",
@@ -308,6 +372,29 @@ def _classify(row: pd.Series, bucket: dict[str, Any] | None, market_side: dict[s
     return sorted(dict.fromkeys(reasons or ["unclassified_miss"]))
 
 
+_PRIMARY_REASON_PRIORITY = (
+    "bad_opportunity_projection",
+    "bad_player_projection",
+    "bad_player_rate_projection",
+    "large_projection_error",
+    "bad_distribution_pricing",
+    "bad_side_probability",
+    "bad_line_price_edge",
+    "model_worse_than_market_price",
+    "bad_clv_bookability",
+    "lost_clv",
+    "bad_calibration_bucket",
+    "bad_bucket_roi",
+    "weak_market_bucket",
+    "unclassified_miss",
+)
+
+
+def _primary_reason(reasons: list[str]) -> str:
+    values = set(reasons)
+    return next((reason for reason in _PRIMARY_REASON_PRIORITY if reason in values), "unclassified_miss")
+
+
 def _metrics_payload(df: pd.DataFrame, cfg: MissDiagnosticConfig) -> tuple[dict[str, Any], pd.DataFrame]:
     if df.empty:
         return {"rows": 0}, df
@@ -318,19 +405,30 @@ def _metrics_payload(df: pd.DataFrame, cfg: MissDiagnosticConfig) -> tuple[dict[
     reason_rows = []
     reason_counter: Counter[str] = Counter()
     reason_market_side: Counter[str] = Counter()
+    primary_counter: Counter[str] = Counter()
+    primary_by_ledger: Counter[str] = Counter()
+    reasons_by_ledger: Counter[str] = Counter()
     work = df.copy()
     labels: list[str] = []
+    primary_labels: list[str] = []
     for _, row in work.iterrows():
         exact_key = tuple(row[col] for col in exact_cols)
         market_side_key = tuple(row[col] for col in market_side_cols)
         reasons = _classify(row, exact.get(exact_key), market_side.get(market_side_key), cfg)
+        primary = _primary_reason(reasons) if reasons else ""
         labels.append(",".join(reasons))
+        primary_labels.append(primary)
         if int(row.get("won") or 0) == 0 and not bool(row.get("push")):
+            ledger = str(row.get("ledger") or "paper_common")
+            primary_counter[primary] += 1
+            primary_by_ledger[f"{ledger}|{primary}"] += 1
             for reason in reasons:
                 reason_counter[reason] += 1
                 reason_market_side[f"{reason}|{row.get('market')}|{row.get('side')}"] += 1
+                reasons_by_ledger[f"{ledger}|{reason}"] += 1
             reason_rows.append({
                 "date": str(row.get("game_date_et")),
+                "ledger": ledger,
                 "player": row.get("player_name"),
                 "market": row.get("market"),
                 "side": row.get("side"),
@@ -346,9 +444,11 @@ def _metrics_payload(df: pd.DataFrame, cfg: MissDiagnosticConfig) -> tuple[dict[
                 "model_prob": row.get("model_prob_side"),
                 "market_prob": row.get("market_prob_side"),
                 "clv_reason": row.get("clv_unknown_reason"),
+                "primary_reason": primary,
                 "reasons": reasons,
             })
     work["miss_reasons"] = labels
+    work["primary_miss_reason"] = primary_labels
 
     def summarize(cols: list[str]) -> list[dict[str, Any]]:
         rows = []
@@ -372,12 +472,41 @@ def _metrics_payload(df: pd.DataFrame, cfg: MissDiagnosticConfig) -> tuple[dict[
         rows.sort(key=lambda rec: (rec["rows"], abs(rec.get("roi") or 0.0)), reverse=True)
         return rows
 
+    ledger_summary = summarize(["ledger"])
+    ledger_losses = {
+        str(ledger): int(((group["won"] == 0) & ~group["push"]).sum())
+        for ledger, group in df.groupby("ledger", dropna=False)
+    }
+
     return {
         "rows": int(len(df)),
         "date_min": str(min(df["game_date_et"])),
         "date_max": str(max(df["game_date_et"])),
         "unique_dates": int(df["game_date_et"].nunique()),
         "miss_reasons": dict(reason_counter.most_common()),
+        "primary_miss_reasons": dict(primary_counter.most_common()),
+        "ledger_summary": ledger_summary,
+        "primary_miss_reasons_by_ledger": [
+            {
+                "ledger": key.split("|", 1)[0],
+                "reason": key.split("|", 1)[1],
+                "misses": count,
+                "share_of_ledger_losses": (
+                    count / ledger_losses.get(key.split("|", 1)[0], 1)
+                    if ledger_losses.get(key.split("|", 1)[0], 0)
+                    else None
+                ),
+            }
+            for key, count in primary_by_ledger.most_common()
+        ],
+        "all_miss_reasons_by_ledger": [
+            {
+                "ledger": key.split("|", 1)[0],
+                "reason": key.split("|", 1)[1],
+                "misses": count,
+            }
+            for key, count in reasons_by_ledger.most_common()
+        ],
         "miss_reasons_by_market_side": [
             {
                 "reason": key.split("|", 2)[0],
@@ -423,6 +552,38 @@ def _write_report(payload: dict[str, Any], cfg: MissDiagnosticConfig) -> str:
     ]
     for reason, count in payload.get("miss_reasons", {}).items():
         lines.append(f"| {reason} | {count} |")
+
+    lines.extend([
+        "",
+        "## Accuracy By Ledger",
+        "",
+        "| Ledger | Rows | Win | Avg Prob | Brier | ROI | MAE | RMSE | CLV Rows | CLV Beat | Avg CLV |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ])
+    ledger_labels = dict(PROP_LEDGER_LABELS)
+    for rec in payload.get("ledger_summary", []):
+        label = ledger_labels.get(rec["key"], rec["key"])
+        lines.append(
+            f"| {label} | {rec['rows']} | {_fmt_pct(rec['win_rate'])} | {_fmt_pct(rec['avg_prob'])} | "
+            f"{_fmt_num(rec['brier'])} | {_fmt_pct(rec['roi'])} | {_fmt_num(rec['mae'])} | "
+            f"{_fmt_num(rec.get('rmse'))} | {rec['clv_rows']} | {_fmt_pct(rec['clv_beat_rate'])} | "
+            f"{_fmt_num(rec['avg_clv_price'], 2, signed=True)} |"
+        )
+
+    lines.extend([
+        "",
+        "## Primary Miss Cause By Ledger",
+        "",
+        "Each losing pick receives one primary cause using opportunity, projection, distribution, pricing, CLV, and bucket evidence in that order.",
+        "",
+        "| Ledger | Primary cause | Misses | Share of ledger losses |",
+        "|---|---|---:|---:|",
+    ])
+    for rec in payload.get("primary_miss_reasons_by_ledger", []):
+        label = ledger_labels.get(rec["ledger"], rec["ledger"])
+        lines.append(
+            f"| {label} | {rec['reason']} | {rec['misses']} | {_fmt_pct(rec.get('share_of_ledger_losses'))} |"
+        )
 
     lines.extend([
         "",
@@ -472,8 +633,8 @@ def _write_report(payload: dict[str, Any], cfg: MissDiagnosticConfig) -> str:
         "",
         "## Recent Losing Examples",
         "",
-        "| Date | Player | Bet | Price | Pred | Actual | PA | BF | Model | Market | CLV Reason | Labels |",
-        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
+        "| Date | Ledger | Player | Bet | Price | Pred | Actual | PA | BF | Model | Market | Primary | Labels |",
+        "|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
     ])
     for row in payload.get("examples", [])[:30]:
         bet = f"{row['market']} {row['side']} {row['line']} {row['book']}"
@@ -485,12 +646,12 @@ def _write_report(payload: dict[str, Any], cfg: MissDiagnosticConfig) -> str:
         if row.get("projected_bf") is not None or row.get("actual_bf") is not None:
             bf = f"{_fmt_num(row.get('projected_bf'), 1)}->{_fmt_num(row.get('actual_bf'), 1)}"
         lines.append(
-            f"| {row['date']} | {row['player']} | {bet} | {row['price']} | "
+            f"| {row['date']} | {ledger_labels.get(row.get('ledger'), row.get('ledger'))} | {row['player']} | {bet} | {row['price']} | "
             f"{_fmt_num(row['pred_count'])} | {_fmt_num(row['actual'])} | "
             f"{pa} | {bf} | {_fmt_pct(row['model_prob'])} | {_fmt_pct(row['market_prob'])} | "
-            f"{row.get('clv_reason') or ''} | {labels} |"
+            f"{row.get('primary_reason') or ''} | {labels} |"
         )
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(path, "\n".join(lines) + "\n")
     return str(path)
 
 
@@ -501,7 +662,7 @@ def build_report(cfg: MissDiagnosticConfig) -> dict[str, Any]:
     payload["generated_at_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     payload["status"] = "ready" if payload.get("rows", 0) else "no_rows"
     payload["report_path"] = _write_report(payload, cfg)
-    (_MODEL_DIR / cfg.json_out).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    atomic_write_json(_MODEL_DIR / cfg.json_out, payload)
     return payload
 
 

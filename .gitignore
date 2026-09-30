@@ -1,6 +1,21 @@
 __pycache__/
 *.pyc
 logs/
+data/external_picks/
+data/ai_picks/
+config/mlb_external_pick_sources.json
 
 # Large model artifacts — exceed GitHub's 100 MB file size limit
 src/mlb_pipeline/modeling/models/player_props/walks_xgb.json
+src/mlb_pipeline/modeling/models/player_props/prop_distribution_training_cache.pkl
+
+# Interrupted atomic-write leftovers
+*.tmp
+
+# NFL model binaries and bulky run outputs stay local; pointers, registrations,
+# manifests and summary reports remain tracked.
+src/nfl_pipeline/modeling/models/**/*.joblib
+src/nfl_pipeline/modeling/models/**/*.pkl
+src/nfl_pipeline/modeling/models/final_probability_validation/
+src/nfl_pipeline/modeling/models/receiving_selection_experiment/
+src/nfl_pipeline/modeling/models/receiving_result_repair/

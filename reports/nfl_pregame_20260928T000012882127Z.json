@@ -1,0 +1,27 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-09-28T00:00:12.852788+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_03_LA_DEN",
+      "kickoff": "2026-09-28T00:20:00+00:00",
+      "target_at": "2026-09-27T22:50:00+00:00",
+      "minutes_to_start": 19.8,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_03_PHI_CHI",
+      "kickoff": "2026-09-29T00:15:00+00:00",
+      "target_at": "2026-09-28T22:45:00+00:00",
+      "minutes_to_start": 1454.8,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [],
+  "pipeline_invoked": false
+}

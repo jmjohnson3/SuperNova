@@ -1,0 +1,86 @@
+{
+  "built_at": "2026-09-24T03:52:35.986395+00:00",
+  "day": "2026-09-23",
+  "status": "no_eligible_offers",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "variant": "stable_ensemble_calibrated",
+  "production_release": "nfl-20260918T143342Z",
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "capture": {
+    "day_eligible_locks": 0,
+    "current_eligible_locks": 0,
+    "eligible_forecast_ids": [],
+    "captured_forecast_ids": [],
+    "current_quotes_fresh_now": 0,
+    "paired_challenger_locks": 0,
+    "missing_current_forecast_ids": [],
+    "selected_research": 0,
+    "missing_historical_forecast_ids": [],
+    "capture_errors": {
+      "quote_expired_before_challenger_capture": 3
+    },
+    "eligibility_exclusions": {
+      "outside_market": 3203,
+      "before_registration": 161,
+      "stale_original_quote": 1
+    }
+  },
+  "settlement": {},
+  "validation_exclusions": {},
+  "pending_variant_rows": 276,
+  "day_metrics": {
+    "all_eligible": {},
+    "fixed_research": {}
+  },
+  "cumulative_metrics": {
+    "all_eligible": {},
+    "fixed_research": {}
+  },
+  "close": {
+    "all_eligible": {
+      "started": 0,
+      "valid": 0,
+      "unknown": 0,
+      "valid_coverage": null,
+      "required_coverage": 0.9,
+      "target_met": null,
+      "unknown_reasons": {},
+      "observations": [],
+      "average_clv": null
+    },
+    "fixed_research": {
+      "started": 0,
+      "valid": 0,
+      "unknown": 0,
+      "valid_coverage": null,
+      "required_coverage": 0.9,
+      "target_met": null,
+      "unknown_reasons": {},
+      "observations": [],
+      "average_clv": null
+    }
+  },
+  "forecast_deployment_review": {
+    "status": "collecting_evidence",
+    "blockers": [
+      "real_offers:missing_matches"
+    ],
+    "deployment_approved": false,
+    "betting_approved": false,
+    "market_evidence_blockers": [
+      "real_offers:missing_true_pair_matches",
+      "exact_micro:missing_true_pair_matches"
+    ],
+    "automatic_promotion": false
+  },
+  "forecast_next_action": "keep_frozen_collect_evidence",
+  "deployment_requires_bankroll_approval": false,
+  "betting_approved": false,
+  "production_changed": false,
+  "limitations": [
+    "Research selections are fixed; this report never reselects after results.",
+    "Freshness at original lock/capture is separate from whether a price is executable now.",
+    "Forecast review does not require ROI or CLV gates. Cash approval remains separate.",
+    "A positive checkpoint prepares a controlled release review; it never overwrites model artifacts."
+  ]
+}

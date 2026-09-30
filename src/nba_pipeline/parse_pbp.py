@@ -8,6 +8,8 @@ from typing import Any, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 
+from nba_pipeline.db import PG_DSN
+
 log = logging.getLogger("nba_pipeline.parse_pbp")
 
 # MSF PBP event keys (one per play, beside playStatus/description)
@@ -219,9 +221,9 @@ def _flush(conn, rows: list[dict]) -> int:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-    dsn = "postgresql://josh:password@localhost:5432/nba"
+    dsn = PG_DSN
     if not dsn:
-        raise RuntimeError("Missing PG_DSN")
+        raise RuntimeError("Set PG_DSN or SUPERNOVABETS_PG_DSN")
     conn = psycopg2.connect(dsn)
     conn.autocommit = False
     try:

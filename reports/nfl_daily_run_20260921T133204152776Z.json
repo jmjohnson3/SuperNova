@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-21",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 2160,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-09-21 07:30:27,753 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-09-21 07:30:39,938 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2980\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 542933,\n      \"rows_selected\": 2251,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 433\n    }\n  ],\n  \"roster_rows_upserted\": 2979,\n  \"depth_rows_upserted\": 2248,\n  \"injury_rows_upserted\": 433\n}\n",
+      "stderr_tail": "2026-09-21 07:30:45,961 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-09-21 07:30:50,190 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-09-21 07:31:18,728 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": " \"advanced_route_usage\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2162,\n      \"rows_matched\": 2160,\n      \"rows_updated\": 629\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 5334,\n      \"player_usage_rows\": 616,\n      \"player_usage_rows_updated\": 611,\n      \"player_game_rows\": 301,\n      \"rows_updated\": 301,\n      \"zero_filled_rows\": 345\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 73\n    }\n  ],\n  \"snap_rows_matched\": 2869,\n  \"snap_rows_updated\": 1405,\n  \"advanced_usage_rows_matched\": 2160,\n  \"advanced_usage_rows_updated\": 629,\n  \"pbp_usage_player_game_rows\": 616,\n  \"pbp_usage_rows_updated\": 611,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 73,\n  \"red_zone_player_game_rows\": 301,\n  \"red_zone_rows_updated\": 646\n}\n",
+      "stderr_tail": "2026-09-21 07:31:23,533 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-09-21 07:31:24,617 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-09-21 07:31:29,136 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-09-21 07:31:29,388 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Odds Crawl",
+      "returncode": 1,
+      "critical": true,
+      "stdout_tail": "ch_failures\": null\n    },\n    {\n      \"provider\": \"therundown\",\n      \"status\": \"partial\",\n      \"events\": 1,\n      \"game_odds_saved\": 0,\n      \"player_prop_events_saved\": 0,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": \"TheRundown raw payload saved; normalizer is waiting for a live sample before trusting game-line mapping\",\n      \"player_prop_fetch_failures\": null\n    },\n    {\n      \"provider\": \"oddsapi\",\n      \"status\": \"failed\",\n      \"events\": 1,\n      \"game_odds_saved\": 0,\n      \"player_prop_events_saved\": 0,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": \"401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\",\n      \"player_prop_fetch_failures\": 1\n    },\n    {\n      \"provider\": \"manual_csv\",\n      \"status\": \"skipped\",\n      \"events\": 0,\n      \"game_odds_saved\": 0,\n      \"player_prop_events_saved\": 0,\n      \"manual_prop_rows_upserted\": null,\n      \"manual_game_rows_upserted\": null,\n      \"reason\": \"no manual CSV files found in C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\",\n      \"player_prop_fetch_failures\": null\n    }\n  ],\n  \"provider_errors\": [\n    {\n      \"provider\": \"sportsgameodds\",\n      \"error\": \"('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))\"\n    }\n  ],\n  \"manual_csv_dir\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\data\\\\manual_odds\\\\nfl\"\n}\n",
+      "stderr_tail": "2026-09-21 07:32:01,838 | WARNING | nfl_pipeline.crawler_oddsapi | Odds API fetch failed (401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com); not retrying\n2026-09-21 07:32:01,838 | WARNING | nfl_pipeline.crawler_oddsapi | NFL game odds fetch failed for 2026-09-21; continuing to player props: 401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\n2026-09-21 07:32:02,436 | WARNING | nfl_pipeline.crawler_oddsapi | Odds API fetch failed (401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com); not retrying\n2026-09-21 07:32:02,437 | WARNING | nfl_pipeline.crawler_oddsapi | Skipping NFL player props for event 32367f882fac1a0c20a6335619922025 (New York Giants at Los Angeles Rams): 401 from The Odds API [OUT_OF_USAGE_CREDITS]: Usage quota has been reached. See usage plans at https://the-odds-api.com\n"
+    }
+  ],
+  "publications": []
+}

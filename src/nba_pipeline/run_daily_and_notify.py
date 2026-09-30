@@ -22,13 +22,14 @@ import asyncio
 import logging
 import os
 import re
-import subprocess
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+
+from mlb_pipeline.subprocess_utils import run_subprocess_tree
 
 log = logging.getLogger("nba_pipeline.run_daily_and_notify")
 
@@ -85,21 +86,16 @@ def run_module(mod: str, timeout_s: int) -> tuple[int, str, str]:
     env["PYTHONIOENCODING"] = "utf-8"   # ensure subprocess stdout is UTF-8
     env["DISCORD_FORMAT"] = "1"         # prediction scripts emit Discord markdown
 
-    try:
-        p = subprocess.run(
-            [sys.executable, "-m", mod],
-            text=True,
-            encoding="utf-8",
-            capture_output=True,
-            check=False,
-            cwd=str(_repo_root()),
-            env=env,
-            timeout=timeout_s,
-        )
-        return p.returncode, p.stdout or "", p.stderr or ""
-    except subprocess.TimeoutExpired:
+    rc, stdout, stderr, _secs = run_subprocess_tree(
+        [sys.executable, "-m", mod],
+        timeout_s=timeout_s,
+        cwd=str(_repo_root()),
+        env=env,
+        encoding="utf-8",
+    )
+    if rc == 124:
         log.error("[%s] timed out after %ds", mod, timeout_s)
-        return 124, "", f"Timed out after {timeout_s}s"
+    return rc, stdout, stderr
 
 
 # ---------------------------------------------------------------------------

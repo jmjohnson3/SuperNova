@@ -32,6 +32,8 @@ import numpy as np
 import pandas as pd
 import psycopg2
 
+from nba_pipeline.db import PG_DSN
+
 from .train_game_models import (
     SPREAD_OBJECTIVE,
     TOTAL_OBJECTIVE,
@@ -55,7 +57,7 @@ MODEL_DIR = Path(__file__).resolve().parent / "models"
 # ---------------------------------------------------------------------------
 @dataclass
 class BacktestConfig:
-    pg_dsn: str = "postgresql://josh:password@localhost:5432/nba"
+    pg_dsn: str = PG_DSN
     min_train_days: int = 60
     test_window_days: int = 7
     step_days: int = 7

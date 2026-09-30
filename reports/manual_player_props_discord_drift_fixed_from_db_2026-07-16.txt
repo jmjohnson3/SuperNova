@@ -1,0 +1,25 @@
+
+**DATA HEALTH**
+- Offers: 59 markets, 280 normalized offers, 280 linked sides
+- Display pool: 14 rows; clean pair 71%; synthetic 0%; CLV model coverage 100%
+
+**BANKROLL PROP BETS**
+- No bankroll-qualified player props today
+- Real-money blockers: CLV-weak 14, opportunity 14, ROI-weak 10, market-better 7, bucket-closed 4, one-sided 4
+
+**MICRO PROJECTION PLAYS - BETTABLE NOW (5 shown / 10 live / 10 qualified)**
+- $1 flat only. Only bet if Cur is still at or better than Min.
+- $1 A.J. Ewing (NYM vs ?) TB O1.5 -> 2.728 P=68.5% Edge=+22.8% EV=+50.0% CLV=47% Lock=+119 Cur=+119 Min=-198 [distribution_projection] [Bet DK](<https://sportsbook.draftkings.com/?outcomes=0QA351758955%232213769131_13L84240Q1-44994196Q20>) | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- $1 Justin Crawford (PHI vs ?) H O0.5 -> 0.827 P=62.0% Edge=+15.5% EV=+33.3% CLV=27% Lock=-192 Cur=+115 Min=-151 [distribution_projection] [Bet DK](<https://sportsbook.draftkings.com/?outcomes=0QA352085920%232214907993_13L84240Q12048455471Q20>) | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- $1 Bryce Harper (PHI vs ?) H O0.5 -> 1.174 P=75.1% Edge=+17.6% EV=+30.7% CLV=36% Lock=-252 Cur=-135 Min=-268 [distribution_projection] [Bet DK](<https://sportsbook.draftkings.com/?outcomes=0QA352086014%232214908100_13L84240Q12048455471Q20>) | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- $1 Brett Baty (NYM vs ?) H O0.5 -> 0.770 P=57.5% Edge=+13.0% EV=+29.3% CLV=36% Lock=-143 Cur=+125 Min=-126 [distribution_projection] [Bet DK](<https://sportsbook.draftkings.com/?outcomes=0QA352086203%232214908952_13L84240Q12048455471Q20>) | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+- $1 Trea Turner (PHI vs ?) TB O1.5 -> 2.398 P=60.0% Edge=+13.5% EV=+28.9% CLV=42% Lock=+114 Cur=+115 Min=-139 [distribution_projection] [Bet DK](<https://sportsbook.draftkings.com/?outcomes=0QA352086199%232214908684_13L84240Q1-405622551Q20>) | why not bankroll: bucket clv beat low, bucket roi negative, clv model not confirming
+
+**WATCHLIST - NOT SELECTOR APPROVED (4 watch model picks)**
+
+**Top 10 Watch Home Runs**
+- Brandon Marsh (PHI vs ?) HR O0.5 → 0.234 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=32578651>)
+- A.J. Ewing (NYM vs ?) HR O0.5 → 0.234 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=98418793>)
+- Jared Young (NYM vs ?) HR O0.5 → 0.233 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=48539655>)
+- Bryce Harper (PHI vs ?) HR O0.5 → 0.282 [Bet FD](<https://sportsbook.fanduel.com/addToBetslip?marketId=42.592298664&selectionId=7423201>)
+

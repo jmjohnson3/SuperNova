@@ -19,6 +19,8 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from mlb_pipeline.atomic_io import atomic_write_json, atomic_write_text
+
 from .prop_market_training import ensure_prop_market_training_schema
 
 from mlb_pipeline.db import PG_DSN as _PG_DSN
@@ -52,6 +54,10 @@ SELECT
     paired_bookmaker_key,
     paired_price_source,
     pair_quality,
+    line_surface,
+    COALESCE(true_pair_flag::float, 0.0) AS true_pair_flag,
+    COALESCE(synthetic_pair_flag::float, 0.0) AS synthetic_pair_flag,
+    COALESCE(clean_market_pair_flag::float, 0.0) AS clean_market_pair_flag,
     no_vig_market_prob::float AS no_vig_market_prob,
     market_prob_source,
     prop_offer_id,
@@ -119,6 +125,9 @@ def _load(cfg: TargetQualityConfig) -> pd.DataFrame:
         "actual_value",
         "closing_line",
         "closing_price",
+        "true_pair_flag",
+        "synthetic_pair_flag",
+        "clean_market_pair_flag",
     ]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
@@ -142,6 +151,30 @@ def _coverage(df: pd.DataFrame) -> list[dict[str, Any]]:
             "coverage": float(present.sum() / total),
         })
     return rows
+
+
+def _promotion_evidence_coverage(df: pd.DataFrame) -> list[dict[str, Any]]:
+    rows = []
+    for market, group in df.groupby("market", dropna=False):
+        common = group[group["line_surface"].fillna("unknown").astype(str).eq("common")]
+        true_pair = common["true_pair_flag"].fillna(0.0).ge(0.5)
+        synthetic = common["synthetic_pair_flag"].fillna(0.0).ge(0.5)
+        clean = common["clean_market_pair_flag"].fillna(0.0).ge(0.5) & ~synthetic
+        rows.append({
+            "market": str(market),
+            "all_rows": int(len(group)),
+            "common_rows": int(len(common)),
+            "clean_true_pair_rows": int(clean.sum()),
+            "common_true_pair_rate": float(true_pair.mean()) if len(common) else None,
+            "promotion_training_pair_rate": 1.0 if clean.any() else 0.0,
+            "unavoidable_one_sided_rows": int((~true_pair & ~synthetic).sum()),
+            "action": (
+                "projection_only_no_true_opposite_side"
+                if market == "batter_home_runs" and not clean.any()
+                else "train_and_promote_on_clean_true_pairs_only"
+            ),
+        })
+    return sorted(rows, key=lambda row: row["market"])
 
 
 def _date_quality(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -260,7 +293,14 @@ def _bad_examples(df: pd.DataFrame, limit: int = 30) -> list[dict[str, Any]]:
             pairing_note = "cross_book_pair"
         elif pair_quality == "synthetic" or paired_source == "synthetic_fanduel_over_only_complement":
             pairing_note = "synthetic_fanduel_over_only"
-        if missing or pairing_note or reason in {"stale_close_before_lock", "close_outside_two_hour_window", "fallback_other_book_only"}:
+        if missing or pairing_note or reason in {
+            "stale_close_before_lock",
+            "close_outside_two_hour_window",
+            "fallback_other_book_only",
+            "exact_line_unavailable_at_close",
+            "player_market_unavailable_at_close",
+            "player_prop_unavailable_at_close",
+        }:
             problems.append({
                 "date": str(row.get("game_date_et")),
                 "player": row.get("player_name"),
@@ -281,12 +321,12 @@ def _fmt_pct(value: Any) -> str:
 
 def _write_text_with_lock_fallback(path: Path, text: str) -> Path:
     try:
-        path.write_text(text, encoding="utf-8")
+        atomic_write_text(path, text)
         return path
     except PermissionError:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         fallback = path.with_name(f"{path.stem}_{stamp}{path.suffix}")
-        fallback.write_text(text, encoding="utf-8")
+        atomic_write_text(fallback, text)
         return fallback
 
 
@@ -307,6 +347,21 @@ def _write_report(payload: dict[str, Any], cfg: TargetQualityConfig) -> str:
     ]
     for rec in payload.get("coverage", []):
         lines.append(f"| {rec['field']} | {rec['present']} | {rec['missing']} | {_fmt_pct(rec['coverage'])} |")
+    lines.extend([
+        "",
+        "## Promotion Evidence Coverage",
+        "",
+        "Feed-wide coverage includes FanDuel lottery ladders. Exact-line training uses only clean common-line true pairs.",
+        "",
+        "| Market | All Rows | Common Rows | Clean True Pairs | Common Pair Rate | Training Pair Rate | Unavoidable One-Sided | Action |",
+        "|---|---:|---:|---:|---:|---:|---:|---|",
+    ])
+    for rec in payload.get("promotion_evidence_coverage", []):
+        lines.append(
+            f"| {rec['market']} | {rec['all_rows']} | {rec['common_rows']} | {rec['clean_true_pair_rows']} | "
+            f"{_fmt_pct(rec.get('common_true_pair_rate'))} | {_fmt_pct(rec.get('promotion_training_pair_rate'))} | "
+            f"{rec['unavoidable_one_sided_rows']} | {rec['action']} |"
+        )
     lines.extend([
         "",
         "## CLV / Close Status",
@@ -402,6 +457,7 @@ def build_report(cfg: TargetQualityConfig) -> dict[str, Any]:
         payload["coverage"] = _coverage(df)
         payload["date_quality"] = _date_quality(df)
         payload["pairing_quality"] = _pairing_quality(df)
+        payload["promotion_evidence_coverage"] = _promotion_evidence_coverage(df)
         payload["fanduel_market_evidence"] = _fanduel_market_evidence(df)
         payload["clv_status_counts"] = {
             str(k): int(v) for k, v in df["clv_status"].fillna("missing").value_counts(dropna=False).items()
@@ -411,7 +467,7 @@ def build_report(cfg: TargetQualityConfig) -> dict[str, Any]:
         }
         payload["bad_examples"] = _bad_examples(df)
     payload["report_path"] = _write_report(payload, cfg)
-    (_MODEL_DIR / cfg.json_out).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    atomic_write_json(_MODEL_DIR / cfg.json_out, payload)
     return payload
 
 

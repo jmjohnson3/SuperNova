@@ -665,6 +665,12 @@ prop_agg AS (
     SELECT
         game_slug,
         player_id,
+        MAX(confirmed_batting_order) FILTER (
+            WHERE confirmed_lineup_source IN ('lock_context', 'expected', 'raw_lineups', 'raw_lineups_name_match')
+        )::float AS lock_lineup_slot,
+        MAX(confirmed_lineup_source) FILTER (
+            WHERE confirmed_lineup_source IN ('lock_context', 'expected', 'raw_lineups', 'raw_lineups_name_match')
+        ) AS lock_lineup_source,
         AVG(projected_pa)::float AS projected_pa,
         MAX(pa_games)::int AS pa_games,
         AVG(pred_count) FILTER (WHERE market = 'batter_hits')::float AS model_pred_hits,
@@ -730,16 +736,21 @@ INSERT INTO features.mlb_hitter_player_game_training (
 )
 SELECT
     b.game_date_et, b.game_slug, b.player_id, b.player_name, b.player_name_norm,
-    b.team_abbr, b.opponent_abbr, b.is_home, b.lineup_slot, b.lineup_source,
-    b.confirmed_starter, b.starter_status_source, b.primary_position, b.batter_hand,
+    b.team_abbr, b.opponent_abbr, b.is_home, COALESCE(p.lock_lineup_slot, b.lineup_slot),
+    COALESCE(p.lock_lineup_source, b.lineup_source),
+    CASE WHEN p.lock_lineup_slot BETWEEN 1 AND 9 THEN TRUE ELSE b.confirmed_starter END,
+    CASE WHEN p.lock_lineup_slot BETWEEN 1 AND 9 THEN 'immutable_lock_context' ELSE b.starter_status_source END,
+    b.primary_position, b.batter_hand,
     b.opp_sp_id, b.opp_sp_hand, b.opp_sp_hand_l, b.team_implied_runs, b.opponent_implied_runs,
     b.game_total_line, b.venue_id, b.park_run_factor, b.park_hr_factor, b.park_babip_factor,
     b.temperature_f, b.wind_speed_mph, b.wind_sin, b.wind_cos, b.precip_prob_pct,
     b.is_dome, b.is_day_game, b.weather_pregame_flag,
     b.own_lineup_xwoba_avg, b.own_lineup_xslg_avg, b.own_lineup_barrel_avg,
     b.own_lineup_hard_hit_avg, b.own_lineup_k_pct_cv, b.own_lineup_pct_lhb,
-    b.lineup_confirmed_flag, b.confirmed_team_lineup_slots, b.team_lineup_confirmed_flag,
-    b.lineup_boxscore_proxy_flag, b.lineup_slot_x_team_implied_runs,
+    CASE WHEN p.lock_lineup_slot BETWEEN 1 AND 9 THEN 1.0 ELSE b.lineup_confirmed_flag END,
+    b.confirmed_team_lineup_slots, b.team_lineup_confirmed_flag,
+    CASE WHEN p.lock_lineup_slot BETWEEN 1 AND 9 THEN 0.0 ELSE b.lineup_boxscore_proxy_flag END,
+    COALESCE(p.lock_lineup_slot, b.lineup_slot) * b.team_implied_runs,
     b.opp_sp_k_pct_10, b.opp_sp_bb_pct, b.opp_sp_xwoba,
     b.opp_sp_hard_hit_pct, b.opp_sp_whiff_pct, b.opp_bp_era_10, b.opp_bp_whip_10,
     b.opp_bp_k9_10, b.opp_bp_ip_last_3, b.opp_bp_ip_last_7, b.opp_team_k_pct_10,
