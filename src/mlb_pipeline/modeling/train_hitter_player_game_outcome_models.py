@@ -3002,6 +3002,27 @@ def _write_report(payload: dict[str, Any], report_file: str | None) -> None:
         f"{num(xbh_candidate.get('weighted_event_brier'), 5)}",
         f"- Offsets: {json.dumps(xbh_calibration.get('production_offsets') or xbh_calibration.get('candidate_offsets') or {}, sort_keys=True)}",
     ])
+    lines.extend([
+        "",
+        "## HR Rare Event",
+        "",
+        f"- Rows: {hr_any.get('rows', 0)}",
+        f"- Model Brier: {num(hr_any.get('model_brier'), 5)}",
+        f"- Prior Brier: {num(hr_any.get('prior_brier'), 5)}",
+        f"- AUC: {num(hr_any.get('auc'), 3)}",
+        "",
+        "## Existing Prop Projection Holdout",
+        "",
+        "| Target | Rows | MAE | RMSE | Bias |",
+        "|---|---:|---:|---:|---:|",
+    ])
+    for label, key in [("Hits", "hits"), ("Total bases", "total_bases"), ("Home runs", "home_runs")]:
+        row = prop.get(key, {})
+        lines.append(
+            f"| {label} | {row.get('rows', 0)} | {num(row.get('mae'))} | "
+            f"{num(row.get('rmse'))} | {num(row.get('bias'))} |"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _boosted_poisson_count_pipeline(
@@ -3026,27 +3047,6 @@ def _boosted_poisson_count_pipeline(
             verbosity=-1,
         )),
     ])
-    lines.extend([
-        "",
-        "## HR Rare Event",
-        "",
-        f"- Rows: {hr_any.get('rows', 0)}",
-        f"- Model Brier: {num(hr_any.get('model_brier'), 5)}",
-        f"- Prior Brier: {num(hr_any.get('prior_brier'), 5)}",
-        f"- AUC: {num(hr_any.get('auc'), 3)}",
-        "",
-        "## Existing Prop Projection Holdout",
-        "",
-        "| Target | Rows | MAE | RMSE | Bias |",
-        "|---|---:|---:|---:|---:|",
-    ])
-    for label, key in [("Hits", "hits"), ("Total bases", "total_bases"), ("Home runs", "home_runs")]:
-        row = prop.get(key, {})
-        lines.append(
-            f"| {label} | {row.get('rows', 0)} | {num(row.get('mae'))} | "
-            f"{num(row.get('rmse'))} | {num(row.get('bias'))} |"
-        )
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _json_default(value: Any) -> Any:

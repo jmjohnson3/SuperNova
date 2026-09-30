@@ -1165,7 +1165,7 @@ def main() -> None:
                 fail_task_on_error=True,
             ))
             steps.append(Step(
-                name="Train AI bet selection model",
+                name="Retrain AI bet selection model",
                 module="mlb_pipeline.modeling.ai_bet_selection_model",
                 args=("--lookback-days", "120", "--max-rows", "12000", "--max-market-families", "8"),
                 timeout_s=300,
