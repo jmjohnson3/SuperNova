@@ -138,3 +138,21 @@ Live impact today: none. The pinned release does not use these features and has 
 adjustment off. The fix keeps future challengers and releases from learning inflated shares. Note the
 opportunity-model trainer writes directly to `nfl_player_opportunity_models.joblib` (unpinned; only
 loaded when no release exists) - retrain it as a challenger file before any future use.
+
+## October 1: sharp-book reference (Pinnacle / EU exchanges)
+
+The model has no information the market lacks, so the edge has to come from price: FanDuel quotes
+that are off-market versus a sharp book. The SportsGameOdds tier here blocks sharp books (Pinnacle,
+Circa, BookMaker, BetOnline, LowVig); The Odds API EU region returns Pinnacle NFL props.
+
+- `sharp_lines.py` captures EU-region receiving-yards prices once per game at lock (kickoff within
+  150 min, from the pregame quote refresh) and once near close (within 25 min), stored as provider
+  `oddsapi_eu`. ~2 credits/game; never below a 150-credit monthly floor (plan: 500/month).
+- Scoring attaches the freshest sharp two-sided quote (Pinnacle first, then exchanges) for the same
+  player, stat and exact line as `offer.sharp_reference` (captured, so replay is exact). It prices the
+  offer at the sharp no-vig line (blended by the stat's probability trust, 0 today), picks the FanDuel
+  side with the better EV, and records `sharp_book`, `sharp_line`, `sharp_over_probability`, `sharp_ev`.
+- Discord lists FanDuel offers with sharp EV >= 3% in a "SHARP-LINE EDGES - research" section.
+  The CLV scorecard reports them as their own strategy (`| sharp-edge`).
+- They stay paper (`SHARP_EDGE_BETS_ENABLED = False`) until the scorecard shows positive CLV over
+  2-3 weeks; flipping the flag allows $1 micro locks for receiving yards.

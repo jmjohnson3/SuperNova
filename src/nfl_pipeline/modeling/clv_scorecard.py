@@ -18,6 +18,7 @@ import psycopg2
 import psycopg2.extras
 
 from nfl_pipeline.db import PG_DSN
+from nfl_pipeline.betting_preferences import SHARP_EDGE_MIN_EV
 from nfl_pipeline.integrity import atomic_json
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -30,14 +31,17 @@ def load(conn) -> pd.DataFrame:
         cur.execute("""
             SELECT p.id, p.stat, p.week, p.game_id, p.player_id, p.side, p.price, p.probability::float AS probability,
                    p.market_no_vig_probability::float AS market_probability,
-                   COALESCE(p.forecast_payload->'probability_trace'->>'market_calibration_version', 'pre-calibration') AS version,
+                   COALESCE(p.forecast_payload->'probability_trace'->>'market_calibration_version', 'pre-calibration')
+                     || CASE WHEN (p.forecast_payload->>'sharp_ev')::float >= %(sharp_min_ev)s THEN ' | sharp-edge'
+                             WHEN p.forecast_payload->>'sharp_book' IS NOT NULL THEN ' | sharp-priced' ELSE '' END AS version,
                    c.clv_status, c.clv_prob_delta::float AS clv,
                    r.result,
                    EXISTS (SELECT 1 FROM bets.nfl_bet_ledger l WHERE l.source_kind='prop' AND l.prediction_id=p.id) AS selected
             FROM bets.nfl_player_prop_predictions p
             LEFT JOIN bets.nfl_prediction_clv c ON c.source_kind='prop' AND c.prediction_id=p.id
             LEFT JOIN bets.nfl_player_prop_prediction_results r ON r.prediction_id=p.id
-            WHERE p.integrity_version='nfl-asof-v2' AND p.line IS NOT NULL AND p.side IN ('over','under')""")
+            WHERE p.integrity_version='nfl-asof-v2' AND p.line IS NOT NULL AND p.side IN ('over','under')""",
+                    {"sharp_min_ev": SHARP_EDGE_MIN_EV})
         return pd.DataFrame([dict(r) for r in cur.fetchall()])
 
 

@@ -10,6 +10,10 @@ REAL_TIERS = {'micro', 'micro_projection', 'starter', 'bankroll', 'locked_micro'
 # still forecast, stored, graded and shown in Discord with links, but only as paper.
 BET_PROP_STATS = frozenset({'receiving_yards'})
 BET_GAME_MARKETS = frozenset()
+# FanDuel offers priced off a sharp book (Pinnacle/exchange) stay paper research until the sharp-edge
+# strategy shows positive CLV on the scorecard; flip to True to allow $1 micro locks.
+SHARP_EDGE_BETS_ENABLED = False
+SHARP_EDGE_MIN_EV = 0.03
 
 
 def execution_link(link):

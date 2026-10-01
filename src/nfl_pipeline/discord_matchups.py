@@ -12,6 +12,16 @@ from nfl_pipeline import fanduel_links
 
 CONTRACT = 'nfl-matchup-cards-v1'
 DESCRIPTION_LIMIT = 3900
+SHARP_HEADING = 'SHARP-LINE EDGES - research'
+SHARP_EDGE_LIMIT = 10
+from nfl_pipeline.betting_preferences import SHARP_EDGE_MIN_EV
+
+
+def sharp_suffix(row):
+    p = row.get('sharp_over_probability')
+    side_p = p if row.get('side') == 'over' else (1 - p if p is not None else None)
+    return (f" | vs {str(row.get('sharp_book') or '').title()} {float(row['sharp_line']):g}: fair {side_p:.0%},"
+            f" EV {float(row['sharp_ev']):+.1%}") if side_p is not None and row.get('sharp_line') is not None else ''
 PAPER_SECTIONS = (
     ('QB Passing Yards', {'QB'}, 'passing_yards'),
     ('QB Rushing Yards', {'QB'}, 'rushing_yards'),
@@ -46,6 +56,11 @@ def selected_props(rows, paper_limit=10):
             selected.append(('BANKROLL PROPS', row))
         elif row.get('tier') == 'locked_micro':
             selected.append(('PREVIOUSLY LOCKED MICRO - NOT ADDITIONAL PLAYS', row))
+    taken = {(r.get('game_id'), r.get('player_id') or r.get('player_name'), r.get('stat')) for _, r in selected}
+    sharp = [r for r in rows if number(r, 'sharp_ev') >= SHARP_EDGE_MIN_EV and r.get('line') is not None
+             and (r.get('game_id'), r.get('player_id') or r.get('player_name'), r.get('stat')) not in taken]
+    sharp.sort(key=lambda r: number(r, 'sharp_ev'), reverse=True)
+    selected.extend((SHARP_HEADING, r) for r in sharp[:SHARP_EDGE_LIMIT])
     for title, positions, stat in PAPER_SECTIONS:
         actionable = {(r.get('game_id'), r.get('player_id') or r.get('player_name'), r.get('stat')) for _, r in selected}
         candidates = [r for r in rows if r.get('position') in positions and r.get('stat') == stat
@@ -166,6 +181,10 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
             if rows:
                 lead = ['- $1 flat only; verify Min and Drift=OK. Daily cap remains 5 across all games.'] if action == 'BET $1' else ['- Historical locked quotes, not refreshed betting instructions.']
                 sections.append((heading, lead + [fanduel_links.format_prop_row(r, action=action) for r in rows]))
+        sharp_rows = by_game[gid].get(SHARP_HEADING, [])
+        if sharp_rows:
+            sections.append((SHARP_HEADING, ['- FanDuel priced off a sharp book at the same line. Research only: tracked by CLV, not a bet.']
+                             + [fanduel_links.format_prop_row(r, action='Research only') + sharp_suffix(r) for r in sharp_rows]))
         paper_games = [r for r in game_picks if r.get('tier', 'paper') != 'bankroll' and r.get('ev') is not None]
         paper_games.sort(key=lambda r: number(r, 'ev'), reverse=True)
         sections.append(('PAPER GAME PICKS', [game_line(r) for r in paper_games] or ['- No current priced game picks at FanDuel.']))
