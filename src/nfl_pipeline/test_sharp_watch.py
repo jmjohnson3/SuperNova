@@ -61,3 +61,26 @@ def test_poll_schedule_budget_and_floor():
     assert tight == pytest.approx(50 / 28)
     due, skipped = w.plan_polls(games, {}, NOW, remaining=200, cost=1, floor=150)
     assert len(due) == 1 and skipped == {"today": "daily_allowance"}  # soonest game gets the budget
+
+
+def test_tight_budget_is_saved_for_the_final_window():
+    # Tonight's case: ~11 checks/day, one game. Early checks may only spend what the last 90 min won't need.
+    start = NOW + timedelta(minutes=180)
+    g = [dict(game_id="tnf", start=start, home="CLE", away="PIT", day=NOW.date())]
+    remaining, spent, polled = 496, 3, []  # 3 early polls already spent today (allowance ~11.3)
+    t = NOW
+    while t < start:
+        state = {"spent": {str(t.astimezone(w._ET).date()): spent},
+                 "last_poll": {"tnf": polled[-1].isoformat()} if polled else {}}
+        due, _ = w.plan_polls(g, state, t, remaining, cost=1, floor=150)
+        if due:
+            polled.append(t); spent += 1; remaining -= 1
+        t += timedelta(minutes=10)
+    in_window = [p for p in polled if (start - p).total_seconds() <= 90 * 60]
+    assert len(in_window) == 9 and len(polled) == 9  # no early polls; every slot of the final 90 minutes
+    # The floor still binds inside the window.
+    due, skipped = w.plan_polls(g, {}, start - timedelta(minutes=30), remaining=150, cost=1, floor=150)
+    assert due == [] and skipped == {"tnf": "credit_floor"}
+    # With plenty of credits nothing is held back.
+    due, skipped = w.plan_polls(g, {}, NOW, remaining=20000, cost=1, floor=150)
+    assert [x["game_id"] for x in due] == ["tnf"] and skipped == {}

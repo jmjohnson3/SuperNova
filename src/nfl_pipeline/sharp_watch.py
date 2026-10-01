@@ -9,7 +9,7 @@ bets.nfl_sharp_alerts (rows are never deleted) and graded by CLV in sharp_alert_
 bets, until that report shows the edge survives to the close.
 
 It runs on the existing 10-minute close task and decides itself whether a poll is worth the credits:
-hourly from 24h before kickoff, every 10 minutes in the last 4 hours, within a daily allowance spread
+hourly from 24h before kickoff, every 10 minutes in the last 4 hours (the final 90 minutes have first claim on a tight budget), within a daily allowance spread
 over the rest of the month (from the live remaining-credit count) and never below a credit floor
 (NFL_SHARP_CREDIT_FLOOR). Add markets with NFL_SHARP_WATCH_MARKETS once the plan has credits for them.
 """
@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import calendar
 import json
+import math
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -47,6 +48,7 @@ DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # alert threshold vs the sharp fair price
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
+FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window
 
 
 def _int_env(name: str, default: int) -> int:
@@ -75,11 +77,22 @@ def daily_allowance(remaining: int, today: date, floor: int) -> float:
     return max(0.0, remaining - floor) / max(1, days_left)
 
 
+def _final_window_polls(minutes_to_kickoff: float) -> int:
+    """10-minute polls a game still needs inside its final window (0 once it has started)."""
+    if minutes_to_kickoff <= 0:
+        return 0
+    return math.ceil(min(minutes_to_kickoff, FINAL_WINDOW_MINUTES) / 10)
+
+
 def plan_polls(games: list[dict], state: dict, now: datetime, remaining: int, cost: int,
                floor: int) -> tuple[list[dict], dict[str, str]]:
     today = now.astimezone(_ET).date()
     spent = state.get("spent", {}).get(str(today), 0)
     allowance = daily_allowance(remaining + spent, today, floor)  # allowance set from start-of-day credits
+    # Credits today's games will still need in their final windows. Earlier (hourly or T-4h..T-90)
+    # polls only spend what is left over, so a tight budget is saved for the window that matters.
+    reserve = cost * sum(_final_window_polls((g["start"] - now).total_seconds() / 60) for g in games
+                         if g["start"].astimezone(_ET).date() == today)
     due, skipped = [], {}
     for game in sorted(games, key=lambda g: g["start"]):
         minutes = (game["start"] - now).total_seconds() / 60
@@ -92,9 +105,15 @@ def plan_polls(games: list[dict], state: dict, now: datetime, remaining: int, co
         if remaining - cost < floor:
             skipped[game["game_id"]] = "credit_floor"
             continue
-        if spent + cost > allowance:
-            skipped[game["game_id"]] = "daily_allowance"
-            continue
+        # Final-window polls are bounded only by the floor: overspend lowers later days' allowance
+        # (recomputed from the live balance), and early polls already yield to the reserve.
+        if minutes > FINAL_WINDOW_MINUTES:
+            if spent + cost > allowance:
+                skipped[game["game_id"]] = "daily_allowance"
+                continue
+            if spent + cost + reserve > allowance:
+                skipped[game["game_id"]] = "final_window_reserve"
+                continue
         due.append(game)
         spent += cost
         remaining -= cost

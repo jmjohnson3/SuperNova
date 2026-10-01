@@ -179,7 +179,9 @@ for itself whether to poll:
   bookmakers ≤ 10 cost 1 credit per market).
 - **Budget:** a daily allowance spreads the remaining credits over the rest of the month, and a
   credit floor (`NFL_SHARP_CREDIT_FLOOR`, default 150) stops it. The free events call reports the
-  live balance.
+  live balance. Today's games get first claim on their final 90 minutes (T-90 inactives, every
+  10 minutes): an earlier check runs only if those checks still fit in the allowance afterwards.
+  Final-window checks stop only at the floor, and any overspend lowers later days' allowances.
 - **Markets:** `NFL_SHARP_WATCH_MARKETS`, default `player_reception_yds`. Add more, for example
   `player_rush_yds,player_receptions,totals`, once the plan has the credits. Spreads are stored but
   not alerted, because key numbers make line conversion unsafe.
