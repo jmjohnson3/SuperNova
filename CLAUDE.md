@@ -215,7 +215,8 @@ Scheduled via Windows Task Scheduler (`scripts/tasks/NFL-*.xml`, installed by
 Batch files take jobs through `scripts/run_with_nfl_mutex.ps1` so operational runs never
 overlap, log to `logs/nfl_*_YYYYMMDD.log`, and read API keys from HKCU environment
 (`ODDS_API_KEY`, `SPORTSGAMEODDS_API_KEY`, `THERUNDOWN_API_KEY`, `NFL_DISCORD_WEBHOOK_URL`;
-provider order via `NFL_ODDS_PROVIDER_ORDER`).
+provider order via `NFL_ODDS_PROVIDER_ORDER`; optional `NFL_FANDUEL_STATE` (betslip IDs are
+per state, see `docs/nfl_fanduel_links.md`), `NFL_SHARP_WATCH_MARKETS`, `NFL_SHARP_CREDIT_FLOOR`).
 
 ### Production is pinned
 - `modeling/models/active_release.json` / `production_freeze.json` pin the production

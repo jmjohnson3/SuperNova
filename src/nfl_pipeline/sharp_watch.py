@@ -218,17 +218,20 @@ def _fallback_link(cur, edge: dict, game: dict) -> str | None:
 
 
 def format_alert(edge: dict, game: dict) -> str:
-    from nfl_pipeline.fanduel_links import single_betslip_url, provider_link
+    from nfl_pipeline.fanduel_links import betslip_for_row, provider_link
     who = edge["player"] or f"{game['away']} @ {game['home']}"
     label = edge["stat"].replace("_", " ").title()
     price = f"{edge['price']:+d}"
     gap = f" ({edge['sharp_book'].title()} {edge['sharp_line']:g})" if edge["line_gap"] else f" ({edge['sharp_book'].title()})"
-    link = single_betslip_url(edge["link"]) or provider_link(edge["link"])
+    slip = betslip_for_row(dict(edge, away=game["away"], home=game["home"],
+                                market=edge["stat"] if edge["stat"] in ("spread", "total") else None))
+    link = slip or provider_link(edge["link"])
     kickoff = int(game["start"].timestamp())
     return (f"**SHARP EDGE - research, not a bet**\n{who} {edge['side'].upper()} {edge['line']:g} {label} "
             f"({game['away']} @ {game['home']}, <t:{kickoff}:R>)\nFanDuel {price} | fair {edge['fair_probability']:.1%}{gap} | "
             f"EV {edge['ev']:+.1%} | take at {edge['minimum_price']:+d} or better"
-            + (f"\n[Open on FanDuel](<{link}>)" if link else "\nNo FanDuel link captured; search manually."))
+            + (f"\n[Add to slip](<{link}>)" if slip else f"\n[Open FanDuel - manual selection](<{link}>)" if link
+               else "\nNo FanDuel link captured; search manually."))
 
 
 def _post(text: str) -> None:

@@ -88,9 +88,12 @@ def single_betslip_url(link):
     return _betslip_url(legs) if len(legs) == 1 else None
 
 
-def parlay_betslip_url(links):
+def parlay_betslip_url(links, rows=None):
     legs = []
     markets = {}
+    from nfl_pipeline import fanduel_state
+    if rows is not None and fanduel_state.state():
+        links = [betslip_for_row(r) for r in rows]
     for link in links:
         parsed = selections(link)
         # Each displayed pick must describe one selection; never omit invalid picks.
@@ -105,11 +108,24 @@ def parlay_betslip_url(links):
     return _betslip_url(legs) if 2 <= len(legs) <= MAX_LEGS else None
 
 
+def betslip_for_row(row):
+    """Add-to-slip URL valid in the bettor's state, or None.
+
+    With NFL_FANDUEL_STATE set, IDs come only from that state's FanDuel feed (provider market IDs belong
+    to other states and are rejected). Without it, the provider's IDs are used as before.
+    """
+    from nfl_pipeline import fanduel_state
+    if fanduel_state.state():
+        leg = fanduel_state.resolve_row(row)
+        return _betslip_url([leg]) if leg else None
+    return single_betslip_url(row.get('link'))
+
+
 def row_link(row):
     if str(row.get('book') or '').lower() != 'fanduel':
         return ''
     original = provider_link(row.get('link'))
-    betslip = single_betslip_url(original)
+    betslip = betslip_for_row(row)
     if betslip:
         fallback = f' | [Provider link](<{original}>)' if original != betslip else ''
         return f' [Add to slip](<{betslip}>){fallback}'

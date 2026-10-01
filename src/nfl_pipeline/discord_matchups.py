@@ -196,7 +196,7 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
             sections.append(('PAPER PROPS', ['- No props from this matchup in the current slate-wide research shortlist.']))
         for heading, rows in paper_sections:
             lines = [fanduel_links.format_prop_row(r, action='Research only') for r in rows]
-            parlay = fanduel_links.parlay_betslip_url([r.get('link') for r in rows])
+            parlay = fanduel_links.parlay_betslip_url([r.get('link') for r in rows], rows)
             if parlay:
                 lines.append(f'- Research parlay: [FanDuel](<{parlay}>)')
             sections.append((heading, lines))
@@ -215,7 +215,7 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
                     scoring_version=(r.get('scoring_replay') or {}).get('scoring_fingerprint')))
                 manifest[-1]['cash_expires_at'] = r.get('expires_at')
                 manifest[-1]['provider_link'] = fanduel_links.provider_link(r.get('link'))
-                manifest[-1]['betslip_link'] = fanduel_links.single_betslip_url(r.get('link'))
+                manifest[-1]['betslip_link'] = fanduel_links.betslip_for_row(r)
         for page, embed in enumerate(embed_pages(title, intro, sections, footer), 1):
             import re
             cash_ids = [r['cash_ledger_id'] for r in cash if
