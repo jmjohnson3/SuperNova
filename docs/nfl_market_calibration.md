@@ -168,3 +168,38 @@ them, the context loader takes the newest status for the week, and a player ESPN
 gets a `Cleared` row. It runs before scoring in the morning run and in every T-90 pregame run, when
 game-day inactives are posted. First run: 10 entries, 7 mapped, 5 Out; Dowdle is no longer projected.
 Out/Doubtful teammates also feed the RB role-change carry redistribution.
+
+## October 1: sharp watch, live alerts and the CLV proof
+
+A lock-time snapshot rarely catches a stale FanDuel price, because those get fixed within minutes.
+`sharp_watch.py` runs at the start of every 10-minute close-task invocation, in every mode, and decides
+for itself whether to poll:
+- **Schedule:** hourly from 24h before kickoff, then every 10 minutes in the last 4 hours.
+- **Cost:** one call per game returns FanDuel plus Pinnacle and the exchanges together (named
+  bookmakers ≤ 10 cost 1 credit per market).
+- **Budget:** a daily allowance spreads the remaining credits over the rest of the month, and a
+  credit floor (`NFL_SHARP_CREDIT_FLOOR`, default 150) stops it. The free events call reports the
+  live balance.
+- **Markets:** `NFL_SHARP_WATCH_MARKETS`, default `player_reception_yds`. Add more, for example
+  `player_rush_yds,player_receptions,totals`, once the plan has the credits. Spreads are stored but
+  not alerted, because key numbers make line conversion unsafe.
+- **Line conversion:** a sharp quote at a nearby line is moved to FanDuel's line with a normal
+  approximation (`sharp_math.py`). It is allowed within ±3 yards for receiving and rushing, ±6 for
+  passing and ±1 point for totals; receptions must match exactly.
+- **Alerts:** a FanDuel side at ≥ +3% EV against the sharp fair price posts a Discord alert with the
+  FanDuel link and the worst price still worth +1% ("take at X or better"). Each distinct price is
+  logged once in `bets.nfl_sharp_alerts`.
+
+`modeling/sharp_alert_report.py` grades every alert after kickoff. Its outputs are
+`reports/nfl_sharp_alerts_latest.{md,json}`, and it runs in the close settlement steps. It reports:
+- **EV at the sharp close:** the FanDuel price, valued at the sharp book's last line before kickoff.
+- **FanDuel CLV:** whether FanDuel's own close moved toward the alerted side.
+- **Results:** last, because results are noise for weeks.
+
+Pass bar for enabling `SHARP_EDGE_BETS_ENABLED` with fixed small stakes: at least 100 alerts over at
+least 3 weeks, at least 55% beating FanDuel's close, and a mean EV at the sharp close of at least +1%.
+Size up only after that, at no more than a fraction of Kelly.
+
+First poll (PIT @ CLE, T-3h): 13 of 14 FanDuel receiving props had a Pinnacle line, 9 exact and 4
+within 1-2 yards. Every side was negative EV; the best was about -0.2%. A fairly priced slate is
+normal, which is why polling frequency matters.

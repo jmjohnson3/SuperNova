@@ -124,7 +124,8 @@ def test_unchanged_settlement_inputs_skip_the_ten_minute_sweep(monkeypatch, isol
     assert first['status']=='ok' and 'nfl_pipeline.import_nflverse' in calls  # first run: no import recorded yet
     calls.clear()
     second = runner.run_for_date(date(2026,9,21))
-    assert second['close_window']['mode']=='settlement_skipped_no_new_inputs' and calls==[]
+    # Only the sharp watcher (self-throttled, runs every invocation) executes on a skipped sweep.
+    assert second['close_window']['mode']=='settlement_skipped_no_new_inputs' and calls==['nfl_pipeline.sharp_watch']
     isolated_settlement['value'] = dict(final_games='2')  # e.g. a new final result or a user cash confirmation
     third = runner.run_for_date(date(2026,9,21))
     assert 'nfl_pipeline.grade_predictions' in calls

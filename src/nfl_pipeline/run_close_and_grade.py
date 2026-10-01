@@ -313,9 +313,14 @@ def run_for_date(
         Step("NFL Snapshot Health", "nfl_pipeline.snapshot_health_report", args=date_args, critical=False, timeout_s=120),
         Step("NFL Readiness Report", "nfl_pipeline.readiness_report", args=date_args, critical=False, timeout_s=120),
         Step("NFL CLV Scorecard", "nfl_pipeline.modeling.clv_scorecard", critical=False, timeout_s=120),
+        Step("NFL Sharp Alert Report", "nfl_pipeline.modeling.sharp_alert_report", critical=False, timeout_s=120),
     ]
     results: list[dict[str, Any]] = []
     status = "ok"
+    # Every 10-minute run, in every mode: the watcher decides itself whether a poll is due and affordable.
+    watch = Step("NFL Sharp Watch", "nfl_pipeline.sharp_watch", critical=False, timeout_s=240)
+    rc, stdout, stderr = _run(watch)
+    results.append(dict(label=watch.label, returncode=rc, stdout_tail=stdout.strip()[-1000:], stderr_tail=stderr.strip()[-1000:]))
     has_close_work = _has_close_work(et_date)
     locked_prop_count = _locked_prop_count(et_date)
     active_games = _active_close_games(
@@ -350,7 +355,7 @@ def run_for_date(
                 return {"status": "ok", "date": et_date.isoformat(),
                         "close_window": {"mode": "settlement_skipped_no_new_inputs", "active_games": [],
                                          "locked_prop_count": locked_prop_count},
-                        "settlement": settlement, "steps": []}
+                        "settlement": settlement, "steps": results}
     attempt_started = datetime.now(timezone.utc)
     capture_health = []; retry_fired = False
     for step in steps:

@@ -1,0 +1,63 @@
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from nfl_pipeline import sharp_watch as w
+
+NOW = datetime(2026, 10, 4, 15, 0, tzinfo=timezone.utc)
+
+
+def book(key, outcomes, market="player_reception_yds"):
+    return {"key": key, "markets": [{"key": market, "outcomes": outcomes}]}
+
+
+def pair(player, line, over, under, link=None):
+    return [dict(name="Over", description=player, point=line, price=over, link=link),
+            dict(name="Under", description=player, point=line, price=under, link=link)]
+
+
+def test_alerts_when_fanduel_is_off_the_sharp_line_and_not_when_it_is_fair():
+    payload = {"bookmakers": [book("fanduel", pair("DK Metcalf", 45.5, -110, -110, "https://sportsbook.fanduel.com/x")
+                                              + pair("Fair Guy", 30.5, -110, -110)),
+                              book("pinnacle", pair("DK Metcalf", 45.5, -140, +120) + pair("Fair Guy", 30.5, -105, -115))]}
+    edges = w.find_edges(payload)
+    assert [(e["player"], e["side"]) for e in edges] == [("DK Metcalf", "over")]
+    e = edges[0]
+    assert e["sharp_book"] == "pinnacle" and e["line_gap"] == 0 and e["ev"] > 0.05
+    assert w.sharp_math.ev(e["fair_probability"], e["minimum_price"]) >= 0.01
+
+
+def test_nearby_sharp_line_is_converted_and_large_gaps_are_ignored():
+    payload = {"bookmakers": [book("fanduel", pair("Near", 44.5, -110, -110) + pair("Far", 40.5, -110, -110)),
+                              book("pinnacle", pair("Near", 46.5, -125, +105) + pair("Far", 46.5, -150, +130))]}
+    edges = w.find_edges(payload)
+    near = [e for e in edges if e["player"] == "Near"]
+    assert near and near[0]["side"] == "over" and near[0]["line_gap"] == -2.0  # FD is 2 yards lower: over is cheap
+    assert not [e for e in edges if e["player"] == "Far"]  # 6-yard gap is too far to trust
+
+
+def test_totals_use_the_same_logic():
+    totals = lambda line, o, u: [dict(name="Over", point=line, price=o), dict(name="Under", point=line, price=u)]
+    payload = {"bookmakers": [book("fanduel", totals(44.5, -110, -110), "totals"),
+                              book("pinnacle", totals(44.5, +115, -135), "totals")]}
+    edges = w.find_edges(payload)
+    assert [(e["stat"], e["side"]) for e in edges] == [("total", "under")]
+
+
+def game(gid, minutes):
+    return dict(game_id=gid, start=NOW + timedelta(minutes=minutes), home="CLE", away="PIT", day=NOW.date())
+
+
+def test_poll_schedule_budget_and_floor():
+    games = [game("soon", 60), game("today", 600), game("far", 3000)]
+    due, skipped = w.plan_polls(games, {}, NOW, remaining=5000, cost=1, floor=150)
+    assert [g["game_id"] for g in due] == ["soon", "today"]  # >24h out is not polled
+    recent = {"last_poll": {"soon": (NOW - timedelta(minutes=5)).isoformat(), "today": (NOW - timedelta(minutes=30)).isoformat()}}
+    due, _ = w.plan_polls(games, recent, NOW, remaining=5000, cost=1, floor=150)
+    assert due == []  # soon polled 5 min ago (10-min cadence); today 30 min ago (hourly)
+    due, skipped = w.plan_polls(games, {}, NOW, remaining=150, cost=1, floor=150)
+    assert due == [] and skipped == {"soon": "credit_floor", "today": "credit_floor"}
+    tight = w.daily_allowance(200, NOW.date(), 150)  # 50 spare credits over the rest of October
+    assert tight == pytest.approx(50 / 28)
+    due, skipped = w.plan_polls(games, {}, NOW, remaining=200, cost=1, floor=150)
+    assert len(due) == 1 and skipped == {"today": "daily_allowance"}  # soonest game gets the budget
