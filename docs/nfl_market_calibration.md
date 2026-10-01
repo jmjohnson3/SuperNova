@@ -93,3 +93,21 @@ history keep the model value. The frozen model's features are unchanged.
 
 Lead backs, weeks 1-3: bias +4.8 -> +1.6 yards. It still carries no information beyond the line
 (correlation with the line's error <= 0), so priced rushing stays anchored to the line until a refit says otherwise.
+
+## October 1: RB role-change detection
+
+The carry-share half of the season-aware estimate now reacts to role changes (RBs only):
+recency-weighted share (half-life 2 games) plus 25% of the season carry share of RB teammates listed
+Out/Doubtful on the pregame injury report for that week, split by the remaining backs' shares.
+Explicit depth-chart promotion bumps were tested and hurt (recency already captures promotions).
+
+Fit on 2020-2022, judged on 2023-2024 (weekly pregame injury reports; 2025 reports are missing):
+
+| 2023-2024 holdout | All RB games | Games with an RB teammate ruled out (277) | Bias, teammate out |
+|---|---:|---:|---:|
+| Season share (previous) | 21.72 | 22.80 | -11.1 |
+| Recency + 25% vacated (live) | 21.47 | 21.53 | -5.1 |
+
+Full redistribution of vacated carries over-projected (+9.6 yards): carries also go to QBs/receivers
+and team volume shifts. On 149 as-of 2026 forecasts the change is neutral (19.71 -> 19.68); only 8
+had a ruled-out teammate, so weeks 4+ will show more.
