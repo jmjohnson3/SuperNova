@@ -74,3 +74,22 @@ Judge by `reports/nfl_clv_scorecard_latest.md` first. To install a refit after r
 ```powershell
 .\.venv\Scripts\python.exe -m nfl_pipeline.modeling.fit_market_calibration --write
 ```
+
+## October 1: season-aware rushing baseline
+
+Rolling `rushing_yards_avg_5` crosses seasons, so early-season projections lean on stale 2025 games.
+`_season_aware_rushing_estimate` shrinks this season's per-game average toward last season's
+(k=3 games; k=1 after a team change) and mixes it 50/50 with this-season carry share x team carries
+x shrunk YPC. Live rushing projection = 50% frozen model + 50% this estimate; players with no NFL
+history keep the model value. The frozen model's features are unchanged.
+
+| Projection (MAE, rushing yards) | Weeks 1-8, 2020-2025 + 2026 (5,584 games) | 2026 settled forecasts (208) |
+|---|---:|---:|
+| 5-game cross-season average | 19.36 | 20.69 |
+| Season-aware estimate | 18.62 | 19.06 |
+| Frozen model | - | 19.25 |
+| 50/50 model + estimate (live) | - | 18.62 |
+| FanDuel line | - | 16.28 |
+
+Lead backs, weeks 1-3: bias +4.8 -> +1.6 yards. It still carries no information beyond the line
+(correlation with the line's error <= 0), so priced rushing stays anchored to the line until a refit says otherwise.
