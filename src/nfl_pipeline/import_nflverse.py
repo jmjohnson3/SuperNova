@@ -324,7 +324,7 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             game_date_et = EXCLUDED.game_date_et,
             player_name = EXCLUDED.player_name,
             opponent_abbr = EXCLUDED.opponent_abbr,
-            position = EXCLUDED.position,
+            position = COALESCE(NULLIF(g.position, ''), EXCLUDED.position),
             is_home = EXCLUDED.is_home,
             passing_yards = EXCLUDED.passing_yards,
             passing_tds = EXCLUDED.passing_tds,
@@ -344,7 +344,8 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             wopr = EXCLUDED.wopr,
             receiving_air_yards = EXCLUDED.receiving_air_yards,
             receiving_yards_after_catch = EXCLUDED.receiving_yards_after_catch,
-            source = EXCLUDED.source,
+            -- Keep the "+pbp_usage" provenance suffix added by import_usage_context.
+            source = CASE WHEN g.source LIKE EXCLUDED.source || '%%' THEN g.source ELSE EXCLUDED.source END,
             raw_json = EXCLUDED.raw_json,
             updated_at_utc = NOW()
         WHERE (
@@ -355,7 +356,8 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             g.target_share, g.air_yards_share, g.wopr, g.receiving_air_yards,
             g.receiving_yards_after_catch, g.source, g.raw_json
         ) IS DISTINCT FROM (
-            EXCLUDED.game_date_et, EXCLUDED.player_name, EXCLUDED.opponent_abbr, EXCLUDED.position, EXCLUDED.is_home,
+            EXCLUDED.game_date_et, EXCLUDED.player_name, EXCLUDED.opponent_abbr,
+            COALESCE(NULLIF(g.position, ''), EXCLUDED.position), EXCLUDED.is_home,
             EXCLUDED.passing_yards, EXCLUDED.passing_tds, EXCLUDED.rushing_yards, EXCLUDED.rushing_tds,
             EXCLUDED.receiving_yards, EXCLUDED.receiving_tds, EXCLUDED.carries, EXCLUDED.targets, EXCLUDED.receptions,
             EXCLUDED.pass_attempts,
@@ -363,7 +365,9 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             COALESCE(EXCLUDED.route_participation, g.route_participation),
             COALESCE(EXCLUDED.snap_share, g.snap_share),
             EXCLUDED.target_share, EXCLUDED.air_yards_share, EXCLUDED.wopr, EXCLUDED.receiving_air_yards,
-            EXCLUDED.receiving_yards_after_catch, EXCLUDED.source, EXCLUDED.raw_json
+            EXCLUDED.receiving_yards_after_catch,
+            CASE WHEN g.source LIKE EXCLUDED.source || '%%' THEN g.source ELSE EXCLUDED.source END,
+            EXCLUDED.raw_json
         )
     """
     with conn.cursor() as cur:
