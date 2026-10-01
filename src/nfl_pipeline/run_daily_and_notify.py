@@ -196,6 +196,8 @@ async def main() -> None:
         Step("NFL Results Refresh", "nfl_pipeline.import_nflverse", args=context_args, timeout_s=600),
         Step("NFL Context Import", "nfl_pipeline.import_context", args=context_args, critical=False, timeout_s=600),
         Step("NFL Usage Context Import", "nfl_pipeline.import_usage_context", args=context_args, critical=False, timeout_s=1200),
+        # Same-day ESPN statuses (incl. game-day inactives at T-90); nflverse injury files lag days.
+        Step("NFL Live Injury Report", "nfl_pipeline.live_injuries", args=date_args, critical=False, timeout_s=120),
         Step("NFL Validated Release", "nfl_pipeline.run_training", args=("--season",context_year,"--skip-context"), timeout_s=3600),
         # Missing/stale quotes only block locking (scoring and forecast_store refuse stale quotes);
         # the morning run still publishes projections. Pregame keeps it critical so it retries.

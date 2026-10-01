@@ -156,3 +156,15 @@ Circa, BookMaker, BetOnline, LowVig); The Odds API EU region returns Pinnacle NF
   The CLV scorecard reports them as their own strategy (`| sharp-edge`).
 - They stay paper (`SHARP_EDGE_BETS_ENABLED = False`) until the scorecard shows positive CLV over
   2-3 weeks; flipping the flag allows $1 micro locks for receiving yards.
+
+## October 1: same-day injury and inactive statuses (ESPN)
+
+nflverse injury files lag days: Thursday 10/1 forecasts used reports from 9/27 and projected Rico
+Dowdle for 25.5 rushing yards although ESPN had listed him Out since 9/30. `live_injuries.py` reads
+ESPN's public game summary (free, no key) for each game on the slate and writes each team's current
+statuses into `raw.nfl_injuries` for that game's week (source `espn_live`, mapped to nflverse IDs via
+roster `espn_id`; unmapped players keep their name). The as-of trigger timestamps when we learned
+them, the context loader takes the newest status for the week, and a player ESPN drops from its list
+gets a `Cleared` row. It runs before scoring in the morning run and in every T-90 pregame run, when
+game-day inactives are posted. First run: 10 entries, 7 mapped, 5 Out; Dowdle is no longer projected.
+Out/Doubtful teammates also feed the RB role-change carry redistribution.
