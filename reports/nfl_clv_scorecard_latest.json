@@ -1,0 +1,126 @@
+{
+  "contract": "nfl-clv-scorecard-v1",
+  "built_at": "2026-10-01T02:40:03.989361+00:00",
+  "stats": {
+    "passing_tds": {
+      "pre-calibration": {
+        "all_offers": {
+          "forecasts": 274,
+          "player_games": 64,
+          "valid_close_rate": 0.9935483870967742,
+          "clv_beat_rate": 0.3823051948051947,
+          "clv_worse_rate": 0.4848484848484848,
+          "avg_clv_prob": -0.0008422511439168449,
+          "valid_close_n": 270,
+          "settled_n": 272,
+          "brier_model": 0.24066437140706237,
+          "brier_market": 0.241278597684942,
+          "roi_flat": 0.10038478450129229
+        },
+        "selected": {
+          "forecasts": 71,
+          "player_games": 64,
+          "valid_close_rate": 0.9919354838709677,
+          "clv_beat_rate": 0.4363143631436314,
+          "clv_worse_rate": 0.5149051490514904,
+          "avg_clv_prob": -0.0008627242443971256,
+          "valid_close_n": 68,
+          "settled_n": 69,
+          "brier_model": 0.23962243585810122,
+          "brier_market": 0.24142916199003314,
+          "roi_flat": 0.07162824433732211
+        }
+      }
+    },
+    "passing_yards": {
+      "pre-calibration": {
+        "all_offers": {
+          "forecasts": 274,
+          "player_games": 64,
+          "valid_close_rate": 0.5615591397849462,
+          "clv_beat_rate": 0.1302058401148875,
+          "clv_worse_rate": 0.3274293920536142,
+          "avg_clv_prob": -0.0003838739947891522,
+          "valid_close_n": 146,
+          "settled_n": 272,
+          "brier_model": 0.25468277121005356,
+          "brier_market": 0.2500060019240759,
+          "roi_flat": -0.14749706236514537
+        },
+        "selected": {
+          "forecasts": 103,
+          "player_games": 64,
+          "valid_close_rate": 0.5510752688172043,
+          "clv_beat_rate": 0.1268292682926829,
+          "clv_worse_rate": 0.5707317073170731,
+          "avg_clv_prob": -0.0009091998070764812,
+          "valid_close_n": 53,
+          "settled_n": 101,
+          "brier_model": 0.25495959270059726,
+          "brier_market": 0.2499675753965608,
+          "roi_flat": -0.14303027071875574
+        }
+      }
+    },
+    "receiving_yards": {
+      "pre-calibration": {
+        "all_offers": {
+          "forecasts": 1302,
+          "player_games": 338,
+          "valid_close_rate": 0.6348069105691057,
+          "clv_beat_rate": 0.12094773072920836,
+          "clv_worse_rate": 0.3616425198110942,
+          "avg_clv_prob": -0.0004454288046150823,
+          "valid_close_n": 776,
+          "settled_n": 1254,
+          "brier_model": 0.25448643286772826,
+          "brier_market": 0.25002603130982043,
+          "roi_flat": -0.019846826826940868
+        },
+        "selected": {
+          "forecasts": 496,
+          "player_games": 338,
+          "valid_close_rate": 0.6357723577235772,
+          "clv_beat_rate": 0.11788682864450127,
+          "clv_worse_rate": 0.563858695652174,
+          "avg_clv_prob": -0.0010426268302728507,
+          "valid_close_n": 290,
+          "settled_n": 471,
+          "brier_model": 0.2543463146827884,
+          "brier_market": 0.2500994421256224,
+          "roi_flat": -0.02457986424780989
+        }
+      }
+    },
+    "rushing_yards": {
+      "pre-calibration": {
+        "all_offers": {
+          "forecasts": 644,
+          "player_games": 155,
+          "valid_close_rate": 0.6834437086092714,
+          "clv_beat_rate": 0.12193152454780361,
+          "clv_worse_rate": 0.39260335917312655,
+          "avg_clv_prob": -0.0005450696301764627,
+          "valid_close_n": 424,
+          "settled_n": 634,
+          "brier_model": 0.2674500941718679,
+          "brier_market": 0.25005797549358927,
+          "roi_flat": -0.26409748252300125
+        },
+        "selected": {
+          "forecasts": 234,
+          "player_games": 155,
+          "valid_close_rate": 0.6917218543046357,
+          "clv_beat_rate": 0.1212701452050423,
+          "clv_worse_rate": 0.5872028083612574,
+          "avg_clv_prob": -0.0012192921298000727,
+          "valid_close_n": 147,
+          "settled_n": 228,
+          "brier_model": 0.2675473420810925,
+          "brier_market": 0.2502145740953233,
+          "roi_flat": -0.27691721340083586
+        }
+      }
+    }
+  }
+}

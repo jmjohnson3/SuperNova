@@ -263,6 +263,7 @@ def run_for_date(
         Step("NFL Exact-Line Training Evidence", "nfl_pipeline.modeling.train_prop_exact_line_models", critical=True, timeout_s=300),
         Step("NFL Snapshot Health", "nfl_pipeline.snapshot_health_report", args=date_args, critical=False, timeout_s=120),
         Step("NFL Readiness Report", "nfl_pipeline.readiness_report", args=date_args, critical=False, timeout_s=120),
+        Step("NFL CLV Scorecard", "nfl_pipeline.modeling.clv_scorecard", critical=False, timeout_s=120),
     ]
     results: list[dict[str, Any]] = []
     status = "ok"

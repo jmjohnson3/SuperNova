@@ -237,6 +237,15 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
   $30 cumulative confirmed loss. Reviews are at 50/100/200 settled decisions, ≥3 weeks.
 - `docs/nfl_cash_readiness.md` holds the full gate list.
 
+### Bet scope, market calibration, CLV (see `docs/nfl_market_calibration.md`)
+- Only stats in `betting_preferences.BET_PROP_STATS` (receiving yards) can lock into staked tiers;
+  every other market (incl. receptions, spreads, totals) is paper/research in Discord with links.
+- `models/player_props/market_calibration.json` anchors projections to the line, widens ranges and
+  blends probabilities toward FanDuel no-vig. Fitted by `modeling/fit_market_calibration.py`
+  (report-only in Tuesday training; `--write` installs). Missing file = identity.
+- Judge changes by `reports/nfl_clv_scorecard_latest.md` (CLV first, ROI last).
+- Official nflverse box-score stats win in `raw.nfl_player_gamelogs`; play-by-play only fills gaps.
+
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`
 are gitignored (several exceed GitHub's 100 MB limit). Pointer, registration, manifest and
