@@ -104,6 +104,31 @@ def test_new_actionable_ledger_rows_filter_book_before_sql_limit(loader, monkeyp
     assert "%(tier)s = 'paper'" in sql
 
 
+@pytest.mark.parametrize('loader,key', [(ledger.lock_game_predictions, 'bet_markets'),
+                                        (ledger.lock_prop_predictions, 'bet_stats')])
+def test_staked_tiers_filter_bettable_markets_before_sql_limit(loader, key, monkeypatch):
+    conn = Connection()
+    monkeypatch.setattr(ledger, '_insert_rows', lambda c, r: 0)
+    loader(conn, ledger.LedgerConfig(tier='micro_projection'))
+    sql, params = conn.cur.calls[0]
+    assert sql.index(f'%({key})s') < sql.index('LIMIT')
+    assert params[key] == sorted(preference.BET_PROP_STATS if key == 'bet_stats' else preference.BET_GAME_MARKETS)
+
+
+def test_only_bettable_markets_lock_into_staked_tiers_but_paper_keeps_everything():
+    fd = 'https://sportsbook.fanduel.com/bet'
+    def row(ident, kind, market, stat, tier='micro_projection'):
+        return (kind,ident,date.today(),tier,1,'fanduel',market,stat,'over',40.5,-110,fd,'v','key')
+    conn = Connection()
+    rows = [row(1,'prop',None,'receiving_yards'), row(2,'prop',None,'rushing_yards'),
+            row(3,'prop',None,'passing_yards'), row(4,'game','total',None),
+            row(5,'game','spread',None), row(6,'prop',None,'rushing_yards',tier='paper'),
+            row(7,'game','total',None,tier='paper')]
+    ledger._insert_rows(conn, rows)
+    inserted = [p[1] for sql, p in conn.cur.calls if 'INSERT INTO' in sql]
+    assert inserted == [1, 6, 7]
+
+
 def test_defense_in_depth_does_not_lock_draftkings_or_wrong_host():
     def row(ident, book, link, tier='micro_projection'):
         return ('prop',ident,date.today(),tier,1,book,None,'receiving_yards','over',40.5,-110,link,'v','key')

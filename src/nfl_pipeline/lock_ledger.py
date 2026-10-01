@@ -13,7 +13,9 @@ import psycopg2.extras
 
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.schema import ensure_schema
-from nfl_pipeline.betting_preferences import EXECUTION_BOOK, FANDUEL_LINK_PATTERN, execution_link
+from nfl_pipeline.betting_preferences import (
+    BET_GAME_MARKETS, BET_PROP_STATS, EXECUTION_BOOK, FANDUEL_LINK_PATTERN, execution_link,
+)
 from nfl_pipeline.offer_selection import CONTRACT as EXECUTION_CONTRACT, MAX_QUOTE_AGE_MINUTES
 from nfl_pipeline.game_scope import game_ids
 
@@ -39,6 +41,8 @@ def _insert_rows(conn, rows: list[tuple]) -> int:
         for row in rows:
             kind, prediction_id, day, tier = row[:4]
             if tier != 'paper' and (row[5] != EXECUTION_BOOK or not execution_link(row[11])):
+                continue
+            if tier != 'paper' and (row[7] not in BET_PROP_STATS if kind == 'prop' else row[6] not in BET_GAME_MARKETS):
                 continue
             table = {"prop": "nfl_player_prop_predictions", "game": "nfl_game_predictions"}[kind]
             same_player = "old.player_id IS NOT DISTINCT FROM new.player_id AND old.stat=new.stat" if kind == "prop" else "old.market=new.market"
@@ -96,6 +100,7 @@ def lock_game_predictions(conn, cfg: LedgerConfig) -> int:
               AND (%(game_ids)s IS NULL OR game_id=ANY(%(game_ids)s))
               AND price IS NOT NULL
               AND line IS NOT NULL
+              AND (%(tier)s = 'paper' OR market = ANY(%(bet_markets)s))
               AND (%(tier)s = 'paper' OR (book = %(execution_book)s AND LOWER(link) ~ %(execution_link_pattern)s))
               AND (%(tier)s = 'paper' OR (forecast_payload->>'execution_contract' = %(execution_contract)s
                 AND (forecast_payload->>'quote_fetched_at_utc')::timestamptz
@@ -104,6 +109,7 @@ def lock_game_predictions(conn, cfg: LedgerConfig) -> int:
             LIMIT %(max_rows)s
             """,
             {"tier": cfg.tier, "game_date": cfg.game_date, "max_rows": cfg.max_rows,
+             "bet_markets": sorted(BET_GAME_MARKETS),
              "execution_book": EXECUTION_BOOK, "execution_link_pattern": FANDUEL_LINK_PATTERN,
              "execution_contract": EXECUTION_CONTRACT, "max_quote_age": MAX_QUOTE_AGE_MINUTES, "game_ids": game_ids()},
         )
@@ -135,6 +141,7 @@ def lock_prop_predictions(conn, cfg: LedgerConfig) -> int:
               AND price IS NOT NULL
               AND line IS NOT NULL
               AND side IN ('over', 'under')
+              AND (%(tier)s = 'paper' OR stat = ANY(%(bet_stats)s))
               AND (%(tier)s = 'paper' OR (book = %(execution_book)s AND LOWER(link) ~ %(execution_link_pattern)s))
               AND (%(tier)s = 'paper' OR (forecast_payload->>'execution_contract' = %(execution_contract)s
                 AND (forecast_payload->>'quote_fetched_at_utc')::timestamptz
@@ -149,6 +156,7 @@ def lock_prop_predictions(conn, cfg: LedgerConfig) -> int:
             LIMIT %(max_rows)s
             """,
             {"tier": cfg.tier, "game_date": cfg.game_date, "max_rows": cfg.max_rows,
+             "bet_stats": sorted(BET_PROP_STATS),
              "execution_book": EXECUTION_BOOK, "execution_link_pattern": FANDUEL_LINK_PATTERN,
              "execution_contract": EXECUTION_CONTRACT, "max_quote_age": MAX_QUOTE_AGE_MINUTES, "game_ids": game_ids()},
         )

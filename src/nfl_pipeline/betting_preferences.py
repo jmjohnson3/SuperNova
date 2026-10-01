@@ -6,6 +6,10 @@ EXECUTION_BOOK = 'fanduel'
 EXECUTION_BOOK_LABEL = 'FanDuel'
 FANDUEL_LINK_PATTERN = r'^https://([a-z0-9-]+\.)*fanduel\.com(/|\?|$)'
 REAL_TIERS = {'micro', 'micro_projection', 'starter', 'bankroll', 'locked_micro', 'cash_trial'}
+# Markets that may be locked into a staked (non-paper) ledger tier. Everything else is
+# still forecast, stored, graded and shown in Discord with links, but only as paper.
+BET_PROP_STATS = frozenset({'receiving_yards'})
+BET_GAME_MARKETS = frozenset()
 
 
 def execution_link(link):
