@@ -148,6 +148,7 @@ def resolve_row(row: dict) -> tuple[str, str] | None:
     stat = row.get("market") if row.get("market") in ("spread", "total") else row.get("stat")
     try:
         return r.resolve(away=away, home=home, stat=stat, side=row.get("side"), line=row.get("line"),
-                         player=row.get("player_name") or row.get("player"))
+                         # the book's own spelling first: forecast player_name is short ("A.Rodgers")
+                         player=row.get("offer_player_name") or row.get("player_name") or row.get("player"))
     except Exception:
         return None

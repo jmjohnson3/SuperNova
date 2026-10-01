@@ -45,6 +45,9 @@ def row(**kw):
 def test_state_ids_replace_provider_ids_by_player_stat_side_and_exact_line(resolver):
     assert fs.resolve_row(row(player_name="D.K. Metcalf", stat="receiving_yards", side="over", line=45.5)) == ("708.10", "26036402")
     assert fs.resolve_row(row(player_name="DK Metcalf", stat="receptions", side="under", line=3.5)) == ("708.12", "26036403")
+    # forecast rows carry a short display name; the offer's own spelling is used
+    assert fs.resolve_row(row(player_name="D.Metcalf", offer_player_name="DK Metcalf", stat="receptions", side="under",
+                              line=3.5)) == ("708.12", "26036403")
     assert fs.resolve_row(row(player_name="Harold Fannin", stat="receiving_yards", side="under", line=40.5)) == ("708.13", "60595588")
     assert fs.resolve_row(row(market="total", side="over", line=37.5)) == ("708.2", "7017916")
     assert fs.resolve_row(row(market="spread", side="away", line=-2.5, home_team_abbr="CLE", away_team_abbr="PIT")) == ("708.1", "50208")
