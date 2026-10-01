@@ -1,0 +1,73 @@
+{
+  "contract": "nfl-game-market-calibration-v1",
+  "version": "game-market-calibration-20261001T153247Z",
+  "fitted_at": "2026-10-01T15:32:47.720249+00:00",
+  "markets": {
+    "spread": {
+      "probability_trust": 0.0,
+      "evidence": {
+        "fitted_probability_trust": 0.0,
+        "market_gate_passed": false,
+        "games": 31,
+        "forecasts": 213,
+        "weeks": [
+          2,
+          3
+        ],
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "probability_trust": 0.0,
+            "games": 15,
+            "log_loss": 0.6870646797106904,
+            "log_loss_market": 0.6870646797106904,
+            "log_loss_uncalibrated": 0.6931471805599453
+          },
+          {
+            "test_week": 3,
+            "probability_trust": 0.0,
+            "games": 16,
+            "log_loss": 0.6874565965620774,
+            "log_loss_market": 0.6874565965620774,
+            "log_loss_uncalibrated": 0.6931471805599454
+          }
+        ],
+        "in_sample_log_loss_market": 0.6872669593759226,
+        "in_sample_log_loss_uncalibrated": 0.6931471805599455
+      }
+    },
+    "total": {
+      "probability_trust": 0.0,
+      "evidence": {
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": false,
+        "games": 31,
+        "forecasts": 221,
+        "weeks": [
+          2,
+          3
+        ],
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "probability_trust": 1.0,
+            "games": 15,
+            "log_loss": 0.69302047468152,
+            "log_loss_market": 0.6931228889244385,
+            "log_loss_uncalibrated": 0.69302047468152
+          },
+          {
+            "test_week": 3,
+            "probability_trust": 1.0,
+            "games": 16,
+            "log_loss": 0.6939282942074716,
+            "log_loss_market": 0.6940734598384662,
+            "log_loss_uncalibrated": 0.6939282942074715
+          }
+        ],
+        "in_sample_log_loss_market": 0.6936135061703881,
+        "in_sample_log_loss_uncalibrated": 0.6934890266949144
+      }
+    }
+  }
+}

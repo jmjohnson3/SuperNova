@@ -103,6 +103,42 @@ def _no_vig_probability(over_price: Any, under_price: Any, side: str) -> float |
     return float(p_over if side == "over" else 1.0 - p_over)
 
 
+MARKET_CALIBRATION_PATH = Path(__file__).resolve().parent / "models" / "game_bets" / "market_calibration.json"
+
+
+def _load_market_calibration() -> dict[str, Any]:
+    """Fitted by fit_game_market_calibration; absent file means identity (model probability kept)."""
+    try:
+        return json.loads(MARKET_CALIBRATION_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+
+
+def _market_trust(calibration: dict[str, Any] | None, market: str) -> float:
+    value = _clean_float((((calibration or {}).get("markets") or {}).get(market) or {}).get("probability_trust"))
+    return 1.0 if value is None else float(np.clip(value, 0.0, 1.0))
+
+
+def _apply_market_calibration(choices: list[dict[str, Any]], line: pd.Series, calibration: dict[str, Any] | None) -> None:
+    """Pull each side's probability toward FanDuel's no-vig price (logit blend) before EV ranking."""
+    for choice in choices:
+        if choice["market"] == "spread":
+            own, other = line.get(f"spread_{choice['side']}_price"), line.get(
+                "spread_away_price" if choice["side"] == "home" else "spread_home_price")
+        else:
+            own, other = line.get(f"total_{choice['side']}_price"), line.get(
+                "total_under_price" if choice["side"] == "over" else "total_over_price")
+        market = _no_vig_probability(own, other, "over")  # "over" = the first (own) price's share
+        model = float(choice["probability"])
+        choice["model_probability"] = model
+        choice["market_no_vig_probability"] = market
+        trust = _market_trust(calibration, choice["market"])
+        choice["market_trust"] = trust
+        if market is not None and trust < 1.0 and 0.0 < model < 1.0 and 0.0 < market < 1.0:
+            logit = lambda p: math.log(p / (1.0 - p))
+            choice["probability"] = 1.0 / (1.0 + math.exp(-(logit(market) + trust * (logit(model) - logit(market)))))
+
+
 def _calibrated_total_over_probability(
     *,
     raw_p_over: float,
@@ -531,7 +567,8 @@ def _line_rows_for_game(lines: pd.DataFrame, game: dict[str, Any]) -> pd.DataFra
     return lines.loc[mask].copy()
 
 
-def _best_spread_candidate(game: dict[str, Any], pred_margin: float, base_margin: float, sigma: float, line: pd.Series) -> dict[str, Any] | None:
+def _best_spread_candidate(game: dict[str, Any], pred_margin: float, base_margin: float, sigma: float, line: pd.Series,
+                           calibration: dict[str, Any] | None = None) -> dict[str, Any] | None:
     home_spread = _clean_float(line.get("spread_home_points"))
     away_spread = _clean_float(line.get("spread_away_points"))
     if home_spread is None and away_spread is not None:
@@ -564,12 +601,14 @@ def _best_spread_candidate(game: dict[str, Any], pred_margin: float, base_margin
             "label_team": game.get("away_team_abbr"),
         },
     ]
+    _apply_market_calibration(choices, line, calibration)
     for choice in choices:
         choice["ev"] = _ev_per_unit(choice["probability"], choice["price"])
     return max(choices, key=lambda rec: (rec.get("ev") is not None, rec.get("ev") or -999.0, abs(rec["edge"])))
 
 
-def _best_total_candidate(game: dict[str, Any], pred_total: float, base_total: float, sigma: float, line: pd.Series) -> dict[str, Any] | None:
+def _best_total_candidate(game: dict[str, Any], pred_total: float, base_total: float, sigma: float, line: pd.Series,
+                          calibration: dict[str, Any] | None = None) -> dict[str, Any] | None:
     total_line = _clean_float(line.get("total_points"))
     if total_line is None:
         return None
@@ -604,6 +643,7 @@ def _best_total_candidate(game: dict[str, Any], pred_total: float, base_total: f
             "label_team": "UNDER",
         },
     ]
+    _apply_market_calibration(choices, line, calibration)
     for choice in choices:
         choice["ev"] = _ev_per_unit(choice["probability"], choice["price"])
     return max(choices, key=lambda rec: (rec.get("ev") is not None, rec.get("ev") or -999.0, abs(rec["edge"])))
@@ -633,6 +673,9 @@ def _prediction_row(game: dict[str, Any], pick: dict[str, Any], *, pred_margin: 
         "baseline_home_margin": base_margin,
         "baseline_total_points": base_total,
         "probability": pick.get("probability"),
+        "model_probability": pick.get("model_probability"),
+        "market_no_vig_probability": pick.get("market_no_vig_probability"),
+        "market_trust": pick.get("market_trust"),
         "ev": pick.get("ev"),
         "edge": pick.get("edge"),
         "tier": "paper",
@@ -682,6 +725,7 @@ def build_predictions(cfg: PredictGameConfig) -> tuple[list[dict[str, Any]], dic
                 for feature in ('qb_injury_risk','ol_injury_score','skill_injury_score','total_injury_score'):
                     snapshot[f'{prefix}_{feature}'] = [injuries.get((int(r.season),int(r.week),r[f'{prefix}_team_abbr']),{}).get(feature) for _,r in snapshot.iterrows()]
         rows: list[dict[str, Any]] = []
+        market_calibration = _load_market_calibration()
         if not snapshot.empty:
             margin_pred, margin_base, margin_accepted = _predict_target(
                 snapshot,
@@ -714,6 +758,7 @@ def build_predictions(cfg: PredictGameConfig) -> tuple[list[dict[str, Any]], dic
                         float(margin_base[idx]),
                         margin_sigma,
                         line_row,
+                        market_calibration,
                     )
                     if spread_pick:
                         rows.append(_prediction_row(
@@ -731,6 +776,7 @@ def build_predictions(cfg: PredictGameConfig) -> tuple[list[dict[str, Any]], dic
                         float(total_base[idx]),
                         total_sigma,
                         line_row,
+                        market_calibration,
                     )
                     if total_pick:
                         rows.append(_prediction_row(

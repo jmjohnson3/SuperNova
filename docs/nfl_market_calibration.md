@@ -111,3 +111,16 @@ Fit on 2020-2022, judged on 2023-2024 (weekly pregame injury reports; 2025 repor
 Full redistribution of vacated carries over-projected (+9.6 yards): carries also go to QBs/receivers
 and team volume shifts. On 149 as-of 2026 forecasts the change is neutral (19.71 -> 19.68); only 8
 had a ruled-out teammate, so weeks 4+ will show more.
+
+## October 1: spreads and totals
+
+`predict_today` now applies the same logit blend toward FanDuel's no-vig price before EV ranking
+(`models/game_bets/market_calibration.json`, fitted by `modeling/fit_game_market_calibration.py`,
+report-only in Tuesday training). Each game counts once per market; pre-contract forecasts use the
+latest same-line FanDuel quote that existed when they were made. New forecasts store
+`model_probability`, `market_no_vig_probability` and `market_trust`.
+
+31 games, weeks 2-3, leave-one-week-out log loss: spreads 0.6871/0.6875 vs market 0.6871/0.6875
+(model adds nothing); totals 0.6930/0.6939 vs 0.6931/0.6941. Both fitters now require a real margin
+(log-loss gain >= 0.002 in every fold) before trusting the model, so both markets price at the
+market (w=0). Prop parameters are unchanged by the margin (rushing won by 0.016 and 0.004).

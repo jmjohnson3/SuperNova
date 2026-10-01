@@ -37,6 +37,8 @@ from nfl_pipeline.modeling import predict_player_props as props
 
 ROOT = Path(__file__).resolve().parents[3]
 CONTRACT = "nfl-market-calibration-v1"
+# A fitted trust must beat the market by a real margin in every fold, not by noise.
+MIN_LOG_LOSS_GAIN = 0.002
 TRUST_GRID = np.round(np.arange(0.0, 1.0001, 0.05), 2)
 SCALE_GRID = np.round(np.arange(1.0, 3.0001, 0.05), 2)
 TARGET_COVERAGE = 0.80
@@ -166,7 +168,7 @@ def fit_captured_stat(stat, captured):
     full = rescore(captured[captured.stat == stat], {stat: {"projection_trust": a, "range_scale": k}})
     w, _ = fit_probability_trust(full)
     fitted_w = w
-    beats = bool(folds) and all(f["calibrated"]["log_loss"] < f["calibrated"]["log_loss_market"] - 1e-6 for f in folds)
+    beats = bool(folds) and all(f["calibrated"]["log_loss"] < f["calibrated"]["log_loss_market"] - MIN_LOG_LOSS_GAIN for f in folds)
     if not beats:
         w = 0.0
     g = _one_per_player_game(all0)
@@ -212,7 +214,7 @@ def fit_receptions(path: Path):
                           log_loss_uncalibrated=_log_loss(scored(te, 1.0), te.over, te.weight)))
     a, w = fit(d)
     fitted_w = w
-    beats = bool(folds) and all(f["log_loss"] < f["log_loss_market"] - 1e-6 for f in folds)
+    beats = bool(folds) and all(f["log_loss"] < f["log_loss_market"] - MIN_LOG_LOSS_GAIN for f in folds)
     if not beats:
         w = 0.0
     return dict(projection_trust=float(a), range_scale=1.0, probability_trust=float(w),

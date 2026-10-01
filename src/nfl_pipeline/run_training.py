@@ -63,6 +63,7 @@ def run_training(*, season: str | None = None, skip_context: bool = False) -> di
         Step("NFL Readiness Report", "nfl_pipeline.readiness_report", timeout_s=300),
         # Report-only refit of market anchoring on all settled weeks; installing is a manual --write.
         Step("NFL Market Calibration Refit Report", "nfl_pipeline.modeling.fit_market_calibration", timeout_s=1800),
+        Step("NFL Game Market Calibration Refit Report", "nfl_pipeline.modeling.fit_game_market_calibration", timeout_s=600),
     ]
     if skip_context:
         steps = [step for step in steps if step.module not in {"nfl_pipeline.import_context", "nfl_pipeline.import_usage_context"}]
