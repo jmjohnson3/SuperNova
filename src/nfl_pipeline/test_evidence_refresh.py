@@ -104,6 +104,48 @@ def test_strict_close_window(minutes,status):
     assert clv.classify_prop_close(row)['status'] == status
 
 
+@pytest.fixture(autouse=True)
+def isolated_settlement(monkeypatch, tmp_path):
+    """Settlement gating reads the DB and a state file; keep tests off both."""
+    signature = {'value': dict(final_games='1')}
+    monkeypatch.setattr(runner, 'SETTLEMENT_STATE', tmp_path/'settlement_state.json')
+    monkeypatch.setattr(runner, '_results_pending', lambda now: False)
+    monkeypatch.setattr(runner, '_settlement_signature', lambda: dict(signature['value']))
+    return signature
+
+
+def test_unchanged_settlement_inputs_skip_the_ten_minute_sweep(monkeypatch, isolated_settlement):
+    calls=[]
+    monkeypatch.setattr(runner, '_has_close_work', lambda d: True)
+    monkeypatch.setattr(runner, '_locked_prop_count', lambda d: 1)
+    monkeypatch.setattr(runner, '_active_close_games', lambda *a,**k: [])
+    monkeypatch.setattr(runner, '_run', lambda step: calls.append(step.module) or (0,'{}',''))
+    first = runner.run_for_date(date(2026,9,21))
+    assert first['status']=='ok' and 'nfl_pipeline.import_nflverse' in calls  # first run: no import recorded yet
+    calls.clear()
+    second = runner.run_for_date(date(2026,9,21))
+    assert second['close_window']['mode']=='settlement_skipped_no_new_inputs' and calls==[]
+    isolated_settlement['value'] = dict(final_games='2')  # e.g. a new final result or a user cash confirmation
+    third = runner.run_for_date(date(2026,9,21))
+    assert 'nfl_pipeline.grade_predictions' in calls
+    assert 'nfl_pipeline.import_nflverse' not in calls  # results import is not due again yet
+    assert third['settlement']['results_import_due'] is False
+
+
+def test_pending_results_force_import_and_failed_runs_are_not_marked_complete(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(runner, '_has_close_work', lambda d: True)
+    monkeypatch.setattr(runner, '_locked_prop_count', lambda d: 1)
+    monkeypatch.setattr(runner, '_active_close_games', lambda *a,**k: [])
+    monkeypatch.setattr(runner, '_results_pending', lambda now: True)
+    monkeypatch.setattr(runner, '_run', lambda step: calls.append(step.module) or (
+        (1,'','boom') if step.module=='nfl_pipeline.grade_predictions' else (0,'{}','')))
+    assert runner.run_for_date(date(2026,9,21))['status']=='failed'
+    calls.clear()
+    runner.run_for_date(date(2026,9,21))  # same inputs, but the last run failed: rerun everything
+    assert 'nfl_pipeline.import_nflverse' in calls and 'nfl_pipeline.grade_predictions' in calls
+
+
 def test_close_before_lock_stays_invalid():
     row=close_record(fresh_book_rows=0,fresh_market_rows=0)
     row['fetched_at_utc']=row['created_at_utc']

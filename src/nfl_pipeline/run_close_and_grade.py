@@ -230,6 +230,52 @@ def _capture_health(et_date, game_ids, since):
         return [dict(game_id=r[0], book=r[1], fresh_rows=r[2]) for r in cur.fetchall()]
 
 
+SETTLEMENT_STATE = Path(__file__).resolve().parents[2] / "reports" / "nfl_close_settlement_state.json"
+RESULTS_PENDING_AFTER_KICKOFF = timedelta(hours=3)
+RESULTS_PENDING_LOOKBACK = timedelta(days=4)
+RESULTS_REFRESH_INTERVAL = timedelta(hours=6)
+RESULT_IMPORT_MODULES = {"nfl_pipeline.import_nflverse", "nfl_pipeline.import_usage_context"}
+
+
+def _results_pending(now: datetime) -> bool:
+    """A game that should be over is not final yet, so new results may be published."""
+    with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
+        cur.execute("SET LOCAL statement_timeout='30s'")
+        cur.execute("""SELECT EXISTS (SELECT 1 FROM raw.nfl_games
+            WHERE start_ts_utc < %s AND start_ts_utc > %s AND COALESCE(status, '') <> 'final')""",
+                    (now - RESULTS_PENDING_AFTER_KICKOFF, now - RESULTS_PENDING_LOOKBACK))
+        return bool(cur.fetchone()[0])
+
+
+def _settlement_signature() -> dict[str, Any]:
+    """Cheap fingerprint of everything grading/CLV/evaluation reads.
+
+    updated_at_utc only moves on real content changes (upserts skip no-op rewrites), so an
+    unchanged signature means rerunning settlement would recompute identical outputs.
+    """
+    with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
+        cur.execute("SET LOCAL statement_timeout='60s'")
+        cur.execute("""SELECT
+            (SELECT row(count(*), max(updated_at_utc))::text FROM raw.nfl_games WHERE status = 'final'),
+            (SELECT max(updated_at_utc)::text FROM raw.nfl_player_gamelogs),
+            (SELECT row(count(*), max(id))::text FROM bets.nfl_player_prop_predictions),
+            (SELECT row(count(*), max(id))::text FROM bets.nfl_game_predictions),
+            (SELECT max(fetched_at_utc)::text FROM odds.nfl_player_prop_lines WHERE snapshot_role = 'close'),
+            (SELECT max(fetched_at_utc)::text FROM odds.nfl_game_lines WHERE snapshot_role = 'close'),
+            (SELECT max(ledger_id)::text FROM bets.nfl_bet_ledger),
+            (SELECT max(event_id)::text FROM bets.nfl_cash_execution_events)""")
+        keys = ("final_games", "gamelogs", "prop_forecasts", "game_forecasts", "prop_closes", "game_closes",
+                "ledger", "cash_events")
+        return dict(zip(keys, cur.fetchone()))
+
+
+def _load_settlement_state() -> dict[str, Any]:
+    try:
+        return json.loads(SETTLEMENT_STATE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
 def run_for_date(
     et_date: date,
     *,
@@ -278,11 +324,31 @@ def run_for_date(
     should_crawl_close = force_crawl or bool(active_games)
     # Keep the 10-minute close path short. Result import/model evaluation cannot
     # occupy the same mutex while a game's final pre-kickoff quotes disappear.
+    settlement: dict[str, Any] = {}
     if active_games:
         capture_modules = {'nfl_pipeline.crawler_oddsapi', 'nfl_pipeline.parse_oddsapi',
                            'nfl_pipeline.clv_report', 'nfl_pipeline.close_capture_diagnostic',
                            'nfl_pipeline.snapshot_health_report'}
         steps = [s for s in steps if s.module in capture_modules]
+    elif not force_crawl:
+        # Settlement mode runs every 10 minutes. Only fetch results when some are due (or a
+        # periodic correction refresh), and only re-run grading/evaluation when inputs changed.
+        now = datetime.now(timezone.utc)
+        state = _load_settlement_state()
+        last_import = state.get("last_results_import_at")
+        pending = _results_pending(now)
+        import_due = (pending or not last_import
+                      or now - datetime.fromisoformat(last_import) >= RESULTS_REFRESH_INTERVAL)
+        before = dict(_settlement_signature(), date=et_date.isoformat())  # dated reports refresh once per day
+        settlement = dict(results_pending=pending, results_import_due=import_due,
+                          signature_before=before, previous_signature=state.get("signature"))
+        if not import_due:
+            steps = [s for s in steps if s.module not in RESULT_IMPORT_MODULES]
+            if before == state.get("signature") and state.get("last_full_run_ok"):
+                return {"status": "ok", "date": et_date.isoformat(),
+                        "close_window": {"mode": "settlement_skipped_no_new_inputs", "active_games": [],
+                                         "locked_prop_count": locked_prop_count},
+                        "settlement": settlement, "steps": []}
     attempt_started = datetime.now(timezone.utc)
     capture_health = []; retry_fired = False
     for step in steps:
@@ -356,6 +422,17 @@ def run_for_date(
             status = "failed"
             if step.critical:
                 break
+    if settlement:
+        state = _load_settlement_state()
+        if settlement["results_import_due"] and all(
+                r["returncode"] == 0 for r in results if r["label"] in ("NFL Final Results Refresh", "NFL Final Participation Refresh")):
+            state["last_results_import_at"] = attempt_started.isoformat()
+        # Signature after this run's own writes, so the next unchanged run is skipped.
+        state.update(signature=dict(_settlement_signature(), date=et_date.isoformat()), last_full_run_ok=status == "ok",
+                     last_run_at=datetime.now(timezone.utc).isoformat())
+        settlement["signature_after"] = state["signature"]
+        from nfl_pipeline.integrity import atomic_json
+        atomic_json(SETTLEMENT_STATE, state)
     return {
         "status": status,
         "date": et_date.isoformat(),
@@ -370,6 +447,7 @@ def run_for_date(
             "fresh_capture_health": capture_health,
             "retry_fired": retry_fired,
         },
+        "settlement": settlement,
         "steps": results,
     }
 
