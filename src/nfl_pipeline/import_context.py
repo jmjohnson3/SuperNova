@@ -14,6 +14,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.markets import normalize_name, normalize_team
 from nfl_pipeline.schema import changed_where, ensure_schema
@@ -459,7 +460,7 @@ def import_context(cfg: ContextImportConfig) -> dict[str, Any]:
 
 
 def _default_seasons() -> tuple[int, ...]:
-    return (datetime.now().year,)
+    return (nfl_season(),)
 
 
 def _parse_seasons(value: str | None) -> tuple[int, ...]:

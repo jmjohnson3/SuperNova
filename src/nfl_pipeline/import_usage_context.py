@@ -15,6 +15,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.markets import normalize_name, normalize_team
 from nfl_pipeline.schema import ensure_schema
@@ -98,7 +99,7 @@ def _read_csv(source: str, **kwargs) -> tuple[pd.DataFrame, str | None]:
 
 def _parse_seasons(value: str | None) -> tuple[int, ...]:
     if not value:
-        year = datetime.now().year
+        year = nfl_season()
         return tuple(range(max(1999, year - 5), year + 1))
     out: list[int] = []
     for part in value.split(","):

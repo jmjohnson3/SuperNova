@@ -22,6 +22,7 @@ import psycopg2
 import psycopg2.extras
 from scipy.stats import norm
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.offer_selection import CONTRACT as EXECUTION_CONTRACT, MAX_QUOTE_AGE_MINUTES
 from nfl_pipeline.game_features import ROLL_WINDOWS
@@ -676,7 +677,7 @@ def build_predictions(cfg: PredictGameConfig) -> tuple[list[dict[str, Any]], dic
         snapshot = _build_snapshot(history, games, et_day)
         if not snapshot.empty:
             from nfl_pipeline.game_features import GameFeatureConfig, _load_team_injury_context
-            injuries = _load_team_injury_context(conn, GameFeatureConfig(min_season=et_day.year))
+            injuries = _load_team_injury_context(conn, GameFeatureConfig(min_season=nfl_season(et_day)))
             for prefix in ('home','away'):
                 for feature in ('qb_injury_risk','ol_injury_score','skill_injury_score','total_injury_score'):
                     snapshot[f'{prefix}_{feature}'] = [injuries.get((int(r.season),int(r.week),r[f'{prefix}_team_abbr']),{}).get(feature) for _,r in snapshot.iterrows()]

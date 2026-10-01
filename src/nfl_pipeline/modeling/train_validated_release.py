@@ -17,6 +17,7 @@ import pandas as pd
 from scipy.stats import norm
 from sqlalchemy import create_engine, text
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import FEATURE_CONTRACT, MODEL_ROOT, atomic_joblib, atomic_json, assert_publication_allowed
 from nfl_pipeline.markets import STAT_SPECS
@@ -226,7 +227,7 @@ def train_release(season, publish=False):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--season',type=int,default=datetime.now().year)
+    parser.add_argument('--season',type=int,default=nfl_season())
     parser.add_argument('--publish',action='store_true')
     args=parser.parse_args()
     logging.basicConfig(level=logging.INFO,format='%(asctime)s | %(levelname)s | %(message)s')

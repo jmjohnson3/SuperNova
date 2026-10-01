@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 import psycopg2
 import psycopg2.extras
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -101,7 +102,7 @@ def _configure_report_session(conn) -> None:
 
 def build_report(cfg: ReadinessConfig) -> str:
     et_day = cfg.game_date or datetime.now(_ET).date()
-    params = {"game_date": et_day, "season": et_day.year}
+    params = {"game_date": et_day, "season": nfl_season(et_day)}
     exact_line_models = _load_json(DEFAULT_EXACT_LINE_MODELS)
     conn = None
     try:

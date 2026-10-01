@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.subprocess_utils import run_subprocess
 from nfl_pipeline.integrity import production_freeze
 
@@ -43,7 +44,7 @@ def _run(step: Step) -> tuple[int, str, str]:
 
 
 def run_training(*, season: str | None = None, skip_context: bool = False) -> dict[str, Any]:
-    season = season or str(datetime.now().year)
+    season = season or str(nfl_season())
     context_args = ("--seasons", season)
     steps = [
         Step("NFL Schema", "nfl_pipeline.schema", timeout_s=180),

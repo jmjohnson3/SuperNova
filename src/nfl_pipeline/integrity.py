@@ -90,6 +90,14 @@ def assert_publication_allowed() -> None:
         raise RuntimeError('NFL production is frozen; train a challenger without --publish')
 
 
+def nfl_season(day: Any = None) -> int:
+    """NFL season a date belongs to: Jan/Feb playoff dates belong to the previous year's season."""
+    if day is None:
+        from zoneinfo import ZoneInfo
+        day = datetime.now(ZoneInfo("America/New_York")).date()
+    return day.year if day.month >= 3 else day.year - 1
+
+
 def utc(value: Any) -> datetime | None:
     if value is None:
         return None

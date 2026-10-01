@@ -23,6 +23,7 @@ import psycopg2
 import psycopg2.extras
 from scipy.stats import norm, poisson
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.features import ROLE_SIGNAL_STATS, ROLLING_STATS, SPARSE_USAGE_STATS, TARGET_STATS, VOLATILITY_STATS, _add_context_risk_features
 from nfl_pipeline.integrity import FEATURE_CONTRACT, release_artifact
@@ -1317,7 +1318,7 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
          AND tic.team_abbr = r.roster_team_abbr
         """,
         conn,
-        params={"season": et_day.year, "game_date": et_day, "context_cutoff_utc": context_cutoff_utc},
+        params={"season": nfl_season(et_day), "game_date": et_day, "context_cutoff_utc": context_cutoff_utc},
     )
 
 

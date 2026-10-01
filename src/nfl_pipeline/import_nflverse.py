@@ -20,6 +20,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.markets import normalize_team
 from nfl_pipeline.schema import ensure_schema
@@ -435,7 +436,7 @@ def import_data(cfg: ImportConfig) -> dict[str, Any]:
 
 
 def _default_seasons() -> tuple[int, ...]:
-    year = datetime.now().year
+    year = nfl_season()
     return tuple(range(max(1999, year - 5), year + 1))
 
 

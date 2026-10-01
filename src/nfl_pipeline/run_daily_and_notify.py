@@ -18,7 +18,7 @@ import psycopg2
 
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.subprocess_utils import run_subprocess
-from nfl_pipeline.integrity import active_release, atomic_json, production_freeze
+from nfl_pipeline.integrity import active_release, atomic_json, nfl_season, production_freeze
 from supernovabets_config import _saved_windows_env
 from nfl_pipeline.game_scope import ENV as SCOPE_ENV, validate_ids
 
@@ -189,7 +189,7 @@ async def main() -> None:
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     run_date = _resolve_run_date(args.date)
     date_args = ("--date", run_date.isoformat())
-    context_year = str(run_date.year)
+    context_year = str(nfl_season(run_date))
     context_args = ("--seasons", context_year)
     steps = [
         Step("NFL Schema", "nfl_pipeline.schema", timeout_s=180),

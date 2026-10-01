@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 
 import psycopg2
 
+from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.subprocess_utils import run_subprocess
 
@@ -240,9 +241,9 @@ def run_for_date(
     steps = [
         Step("NFL Close Odds Crawl", "nfl_pipeline.crawler_oddsapi", args=(*date_args, "--snapshot-role", "close"), critical=False, timeout_s=300),
         Step("NFL Close Odds Parse", "nfl_pipeline.parse_oddsapi", args=date_args, critical=True, timeout_s=180),
-        Step("NFL Final Results Refresh", "nfl_pipeline.import_nflverse", args=("--seasons",str(et_date.year)), critical=True, timeout_s=600),
+        Step("NFL Final Results Refresh", "nfl_pipeline.import_nflverse", args=("--seasons",str(nfl_season(et_date))), critical=True, timeout_s=600),
         Step("NFL Final Participation Refresh", "nfl_pipeline.import_usage_context",
-             args=("--seasons",str(et_date.year),"--skip-schema","--skip-pbp","--skip-participation","--skip-advanced-usage"), timeout_s=180),
+             args=("--seasons",str(nfl_season(et_date)),"--skip-schema","--skip-pbp","--skip-participation","--skip-advanced-usage"), timeout_s=180),
         Step("NFL Grade Predictions", "nfl_pipeline.grade_predictions", critical=True, timeout_s=300),
         Step("NFL Verified Receiving Result Repair", "nfl_pipeline.repair_receiving_results", args=(*date_args,"--apply"), timeout_s=180),
         Step("NFL Grade Recovered Receiving Results", "nfl_pipeline.grade_predictions", args=date_args, timeout_s=180),
