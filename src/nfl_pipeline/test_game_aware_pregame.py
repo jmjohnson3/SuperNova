@@ -136,9 +136,33 @@ def test_fast_pipeline_order_and_scope(monkeypatch,tmp_path):
     assert modules[0]=='nfl_pipeline.import_context' and steps[0].critical
     assert 'nfl_pipeline.run_training' not in modules and 'nfl_pipeline.schema' not in modules
     assert modules.index('nfl_pipeline.refresh_lock_quotes')<modules.index('nfl_pipeline.modeling.predict_today')
+    assert next(s for s in steps if s.module=='nfl_pipeline.refresh_lock_quotes').critical  # pregame retries for fresh quotes
     assert modules.index('nfl_pipeline.modeling.benchmark_offers')<modules.index('nfl_pipeline.publish_forecasts')
     doc=json.loads((tmp_path/'reports/nfl_daily_run_test.json').read_text())
     assert doc['pregame'] and doc['game_ids']==['early']
+
+
+def test_morning_run_publishes_projections_when_quotes_are_missing(monkeypatch,tmp_path):
+    from nfl_pipeline import run_daily_and_notify as daily
+    monkeypatch.setattr('sys.argv',['daily','--date','2099-09-27','--skip-train','--run-id','morning'])
+    monkeypatch.setattr(daily,'_repo_root',lambda:tmp_path)
+    monkeypatch.setattr(daily,'active_release',lambda:{'release_id':'frozen'})
+    monkeypatch.setenv('NFL_MODEL_RELEASE_ID','frozen')
+    steps=[]; posted=[]
+    def execute(step):
+        steps.append(step.module)
+        return (1,'{"status":"no_fresh_quotes"}','') if step.module=='nfl_pipeline.refresh_lock_quotes' else (0,'{}','')
+    async def post_section(header, body):
+        posted.append(header)
+    async def post(*a):
+        posted.append('cards')
+    monkeypatch.setattr(daily,'_run',execute)
+    monkeypatch.setattr(daily,'_post_section',post_section)
+    monkeypatch.setattr(daily,'_post_matchups',post)
+    with pytest.raises(SystemExit):
+        asyncio.run(daily.main())  # still reported as a failed run: quotes were missing
+    assert 'nfl_pipeline.modeling.predict_player_props' in steps and 'cards' in posted
+    assert any('Fresh Lock Quotes' in h for h in posted)
 
 
 def test_task_replaces_fixed_refresh_with_ten_minute_checker():

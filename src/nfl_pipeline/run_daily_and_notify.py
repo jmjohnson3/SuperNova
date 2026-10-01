@@ -197,7 +197,9 @@ async def main() -> None:
         Step("NFL Context Import", "nfl_pipeline.import_context", args=context_args, critical=False, timeout_s=600),
         Step("NFL Usage Context Import", "nfl_pipeline.import_usage_context", args=context_args, critical=False, timeout_s=1200),
         Step("NFL Validated Release", "nfl_pipeline.run_training", args=("--season",context_year,"--skip-context"), timeout_s=3600),
-        Step("NFL Fresh Lock Quotes", "nfl_pipeline.refresh_lock_quotes", args=date_args, timeout_s=600),
+        # Missing/stale quotes only block locking (scoring and forecast_store refuse stale quotes);
+        # the morning run still publishes projections. Pregame keeps it critical so it retries.
+        Step("NFL Fresh Lock Quotes", "nfl_pipeline.refresh_lock_quotes", args=date_args, critical=False, timeout_s=600),
         Step("NFL Snapshot Health", "nfl_pipeline.snapshot_health_report", args=date_args, critical=False, timeout_s=120),
         Step("NFL Game Predictions", "nfl_pipeline.modeling.predict_today", args=date_args, timeout_s=600),
         Step("NFL Team Workload Snapshot", "nfl_pipeline.modeling.score_accuracy_components", args=(*date_args,"--capture-team-context"), critical=False, timeout_s=120),
@@ -219,7 +221,8 @@ async def main() -> None:
             'nfl_pipeline.modeling.model_holdout_report','nfl_pipeline.modeling.score_locked_micro_uncertainty'}
         steps = [s for s in steps if s.module not in omitted and not (
             s.module=='nfl_pipeline.modeling.score_accuracy_components' and '--capture-team-context' not in s.args)]
-        steps = [Step(s.label,s.module,s.args,True,s.post_output,s.timeout_s) if s.module=='nfl_pipeline.import_context' else s for s in steps]
+        steps = [Step(s.label,s.module,s.args,True,s.post_output,s.timeout_s)
+                 if s.module in ('nfl_pipeline.import_context','nfl_pipeline.refresh_lock_quotes') else s for s in steps]
     results, publications = [], []
     try:
         for step in steps:
