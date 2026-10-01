@@ -37,7 +37,8 @@ def load_rows(day=None, stat=None):
                      COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0)>0)
                    THEN CASE p.stat WHEN 'passing_yards' THEN l.passing_yards WHEN 'rushing_yards' THEN l.rushing_yards
                      WHEN 'receiving_yards' THEN l.receiving_yards WHEN 'passing_tds' THEN l.passing_tds
-                     WHEN 'rushing_tds' THEN l.rushing_tds WHEN 'receiving_tds' THEN l.receiving_tds END END AS actual
+                     WHEN 'rushing_tds' THEN l.rushing_tds WHEN 'receiving_tds' THEN l.receiving_tds
+                     WHEN 'receptions' THEN l.receptions END END AS actual
             FROM bets.nfl_player_prop_predictions p JOIN raw.nfl_games g USING(game_id)
             LEFT JOIN raw.nfl_player_gamelogs l ON l.game_id=p.game_id AND l.player_id=p.player_id AND l.team_abbr=p.team_abbr
             LEFT JOIN odds.nfl_player_prop_lines o ON o.id=p.offer_id

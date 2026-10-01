@@ -225,6 +225,8 @@ def _sgo_market_key(stat_id: str | None) -> str | None:
         "rushing_touchdowns": "player_rush_tds",
         "rushing_tds": "player_rush_tds",
         "receiving_yards": "player_reception_yds",
+        "receiving_receptions": "player_receptions",
+        "receptions": "player_receptions",
         "receiving_touchdowns": "player_reception_tds",
         "receiving_tds": "player_reception_tds",
     }.get(key)
@@ -877,6 +879,8 @@ def _manual_prop_rows(raw_rows: list[dict[str, str]], cfg: OddsCrawlerConfig, et
             "player_rush_tds": "player_rush_tds",
             "receiving_yards": "player_reception_yds",
             "player_reception_yds": "player_reception_yds",
+            "receptions": "player_receptions",
+            "player_receptions": "player_receptions",
             "receiving_tds": "player_reception_tds",
             "player_reception_tds": "player_reception_tds",
         }.get(stat.lower())
@@ -886,6 +890,7 @@ def _manual_prop_rows(raw_rows: list[dict[str, str]], cfg: OddsCrawlerConfig, et
             "player_pass_tds": "passing_tds",
             "player_rush_tds": "rushing_tds",
             "player_reception_yds": "receiving_yards",
+            "player_receptions": "receptions",
             "player_reception_tds": "receiving_tds",
         }.get(market_key or "")
         if not market_key or not stat_norm:

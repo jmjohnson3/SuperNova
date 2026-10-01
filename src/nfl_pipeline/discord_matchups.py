@@ -18,8 +18,10 @@ PAPER_SECTIONS = (
     ('QB Passing TDs', {'QB'}, 'passing_tds'),
     ('RB Rushing Yards', {'RB'}, 'rushing_yards'),
     ('RB Receiving Yards', {'RB'}, 'receiving_yards'),
+    ('RB Receptions', {'RB'}, 'receptions'),
     ('RB Rushing TDs', {'RB'}, 'rushing_tds'),
     ('WR/TE Receiving Yards', {'WR', 'TE'}, 'receiving_yards'),
+    ('WR/TE Receptions', {'WR', 'TE'}, 'receptions'),
     ('WR/TE Receiving TDs', {'WR', 'TE'}, 'receiving_tds'),
 )
 

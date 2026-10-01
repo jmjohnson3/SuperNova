@@ -134,6 +134,7 @@ def grade_player_prop_predictions(conn, cfg: GradeConfig) -> int:
                 l.rushing_tds::float AS rushing_tds,
                 l.receiving_yards::float AS receiving_yards,
                 l.receiving_tds::float AS receiving_tds,
+                l.receptions::float AS receptions,
                 l.offense_snaps::float AS offense_snaps,
                 prior.result AS prior_result,
                 (COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0))::float AS offensive_actions

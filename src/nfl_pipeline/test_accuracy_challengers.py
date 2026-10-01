@@ -181,11 +181,32 @@ def test_full_live_scoring_roundtrips_exactly():
     assert restored['probability']==live['probability']
     assert restored['probability_trace']==live['probability_trace']
     assert set(live['probability_trace'])=={'raw_over','heuristic_over','post_exact_side','final_side','side',
-        'probability_basis','push_probability','context_blend_over','market_anchor_over','context_trust'}
+        'probability_basis','push_probability','context_blend_over','market_anchor_over','context_trust',
+        'pre_market_side','model_projection','market_calibration','market_calibration_version'}
     assert live['probability_trace']['probability_basis']=='win_given_no_push'
     captured['scoring_fingerprint']='old'
     with pytest.raises(ValueError,match='code_version'):
         replay(captured)
+
+
+def test_market_calibration_travels_in_captured_metrics_and_replays_exactly():
+    row,offer,metrics,distribution=scoring_fixture()
+    offer=dict(offer, over_price=-125, under_price=105)
+    metrics=dict(metrics, market_calibration={'version':'test','stats':{'receiving_yards':
+        {'projection_trust':0.2,'range_scale':1.3,'probability_trust':0.1}}})
+    identity=_candidate_from_offer(row,'receiving_yards',60,50,scoring_fixture()[2],offer,distribution)
+    live=_candidate_from_offer(row,'receiving_yards',60,50,metrics,offer,distribution)
+    captured=capture(row,'receiving_yards',60,50,metrics,offer,distribution,{}, {},.02,{'version':'frozen'})
+    restored=replay(json.loads(json.dumps(captured,default=str)))
+    assert restored['probability']==live['probability']
+    assert restored['probability_trace']==live['probability_trace']
+    # Anchored projection: line + 0.2 * (60 - 45.5); model projection kept in the trace.
+    assert live['projection']==pytest.approx(45.5+0.2*14.5)
+    assert live['probability_trace']['model_projection']==60
+    # Pulled toward the market and less extreme than the uncalibrated forecast.
+    market=live['market_no_vig_probability']
+    assert abs(live['probability']-market) < abs(identity['probability']-identity['market_no_vig_probability'])
+    assert live['projection_p90']-live['projection_p10'] > 0
 
 
 def test_uncaptured_overlay_never_claims_exact_replay():

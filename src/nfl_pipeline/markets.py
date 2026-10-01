@@ -54,6 +54,14 @@ STAT_SPECS: tuple[NflStatSpec, ...] = (
         min_projection=5.0,
     ),
     NflStatSpec(
+        stat="receptions",
+        label="Receptions",
+        market_keys=("player_receptions",),
+        positions=("RB", "WR", "TE"),
+        count_like=True,
+        min_projection=0.5,
+    ),
+    NflStatSpec(
         stat="receiving_tds",
         label="Receiving TDs",
         market_keys=("player_reception_tds",),
