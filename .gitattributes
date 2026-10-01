@@ -1,1 +1,5 @@
 src/mlb_pipeline/modeling/models/player_props/walks_xgb.json filter=lfs diff=lfs merge=lfs -text
+# Scoring fingerprints hash raw bytes; never convert line endings on these.
+src/nfl_pipeline/modeling/predict_player_props.py text eol=lf
+src/nfl_pipeline/modeling/scoring_capture.py text eol=lf
+src/nfl_pipeline/modeling/models/scoring_code_versions/** -text
