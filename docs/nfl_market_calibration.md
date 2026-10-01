@@ -124,3 +124,17 @@ latest same-line FanDuel quote that existed when they were made. New forecasts s
 (model adds nothing); totals 0.6930/0.6939 vs 0.6931/0.6941. Both fitters now require a real margin
 (log-loss gain >= 0.002 in every fold) before trusting the model, so both markets price at the
 market (w=0). Prop parameters are unchanged by the margin (rushing won by 0.016 and 0.004).
+
+## October 1: pregame-knowable role features
+
+`features._add_usage_role_features` computed `*_share_avg_5`, `*_role_rank` and
+`team_player_*_avg5_sum` among only the players who actually played each game (post-game
+information). Teammates expected before kickoff (played in the team's previous 4 games, not listed
+Out/Doubtful that week) now count, at their 5-game average entering the game. On 39,148 training
+rows the old shares were higher by +0.015 (carries) and +0.016 (targets) on average; ranks change in
+48-57% of rows. 2025 has no injury reports in the database, so no one is excluded for that season.
+
+Live impact today: none. The pinned release does not use these features and has workload/opportunity
+adjustment off. The fix keeps future challengers and releases from learning inflated shares. Note the
+opportunity-model trainer writes directly to `nfl_player_opportunity_models.joblib` (unpinned; only
+loaded when no release exists) - retrain it as a challenger file before any future use.

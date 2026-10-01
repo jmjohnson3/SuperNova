@@ -379,9 +379,51 @@ def _add_defense_allowed(df: pd.DataFrame) -> pd.DataFrame:
     ).drop(columns=["def_team"], errors="ignore")
 
 
-def _add_usage_role_features(df: pd.DataFrame) -> pd.DataFrame:
+EXPECTED_ROSTER_LOOKBACK_GAMES = 4
+
+
+def _expected_absent_teammates(df: pd.DataFrame, stats: tuple[str, ...],
+                               ruled_out: set[tuple[int, int, str, str]]) -> dict[tuple[str, str], dict[str, list[float]]]:
+    """Teammates a forecaster would have expected but who did not play, with their 5-game average entering the game.
+
+    Expected = played for the team in its previous EXPECTED_ROSTER_LOOKBACK_GAMES games this season and not
+    listed Out/Doubtful for that week (pregame reports; seasons without reports exclude no one).
+    """
+    order = df.sort_values(["player_id", "season", "week", "game_id"])
+    cols = {}
+    for stat in stats:
+        raw = pd.to_numeric(order.get(stat, pd.Series(np.nan, index=order.index)), errors="coerce").fillna(0.0)
+        cols[f"_after_{stat}"] = raw.groupby(order["player_id"]).rolling(5, min_periods=1).mean().reset_index(level=0, drop=True)
+    rows = order[["player_id", "season", "week", "game_id", "team_abbr"]].assign(**cols)
+    absent: dict[tuple[str, str], dict[str, list[float]]] = {}
+    for (team, season), team_rows in rows.groupby(["team_abbr", "season"]):
+        games = team_rows[["week", "game_id"]].drop_duplicates().sort_values(["week", "game_id"])
+        weeks, game_ids = games.week.tolist(), games.game_id.tolist()
+        for i, (week, game_id) in enumerate(zip(weeks, game_ids)):
+            prior_weeks = weeks[max(0, i - EXPECTED_ROSTER_LOOKBACK_GAMES):i]
+            if not prior_weeks:
+                continue
+            prior = team_rows[team_rows.week.isin(prior_weeks)]
+            played = set(team_rows.loc[team_rows.game_id == game_id, "player_id"])
+            candidates = {p for p in set(prior.player_id) - played if (season, week, team, p) not in ruled_out}
+            if not candidates:
+                continue
+            latest = prior[prior.player_id.isin(candidates)].sort_values("week").groupby("player_id").tail(1)
+            absent[(game_id, team)] = {s: latest[f"_after_{s}"].clip(lower=0.0).tolist() for s in stats}
+    return absent
+
+
+def _add_usage_role_features(df: pd.DataFrame, ruled_out: set[tuple[int, int, str, str]] | None = None) -> pd.DataFrame:
+    """Team-relative role shares and ranks among the pregame-expected roster.
+
+    Previously the group was only the players who actually played, which is known only after the game
+    (shares ran ~16-18% higher than pregame-knowable values in 2023-2024/2026). Expected-but-absent
+    teammates now count in the denominator and rank, matching what live scoring can know.
+    """
     out = df.copy()
     group_cols = ["game_id", "team_abbr"]
+    absent = _expected_absent_teammates(out, ROLE_SIGNAL_STATS, ruled_out or set())
+    keys = list(zip(out["game_id"], out["team_abbr"]))
     for stat in ROLE_SIGNAL_STATS:
         avg_col = f"{stat}_avg_5"
         if avg_col not in out.columns:
@@ -390,15 +432,24 @@ def _add_usage_role_features(df: pd.DataFrame) -> pd.DataFrame:
         sum_col = f"team_player_{stat}_avg5_sum"
         share_col = f"{stat}_share_avg_5"
         rank_col = f"{stat}_role_rank"
-        team_sum = values.groupby([out[col] for col in group_cols]).transform("sum")
+        absent_values = [absent.get(k, {}).get(stat, []) for k in keys]
+        team_sum = values.groupby([out[col] for col in group_cols]).transform("sum") + pd.Series(
+            [sum(v) for v in absent_values], index=out.index)
         out[sum_col] = team_sum.replace(0.0, np.nan)
         out[share_col] = (values / out[sum_col]).replace([np.inf, -np.inf], np.nan)
-        out[rank_col] = (
-            values.groupby([out[col] for col in group_cols])
-            .rank(method="min", ascending=False)
-            .where(team_sum > 0)
-        )
+        played_rank = values.groupby([out[col] for col in group_cols]).rank(method="min", ascending=False)
+        ahead_absent = pd.Series([sum(a > v for a in extra) for v, extra in zip(values, absent_values)], index=out.index)
+        out[rank_col] = (played_rank + ahead_absent).where(team_sum > 0)
     return out
+
+
+def _load_ruled_out(conn, min_season: int | None) -> set[tuple[int, int, str, str]]:
+    """(season, week, team, player_id) listed Out/Doubtful on the pregame injury report."""
+    with conn.cursor() as cur:
+        cur.execute("""SELECT DISTINCT season, week, UPPER(team_abbr), player_id FROM raw.nfl_injuries
+            WHERE report_status IN ('Out', 'Doubtful') AND player_id IS NOT NULL
+              AND (%(min_season)s IS NULL OR season >= %(min_season)s)""", {"min_season": min_season})
+        return {(int(s), int(w), str(t), str(p)) for s, w, t, p in cur.fetchall()}
 
 
 def _injury_downgrade_score(report_status: pd.Series, practice_status: pd.Series) -> pd.Series:
@@ -1318,7 +1369,7 @@ def build_feature_frame(conn, cfg: FeatureBuildConfig) -> pd.DataFrame:
     df = _add_player_rolling(df)
     df = _add_team_context(df)
     df = _add_defense_allowed(df)
-    df = _add_usage_role_features(df)
+    df = _add_usage_role_features(df, _load_ruled_out(conn, cfg.min_season))
     df = _add_context_risk_features(df)
     df["is_home"] = df["is_home"].astype("boolean")
     return df
