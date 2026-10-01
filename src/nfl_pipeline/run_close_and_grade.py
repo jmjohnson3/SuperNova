@@ -287,6 +287,8 @@ def run_for_date(
     steps = [
         Step("NFL Close Odds Crawl", "nfl_pipeline.crawler_oddsapi", args=(*date_args, "--snapshot-role", "close"), critical=False, timeout_s=300),
         Step("NFL Close Odds Parse", "nfl_pipeline.parse_oddsapi", args=date_args, critical=True, timeout_s=180),
+        # Once per game near kickoff (state-guarded, credit floor); parses its own payloads.
+        Step("NFL Sharp Close Lines", "nfl_pipeline.sharp_lines", args=(*date_args, "--role", "close"), critical=False, timeout_s=180),
         Step("NFL Final Results Refresh", "nfl_pipeline.import_nflverse", args=("--seasons",str(nfl_season(et_date))), critical=True, timeout_s=600),
         Step("NFL Final Participation Refresh", "nfl_pipeline.import_usage_context",
              args=("--seasons",str(nfl_season(et_date)),"--skip-schema","--skip-pbp","--skip-participation","--skip-advanced-usage"), timeout_s=180),
@@ -326,7 +328,7 @@ def run_for_date(
     # occupy the same mutex while a game's final pre-kickoff quotes disappear.
     settlement: dict[str, Any] = {}
     if active_games:
-        capture_modules = {'nfl_pipeline.crawler_oddsapi', 'nfl_pipeline.parse_oddsapi',
+        capture_modules = {'nfl_pipeline.crawler_oddsapi', 'nfl_pipeline.parse_oddsapi', 'nfl_pipeline.sharp_lines',
                            'nfl_pipeline.clv_report', 'nfl_pipeline.close_capture_diagnostic',
                            'nfl_pipeline.snapshot_health_report'}
         steps = [s for s in steps if s.module in capture_modules]

@@ -63,13 +63,19 @@ def refresh(day):
                     built_at=at.isoformat(), ready_for_scoring=False)
     result = fetch_for_date(OddsCrawlerConfig(snapshot_role='lock'), day)
     parse_props(ParseConfig(as_of_date=day))
+    try:
+        # Sharp reference prices for games in the pregame window; never blocks FanDuel quotes.
+        from nfl_pipeline.sharp_lines import capture
+        sharp = capture(day, 'lock')
+    except Exception as exc:
+        sharp = dict(status='failed', error=type(exc).__name__)
     health = quote_health(day)
     stale = [k for k, h in health.items() if h['observed_rows'] and not h['fresh_rows']]
     fresh = sum(h['fresh_rows'] for h in health.values())
     status = 'fresh_quotes_ready' if fresh and not stale else 'partial_fresh_quotes' if fresh else 'no_fresh_quotes'
     return dict(status=status, day=str(day), built_at=at.isoformat(), games=count, api_called=True,
         provider_status=result.get('status'), provider=result.get('provider'), quote_health=health, game_ids=game_ids(),
-        stale_kinds=stale, max_quote_age_minutes=MAX_QUOTE_AGE_MINUTES,
+        stale_kinds=stale, max_quote_age_minutes=MAX_QUOTE_AGE_MINUTES, sharp_lines=sharp,
         ready_for_scoring=bool(fresh),
         note='Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.')
 
