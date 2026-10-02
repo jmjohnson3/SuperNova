@@ -28,3 +28,11 @@ def test_verdict_needs_volume_then_evidence():
     assert r.summarize(r.grade(pd.DataFrame(rows)))["verdict"].startswith("PASS")
     bad = [alert(week=w, close_price=-105, sharp_close_over=105, sharp_close_under=-125) for w in (4, 5, 6) for _ in range(40)]
     assert r.summarize(r.grade(pd.DataFrame(bad)))["verdict"].startswith("FAIL")
+
+
+def test_logged_gaps_are_reported_but_do_not_count_toward_the_pass_bar():
+    rows = [alert(week=w, tier="logged") for w in (4, 5, 6) for _ in range(40)] + [alert(tier="alert")]
+    s = r.summarize(r.grade(pd.DataFrame(rows)))
+    assert s["alerts"] == 1 and s["logged"]["alerts"] == 120 and s["verdict"] == "keep collecting"
+    md = r.markdown(s, r.grade(pd.DataFrame(rows)))
+    assert "Logged gaps graded: 120" in md and "| 2026-5 | logged | 40 |" in md

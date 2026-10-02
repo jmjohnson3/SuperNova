@@ -63,12 +63,11 @@ def test_reference_index_matches_exact_line_fresh_two_sided_sharp_quotes_only():
     assert props._sharp_reference_for(index, dict(fd, line=44.5)) is None
 
 
-def test_discord_lists_sharp_edges_in_their_own_research_section():
+def test_discord_cards_no_longer_carry_a_snapshot_sharp_section():
     import json as _json
-    from nfl_pipeline.discord_matchups import SHARP_HEADING, build_bundle
+    from nfl_pipeline.discord_matchups import build_bundle
     from nfl_pipeline.test_discord_matchups import prop, schedule, NOW as CARD_NOW, DAY
     edge = prop(player='EdgeGuy', sharp_ev=0.06, sharp_book='pinnacle', sharp_line=45.5, sharp_over_probability=0.58, side='over')
-    plain = prop(player='PlainGuy')
-    text = _json.dumps(build_bundle(DAY, schedule(), [], [edge, plain], ['frozen'], now=CARD_NOW))
-    assert SHARP_HEADING in text and 'vs Pinnacle 45.5: fair 58%, EV +6.0%' in text
-    assert text.count('EdgeGuy') >= 1 and 'PlainGuy' in text
+    text = _json.dumps(build_bundle(DAY, schedule(), [], [edge, prop(player='PlainGuy')], ['frozen'], now=CARD_NOW))
+    assert 'SHARP-LINE EDGES' not in text and 'vs Pinnacle' not in text  # live alerts come from sharp_watch
+    assert 'EdgeGuy' in text and 'PlainGuy' in text  # still listed as ordinary research rows

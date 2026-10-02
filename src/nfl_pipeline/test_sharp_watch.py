@@ -84,3 +84,13 @@ def test_tight_budget_is_saved_for_the_final_window():
     # With plenty of credits nothing is held back.
     due, skipped = w.plan_polls(g, {}, NOW, remaining=20000, cost=1, floor=150)
     assert [x["game_id"] for x in due] == ["tnf"] and skipped == {}
+
+
+def test_small_gaps_are_logged_but_not_alerted():
+    # Pinnacle -122/+102 -> fair over ~52.6%; FanDuel over -108 -> EV ~ +1.3%: logged, not pinged
+    payload = {"bookmakers": [book("fanduel", pair("Small", 45.5, -108, -112)),
+                              book("pinnacle", pair("Small", 45.5, -122, +102))]}
+    logged = w.find_edges(payload, min_ev=w.LOG_MIN_EV)
+    assert [(e["player"], e["side"]) for e in logged] == [("Small", "over")]
+    assert w.LOG_MIN_EV <= logged[0]["ev"] < w.MIN_EV
+    assert w.find_edges(payload) == []  # below the Discord threshold

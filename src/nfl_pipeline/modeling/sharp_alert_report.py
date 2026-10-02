@@ -112,23 +112,39 @@ def grade(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def summarize(df: pd.DataFrame) -> dict:
+def _stats(df: pd.DataFrame) -> dict:
     if df.empty:
-        return dict(alerts=0, verdict="no graded alerts yet")
+        return dict(alerts=0, weeks=0)
     clv = pd.to_numeric(df.clv, errors="coerce").dropna()
     evc = pd.to_numeric(df.ev_at_sharp_close, errors="coerce").dropna()
     weeks = df[["season", "week"]].drop_duplicates().shape[0]
-    out = dict(alerts=int(len(df)), weeks=int(weeks), with_fd_close=int(len(clv)), beat_fd_close=float((clv > 1e-9).mean()) if len(clv) else None,
-               mean_fd_clv=float(clv.mean()) if len(clv) else None, with_sharp_close=int(len(evc)),
-               mean_ev_at_sharp_close=float(evc.mean()) if len(evc) else None,
-               positive_at_sharp_close=float((evc > 0).mean()) if len(evc) else None,
-               settled=int(df.result.notna().sum()), roi=float(pd.to_numeric(df.units, errors="coerce").dropna().mean()) if df.result.notna().any() else None,
-               mean_alert_ev=float(pd.to_numeric(df.ev, errors="coerce").mean()))
+    return dict(alerts=int(len(df)), weeks=int(weeks), with_fd_close=int(len(clv)), beat_fd_close=float((clv > 1e-9).mean()) if len(clv) else None,
+                mean_fd_clv=float(clv.mean()) if len(clv) else None, with_sharp_close=int(len(evc)),
+                mean_ev_at_sharp_close=float(evc.mean()) if len(evc) else None,
+                positive_at_sharp_close=float((evc > 0).mean()) if len(evc) else None,
+                settled=int(df.result.notna().sum()), roi=float(pd.to_numeric(df.units, errors="coerce").dropna().mean()) if df.result.notna().any() else None,
+                mean_alert_ev=float(pd.to_numeric(df.ev, errors="coerce").mean()))
+
+
+def _tier(df: pd.DataFrame) -> pd.Series:
+    return df["tier"].fillna("alert") if "tier" in df else pd.Series("alert", index=df.index)
+
+
+def summarize(df: pd.DataFrame) -> dict:
+    """Pass/fail is judged on pinged alerts (EV >= +3%). Logged gaps (+1% to +3%, no ping) are reported
+    beside them: they show sooner whether FanDuel-vs-sharp gaps predict the close at all."""
+    if df.empty:
+        return dict(alerts=0, verdict="no graded alerts yet", logged=dict(alerts=0, weeks=0))
+    tier = _tier(df)
+    out = _stats(df[tier == "alert"])
+    out["logged"] = _stats(df[tier == "logged"])
+    weeks = out.get("weeks", 0)
     checks = dict(enough_alerts=out["alerts"] >= PASS["min_alerts"], enough_weeks=weeks >= PASS["min_weeks"],
-                  beats_fd_close=(out["beat_fd_close"] or 0) >= PASS["min_beat_close"],
-                  positive_at_sharp_close=(out["mean_ev_at_sharp_close"] or -1) >= PASS["min_sharp_close_ev"])
+                  beats_fd_close=(out.get("beat_fd_close") or 0) >= PASS["min_beat_close"],
+                  positive_at_sharp_close=(out.get("mean_ev_at_sharp_close") or -1) >= PASS["min_sharp_close_ev"])
     out["checks"] = checks
     out["verdict"] = ("PASS: enable SHARP_EDGE_BETS_ENABLED with fixed small stakes" if all(checks.values())
+                      else "no graded alerts yet" if not out["alerts"]
                       else "keep collecting" if not (checks["enough_alerts"] and checks["enough_weeks"])
                       else "FAIL: the alerted prices do not hold up at the close; do not bet them")
     return out
@@ -137,21 +153,24 @@ def summarize(df: pd.DataFrame) -> dict:
 def markdown(summary: dict, df: pd.DataFrame) -> str:
     pct = lambda v: "-" if v is None else f"{v:.1%}"
     signed = lambda v: "-" if v is None else f"{v:+.2%}"
+    a, g = summary, summary.get("logged") or {}
     lines = ["# NFL Sharp-Edge Alerts", "", f"Verdict: **{summary['verdict']}**", "",
-             f"Alerts graded: {summary['alerts']} over {summary.get('weeks', 0)} week(s) "
-             f"(pass bar: {PASS['min_alerts']} over {PASS['min_weeks']}).", "",
-             "| Evidence (most reliable first) | Value | Pass bar |", "|---|---:|---:|",
-             f"| Mean EV at the sharp close | {signed(summary.get('mean_ev_at_sharp_close'))} | >= {PASS['min_sharp_close_ev']:+.0%} |",
-             f"| Share positive at the sharp close | {pct(summary.get('positive_at_sharp_close'))} | - |",
-             f"| Beat FanDuel's close | {pct(summary.get('beat_fd_close'))} | >= {PASS['min_beat_close']:.0%} |",
-             f"| Mean FanDuel CLV (implied prob) | {signed(summary.get('mean_fd_clv'))} | > 0 |",
-             f"| EV claimed at alert time | {signed(summary.get('mean_alert_ev'))} | - |",
-             f"| Flat ROI ({summary.get('settled', 0)} settled) | {signed(summary.get('roi'))} | noise for weeks |"]
+             f"Alerts graded: {a.get('alerts', 0)} over {a.get('weeks', 0)} week(s) "
+             f"(pass bar: {PASS['min_alerts']} over {PASS['min_weeks']}). Logged gaps graded: {g.get('alerts', 0)}.", "",
+             "| Evidence (most reliable first) | Alerts (>= +3%, pinged) | Logged (+1% to +3%) | Pass bar (alerts) |",
+             "|---|---:|---:|---:|",
+             f"| Mean EV at the sharp close | {signed(a.get('mean_ev_at_sharp_close'))} | {signed(g.get('mean_ev_at_sharp_close'))} | >= {PASS['min_sharp_close_ev']:+.0%} |",
+             f"| Share positive at the sharp close | {pct(a.get('positive_at_sharp_close'))} | {pct(g.get('positive_at_sharp_close'))} | - |",
+             f"| Beat FanDuel's close | {pct(a.get('beat_fd_close'))} | {pct(g.get('beat_fd_close'))} | >= {PASS['min_beat_close']:.0%} |",
+             f"| Mean FanDuel CLV (implied prob) | {signed(a.get('mean_fd_clv'))} | {signed(g.get('mean_fd_clv'))} | > 0 |",
+             f"| EV claimed when seen | {signed(a.get('mean_alert_ev'))} | {signed(g.get('mean_alert_ev'))} | - |",
+             f"| Flat ROI (settled: {a.get('settled', 0)} / {g.get('settled', 0)}) | {signed(a.get('roi'))} | {signed(g.get('roi'))} | noise for weeks |"]
     if not df.empty:
-        lines += ["", "| Week | Alerts | Beat FD close | Mean EV at sharp close |", "|---|---:|---:|---:|"]
-        for (season, week), g in df.groupby(["season", "week"]):
-            c = pd.to_numeric(g.clv, errors="coerce").dropna(); e = pd.to_numeric(g.ev_at_sharp_close, errors="coerce").dropna()
-            lines.append(f"| {season}-{week} | {len(g)} | {pct((c > 1e-9).mean() if len(c) else None)} | {signed(e.mean() if len(e) else None)} |")
+        tier = _tier(df)
+        lines += ["", "| Week | Tier | Count | Beat FD close | Mean EV at sharp close |", "|---|---|---:|---:|---:|"]
+        for (season, week, t), grp in df.assign(tier=tier).groupby(["season", "week", "tier"]):
+            c = pd.to_numeric(grp.clv, errors="coerce").dropna(); e = pd.to_numeric(grp.ev_at_sharp_close, errors="coerce").dropna()
+            lines.append(f"| {season}-{week} | {t} | {len(grp)} | {pct((c > 1e-9).mean() if len(c) else None)} | {signed(e.mean() if len(e) else None)} |")
     return "\n".join(lines) + "\n"
 
 

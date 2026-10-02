@@ -45,7 +45,8 @@ SHARP_BOOKS = ("pinnacle", "betfair_ex_eu", "matchbook", "smarkets")
 BOOKMAKERS = ("fanduel",) + SHARP_BOOKS  # <= 10 named books = one region per market
 GAME_MARKETS = {"spreads": "spread", "totals": "total"}
 DEFAULT_MARKETS = "player_reception_yds"
-MIN_EV = 0.03            # alert threshold vs the sharp fair price
+MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
+LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
 FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window
@@ -202,6 +203,8 @@ CREATE TABLE IF NOT EXISTS bets.nfl_sharp_alerts (
   ev NUMERIC NOT NULL, minimum_price INTEGER, line_gap NUMERIC, posted BOOLEAN NOT NULL DEFAULT FALSE,
   UNIQUE (event_id, stat, player_name_norm, fd_line, side, fd_price)
 );
+-- 'alert' = pinged in Discord (EV >= MIN_EV); 'logged' = research only (LOG_MIN_EV <= EV < MIN_EV).
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'alert';
 """
 
 
@@ -301,24 +304,33 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                                   url=_full_url(url, params), payload=payload, provider=PROVIDER)
             state.setdefault("last_poll", {})[game["game_id"]] = now.isoformat()
             state.setdefault("spent", {})[today] = state.get("spent", {}).get(today, 0) + cost
-            edges = find_edges(payload)
+            edges = find_edges(payload, min_ev=LOG_MIN_EV)
             result["polled"].append(dict(game_id=game["game_id"], books=sorted(b["key"] for b in payload.get("bookmakers", [])),
                                          edges=len(edges)))
             with conn.cursor() as cur:
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
+                    tier = "alert" if edge["ev"] >= MIN_EV else "logged"
+                    # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
-                            fair_probability, ev, minimum_price, line_gap)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                        ON CONFLICT DO NOTHING RETURNING alert_id""",
+                            fair_probability, ev, minimum_price, line_gap, tier)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        ON CONFLICT (event_id, stat, player_name_norm, fd_line, side, fd_price) DO UPDATE SET
+                            tier='alert', sharp_book=EXCLUDED.sharp_book, sharp_line=EXCLUDED.sharp_line,
+                            fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev,
+                            minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap
+                          WHERE bets.nfl_sharp_alerts.tier='logged' AND EXCLUDED.tier='alert'
+                        RETURNING alert_id, tier""",
                                 (event["id"], game["game_id"], game["start"], game["home"], game["away"], edge["stat"],
                                  edge["player"], edge["player_norm"], edge["side"], edge["line"], edge["price"], edge["link"],
                                  edge["sharp_book"], edge["sharp_line"], edge["fair_probability"], edge["ev"],
-                                 edge["minimum_price"], edge["line_gap"]))
+                                 edge["minimum_price"], edge["line_gap"], tier))
                     row = cur.fetchone()
-                    if row:
+                    if row and row[1] == "alert":
                         new_alerts.append((row[0], edge, game))
+                    elif row:
+                        result["logged"] = result.get("logged", 0) + 1
             conn.commit()
         for alert_id, edge, game in new_alerts[:MAX_ALERTS_PER_RUN]:
             try:

@@ -152,8 +152,10 @@ Circa, BookMaker, BetOnline, LowVig); The Odds API EU region returns Pinnacle NF
   player, stat and exact line as `offer.sharp_reference` (captured, so replay is exact). It prices the
   offer at the sharp no-vig line (blended by the stat's probability trust, 0 today), picks the FanDuel
   side with the better EV, and records `sharp_book`, `sharp_line`, `sharp_over_probability`, `sharp_ev`.
-- Discord lists FanDuel offers with sharp EV >= 3% in a "SHARP-LINE EDGES - research" section.
-  The CLV scorecard reports them as their own strategy (`| sharp-edge`).
+- Discord listed FanDuel offers with sharp EV >= 3% in a "SHARP-LINE EDGES - research" section.
+  That section was removed on October 2: it compared the morning/pregame snapshot, and live gaps
+  come from `sharp_watch` instead. Scoring still records `sharp_ev`, and the CLV scorecard still
+  reports it as its own strategy (`| sharp-edge`).
 - They stay paper (`SHARP_EDGE_BETS_ENABLED = False`) until the scorecard shows positive CLV over
   2-3 weeks; flipping the flag allows $1 micro locks for receiving yards.
 
@@ -191,12 +193,19 @@ for itself whether to poll:
 - **Alerts:** a FanDuel side at ≥ +3% EV against the sharp fair price posts a Discord alert with the
   FanDuel link and the worst price still worth +1% ("take at X or better"). Each distinct price is
   logged once in `bets.nfl_sharp_alerts`.
+- **Logged gaps (October 2):** sides from +1% up to +3% EV are also stored, with `tier='logged'`
+  and no ping. A 3%+ edge at a single game rarely appears (PIT @ CLE: 12 checks, best side about
+  0%), so the alert sample alone would take months. If a logged gap later reaches +3% at the same
+  FanDuel price, it is upgraded to `alert` and pinged once.
 
 `modeling/sharp_alert_report.py` grades every alert after kickoff. Its outputs are
 `reports/nfl_sharp_alerts_latest.{md,json}`, and it runs in the close settlement steps. It reports:
 - **EV at the sharp close:** the FanDuel price, valued at the sharp book's last line before kickoff.
 - **FanDuel CLV:** whether FanDuel's own close moved toward the alerted side.
 - **Results:** last, because results are noise for weeks.
+
+Logged gaps are graded in their own column. They don't count toward the pass bar, but they show
+sooner whether FanDuel-vs-sharp gaps predict the close at all.
 
 Pass bar for enabling `SHARP_EDGE_BETS_ENABLED` with fixed small stakes: at least 100 alerts over at
 least 3 weeks, at least 55% beating FanDuel's close, and a mean EV at the sharp close of at least +1%.
