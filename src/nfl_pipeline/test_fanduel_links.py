@@ -105,3 +105,14 @@ def test_cash_reservation_rejects_a_landing_page_before_spending_capacity(monkey
     from nfl_pipeline import cash_execution
     monkeypatch.setattr(cash_execution, 'forecast_quote_error', lambda row, now: None)
     assert cash_execution.candidate_error(dict(book='fanduel', link='https://sportsbook.fanduel.com/'), NOW) == 'missing_fanduel_link'
+
+
+def test_model_projection_shown_beside_line_anchored_projection():
+    trace = {'model_projection': 31.24, 'market_calibration': {'projection_trust': 0.0}}
+    row = dict(book='fanduel', player_name='D.Metcalf', team_abbr='PIT', opponent_abbr='CLE', stat='receiving_yards',
+               side='over', line=45.5, price=-113, projection=45.5, probability_trace=trace)
+    text = links._with_model_projection('x proj=45.50 range=1-2', row)
+    assert text == 'x model=31.2 | line-anchored=45.5 (0% model) range=1-2'
+    full = dict(row, probability_trace=dict(trace, market_calibration={'projection_trust': 1.0}))
+    assert links._with_model_projection('x proj=45.50', full) == 'x proj=45.50'  # unanchored: unchanged
+    assert links._with_model_projection('x proj=45.50', dict(row, probability_trace=None)) == 'x proj=45.50'

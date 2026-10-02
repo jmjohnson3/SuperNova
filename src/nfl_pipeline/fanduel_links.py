@@ -134,9 +134,26 @@ def row_link(row):
     return ' | Betslip link unavailable' if row.get('line') is not None else ''
 
 
+def _with_model_projection(rendered, row):
+    """Show the model's own number beside the line-anchored projection (display only).
+
+    Market calibration pulls projections toward the line (fully, for stats whose model did not beat
+    it), so proj= alone often just repeats the line. The unanchored number lets disagreements be followed.
+    """
+    trace = row.get('probability_trace') or {}
+    model, projection = trace.get('model_projection'), row.get('projection')
+    trust = (trace.get('market_calibration') or {}).get('projection_trust')
+    if model is None or projection is None or row.get('line') is None or trust is None or trust >= 1.0:
+        return rendered
+    old = f"proj={float(projection):.2f}"
+    new = f"model={float(model):.1f} | line-anchored={float(projection):.1f} ({float(trust):.0%} model)"
+    return rendered.replace(old, new, 1)
+
+
 def format_prop_row(row, *, action):
     # Reuse the frozen numeric formatter without changing its scoring fingerprint.
     from nfl_pipeline.modeling import predict_player_props as props
     rendered = props._format_prop_row(dict(row, link=None), action=action)
+    rendered = _with_model_projection(rendered, row)
     from nfl_pipeline.forecast_outputs import display_suffix
     return rendered + display_suffix(row) + (row_link(row) if row.get('line') is not None else '')
