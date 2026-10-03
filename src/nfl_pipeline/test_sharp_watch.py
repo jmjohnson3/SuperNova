@@ -94,3 +94,20 @@ def test_small_gaps_are_logged_but_not_alerted():
     assert [(e["player"], e["side"]) for e in logged] == [("Small", "over")]
     assert w.LOG_MIN_EV <= logged[0]["ev"] < w.MIN_EV
     assert w.find_edges(payload) == []  # below the Discord threshold
+
+
+def test_budget_follows_games_until_the_plan_resets():
+    from datetime import date
+    assert w.cycle_end(date(2026, 10, 3), 3) == date(2026, 11, 3)
+    assert w.cycle_end(date(2026, 10, 2), 3) == date(2026, 10, 3)
+    assert w.cycle_end(date(2026, 1, 31), 31) == date(2026, 2, 28)  # clamped to the month's length
+    by_day = {date(2026, 10, 4): 14, date(2026, 10, 5): 1, date(2026, 10, 8): 1, date(2026, 11, 8): 14}
+    assert w.game_share(date(2026, 10, 4), by_day, 3) == pytest.approx(14 / 16)  # Nov 8 is next cycle
+    assert w.game_share(date(2026, 10, 6), by_day, 3) == 0.0  # no games today: nothing early is spent
+    assert w.game_share(date(2026, 10, 4), {}, 3) is None
+    # Sunday with 14 games gets the bulk of the spare credits, so early checks are not starved.
+    games = [dict(game_id=f"g{i}", start=NOW + timedelta(minutes=200), home="CLE", away="PIT", day=NOW.date()) for i in range(14)]
+    due, skipped = w.plan_polls(games, {}, NOW, remaining=20000, cost=4, floor=150, share=14 / 62)
+    assert len(due) == 14 and skipped == {}
+    sunday_need = 14 * 44 * 4  # 14 games x 44 checks x 4 markets
+    assert w.daily_allowance(20000, NOW.date(), 150) < sunday_need <= (20000 - 150) * 14 / 62  # calendar split starves Sunday

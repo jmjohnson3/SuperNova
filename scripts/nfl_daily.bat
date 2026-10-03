@@ -31,7 +31,7 @@ if "%NFL_ODDS_PROVIDER_ORDER%"=="" (
     for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v NFL_ODDS_PROVIDER_ORDER 2^>nul ^| findstr NFL_ODDS_PROVIDER_ORDER') do set "NFL_ODDS_PROVIDER_ORDER=%%B"
 )
 :: Optional NFL settings (FanDuel state for betslip links; sharp-watch markets and credit floor).
-for %%V in (NFL_FANDUEL_STATE NFL_SHARP_WATCH_MARKETS NFL_SHARP_CREDIT_FLOOR) do (
+for %%V in (NFL_FANDUEL_STATE NFL_SHARP_WATCH_MARKETS NFL_SHARP_CREDIT_FLOOR NFL_ODDS_API_RESET_DAY) do (
     for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v %%V 2^>nul ^| findstr %%V') do set "%%V=%%B"
 )
 

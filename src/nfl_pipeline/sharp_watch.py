@@ -9,8 +9,9 @@ bets.nfl_sharp_alerts (rows are never deleted) and graded by CLV in sharp_alert_
 bets, until that report shows the edge survives to the close.
 
 It runs on the existing 10-minute close task and decides itself whether a poll is worth the credits:
-hourly from 24h before kickoff, every 10 minutes in the last 4 hours (the final 90 minutes have first claim on a tight budget), within a daily allowance spread
-over the rest of the month (from the live remaining-credit count) and never below a credit floor
+hourly from 24h before kickoff, every 10 minutes in the last 4 hours (the final 90 minutes have first
+claim on a tight budget). The daily allowance is today's share, by games, of the spare credits left
+before the plan resets (NFL_ODDS_API_RESET_DAY; live remaining-credit count), never below a credit floor
 (NFL_SHARP_CREDIT_FLOOR). Add markets with NFL_SHARP_WATCH_MARKETS once the plan has credits for them.
 """
 from __future__ import annotations
@@ -78,6 +79,24 @@ def daily_allowance(remaining: int, today: date, floor: int) -> float:
     return max(0.0, remaining - floor) / max(1, days_left)
 
 
+def cycle_end(today: date, reset_day: int) -> date:
+    """First credit-reset date after today (reset_day clamped to the month's length)."""
+    year, month = today.year, today.month
+    for _ in range(2):
+        day = min(reset_day, calendar.monthrange(year, month)[1])
+        if date(year, month, day) > today:
+            return date(year, month, day)
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return date(year, month, min(reset_day, calendar.monthrange(year, month)[1]))
+
+
+def game_share(today: date, games_by_day: dict[date, int], reset_day: int) -> float | None:
+    """Today's share of the cycle's spare credits, by games (NFL demand is lumpy: Sunday >> Tuesday)."""
+    end = cycle_end(today, reset_day)
+    total = sum(n for d, n in games_by_day.items() if today <= d < end)
+    return games_by_day.get(today, 0) / total if total else None
+
+
 def _final_window_polls(minutes_to_kickoff: float) -> int:
     """10-minute polls a game still needs inside its final window (0 once it has started)."""
     if minutes_to_kickoff <= 0:
@@ -86,10 +105,12 @@ def _final_window_polls(minutes_to_kickoff: float) -> int:
 
 
 def plan_polls(games: list[dict], state: dict, now: datetime, remaining: int, cost: int,
-               floor: int) -> tuple[list[dict], dict[str, str]]:
+               floor: int, share: float | None = None) -> tuple[list[dict], dict[str, str]]:
     today = now.astimezone(_ET).date()
     spent = state.get("spent", {}).get(str(today), 0)
-    allowance = daily_allowance(remaining + spent, today, floor)  # allowance set from start-of-day credits
+    # Allowance from start-of-day credits: today's share of the cycle by games, else an even share by day.
+    allowance = (max(0.0, remaining + spent - floor) * share if share is not None
+                 else daily_allowance(remaining + spent, today, floor))
     # Credits today's games will still need in their final windows. Earlier (hourly or T-4h..T-90)
     # polls only spend what is left over, so a tight budget is saved for the window that matters.
     reserve = cost * sum(_final_window_polls((g["start"] - now).total_seconds() / 60) for g in games
@@ -250,6 +271,14 @@ def _games(now: datetime) -> list[dict]:
         return [dict(zip(("game_id", "day", "home", "away", "start"), r)) for r in cur.fetchall()]
 
 
+def _games_by_day(now: datetime) -> dict[date, int]:
+    with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
+        cur.execute("SET LOCAL statement_timeout='30s'")
+        cur.execute("""SELECT (start_ts_utc AT TIME ZONE 'America/New_York')::date, count(*) FROM raw.nfl_games
+            WHERE start_ts_utc > %s - interval '1 day' AND start_ts_utc <= %s + interval '40 days' GROUP BY 1""", (now, now))
+        return {d: int(n) for d, n in cur.fetchall()}
+
+
 def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     games = _games(now)
@@ -265,6 +294,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
     wanted = markets()
     cost = len(wanted)  # named bookmakers <= 10 -> one region-equivalent per market
     floor = _int_env("NFL_SHARP_CREDIT_FLOOR", 150)
+    share = game_share(now.astimezone(_ET).date(), _games_by_day(now), _int_env("NFL_ODDS_API_RESET_DAY", 1))
     # Time-due first (no API call), then the free events call reports the true remaining credits.
     time_due, _ = plan_polls(games, state, now, 10**9, 0, 0)
     if not time_due:
@@ -273,7 +303,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
     events.raise_for_status()
     remaining = int(events.headers.get("x-requests-remaining") or 0)
     by_matchup = {(normalize_team(e["home_team"]), normalize_team(e["away_team"])): e for e in events.json()}
-    due, skipped = plan_polls(time_due, state, now, remaining, cost, floor)
+    due, skipped = plan_polls(time_due, state, now, remaining, cost, floor, share)
     result = dict(status="ok", polled=[], skipped=skipped, alerts=0, credits_remaining=remaining, markets=wanted)
     if not due:
         return dict(result, status="budget_hold")
