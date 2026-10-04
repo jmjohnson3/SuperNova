@@ -1,6 +1,6 @@
 # NFL Sharp-Gap Backtest
 
-Season 2025, 120 sampled Sunday games, markets player_reception_yds. Credits spent this run: 330 (cached responses reused: 463); remaining: 15168.
+Season 2025, 120 sampled Sunday games, markets player_reception_yds. Credits spent this run: 0 (cached responses reused: 496); remaining: None.
 
 Each FanDuel side with a sharp fair price, at each snapshot. EV is against the sharp no-vig line at that time; 'EV at sharp close' values the same price at the sharp kickoff snapshot.
 

@@ -6,12 +6,12 @@
     "markets": [
       "player_reception_yds"
     ],
-    "credits_spent": 330,
-    "cached": 463,
-    "credits_remaining": 15168,
+    "credits_spent": 0,
+    "cached": 496,
+    "credits_remaining": null,
     "stopped": null,
     "failed": [],
-    "built_at": "2026-10-04T00:01:16.819619+00:00"
+    "built_at": "2026-10-04T00:23:31.957634+00:00"
   },
   "summary": [
     {

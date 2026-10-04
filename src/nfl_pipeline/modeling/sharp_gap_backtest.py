@@ -291,9 +291,10 @@ def main() -> None:
     meta = dict(season=args.season, games=int(df.game_id.nunique()) if not df.empty else 0, sampled=len(games),
                 markets=markets, credits_spent=client.spent, cached=client.cached, credits_remaining=client.remaining,
                 stopped=stopped, failed=failed, built_at=datetime.now(timezone.utc).isoformat())
-    atomic_json(ROOT / "reports" / "nfl_sharp_gap_backtest_latest.json", dict(meta=meta, summary=rows))
-    (ROOT / "reports" / "nfl_sharp_gap_backtest_latest.md").write_text(markdown(meta, rows), encoding="utf-8")
-    df.to_csv(ROOT / "reports" / "nfl_sharp_gap_backtest_sides.csv", index=False)
+    stem = ROOT / "reports" / f"nfl_sharp_gap_backtest_{args.season}_{'_'.join(sorted(markets))}"  # one report per market set
+    atomic_json(stem.with_suffix(".json"), dict(meta=meta, summary=rows))
+    stem.with_suffix(".md").write_text(markdown(meta, rows), encoding="utf-8")
+    df.to_csv(f"{stem}_sides.csv", index=False)
     print(json.dumps(meta, indent=2, default=str))
 
 

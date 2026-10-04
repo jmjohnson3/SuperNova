@@ -214,3 +214,30 @@ Size up only after that, at no more than a fraction of Kelly.
 First poll (PIT @ CLE, T-3h): 13 of 14 FanDuel receiving props had a Pinnacle line, 9 exact and 4
 within 1-2 yards. Every side was negative EV; the best was about -0.2%. A fairly priced slate is
 normal, which is why polling frequency matters.
+
+## October 3: historical sharp-gap backtest (2025)
+
+`modeling/sharp_gap_backtest.py` replays the watcher on The Odds API history for sampled 2025 Sundays.
+It pulls FanDuel and the sharp books at T-90, T-45, T-15 and kickoff (T-2). Every FanDuel side is
+priced against the sharp fair line, then graded at the sharp close, by FanDuel's own close and by
+the result. FanDuel moves props by changing the line at a fixed -112/-112 price, so the close is
+compared at the bet's line rather than requiring the same line. Each market gets its own report:
+`reports/nfl_sharp_gap_backtest_2025_<market>.md`, plus a sides CSV. Paid responses are cached in
+`raw.nfl_api_responses` (endpoint `nfl_player_props_history`), so reruns cost nothing.
+
+| Market (games) | T- | Sides >= +1% | >= +3% | EV of >= +3% at the sharp close | Positive at the close |
+|---|---:|---:|---:|---:|---:|
+| Receiving yards (120) | 90 / 45 / 15 | 4.4% / 4.4% / 4.5% | 1.7% / 2.0% / 1.3% | +2.7% / +2.5% / +3.3% | 75% / 78% / 92% |
+| Rushing yards (60) | 90 / 45 / 15 | 6.1% / 7.8% / 7.1% | 1.4% / 2.7% / 2.0% | +3.8% / +3.5% / +4.8% | 86% / 92% / 100% |
+
+- About 1 in 50 FanDuel sides is at +3% or better, roughly 0.35 per game at each check, so a full
+  Sunday should produce about 5-8 alerts per market.
+- FanDuel rarely corrects late: only about 4% of sides moved between T-15 and kickoff, so gaps can
+  still be bet when an alert arrives.
+- Pinnacle's close predicted results slightly better than FanDuel's on 967 receiving overs (log loss
+  0.6918 vs 0.6934; a coin flip scores 0.6931). Where they disagreed by more than 2 points,
+  Pinnacle's side won 53.7% of 257. That points the right way but is not proof.
+- Flat ROI on these buckets (7-93 bets each) is noise.
+
+This supports the live watcher and its 3% alert threshold. It does not replace the live CLV proof:
+alerts stay paper until live Sundays match the backtest.
