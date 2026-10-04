@@ -5,9 +5,8 @@ cd /d C:\Users\josh\Git\SuperNovaBets
 set PYTHONIOENCODING=utf-8
 if not exist logs mkdir logs
 
-if "%ODDS_API_KEY%"=="" (
-    for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v ODDS_API_KEY 2^>nul ^| findstr ODDS_API_KEY') do set "ODDS_API_KEY=%%B"
-)
+:: Always take the saved key: a scheduler-inherited environment can hold a replaced (old) key.
+for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v ODDS_API_KEY 2^>nul ^| findstr ODDS_API_KEY') do set "ODDS_API_KEY=%%B"
 if "%SPORTSGAMEODDS_API_KEY%"=="" (
     for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v SPORTSGAMEODDS_API_KEY 2^>nul ^| findstr SPORTSGAMEODDS_API_KEY') do set "SPORTSGAMEODDS_API_KEY=%%B"
 )

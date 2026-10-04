@@ -15,9 +15,8 @@ if "%NFL_DISCORD_WEBHOOK_URL%"=="" (
 if "%NFL_DISCORD_WEBHOOK_URL%"=="" (
     for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v DISCORD_WEBHOOK_URL 2^>nul ^| findstr DISCORD_WEBHOOK_URL') do set "NFL_DISCORD_WEBHOOK_URL=%%B"
 )
-if "%ODDS_API_KEY%"=="" (
-    for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v ODDS_API_KEY 2^>nul ^| findstr ODDS_API_KEY') do set "ODDS_API_KEY=%%B"
-)
+:: Always take the saved key: a scheduler-inherited environment can hold a replaced (old) key.
+for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v ODDS_API_KEY 2^>nul ^| findstr ODDS_API_KEY') do set "ODDS_API_KEY=%%B"
 if "%SPORTSGAMEODDS_API_KEY%"=="" (
     for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v SPORTSGAMEODDS_API_KEY 2^>nul ^| findstr SPORTSGAMEODDS_API_KEY') do set "SPORTSGAMEODDS_API_KEY=%%B"
 )
