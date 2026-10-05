@@ -19,3 +19,8 @@ src/nfl_pipeline/modeling/models/**/*.pkl
 src/nfl_pipeline/modeling/models/final_probability_validation/
 src/nfl_pipeline/modeling/models/receiving_selection_experiment/
 src/nfl_pipeline/modeling/models/receiving_result_repair/
+
+# Walk-forward replay scratch outputs (regenerable)
+reports/walk_forward_cache/
+reports/nfl_walk_forward_*.csv
+reports/nfl_sharp_gap_backtest_*_sides.csv
