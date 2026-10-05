@@ -107,9 +107,39 @@ VOLATILITY_STATS = (
 class FeatureBuildConfig:
     pg_dsn: str = PG_DSN
     min_season: int | None = None
+    # Backfilled seasons were imported after their games, so the strict "row entered our DB before
+    # kickoff" rule drops all of their roster/depth/injury context (2019-2025 trained with it empty while
+    # 2026 live rows carry it). True trusts the report's own week/snapshot time for those seasons only.
+    # Off by default: a training-contract change that goes through challenger evaluation first.
+    archive_context: bool = False
 
 
-def _load_logs(conn, min_season: int | None = None) -> pd.DataFrame:
+# A season is an archive backfill for a game when the game kicked off before that season's first import.
+_ARCHIVE_JOINS = """
+        LEFT JOIN (SELECT season, MIN(created_at_utc) AS first_import FROM raw.nfl_rosters GROUP BY season) r_hist ON r_hist.season = p.season
+        LEFT JOIN (SELECT season, MIN(created_at_utc) AS first_import FROM raw.nfl_depth_charts GROUP BY season) d_hist ON d_hist.season = p.season
+        LEFT JOIN (SELECT season, MIN(created_at_utc) AS first_import FROM raw.nfl_injuries GROUP BY season) i_hist ON i_hist.season = p.season"""
+_STRICT = {
+    "{roster_asof}": "r.updated_at_utc < g.start_ts_utc",
+    "{depth_asof}": "d.updated_at_utc < g.start_ts_utc AND COALESCE(d.snapshot_ts_utc,d.updated_at_utc) < g.start_ts_utc",
+    "{injury_asof}": "i.updated_at_utc < g.start_ts_utc",
+    "{team_injury_asof}": "ti.updated_at_utc < g.start_ts_utc",
+    "{archive_joins}": "",
+}
+_ARCHIVE = {
+    "{roster_asof}": "(r.updated_at_utc < g.start_ts_utc OR g.start_ts_utc < r_hist.first_import)",
+    # Backfill: a dated snapshot taken before kickoff, or an undated week-keyed chart (never an undated
+    # "latest" snapshot, which is end-of-season information).
+    "{depth_asof}": ("((d.updated_at_utc < g.start_ts_utc AND COALESCE(d.snapshot_ts_utc,d.updated_at_utc) < g.start_ts_utc)"
+                     " OR (g.start_ts_utc < d_hist.first_import AND (d.snapshot_ts_utc < g.start_ts_utc"
+                     " OR (d.snapshot_ts_utc IS NULL AND d.week IS NOT NULL))))"),
+    "{injury_asof}": "(i.updated_at_utc < g.start_ts_utc OR g.start_ts_utc < i_hist.first_import)",
+    "{team_injury_asof}": "(ti.updated_at_utc < g.start_ts_utc OR g.start_ts_utc < i_hist.first_import)",
+    "{archive_joins}": _ARCHIVE_JOINS,
+}
+
+
+def _load_logs(conn, min_season: int | None = None, archive_context: bool = False) -> pd.DataFrame:
     sql = """
         SELECT
             p.season, p.week, p.game_id,
@@ -199,14 +229,14 @@ def _load_logs(conn, min_season: int | None = None) -> pd.DataFrame:
                 ELSE NULL
             END AS opponent_implied_points
         FROM raw.nfl_player_gamelogs p
-        LEFT JOIN raw.nfl_games g ON g.game_id = p.game_id
+        LEFT JOIN raw.nfl_games g ON g.game_id = p.game_id{archive_joins}
         LEFT JOIN LATERAL (
             SELECT roster_status, depth_chart_position
             FROM raw.nfl_rosters r
             WHERE r.season = p.season
               AND r.player_id = p.player_id
               AND r.team_abbr = UPPER(p.team_abbr)
-              AND r.updated_at_utc < g.start_ts_utc
+              AND {roster_asof}
               AND COALESCE(r.week, 0) <= COALESCE(p.week, 999)
             ORDER BY
                 COALESCE(r.week, 0) DESC,
@@ -225,8 +255,7 @@ def _load_logs(conn, min_season: int | None = None) -> pd.DataFrame:
                   OR p.week IS NULL
                   OR d.week <= p.week
               )
-              AND d.updated_at_utc < g.start_ts_utc
-              AND COALESCE(d.snapshot_ts_utc,d.updated_at_utc) < g.start_ts_utc
+              AND {depth_asof}
             ORDER BY COALESCE(d.week, 0) DESC, d.snapshot_ts_utc DESC NULLS LAST, d.pos_rank NULLS LAST
             LIMIT 1
         ) d ON TRUE
@@ -236,7 +265,7 @@ def _load_logs(conn, min_season: int | None = None) -> pd.DataFrame:
             WHERE i.season = p.season
               AND i.player_id = p.player_id
               AND i.team_abbr = UPPER(p.team_abbr)
-              AND i.updated_at_utc < g.start_ts_utc
+              AND {injury_asof}
               AND i.week = p.week
             ORDER BY COALESCE(i.week, 0) DESC, i.updated_at_utc DESC
             LIMIT 1
@@ -283,7 +312,7 @@ def _load_logs(conn, min_season: int | None = None) -> pd.DataFrame:
                 FROM raw.nfl_injuries ti
                 WHERE ti.season = p.season
                   AND ti.team_abbr = UPPER(p.team_abbr)
-                  AND ti.updated_at_utc < g.start_ts_utc
+                  AND {team_injury_asof}
                   AND ti.week = p.week
                   AND COALESCE(ti.player_id, '') <> COALESCE(p.player_id, '')
                 ORDER BY COALESCE(player_id, player_name_norm), COALESCE(week, 0) DESC, updated_at_utc DESC
@@ -298,6 +327,8 @@ def _load_logs(conn, min_season: int | None = None) -> pd.DataFrame:
           AND p.player_id IS NOT NULL
           AND UPPER(COALESCE(p.position, '')) IN ('QB', 'RB', 'WR', 'TE')
     """
+    for token, clause in (_ARCHIVE if archive_context else _STRICT).items():
+        sql = sql.replace(token, clause)
     return pd.read_sql(sql, conn, params={"min_season": min_season})
 
 
@@ -1363,7 +1394,7 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_feature_frame(conn, cfg: FeatureBuildConfig) -> pd.DataFrame:
-    df = _load_logs(conn, cfg.min_season)
+    df = _load_logs(conn, cfg.min_season, cfg.archive_context)
     if df.empty:
         return df
     df = _add_player_rolling(df)

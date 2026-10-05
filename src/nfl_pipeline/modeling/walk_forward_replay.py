@@ -36,9 +36,21 @@ CACHE = ROOT / "reports" / "walk_forward_cache"
 log = logging.getLogger(__name__)
 
 
-def load_rows(pg_dsn: str = PG_DSN) -> pd.DataFrame:
+def load_rows(pg_dsn: str = PG_DSN, archive_context: bool = False) -> pd.DataFrame:
     cfg = trainer.TrainConfig()
-    return pd.read_sql(text(trainer.SQL_TRAIN), create_engine(pg_dsn), params={"min_prev_games": cfg.min_prev_games})
+    if not archive_context:  # the production features table, exactly as the trainer reads it
+        return pd.read_sql(text(trainer.SQL_TRAIN), create_engine(pg_dsn), params={"min_prev_games": cfg.min_prev_games})
+    # Challenger: rebuild the same feature frame in memory with backfilled seasons' context restored
+    # (features.FeatureBuildConfig.archive_context); the production table is not touched.
+    import psycopg2
+    from nfl_pipeline import features
+    with psycopg2.connect(pg_dsn) as conn:
+        frame = features.build_feature_frame(conn, features.FeatureBuildConfig(pg_dsn=pg_dsn, archive_context=True))
+    # Same columns as the production table the trainer reads (FEATURE_COLUMNS lists a few names twice).
+    table_cols = pd.read_sql("SELECT * FROM features.nfl_player_game_training_features LIMIT 0", create_engine(pg_dsn)).columns
+    frame = frame.reindex(columns=[c for c in table_cols if c not in ("created_at_utc", "updated_at_utc")])
+    frame = frame[(pd.to_numeric(frame.n_games_prev_3, errors="coerce") >= cfg.min_prev_games) & frame.game_date_et.notna()]
+    return frame.sort_values(["season", "week", "game_id", "player_id"]).reset_index(drop=True)
 
 
 def train_before(df: pd.DataFrame, season: int, week: int, stats: list[str], model_dir: Path) -> dict:
@@ -80,12 +92,14 @@ def main() -> None:
     ap.add_argument("--stats", default="receiving_yards,rushing_yards")
     ap.add_argument("--first-week", type=int, default=3)
     ap.add_argument("--last-week", type=int, default=18)
+    ap.add_argument("--archive-context", action="store_true",
+                    help="challenger features: restore backfilled seasons' injury/depth/roster context")
     args = ap.parse_args()
     logging.basicConfig(level=logging.WARNING)
     stats = [s.strip() for s in args.stats.split(",") if s.strip()]
-    slug = "_".join(sorted(stats))
+    slug = "_".join(sorted(stats)) + ("_archive_context" if args.archive_context else "")
     CACHE.mkdir(parents=True, exist_ok=True)
-    df = load_rows()
+    df = load_rows(archive_context=args.archive_context)
     parts = []
     for week in range(args.first_week, args.last_week + 1):
         cached = CACHE / f"{args.season}_w{week:02d}_{slug}.csv"

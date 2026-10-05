@@ -278,3 +278,25 @@ distribution so its median equals the anchored projection, for yardage stats onl
 counts). The shift is recorded as `probability_trace.median_shift`. Re-scoring Sunday's 414 captured
 forecasts gives a mean P(over) of 0.500 for passing and rushing, with receiving and receptions
 unchanged. Scoring version `d387051d`; earlier versions replay from their archives.
+
+## October 5: Phase A/B, does the stat model add anything to the line?
+
+`modeling/walk_forward_replay.py` trains the production stat trainer on rows before each 2025 week
+(weeks 3-18) and predicts that week with live inference. `modeling/model_vs_line.py` joins those
+projections to the backtest's real FanDuel and Pinnacle quotes (`reports/nfl_model_vs_line_2025*.md`).
+- **Phase A, production features:** on 947 receiving and 226 rushing player-games, the model's
+  disagreement with the line has correlation -0.01 and -0.06 with actual-minus-line. Fitting
+  actual = 1.05 x line - 0.06 x model gives the model no weight. Disagreements of 15 yards or more
+  win only 38% (receiving). Model agreement does not improve sharp gaps at Pinnacle's close: for
+  receiving >= +3%, +2.6% when the model agrees vs +3.6% when it disagrees.
+- **Phase B, context restored:** roster, depth and injury context was empty for 2019-2025 training
+  rows. Those seasons were bulk-imported after their games, and the as-of rule required rows to
+  have entered the DB before kickoff. `FeatureBuildConfig.archive_context` (default off) trusts the
+  report's own week or snapshot for backfilled seasons. 2025 injuries and dated depth snapshots
+  were imported. With the context restored, accuracy is slightly worse on the same 6,047 player-games
+  (MAE +0.10 receiving, +0.33 rushing), and the line correlation is unchanged or worse. Not adopted.
+  Live 2026 rows carry this context, but a feature that was constant in training is never split on,
+  so live values are ignored.
+
+Conclusion: the model stays informational (shown as `model=` on cards) and is not a betting filter.
+Edges come from sharp gaps.

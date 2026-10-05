@@ -33,8 +33,8 @@ def _strip(name: str) -> str:
     return " ".join(w for w in str(name or "").split() if w not in SUFFIXES)
 
 
-def load(season: int, stats: list[str]) -> pd.DataFrame:
-    wf = pd.read_csv(ROOT / "reports" / f"nfl_walk_forward_{season}_{'_'.join(sorted(stats))}.csv")
+def load(season: int, stats: list[str], variant: str = "") -> pd.DataFrame:
+    wf = pd.read_csv(ROOT / "reports" / f"nfl_walk_forward_{season}_{'_'.join(sorted(stats))}{variant}.csv")
     with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
         cur.execute("SELECT DISTINCT player_id, player_name_norm FROM raw.nfl_rosters WHERE season=%s AND player_name_norm IS NOT NULL", (season,))
         names = pd.DataFrame(cur.fetchall(), columns=["player_id", "player_norm"])
@@ -116,11 +116,12 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--season", type=int, default=2025)
     ap.add_argument("--stats", default="receiving_yards,rushing_yards")
+    ap.add_argument("--variant", default="", help="replay variant suffix, e.g. _archive_context")
     args = ap.parse_args()
     stats = [s.strip() for s in args.stats.split(",") if s.strip()]
-    j, sides = load(args.season, stats)
+    j, sides = load(args.season, stats, args.variant)
     a, b = model_vs_line(j), confluence(j)
-    stem = ROOT / "reports" / f"nfl_model_vs_line_{args.season}"
+    stem = ROOT / "reports" / f"nfl_model_vs_line_{args.season}{args.variant}"
     atomic_json(stem.with_suffix(".json"), dict(season=args.season, matched=int(len(j)), total=int(len(sides)), model_vs_line=a, confluence=b))
     stem.with_suffix(".md").write_text(markdown(args.season, len(j), len(sides), a, b), encoding="utf-8")
     print(stem.with_suffix(".md").read_text(encoding="utf-8"))
