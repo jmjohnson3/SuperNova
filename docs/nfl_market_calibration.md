@@ -267,3 +267,14 @@ Week 4 after the fix:
 | Logged | 29 | -0.8% |
 
 Too few to judge. The pass bar and threshold are unchanged.
+
+## October 5: anchored projections are the median
+
+With `projection_trust` below 1, the anchored projection, which is mostly FanDuel's line, was used as
+the distribution's mean. Yardage residuals are right-skewed, so the median sat below the line. Every
+anchored rushing and passing row then read as a small UNDER edge: on 2026-10-04, 64 of 64 rushing and
+24 of 24 passing sides were unders at P(under) of about 53%. `_candidate_from_offer` now shifts the
+distribution so its median equals the anchored projection, for yardage stats only (receptions are
+counts). The shift is recorded as `probability_trace.median_shift`. Re-scoring Sunday's 414 captured
+forecasts gives a mean P(over) of 0.500 for passing and rushing, with receiving and receptions
+unchanged. Scoring version `d387051d`; earlier versions replay from their archives.
