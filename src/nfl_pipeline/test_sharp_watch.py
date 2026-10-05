@@ -111,3 +111,9 @@ def test_budget_follows_games_until_the_plan_resets():
     assert len(due) == 14 and skipped == {}
     sunday_need = 14 * 44 * 4  # 14 games x 44 checks x 4 markets
     assert w.daily_allowance(20000, NOW.date(), 150) < sunday_need <= (20000 - 150) * 14 / 62  # calendar split starves Sunday
+
+
+def test_pings_only_inside_the_backtested_window():
+    assert w.alert_tier(0.05, 60) == "alert" and w.alert_tier(0.05, 120) == "alert"
+    assert w.alert_tier(0.05, 121) == "early"  # still logged, upgraded and pinged if it holds into the window
+    assert w.alert_tier(0.02, 30) == "logged"

@@ -241,3 +241,29 @@ compared at the bet's line rather than requiring the same line. Each market gets
 
 This supports the live watcher and its 3% alert threshold. It does not replace the live CLV proof:
 alerts stay paper until live Sundays match the backtest.
+
+## October 5: first live Sunday, ping window and FanDuel CLV fix
+
+Week 4 Sunday: 7 pings and 29 logged gaps across 12 games, 1,196 credits. Four of the 7 pings fired
+13-22 hours before kickoff, a window the backtest never tested. Pinnacle's props are thin and move
+then. Pings are now limited to the last `PING_WINDOW_MINUTES` (120) before kickoff, which covers the
+backtest's T-90/45/15 checks:
+- A +3% gap seen earlier is stored as `tier='early'`, without a ping.
+- If it is still +3% at the same FanDuel price inside the window, it is upgraded and pinged once.
+- The report re-labels pings sent before this rule existed as early when it reads them; stored rows
+  are not rewritten.
+
+The live report's FanDuel CLV had the same flaw as the first backtest: it looked up the close at the
+alert's line, but FanDuel moves props by line at a fixed price. It now takes FanDuel's last
+two-sided quote before kickoff at any line, moves it to the alert's line (`sharp_math.shift_probability`,
+shared with the backtest), and compares no-vig probabilities with FanDuel's quote at alert time.
+
+Week 4 after the fix:
+
+| Tier | Count | EV at the sharp close |
+|---|---:|---:|
+| In-window alerts | 3 | -6.9% |
+| Early | 4 | +1.2% |
+| Logged | 29 | -0.8% |
+
+Too few to judge. The pass bar and threshold are unchanged.

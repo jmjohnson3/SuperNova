@@ -1,8 +1,8 @@
 """Grade sharp-edge alerts by closing-line value: the go/no-go evidence for betting them.
 
 For each alert whose game has started:
-- FanDuel CLV: FanDuel's last price for the same player/stat/line/side before kickoff vs the alerted
-  price (positive implied-probability move = beat the close).
+- FanDuel CLV: FanDuel's last no-vig price before kickoff, moved to the alert's line, vs its no-vig price
+  when alerted. FanDuel moves props by line at a fixed price, so a same-line lookup misses most moves.
 - EV at the sharp close: the alerted FanDuel price valued at the sharp book's last fair line before
   kickoff (moved to FanDuel's line when close). Positive = the alert really was +EV.
 - Result (win/loss/push) from final stats, reported last; a few weeks of results is mostly noise.
@@ -25,7 +25,7 @@ import psycopg2.extras
 from nfl_pipeline import sharp_math
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
-from nfl_pipeline.sharp_watch import SHARP_BOOKS
+from nfl_pipeline.sharp_watch import PING_WINDOW_MINUTES, SHARP_BOOKS
 
 ROOT = Path(__file__).resolve().parents[3]
 PASS = dict(min_alerts=100, min_weeks=3, min_beat_close=0.55, min_sharp_close_ev=0.01)
@@ -39,25 +39,46 @@ def load(conn) -> pd.DataFrame:
             return pd.DataFrame()
         cur.execute("""
             SELECT a.*, g.season, g.week, g.status, g.home_score, g.away_score,
-              fd.close_price,
+              fd.close_price, fd.fd_close_line, fd.fd_close_over, fd.fd_close_under,
+              ft.fd_then_over, ft.fd_then_under,
               sc.sharp_close_book, sc.sharp_close_line, sc.sharp_close_over, sc.sharp_close_under,
               gl.actual
             FROM bets.nfl_sharp_alerts a
             JOIN raw.nfl_games g ON g.game_id = a.game_id
-            LEFT JOIN LATERAL (
-              SELECT CASE WHEN a.side='over' THEN q.over_price ELSE q.under_price END AS close_price, q.fetched_at_utc
+            LEFT JOIN LATERAL (  -- FanDuel's last two-sided quote before kickoff, any line (latest snapshot, nearest line)
+              SELECT * FROM (
+              SELECT q.line AS fd_close_line, q.over_price AS fd_close_over, q.under_price AS fd_close_under, q.fetched_at_utc
               FROM odds.nfl_player_prop_lines q
               WHERE a.player_name_norm IS NOT NULL AND q.bookmaker_key='fanduel' AND q.player_name_norm=a.player_name_norm
-                AND q.stat=a.stat AND q.line=a.fd_line AND q.fetched_at_utc < a.commence_time_utc
+                AND q.stat=a.stat AND q.fetched_at_utc < a.commence_time_utc
                 AND q.commence_time_utc BETWEEN a.commence_time_utc - interval '30 minutes' AND a.commence_time_utc + interval '30 minutes'
-                AND CASE WHEN a.side='over' THEN q.over_price ELSE q.under_price END IS NOT NULL
+                AND q.over_price IS NOT NULL AND q.under_price IS NOT NULL
               UNION ALL
-              SELECT CASE WHEN a.side='over' THEN q.total_over_price ELSE q.total_under_price END, q.fetched_at_utc
+              SELECT q.total_points, q.total_over_price, q.total_under_price, q.fetched_at_utc
               FROM odds.nfl_game_lines q
-              WHERE a.stat='total' AND q.bookmaker_key='fanduel' AND q.total_points=a.fd_line
-                AND q.home_team_abbr=a.home_team AND q.away_team_abbr=a.away_team AND q.fetched_at_utc < a.commence_time_utc
-                AND CASE WHEN a.side='over' THEN q.total_over_price ELSE q.total_under_price END IS NOT NULL
-              ORDER BY fetched_at_utc DESC LIMIT 1) fd ON TRUE
+              WHERE a.stat='total' AND q.bookmaker_key='fanduel' AND q.home_team_abbr=a.home_team
+                AND q.away_team_abbr=a.away_team AND q.fetched_at_utc < a.commence_time_utc
+                AND q.total_over_price IS NOT NULL AND q.total_under_price IS NOT NULL
+              ) u
+              ORDER BY date_trunc('minute', u.fetched_at_utc) DESC, abs(u.fd_close_line - a.fd_line) LIMIT 1) fd0 ON TRUE
+            LEFT JOIN LATERAL (SELECT fd0.fd_close_line, fd0.fd_close_over, fd0.fd_close_under,
+                CASE WHEN fd0.fd_close_line = a.fd_line
+                  THEN CASE WHEN a.side='over' THEN fd0.fd_close_over ELSE fd0.fd_close_under END END AS close_price) fd ON TRUE
+            LEFT JOIN LATERAL (  -- FanDuel's two-sided quote at the alert's line when the alert was logged
+              SELECT * FROM (
+              SELECT q.over_price AS fd_then_over, q.under_price AS fd_then_under, q.fetched_at_utc
+              FROM odds.nfl_player_prop_lines q
+              WHERE a.player_name_norm IS NOT NULL AND q.bookmaker_key='fanduel' AND q.player_name_norm=a.player_name_norm
+                AND q.stat=a.stat AND q.line=a.fd_line AND q.fetched_at_utc <= a.alerted_at + interval '5 minutes'
+                AND q.commence_time_utc BETWEEN a.commence_time_utc - interval '30 minutes' AND a.commence_time_utc + interval '30 minutes'
+                AND q.over_price IS NOT NULL AND q.under_price IS NOT NULL
+              UNION ALL
+              SELECT q.total_over_price, q.total_under_price, q.fetched_at_utc
+              FROM odds.nfl_game_lines q
+              WHERE a.stat='total' AND q.bookmaker_key='fanduel' AND q.total_points=a.fd_line AND q.home_team_abbr=a.home_team
+                AND q.away_team_abbr=a.away_team AND q.fetched_at_utc <= a.alerted_at + interval '5 minutes'
+                AND q.total_over_price IS NOT NULL AND q.total_under_price IS NOT NULL
+              ) u ORDER BY u.fetched_at_utc DESC LIMIT 1) ft ON TRUE
             LEFT JOIN LATERAL (
               SELECT * FROM (
               SELECT q.bookmaker_key AS sharp_close_book, q.line AS sharp_close_line,
@@ -88,13 +109,31 @@ def load(conn) -> pd.DataFrame:
         return pd.DataFrame([dict(r) for r in cur.fetchall()])
 
 
+def _side(p_over, side):
+    return None if p_over is None else (p_over if side == "over" else 1.0 - p_over)
+
+
+def fd_clv(r) -> float | None:
+    """FanDuel's no-vig probability for the alerted side at the alert's line: close minus then."""
+    if pd.isna(r.fd_close_line) or pd.isna(r.fd_then_over):
+        return None
+    close_over = sharp_math.shift_probability(r.stat, float(r.fd_close_line),
+                                              sharp_math.no_vig_over(r.fd_close_over, r.fd_close_under), float(r.fd_line))
+    then_over = sharp_math.no_vig_over(r.fd_then_over, r.fd_then_under)
+    close, then = _side(close_over, r.side), _side(then_over, r.side)
+    return None if close is None or then is None else close - then
+
+
 def grade(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
     df = df.copy()
-    for col in ("fd_line", "fd_price", "close_price", "sharp_close_line", "home_score", "away_score", "actual"):
+    for col in ("fd_line", "fd_price", "close_price", "sharp_close_line", "home_score", "away_score", "actual",
+                "fd_close_line", "fd_close_over", "fd_close_under", "fd_then_over", "fd_then_under"):
+        if col not in df:
+            df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    df["clv"] = [None if pd.isna(c) else sharp_math.implied(c) - sharp_math.implied(p) for c, p in zip(df.close_price, df.fd_price)]
+    df["clv"] = [fd_clv(r) for r in df.itertuples()]
     ev_close = []
     for r in df.itertuples():
         fair_over = None
@@ -127,7 +166,13 @@ def _stats(df: pd.DataFrame) -> dict:
 
 
 def _tier(df: pd.DataFrame) -> pd.Series:
-    return df["tier"].fillna("alert") if "tier" in df else pd.Series("alert", index=df.index)
+    """Tier as the strategy is now defined: a >= +3% gap seen more than PING_WINDOW_MINUTES before kickoff is
+    'early' (pings sent before the window existed are relabelled here; stored rows are not rewritten)."""
+    tier = df["tier"].fillna("alert") if "tier" in df else pd.Series("alert", index=df.index)
+    if {"commence_time_utc", "alerted_at"} <= set(df.columns):
+        lead = (pd.to_datetime(df.commence_time_utc, utc=True) - pd.to_datetime(df.alerted_at, utc=True)).dt.total_seconds() / 60
+        tier = tier.where(~((tier == "alert") & (lead > PING_WINDOW_MINUTES)), "early")
+    return tier
 
 
 def summarize(df: pd.DataFrame) -> dict:
@@ -138,6 +183,7 @@ def summarize(df: pd.DataFrame) -> dict:
     tier = _tier(df)
     out = _stats(df[tier == "alert"])
     out["logged"] = _stats(df[tier == "logged"])
+    out["early"] = _stats(df[tier == "early"])
     weeks = out.get("weeks", 0)
     checks = dict(enough_alerts=out["alerts"] >= PASS["min_alerts"], enough_weeks=weeks >= PASS["min_weeks"],
                   beats_fd_close=(out.get("beat_fd_close") or 0) >= PASS["min_beat_close"],
@@ -153,18 +199,22 @@ def summarize(df: pd.DataFrame) -> dict:
 def markdown(summary: dict, df: pd.DataFrame) -> str:
     pct = lambda v: "-" if v is None else f"{v:.1%}"
     signed = lambda v: "-" if v is None else f"{v:+.2%}"
-    a, g = summary, summary.get("logged") or {}
+    a, e, g = summary, summary.get("early") or {}, summary.get("logged") or {}
+    row = lambda label, key, fmt, bar: f"| {label} | {fmt(a.get(key))} | {fmt(e.get(key))} | {fmt(g.get(key))} | {bar} |"
     lines = ["# NFL Sharp-Edge Alerts", "", f"Verdict: **{summary['verdict']}**", "",
              f"Alerts graded: {a.get('alerts', 0)} over {a.get('weeks', 0)} week(s) "
-             f"(pass bar: {PASS['min_alerts']} over {PASS['min_weeks']}). Logged gaps graded: {g.get('alerts', 0)}.", "",
-             "| Evidence (most reliable first) | Alerts (>= +3%, pinged) | Logged (+1% to +3%) | Pass bar (alerts) |",
-             "|---|---:|---:|---:|",
-             f"| Mean EV at the sharp close | {signed(a.get('mean_ev_at_sharp_close'))} | {signed(g.get('mean_ev_at_sharp_close'))} | >= {PASS['min_sharp_close_ev']:+.0%} |",
-             f"| Share positive at the sharp close | {pct(a.get('positive_at_sharp_close'))} | {pct(g.get('positive_at_sharp_close'))} | - |",
-             f"| Beat FanDuel's close | {pct(a.get('beat_fd_close'))} | {pct(g.get('beat_fd_close'))} | >= {PASS['min_beat_close']:.0%} |",
-             f"| Mean FanDuel CLV (implied prob) | {signed(a.get('mean_fd_clv'))} | {signed(g.get('mean_fd_clv'))} | > 0 |",
-             f"| EV claimed when seen | {signed(a.get('mean_alert_ev'))} | {signed(g.get('mean_alert_ev'))} | - |",
-             f"| Flat ROI (settled: {a.get('settled', 0)} / {g.get('settled', 0)}) | {signed(a.get('roi'))} | {signed(g.get('roi'))} | noise for weeks |"]
+             f"(pass bar: {PASS['min_alerts']} over {PASS['min_weeks']}). Early gaps graded: {e.get('alerts', 0)}. "
+             f"Logged gaps graded: {g.get('alerts', 0)}.", "",
+             f"| Evidence (most reliable first) | Alerts (>= +3%, last {PING_WINDOW_MINUTES} min, pinged) | Early (>= +3%, earlier) "
+             "| Logged (+1% to +3%) | Pass bar (alerts) |",
+             "|---|---:|---:|---:|---:|",
+             row("Mean EV at the sharp close", "mean_ev_at_sharp_close", signed, f">= {PASS['min_sharp_close_ev']:+.0%}"),
+             row("Share positive at the sharp close", "positive_at_sharp_close", pct, "-"),
+             row("Beat FanDuel's close (no-vig, at the alert's line)", "beat_fd_close", pct, f">= {PASS['min_beat_close']:.0%}"),
+             row("Mean FanDuel CLV (no-vig prob)", "mean_fd_clv", signed, "> 0"),
+             row("EV claimed when seen", "mean_alert_ev", signed, "-"),
+             row("Flat ROI", "roi", signed, "noise for weeks"),
+             row("Settled", "settled", lambda v: "-" if v is None else str(v), "-")]
     if not df.empty:
         tier = _tier(df)
         lines += ["", "| Week | Tier | Count | Beat FD close | Mean EV at sharp close |", "|---|---|---:|---:|---:|"]

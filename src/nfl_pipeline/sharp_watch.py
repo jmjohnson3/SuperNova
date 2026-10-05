@@ -48,6 +48,7 @@ GAME_MARKETS = {"spreads": "spread", "totals": "total"}
 DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
 LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
+PING_WINDOW_MINUTES = 120  # pings only where the 2025 backtest validated gaps (T-90..kickoff); earlier = 'early'
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
 FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window
@@ -213,6 +214,12 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV) -> list[dict]:
     return sorted(edges, key=lambda e: -e["ev"])
 
 
+def alert_tier(ev: float, minutes_to_kickoff: float) -> str:
+    if ev < MIN_EV:
+        return "logged"
+    return "alert" if minutes_to_kickoff <= PING_WINDOW_MINUTES else "early"
+
+
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS bets.nfl_sharp_alerts (
   alert_id BIGSERIAL PRIMARY KEY,
@@ -224,7 +231,8 @@ CREATE TABLE IF NOT EXISTS bets.nfl_sharp_alerts (
   ev NUMERIC NOT NULL, minimum_price INTEGER, line_gap NUMERIC, posted BOOLEAN NOT NULL DEFAULT FALSE,
   UNIQUE (event_id, stat, player_name_norm, fd_line, side, fd_price)
 );
--- 'alert' = pinged in Discord (EV >= MIN_EV); 'logged' = research only (LOG_MIN_EV <= EV < MIN_EV).
+-- 'alert' = pinged in Discord (EV >= MIN_EV within PING_WINDOW_MINUTES of kickoff);
+-- 'early' = EV >= MIN_EV but earlier than that (logged, no ping); 'logged' = LOG_MIN_EV <= EV < MIN_EV.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'alert';
 """
 
@@ -340,7 +348,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             with conn.cursor() as cur:
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
-                    tier = "alert" if edge["ev"] >= MIN_EV else "logged"
+                    tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60)
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
@@ -350,7 +358,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                             tier='alert', sharp_book=EXCLUDED.sharp_book, sharp_line=EXCLUDED.sharp_line,
                             fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev,
                             minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap
-                          WHERE bets.nfl_sharp_alerts.tier='logged' AND EXCLUDED.tier='alert'
+                          WHERE bets.nfl_sharp_alerts.tier IN ('logged', 'early') AND EXCLUDED.tier='alert'
                         RETURNING alert_id, tier""",
                                 (event["id"], game["game_id"], game["start"], game["home"], game["away"], edge["stat"],
                                  edge["player"], edge["player_norm"], edge["side"], edge["line"], edge["price"], edge["link"],

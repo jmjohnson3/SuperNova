@@ -7,12 +7,13 @@ from nfl_pipeline.modeling import sharp_alert_report as r
 def alert(**kw):
     base = dict(season=2026, week=4, stat="receiving_yards", side="over", fd_line=45.5, fd_price=-110, ev=0.05,
                 close_price=-130, sharp_close_book="pinnacle", sharp_close_line=45.5, sharp_close_over=-125,
-                sharp_close_under=105, status="final", home_score=24, away_score=20, actual=60.0)
+                sharp_close_under=105, status="final", home_score=24, away_score=20, actual=60.0,
+                fd_then_over=-110, fd_then_under=-110, fd_close_line=45.5, fd_close_over=-130, fd_close_under=110)
     return dict(base, **kw)
 
 
 def test_grade_clv_sharp_close_and_result():
-    df = r.grade(pd.DataFrame([alert(), alert(side="under", close_price=-105, actual=40.0),
+    df = r.grade(pd.DataFrame([alert(), alert(side="under", actual=40.0),
                                alert(stat="total", fd_line=44.5, actual=None, sharp_close_line=44.5)]))
     over, under, total = df.to_dict("records")
     assert over["clv"] > 0 and under["clv"] < 0  # FD moved to -130 on the over; under got cheaper
@@ -26,7 +27,8 @@ def test_verdict_needs_volume_then_evidence():
     assert small["verdict"] == "keep collecting"
     rows = [alert(week=w) for w in (4, 5, 6) for _ in range(40)]
     assert r.summarize(r.grade(pd.DataFrame(rows)))["verdict"].startswith("PASS")
-    bad = [alert(week=w, close_price=-105, sharp_close_over=105, sharp_close_under=-125) for w in (4, 5, 6) for _ in range(40)]
+    bad = [alert(week=w, fd_close_over=110, fd_close_under=-130, sharp_close_over=105, sharp_close_under=-125)
+           for w in (4, 5, 6) for _ in range(40)]
     assert r.summarize(r.grade(pd.DataFrame(bad)))["verdict"].startswith("FAIL")
 
 
@@ -36,3 +38,18 @@ def test_logged_gaps_are_reported_but_do_not_count_toward_the_pass_bar():
     assert s["alerts"] == 1 and s["logged"]["alerts"] == 120 and s["verdict"] == "keep collecting"
     md = r.markdown(s, r.grade(pd.DataFrame(rows)))
     assert "Logged gaps graded: 120" in md and "| 2026-5 | logged | 40 |" in md
+
+
+def test_fanduel_line_move_counts_as_closing_line_value():
+    # FanDuel keeps -110/-110 and moves the line from 45.5 to 48.5: the over beat the close.
+    moved = alert(fd_close_line=48.5, fd_close_over=-110, fd_close_under=-110)
+    over, under = r.grade(pd.DataFrame([moved, dict(moved, side="under")])).to_dict("records")
+    assert over["clv"] > 0.03 and under["clv"] == pytest.approx(-over["clv"])
+    assert r.grade(pd.DataFrame([alert(fd_then_over=None)])).clv.isna().all()  # no quote at alert time: ungraded
+
+
+def test_pings_before_the_window_are_graded_as_early():
+    from datetime import datetime, timedelta, timezone
+    kick = datetime(2026, 10, 4, 17, tzinfo=timezone.utc)
+    rows = [alert(tier="alert", commence_time_utc=kick, alerted_at=kick - timedelta(minutes=m)) for m in (30, 119, 600)]
+    assert list(r._tier(pd.DataFrame(rows))) == ["alert", "alert", "early"]

@@ -1,0 +1,55 @@
+{
+  "built_at": "2026-10-05T14:07:54.750101+00:00",
+  "pass_bar": {
+    "min_alerts": 100,
+    "min_weeks": 3,
+    "min_beat_close": 0.55,
+    "min_sharp_close_ev": 0.01
+  },
+  "summary": {
+    "alerts": 3,
+    "weeks": 1,
+    "with_fd_close": 3,
+    "beat_fd_close": 0.0,
+    "mean_fd_clv": -0.03053242493060815,
+    "with_sharp_close": 3,
+    "mean_ev_at_sharp_close": -0.0692525018879498,
+    "positive_at_sharp_close": 0.0,
+    "settled": 1,
+    "roi": -1.0,
+    "mean_alert_ev": 0.06152435064046324,
+    "logged": {
+      "alerts": 29,
+      "weeks": 1,
+      "with_fd_close": 29,
+      "beat_fd_close": 0.41379310344827586,
+      "mean_fd_clv": 0.011305804114624845,
+      "with_sharp_close": 26,
+      "mean_ev_at_sharp_close": -0.008152317963488042,
+      "positive_at_sharp_close": 0.5769230769230769,
+      "settled": 27,
+      "roi": -0.08304202976749052,
+      "mean_alert_ev": 0.02011942204602669
+    },
+    "early": {
+      "alerts": 4,
+      "weeks": 1,
+      "with_fd_close": 4,
+      "beat_fd_close": 0.25,
+      "mean_fd_clv": 0.01058537634060841,
+      "with_sharp_close": 4,
+      "mean_ev_at_sharp_close": 0.011904595083289463,
+      "positive_at_sharp_close": 0.75,
+      "settled": 3,
+      "roi": -0.16,
+      "mean_alert_ev": 0.03578830293568913
+    },
+    "checks": {
+      "enough_alerts": false,
+      "enough_weeks": false,
+      "beats_fd_close": false,
+      "positive_at_sharp_close": false
+    },
+    "verdict": "keep collecting"
+  }
+}

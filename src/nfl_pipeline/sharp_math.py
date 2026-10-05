@@ -55,6 +55,25 @@ def over_probability_at(stat: str, sharp_line: float, sharp_over: float, target_
     return float(1.0 - norm.cdf(float(target_line), loc=mean, scale=sigma))
 
 
+# How far a closing line may be moved back to the bet's line when measuring movement (wider than
+# LINE_MODEL max_gap, which bounds pricing a bet off a different sharp line).
+MAX_CLOSE_SHIFT = {"receiving_yards": 10.0, "rushing_yards": 10.0, "passing_yards": 20.0, "receptions": 1.0, "total": 3.0}
+
+
+def shift_probability(stat: str, from_line: float, p_over: float | None, to_line: float) -> float | None:
+    """No-vig P(over from_line) moved to to_line, for measuring line movement (FanDuel moves props by
+    line at a fixed price). None beyond MAX_CLOSE_SHIFT or for exact-line-only stats."""
+    model = LINE_MODEL.get(stat)
+    if model is None or p_over is None or not 0.0 < p_over < 1.0:
+        return None
+    if abs(float(to_line) - float(from_line)) < 1e-9:
+        return float(p_over)
+    if abs(float(to_line) - float(from_line)) > MAX_CLOSE_SHIFT.get(stat, 0.0) or model["max_gap"] == 0.0:
+        return None
+    mean = float(from_line) + model["sigma"] * norm.ppf(p_over)
+    return float(1.0 - norm.cdf(float(to_line), loc=mean, scale=model["sigma"]))
+
+
 def ev(probability: float, price) -> float | None:
     p = implied(price)
     if p is None or probability is None:

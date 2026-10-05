@@ -134,21 +134,8 @@ def fetch_snapshots(client: Client, game: dict, event_id: str, market: str) -> d
     return snaps
 
 
-MAX_CLOSE_SHIFT = {"receiving_yards": 10.0, "rushing_yards": 10.0, "passing_yards": 20.0, "receptions": 1.0, "total": 3.0}
-
-
 def _shift(stat: str, from_line: float, p_over: float | None, to_line: float) -> float | None:
-    """P(over to_line) from a no-vig P(over from_line). FanDuel moves props by line, not price, so the
-    close must be compared at the bet's line. Wider than sharp_math's gap limit (it measures movement)."""
-    model = sharp_math.LINE_MODEL.get(stat)
-    if model is None or p_over is None or not 0.0 < p_over < 1.0:
-        return None
-    if abs(to_line - from_line) < 1e-9:
-        return p_over
-    if abs(to_line - from_line) > MAX_CLOSE_SHIFT.get(stat, 0.0) or model["max_gap"] == 0.0:
-        return None
-    mean = from_line + model["sigma"] * norm.ppf(p_over)
-    return float(1.0 - norm.cdf(to_line, loc=mean, scale=model["sigma"]))
+    return sharp_math.shift_probability(stat, from_line, p_over, to_line)
 
 
 def _player_pairs(snapshot: dict, book: str, stat: str, who: str) -> list[tuple[float, float]]:
