@@ -300,3 +300,11 @@ projections to the backtest's real FanDuel and Pinnacle quotes (`reports/nfl_mod
 
 Conclusion: the model stays informational (shown as `model=` on cards) and is not a betting filter.
 Edges come from sharp gaps.
+
+October 5, operations: the 2025 dated depth-chart backfill (about 554k rows) made live scoring
+time out. `raw.nfl_depth_charts_at()` materialises every observation up to the cutoff, across all
+seasons, so the backfill was removed from both `raw.nfl_depth_charts` and
+`raw.nfl_context_observations`. 2025 injury reports (6k rows) were kept. To rerun the
+archive-context challenger, re-import 2025 depth snapshots only after the `_at()` builders filter by
+season. Pregame step timeouts were also raised: Player Predictions took about 8 minutes against a
+10-minute limit even without the backfill.
