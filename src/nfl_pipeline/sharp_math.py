@@ -18,6 +18,10 @@ LINE_MODEL = {
     "rushing_yards": dict(sigma=22.0, max_gap=3.0),
     "passing_yards": dict(sigma=55.0, max_gap=6.0),
     "receptions": dict(sigma=1.9, max_gap=0.0),   # counts: exact line only
+    "passing_tds": dict(sigma=0.95, max_gap=0.0),
+    "pass_completions": dict(sigma=5.0, max_gap=0.0),
+    "pass_attempts": dict(sigma=6.0, max_gap=0.0),
+    "rush_attempts": dict(sigma=4.0, max_gap=0.0),
     "total": dict(sigma=10.5, max_gap=1.0),
     "spread": dict(sigma=13.5, max_gap=0.0),      # key numbers: exact line only
 }

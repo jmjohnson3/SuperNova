@@ -354,3 +354,34 @@ time, and the edge goes with it. From about three hours the edge holds its full 
 `PING_WINDOW_MINUTES` is therefore 180, not 120 - a free volume gain with no loss of quality, and
 confirmation that week 4's four pings at 13-22 hours out were correctly withheld. Gaps outside the
 window are still stored as `early` and graded, so this can be revisited with live data.
+
+## October 7: spend credits where the edges are
+
+Market discovery on one event (18 credits) showed what the plan tier actually offers and, more
+usefully, which markets a sharp book also prices - without that there is no fair line to compare to.
+
+| Market | Outcomes/game | Sharp coverage | Verdict |
+|---|---:|---|---|
+| `alternate_totals` / `alternate_spreads` | ~510 | Pinnacle | best value: same 1 credit as a 22-outcome market |
+| `player_anytime_td` | 170 | Pinnacle | large, but proportional de-vig overstates longshots - needs a better de-vig first |
+| `player_pass_yds`, `player_pass_tds`, `player_rush_attempts` | ~20 | Pinnacle | cheap to add |
+| `player_reception_yds_alternate` (574), `player_rush_yds_alternate` (275) | large | **none** | cannot be priced; books are loosest here, but no sharp line exists |
+| `player_1st_td`, `player_*_longest`, `player_pass_interceptions` | large | none | same |
+
+Three changes followed:
+
+- **Stop polling before T-4h.** The decay curve already showed those gaps are worth nothing at the
+  close, so the hourly 24h->4h sweep was buying data we would never act on. Cadence is now 10 minutes
+  from T-4h and 5 minutes inside the last hour, where the edge is strongest (+3.3%) and books move
+  lines least (4%). That is 30 polls per game instead of 44: **32% cheaper and better aimed**, which
+  pays for 50% more markets at the same spend.
+- **Fill the free book slots.** <= 10 named books cost one region, and only 6 were used. `betmgm`,
+  `williamhill_us`, `espnbet` and `fanatics` are now scanned as `REFERENCE_BOOKS`: not bettable, but
+  their prices show whether opening an account elsewhere would pay. First look: fanatics 89 priced
+  pairs, betmgm 67, espnbet 46.
+- **Per-market staking allowlist.** `SHARP_WATCH_STAKED_STATS` holds only the markets with a
+  backtest behind them. New markets are scanned, alerted and graded at stake 0 until they earn it.
+
+This immediately exposed a gap: in both week 4 and the first expanded dry run, **every qualifying
+edge was on receptions**, a market we had never backtested - so nothing would have been staked.
+Receptions is therefore the next backtest, not an afterthought.

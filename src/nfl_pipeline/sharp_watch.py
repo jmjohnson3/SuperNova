@@ -46,12 +46,21 @@ BASE = "https://api.the-odds-api.com/v4/sports/americanfootball_nfl"
 _ET = ZoneInfo("America/New_York")
 SHARP_BOOKS = ("pinnacle", "betfair_ex_eu", "matchbook", "smarkets")
 BET_BOOKS = tuple(prefs.SHARP_WATCH_BET_BOOKS)  # books we can bet at, priced against SHARP_BOOKS
-BOOKMAKERS = BET_BOOKS + SHARP_BOOKS  # <= 10 named books = one region per market
+# Books we cannot bet at today. Naming them is free (<= 10 books cost one region per market) and
+# their prices tell us whether opening an account somewhere else would be worth it.
+REFERENCE_BOOKS = ("betmgm", "williamhill_us", "espnbet", "fanatics")
+BOOKMAKERS = tuple(dict.fromkeys(BET_BOOKS + SHARP_BOOKS + REFERENCE_BOOKS))[:10]
 BOOK_LABEL = {"fanduel": "FanDuel", "draftkings": "DraftKings", "betmgm": "BetMGM",
               "williamhill_us": "Caesars", "espnbet": "ESPN BET", "fanatics": "Fanatics"}
 BOOK_DOMAIN = {"fanduel": "fanduel.com", "draftkings": "draftkings.com", "betmgm": "betmgm.com",
                "williamhill_us": "caesars.com", "espnbet": "espnbet.com", "fanatics": "fanatics.com"}
-GAME_MARKETS = {"spreads": "spread", "totals": "total"}
+GAME_MARKETS = {"spreads": "spread", "totals": "total", "alternate_totals": "total",
+                "alternate_spreads": "spread"}
+# Markets the scanner can price but the modeling pipeline has no stat spec for. Kept local so
+# STAT_SPECS, which drives training and scoring, is untouched.
+EXTRA_STAT_BY_MARKET = {"player_pass_completions": "pass_completions",
+                        "player_pass_attempts": "pass_attempts",
+                        "player_rush_attempts": "rush_attempts"}
 DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
 LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
@@ -76,12 +85,18 @@ def markets() -> list[str]:
 
 
 def interval_minutes(minutes_to_kickoff: float) -> int | None:
+    """Poll cadence by time to kickoff, or None when a poll would buy nothing actionable.
+
+    The 2025 decay curve (docs/nfl_market_calibration.md) puts a >= +3% gap seen 12h out at -0.05%
+    EV by the close and 3h out at +2.70%, so polling before T-4h spent credits on gaps we would
+    never bet. The last hour is both the strongest window (+3.3%) and the one books move least.
+    """
     if minutes_to_kickoff <= 0:
         return None
+    if minutes_to_kickoff <= 60:
+        return 5
     if minutes_to_kickoff <= 240:
         return 10
-    if minutes_to_kickoff <= 1440:
-        return 60
     return None
 
 
@@ -109,10 +124,15 @@ def game_share(today: date, games_by_day: dict[date, int], reset_day: int) -> fl
 
 
 def _final_window_polls(minutes_to_kickoff: float) -> int:
-    """10-minute polls a game still needs inside its final window (0 once it has started)."""
-    if minutes_to_kickoff <= 0:
-        return 0
-    return math.ceil(min(minutes_to_kickoff, FINAL_WINDOW_MINUTES) / 10)
+    """Polls a game still needs inside its final window, at the cadence it will actually use."""
+    count, remaining = 0, min(float(minutes_to_kickoff), FINAL_WINDOW_MINUTES)
+    while remaining > 0:
+        every = interval_minutes(remaining)
+        if every is None:
+            break
+        count += 1
+        remaining -= every
+    return count
 
 
 def plan_polls(games: list[dict], state: dict, now: datetime, remaining: int, cost: int,
@@ -173,7 +193,7 @@ def _pairs(book: dict) -> dict[tuple, dict]:
                     rec = out.setdefault((stat, "game", float(line)), {})
                     rec[side] = o.get("price"); rec[f"{side}_link"] = o.get("link")
             continue
-        stat = STAT_BY_MARKET.get(key)
+        stat = STAT_BY_MARKET.get(key) or EXTRA_STAT_BY_MARKET.get(key)
         if not stat:
             continue
         for o in market.get("outcomes", []):
@@ -258,14 +278,16 @@ def risk_budget(cur, now: datetime) -> dict[str, Any]:
                 paused=profit <= prefs.SHARP_WATCH_LOSS_PAUSE, realized_profit=profit)
 
 
-def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any]) -> float:
-    """Flat stake for a pinged alert, or 0.0 when a cap or the loss pause binds.
+def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any], stat: str | None = None) -> float:
+    """Flat stake for a pinged alert, or 0.0 when a cap, the loss pause, or an unproven market binds.
 
-    A capped alert is still stored and graded; it just carries no money, so evidence keeps accruing.
+    A zero-stake alert is still stored and graded; it just carries no money, so evidence keeps accruing.
     """
     stake = float(prefs.SHARP_WATCH_STAKE)
     if tier != "alert" or stake <= 0 or budget["paused"]:
         return 0.0
+    if stat is not None and stat not in prefs.SHARP_WATCH_STAKED_STATS:
+        return 0.0  # scanned and graded, but not backtested yet
     committed = budget["staked"]
     if budget["today"] + committed + stake > prefs.SHARP_WATCH_MAX_STAKE_PER_DAY:
         return 0.0
@@ -445,7 +467,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
                     tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60)
-                    stake = stake_for(cur, tier, now, budget) if tier == "alert" else 0.0
+                    stake = stake_for(cur, tier, now, budget, edge["stat"]) if tier == "alert" else 0.0
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,

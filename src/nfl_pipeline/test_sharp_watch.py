@@ -49,18 +49,23 @@ def game(gid, minutes):
 
 
 def test_poll_schedule_budget_and_floor():
-    games = [game("soon", 60), game("today", 600), game("far", 3000)]
+    # Only the last 4 hours are polled at all: a gap seen earlier decays to nothing by the close.
+    games = [game("last_hour", 30), game("window", 200), game("early", 600), game("far", 3000)]
     due, skipped = w.plan_polls(games, {}, NOW, remaining=5000, cost=1, floor=150)
-    assert [g["game_id"] for g in due] == ["soon", "today"]  # >24h out is not polled
-    recent = {"last_poll": {"soon": (NOW - timedelta(minutes=5)).isoformat(), "today": (NOW - timedelta(minutes=30)).isoformat()}}
+    assert [g["game_id"] for g in due] == ["last_hour", "window"]
+    recent = {"last_poll": {"last_hour": (NOW - timedelta(minutes=3)).isoformat(),
+                            "window": (NOW - timedelta(minutes=5)).isoformat()}}
     due, _ = w.plan_polls(games, recent, NOW, remaining=5000, cost=1, floor=150)
-    assert due == []  # soon polled 5 min ago (10-min cadence); today 30 min ago (hourly)
+    assert due == []  # 5-minute cadence inside the last hour, 10-minute from T-4h
+    due, _ = w.plan_polls(games, {"last_poll": {"last_hour": (NOW - timedelta(minutes=6)).isoformat()}},
+                          NOW, remaining=5000, cost=1, floor=150)
+    assert [g["game_id"] for g in due] == ["last_hour", "window"]  # 6 min > the 5-minute cadence
     due, skipped = w.plan_polls(games, {}, NOW, remaining=150, cost=1, floor=150)
-    assert due == [] and skipped == {"soon": "credit_floor", "today": "credit_floor"}
+    assert due == [] and skipped == {"last_hour": "credit_floor", "window": "credit_floor"}
     tight = w.daily_allowance(200, NOW.date(), 150)  # 50 spare credits over the rest of October
     assert tight == pytest.approx(50 / 28)
     due, skipped = w.plan_polls(games, {}, NOW, remaining=200, cost=1, floor=150)
-    assert len(due) == 1 and skipped == {"today": "daily_allowance"}  # soonest game gets the budget
+    assert len(due) == 1 and skipped == {"window": "daily_allowance"}  # soonest game gets the budget
 
 
 def test_tight_budget_is_saved_for_the_final_window():
