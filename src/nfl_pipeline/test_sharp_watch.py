@@ -114,8 +114,8 @@ def test_budget_follows_games_until_the_plan_resets():
 
 
 def test_pings_only_inside_the_backtested_window():
-    assert w.alert_tier(0.05, 60) == "alert" and w.alert_tier(0.05, 120) == "alert"
-    assert w.alert_tier(0.05, 121) == "early"  # still logged, upgraded and pinged if it holds into the window
+    assert w.alert_tier(0.05, 60) == "alert" and w.alert_tier(0.05, 180) == "alert"
+    assert w.alert_tier(0.05, 181) == "early"  # still logged, upgraded and pinged if it holds into the window
     assert w.alert_tier(0.02, 30) == "logged"
 
 

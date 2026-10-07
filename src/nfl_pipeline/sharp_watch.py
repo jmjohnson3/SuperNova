@@ -55,7 +55,10 @@ GAME_MARKETS = {"spreads": "spread", "totals": "total"}
 DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
 LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
-PING_WINDOW_MINUTES = 120  # pings only where the 2025 backtest validated gaps (T-90..kickoff); earlier = 'early'
+# Pings only where a gap still holds its edge at the sharp close. 2025 backtest, >= +3% receiving
+# gaps, EV measured at Pinnacle's close: T-720 -0.05%, T-360 +1.74%, T-180 +2.70%, T-90 +2.70%,
+# T-15 +3.32%. Edges decay to nothing by ~12h out, so 3 hours is the honest boundary.
+PING_WINDOW_MINUTES = 180
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
 FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window

@@ -335,3 +335,22 @@ model. Volume is the binding constraint, so the scanner now:
 Schema: `bets.nfl_sharp_alerts` gains `book`, `stake`, `placed_at`. The unique key becomes
 `(event_id, book, stat, COALESCE(player_name_norm,''), fd_line, side, fd_price)` - the old one
 omitted the book and used a nullable player name, which let every poll re-insert game totals.
+
+## October 6: how fast a sharp gap decays (the ping window, settled)
+
+`sharp_gap_backtest --snapshots 720,360,180` on 60 of the same 2025 games (2,400 credits). For
+receiving-yards gaps of >= +3%, valued at Pinnacle's close:
+
+| Seen at | Sides >= +3% | EV at the sharp close | Still positive | Book's own line moved by close |
+|---|---:|---:|---:|---:|
+| T-720 (12h) | 1.5% | **-0.05%** | 46% | 48% |
+| T-360 (6h) | 1.9% | +1.74% | 61% | 44% |
+| T-180 (3h) | 1.5% | +2.70% | 81% | 35% |
+| T-90 | 1.7% | +2.70% | 75% | 24% |
+| T-15 | 1.3% | +3.32% | 92% | 4% |
+
+A gap seen half a day out is worth nothing by kickoff: the book moves that line roughly half the
+time, and the edge goes with it. From about three hours the edge holds its full value.
+`PING_WINDOW_MINUTES` is therefore 180, not 120 - a free volume gain with no loss of quality, and
+confirmation that week 4's four pings at 13-22 hours out were correctly withheld. Gaps outside the
+window are still stored as `early` and graded, so this can be revisited with live data.

@@ -42,7 +42,7 @@ ROOT = Path(__file__).resolve().parents[3]
 BASE = "https://api.the-odds-api.com/v4/historical/sports/americanfootball_nfl"
 ENDPOINT = "nfl_player_props_history"
 PROVIDER = "oddsapi_history"
-SNAPSHOTS = (90, 45, 15)   # minutes before kickoff when a gap could be acted on
+SNAPSHOTS = (90, 45, 15)   # minutes before kickoff when a gap could be acted on (--snapshots overrides)
 CLOSE_MINUTES = 2          # "close": last snapshot before kickoff
 THRESHOLDS = (0.01, 0.03)
 
@@ -254,8 +254,13 @@ def main() -> None:
     ap.add_argument("--markets", default="player_reception_yds")
     ap.add_argument("--min-remaining", type=int, default=15000, help="never let the balance fall below this")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--snapshots", default=None,
+                    help="comma-separated minutes before kickoff, e.g. 720,360,180 to test the early window")
     args = ap.parse_args()
     markets = [m.strip() for m in args.markets.split(",") if m.strip()]
+    global SNAPSHOTS
+    if args.snapshots:
+        SNAPSHOTS = tuple(int(x) for x in args.snapshots.split(",") if x.strip())
     key = OddsCrawlerConfig().oddsapi_key
     conn = psycopg2.connect(PG_DSN)
     client = Client(conn, key, args.min_remaining)
@@ -278,7 +283,8 @@ def main() -> None:
     meta = dict(season=args.season, games=int(df.game_id.nunique()) if not df.empty else 0, sampled=len(games),
                 markets=markets, credits_spent=client.spent, cached=client.cached, credits_remaining=client.remaining,
                 stopped=stopped, failed=failed, built_at=datetime.now(timezone.utc).isoformat())
-    stem = ROOT / "reports" / f"nfl_sharp_gap_backtest_{args.season}_{'_'.join(sorted(markets))}"  # one report per market set
+    label = f"{args.season}_{'_'.join(sorted(markets))}" + (f"_T{'_'.join(map(str, SNAPSHOTS))}" if args.snapshots else "")
+    stem = ROOT / "reports" / f"nfl_sharp_gap_backtest_{label}"  # one report per market set
     atomic_json(stem.with_suffix(".json"), dict(meta=meta, summary=rows))
     stem.with_suffix(".md").write_text(markdown(meta, rows), encoding="utf-8")
     df.to_csv(f"{stem}_sides.csv", index=False)

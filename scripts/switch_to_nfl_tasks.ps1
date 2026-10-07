@@ -36,7 +36,8 @@ $nflTasks = @(
     @{ Name = "NFL-Daily"; File = "NFL-Daily.xml" },
     @{ Name = "NFL-PrimeTime-Refresh"; File = "NFL-PrimeTime-Refresh.xml" },
     @{ Name = "NFL-Close"; File = "NFL-Close.xml" },
-    @{ Name = "NFL-Training"; File = "NFL-Training.xml" }
+    @{ Name = "NFL-Training"; File = "NFL-Training.xml" },
+    @{ Name = "NFL-Sharp-Watch"; File = "NFL-Sharp-Watch.xml" }
 )
 
 $failures = [System.Collections.Generic.List[string]]::new()
