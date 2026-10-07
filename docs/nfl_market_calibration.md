@@ -489,3 +489,41 @@ rows picked a different depth-chart entry: those players sit on several position
 equal `pos_rank`, and the query's `ORDER BY week DESC, snapshot_ts_utc DESC, pos_rank` cannot break
 that tie, so the winner depended on physical row order. That ambiguity predates this change and is
 left alone rather than altering a frozen scoring path; it is recorded here as a known fragility.
+
+## October 7: projection accuracy, asked and answered four ways
+
+"Can we improve the projections?" was tested to exhaustion on the 2025 walk-forward replay against
+real posted lines. All four tests agree, and no further model work is planned.
+
+1. **Globally** - the model's disagreement with the line correlates -0.01 (receiving, n=947) and
+   -0.06 (rushing, n=226) with the outcome.
+2. **By subgroup** - 17 cuts by position, experience, role stability and disagreement size. The best
+   was RB receiving at 57.3% (z=2.17), which is what one expects as the best of 17 by chance. It is
+   also the group that looked promising in Phase A at correlation +0.26 on 57 forecasts; with 218 it
+   fell to +0.089. Regression toward zero as the sample grows is the signature of noise.
+3. **Optimal blend** - fitting the weight on the model directly to minimise MAE gives **0.05 for
+   receiving and 0.00 for rushing**, independently confirming the installed market calibration that
+   was fitted on three weeks of 2026 data. The line beats the model outright by 0.63 and 1.07 yards.
+4. **Residual-from-line** - the one angle never tried: give a model the line *as an input* and train
+   it to predict the line's error, scored out-of-sample by week. Receiving MAE 20.20 -> 20.90,
+   correlation -0.055, side-hit 45.9%. Rushing 20.64 -> 23.26. Actively worse.
+
+The model does beat its own naive baseline (20.83 vs 22.22 receiving), so it is not useless - it is
+simply behind a line that already contains injury news, weather and sharp money.
+
+### The accuracy that does move money
+Not the projection: the `LINE_MODEL` sigma that converts a sharp book's nearby line onto ours. Those
+were hand-set. Fitted against 2025 outcomes at real lines:
+
+| Stat | Hand-set | Measured (IQR-based) | n |
+|---|---:|---:|---:|
+| Receiving yards | 26.0 | 25.9 | 1,047 |
+| Rushing yards | **22.0** | **25.9** | 296 |
+| Receptions | 1.9 | 3.7 | 60 (unused: exact-line only) |
+
+Receiving was right. Rushing was 15% too narrow, so every nearby-line rushing conversion overstated
+the edge - by up to 0.8 points of probability at the 3-yard limit, always in the direction of making
+a gap look better than it was. Corrected to 26.0. Re-grading from cache moves the rushing T-90 bucket
+from +3.47% to +2.71% and leaves T-45/T-15 unchanged; the market still qualifies on its own evidence.
+An IQR-based spread is used rather than a standard deviation because rushing's tails (sd 30.3) would
+overstate the width near the median, which is the only region a conversion crosses.

@@ -14,8 +14,11 @@ from scipy.stats import norm
 
 # Typical spread of the outcome around a fair line, and the largest line gap we will convert across.
 LINE_MODEL = {
-    "receiving_yards": dict(sigma=26.0, max_gap=3.0),
-    "rushing_yards": dict(sigma=22.0, max_gap=3.0),
+    # sigma fitted from 2025 outcomes against real posted lines, as an IQR-based spread rather than a
+    # standard deviation: rushing has heavy tails (sd 30.3 vs IQR-implied 25.9) that would overstate
+    # the width near the median, which is the only region a nearby-line conversion crosses.
+    "receiving_yards": dict(sigma=26.0, max_gap=3.0),   # measured 25.9 on 1,047 player-games
+    "rushing_yards": dict(sigma=26.0, max_gap=3.0),     # measured 25.9 on 296; was 22.0, 15% too narrow
     "passing_yards": dict(sigma=55.0, max_gap=6.0),
     "receptions": dict(sigma=1.9, max_gap=0.0),   # counts: exact line only
     "passing_tds": dict(sigma=0.95, max_gap=0.0),
