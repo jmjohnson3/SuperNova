@@ -162,7 +162,16 @@ def _stats(df: pd.DataFrame) -> dict:
                 mean_ev_at_sharp_close=float(evc.mean()) if len(evc) else None,
                 positive_at_sharp_close=float((evc > 0).mean()) if len(evc) else None,
                 settled=int(df.result.notna().sum()), roi=float(pd.to_numeric(df.units, errors="coerce").dropna().mean()) if df.result.notna().any() else None,
-                mean_alert_ev=float(pd.to_numeric(df.ev, errors="coerce").mean()))
+                mean_alert_ev=float(pd.to_numeric(df.ev, errors="coerce").mean()),
+                staked=float(_stake(df).sum()),
+                # Dollars won or lost on settled rows. sharp_watch reads this for its sticky loss pause.
+                realized_profit=float((pd.to_numeric(df.units, errors="coerce") * _stake(df)).dropna().sum()))
+
+
+def _stake(df: pd.DataFrame) -> pd.Series:
+    if "stake" not in df:
+        return pd.Series(0.0, index=df.index)
+    return pd.to_numeric(df["stake"], errors="coerce").fillna(0.0)
 
 
 def _tier(df: pd.DataFrame) -> pd.Series:
@@ -184,12 +193,17 @@ def summarize(df: pd.DataFrame) -> dict:
     out = _stats(df[tier == "alert"])
     out["logged"] = _stats(df[tier == "logged"])
     out["early"] = _stats(df[tier == "early"])
+    # Bets actually placed, confirmed by hand with sharp_bets --confirm. This is the real money record.
+    placed = df[df.placed_at.notna()] if "placed_at" in df else df.iloc[:0]
+    out["placed"] = _stats(placed)
+    books = df["book"].fillna("fanduel") if "book" in df else pd.Series("fanduel", index=df.index)
+    out["by_book"] = {str(book): _stats(g[_tier(g) == "alert"]) for book, g in df.groupby(books)}
     weeks = out.get("weeks", 0)
     checks = dict(enough_alerts=out["alerts"] >= PASS["min_alerts"], enough_weeks=weeks >= PASS["min_weeks"],
                   beats_fd_close=(out.get("beat_fd_close") or 0) >= PASS["min_beat_close"],
                   positive_at_sharp_close=(out.get("mean_ev_at_sharp_close") or -1) >= PASS["min_sharp_close_ev"])
     out["checks"] = checks
-    out["verdict"] = ("PASS: enable SHARP_EDGE_BETS_ENABLED with fixed small stakes" if all(checks.values())
+    out["verdict"] = ("PASS: the alerted prices hold up; raising SHARP_WATCH_STAKE is justified" if all(checks.values())
                       else "no graded alerts yet" if not out["alerts"]
                       else "keep collecting" if not (checks["enough_alerts"] and checks["enough_weeks"])
                       else "FAIL: the alerted prices do not hold up at the close; do not bet them")
@@ -215,6 +229,16 @@ def markdown(summary: dict, df: pd.DataFrame) -> str:
              row("EV claimed when seen", "mean_alert_ev", signed, "-"),
              row("Flat ROI", "roi", signed, "noise for weeks"),
              row("Settled", "settled", lambda v: "-" if v is None else str(v), "-")]
+    placed = summary.get("placed") or {}
+    if placed.get("alerts"):
+        lines += ["", f"**Placed bets: {placed['alerts']} for ${placed.get('staked', 0):.2f} staked; "
+                      f"realized ${placed.get('realized_profit', 0):+.2f} on {placed.get('settled', 0)} settled "
+                      f"(EV at sharp close {signed(placed.get('mean_ev_at_sharp_close'))}).**"]
+    by_book = summary.get("by_book") or {}
+    if len(by_book) > 1:
+        lines += ["", "| Book | Alerts | EV at sharp close | Beat close |", "|---|---:|---:|---:|"]
+        for book, st in sorted(by_book.items()):
+            lines.append(f"| {book} | {st.get('alerts', 0)} | {signed(st.get('mean_ev_at_sharp_close'))} | {pct(st.get('beat_fd_close'))} |")
     if not df.empty:
         tier = _tier(df)
         lines += ["", "| Week | Tier | Count | Beat FD close | Mean EV at sharp close |", "|---|---|---:|---:|---:|"]

@@ -124,8 +124,8 @@ def test_unchanged_settlement_inputs_skip_the_ten_minute_sweep(monkeypatch, isol
     assert first['status']=='ok' and 'nfl_pipeline.import_nflverse' in calls  # first run: no import recorded yet
     calls.clear()
     second = runner.run_for_date(date(2026,9,21))
-    # Only the sharp watcher (self-throttled, runs every invocation) executes on a skipped sweep.
-    assert second['close_window']['mode']=='settlement_skipped_no_new_inputs' and calls==['nfl_pipeline.sharp_watch']
+    # Nothing runs on a skipped sweep; the sharp watcher has its own task and its own mutex.
+    assert second['close_window']['mode']=='settlement_skipped_no_new_inputs' and calls==[]
     isolated_settlement['value'] = dict(final_games='2')  # e.g. a new final result or a user cash confirmation
     third = runner.run_for_date(date(2026,9,21))
     assert 'nfl_pipeline.grade_predictions' in calls
@@ -150,6 +150,48 @@ def test_pending_results_force_import_and_failed_runs_are_not_marked_complete(mo
 def test_close_before_lock_stays_invalid():
     row=close_record(fresh_book_rows=0,fresh_market_rows=0)
     row['fetched_at_utc']=row['created_at_utc']
+    assert clv.classify_prop_close(row)['status'] == 'stale_close_before_lock'
+
+
+def cross_provider_close(**changes):
+    row = close_record(lock_provider='oddsapi_watch', close_provider='sportsgameodds',
+        lock_event_id='provider-a', close_event_id='provider-b',
+        game_home_team='NO', game_away_team='ATL',
+        lock_home_team='New Orleans Saints', lock_away_team='Atlanta Falcons',
+        close_home_team='New Orleans Saints', close_away_team='Atlanta Falcons')
+    row['fetched_at_utc'] = row['start_ts_utc'] - timedelta(minutes=10)
+    row['lock_commence_time_utc'] = row['start_ts_utc'] + timedelta(minutes=3)
+    row.update(changes)
+    return row
+
+
+def test_exact_same_book_close_can_cross_provider_event_ids():
+    quality = clv.classify_prop_close(cross_provider_close())
+    assert quality['valid'] and quality['available'] is True
+    assert quality['match_method'] == 'verified_same_book_matchup_cross_provider'
+
+
+@pytest.mark.parametrize('change', [
+    {'close_home_team': 'DAL'}, {'lock_away_team': 'DAL'}, {'game_home_team': None},
+    {'lock_commence_time_utc': None}, {'commence_time_utc': None},
+    {'commence_time_utc': datetime(2026, 9, 21, 20, 6, tzinfo=timezone.utc)},
+    {'lock_commence_time_utc': datetime(2026, 9, 21, 20, 6, tzinfo=timezone.utc)},
+])
+def test_cross_provider_close_rejects_ambiguous_game_or_kickoff(change):
+    quality = clv.classify_prop_close(cross_provider_close(**change))
+    assert not quality['valid'] and quality['available'] is None
+    assert quality['status'] == 'cross_provider_game_identity_unverified'
+
+
+def test_cross_provider_close_never_substitutes_an_alternate_line():
+    quality = clv.classify_prop_close(cross_provider_close(line=14.5))
+    assert not quality['valid'] and quality['status'] == 'exact_line_mismatch'
+
+
+def test_cross_provider_identity_does_not_relax_close_timing():
+    row = cross_provider_close()
+    row['fetched_at_utc'] = row['created_at_utc']
+    row.update(fresh_book_rows=0, fresh_market_rows=0)
     assert clv.classify_prop_close(row)['status'] == 'stale_close_before_lock'
 
 

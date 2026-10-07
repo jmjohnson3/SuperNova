@@ -308,3 +308,30 @@ seasons, so the backfill was removed from both `raw.nfl_depth_charts` and
 archive-context challenger, re-import 2025 depth snapshots only after the `_at()` builders filter by
 season. Pregame step timeouts were also raised: Player Predictions took about 8 minutes against a
 10-minute limit even without the backfill.
+
+## October 6: multi-book scanning and real (small) stakes
+
+The 2025 backtest and the Phase A/B replay together say the edge is a price gap between books, not a
+model. Volume is the binding constraint, so the scanner now:
+
+- **Scans every bettable book, not just FanDuel.** `betting_preferences.SHARP_WATCH_BET_BOOKS`
+  (`fanduel`, `draftkings`); `find_edges` loops over them and tags each edge with its `book`. The
+  Odds API charges per market per region and <= 10 named bookmakers cost one region, so this adds
+  **no credits**. First dry run (TB @ DAL, 4 credits): 62 FanDuel sides and 60 DraftKings sides
+  priced, and the best edge on the board (+6.8%) was a DraftKings price FanDuel never offered.
+- **Carries a stake.** `SHARP_WATCH_STAKE` ($5 flat) on pinged alerts only, capped at
+  `MAX_STAKE_PER_DAY` ($50) and `MAX_STAKE_PER_WEEK` ($150), with a sticky pause at
+  `SHARP_WATCH_LOSS_PAUSE` (-$200) read from the report's realized profit. A capped alert is still
+  stored and graded at stake 0, so evidence keeps accruing while risk does not.
+  `SHARP_EDGE_BETS_ENABLED` is **unchanged (False)**: it gates the model-based forecast path, whose
+  edge this document already disproves.
+- **Records what was actually bet.** `sharp_bets.py --confirm <id>` sets `placed_at`; nothing is ever
+  placed automatically, and a bet cannot be confirmed after kickoff. The alert report splits every
+  table by placed-vs-all and by book.
+- **Runs on its own schedule.** `scripts/tasks/NFL-Sharp-Watch.xml` every 10 minutes on the
+  `SuperNovaBets_NFL_SharpWatch` mutex, so a 20-minute Player Predictions step can never delay an
+  alert. It is no longer a step inside `run_close_and_grade`.
+
+Schema: `bets.nfl_sharp_alerts` gains `book`, `stake`, `placed_at`. The unique key becomes
+`(event_id, book, stat, COALESCE(player_name_norm,''), fd_line, side, fd_price)` - the old one
+omitted the book and used a nullable player name, which let every poll re-insert game totals.

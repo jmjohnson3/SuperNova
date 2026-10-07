@@ -12,8 +12,22 @@ BET_PROP_STATS = frozenset({'receiving_yards'})
 BET_GAME_MARKETS = frozenset()
 # FanDuel offers priced off a sharp book (Pinnacle/exchange) stay paper research until the sharp-edge
 # strategy shows positive CLV on the scorecard; flip to True to allow $1 micro locks.
+# This gates the *forecast* path in predict_player_props, whose model edge the 2025 walk-forward
+# replay disproved (docs/nfl_market_calibration.md). It stays off. The sharp_watch scanner below is
+# a separate strategy with its own evidence and its own stake.
 SHARP_EDGE_BETS_ENABLED = False
 SHARP_EDGE_MIN_EV = 0.03
+
+# --- sharp_watch scanner (live book-vs-sharp price gaps) -------------------------------------
+# Books we can actually bet at. <= 10 named bookmakers cost one region per market at The Odds API,
+# so adding a book here costs no extra credits.
+SHARP_WATCH_BET_BOOKS = ('fanduel', 'draftkings')
+# Flat stake per pinged alert. 0.0 keeps every alert research-only.
+SHARP_WATCH_STAKE = 5.0
+SHARP_WATCH_MAX_STAKE_PER_DAY = 50.0
+SHARP_WATCH_MAX_STAKE_PER_WEEK = 150.0
+# Sticky: once realized profit on placed bets reaches this, staking stops until it is raised by hand.
+SHARP_WATCH_LOSS_PAUSE = -200.0
 
 
 def execution_link(link):

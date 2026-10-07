@@ -117,3 +117,42 @@ def test_pings_only_inside_the_backtested_window():
     assert w.alert_tier(0.05, 60) == "alert" and w.alert_tier(0.05, 120) == "alert"
     assert w.alert_tier(0.05, 121) == "early"  # still logged, upgraded and pinged if it holds into the window
     assert w.alert_tier(0.02, 30) == "logged"
+
+
+def test_every_bettable_book_is_priced_against_the_sharp_line():
+    # Pinnacle fair over ~58%. DraftKings is generous on the over, FanDuel on the under.
+    payload = {"bookmakers": [book("fanduel", pair("DK Metcalf", 45.5, -200, +170)),
+                              book("draftkings", pair("DK Metcalf", 45.5, +120, -140)),
+                              book("pinnacle", pair("DK Metcalf", 45.5, -140, +120))]}
+    edges = w.find_edges(payload)
+    assert {(e["book"], e["side"]) for e in edges} == {("draftkings", "over"), ("fanduel", "under")}
+    assert edges[0]["ev"] >= edges[-1]["ev"]  # still ranked by EV across books
+    # A book we cannot bet at is never alerted on, even when it is the most generous price.
+    assert w.find_edges(payload, bet_books=("fanduel",)) == [e for e in edges if e["book"] == "fanduel"]
+
+
+def test_other_books_keep_only_their_own_verified_links():
+    game = dict(start=NOW + timedelta(minutes=30), home="CLE", away="PIT")
+    edge = dict(book="draftkings", stat="receiving_yards", player="X", player_norm="x", side="over",
+                line=45.5, price=120, sharp_book="pinnacle", sharp_line=45.5, line_gap=0.0,
+                fair_probability=0.58, ev=0.05, minimum_price=110,
+                link="https://sportsbook.draftkings.com/event/123")
+    assert w.book_link(edge, game) == ("https://sportsbook.draftkings.com/event/123", False)
+    assert w.book_link(dict(edge, link="https://evil.example.com/x"), game) == (None, False)
+    assert w.book_link(dict(edge, link="http://sportsbook.draftkings.com/x"), game) == (None, False)
+    text = w.format_alert(edge, game, stake=5.0)
+    assert "bet $5 at DraftKings" in text and "DraftKings +120" in text and "manual selection" in text
+
+
+def test_stake_respects_caps_and_the_loss_pause(monkeypatch):
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_STAKE", 5.0)
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_MAX_STAKE_PER_DAY", 10.0)
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_MAX_STAKE_PER_WEEK", 100.0)
+    budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
+    assert w.stake_for(None, "alert", NOW, budget) == 5.0
+    assert w.stake_for(None, "logged", NOW, budget) == 0.0  # only pinged alerts carry money
+    assert w.stake_for(None, "early", NOW, budget) == 0.0
+    budget["staked"] = 10.0  # daily cap reached within this run
+    assert w.stake_for(None, "alert", NOW, budget) == 0.0
+    assert w.stake_for(None, "alert", NOW, dict(budget, staked=0.0, week=100.0)) == 0.0  # weekly cap
+    assert w.stake_for(None, "alert", NOW, dict(budget, staked=0.0, paused=True)) == 0.0  # sticky pause

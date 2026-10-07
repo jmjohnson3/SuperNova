@@ -317,10 +317,8 @@ def run_for_date(
     ]
     results: list[dict[str, Any]] = []
     status = "ok"
-    # Every 10-minute run, in every mode: the watcher decides itself whether a poll is due and affordable.
-    watch = Step("NFL Sharp Watch", "nfl_pipeline.sharp_watch", critical=False, timeout_s=240)
-    rc, stdout, stderr = _run(watch)
-    results.append(dict(label=watch.label, returncode=rc, stdout_tail=stdout.strip()[-1000:], stderr_tail=stderr.strip()[-1000:]))
+    # The sharp watcher runs on its own NFL-Sharp-Watch task and its own mutex, so a long model step
+    # here can never delay an alert. It is deliberately not a step in this runner.
     has_close_work = _has_close_work(et_date)
     locked_prop_count = _locked_prop_count(et_date)
     active_games = _active_close_games(

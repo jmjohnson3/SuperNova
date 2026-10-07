@@ -25,12 +25,14 @@ import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
 import requests
 
+from nfl_pipeline import betting_preferences as prefs
 from nfl_pipeline import sharp_math
 from nfl_pipeline.crawler_oddsapi import OddsCrawlerConfig, _full_url, _save_payload
 from nfl_pipeline.db import PG_DSN
@@ -43,7 +45,12 @@ PROVIDER = "oddsapi_watch"
 BASE = "https://api.the-odds-api.com/v4/sports/americanfootball_nfl"
 _ET = ZoneInfo("America/New_York")
 SHARP_BOOKS = ("pinnacle", "betfair_ex_eu", "matchbook", "smarkets")
-BOOKMAKERS = ("fanduel",) + SHARP_BOOKS  # <= 10 named books = one region per market
+BET_BOOKS = tuple(prefs.SHARP_WATCH_BET_BOOKS)  # books we can bet at, priced against SHARP_BOOKS
+BOOKMAKERS = BET_BOOKS + SHARP_BOOKS  # <= 10 named books = one region per market
+BOOK_LABEL = {"fanduel": "FanDuel", "draftkings": "DraftKings", "betmgm": "BetMGM",
+              "williamhill_us": "Caesars", "espnbet": "ESPN BET", "fanatics": "Fanatics"}
+BOOK_DOMAIN = {"fanduel": "fanduel.com", "draftkings": "draftkings.com", "betmgm": "betmgm.com",
+               "williamhill_us": "caesars.com", "espnbet": "espnbet.com", "fanatics": "fanatics.com"}
 GAME_MARKETS = {"spreads": "spread", "totals": "total"}
 DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
@@ -176,41 +183,43 @@ def _pairs(book: dict) -> dict[tuple, dict]:
     return out
 
 
-def find_edges(payload: dict, *, min_ev: float = MIN_EV) -> list[dict]:
+def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, ...] = BET_BOOKS) -> list[dict]:
+    """Every bettable book's side that is at least min_ev above the sharp no-vig fair price."""
     books = {b["key"]: _pairs(b) for b in payload.get("bookmakers", [])}
-    fanduel = books.get("fanduel") or {}
     sharp_books = [b for b in SHARP_BOOKS if b in books]
     edges = []
-    for (stat, who, line), fd in fanduel.items():
-        if stat == "spread":
-            continue  # spreads need both teams' sides; handled as exact-line two-way below
-        if fd.get("over") is None or fd.get("under") is None:
-            continue
-        best = None
-        for book in sharp_books:  # preferred book first, then closest line
-            for (s_stat, s_who, s_line), q in books[book].items():
-                if s_stat != stat or s_who != who or q.get("over") is None or q.get("under") is None:
-                    continue
-                fair_over = sharp_math.over_probability_at(stat, s_line, sharp_math.no_vig_over(q["over"], q["under"]), line)
-                if fair_over is None:
-                    continue
-                cand = (abs(s_line - line), dict(book=book, line=s_line, fair_over=fair_over))
-                if best is None or cand[0] < best[0]:
-                    best = cand
-            if best is not None and best[0] == 0:
-                break
-        if best is None:
-            continue
-        sharp = best[1]
-        for side in ("over", "under"):
-            fair = sharp["fair_over"] if side == "over" else 1.0 - sharp["fair_over"]
-            value = sharp_math.ev(fair, fd[side])
-            if value is not None and value >= min_ev:
-                edges.append(dict(stat=stat, player=fd.get("player"), player_norm=who if who != "game" else None,
-                                  side=side, line=line, price=int(fd[side]), link=fd.get(f"{side}_link"),
-                                  sharp_book=sharp["book"], sharp_line=sharp["line"], fair_probability=fair,
-                                  ev=value, minimum_price=sharp_math.minimum_price(fair, MIN_PRICE_EV),
-                                  line_gap=line - sharp["line"]))
+    for bet_book in bet_books:
+        for (stat, who, line), offer in (books.get(bet_book) or {}).items():
+            if stat == "spread":
+                continue  # spreads need both teams' sides; handled as exact-line two-way below
+            if offer.get("over") is None or offer.get("under") is None:
+                continue
+            best = None
+            for book in sharp_books:  # preferred book first, then closest line
+                for (s_stat, s_who, s_line), q in books[book].items():
+                    if s_stat != stat or s_who != who or q.get("over") is None or q.get("under") is None:
+                        continue
+                    fair_over = sharp_math.over_probability_at(stat, s_line, sharp_math.no_vig_over(q["over"], q["under"]), line)
+                    if fair_over is None:
+                        continue
+                    cand = (abs(s_line - line), dict(book=book, line=s_line, fair_over=fair_over))
+                    if best is None or cand[0] < best[0]:
+                        best = cand
+                if best is not None and best[0] == 0:
+                    break
+            if best is None:
+                continue
+            sharp = best[1]
+            for side in ("over", "under"):
+                fair = sharp["fair_over"] if side == "over" else 1.0 - sharp["fair_over"]
+                value = sharp_math.ev(fair, offer[side])
+                if value is not None and value >= min_ev:
+                    edges.append(dict(book=bet_book, stat=stat, player=offer.get("player"),
+                                      player_norm=who if who != "game" else None,
+                                      side=side, line=line, price=int(offer[side]), link=offer.get(f"{side}_link"),
+                                      sharp_book=sharp["book"], sharp_line=sharp["line"], fair_probability=fair,
+                                      ev=value, minimum_price=sharp_math.minimum_price(fair, MIN_PRICE_EV),
+                                      line_gap=line - sharp["line"]))
     return sorted(edges, key=lambda e: -e["ev"])
 
 
@@ -218,6 +227,48 @@ def alert_tier(ev: float, minutes_to_kickoff: float) -> str:
     if ev < MIN_EV:
         return "logged"
     return "alert" if minutes_to_kickoff <= PING_WINDOW_MINUTES else "early"
+
+
+ALERT_REPORT = ROOT / "reports" / "nfl_sharp_alerts_latest.json"
+
+
+def realized_profit() -> float:
+    """Settled profit on bets actually placed, as the alert report graded them (0.0 if unknown)."""
+    try:
+        placed = (json.loads(ALERT_REPORT.read_text(encoding="utf-8")).get("summary") or {}).get("placed") or {}
+        return float(placed.get("realized_profit") or 0.0)
+    except (FileNotFoundError, ValueError, TypeError, AttributeError):
+        return 0.0
+
+
+def risk_budget(cur, now: datetime) -> dict[str, Any]:
+    """Stake already committed today and this NFL week, plus the sticky loss pause."""
+    et_now = now.astimezone(_ET)
+    day_start = et_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = day_start - timedelta(days=(et_now.weekday() - 1) % 7)  # NFL week starts Tuesday ET
+    cur.execute("""SELECT COALESCE(SUM(stake) FILTER (WHERE alerted_at >= %s), 0),
+                          COALESCE(SUM(stake) FILTER (WHERE alerted_at >= %s), 0)
+                   FROM bets.nfl_sharp_alerts WHERE stake > 0""", (day_start, week_start))
+    today, week = (float(v) for v in cur.fetchone())
+    profit = realized_profit()
+    return dict(today=today, week=week, staked=0.0,
+                paused=profit <= prefs.SHARP_WATCH_LOSS_PAUSE, realized_profit=profit)
+
+
+def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any]) -> float:
+    """Flat stake for a pinged alert, or 0.0 when a cap or the loss pause binds.
+
+    A capped alert is still stored and graded; it just carries no money, so evidence keeps accruing.
+    """
+    stake = float(prefs.SHARP_WATCH_STAKE)
+    if tier != "alert" or stake <= 0 or budget["paused"]:
+        return 0.0
+    committed = budget["staked"]
+    if budget["today"] + committed + stake > prefs.SHARP_WATCH_MAX_STAKE_PER_DAY:
+        return 0.0
+    if budget["week"] + committed + stake > prefs.SHARP_WATCH_MAX_STAKE_PER_WEEK:
+        return 0.0
+    return stake
 
 
 SCHEMA_SQL = """
@@ -234,36 +285,75 @@ CREATE TABLE IF NOT EXISTS bets.nfl_sharp_alerts (
 -- 'alert' = pinged in Discord (EV >= MIN_EV within PING_WINDOW_MINUTES of kickoff);
 -- 'early' = EV >= MIN_EV but earlier than that (logged, no ping); 'logged' = LOG_MIN_EV <= EV < MIN_EV.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'alert';
+-- fd_line/fd_price/fd_link predate multi-book scanning; they hold the bettable book's own numbers.
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS book TEXT NOT NULL DEFAULT 'fanduel';
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS stake NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS placed_at TIMESTAMPTZ;
+-- The old key omitted the book (so two books' identical lines collided) and used a nullable
+-- player_name_norm, which let every poll re-insert game totals. COALESCE closes both. Those
+-- duplicate totals already exist, so drop all but the first of each before the index goes on.
+ALTER TABLE bets.nfl_sharp_alerts DROP CONSTRAINT IF EXISTS nfl_sharp_alerts_event_id_stat_player_name_norm_fd_line_sid_key;
+DELETE FROM bets.nfl_sharp_alerts a USING bets.nfl_sharp_alerts b
+ WHERE a.alert_id > b.alert_id AND a.event_id = b.event_id AND a.book = b.book AND a.stat = b.stat
+   AND COALESCE(a.player_name_norm, '') = COALESCE(b.player_name_norm, '')
+   AND a.fd_line = b.fd_line AND a.side = b.side AND a.fd_price = b.fd_price;
+CREATE UNIQUE INDEX IF NOT EXISTS nfl_sharp_alerts_offer_key ON bets.nfl_sharp_alerts
+  (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price);
 """
 
 
 def _fallback_link(cur, edge: dict, game: dict) -> str | None:
-    """FanDuel deep link from the regular quote feed for the same player/stat/line/side, if any."""
+    """Book deep link from the regular quote feed for the same player/stat/line/side, if any."""
     if edge["player_norm"] is None:
         return None
     cur.execute(f"""SELECT {edge['side']}_link FROM odds.nfl_player_prop_lines
-        WHERE bookmaker_key='fanduel' AND player_name_norm=%s AND stat=%s AND line=%s AND {edge['side']}_link IS NOT NULL
+        WHERE bookmaker_key=%s AND player_name_norm=%s AND stat=%s AND line=%s AND {edge['side']}_link IS NOT NULL
           AND commence_time_utc BETWEEN %s AND %s ORDER BY fetched_at_utc DESC LIMIT 1""",
-                (edge["player_norm"], edge["stat"], edge["line"], game["start"] - timedelta(minutes=30), game["start"] + timedelta(minutes=30)))
+                (edge["book"], edge["player_norm"], edge["stat"], edge["line"],
+                 game["start"] - timedelta(minutes=30), game["start"] + timedelta(minutes=30)))
     row = cur.fetchone()
     return row[0] if row else None
 
 
-def format_alert(edge: dict, game: dict) -> str:
-    from nfl_pipeline.fanduel_links import betslip_for_row, provider_link
+def book_link(edge: dict, game: dict) -> tuple[str | None, bool]:
+    """(url, is_betslip). FanDuel resolves to a one-tap betslip in the bettor's state; other books
+    keep the provider's own deep link, host-checked so a bad link can never be rendered as theirs."""
+    book = edge.get("book") or "fanduel"
+    if book == "fanduel":
+        from nfl_pipeline.fanduel_links import betslip_for_row, provider_link
+        row = dict(edge, away=game["away"], home=game["home"],
+                   market=edge["stat"] if edge["stat"] in ("spread", "total") else None)
+        slip = betslip_for_row(row)
+        return (slip, True) if slip else (provider_link(edge.get("link")), False)
+    link = str(edge.get("link") or "").strip()
+    domain = BOOK_DOMAIN.get(book)
+    if not link or not domain or any(c.isspace() or ord(c) < 32 or c in "<>\\" for c in link):
+        return None, False
+    try:
+        url = urlsplit(link)
+        host = url.hostname or ""
+    except ValueError:
+        return None, False
+    if url.scheme != "https" or url.username or url.password or url.port is not None:
+        return None, False
+    return (link, False) if (host == domain or host.endswith("." + domain)) else (None, False)
+
+
+def format_alert(edge: dict, game: dict, stake: float = 0.0) -> str:
     who = edge["player"] or f"{game['away']} @ {game['home']}"
     label = edge["stat"].replace("_", " ").title()
-    price = f"{edge['price']:+d}"
+    book = edge.get("book") or "fanduel"
+    book_name = BOOK_LABEL.get(book, book.title())
     gap = f" ({edge['sharp_book'].title()} {edge['sharp_line']:g})" if edge["line_gap"] else f" ({edge['sharp_book'].title()})"
-    slip = betslip_for_row(dict(edge, away=game["away"], home=game["home"],
-                                market=edge["stat"] if edge["stat"] in ("spread", "total") else None))
-    link = slip or provider_link(edge["link"])
+    link, is_slip = book_link(edge, game)
     kickoff = int(game["start"].timestamp())
-    return (f"**SHARP EDGE - research, not a bet**\n{who} {edge['side'].upper()} {edge['line']:g} {label} "
-            f"({game['away']} @ {game['home']}, <t:{kickoff}:R>)\nFanDuel {price} | fair {edge['fair_probability']:.1%}{gap} | "
+    heading = f"**SHARP EDGE - bet ${stake:g} at {book_name}**" if stake > 0 else "**SHARP EDGE - research, not a bet**"
+    return (f"{heading}\n{who} {edge['side'].upper()} {edge['line']:g} {label} "
+            f"({game['away']} @ {game['home']}, <t:{kickoff}:R>)\n{book_name} {edge['price']:+d} | "
+            f"fair {edge['fair_probability']:.1%}{gap} | "
             f"EV {edge['ev']:+.1%} | take at {edge['minimum_price']:+d} or better"
-            + (f"\n[Add to slip](<{link}>)" if slip else f"\n[Open FanDuel - manual selection](<{link}>)" if link
-               else "\nNo FanDuel link captured; search manually."))
+            + (f"\n[Add to slip](<{link}>)" if is_slip else f"\n[Open {book_name} - manual selection](<{link}>)" if link
+               else f"\nNo {book_name} link captured; search manually."))
 
 
 def _post(text: str) -> None:
@@ -322,6 +412,9 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             cur.execute("SET LOCAL lock_timeout='5s'")
             cur.execute(SCHEMA_SQL)
         conn.commit()
+        with conn.cursor() as cur:
+            budget = risk_budget(cur, now)
+        result["risk"] = {k: v for k, v in budget.items() if k != "staked"}
         for game in due:
             event = by_matchup.get((normalize_team(game["home"]), normalize_team(game["away"])))
             if event is None:
@@ -349,35 +442,38 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
                     tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60)
+                    stake = stake_for(cur, tier, now, budget) if tier == "alert" else 0.0
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
-                            fair_probability, ev, minimum_price, line_gap, tier)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                        ON CONFLICT (event_id, stat, player_name_norm, fd_line, side, fd_price) DO UPDATE SET
+                            fair_probability, ev, minimum_price, line_gap, tier, book, stake)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        ON CONFLICT (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price) DO UPDATE SET
                             tier='alert', sharp_book=EXCLUDED.sharp_book, sharp_line=EXCLUDED.sharp_line,
-                            fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev,
+                            fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev, stake=EXCLUDED.stake,
                             minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap
                           WHERE bets.nfl_sharp_alerts.tier IN ('logged', 'early') AND EXCLUDED.tier='alert'
-                        RETURNING alert_id, tier""",
+                        RETURNING alert_id, tier, stake""",
                                 (event["id"], game["game_id"], game["start"], game["home"], game["away"], edge["stat"],
                                  edge["player"], edge["player_norm"], edge["side"], edge["line"], edge["price"], edge["link"],
                                  edge["sharp_book"], edge["sharp_line"], edge["fair_probability"], edge["ev"],
-                                 edge["minimum_price"], edge["line_gap"], tier))
+                                 edge["minimum_price"], edge["line_gap"], tier, edge["book"], stake))
                     row = cur.fetchone()
                     if row and row[1] == "alert":
-                        new_alerts.append((row[0], edge, game))
+                        new_alerts.append((row[0], edge, game, float(row[2] or 0.0)))
+                        budget["staked"] += float(row[2] or 0.0)
                     elif row:
                         result["logged"] = result.get("logged", 0) + 1
             conn.commit()
-        for alert_id, edge, game in new_alerts[:MAX_ALERTS_PER_RUN]:
+        for alert_id, edge, game, stake in new_alerts[:MAX_ALERTS_PER_RUN]:
             try:
-                post(format_alert(edge, game))
+                post(format_alert(edge, game, stake) + (f"\nConfirm with: sharp_bets --confirm {alert_id}" if stake > 0 else ""))
                 with conn.cursor() as cur:
                     cur.execute("UPDATE bets.nfl_sharp_alerts SET posted=TRUE WHERE alert_id=%s", (alert_id,))
                 conn.commit()
             except Exception as exc:  # an unposted alert is still logged and graded
                 result.setdefault("post_errors", []).append(type(exc).__name__)
+        result["staked"] = round(budget["staked"], 2)
     from nfl_pipeline.parse_oddsapi import ParseConfig, parse_props
     for day in sorted({g["day"] for g in due}):
         parse_props(ParseConfig(as_of_date=day))
