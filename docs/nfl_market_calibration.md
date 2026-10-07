@@ -527,3 +527,34 @@ a gap look better than it was. Corrected to 26.0. Re-grading from cache moves th
 from +3.47% to +2.71% and leaves T-45/T-15 unchanged; the market still qualifies on its own evidence.
 An IQR-based spread is used rather than a standard deviation because rushing's tails (sd 30.3) would
 overstate the width near the median, which is the only region a conversion crosses.
+
+## October 7: the opportunity models are active, and carry no edge
+
+Correction to an earlier note in this document: the 70 MB opportunity artifact is **not** switched
+off. `apply_workload_adjustment` is absent from the stat artifact and
+`predict_player_props` defaults it to `True`, so these 26 usage models are loaded and applied on
+every production run.
+
+They are individually good at what they do - predicted targets MAE 2.14 against a 2.43 baseline,
+receptions 1.64 vs 1.78, air yards 19.2 vs 21.5, and most of the 26 targets beat their baseline. The
+question is whether that usage knowledge is information the market lacks.
+
+Eight layers (targets, receptions, air yards, carries, target share, snap share, route-opportunity
+share, QB pass attempts) were scored onto the 1,173 2025 player-games that have a real posted line,
+confirmed to move off their baselines on ~100% of rows, and tested as features for predicting the
+line's error with GroupKFold by week:
+
+| | Line alone | + model projection | + opportunity layers |
+|---|---:|---:|---:|
+| Receiving yards (947) | **20.20** | 21.19 | 20.89 |
+| Rushing yards (226) | **20.64** | 23.32 | 23.27 |
+
+Correlation with the line's error: **+0.002** receiving, -0.192 rushing; side-hit 48.4% and 50.4%.
+
+The test was deliberately generous: the artifact was trained through 2026-09-15, so scoring it on
+2025 is in-sample and flatters it. It still adds nothing.
+
+This closes a consistent story. The stat model beats its naive baseline; the opportunity models beat
+theirs; the market beats both. Knowing a receiver will see seven targets rather than six is not
+private information - it is what the line is already made of. The edge is in price discrepancies
+between books, not in predicting football better.
