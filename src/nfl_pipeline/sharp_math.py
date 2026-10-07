@@ -24,6 +24,7 @@ LINE_MODEL = {
     "rush_attempts": dict(sigma=4.0, max_gap=0.0),
     "total": dict(sigma=10.5, max_gap=1.0),
     "spread": dict(sigma=13.5, max_gap=0.0),      # key numbers: exact line only
+    "anytime_td": dict(sigma=1.0, max_gap=0.0),   # yes/no at a notional 0.5 line: exact only
 }
 
 
@@ -37,11 +38,33 @@ def implied(price: float | None) -> float | None:
     return 100.0 / (price + 100.0) if price > 0 else -price / (-price + 100.0)
 
 
-def no_vig_over(over_price, under_price) -> float | None:
+DEVIG_METHOD = "power"
+
+
+def no_vig_over(over_price, under_price, method: str = DEVIG_METHOD) -> float | None:
+    """Fair P(over) from a two-sided quote, with the book's margin removed.
+
+    Proportional de-vig (`over / (over + under)`) assumes the book spreads its margin evenly across
+    both sides. It does not: the unlikely side carries more of it, so dividing the overround out
+    evenly leaves longshots looking better than they are. On an anytime-TD price of +380 / -520 that
+    error is worth about two points of probability, which is the whole edge.
+
+    The power method instead solves `over**k + under**k == 1`, which shrinks the longer price harder.
+    For a near-even prop (-125/+105) the two agree to within 0.2 points, so switching costs the
+    yardage markets nothing; it only bites where it should.
+    """
     over, under = implied(over_price), implied(under_price)
     if over is None or under is None or over + under <= 0:
         return None
-    return over / (over + under)
+    proportional = over / (over + under)
+    if method == "proportional" or not (0.0 < over < 1.0 and 0.0 < under < 1.0):
+        return proportional
+    try:
+        from scipy.optimize import brentq
+        k = brentq(lambda k: over ** k + under ** k - 1.0, 0.05, 20.0, xtol=1e-12)
+    except (ValueError, RuntimeError, ImportError):
+        return proportional  # no sign change in the bracket (e.g. a quote with no margin at all)
+    return float(over ** k)
 
 
 def over_probability_at(stat: str, sharp_line: float, sharp_over: float, target_line: float) -> float | None:

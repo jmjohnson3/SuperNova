@@ -38,6 +38,10 @@ from nfl_pipeline.integrity import atomic_json
 from nfl_pipeline.markets import STAT_BY_MARKET, normalize_name, normalize_team
 from nfl_pipeline.sharp_watch import BOOKMAKERS, SHARP_BOOKS, _pairs, find_edges
 
+# The book list is part of the cache key, so a re-grade must ask for exactly the books the original
+# run fetched or every call is a cache miss and costs credits again. Pinned here, overridable.
+FETCH_BOOKS = BOOKMAKERS
+
 ROOT = Path(__file__).resolve().parents[3]
 BASE = "https://api.the-odds-api.com/v4/historical/sports/americanfootball_nfl"
 ENDPOINT = "nfl_player_props_history"
@@ -128,7 +132,7 @@ def fetch_snapshots(client: Client, game: dict, event_id: str, market: str) -> d
     snaps = {}
     for minutes in (*SNAPSHOTS, CLOSE_MINUTES):
         params = {"date": _iso(game["start_ts_utc"] - timedelta(minutes=minutes)), "markets": market,
-                  "bookmakers": ",".join(BOOKMAKERS), "oddsFormat": "american"}
+                  "bookmakers": ",".join(FETCH_BOOKS), "oddsFormat": "american"}
         payload = client.get(f"events/{event_id}/odds", params, cost=10, as_of=game["game_date_et"])
         snaps[minutes] = payload.get("data") or {}
     return snaps
@@ -254,11 +258,15 @@ def main() -> None:
     ap.add_argument("--markets", default="player_reception_yds")
     ap.add_argument("--min-remaining", type=int, default=15000, help="never let the balance fall below this")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--bookmakers", default=None,
+                    help="exact book list the cached run used; required to re-grade without paying again")
     ap.add_argument("--snapshots", default=None,
                     help="comma-separated minutes before kickoff, e.g. 720,360,180 to test the early window")
     args = ap.parse_args()
     markets = [m.strip() for m in args.markets.split(",") if m.strip()]
-    global SNAPSHOTS
+    global SNAPSHOTS, FETCH_BOOKS
+    if args.bookmakers:
+        FETCH_BOOKS = tuple(b.strip() for b in args.bookmakers.split(",") if b.strip())
     if args.snapshots:
         SNAPSHOTS = tuple(int(x) for x in args.snapshots.split(",") if x.strip())
     key = OddsCrawlerConfig().oddsapi_key

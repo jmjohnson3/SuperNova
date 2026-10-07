@@ -179,3 +179,22 @@ def test_only_backtested_markets_carry_money():
     assert w.stake_for(None, "alert", NOW, budget, "receptions") > 0
     assert w.stake_for(None, "alert", NOW, budget, "total") == 0.0  # scanned and graded, not staked
     assert w.stake_for(None, "alert", NOW, budget, "passing_yards") == 0.0
+
+
+def test_anytime_td_is_normalised_onto_the_over_under_shape():
+    # Yes/No with no point, priced as over/under a notional 0.5 line.
+    td = lambda p, yes, no: [dict(name="Yes", description=p, price=yes), dict(name="No", description=p, price=no)]
+    payload = {"bookmakers": [book("fanduel", td("Scorer", 650, -1100), "player_anytime_td"),
+                              book("pinnacle", td("Scorer", 600, -950), "player_anytime_td")]}
+    priced = w.find_edges(payload, min_ev=-1.0)  # ranked by EV, so the favourite side leads
+    assert {(e["stat"], e["side"], e["line"]) for e in priced} == {("anytime_td", "over", 0.5), ("anytime_td", "under", 0.5)}
+    # Proportional de-vig would call this yes-side a far better price than it is.
+    fair = w.sharp_math.no_vig_over(600, -950)
+    assert fair < w.sharp_math.no_vig_over(600, -950, method="proportional") - 0.01
+
+
+def test_markets_are_only_fetched_while_they_could_still_be_bet():
+    wanted = ["player_reception_yds", "player_receptions", "alternate_totals"]
+    assert w.markets_for(200, wanted) == []                       # before any window opens
+    assert "player_receptions" not in w.markets_for(150, wanted)   # counts decay fast; not yet worth paying for
+    assert w.markets_for(30, wanted) == wanted                     # inside every window

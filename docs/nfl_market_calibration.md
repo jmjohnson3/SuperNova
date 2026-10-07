@@ -414,3 +414,45 @@ window assumes it behaves like receiving yards. Reasonable for continuous yardag
 Backtest EV assumes the alerted price is the price obtained. `sharp_bets --confirm <id> --price -115`
 records what was actually taken; placed bets are graded on that price, and the report shows mean
 slippage against the alert. If taking the bet costs more than the edge is worth, this is where it shows.
+
+## October 7: power de-vig, and paying only for markets we would bet
+
+**De-vig.** `sharp_math.no_vig_over` divided the overround out evenly across both sides. Books do not
+price that way - the unlikely side carries more of the margin - so proportional de-vig leaves
+longshots looking better than they are. The power method solves `over**k + under**k == 1` instead,
+which shrinks the longer price harder. Measured on real quotes:
+
+| Quote | Proportional | Power | Shift |
+|---|---:|---:|---:|
+| -113 / -113 (typical prop) | 50.00% | 50.00% | 0.00% |
+| -125 / +105 | 53.25% | 53.46% | +0.21% |
+| +380 / -520 (anytime TD) | 19.90% | 17.67% | **-2.23%** |
+| +650 / -1100 | 12.70% | 9.62% | **-3.08%** |
+
+Near-even props barely move; longshots move by more than any edge we would bet. The anytime-TD
+"edges" of +17% and +9.4% noted on October 4 were artefacts of the old method.
+
+Re-grading all three backtests on identical games (0 credits, from cache) confirms the conclusions
+survive and ~30% more sides qualify:
+
+| Market | T-90 | T-45 | T-15 |
+|---|---:|---:|---:|
+| Receiving | 2.70% -> **3.01%** | 2.49% -> 2.69% | 3.32% -> 3.72% |
+| Rushing | 3.75% -> 3.47% | 3.48% -> 3.28% | 4.77% -> 4.36% |
+| Receptions | -0.02% -> 0.68% | 1.58% -> 1.59% | 3.49% -> 3.13% |
+
+Anytime TD is now parseable (`YES_NO_SIDES` maps Yes/No onto over/under at a notional 0.5 line) but
+is **not scanned yet**: at 5,994 credits before the November 3 reset it would cost ~7,200/month
+against ~5,600 for the four markets we keep, and starving a staked market to research an unstaked
+one is the wrong trade.
+
+**Fetch windows.** A market is now only requested while its gaps are still actionable
+(`markets_for`): receptions from T-60, yardage and totals from T-195. Paying for receptions data at
+T-4h bought gaps the decay curve says are worthless.
+
+**Cache keys include the book list.** Re-running a backtest after adding reference books refetched
+everything and truncated two reports before the credit floor stopped it (restored from git).
+`--bookmakers` now pins the list so a re-grade hits cache and costs nothing.
+
+Current scan: `player_reception_yds, player_rush_yds, player_receptions, alternate_totals`
+(~87 credits/game, ~1,218/Sunday, ~5,600/month).

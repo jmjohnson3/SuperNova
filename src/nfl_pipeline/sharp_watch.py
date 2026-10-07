@@ -60,7 +60,11 @@ GAME_MARKETS = {"spreads": "spread", "totals": "total", "alternate_totals": "tot
 # STAT_SPECS, which drives training and scoring, is untouched.
 EXTRA_STAT_BY_MARKET = {"player_pass_completions": "pass_completions",
                         "player_pass_attempts": "pass_attempts",
-                        "player_rush_attempts": "rush_attempts"}
+                        "player_rush_attempts": "rush_attempts",
+                        "player_anytime_td": "anytime_td"}
+# Yes/No markets priced as "over/under 0.5". Worth pricing only with a de-vig that handles longshots:
+# proportional de-vig overstates a +650 yes by ~3 points, which is larger than any edge we would bet.
+YES_NO_SIDES = {"yes": "over", "no": "under"}
 DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
 LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
@@ -204,9 +208,12 @@ def _pairs(book: dict) -> dict[tuple, dict]:
         for o in market.get("outcomes", []):
             side = str(o.get("name") or "").lower()
             player = o.get("description")
-            if side not in ("over", "under") or not player or o.get("point") is None:
+            point = o.get("point")
+            if side in YES_NO_SIDES and point is None:
+                side, point = YES_NO_SIDES[side], 0.5
+            if side not in ("over", "under") or not player or point is None:
                 continue
-            rec = out.setdefault((stat, normalize_name(player), float(o["point"])), {"player": player})
+            rec = out.setdefault((stat, normalize_name(player), float(point)), {"player": player})
             rec[side] = o.get("price"); rec[f"{side}_link"] = o.get("link")
     return out
 
@@ -249,6 +256,17 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, .
                                       ev=value, minimum_price=sharp_math.minimum_price(fair, MIN_PRICE_EV),
                                       line_gap=line - sharp["line"]))
     return sorted(edges, key=lambda e: -e["ev"])
+
+
+def market_window(market: str) -> int:
+    """How close to kickoff a market's gaps are still worth acting on, plus a little lead so the
+    gap can be seen forming. Fetching a market outside this buys data we would never bet."""
+    stat = STAT_BY_MARKET.get(market) or EXTRA_STAT_BY_MARKET.get(market) or GAME_MARKETS.get(market)
+    return PING_WINDOW_BY_STAT.get(stat or "", PING_WINDOW_MINUTES) + 15
+
+
+def markets_for(minutes_to_kickoff: float, wanted: list[str]) -> list[str]:
+    return [m for m in wanted if minutes_to_kickoff <= market_window(m)]
 
 
 def alert_tier(ev: float, minutes_to_kickoff: float, stat: str | None = None) -> str:
@@ -454,23 +472,31 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             if event is None:
                 skipped[game["game_id"]] = "no_matching_event"
                 continue
-            params = {"apiKey": cfg.oddsapi_key, "bookmakers": ",".join(BOOKMAKERS), "markets": ",".join(wanted),
+            # Ask only for the markets whose gaps are still actionable for this kickoff. Budgeting
+            # above assumed the full list, so the real spend can only come in under it.
+            game_markets = markets_for((game["start"] - now).total_seconds() / 60, wanted)
+            if not game_markets:
+                skipped[game["game_id"]] = "no_market_in_window"
+                continue
+            params = {"apiKey": cfg.oddsapi_key, "bookmakers": ",".join(BOOKMAKERS), "markets": ",".join(game_markets),
                       "oddsFormat": "american", "dateFormat": "iso", "includeLinks": "true"}
             url = f"{BASE}/events/{event['id']}/odds"
             response = session.get(url, params=params, timeout=cfg.timeout_s)
             if not response.ok:
                 skipped[game["game_id"]] = f"http_{response.status_code}"
                 continue
-            remaining = int(response.headers.get("x-requests-remaining") or remaining - cost)
+            spent_here = len(game_markets)  # one credit per market, however many books are named
+            remaining = int(response.headers.get("x-requests-remaining") or remaining - spent_here)
             payload = response.json()
             for endpoint, keep in (("nfl_player_props", lambda k: k not in GAME_MARKETS), ("nfl_game_odds", lambda k: k in GAME_MARKETS)):
                 if any(keep(m.get("key")) for b in payload.get("bookmakers", []) for m in b.get("markets", [])):
                     _save_payload(conn, endpoint=endpoint, snapshot_role="live", as_of_date=game["day"],
                                   url=_full_url(url, params), payload=payload, provider=PROVIDER)
             state.setdefault("last_poll", {})[game["game_id"]] = now.isoformat()
-            state.setdefault("spent", {})[today] = state.get("spent", {}).get(today, 0) + cost
+            state.setdefault("spent", {})[today] = state.get("spent", {}).get(today, 0) + spent_here
             edges = find_edges(payload, min_ev=LOG_MIN_EV)
-            result["polled"].append(dict(game_id=game["game_id"], books=sorted(b["key"] for b in payload.get("bookmakers", [])),
+            result["polled"].append(dict(game_id=game["game_id"], markets=game_markets, credits=spent_here,
+                                         books=sorted(b["key"] for b in payload.get("bookmakers", [])),
                                          edges=len(edges)))
             with conn.cursor() as cur:
                 for edge in edges:
