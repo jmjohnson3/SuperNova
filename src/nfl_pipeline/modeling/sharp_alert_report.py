@@ -25,7 +25,7 @@ import psycopg2.extras
 from nfl_pipeline import sharp_math
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
-from nfl_pipeline.sharp_watch import PING_WINDOW_MINUTES, SHARP_BOOKS
+from nfl_pipeline.sharp_watch import PING_WINDOW_BY_STAT, PING_WINDOW_MINUTES, SHARP_BOOKS
 
 ROOT = Path(__file__).resolve().parents[3]
 PASS = dict(min_alerts=100, min_weeks=3, min_beat_close=0.55, min_sharp_close_ev=0.01)
@@ -134,6 +134,11 @@ def grade(df: pd.DataFrame) -> pd.DataFrame:
             df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df["clv"] = [fd_clv(r) for r in df.itertuples()]
+    # A placed bet is graded at the price actually taken; everything else at the alerted price.
+    taken = pd.to_numeric(df.get("taken_price"), errors="coerce") if "taken_price" in df else pd.Series(np.nan, index=df.index)
+    df["bet_price"] = taken.fillna(df.fd_price)
+    df["slippage"] = [None if pd.isna(t) else sharp_math.implied(p) - sharp_math.implied(t)
+                      for t, p in zip(taken, df.fd_price)]
     ev_close = []
     for r in df.itertuples():
         fair_over = None
@@ -141,12 +146,12 @@ def grade(df: pd.DataFrame) -> pd.DataFrame:
             fair_over = sharp_math.over_probability_at(r.stat, float(r.sharp_close_line),
                                                        sharp_math.no_vig_over(r.sharp_close_over, r.sharp_close_under), float(r.fd_line))
         fair = None if fair_over is None else (fair_over if r.side == "over" else 1 - fair_over)
-        ev_close.append(None if fair is None else sharp_math.ev(fair, r.fd_price))
+        ev_close.append(None if fair is None else sharp_math.ev(fair, r.bet_price))
     df["ev_at_sharp_close"] = ev_close
     actual = np.where(df.stat == "total", df.home_score + df.away_score, df.actual)
     diff = (actual - df.fd_line) * np.where(df.side == "over", 1, -1)
     df["result"] = np.where(pd.isna(actual) | (df.status != "final"), None, np.where(diff > 0, "win", np.where(diff < 0, "loss", "push")))
-    payout = np.where(df.fd_price > 0, df.fd_price / 100, 100 / df.fd_price.abs())
+    payout = np.where(df.bet_price > 0, df.bet_price / 100, 100 / df.bet_price.abs())
     df["units"] = np.where(df.result == "win", payout, np.where(df.result == "loss", -1.0, np.where(df.result == "push", 0.0, np.nan)))
     return df
 
@@ -164,6 +169,8 @@ def _stats(df: pd.DataFrame) -> dict:
                 settled=int(df.result.notna().sum()), roi=float(pd.to_numeric(df.units, errors="coerce").dropna().mean()) if df.result.notna().any() else None,
                 mean_alert_ev=float(pd.to_numeric(df.ev, errors="coerce").mean()),
                 staked=float(_stake(df).sum()),
+                mean_slippage=float(pd.to_numeric(df.get("slippage"), errors="coerce").dropna().mean())
+                if "slippage" in df and pd.to_numeric(df["slippage"], errors="coerce").notna().any() else None,
                 # Dollars won or lost on settled rows. sharp_watch reads this for its sticky loss pause.
                 realized_profit=float((pd.to_numeric(df.units, errors="coerce") * _stake(df)).dropna().sum()))
 
@@ -180,7 +187,8 @@ def _tier(df: pd.DataFrame) -> pd.Series:
     tier = df["tier"].fillna("alert") if "tier" in df else pd.Series("alert", index=df.index)
     if {"commence_time_utc", "alerted_at"} <= set(df.columns):
         lead = (pd.to_datetime(df.commence_time_utc, utc=True) - pd.to_datetime(df.alerted_at, utc=True)).dt.total_seconds() / 60
-        tier = tier.where(~((tier == "alert") & (lead > PING_WINDOW_MINUTES)), "early")
+        window = df.stat.map(PING_WINDOW_BY_STAT).fillna(PING_WINDOW_MINUTES) if "stat" in df else PING_WINDOW_MINUTES
+        tier = tier.where(~((tier == "alert") & (lead > window)), "early")
     return tier
 
 
@@ -231,9 +239,11 @@ def markdown(summary: dict, df: pd.DataFrame) -> str:
              row("Settled", "settled", lambda v: "-" if v is None else str(v), "-")]
     placed = summary.get("placed") or {}
     if placed.get("alerts"):
+        slip = placed.get("mean_slippage")
         lines += ["", f"**Placed bets: {placed['alerts']} for ${placed.get('staked', 0):.2f} staked; "
                       f"realized ${placed.get('realized_profit', 0):+.2f} on {placed.get('settled', 0)} settled "
-                      f"(EV at sharp close {signed(placed.get('mean_ev_at_sharp_close'))}).**"]
+                      f"(EV at sharp close {signed(placed.get('mean_ev_at_sharp_close'))}"
+                      + (f", slippage {signed(slip)} vs the alerted price" if slip is not None else "") + ").**"]
     by_book = summary.get("by_book") or {}
     if len(by_book) > 1:
         lines += ["", "| Book | Alerts | EV at sharp close | Beat close |", "|---|---:|---:|---:|"]

@@ -8,6 +8,7 @@ loss pause that sharp_watch checks before staking anything new.
   python -m nfl_pipeline.sharp_bets --pending            # staked alerts not yet confirmed
   python -m nfl_pipeline.sharp_bets --confirm 41 42      # mark these placed, at the stored stake
   python -m nfl_pipeline.sharp_bets --confirm 41 --stake 10   # placed at a different size
+  python -m nfl_pipeline.sharp_bets --confirm 41 --price -115 # the price you actually got
   python -m nfl_pipeline.sharp_bets --unconfirm 41       # placed it by mistake / did not get the price
   python -m nfl_pipeline.sharp_bets --summary            # staked, realized, open
 """
@@ -37,17 +38,23 @@ def pending(conn) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
-def confirm(conn, alert_ids: list[int], stake: float | None, placed: bool = True) -> list[dict]:
+def confirm(conn, alert_ids: list[int], stake: float | None, placed: bool = True,
+            price: int | None = None) -> list[dict]:
     """Mark alerts placed (or not). Refuses a game that has already started: a bet cannot be
-    recorded after the fact, or the closing-line grade would be meaningless."""
+    recorded after the fact, or the closing-line grade would be meaningless.
+
+    `price` is the price actually obtained; left out, the alerted price is assumed. Everything is
+    graded on the taken price, so slippage shows up as lost EV instead of hiding.
+    """
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""UPDATE bets.nfl_sharp_alerts
             SET placed_at = CASE WHEN %(placed)s THEN now() END,
-                stake = COALESCE(%(stake)s, stake)
+                stake = COALESCE(%(stake)s, stake),
+                taken_price = CASE WHEN %(placed)s THEN COALESCE(%(price)s, taken_price, fd_price) END
             WHERE alert_id = ANY(%(ids)s)
               AND (NOT %(placed)s OR commence_time_utc > now())
-            RETURNING alert_id, book, player_name, side, fd_line, fd_price, stake, placed_at""",
-                    {"ids": alert_ids, "stake": stake, "placed": placed})
+            RETURNING alert_id, book, player_name, side, fd_line, fd_price, taken_price, stake, placed_at""",
+                    {"ids": alert_ids, "stake": stake, "placed": placed, "price": price})
         rows = [dict(r) for r in cur.fetchall()]
     conn.commit()
     return rows
@@ -71,12 +78,13 @@ def main() -> None:
     ap.add_argument("--confirm", nargs="+", type=int, metavar="ALERT_ID")
     ap.add_argument("--unconfirm", nargs="+", type=int, metavar="ALERT_ID")
     ap.add_argument("--stake", type=float, help="actual stake, when it differs from the recommendation")
+    ap.add_argument("--price", type=int, help="American price actually obtained (default: the alerted price)")
     ap.add_argument("--pending", action="store_true")
     ap.add_argument("--summary", action="store_true")
     args = ap.parse_args()
     with psycopg2.connect(PG_DSN) as conn:
         if args.confirm:
-            rows = confirm(conn, args.confirm, args.stake, placed=True)
+            rows = confirm(conn, args.confirm, args.stake, placed=True, price=args.price)
             missed = sorted(set(args.confirm) - {r["alert_id"] for r in rows})
             print(json.dumps({"confirmed": rows, "not_updated_already_started_or_unknown": missed}, indent=2, default=str))
         if args.unconfirm:

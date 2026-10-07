@@ -161,3 +161,21 @@ def test_stake_respects_caps_and_the_loss_pause(monkeypatch):
     assert w.stake_for(None, "alert", NOW, budget) == 0.0
     assert w.stake_for(None, "alert", NOW, dict(budget, staked=0.0, week=100.0)) == 0.0  # weekly cap
     assert w.stake_for(None, "alert", NOW, dict(budget, staked=0.0, paused=True)) == 0.0  # sticky pause
+
+
+def test_ping_window_is_per_market_because_counts_decay_faster():
+    # Receptions sit on integer lines; books correct them within the hour, so a 2025 +3% gap seen at
+    # T-90 is worth -0.02% at the close while the same receiving-yards gap is worth +2.70%.
+    assert w.alert_tier(0.05, 150, "receiving_yards") == "alert"
+    assert w.alert_tier(0.05, 150, "receptions") == "early"
+    assert w.alert_tier(0.05, 40, "receptions") == "alert"
+    assert w.alert_tier(0.05, 150, None) == "alert"  # unknown market falls back to the default window
+    assert w.alert_tier(0.02, 10, "receptions") == "logged"  # threshold still rules
+
+
+def test_only_backtested_markets_carry_money():
+    budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
+    assert w.stake_for(None, "alert", NOW, budget, "receiving_yards") > 0
+    assert w.stake_for(None, "alert", NOW, budget, "receptions") > 0
+    assert w.stake_for(None, "alert", NOW, budget, "total") == 0.0  # scanned and graded, not staked
+    assert w.stake_for(None, "alert", NOW, budget, "passing_yards") == 0.0

@@ -25,7 +25,7 @@ SHARP_WATCH_BET_BOOKS = ('fanduel', 'draftkings')
 # Only markets whose edge has been backtested may carry money. Everything else in
 # NFL_SHARP_WATCH_MARKETS is still scanned, alerted and graded, but at stake 0 until it proves out
 # on its own evidence in reports/nfl_sharp_alerts_latest.md.
-SHARP_WATCH_STAKED_STATS = frozenset({'receiving_yards', 'rushing_yards'})
+SHARP_WATCH_STAKED_STATS = frozenset({'receiving_yards', 'rushing_yards', 'receptions'})
 # Flat stake per pinged alert. 0.0 keeps every alert research-only.
 SHARP_WATCH_STAKE = 5.0
 SHARP_WATCH_MAX_STAKE_PER_DAY = 50.0

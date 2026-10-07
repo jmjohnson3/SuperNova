@@ -385,3 +385,32 @@ Three changes followed:
 This immediately exposed a gap: in both week 4 and the first expanded dry run, **every qualifying
 edge was on receptions**, a market we had never backtested - so nothing would have been staked.
 Receptions is therefore the next backtest, not an afterthought.
+
+## October 7: receptions decays three times faster, so the ping window is per market
+
+Backtesting receptions on 60 of the 2025 games (2,400 credits) produced a different curve from the
+yardage markets. For >= +3% gaps, EV at Pinnacle's close:
+
+| Market | T-90 | T-45 | T-15 |
+|---|---:|---:|---:|
+| Receiving yards | +2.70% | +2.49% | +3.32% |
+| Rushing yards | +3.75% | +3.48% | +4.77% |
+| **Receptions** | **-0.02%** | +1.58% | +3.49% |
+
+Receptions is excellent late and worthless early. Counts sit on integer lines, so one reception is a
+large probability move and books correct it within the hour; continuous yardage drifts slowly and
+holds its edge for hours. A single global window would therefore have staked receptions gaps worth
+nothing - and receptions is exactly where the live edges keep appearing (4 of week 4's 7 qualifying
+gaps, and every edge in the first expanded dry run).
+
+`PING_WINDOW_BY_STAT` gives receptions a 45-minute window against 180 for yardage, and receptions
+joins `SHARP_WATCH_STAKED_STATS` on the strength of its late-window edge. The report applies the
+same per-market window when it relabels historical pings.
+
+Caveat worth keeping visible: rushing yards was only backtested at T-90/45/15, so its 180-minute
+window assumes it behaves like receiving yards. Reasonable for continuous yardage, but untested.
+
+### Slippage is now measured
+Backtest EV assumes the alerted price is the price obtained. `sharp_bets --confirm <id> --price -115`
+records what was actually taken; placed bets are graded on that price, and the report shows mean
+slippage against the alert. If taking the bet costs more than the edge is worth, this is where it shows.

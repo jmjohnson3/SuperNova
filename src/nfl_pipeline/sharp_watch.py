@@ -64,10 +64,15 @@ EXTRA_STAT_BY_MARKET = {"player_pass_completions": "pass_completions",
 DEFAULT_MARKETS = "player_reception_yds"
 MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
 LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
-# Pings only where a gap still holds its edge at the sharp close. 2025 backtest, >= +3% receiving
-# gaps, EV measured at Pinnacle's close: T-720 -0.05%, T-360 +1.74%, T-180 +2.70%, T-90 +2.70%,
-# T-15 +3.32%. Edges decay to nothing by ~12h out, so 3 hours is the honest boundary.
-PING_WINDOW_MINUTES = 180
+# Pings only where a gap still holds its edge at the sharp close, which decays at a different rate
+# per market. 2025 backtests, >= +3% gaps, EV measured at Pinnacle's close:
+#   receiving  T-720 -0.05% | T-360 +1.74% | T-180 +2.70% | T-90 +2.70% | T-15 +3.32%
+#   receptions                              | T-90  -0.02% | T-45 +1.58% | T-15 +3.49%
+#   rushing                                 | T-90  +3.75% | T-45 +3.48% | T-15 +4.77%
+# Counts sit on integer lines, so a one-reception move is a large probability move and books correct
+# it within the hour; continuous yardage drifts slowly and holds its edge for hours.
+PING_WINDOW_MINUTES = 180  # continuous yardage; rushing assumes receiving's T-180 result, untested
+PING_WINDOW_BY_STAT = {"receptions": 45}
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
 FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window
@@ -246,10 +251,11 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, .
     return sorted(edges, key=lambda e: -e["ev"])
 
 
-def alert_tier(ev: float, minutes_to_kickoff: float) -> str:
+def alert_tier(ev: float, minutes_to_kickoff: float, stat: str | None = None) -> str:
     if ev < MIN_EV:
         return "logged"
-    return "alert" if minutes_to_kickoff <= PING_WINDOW_MINUTES else "early"
+    window = PING_WINDOW_BY_STAT.get(stat or "", PING_WINDOW_MINUTES)
+    return "alert" if minutes_to_kickoff <= window else "early"
 
 
 ALERT_REPORT = ROOT / "reports" / "nfl_sharp_alerts_latest.json"
@@ -314,6 +320,9 @@ ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DE
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS book TEXT NOT NULL DEFAULT 'fanduel';
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS stake NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS placed_at TIMESTAMPTZ;
+-- The price actually obtained, which is rarely the alerted one. Backtest EV assumes no slippage;
+-- this is how we find out what that assumption costs.
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS taken_price INTEGER;
 -- The old key omitted the book (so two books' identical lines collided) and used a nullable
 -- player_name_norm, which let every poll re-insert game totals. COALESCE closes both. Those
 -- duplicate totals already exist, so drop all but the first of each before the index goes on.
@@ -466,7 +475,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             with conn.cursor() as cur:
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
-                    tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60)
+                    tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60, edge["stat"])
                     stake = stake_for(cur, tier, now, budget, edge["stat"]) if tier == "alert" else 0.0
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
