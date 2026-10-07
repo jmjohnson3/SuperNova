@@ -967,12 +967,18 @@ CREATE TABLE IF NOT EXISTS raw.nfl_context_observations (
  kind TEXT NOT NULL, row_id TEXT NOT NULL, observed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
  payload JSONB NOT NULL, PRIMARY KEY(kind, row_id, observed_at)
 );
+-- Bookkeeping columns are not content: re-importing an unchanged row rewrites created_at_utc and
+-- raw_json, which made 92% of roster observations duplicates of their predecessor and grew the
+-- as-of log by ~162k rows/week for no information. raw_json is also dropped from the stored payload
+-- (nothing reads it back through the *_at() builders), halving the bytes an as-of rebuild must read.
 CREATE OR REPLACE FUNCTION raw.nfl_capture_context() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE body JSONB; BEGIN
- body := to_jsonb(NEW) - 'updated_at_utc';
- IF TG_OP = 'INSERT' OR body IS DISTINCT FROM (to_jsonb(OLD) - 'updated_at_utc') THEN
+ -- body decides whether anything changed; the stored payload keeps updated_at_utc, which the
+ -- *_at() builders surface as roster/depth/injury_observed_at and scoring reads.
+ body := to_jsonb(NEW) - 'updated_at_utc' - 'created_at_utc' - 'raw_json';
+ IF TG_OP = 'INSERT' OR body IS DISTINCT FROM (to_jsonb(OLD) - 'updated_at_utc' - 'created_at_utc' - 'raw_json') THEN
    INSERT INTO raw.nfl_context_observations(kind,row_id,payload)
-   VALUES(TG_TABLE_NAME, md5(body::text), to_jsonb(NEW)) ON CONFLICT DO NOTHING;
+   VALUES(TG_TABLE_NAME, md5(body::text), to_jsonb(NEW) - 'raw_json') ON CONFLICT DO NOTHING;
  ELSE
    NEW.updated_at_utc := OLD.updated_at_utc;
  END IF;
@@ -980,7 +986,12 @@ DECLARE body JSONB; BEGIN
 END $$;
 DO $$ DECLARE t TEXT; BEGIN
  FOREACH t IN ARRAY ARRAY['nfl_rosters','nfl_depth_charts','nfl_injuries'] LOOP
-  EXECUTE format('INSERT INTO raw.nfl_context_observations(kind,row_id,observed_at,payload) SELECT %L,md5((to_jsonb(x) - ''updated_at_utc'')::text),updated_at_utc,to_jsonb(x) FROM (SELECT DISTINCT ON (season,COALESCE(player_id,player_name_norm),team_abbr) * FROM raw.%I WHERE season >= extract(year FROM NOW()) - 1 ORDER BY season,COALESCE(player_id,player_name_norm),team_abbr,updated_at_utc DESC) x ON CONFLICT DO NOTHING',t,t);
+  -- Seed one observation per entity, but only on a log that has none for this kind. Re-seeding a
+  -- live log injects rows dated at the base row's updated_at_utc, which can outrank real captured
+  -- history and silently change which depth-chart entry wins an equal-pos_rank tie.
+  CONTINUE WHEN EXISTS (SELECT 1 FROM raw.nfl_context_observations WHERE kind = t);
+  -- row_id and payload must match what the trigger writes, or the seed row looks like a change.
+  EXECUTE format('INSERT INTO raw.nfl_context_observations(kind,row_id,observed_at,payload) SELECT %L,md5((to_jsonb(x) - ''updated_at_utc'' - ''created_at_utc'' - ''raw_json'')::text),updated_at_utc,to_jsonb(x) - ''raw_json'' FROM (SELECT DISTINCT ON (season,COALESCE(player_id,player_name_norm),team_abbr) * FROM raw.%I WHERE season >= extract(year FROM NOW()) - 1 ORDER BY season,COALESCE(player_id,player_name_norm),team_abbr,updated_at_utc DESC) x ON CONFLICT DO NOTHING',t,t);
   EXECUTE format('DROP TRIGGER IF EXISTS nfl_capture_context ON raw.%I',t);
   EXECUTE format('CREATE TRIGGER nfl_capture_context BEFORE INSERT OR UPDATE ON raw.%I FOR EACH ROW EXECUTE FUNCTION raw.nfl_capture_context()',t);
  END LOOP;
@@ -998,7 +1009,7 @@ CREATE OR REPLACE FUNCTION raw.nfl_depth_charts_at(cutoff TIMESTAMPTZ) RETURNS S
  SELECT (jsonb_populate_record(NULL::raw.nfl_depth_charts, payload)).*
  FROM raw.nfl_context_observations WHERE kind='nfl_depth_charts' AND observed_at <= cutoff;
 $$;
-INSERT INTO raw.nfl_schema_versions(version) VALUES('20260917_integrity_v2') ON CONFLICT DO NOTHING;
+INSERT INTO raw.nfl_schema_versions(version) VALUES('20261007_context_log_compaction') ON CONFLICT DO NOTHING;
 """
 
 
@@ -1025,7 +1036,7 @@ def ensure_schema(conn) -> None:
     with conn.cursor() as cur:
         cur.execute("SELECT to_regclass('raw.nfl_schema_versions')")
         if cur.fetchone()[0]:
-            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = '20260917_integrity_v2'")
+            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = '20261007_context_log_compaction'")
             if cur.fetchone():
                 conn.commit()
                 return

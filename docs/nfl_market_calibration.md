@@ -456,3 +456,36 @@ everything and truncated two reports before the credit floor stopped it (restore
 
 Current scan: `player_reception_yds, player_rush_yds, player_receptions, alternate_totals`
 (~87 credits/game, ~1,218/Sunday, ~5,600/month).
+
+## October 7: the as-of context log was 76% churn
+
+Monday's prediction timeout was blamed on a 2025 depth-chart backfill and "fixed" by deleting it.
+That was the symptom. The cause was that `raw.nfl_capture_context` treated `created_at_utc` and
+`raw_json` as content, so re-importing an unchanged roster row recorded a fresh observation saying
+nothing new. The two newest observations of the busiest player differed only in those bookkeeping
+fields. The log grew ~162k rows/week and every as-of rebuild reads all of it.
+
+| | Stored | Excl. `created_at_utc` | Also excl. `raw_json` |
+|---|---:|---:|---:|
+| Rosters | 168,117 | 17,154 | 13,027 |
+| Depth charts | 122,131 | 58,329 | 58,329 |
+| Injuries | 48,393 | 8,478 | 8,381 |
+
+- The trigger now hashes content only (`- updated_at_utc - created_at_utc - raw_json`) while the
+  **stored payload keeps `updated_at_utc`**, which the `*_at()` builders surface as
+  `roster/depth/injury_observed_at` and scoring reads. A first attempt stored the hash body itself,
+  which would have nulled those timestamps and silently changed scoring inputs.
+- `compact_context_log.py` removes an observation only when it is identical to the one immediately
+  before it for the same entity, so a value that changes and changes back keeps both transitions.
+  258,086 of 338,660 rows removed; table 610 MB -> 86 MB; the three as-of builds went from 38s/34s/7s
+  to effectively nothing.
+- The schema seed block now skips a kind that already has observations. Re-seeding a live log inserts
+  rows dated at the base row's `updated_at_utc`, which can outrank real captured history.
+
+**Verified, with one caveat.** The context frame at a fixed cutoff is identical in content for 1,006
+of 1,012 rows; `roster/depth_observed_at` move earlier (never later, null-ness unchanged), which is
+the correct "when this first became true" and passes every `<= cutoff` gate exactly as before. Six
+rows picked a different depth-chart entry: those players sit on several position lists (WR/PR/KR) at
+equal `pos_rank`, and the query's `ORDER BY week DESC, snapshot_ts_utc DESC, pos_rank` cannot break
+that tie, so the winner depended on physical row order. That ambiguity predates this change and is
+left alone rather than altering a frozen scoring path; it is recorded here as a known fragility.
