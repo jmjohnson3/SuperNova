@@ -662,3 +662,23 @@ Series. The list is now deduplicated in place, order preserved.
 After both fixes the table rebuilt to 39,806 rows (from a stale 39,458) with every new column
 populated: 8.13 yards per target allowed to WRs, 10.81 air yards per target, 4.21 yards per carry to
 backs.
+
+### Verdict on weather and position-split defence: not adopted
+
+Walk-forward replay of 2025 weeks 3-18, retraining each week on the repaired feature table, compared
+against the baseline replay on the same 6,368 player-games (identical actuals):
+
+| Stat | n | Baseline MAE | With new features | Change |
+|---|---:|---:|---:|---:|
+| Receiving yards | 4,503 | 15.20 | 15.32 | **-0.12** (3.0 SE worse) |
+| Rushing yards | 1,865 | 16.11 | 16.40 | **-0.29** (2.6 SE worse) |
+
+Against the line it is also no better: receiving correlation -0.053 (was -0.014), side-hit 51.5%
+(was 51.7%); rushing -0.084 (was -0.057), side-hit 45.6% (was 47.8%).
+
+Both measures move the wrong way, and the MAE deterioration is statistically clear rather than noise.
+Sixteen extra columns on a fixed training sample cost more in variance than the information they add,
+and the information they add is already in the line. **Not promoted.** The columns stay in the
+feature table - they are cheap to carry, correctly built and leakage-checked - but the production
+release is unchanged, and this is the fourth consecutive negative result for improving the projection
+as a route to edge.

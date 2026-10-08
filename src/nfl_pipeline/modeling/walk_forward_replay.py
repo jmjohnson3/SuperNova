@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import tempfile
 import time
 from dataclasses import replace
@@ -32,7 +33,7 @@ from nfl_pipeline.modeling import train_player_stat_models as trainer
 from nfl_pipeline.modeling.predict_player_props import _predict_stat
 
 ROOT = Path(__file__).resolve().parents[3]
-CACHE = ROOT / "reports" / "walk_forward_cache"
+CACHE = ROOT / "reports" / ("walk_forward_cache_newfeat" if os.getenv("NFL_WF_VARIANT") else "walk_forward_cache")
 log = logging.getLogger(__name__)
 
 
