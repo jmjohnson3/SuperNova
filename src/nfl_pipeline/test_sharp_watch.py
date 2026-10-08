@@ -198,3 +198,17 @@ def test_markets_are_only_fetched_while_they_could_still_be_bet():
     assert w.markets_for(200, wanted) == []                       # before any window opens
     assert "player_receptions" not in w.markets_for(150, wanted)   # counts decay fast; not yet worth paying for
     assert w.markets_for(30, wanted) == wanted                     # inside every window
+
+
+def test_model_view_records_which_side_our_projection_takes():
+    class FakeCur:
+        def __init__(self, projection): self.projection = projection
+        def execute(self, *a, **k): pass
+        def fetchone(self): return None if self.projection is None else (self.projection,)
+    game = dict(game_id="2026_05_TB_DAL")
+    edge = dict(player_norm="emeka egbuka", stat="receptions", line=2.5, side="over")
+    assert w.model_view(FakeCur(2.67), edge, game) == (2.67, True)      # projection above the line
+    assert w.model_view(FakeCur(2.10), edge, game) == (2.10, False)     # below: model takes the under
+    assert w.model_view(FakeCur(2.10), dict(edge, side="under"), game) == (2.10, True)
+    assert w.model_view(FakeCur(None), edge, game) == (None, None)      # no frozen forecast for this bet
+    assert w.model_view(FakeCur(2.67), dict(edge, player_norm=None), game) == (None, None)  # game totals

@@ -206,6 +206,11 @@ def summarize(df: pd.DataFrame) -> dict:
     out["placed"] = _stats(placed)
     books = df["book"].fillna("fanduel") if "book" in df else pd.Series("fanduel", index=df.index)
     out["by_book"] = {str(book): _stats(g[_tier(g) == "alert"]) for book, g in df.groupby(books)}
+    # Does our own projection add anything on top of the price edge? Priced alerts only.
+    if "model_agrees" in df:
+        priced = df[(tier.isin(("alert", "early"))) & df.model_agrees.notna()]
+        out["model"] = {("agrees" if bool(k) else "disagrees"): _stats(g)
+                        for k, g in priced.groupby(priced.model_agrees)}
     weeks = out.get("weeks", 0)
     checks = dict(enough_alerts=out["alerts"] >= PASS["min_alerts"], enough_weeks=weeks >= PASS["min_weeks"],
                   beats_fd_close=(out.get("beat_fd_close") or 0) >= PASS["min_beat_close"],
@@ -244,6 +249,16 @@ def markdown(summary: dict, df: pd.DataFrame) -> str:
                       f"realized ${placed.get('realized_profit', 0):+.2f} on {placed.get('settled', 0)} settled "
                       f"(EV at sharp close {signed(placed.get('mean_ev_at_sharp_close'))}"
                       + (f", slippage {signed(slip)} vs the alerted price" if slip is not None else "") + ").**"]
+    mv = summary.get("model") or {}
+    if mv:
+        lines += ["", "| Our projection | Alerts | EV at sharp close | Beat close | ROI |", "|---|---:|---:|---:|---:|"]
+        for name in ("agrees", "disagrees"):
+            st = mv.get(name) or {}
+            lines.append(f"| model {name} with the price edge | {st.get('alerts', 0)} | "
+                         f"{signed(st.get('mean_ev_at_sharp_close'))} | {pct(st.get('beat_fd_close'))} | {signed(st.get('roi'))} |")
+        lines.append("")
+        lines.append("_A consistent gap here, over a few hundred alerts, is what would justify staking the "
+                     "model's side more heavily. 2025 backtests put the standalone model edge near +1%._")
     by_book = summary.get("by_book") or {}
     if len(by_book) > 1:
         lines += ["", "| Book | Alerts | EV at sharp close | Beat close |", "|---|---:|---:|---:|"]

@@ -341,6 +341,12 @@ ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS placed_at TIMESTAMPTZ
 -- The price actually obtained, which is rarely the alerted one. Backtest EV assumes no slippage;
 -- this is how we find out what that assumption costs.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS taken_price INTEGER;
+-- The model's own view of this bet. It is not what selects the bet - the price gap is - but against
+-- 2025 early lines the model's side beat the close ~1% more often than not, and whether that adds to
+-- a price edge is only answerable with live bets. Recorded on every alert so the question can be
+-- settled from real money rather than argued.
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_projection NUMERIC;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_agrees BOOLEAN;
 -- The old key omitted the book (so two books' identical lines collided) and used a nullable
 -- player_name_norm, which let every poll re-insert game totals. COALESCE closes both. Those
 -- duplicate totals already exist, so drop all but the first of each before the index goes on.
@@ -352,6 +358,25 @@ DELETE FROM bets.nfl_sharp_alerts a USING bets.nfl_sharp_alerts b
 CREATE UNIQUE INDEX IF NOT EXISTS nfl_sharp_alerts_offer_key ON bets.nfl_sharp_alerts
   (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price);
 """
+
+
+def model_view(cur, edge: dict, game: dict) -> tuple[float | None, bool | None]:
+    """(projection, agrees) from the current frozen forecast for this player and stat, if one exists.
+
+    Matched on the book's own spelling of the player, which is what the forecast stores alongside its
+    own short display name.
+    """
+    if edge["player_norm"] is None:
+        return None, None
+    cur.execute("""SELECT projection FROM bets.nfl_player_prop_predictions
+        WHERE game_id=%s AND stat=%s AND offer_player_name_norm=%s AND is_current
+        ORDER BY id DESC LIMIT 1""", (game["game_id"], edge["stat"], edge["player_norm"]))
+    row = cur.fetchone()
+    if not row or row[0] is None:
+        return None, None
+    projection = float(row[0])
+    model_side = "over" if projection > float(edge["line"]) else "under"
+    return projection, model_side == edge["side"]
 
 
 def _fallback_link(cur, edge: dict, game: dict) -> str | None:
@@ -501,23 +526,27 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             with conn.cursor() as cur:
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
+                    projection, agrees = model_view(cur, edge, game)
                     tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60, edge["stat"])
                     stake = stake_for(cur, tier, now, budget, edge["stat"]) if tier == "alert" else 0.0
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
-                            fair_probability, ev, minimum_price, line_gap, tier, book, stake)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            fair_probability, ev, minimum_price, line_gap, tier, book, stake,
+                            model_projection, model_agrees)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         ON CONFLICT (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price) DO UPDATE SET
                             tier='alert', sharp_book=EXCLUDED.sharp_book, sharp_line=EXCLUDED.sharp_line,
                             fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev, stake=EXCLUDED.stake,
-                            minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap
+                            minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap,
+                            model_projection=EXCLUDED.model_projection, model_agrees=EXCLUDED.model_agrees
                           WHERE bets.nfl_sharp_alerts.tier IN ('logged', 'early') AND EXCLUDED.tier='alert'
                         RETURNING alert_id, tier, stake""",
                                 (event["id"], game["game_id"], game["start"], game["home"], game["away"], edge["stat"],
                                  edge["player"], edge["player_norm"], edge["side"], edge["line"], edge["price"], edge["link"],
                                  edge["sharp_book"], edge["sharp_line"], edge["fair_probability"], edge["ev"],
-                                 edge["minimum_price"], edge["line_gap"], tier, edge["book"], stake))
+                                 edge["minimum_price"], edge["line_gap"], tier, edge["book"], stake,
+                                 projection, agrees))
                     row = cur.fetchone()
                     if row and row[1] == "alert":
                         new_alerts.append((row[0], edge, game, float(row[2] or 0.0)))

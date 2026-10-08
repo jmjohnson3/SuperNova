@@ -558,3 +558,29 @@ This closes a consistent story. The stat model beats its naive baseline; the opp
 theirs; the market beats both. Knowing a receiver will see seven targets rather than six is not
 private information - it is what the line is already made of. The edge is in price discrepancies
 between books, not in predicting football better.
+
+## October 7: how the projections actually get used
+
+Break-even win rate by price paid, against our measured 51.7% on receiving yards:
+
+| Price | Break-even | Our 51.7% |
+|---|---:|---|
+| -113 (typical prop) | 53.05% | loses |
+| -110 | 52.38% | loses |
+| -105 | 51.22% | **wins** |
+| +100 | 50.00% | **wins** |
+
+The model is not far from viable; it simply cannot carry -113 of juice. That reframes the whole
+project: **the price paid matters at least as much as the quality of the prediction**, and the
+scanner's entire job is finding prices better than fair. A modest edge at a good price is a winning
+bet; an excellent edge at a bad price is not.
+
+(Caveat kept visible: at 947 bets, 51.7% is 1.0 standard error from a coin flip. We cannot yet
+demonstrate the model is above 50% against the line at all; ~5,000 bets would be needed.)
+
+So the two halves are complementary rather than competing: **the scanner picks the price, the model
+picks the side.** Every alert now records `model_projection` and `model_agrees` - the current frozen
+forecast's view of that exact bet - and the report splits priced alerts by agreement. Stakes stay
+flat on the price edge, which is the half with a backtest behind it; if agreement shows a consistent
+lift over a few hundred alerts, that is what would justify staking the model's side more heavily.
+2025 put the standalone model edge near +1% of closing-line value, so the lift to look for is small.
