@@ -682,3 +682,47 @@ and the information they add is already in the line. **Not promoted.** The colum
 feature table - they are cheap to carry, correctly built and leakage-checked - but the production
 release is unchanged, and this is the fourth consecutive negative result for improving the projection
 as a route to edge.
+
+## October 8: coverage features, tested before building
+
+nflverse publishes `pbp_participation_{season}.csv` alongside play-by-play, carrying
+`defense_man_zone_type`, `defense_coverage_type`, `route`, `was_pressure` and the player IDs on the
+field. The pipeline already downloads both files and keeps only route participation and target share.
+Joining them on (game_id, play_id) for 2025 gives 17,570 targeted pass plays with a coverage label -
+89% of pass attempts, far better than the 49%-of-all-plays figure suggests. League-wide: 6.93 yards
+per target against man, 7.49 against zone, 31% man.
+
+Rather than build the three proposed features and spend an hour on a replay, each leg was tested
+first. Both failed, for opposite reasons.
+
+**Receiver coverage splits are not measurable at this density.** The median receiver sees 3 labelled
+targets per game. Split-half reliability (odd vs even weeks, 2025):
+
+| Quantity | Split-half r | Full-season (Spearman-Brown) |
+|---|---:|---:|
+| Defence man rate | **+0.860** | +0.925 |
+| Receiver yds/target vs man | +0.168 | +0.287 |
+| Receiver (man - zone) difference | +0.148 | +0.258 |
+
+A receiver's man/zone split is ~85% noise. A feature cannot predict an outcome better than it can
+reproduce itself, so those two could only behave like the October 7 additions.
+
+**Defence man rate is highly reliable and completely unrelated to the outcome.** On 4,503 WR/TE
+player-games, against the walk-forward model's own error:
+
+| Man-rate quartile | n | Man rate | Model error | Yds/target |
+|---|---:|---:|---:|---:|
+| Least man | 1,132 | 19% | +1.42 | 6.93 |
+| | 1,123 | 28% | +4.41 | 7.21 |
+| | 1,127 | 35% | +3.69 | 7.30 |
+| Most man | 1,121 | 45% | +2.69 | 7.00 |
+
+Correlation with model error +0.009, with yards per target -0.005 (volume removed). Most-man minus
+least-man is +1.27 yards at 1.4 SE, and man rate ranges 8%-62%, so there was ample variation for a
+real effect to show. The interaction cannot work either: it is the product of an unreliable term and
+an irrelevant one.
+
+**Not built.** Twenty minutes of reliability and relevance checks replaced roughly three hours of
+building plus a replay. The useful generalisation: before adding a feature, measure whether it
+reproduces itself across a split, and whether it relates to the model's *error* rather than to the
+raw target - raw correlations are dominated by which player it is.
