@@ -584,3 +584,34 @@ forecast's view of that exact bet - and the report splits priced alerts by agree
 flat on the price edge, which is the half with a backtest behind it; if agreement shows a consistent
 lift over a few hundred alerts, that is what would justify staking the model's side more heavily.
 2025 put the standalone model edge near +1% of closing-line value, so the lift to look for is small.
+
+## October 7: new features - what is missing, and why it would not help
+
+The receiving model already uses 402 features from a 370-column table (targets, routes, snaps, carries,
+shares, trends, depth, injuries, team context, opponent-allowed). 55 table columns go unused, mostly
+red-zone variants the trainer's own feature selection dropped.
+
+**Weather is genuinely absent.** `raw.nfl_games` carries `temp`, `wind`, `roof` and `surface`, and none
+of them reach the feature table. Tempting lead: on 2025 outdoor receiving player-games with a real
+line, the book's error in 15+ mph wind was -1.93 against +3.53 in calm conditions - a 5.5-yard gap at
+2.0 SE, suggesting books under-adjust for wind.
+
+Dose-response killed it:
+
+| Wind (mph) | n | Book's error |
+|---|---:|---:|
+| 0-5 | 142 | +3.42 |
+| 5-10 | 305 | +2.55 |
+| 10-15 | 95 | **+7.10** |
+| 15+ | 91 | -1.93 |
+
+Not monotonic, and the 10-15 bucket is the worst for the hypothesis. Regression slope -0.134 yards
+per mph, t = -0.6. The original result was an artefact of the threshold chosen. Weather would improve
+raw prediction slightly; it would not create edge, because the market prices it.
+
+That generalises. Every feature in the set is public box-score data, and public information is what a
+line is made of. Adding more of it moves us toward the market, not past it. The categories that could
+create edge are information the market lacks (we have none), information it prices slowly (the early
+window, which the decay curve shows is worthless by kickoff), and information that is public but hard
+to process at scale - which is where multi-book line disagreement, collected since October 6, is the
+only genuinely new input we have.
