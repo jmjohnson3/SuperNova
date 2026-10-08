@@ -645,3 +645,20 @@ There is no participation or play-by-play table; usage context lives as columns 
 Expectation, stated in advance: this should improve raw accuracy modestly and is unlikely to create
 betting edge, for the reason the weather test above demonstrates - the market prices public
 information. The walk-forward replay is the way to find out rather than assume.
+
+### The feature table had been failing to write since 29 September
+
+Wiring the new columns in uncovered a pre-existing break. `FEATURE_COLUMNS` contains
+`opp_allowed_receptions_avg_5` - receptions joined `STAT_SPECS` after the table was created, and no
+`ALTER TABLE` was ever added for it - so every `write_features` run failed on an undefined column and
+`features.nfl_player_game_training_features` had been frozen at its 29 September contents. Tuesday's
+training run has been reading eight-day-old features without surfacing an error.
+
+A second fault was introduced by this change and fixed with it: `FEATURE_COLUMNS` carried four
+duplicate names (receptions appears in both `TARGET_STATS` and `USAGE_STATS`), so
+`df[FEATURE_COLUMNS]` returned a two-column frame for them and `row.get(name)` handed the insert a
+Series. The list is now deduplicated in place, order preserved.
+
+After both fixes the table rebuilt to 39,806 rows (from a stale 39,458) with every new column
+populated: 8.13 yards per target allowed to WRs, 10.81 air yards per target, 4.21 yards per carry to
+backs.

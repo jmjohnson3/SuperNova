@@ -367,6 +367,9 @@ CREATE TABLE IF NOT EXISTS features.nfl_player_game_training_features (
 );
 
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS route_participation NUMERIC;
+-- receptions joined STAT_SPECS after this table was created, so its opponent-allowed column was
+-- never added and write_features has been failing on every run since.
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_receptions_avg_5 NUMERIC;
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS is_indoor NUMERIC;
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS wind_mph NUMERIC;
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS temp_f NUMERIC;

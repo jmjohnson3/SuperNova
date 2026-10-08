@@ -1564,6 +1564,11 @@ FEATURE_COLUMNS = [
     "yardage_projection_volatility_v4_score",
     *[f"{stat}_std_{window}" for stat in VOLATILITY_STATS for window in (5, 10)],
 ]
+# The list is assembled from several stat tuples, and a few names appear in more than one of them
+# (receptions is both a target and a usage stat). A repeated name makes df[FEATURE_COLUMNS] return a
+# two-column frame for it, so row.get(name) hands back a Series and the insert fails to adapt it.
+# Order is preserved so the column list, the INSERT and the row tuple stay in step.
+FEATURE_COLUMNS = list(dict.fromkeys(FEATURE_COLUMNS))
 
 
 def _row_tuple(row: pd.Series) -> tuple:
