@@ -615,3 +615,33 @@ create edge are information the market lacks (we have none), information it pric
 window, which the decay curve shows is worthless by kickoff), and information that is public but hard
 to process at scale - which is where multi-book line disagreement, collected since October 6, is the
 only genuinely new input we have.
+
+### Weather and position-split defence wired in (challenger features)
+
+Two gaps in the 370-column feature table, both now filled. **These are challenger features**: the
+production release is pinned by sha256, so nothing reaches live scoring until a retrain is evaluated
+and promoted by hand.
+
+**Weather.** `temp`, `wind`, `roof` and `surface` were collected in `raw.nfl_games` and never reached
+the feature table. `_add_weather` derives `is_indoor`, `wind_mph`, `temp_f`, `is_high_wind`,
+`is_cold`, `is_grass`. Indoors a wind or temperature reading is meaningless, so it is replaced with a
+neutral value and flagged rather than left null for the model to impute from outdoor games.
+
+**Defence.** `opp_allowed_*_avg_5` summed everything a defence gave up, so a slow-paced team facing
+few passes looked stingy, and a defence that shut down receivers but was gashed by backs looked
+average. `_add_defense_detail` adds, per position group (WR/TE/RB): yards allowed, yards allowed per
+target, air yards per target, and yards per carry for backs. Dividing by opportunity removes pace and
+volume. Every column is shifted one game before rolling, so a row never sees its own result.
+
+Built over 2024-2026 (12,890 rows): WRs average 144 yards and 8.06 yards per target against a
+defence, air yards 10.85 per target, RBs 4.26 per carry - all plausible. Indoor rows carry zero wind
+as intended. A leakage check found 4 rows of 12,588 where the WR-allowed feature coincidentally
+equals that game's own total, consistent with chance at integer yardage.
+
+True coverage data - man/zone rates, cornerback assignments, shadow matchups - is **not available**.
+There is no participation or play-by-play table; usage context lives as columns on
+`raw.nfl_player_gamelogs`. That would need Next Gen Stats or PFF.
+
+Expectation, stated in advance: this should improve raw accuracy modestly and is unlikely to create
+betting edge, for the reason the weather test above demonstrates - the market prices public
+information. The walk-forward replay is the way to find out rather than assume.

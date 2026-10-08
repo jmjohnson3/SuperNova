@@ -367,6 +367,22 @@ CREATE TABLE IF NOT EXISTS features.nfl_player_game_training_features (
 );
 
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS route_participation NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS is_indoor NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS wind_mph NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS temp_f NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS is_high_wind NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS is_cold NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS is_grass NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_receiving_yards_wr_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_receiving_yards_te_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_receiving_yards_rb_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_yards_per_target_wr_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_yards_per_target_te_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_yards_per_target_rb_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_air_yards_per_target_wr_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_air_yards_per_target_te_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_air_yards_per_target_rb_avg_5 NUMERIC;
+ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS opp_allowed_yards_per_carry_rb_avg_5 NUMERIC;
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS snap_share NUMERIC;
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS roster_status TEXT;
 ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS roster_is_active BOOLEAN;

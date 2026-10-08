@@ -210,6 +210,10 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
             COALESCE(team_inj.teammate_receiver_injury_score, 0)::float AS same_week_teammate_receiver_injury_score,
             COALESCE(team_inj.teammate_receiver_out_count, 0)::float AS same_week_teammate_receiver_out_count,
             g.total_line::float AS game_total_line,
+            g.temp::float AS game_temp_f,
+            g.wind::float AS game_wind_mph,
+            LOWER(COALESCE(g.roof, '')) AS game_roof,
+            LOWER(COALESCE(g.surface, '')) AS game_surface,
             CASE
                 WHEN g.spread_line IS NULL THEN NULL
                 WHEN UPPER(p.team_abbr) = UPPER(g.home_team_abbr) THEN -g.spread_line::float
@@ -402,16 +406,79 @@ def _add_defense_allowed(df: pd.DataFrame) -> pd.DataFrame:
             .reset_index(level=0, drop=True)
         )
     keep = ["def_team", "game_id"] + [f"opp_allowed_{stat}_avg_5" for stat in TARGET_STATS]
-    return df.merge(
+    out = df.merge(
         allowed[keep],
         left_on=["opponent_abbr", "game_id"],
         right_on=["def_team", "game_id"],
         how="left",
-    ).drop(columns=["def_team"], errors="ignore")
+    ).drop(columns=["def_team"])
+    return _add_defense_detail(out)
 
 
 EXPECTED_ROSTER_LOOKBACK_GAMES = 4
 
+
+def _add_defense_detail(df: pd.DataFrame) -> pd.DataFrame:
+    """Defence features beyond total yards allowed.
+
+    `opp_allowed_*_avg_5` sums everything a defence gave up, so a slow-paced team that faces few
+    passes looks stingy, and a defence that shuts down receivers but is gashed by backs looks average.
+    These split what was allowed by the position that earned it, and divide by opportunity so volume
+    and pace drop out. Every column is shifted one game before rolling, so a row never sees its own
+    result.
+    """
+    pos = df["position"].astype(str).str.upper()
+    per_game = df.assign(_pos=pos.where(pos.isin(["WR", "TE", "RB"]), "OTHER")).groupby(
+        ["opponent_abbr", "season", "week", "game_id", "_pos"], dropna=False
+    ).agg(rec_yards=("receiving_yards", "sum"), targets=("targets", "sum"),
+          air_yards=("receiving_air_yards", "sum") if "receiving_air_yards" in df.columns else ("targets", "sum"),
+          rush_yards=("rushing_yards", "sum"), carries=("carries", "sum")).reset_index()
+
+    wide = per_game.pivot_table(index=["opponent_abbr", "season", "week", "game_id"], columns="_pos",
+                                values=["rec_yards", "targets", "air_yards", "rush_yards", "carries"],
+                                aggfunc="sum")
+    wide.columns = [f"{a}_{b}" for a, b in wide.columns]
+    wide = wide.reset_index().sort_values(["opponent_abbr", "season", "week", "game_id"])
+
+    # Yards allowed to each position group, and yards per target against this defence.
+    built: dict[str, pd.Series] = {}
+    for group in ("WR", "TE", "RB"):
+        yards, tgts = f"rec_yards_{group}", f"targets_{group}"
+        if yards in wide:
+            built[f"opp_allowed_receiving_yards_{group.lower()}_avg_5"] = wide[yards]
+            if tgts in wide:
+                built[f"opp_allowed_yards_per_target_{group.lower()}_avg_5"] = (
+                    wide[yards] / wide[tgts].replace(0, np.nan))
+        air, tg = f"air_yards_{group}", f"targets_{group}"
+        if air in wide and tg in wide and air != tg:
+            built[f"opp_allowed_air_yards_per_target_{group.lower()}_avg_5"] = (
+                wide[air] / wide[tg].replace(0, np.nan))
+    if "rush_yards_RB" in wide and "carries_RB" in wide:
+        built["opp_allowed_yards_per_carry_rb_avg_5"] = wide["rush_yards_RB"] / wide["carries_RB"].replace(0, np.nan)
+
+    for name, series in built.items():
+        wide[name] = (series.groupby(wide["opponent_abbr"]).shift(1)
+                      .groupby(wide["opponent_abbr"]).rolling(5, min_periods=1).mean()
+                      .reset_index(level=0, drop=True))
+    keep = ["opponent_abbr", "game_id"] + list(built)
+    return df.merge(wide[keep], on=["opponent_abbr", "game_id"], how="left")
+
+
+def _add_weather(df: pd.DataFrame) -> pd.DataFrame:
+    """Playing conditions. Indoors a wind or temperature reading is meaningless, so it is replaced by
+    a neutral value and flagged, rather than left as a null the model would impute from outdoor games."""
+    roof = df.get("game_roof", pd.Series("", index=df.index)).astype(str).str.lower()
+    indoor = roof.isin(["dome", "closed"])
+    wind = pd.to_numeric(df.get("game_wind_mph"), errors="coerce")
+    temp = pd.to_numeric(df.get("game_temp_f"), errors="coerce")
+    out = df.copy()
+    out["is_indoor"] = indoor.astype(float)
+    out["wind_mph"] = wind.where(~indoor, 0.0)
+    out["temp_f"] = temp.where(~indoor, 70.0)
+    out["is_high_wind"] = (out["wind_mph"] >= 15).astype(float)
+    out["is_cold"] = (out["temp_f"] <= 32).astype(float)
+    out["is_grass"] = df.get("game_surface", pd.Series("", index=df.index)).astype(str).str.contains("grass").astype(float)
+    return out
 
 def _expected_absent_teammates(df: pd.DataFrame, stats: tuple[str, ...],
                                ruled_out: set[tuple[int, int, str, str]]) -> dict[tuple[str, str], dict[str, list[float]]]:
@@ -1400,6 +1467,7 @@ def build_feature_frame(conn, cfg: FeatureBuildConfig) -> pd.DataFrame:
     df = _add_player_rolling(df)
     df = _add_team_context(df)
     df = _add_defense_allowed(df)
+    df = _add_weather(df)
     df = _add_usage_role_features(df, _load_ruled_out(conn, cfg.min_season))
     df = _add_context_risk_features(df)
     df["is_home"] = df["is_home"].astype("boolean")
@@ -1407,6 +1475,23 @@ def build_feature_frame(conn, cfg: FeatureBuildConfig) -> pd.DataFrame:
 
 
 FEATURE_COLUMNS = [
+    # playing conditions and position-split opponent defence (added 2026-10-07)
+    "is_indoor",
+    "wind_mph",
+    "temp_f",
+    "is_high_wind",
+    "is_cold",
+    "is_grass",
+    "opp_allowed_receiving_yards_wr_avg_5",
+    "opp_allowed_receiving_yards_te_avg_5",
+    "opp_allowed_receiving_yards_rb_avg_5",
+    "opp_allowed_yards_per_target_wr_avg_5",
+    "opp_allowed_yards_per_target_te_avg_5",
+    "opp_allowed_yards_per_target_rb_avg_5",
+    "opp_allowed_air_yards_per_target_wr_avg_5",
+    "opp_allowed_air_yards_per_target_te_avg_5",
+    "opp_allowed_air_yards_per_target_rb_avg_5",
+    "opp_allowed_yards_per_carry_rb_avg_5",
     "season", "week", "season_type", "game_id", "game_date_et", "player_id", "player_name",
     "team_abbr", "opponent_abbr", "position", "is_home", "n_games_prev_3",
     "n_games_prev_5", "n_games_prev_10", "rest_days", "team_game_number",
