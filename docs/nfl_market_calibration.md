@@ -726,3 +726,45 @@ an irrelevant one.
 building plus a replay. The useful generalisation: before adding a feature, measure whether it
 reproduces itself across a split, and whether it relates to the model's *error* rather than to the
 raw target - raw correlations are dominated by which player it is.
+
+## October 9: where the accuracy actually is, and what is left to fix
+
+**The point estimate has almost no headroom.** Decomposing 2025 receiving error on the 947
+player-games with real lines:
+
+| Projection method | MAE |
+|---|---:|
+| Our model's own number | 20.83 |
+| The market line (what scoring anchors to) | **20.20** |
+| Knowing exact targets, league-average efficiency | 15.82 |
+| Knowing exact targets + that player's own efficiency | 12.85 |
+| Knowing exact receptions + air yards | 11.63 |
+
+Even near-perfect foreknowledge of the box score leaves ~11.6 yards of error, so **58% of the line's
+error is irreducible** - play calling, broken tackles, game script. The entire gap between the market
+and omniscience is 8.6 yards, and the market's implied volume forecast is already within 4.4 yards of
+perfect. Since `projection_trust` is 0, scoring already uses the line, which is the most accurate
+predictor available. There is no meaningful accuracy left to win.
+
+**Probability calibration had a real fault, now confirmed fixed.** Across 3,956 settled 2026 priced
+forecasts, stated probabilities above 55% were winning well under half the time. It was concentrated
+entirely in rushing yards - the one stat with `probability_trust = 1.0`, so the model's own
+probability is used rather than the market's:
+
+| Stat | prob_trust | Confident picks | Said | Won |
+|---|---:|---:|---:|---:|
+| passing_tds | 0.0 | 119 | 61.6% | 54.6% |
+| receiving_yards | 0.0 | 364 | 57.6% | 47.3% |
+| receptions | 0.0 | 252 | 59.3% | 50.4% |
+| **rushing_yards** | **1.0** | **154** | **58.5%** | **29.9%** |
+
+All 154 predate the 5 October median-shift fix, and the side split shows the mechanism: before the
+fix, rushing overs won 25.1% (199 picks) against unders at 52.3% (618). After it, both sides sit at
+50.0% and **no forecast reaches 55% confidence at all** (0 of 30). That is live confirmation of a fix
+previously checked only by re-scoring.
+
+**One genuine issue remains.** The stored p10-p90 band should contain the result 80% of the time; it
+contains it 76.7%, and asymmetrically - 13.8% finish above p90 against 9.5% below p10. The upper tail
+is too thin, which matches receivers' occasional spike games. Impact is limited while
+`probability_trust` is 0 almost everywhere (the market's probability is used), but it would matter to
+any stat that later earns trust, and to the ranges shown on cards.
