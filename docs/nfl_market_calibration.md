@@ -800,3 +800,30 @@ for a bet the link already names. `book_link` now returns a kind: `betslip` (Fan
 bettor's state), `selection` (the book's own deep link naming this bet), or `page` (valid link, names
 no bet), rendered as "Add to slip", "Open this bet on DraftKings" and "find it manually". Host and
 scheme checks are unchanged, so a foreign host still yields no link whatever parameters it carries.
+
+## October 12: which books are actually worth an account
+
+The four reference books have been scanned free since 6 October (<= 10 named books cost one region).
+Sunday's 440 saved payloads across 13 games give the first read. Distinct +3% opportunities, and the
+same opportunities valued at the sharp book's last price before kickoff:
+
+| Book | Sides priced | Distinct +3% | Rate | EV at the sharp close | Still +EV |
+|---|---:|---:|---:|---:|---:|
+| FanDuel | 874 | 11 | 1.3% | **+4.41%** | 89% |
+| DraftKings | 1,198 | 33 | 2.8% | +2.46% | 78% |
+| BetMGM | 936 | 7 | 0.7% | **+3.76%** | 98% |
+| **ESPN Bet** | 790 | **38** | 4.8% | **+3.85%** | 93% |
+| Fanatics | 232 | 30 | 12.9% | +1.77% | 71% |
+| Caesars | 0 | 0 | - | - | - |
+
+Two findings worth separating. **Fanatics looks loosest and is not** - 12.9% of its prices show a
++3% gap, but they decay to +1.77% by the close and only 71% survive, which is what a slow book that
+corrects late looks like. Edge frequency alone is a trap; frequency must be graded at the close.
+
+**ESPN Bet is the opposite** and is the single biggest lever available: more distinct opportunities
+than FanDuel and DraftKings combined, at quality above DraftKings and close to FanDuel's. Caesars
+(`williamhill_us`) returned no player props at all and can be dropped from the scan to free a slot.
+
+Ranking by total expected value (distinct chances x EV at close), ESPN Bet is worth more than
+FanDuel, DraftKings and BetMGM together. Opening that account costs nothing in API credits - it is
+already being scanned - and roughly doubles actionable volume.
