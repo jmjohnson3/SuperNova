@@ -768,3 +768,35 @@ contains it 76.7%, and asymmetrically - 13.8% finish above p90 against 9.5% belo
 is too thin, which matches receivers' occasional spike games. Impact is limited while
 `probability_trust` is 0 almost everywhere (the market's probability is used), but it would matter to
 any stat that later earns trust, and to the ranges shown on cards.
+
+## October 12: week 5 result, and DraftKings link labelling
+
+**First Sunday with the full setup.** 47 alerts fired and posted (35 DraftKings, 12 FanDuel), 124
+logged gaps, 738 credits. Graded:
+
+| | Week 4 | Week 5 | Backtest said |
+|---|---:|---:|---:|
+| Alerts | 1 | 35 | - |
+| Mean EV at the sharp close | -5.96% | **+3.55%** | +2.5% to +3.3% |
+
+Live matched the backtest. The volume jump came from adding DraftKings and widening the ping window
+to 3 hours, both evidence-driven. By book: DraftKings 25 graded alerts at **+3.49%**, FanDuel 11 at
+**+1.52%** - DraftKings is carrying the edge and stays in the scan.
+
+Model agreement still adds nothing: agrees 31 alerts at +3.67%, disagrees 9 at +3.86%.
+
+Predictions are unchanged: 417 priced week-5 props, model side won 52.0% against a 53.05% break-even
+(+0.8 SE from a coin flip), model MAE 16.1 against the line's 14.7.
+
+**Two caveats kept visible.** 36 graded alerts over 2 weeks against a bar of 100 over 3. And "beat
+FanDuel's close" is 20% against a 55% bar - but that criterion measures whether the *book* moved its
+line, and the backtest already showed books correct only ~4% of these late. When a line does not
+move, CLV is zero and scores as a miss. EV at the sharp close is the meaningful test for this
+strategy; the beat-close bar was designed for a strategy whose lines move and should be revisited.
+
+**Link labelling.** All 35 DraftKings alerts carried a `?outcomes=` link - the book's own betslip
+deep-link form, not a homepage. Rendering those as "manual selection" told the bettor to go hunting
+for a bet the link already names. `book_link` now returns a kind: `betslip` (FanDuel, resolved to the
+bettor's state), `selection` (the book's own deep link naming this bet), or `page` (valid link, names
+no bet), rendered as "Add to slip", "Open this bet on DraftKings" and "find it manually". Host and
+scheme checks are unchanged, so a foreign host still yields no link whatever parameters it carries.

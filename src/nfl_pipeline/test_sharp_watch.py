@@ -142,11 +142,15 @@ def test_other_books_keep_only_their_own_verified_links():
                 line=45.5, price=120, sharp_book="pinnacle", sharp_line=45.5, line_gap=0.0,
                 fair_probability=0.58, ev=0.05, minimum_price=110,
                 link="https://sportsbook.draftkings.com/event/123")
-    assert w.book_link(edge, game) == ("https://sportsbook.draftkings.com/event/123", False)
-    assert w.book_link(dict(edge, link="https://evil.example.com/x"), game) == (None, False)
-    assert w.book_link(dict(edge, link="http://sportsbook.draftkings.com/x"), game) == (None, False)
-    text = w.format_alert(edge, game, stake=5.0)
-    assert "bet $5 at DraftKings" in text and "DraftKings +120" in text and "manual selection" in text
+    # a plain event page names no bet; the ?outcomes= form carries the exact selection
+    assert w.book_link(edge, game) == ("https://sportsbook.draftkings.com/event/123", "page")
+    withsel = dict(edge, link="https://sportsbook.draftkings.com/?outcomes=0QA37612%232309657")
+    assert w.book_link(withsel, game)[1] == "selection"
+    assert w.book_link(dict(edge, link="https://evil.example.com/?outcomes=1"), game) == (None, None)
+    assert w.book_link(dict(edge, link="http://sportsbook.draftkings.com/x"), game) == (None, None)
+    assert "find it manually" in w.format_alert(edge, game, stake=5.0)
+    text = w.format_alert(withsel, game, stake=5.0)
+    assert "bet $5 at DraftKings" in text and "DraftKings +120" in text and "Open this bet on DraftKings" in text
 
 
 def test_stake_respects_caps_and_the_loss_pause(monkeypatch):

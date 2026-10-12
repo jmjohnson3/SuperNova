@@ -392,28 +392,47 @@ def _fallback_link(cur, edge: dict, game: dict) -> str | None:
     return row[0] if row else None
 
 
-def book_link(edge: dict, game: dict) -> tuple[str | None, bool]:
-    """(url, is_betslip). FanDuel resolves to a one-tap betslip in the bettor's state; other books
-    keep the provider's own deep link, host-checked so a bad link can never be rendered as theirs."""
+# Query parameters a book uses to carry one specific selection into its betslip.
+SELECTION_PARAMS = ("outcomes", "selectionids", "selectionid", "marketid", "addtobetslip", "bet")
+
+
+def _carries_a_selection(url) -> bool:
+    query = (url.query or "").lower()
+    return any(p in query for p in SELECTION_PARAMS) or "addtobetslip" in (url.path or "").lower()
+
+
+def book_link(edge: dict, game: dict) -> tuple[str | None, str | None]:
+    """(url, kind) where kind is:
+       'betslip'   - resolved to the bettor's own state, one tap adds the exact selection (FanDuel)
+       'selection' - the book's own deep link carrying this selection, not state-resolved
+       'page'      - a valid link to the book, but it does not name the bet
+    Host-checked throughout, so a bad link can never be rendered as the book's own."""
     book = edge.get("book") or "fanduel"
     if book == "fanduel":
         from nfl_pipeline.fanduel_links import betslip_for_row, provider_link
         row = dict(edge, away=game["away"], home=game["home"],
                    market=edge["stat"] if edge["stat"] in ("spread", "total") else None)
         slip = betslip_for_row(row)
-        return (slip, True) if slip else (provider_link(edge.get("link")), False)
+        if slip:
+            return slip, "betslip"
+        fallback = provider_link(edge.get("link"))
+        if not fallback:
+            return None, None
+        return fallback, ("selection" if _carries_a_selection(urlsplit(fallback)) else "page")
     link = str(edge.get("link") or "").strip()
     domain = BOOK_DOMAIN.get(book)
     if not link or not domain or any(c.isspace() or ord(c) < 32 or c in "<>\\" for c in link):
-        return None, False
+        return None, None
     try:
         url = urlsplit(link)
         host = url.hostname or ""
     except ValueError:
-        return None, False
+        return None, None
     if url.scheme != "https" or url.username or url.password or url.port is not None:
-        return None, False
-    return (link, False) if (host == domain or host.endswith("." + domain)) else (None, False)
+        return None, None
+    if not (host == domain or host.endswith("." + domain)):
+        return None, None
+    return link, ("selection" if _carries_a_selection(url) else "page")
 
 
 def format_alert(edge: dict, game: dict, stake: float = 0.0) -> str:
@@ -422,14 +441,16 @@ def format_alert(edge: dict, game: dict, stake: float = 0.0) -> str:
     book = edge.get("book") or "fanduel"
     book_name = BOOK_LABEL.get(book, book.title())
     gap = f" ({edge['sharp_book'].title()} {edge['sharp_line']:g})" if edge["line_gap"] else f" ({edge['sharp_book'].title()})"
-    link, is_slip = book_link(edge, game)
+    link, kind = book_link(edge, game)
     kickoff = int(game["start"].timestamp())
     heading = f"**SHARP EDGE - bet ${stake:g} at {book_name}**" if stake > 0 else "**SHARP EDGE - research, not a bet**"
     return (f"{heading}\n{who} {edge['side'].upper()} {edge['line']:g} {label} "
             f"({game['away']} @ {game['home']}, <t:{kickoff}:R>)\n{book_name} {edge['price']:+d} | "
             f"fair {edge['fair_probability']:.1%}{gap} | "
             f"EV {edge['ev']:+.1%} | take at {edge['minimum_price']:+d} or better"
-            + (f"\n[Add to slip](<{link}>)" if is_slip else f"\n[Open {book_name} - manual selection](<{link}>)" if link
+            + (f"\n[Add to slip](<{link}>)" if kind == "betslip"
+               else f"\n[Open this bet on {book_name}](<{link}>)" if kind == "selection"
+               else f"\n[Open {book_name} - find it manually](<{link}>)" if link
                else f"\nNo {book_name} link captured; search manually."))
 
 
