@@ -36,9 +36,23 @@ def offer(**changes):
         under_link='https://sportsbook.fanduel.com/addToBetslip?marketId=42.101&selectionId=12'), **changes)
 
 
-def score(q):
+def score(q, *, approved_signal=False):
     metrics = dict(accepted_live=True, accepted=True, live_model_version='production', mae=15.)
     dist = dict(kind='empirical_oof_residual', residual_quantiles=list(range(-40, 41)))
+    if approved_signal:
+        market = live._no_vig_side_probability(q.get('over_price'), q.get('under_price'), 'over')
+        q = dict(q, _fanduel_signal=dict(
+            contract='nfl-fanduel-residual-signal-v1',
+            final_over_probability=min(.999, market + .04),
+            market_over_probability=market,
+            model_over_probability=.65,
+            approved=True,
+            actionable_context=True,
+            adjustment=.04,
+            trust=.20,
+            policy_id='chronological-test-policy',
+            reasons=['test_approved_chronological_residual'],
+        ))
     r = live._candidate_from_offer(player(), 'receiving_yards', 65., 60., metrics, q, dist)
     r.update(execution_contract=CONTRACT, quote_fetched_at_utc=q['fetched_at_utc'],
         prediction_context_cutoff_utc=NOW.isoformat(), start_ts_utc=START,
@@ -59,7 +73,7 @@ def test_fresh_fanduel_workflow_through_exact_alternate_close_and_evaluation(mon
         player(), 'receiving_yards', NOW, now=NOW)
     assert [q['line'] for q in qs] == [50.5, 60.5]
     assert issues == {'other_book':1, 'stale_quote_refresh_required':1}
-    rows = [score(q) for q in qs]
+    rows = [score(q, approved_signal=True) for q in qs]
     assert any(r['tier']=='micro_projection' for r in rows)
     live._apply_daily_micro_cap(rows, 5)
     chosen = next(r for r in rows if r['tier']=='micro_projection')
@@ -206,11 +220,11 @@ def test_no_game_never_fetches_quotes_or_creates_discord_bets(monkeypatch):
     assert not bundle['cards'] and bundle['games']==0
 
 
-def test_paper_caps_choose_distinct_players_after_ranking():
+def test_paper_rows_are_not_selected_as_betting_instructions():
     rows=[dict(score(offer(line=50.5+i)), tier='paper', ev=.5-i*.01) for i in range(12)]
     rows.append(dict(rows[0], player_id='second', player_name='Other', ev=.1))
     chosen=selected_props(rows,paper_limit=2)
-    assert [r['player_id'] for _,r in chosen]==['player','second']
+    assert chosen == []
 
 
 def test_rerun_cannot_lock_another_line_on_the_same_micro_player():

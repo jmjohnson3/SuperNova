@@ -1,0 +1,198 @@
+{
+  "contract": "nfl-stat-candidate-evidence-v1",
+  "stat": "receiving_yards",
+  "component": "receiving_conditional",
+  "artifact_sha256": "164a94e0f8277127c43a8aab96413dd1434f37ee5df51b5585eeab4be7aa8906",
+  "historical_screen_outputs": [
+    "probability"
+  ],
+  "approved_outputs": [],
+  "deployment_approved": false,
+  "betting_approved": false,
+  "blockers": [
+    "needs_100_player_games_and_3_independent_weeks",
+    "needs_fixed_horizon_evidence",
+    "probability_not_better_than_production_and_market"
+  ],
+  "built_at": "2026-10-11T04:26:34.016920+00:00",
+  "prospective_validation": {
+    "offers": 488,
+    "player_games": 144,
+    "weeks": 1,
+    "candidate_projection": {
+      "rows": 144,
+      "mae": 21.961380593946032,
+      "rmse": 28.160528712701208,
+      "bias": -2.5155013137331412,
+      "interval_rows": 144,
+      "coverage_80": 0.7291666666666666,
+      "interval_width": 62.3618777379991
+    },
+    "production_projection": {
+      "rows": 144,
+      "mae": 20.22222222222222,
+      "rmse": 26.588949250059173,
+      "bias": -3.576388888888889
+    },
+    "candidate_median": {
+      "rows": 144,
+      "mae": 21.95805830759552,
+      "rmse": 28.908694986205692,
+      "bias": -7.545277834924381
+    },
+    "probability_rows": 170,
+    "probability_player_games": 144,
+    "probability_weeks": 1,
+    "candidate_probability": {
+      "rows": 170,
+      "brier": 0.2827148845247561,
+      "log_loss": 0.763005213202501,
+      "calibration_error": 0.17553630363036304,
+      "probability_bias": -0.03550146681334799
+    },
+    "production_probability": {
+      "rows": 170,
+      "brier": 0.24790881366535722,
+      "log_loss": 0.6889624688895756,
+      "calibration_error": 0.03261296358136733,
+      "probability_bias": 0.03261296358136734
+    },
+    "market_probability": {
+      "rows": 170,
+      "brier": 0.24972680744041328,
+      "log_loss": 0.6926003947191101,
+      "calibration_error": 0.038716640721947734,
+      "probability_bias": 0.03153430373893541
+    },
+    "candidate_vs_production_brier_gain": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    },
+    "primary_horizon": null,
+    "by_horizon": {
+      "t120": {
+        "offers": 404,
+        "player_games": 144,
+        "weeks": 1,
+        "candidate_projection": {
+          "rows": 144,
+          "mae": 21.961380593946032,
+          "rmse": 28.160528712701208,
+          "bias": -2.5155013137331403,
+          "interval_rows": 144,
+          "coverage_80": 0.7291666666666666,
+          "interval_width": 62.3618777379991
+        },
+        "production_projection": {
+          "rows": 144,
+          "mae": 20.180555555555557,
+          "rmse": 26.544250266719196,
+          "bias": -3.5347222222222223
+        },
+        "candidate_median": {
+          "rows": 144,
+          "mae": 21.95805830759552,
+          "rmse": 28.908694986205692,
+          "bias": -7.545277834924382
+        },
+        "probability_rows": 166,
+        "probability_player_games": 144,
+        "probability_weeks": 1,
+        "candidate_probability": {
+          "rows": 166,
+          "brier": 0.2828340177252049,
+          "log_loss": 0.7632673281928822,
+          "calibration_error": 0.17581133113311329,
+          "probability_bias": -0.035501466813347995
+        },
+        "production_probability": {
+          "rows": 166,
+          "brier": 0.2479452918409442,
+          "log_loss": 0.6890354358140399,
+          "calibration_error": 0.03257686078833973,
+          "probability_bias": 0.03257686078833973
+        },
+        "market_probability": {
+          "rows": 166,
+          "brier": 0.24976328561600022,
+          "log_loss": 0.6926733616435745,
+          "calibration_error": 0.042224965737197556,
+          "probability_bias": 0.031498200945907814
+        },
+        "candidate_vs_production_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        }
+      },
+      "t24h": {
+        "offers": 84,
+        "player_games": 42,
+        "weeks": 1,
+        "candidate_projection": {
+          "rows": 42,
+          "mae": 19.270797858919398,
+          "rmse": 24.503993771978394,
+          "bias": -0.8330646489206615,
+          "interval_rows": 42,
+          "coverage_80": 0.7857142857142857,
+          "interval_width": 62.04858309609904
+        },
+        "production_projection": {
+          "rows": 42,
+          "mae": 18.547619047619047,
+          "rmse": 24.49319633422038,
+          "bias": -0.9523809523809523
+        },
+        "candidate_median": {
+          "rows": 42,
+          "mae": 18.62080849718478,
+          "rmse": 24.895392672798266,
+          "bias": -5.8375724949019565
+        },
+        "probability_rows": 42,
+        "probability_player_games": 42,
+        "probability_weeks": 1,
+        "candidate_probability": {
+          "rows": 42,
+          "brier": 0.25982279981887857,
+          "log_loss": 0.7132219928136311,
+          "calibration_error": 0.21334276284771336,
+          "probability_bias": 0.013437057991513447
+        },
+        "production_probability": {
+          "rows": 42,
+          "brier": 0.24864746022606138,
+          "log_loss": 0.6904402436504647,
+          "calibration_error": 0.09662066669484731,
+          "probability_bias": 0.09662066669484731
+        },
+        "market_probability": {
+          "rows": 42,
+          "brier": 0.24864746022606138,
+          "log_loss": 0.6904402436504647,
+          "calibration_error": 0.09662066669484731,
+          "probability_bias": 0.09662066669484731
+        },
+        "candidate_vs_production_brier_gain": {
+          "clusters": 1,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "candidate_vs_production_squared_error_gain": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    },
+    "candidate_median_vs_production_mae_gain": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    }
+  },
+  "review_complete": false,
+  "reviewed_at": "2026-10-12T17:45:49.896016+00:00"
+}

@@ -23,6 +23,8 @@ def summarize(records, now):
         rows.append(dict(prediction_id=p['prediction_id'], player=p['player_name'], stat=p['stat'],
             side=p['side'], book=p['book'], line=p['locked_line'], status=q['status'],
             valid=q['valid'], fresh_book_rows=p['fresh_book_rows'], fresh_market_rows=p['fresh_market_rows'],
+            close_source_row_id=q['source_row_id'], close_source_role=q['observation_role'],
+            close_provider=p.get('close_provider'), match_method=q['match_method'],
             observed_lines=p['observed_lines'], last_exact_snapshot=p['fetched_at_utc'], phase=phase,
             is_current=p.get('is_current', False), selected_real_tier=p.get('selected_real_tier', False)))
 

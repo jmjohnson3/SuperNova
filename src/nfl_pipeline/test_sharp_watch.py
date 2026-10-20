@@ -8,7 +8,17 @@ NOW = datetime(2026, 10, 4, 15, 0, tzinfo=timezone.utc)
 
 
 def book(key, outcomes, market="player_reception_yds"):
-    return {"key": key, "markets": [{"key": market, "outcomes": outcomes}]}
+    return {"key": key, "last_update": NOW.isoformat(),
+            "markets": [{"key": market, "last_update": NOW.isoformat(), "outcomes": outcomes}]}
+
+
+@pytest.fixture(autouse=True)
+def fixed_clock(monkeypatch):
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return NOW
+    monkeypatch.setattr(w, 'datetime', Clock)
 
 
 def pair(player, line, over, under, link=None):
@@ -129,11 +139,18 @@ def test_every_bettable_book_is_priced_against_the_sharp_line():
     payload = {"bookmakers": [book("fanduel", pair("DK Metcalf", 45.5, -200, +170)),
                               book("draftkings", pair("DK Metcalf", 45.5, +120, -140)),
                               book("pinnacle", pair("DK Metcalf", 45.5, -140, +120))]}
-    edges = w.find_edges(payload)
+    edges = w.find_edges(payload, bet_books=("fanduel", "draftkings"))
     assert {(e["book"], e["side"]) for e in edges} == {("draftkings", "over"), ("fanduel", "under")}
     assert edges[0]["ev"] >= edges[-1]["ev"]  # still ranked by EV across books
     # A book we cannot bet at is never alerted on, even when it is the most generous price.
     assert w.find_edges(payload, bet_books=("fanduel",)) == [e for e in edges if e["book"] == "fanduel"]
+
+
+def test_default_execution_scan_is_fanduel_only():
+    payload = {"bookmakers": [book("fanduel", pair("DK Metcalf", 45.5, -200, +170)),
+                              book("draftkings", pair("DK Metcalf", 45.5, +120, -140)),
+                              book("pinnacle", pair("DK Metcalf", 45.5, -140, +120))]}
+    assert {edge["book"] for edge in w.find_edges(payload)} == {"fanduel"}
 
 
 def test_other_books_keep_only_their_own_verified_links():
@@ -154,6 +171,7 @@ def test_other_books_keep_only_their_own_verified_links():
 
 
 def test_stake_respects_caps_and_the_loss_pause(monkeypatch):
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_BETS_ENABLED", True)
     monkeypatch.setattr(w.prefs, "SHARP_WATCH_STAKE", 5.0)
     monkeypatch.setattr(w.prefs, "SHARP_WATCH_MAX_STAKE_PER_DAY", 10.0)
     monkeypatch.setattr(w.prefs, "SHARP_WATCH_MAX_STAKE_PER_WEEK", 100.0)
@@ -177,12 +195,20 @@ def test_ping_window_is_per_market_because_counts_decay_faster():
     assert w.alert_tier(0.02, 10, "receptions") == "logged"  # threshold still rules
 
 
-def test_only_backtested_markets_carry_money():
+def test_only_backtested_markets_carry_money(monkeypatch):
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_BETS_ENABLED", True)
     budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
     assert w.stake_for(None, "alert", NOW, budget, "receiving_yards") > 0
     assert w.stake_for(None, "alert", NOW, budget, "receptions") > 0
     assert w.stake_for(None, "alert", NOW, budget, "total") == 0.0  # scanned and graded, not staked
     assert w.stake_for(None, "alert", NOW, budget, "passing_yards") == 0.0
+
+
+def test_unapproved_sharp_strategy_is_always_research_only(monkeypatch):
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_BETS_ENABLED", False)
+    monkeypatch.setattr(w.prefs, "SHARP_WATCH_STAKE", 5.0)
+    budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
+    assert w.stake_for(None, "alert", NOW, budget, "receiving_yards") == 0.0
 
 
 def test_anytime_td_is_normalised_onto_the_over_under_shape():
@@ -216,3 +242,60 @@ def test_model_view_records_which_side_our_projection_takes():
     assert w.model_view(FakeCur(2.10), dict(edge, side="under"), game) == (2.10, True)
     assert w.model_view(FakeCur(None), edge, game) == (None, None)      # no frozen forecast for this bet
     assert w.model_view(FakeCur(2.67), dict(edge, player_norm=None), game) == (None, None)  # game totals
+
+
+@pytest.mark.parametrize('book_index,stamp', [(0, None), (1, None), (0, NOW-timedelta(seconds=301)),
+    (1, NOW-timedelta(seconds=301)), (0, NOW+timedelta(seconds=1)), (1, NOW+timedelta(seconds=1))])
+def test_invalid_source_timestamps_never_create_edges(book_index, stamp):
+    payload = {'bookmakers': [book('fanduel', pair('X', 45.5, -110, -110)),
+                             book('pinnacle', pair('X', 45.5, -140, 120))]}
+    changed = payload['bookmakers'][book_index]
+    changed['last_update'] = changed['markets'][0]['last_update'] = stamp.isoformat() if stamp else None
+    assert w.find_edges(payload, now=NOW) == []
+
+
+def test_two_individually_fresh_quotes_must_also_be_time_aligned():
+    payload = {'bookmakers': [book('fanduel', pair('X', 45.5, -110, -110)),
+                             book('pinnacle', pair('X', 45.5, -140, 120))]}
+    payload['bookmakers'][1]['markets'][0]['last_update'] = (NOW-timedelta(seconds=121)).isoformat()
+    assert w.find_edges(payload, now=NOW) == []
+
+
+def test_exchange_without_cost_and_liquidity_proof_is_not_a_reference():
+    payload = {'bookmakers': [book('fanduel', pair('X', 45.5, -110, -110)),
+                             book('betfair_ex_eu', pair('X', 45.5, -140, 120))]}
+    assert w.find_edges(payload, now=NOW) == []
+
+
+def test_observations_capture_fair_quotes_and_preserve_original_payload():
+    payload = {'id':'event', 'bookmakers': [book('fanduel', pair('X', 45.5, -110, -110)),
+                                           book('pinnacle', pair('X', 45.5, -110, -110))]}
+    observations = w.quote_observations(payload, game('game', 30), NOW)
+    assert len(observations) == 2 and not w.find_edges(payload, now=NOW)
+    assert observations == w.quote_observations(payload, game('game', 30), NOW)
+    changed = w.quote_observations(payload, game('game', 30), NOW+timedelta(seconds=1))
+    assert observations[0]['observation_id'] != changed[0]['observation_id']
+    assert observations[0]['quote']['market_updated_at'] == NOW.isoformat()
+
+
+def test_unregistered_scan_exits_before_reading_games_or_network(monkeypatch):
+    from nfl_pipeline import experiment_registry
+    monkeypatch.setattr(experiment_registry, 'load_experiment', lambda name: None)
+    monkeypatch.setattr(w, '_games', lambda now: pytest.fail('unregistered scan must not start'))
+    assert w.run(now=NOW)['status'] == 'research_not_registered'
+
+
+def test_source_drift_exits_before_reading_games_or_network(monkeypatch):
+    # Drift must refuse as a status row like every other refusal here. Raising took
+    # the whole watcher down on 19 October over a column the scanner never reads.
+    from nfl_pipeline import experiment_registry
+
+    def drifted(name, **kwargs):
+        raise ValueError('Frozen experiment changed; restore the pinned version')
+
+    monkeypatch.setattr(experiment_registry, 'load_experiment', lambda name: {'config': {}})
+    monkeypatch.setattr(experiment_registry, 'check_experiment', drifted)
+    monkeypatch.setattr(w, '_games', lambda now: pytest.fail('drifted scan must not start'))
+    result = w.run(now=NOW)
+    assert result['status'] == 'experiment_source_drift'
+    assert result['experiment_id'] == w.EXPERIMENT_NAME

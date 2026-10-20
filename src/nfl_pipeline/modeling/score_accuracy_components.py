@@ -19,6 +19,7 @@ from nfl_pipeline.modeling.challenger_models import player_features,curve_summar
 from nfl_pipeline.modeling.component_validation import calibrate_curve
 from nfl_pipeline.modeling.scoring_capture import replay
 from nfl_pipeline.modeling.team_workload import PregameTeamHistory,COUNTS,YARDS
+from nfl_pipeline.modeling.train_accuracy_components import team_curve
 from nfl_pipeline.modeling.train_accuracy_challengers import mixture_curve
 
 
@@ -143,24 +144,41 @@ def score_records(records,artifact,team_snapshots=()):
                 books=[p.get('book') or 'unpriced_proxy' for _,p,_ in selected],
                 extra_lines=[[p.get('line',np.nan)] for _,p,_ in selected])
         else:
-            b=model['bundle']; center=b['reference'].predict(frame)
-            cached={}
+            b=model['bundle']; curve_rows=[None]*len(frame); grouped={}
             for i,(_,p,_) in enumerate(selected):
                 snapshot=snapshot_before(team_snapshots,safe_time(p['prediction_context_cutoff_utc']))
                 if not snapshot:
                     valid[i]=False; excluded['missing_pregame_team_snapshot']+=1; continue
                 stamp=snapshot['captured_at']
-                if stamp not in cached:
-                    teams=pd.DataFrame(snapshot['teams']); roster=pd.DataFrame(snapshot['roster'])
-                    teams=teams.loc[teams.history_games.ge(3)]
-                    roster=roster.merge(teams[['game_id','team_abbr']],on=['game_id','team_abbr'],validate='many_to_one')
-                    out=b['team'].predict(teams,roster)
-                    cached[stamp]=out.set_index(['game_id','team_abbr','player_id']).projection.to_dict()
-                value=cached[stamp].get((p['game_id'],p['team_abbr'],str(p['player_id'])))
-                if value is None or not np.isfinite(value):
-                    valid[i]=False; excluded['unknown_pregame_roster_member']+=1
-                else: center[i]=value
-            values,weights=b['uncertainty'].mixture(player_features(frame,stat),center,np.ones((len(frame),1)))
+                grouped.setdefault(stamp,{'snapshot':snapshot,'indices':[]})['indices'].append(i)
+            for group in grouped.values():
+                indices=np.asarray(group['indices'],dtype=int)
+                snapshot=group['snapshot']
+                teams=pd.DataFrame(snapshot['teams']); roster=pd.DataFrame(snapshot['roster'])
+                sub=frame.iloc[indices]
+                books=[selected[i][1].get('book') or 'unpriced_proxy' for i in indices]
+                offer_lines=[[selected[i][1].get('line',np.nan)] for i in indices]
+                try:
+                    group_values,group_weights,components=team_curve(
+                        b,sub,teams,roster,stat,base=point[indices],books=books,
+                        extra_lines=offer_lines,calibrate=True)
+                except (KeyError,ValueError) as exc:
+                    valid[indices]=False
+                    excluded['invalid_pregame_team_distribution']+=len(indices)
+                    continue
+                for local,index in enumerate(indices):
+                    if not bool(components['covered'][local]):
+                        valid[index]=False; excluded['unknown_pregame_roster_member']+=1
+                        continue
+                    curve_rows[index]=(group_values[local],group_weights[local])
+            width=max((len(v) for row in curve_rows if row is not None for v in row[:1]),default=1)
+            values=np.zeros((len(frame),width)); weights=np.zeros((len(frame),width))
+            for i,row in enumerate(curve_rows):
+                if row is None:
+                    values[i,0]=point[i]; weights[i,0]=1.
+                    continue
+                v,w=row; values[i,:len(v)]=v; weights[i,:len(w)]=w
+                if len(v)<width: values[i,len(v):]=v[-1]
         summary=curve_summary(values,weights); scored=[]
         for i,(forecast_id,p,_) in enumerate(selected):
             if not valid[i]: continue
@@ -195,10 +213,12 @@ def run(day):
             AND g.start_ts_utc>NOW() AND p.created_at_utc<g.start_ts_utc AND p.integrity_version='nfl-asof-v2'
             ORDER BY p.created_at_utc,p.id""",(day,))
         records=cur.fetchall()
-    from nfl_pipeline.modeling.target_point_capture import capture_records
+    from nfl_pipeline.modeling.target_point_capture import capture_records, QUANTILE_STORE
     point_capture = capture_records(records)
+    quantile_capture = capture_records(records, store=QUANTILE_STORE)
     if artifact is None:
-        return {'status':'waiting_for_distribution_components','point_component':point_capture,'production_changed':False}
+        return {'status':'waiting_for_distribution_components','point_component':point_capture,
+                'quantile_point_component':quantile_capture,'production_changed':False}
     snapshots=[json.loads(p.read_text()) for p in (MODEL_ROOT/'accuracy_components'/'team_context'/str(day)).glob('*.json')]
     results,excluded=score_records(records,artifact,snapshots)
     at=datetime.now(timezone.utc); stamp=at.strftime('%Y%m%dT%H%M%S%fZ')
@@ -208,7 +228,7 @@ def run(day):
             'training_end':artifact['training_end'],'source_manifest':manifest,'exclusions':excluded})
         atomic_json(MODEL_ROOT/'challengers'/cohort/'prospective'/str(day)/(stamp+'.json'),payload)
     return {'status':'prospective_only','rows':{k:len(v) for k,v in results.items()},'excluded':excluded,
-            'point_component':point_capture,'production_changed':False}
+            'point_component':point_capture,'quantile_point_component':quantile_capture,'production_changed':False}
 
 
 if __name__=='__main__':

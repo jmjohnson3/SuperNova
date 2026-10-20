@@ -10,6 +10,7 @@ import time
 import psycopg2
 
 from nfl_pipeline import cash_trial_policy as policy
+from nfl_pipeline import cash_freeze
 from nfl_pipeline.context_contract import safe_time
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
@@ -20,7 +21,7 @@ from nfl_pipeline.modeling.live_scoring_replay import ROOT, load_rows
 from nfl_pipeline.modeling.scoring_versions import source_hash, SOURCE
 
 
-def register():
+def registration_config():
     research = trial.load_registration()
     artifact, manifest = benchmark.load_artifact()
     if research is None:
@@ -28,16 +29,35 @@ def register():
     cfg = research['config']
     if manifest['sha256'] != cfg['artifact_sha256']:
         raise ValueError('Pinned research artifact mismatch')
-    return policy.register(dict(strategy_id=cfg['trial_id'], trial_sha256=research['sha256'],
+    return dict(strategy_id=cfg['trial_id'], trial_sha256=research['sha256'],
         release=cfg['production_release'], variant=cfg['variant'], artifact_sha256=manifest['sha256'],
         scoring_version=source_hash(SOURCE), source_kind='prop', stat='receiving_yards',
-        book='fanduel', research_registration=research))
+        book='fanduel', research_registration=research)
+
+
+def registration_with_freeze(name):
+    config = registration_config()
+    if not name:
+        raise ValueError('Explicit --freeze-name is required; existing cohorts never acquire a freeze automatically')
+    config[cash_freeze.FIELD] = cash_freeze.create_freeze(name, config)
+    return config
+
+
+def register(freeze_name=None):
+    return policy.register(registration_with_freeze(freeze_name))
+
+
+def rollover_scoring(reason, freeze_name=None):
+    return policy.rollover_scoring(registration_with_freeze(freeze_name), reason)
 
 
 def evidence(records, documents, registration, selections, closes, now):
     """Only original post-registration locks, immutable captures and final outcomes."""
     cfg = registration['config']; research = cfg['research_registration']
-    captured, errors = checkpoint.capture_index(records, documents, research['config'])
+    approved_documents = cash_freeze.eligible_documents(documents, registration)
+    captured, errors = checkpoint.capture_index(records, approved_documents, research['config'])
+    if len(approved_documents) != len(documents):
+        errors['benchmark_cash_provenance_missing_or_mismatched'] = len(documents)-len(approved_documents)
     lookup = {int(r['id']): r for r in records}
     selected_ids = {int(s['forecast_id']) for s in selections}
     output = []; excluded = Counter(errors); unresolved = 0; pending = 0
@@ -55,6 +75,11 @@ def evidence(records, documents, registration, selections, closes, now):
         fingerprint = (p.get('scoring_replay') or {}).get('scoring_fingerprint')
         if fingerprint != cfg['scoring_version'] or p.get('model_version') != cfg['release']:
             excluded['different_scoring_cohort'] += 1
+            unresolved += int(fid in selected_ids)
+            continue
+        provenance_issue = cash_freeze.provenance_error((p.get('scoring_replay') or {}).get('cash_freeze'), registration)
+        if provenance_issue:
+            excluded[provenance_issue] += 1
             unresolved += int(fid in selected_ids)
             continue
         error = checkpoint.eligible_error(rec, research['config'])
@@ -120,6 +145,8 @@ def selection_cohort_accounting(records, selections, registration):
             elif ((p.get('scoring_replay') or {}).get('scoring_fingerprint') != cfg['scoring_version']
                   or p.get('model_version') != cfg['release']):
                 status = 'post_policy_wrong_cohort'
+            elif cash_freeze.provenance_error((p.get('scoring_replay') or {}).get('cash_freeze'), registration):
+                status = 'post_policy_generation_provenance_missing_or_mismatched'
             elif rec.get('status') != 'final':
                 status = 'post_policy_pending_game'
             elif rec.get('graded_result')=='void_nonparticipant':
@@ -136,9 +163,10 @@ def selection_cohort_accounting(records, selections, registration):
 
 def review(registration, selected, all_rows, unresolved, now, *, store=policy.STORE, pending=0, completed_weeks=None):
     """Each checkpoint is consumed once. Post-registration changes start new evidence."""
+    cohort_store = store / 'cohorts' / registration['sha256']
     saved = []
     for target in policy.POLICY.checkpoints:
-        path = store / 'reviews' / f'{target}.json'
+        path = cohort_store / 'reviews' / f'{target}.json'
         if path.exists():
             doc = json.loads(path.read_text())
             if doc['registration_sha256'] != registration['sha256']:
@@ -156,10 +184,10 @@ def review(registration, selected, all_rows, unresolved, now, *, store=policy.ST
         atomic_json(path, doc); saved.append(doc)
     passed = next((r for r in saved if r['status'] == 'cash_trial_eligible'), None)
     # Review completed weeks only; pending games are not negative evidence.
-    pause = store/'pause.json'
+    pause = cohort_store/'pause.json'
     week_order = lambda key: tuple(map(int, key.split(':')))
     monitor_week = max(completed_weeks, key=week_order) if completed_weeks else None
-    monitor_path = store/'monitors'/str(monitor_week).replace(':','_')
+    monitor_path = cohort_store/'monitors'/str(monitor_week).replace(':','_')
     should_monitor = completed_weeks is None or (passed and monitor_week and
         week_order(monitor_week) >= week_order(passed['through_week']) and not monitor_path.exists())
     if passed and should_monitor:
@@ -211,6 +239,7 @@ def report(day):
     now = datetime.now(timezone.utc)
     if not registration:
         raise ValueError('Cash readiness policy is not registered')
+    cash_freeze.check_registration(registration)
     research = trial.load_registration()
     if research['sha256'] != registration['config']['trial_sha256']:
         raise ValueError('Research strategy changed')
@@ -223,6 +252,7 @@ def report(day):
         acquire_review_lock(cur)
         if policy.load_registration()['sha256'] != registration['sha256'] or trial.load_registration()['sha256'] != research['sha256']:
             raise ValueError('Registration changed during evidence loading')
+        cash_freeze.check_registration(registration)
         existing_path = ROOT/'reports'/f'nfl_cash_readiness_{day}.json'
         if existing_path.exists():
             existing = json.loads(existing_path.read_text())
@@ -250,6 +280,7 @@ def report(day):
         doc = dict(contract=policy.CONTRACT, day=str(day), built_at=now.isoformat(),
             registration_sha256=registration['sha256'], strategy_id=registration['config']['strategy_id'],
             release=registration['config']['release'], scoring_version=registration['config']['scoring_version'],
+            frozen_provenance=registration['config'][cash_freeze.FIELD], dependency_freeze_status='verified',
             decision=decision, provisional=provisional, exclusions=excluded, pending=pending,
             selection_cohort_accounting=selection_cohort_accounting(records,selections,registration),
             forecast_deployment_review=deployment,
@@ -281,9 +312,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--date', type=date.fromisoformat, default=date.today())
     parser.add_argument('--register', action='store_true')
+    parser.add_argument('--rollover-scoring', action='store_true')
+    parser.add_argument('--freeze-name', help='Explicit immutable dependency manifest name for a new cohort')
+    parser.add_argument('--registration-only', action='store_true', help='Register locally and exit without reading database evidence')
+    parser.add_argument('--reason', default='verified scoring implementation change')
     args = parser.parse_args()
+    if args.register and args.rollover_scoring:
+        parser.error('--register and --rollover-scoring are mutually exclusive')
+    if (args.registration_only or args.freeze_name) and not (args.register or args.rollover_scoring):
+        parser.error('--freeze-name and --registration-only require --register or --rollover-scoring')
+    if (args.register or args.rollover_scoring) and not args.freeze_name:
+        parser.error('--register and --rollover-scoring require an explicit --freeze-name')
     if args.register:
-        register()
-    result = report(args.date)
-    print(json.dumps(dict(status=result['decision']['status'], pending=result['pending'],
-        metrics=result['provisional']['metrics'], blockers=result['provisional']['blockers']), default=str))
+        registered = register(args.freeze_name)
+    if args.rollover_scoring:
+        registered = rollover_scoring(args.reason, args.freeze_name)
+    if args.registration_only:
+        print(json.dumps(dict(status='registered_research_only', registration_sha256=registered['sha256'],
+            frozen_provenance=registered['config'][cash_freeze.FIELD], betting_approved=False)))
+    else:
+        result = report(args.date)
+        print(json.dumps(dict(status=result['decision']['status'], pending=result['pending'],
+            metrics=result['provisional']['metrics'], blockers=result['provisional']['blockers']), default=str))

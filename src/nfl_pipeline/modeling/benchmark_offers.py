@@ -14,7 +14,7 @@ from nfl_pipeline.forecast_store import clean
 from nfl_pipeline.integrity import MODEL_ROOT, active_release, atomic_json
 from nfl_pipeline.modeling.challenger_models import curve_summary, player_features
 from nfl_pipeline.modeling.evaluation import clustered_gain, probability_metrics, projection_metrics
-from nfl_pipeline.modeling.final_probability_validation import load_ledger
+from nfl_pipeline.modeling.final_probability_validation import attach_label_availability, load_ledger
 from nfl_pipeline.modeling.live_scoring_replay import load_rows, validate_lock, ROOT
 from nfl_pipeline.modeling.model_benchmark import CONTRACT, SUPPORTED_CONTRACTS, named_curve
 from nfl_pipeline.modeling.score_accuracy_components import full_path
@@ -24,6 +24,24 @@ from nfl_pipeline.modeling.prospective_market import locked_market, market_compa
 from nfl_pipeline.modeling import receiving_research_trial
 
 STORE = MODEL_ROOT/'model_benchmark'
+
+
+def independent_line_probability(values, weights, line):
+    """Price a line from the challenger curve before any market anchoring."""
+    values = np.asarray(values, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    valid = np.isfinite(values) & np.isfinite(weights) & (weights >= 0)
+    values, weights = values[valid], weights[valid]
+    total = float(weights.sum())
+    if not len(values) or total <= 0:
+        raise ValueError('invalid_challenger_distribution')
+    weights = weights / total
+    push = float(weights[np.isclose(values, float(line), atol=1e-10, rtol=0)].sum())
+    nonpush = 1.0 - push
+    if nonpush <= 1e-12:
+        raise ValueError('challenger_distribution_all_push')
+    over = float(weights[values > float(line) + 1e-10].sum()) / nonpush
+    return float(np.clip(over, 0.0, 1.0)), push
 
 
 def load_artifact(*, latest=False):
@@ -158,23 +176,33 @@ def score_records(records, ledger, artifact, now):
                 p = r['forecast_payload']
                 try:
                     replayed = full_path(p, values[i], weights[i], centers[i])
+                    independent_over, independent_push = independent_line_probability(
+                        values[i], weights[i], float(p['line']))
                 except ValueError as exc:
                     issues[str(exc)] += 1; continue
                 micros = [l for l in by_prediction.get(int(r['id']), []) if ledger_matches(l, r, now)]
                 over = replayed['calibrated_over_probability']
                 output.append(dict(forecast_id=int(r['id']), variant=variant, stat=stat,
                     production_release=p['model_version'], source_context_cutoff=p['prediction_context_cutoff_utc'],
+                    source_scoring_version=(p.get('scoring_replay') or {}).get('scoring_fingerprint'),
                     source_book=p['book'], source_line=p['line'], source_price=p['price'], source_side=p['side'],
                     ledger_ids=[l['ledger_id'] for l in micros], choices=choices,
                     expected_yards=float(centers[i]), median_yards=float(medians[i]),
                     distribution_mean=float(summary['mean'][i]),
                     raw_p10=float(summary['p10'][i]), raw_p90=float(summary['p90'][i]),
+                    independent_over_probability=independent_over,
+                    independent_push_probability=independent_push,
+                    independent_same_side_probability=float(
+                        independent_over if p['side'] == 'over' else 1-independent_over),
+                    independent_probability_source='pinned_challenger_curve_before_market_adjustments',
                     same_side_probability=float(over if p['side'] == 'over' else 1-over),
                     production_probability=float(p['probability']), **locked_market(r), **replayed))
     return output, dict(issues)
 
 
 def score(day):
+    from nfl_pipeline.cash_freeze import capture_provenance
+    cash_freeze = capture_provenance()
     artifact, manifest = load_artifact()
     if artifact is None:
         return {'status': 'waiting_for_benchmark'}
@@ -189,14 +217,20 @@ def score(day):
                for v in ('selected_policy', 'production_point_conditional',
                          *artifact['models'].get(r['stat'], {}).get('prospective_variants', [])))]
     rows, issues = score_records(pending, ledger, artifact, datetime.now(timezone.utc))
+    from nfl_pipeline.modeling import receiving_residual_challenger
+    for row in rows:
+        row.setdefault('run_id', artifact['run_id'])
+    rows = receiving_residual_challenger.apply_document_rows(records, rows)
     at = datetime.now(timezone.utc)
     starts = {int(r['id']): safe_time(r['start_ts_utc']) for r in records}
     rows = [r for r in rows if (r['forecast_id'], r['variant']) not in existing and at < starts[r['forecast_id']]]
     doc = clean(dict(contract=artifact['contract'], run_id=artifact['run_id'], scored_at=at.isoformat(),
+                     cash_freeze=cash_freeze,
                      artifact_created_at=artifact['created_at'], training_end=artifact['training_end'],
                      source_manifest=manifest, rows=rows, exclusions=issues))
     atomic_json(STORE/artifact['run_id']/'prospective'/str(day)/(at.strftime('%Y%m%dT%H%M%S%fZ')+'.json'), doc)
     research_capture = receiving_research_trial.capture(records, doc)
+    residual_capture = receiving_residual_challenger.capture(records, doc)
     eligible = [r for r in records if r['stat'] in artifact['models'] and prospective_error(r, artifact, at) is None]
     expected = len(eligible)
     captured = existing | {(r['forecast_id'], r['variant']) for r in rows}
@@ -212,6 +246,7 @@ def score(day):
         missing_variants=missing_pairs,
         capture_errors=capture_errors,
         receiving_research_trial=research_capture,
+        receiving_residual_trial=residual_capture,
         exclusions=issues, production_changed=False, betting_approved=False)
 
 
@@ -258,6 +293,7 @@ def validate_documents(records, ledger, documents):
             result = dict(row, run_id=doc['run_id'], game_id=rec['game_id'], player_id=rec['player_id'],
                 scoring_version=(p.get('scoring_replay') or {}).get('scoring_fingerprint', 'legacy_unknown'),
                 season=rec['season'], week=rec['week'], created_at=str(rec['created_at_utc']), scored_at=doc['scored_at'],
+                label_available_at=rec.get('label_available_at'),
                 actual=actual, production_yards=float(p['projection']),
                 production_p10=p.get('projection_p10'), production_p90=p.get('projection_p90'),
                 outcome=float(actual > line if p['side'] == 'over' else actual < line), micro_ids=micro_ids)
@@ -268,6 +304,81 @@ def validate_documents(records, ledger, documents):
     return rows, dict(issues), pending
 
 
+def reconstruct_independent_probabilities(records, rows, artifact, artifact_sha256):
+    """Recover a pre-market curve only when its stored summary replays exactly.
+
+    The benchmark artifact and lock features both existed before kickoff. The
+    settled result is never passed to the curve. Mean and tail checks prevent a
+    changed feature/model path from masquerading as the original challenger.
+    """
+    output = [dict(row) for row in rows]
+    cache_path = STORE/artifact['run_id']/'independent_probability_replay_v1.json'
+    cached = {}
+    if cache_path.exists():
+        document = json.loads(cache_path.read_text(encoding='utf-8'))
+        if (document.get('contract') == 'nfl-independent-probability-replay-v1'
+                and document.get('artifact_sha256') == artifact_sha256):
+            cached = {int(key): value for key, value in document.get('rows', {}).items()}
+    targets = [row for row in output if row.get('variant') == 'stable_ensemble_calibrated'
+               and row.get('stat') == 'receiving_yards'
+               and row.get('independent_same_side_probability') is None]
+    if not targets:
+        return output, {'verified_replays': 0, 'already_captured': sum(
+            row.get('independent_same_side_probability') is not None for row in output)}
+    lookup = {int(record['id']): record for record in records}
+    issues = Counter()
+    updates = {}
+    remaining = []
+    for row in targets:
+        restored = cached.get(int(row['forecast_id']))
+        identity = [row.get('production_release'), row.get('source_side'), row.get('source_line'),
+                    row.get('distribution_mean'), row.get('raw_p10'), row.get('raw_p90')]
+        if restored and restored.get('identity') == identity:
+            updates[int(row['forecast_id'])] = restored['probability']
+            issues['cached_verified_replays'] += 1
+        else:
+            remaining.append(row)
+    selected, selected_rows, issues = [], [], Counter()
+    issues['cached_verified_replays'] = len(updates)
+    for row in remaining:
+        record = lookup.get(int(row['forecast_id']))
+        if not record:
+            issues['missing_original_forecast'] += 1; continue
+        if row.get('run_id') != artifact.get('run_id') or row.get('production_release') != artifact.get('production_release'):
+            issues['artifact_or_release_mismatch'] += 1; continue
+        selected.append(record); selected_rows.append(row)
+    if selected:
+        suite = artifact['models']['receiving_yards']
+        frame = scoring_frame(selected, artifact)
+        values, weights = named_curve(suite, frame, 'receiving_yards', 'ensemble+tail_cal')
+        summary = curve_summary(values, weights)
+        for index, (record, row) in enumerate(zip(selected, selected_rows)):
+            stored = np.asarray([row.get('distribution_mean'), row.get('raw_p10'), row.get('raw_p90')], dtype=float)
+            replayed = np.asarray([summary['mean'][index], summary['p10'][index], summary['p90'][index]], dtype=float)
+            if not np.all(np.isfinite(stored)) or not np.allclose(stored, replayed, atol=1e-8, rtol=0):
+                issues['stored_curve_summary_replay_mismatch'] += 1; continue
+            over, push = independent_line_probability(values[index], weights[index], row['source_line'])
+            probability = dict(
+                independent_over_probability=over,
+                independent_push_probability=push,
+                independent_same_side_probability=float(over if row['source_side'] == 'over' else 1-over),
+                independent_probability_source='verified_pinned_challenger_replay',
+                source_scoring_version=(record.get('forecast_payload', {}).get('scoring_replay') or {}).get('scoring_fingerprint'))
+            updates[int(row['forecast_id'])] = probability
+            cached[int(row['forecast_id'])] = dict(
+                identity=[row.get('production_release'), row.get('source_side'), row.get('source_line'),
+                          row.get('distribution_mean'), row.get('raw_p10'), row.get('raw_p90')],
+                probability=probability)
+            issues['verified_replays'] += 1
+        atomic_json(cache_path, clean(dict(
+            contract='nfl-independent-probability-replay-v1', artifact_sha256=artifact_sha256,
+            built_at=datetime.now(timezone.utc).isoformat(), rows={str(key): value for key, value in cached.items()})))
+    for row in output:
+        if row.get('variant') == 'stable_ensemble_calibrated':
+            row.update(updates.get(int(row['forecast_id']), {}))
+    return output, dict(issues)
+
+
 def offered_metrics(rows):
     frame = pd.DataFrame(rows)
     if frame.empty:
@@ -275,6 +386,10 @@ def offered_metrics(rows):
     if 'scoring_version' not in frame:
         frame['scoring_version'] = 'legacy_unknown'
     frame['scoring_version'] = frame['scoring_version'].fillna('legacy_unknown')
+    from nfl_pipeline.modeling.scoring_equivalence import verified_aliases, cohort_for
+    aliases = verified_aliases()
+    frame['source_scoring_version'] = frame.scoring_version
+    frame['scoring_version'] = [cohort_for(r.scoring_version, r.forecast_id, aliases) for r in frame.itertuples()]
     results = {}
     for key, all_rows in frame.groupby(['run_id', 'production_release', 'stat', 'variant', 'scoring_version']):
         all_rows = all_rows.sort_values('created_at')
@@ -304,6 +419,7 @@ def offered_metrics(rows):
                                                   g.outcome, g.weight)
                       for stage in ('raw_over', 'heuristic_over', 'post_exact_side', 'final_side')}
             result[scope] = dict(rows=len(g), unique_player_games=len(pg),
+                source_scoring_versions=sorted(g.source_scoring_version.unique()),
                 weeks=len(g[['season', 'week']].drop_duplicates()),
                 production=probability_metrics(g.production_probability, g.outcome, g.weight),
                 raw=probability_metrics(raw_side, g.outcome, g.weight),
@@ -424,15 +540,22 @@ def matched_variant_comparisons(rows):
 
 def report():
     documents = [json.loads(p.read_text()) for p in STORE.glob('*/prospective/*/*.json')]
-    records = load_rows(); ledger = load_ledger()
+    records = attach_label_availability(load_rows()); ledger = load_ledger()
     rows, exclusions, pending = validate_documents(records, ledger, documents)
+    artifact, artifact_manifest = load_artifact()
+    rows, independent_replay = reconstruct_independent_probabilities(
+        records, rows, artifact, artifact_manifest['sha256'])
+    from nfl_pipeline.modeling import receiving_residual_challenger
+    residual_challenger = receiving_residual_challenger.fit_and_write(rows)
     results = offered_metrics(rows)
     pin = json.loads((STORE/'active_trial.json').read_text()) if (STORE/'active_trial.json').exists() else None
     research_trial = receiving_research_trial.report(records, rows, offered_metrics)
     atomic_json(ROOT/'reports'/'nfl_receiving_research_trial_latest.json', research_trial)
     doc = clean(dict(built_at=datetime.now(timezone.utc).isoformat(), cohorts=results,
         pending=pending, exclusions=exclusions, original_micro_ledger_rows=len(ledger),
+        independent_probability_replay=independent_replay,
         matched_variants=matched_variant_comparisons(rows),
+        receiving_residual_challenger=residual_challenger,
         receiving_research_trial=research_trial,
         deployment_reviews={name: deployment_review(scopes) for name, scopes in results.items()},
         active_trial=pin, pinned_release_evidence=pinned_capture_summary(records, documents, pin),
@@ -488,6 +611,9 @@ def report():
             *['- '+b for b in research_trial['blockers']]]
     (ROOT/'reports'/'nfl_receiving_research_trial_latest.md').write_text('\n'.join(trial_text)+'\n', encoding='utf-8')
     text += ['', *doc['limitations']]
+    text += ['', '## Conservative Receiving Residual Challenger', '',
+             f"Status: {residual_challenger.get('status')}; captured independent rows: {residual_challenger.get('input_rows', 0)}",
+             'This path is paper-only and ranks only when conservative EV remains positive.']
     text += ['', '## Component Review (Not Betting Approval)', '']
     for name, review in doc['deployment_reviews'].items():
         text.append(f"- {name}: {review['status']}; {', '.join(review['blockers'])}")

@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import pickle
 from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -21,12 +23,36 @@ from nfl_pipeline.modeling.scoring_capture import replay
 ROOT=Path(__file__).resolve().parents[3]
 
 
+def intern_forecast_inputs(row, cache):
+    """Share equal immutable input objects across books/lines without losing fields."""
+    p = row.get('forecast_payload') or {}
+    for parent, names in ((p, ('forecast_features', 'model_inputs', 'forecast_distribution', 'context_evidence')),
+                          (p.get('scoring_replay') or {}, ('row', 'metrics', 'distribution', 'calibration', 'clv_guards'))):
+        for name in names:
+            value = parent.get(name)
+            if not isinstance(value, (dict, list)):
+                continue
+            # Encode only in memory; no pickle is loaded. This preserves numeric
+            # types and avoids repeatedly sorting/JSON-encoding large tables.
+            key = hashlib.sha256(pickle.dumps(value, protocol=5)).digest()
+            existing = cache.setdefault(key, value)
+            if existing != value:
+                raise ValueError('replay_input_digest_collision')
+            parent[name] = existing
+    return row
+
+
 def load_rows(day=None, stat=None):
     with psycopg2.connect(PG_DSN) as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        conn.set_session(readonly=True, isolation_level='REPEATABLE READ')
         cur.execute("SET LOCAL statement_timeout='90s'")
-        cur.execute("""
+        # Stream the original payload once. Extracting/hashing large nested JSONB
+        # repeatedly in SQL caused expensive TOAST reads and sorts under load.
+        stream = conn.cursor(name='nfl_locked_replay', cursor_factory=psycopg2.extras.RealDictCursor)
+        stream.execute("""
             SELECT p.id,p.game_id,p.player_id,p.stat,p.side,p.line,p.book,p.created_at_utc,p.is_current,
-                   g.season,g.week,g.status,g.start_ts_utc,p.forecast_payload,
+                   g.season,g.week,g.status,g.start_ts_utc,
+                   p.forecast_payload,
                    o.fetched_at_utc AS offer_fetched_at,
                    l.game_id AS result_game_id, l.offense_snaps AS actual_offense_snaps,
                    graded.result AS graded_result,
@@ -34,7 +60,9 @@ def load_rows(day=None, stat=None):
                    CASE WHEN g.status='final' THEN l.carries END AS actual_carries,
                    CASE WHEN g.status='final' THEN l.pass_attempts END AS actual_pass_attempts,
                    CASE WHEN g.status='final' AND (COALESCE(l.offense_snaps,0)>0 OR
-                     COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0)>0)
+                     COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0)>0 OR
+                     (p.stat='receiving_yards' AND
+                      (l.raw_json #> '{receiving_result_repair,verified_game_participation}')='true'::jsonb))
                    THEN CASE p.stat WHEN 'passing_yards' THEN l.passing_yards WHEN 'rushing_yards' THEN l.rushing_yards
                      WHEN 'receiving_yards' THEN l.receiving_yards WHEN 'passing_tds' THEN l.passing_tds
                      WHEN 'rushing_tds' THEN l.rushing_tds WHEN 'receiving_tds' THEN l.receiving_tds
@@ -45,9 +73,14 @@ def load_rows(day=None, stat=None):
             LEFT JOIN bets.nfl_player_prop_prediction_results graded ON graded.prediction_id=p.id
             WHERE p.integrity_version='nfl-asof-v2' AND (%s IS NULL OR p.game_date_et=%s)
               AND (%s IS NULL OR p.stat=%s)
-            ORDER BY p.created_at_utc,p.id
         """,(day,day,stat,stat))
-        return [dict(r) for r in cur.fetchall()]
+        records, inputs = [], {}
+        while batch := stream.fetchmany(8):
+            records.extend(intern_forecast_inputs(dict(r), inputs) for r in batch)
+        stream.close()
+        # Sort references after interning, not expanded JSONB payloads in SQL.
+        records.sort(key=lambda r: (r['created_at_utc'], r['id']))
+        return records
 
 
 def validate_lock(record):
@@ -133,12 +166,13 @@ def build_report(records):
                 'Locked p10/p90 describe the stat forecast, not a distribution inferred from independently adjusted book probabilities.']}
 
 
-def prospective_report(records,root=None):
+def prospective_report(records,root=None,day=None):
     """Score immutable shadow files against the exact production forecast they used."""
     root=root or MODEL_ROOT/'challengers'
     lookup={int(r['id']):r for r in records}
     seen=set(); rows=[]; exclusions=Counter(); pending=0; pending_unique=set(); pending_by_cohort=Counter()
-    for path in sorted(root.glob('*/prospective/*/*.json')):
+    pattern = f'*/prospective/{day}/*.json' if day else '*/prospective/*/*.json'
+    for path in sorted(root.glob(pattern)):
         data=json.loads(path.read_text(encoding='utf-8'))
         scored_at=safe_time(data.get('scored_at'))
         for shadow in data.get('rows',[]):

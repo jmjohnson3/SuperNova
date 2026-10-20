@@ -97,8 +97,12 @@ def close_summary(records, ids, closes, now):
 def metrics_for(rows):
     if not rows:
         return {}
-    latest = max(rows, key=lambda r: r.get('created_at','')).get('scoring_version','legacy_unknown')
-    cohort = [r for r in rows if r.get('scoring_version','legacy_unknown') == latest]
+    from nfl_pipeline.modeling.scoring_equivalence import verified_aliases, cohort_for
+    aliases = verified_aliases()
+    def version(row):
+        return cohort_for(row.get('scoring_version', 'legacy_unknown'), row.get('forecast_id'), aliases)
+    latest = version(max(rows, key=lambda r: r.get('created_at','')))
+    cohort = [r for r in rows if version(r) == latest]
     return next(iter(benchmark.offered_metrics(cohort).values()), {})
 
 
@@ -165,7 +169,8 @@ def build_checkpoint(day, records, documents, ledger, registration, selections, 
                          fixed_research=metrics_for([r for r in selected_rows if r['forecast_id'] in day_selected])),
         cumulative_metrics=dict(all_eligible=all_metrics, fixed_research=selected_metrics),
         scoring_cohorts=benchmark.offered_metrics(rows),
-        close=dict(all_eligible=close_summary(records, day_ids, closes, now),
+        close=dict(current_eligible=close_summary(records, current_ids, closes, now),
+                   all_eligible=close_summary(records, day_ids, closes, now),
                    fixed_research=close_summary(records, day_selected, closes, now)),
         forecast_deployment_review=review,
         forecast_next_action='prepare_forecast_only_release' if not review['blockers'] else 'keep_frozen_collect_evidence',
@@ -178,6 +183,8 @@ def build_checkpoint(day, records, documents, ledger, registration, selections, 
 
 def render(doc):
     lines = ['# NFL Receiving Trial Checkpoint', '', f"Date: {doc['day']}; status: {doc['status']}"]
+    if doc.get('report_scope') == 'date_partition':
+        lines += ['Scope: this date only; cumulative deployment review requires an offline history report.']
     if 'capture' not in doc:
         return '\n'.join(lines)+'\n'
     capture = doc['capture']
@@ -215,13 +222,32 @@ def render(doc):
     return '\n'.join(lines)+'\n'
 
 
-def report(day):
+def report(day, *, incremental=False):
     registration = trial.load_registration()
-    documents = [json.loads(p.read_text()) for p in benchmark.STORE.glob('*/prospective/*/*.json')]
-    records = load_rows(stat='receiving_yards'); ledger = benchmark.load_ledger()
-    selections = [r for d in trial.captures(registration) for r in d['selected']] if registration else []
-    closes = trial.load_closes([int(r['id']) for r in records])
+    records, documents, ledger, selections, closes = [], [], [], [], {}
+    if registration:
+        # Scheduled checks need only the registered run and this date. Loading
+        # every historical replay payload made the checkpoint exceed its task
+        # timeout as immutable forecast revisions accumulated.
+        partition = str(day) if incremental else '*'
+        source = benchmark.STORE/registration['config']['run_id']/'prospective'
+        documents = [json.loads(p.read_text()) for p in sorted(source.glob(f'{partition}/*.json'))]
+        records = load_rows(day if incremental else None, stat='receiving_yards')
+        ledger = benchmark.load_ledger(day if incremental else None)
+        selections = [r for d in trial.captures(registration) for r in d['selected']
+                      if not incremental or str(r['day']) == str(day)]
+        if incremental:
+            forecast_ids = {int(row['id']) for row in records}
+            ledger = [row for row in ledger if int(row['prediction_id']) in forecast_ids]
+        closes = trial.load_closes([int(r['id']) for r in records])
     doc = build_checkpoint(day, records, documents, ledger, registration, selections, closes, datetime.now(timezone.utc))
+    doc['report_scope'] = 'date_partition' if incremental else 'cumulative_history'
+    if incremental and registration:
+        # A successful daily capture check is not a cumulative deployment review.
+        doc['cumulative_metrics'] = {}
+        doc['forecast_deployment_review']['blockers'].append('date_partition_not_cumulative_review')
+        doc['forecast_deployment_review']['status'] = 'collecting_evidence'
+        doc['forecast_next_action'] = 'keep_frozen_collect_evidence'
     root = ROOT/'reports'
     for suffix in (str(day), 'latest'):
         atomic_json(root/f'nfl_receiving_trial_checkpoint_{suffix}.json', doc)
@@ -232,7 +258,10 @@ def report(day):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--date', type=date.fromisoformat, required=True)
-    doc = report(parser.parse_args().date)
+    parser.add_argument('--incremental', action='store_true',
+                        help='Evaluate only this date; cumulative review remains an offline report.')
+    args = parser.parse_args()
+    doc = report(args.date, incremental=args.incremental)
     print(json.dumps({k: doc[k] for k in ('day', 'status', 'capture', 'settlement', 'close', 'forecast_next_action') if k in doc}, default=str))
     if doc['status'] in ('capture_incomplete', 'not_registered'):
         raise SystemExit(1)

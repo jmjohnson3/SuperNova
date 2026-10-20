@@ -1,0 +1,59 @@
+{
+  "contract": "nfl-stat-model-registry-v3",
+  "base_release": "nfl-20260918T143342Z",
+  "active": {},
+  "candidates": {
+    "receiving_yards": {
+      "receiving-oe-v2-20261012T234225243219Z": {
+        "stat": "receiving_yards",
+        "component_id": "receiving-oe-v2-20261012T234225243219Z",
+        "contract": "nfl-receiving-opportunity-efficiency-v2",
+        "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\receiving_opportunity_efficiency\\receiving-oe-v2-20261012T234225243219Z\\model.joblib",
+        "sha256": "2dc40598f408bf1ad11029836a7f308530761613d90520b09abf64bc2706c5ed",
+        "outputs": [
+          "probability"
+        ],
+        "base_release": "nfl-20260918T143342Z",
+        "training_end": "2026-09-28",
+        "evidence": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\receiving_opportunity_efficiency\\receiving-oe-v2-20261012T234225243219Z\\evidence.json",
+        "registered_at": "2026-10-12T23:42:26.497405+00:00",
+        "betting_approved": false
+      },
+      "components-20261015T203006649687Z-team_receiving_yards": {
+        "stat": "receiving_yards",
+        "component_id": "components-20261015T203006649687Z-team_receiving_yards",
+        "contract": "nfl-team-opportunity-stat-v2",
+        "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\accuracy_components\\components-20261015T203006649687Z\\stat_candidates\\receiving_yards\\team_receiving_yards.joblib",
+        "sha256": "1ba32bf961462e9663e07ba34a4fcc94bb7d39857dd9e557ae5b9ae5b9fa6720",
+        "outputs": [
+          "expected_mean",
+          "median"
+        ],
+        "base_release": "nfl-20260918T143342Z",
+        "training_end": "2026-10-12",
+        "evidence": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\accuracy_components\\components-20261015T203006649687Z\\stat_candidates\\receiving_yards\\team_receiving_yards.evidence.json",
+        "registered_at": "2026-10-15T20:45:41.461401+00:00",
+        "betting_approved": false
+      }
+    },
+    "passing_yards": {
+      "components-20261010T222543607583Z-qb_tail": {
+        "stat": "passing_yards",
+        "component_id": "components-20261010T222543607583Z-qb_tail",
+        "contract": "nfl-team-opportunity-stat-v2",
+        "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\accuracy_components\\components-20261010T222543607583Z\\stat_candidates\\passing_yards\\qb_tail.joblib",
+        "sha256": "fca7a3b907c3006c1b5457da78edc94d9ccbd161a6fe3bdf770398b9f66714b4",
+        "outputs": [
+          "expected_mean",
+          "median"
+        ],
+        "base_release": "nfl-20260918T143342Z",
+        "training_end": "2026-09-28",
+        "evidence": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\accuracy_components\\components-20261010T222543607583Z\\stat_candidates\\passing_yards\\qb_tail.evidence.json",
+        "registered_at": "2026-10-10T22:37:57.091311+00:00",
+        "betting_approved": false
+      }
+    }
+  },
+  "updated_at": "2026-10-15T20:45:41.466401+00:00"
+}

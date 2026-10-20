@@ -42,14 +42,16 @@ def body(bundle, game):
 
 def test_each_game_has_its_own_card_in_kickoff_order():
     bundle = build_bundle(DAY, list(reversed(schedule())), [game_pick()],
-        [prop(player='EarlyPlayer'), prop('late', 'LatePlayer'), prop('past', 'PastPlayer')], ['frozen'], now=NOW)
+        [prop(player='EarlyPlayer', tier='micro_projection'),
+         prop('late', 'LatePlayer', tier='micro_projection'),
+         prop('past', 'PastPlayer', tier='micro_projection')], ['frozen'], now=NOW)
     assert bundle['games'] == 2
     assert [c['game_id'] for c in bundle['cards']] == ['early', 'late']
     assert 'EarlyPlayer' in body(bundle, 'early') and 'LatePlayer' not in body(bundle, 'early')
     assert 'LatePlayer' in body(bundle, 'late') and 'EarlyPlayer' not in body(bundle, 'late')
     assert 'PastPlayer' not in json.dumps(bundle)
-    assert 'DAL -3.5' in body(bundle, 'early') and 'DAL -3.5' not in body(bundle, 'late')
-    assert 'PAPER GAME PICKS' in body(bundle, 'early')
+    assert 'DAL -3.5' not in json.dumps(bundle)
+    assert 'PAPER GAME PICKS' not in json.dumps(bundle)
     assert '<t:' in body(bundle, 'early')
     assert prop(player='EarlyPlayer')['link'] in body(bundle, 'early')
     assert 'https://account.sportsbook.fanduel.com/sportsbook/addToBetslip?' in body(bundle, 'early')
@@ -60,28 +62,65 @@ def test_micro_cap_is_slate_wide_not_per_game_and_requires_ledger_lock():
     rows.append(prop(player='Unrecorded', tier='micro_projection', ledger_locked=False, ev=10))
     bundle = build_bundle(DAY, schedule(), [], rows, ['frozen'], now=NOW)
     text = json.dumps(bundle)
-    assert text.count('BET $1:') == 5
+    assert text.count('BET $1:') == 3
     assert 'Unrecorded' not in text
     assert 'Player0' not in text and 'Player7' in text
     assert 'Min=' in text and 'Drift=OK' in text
-    assert 'Daily cap remains 5 across all games' in text
+    assert 'Maximum 3 across all games; there is no quota' in text
 
 
 def test_old_locks_are_separate_and_paper_does_not_become_micro():
     bundle = build_bundle(DAY, schedule(), [], [prop(player='Research'),
         prop(player='Recorded', tier='locked_micro', previously_locked=True)], ['frozen'], now=NOW)
     text = body(bundle, 'early')
-    assert 'Research only: Research' in text
+    assert 'Research' not in text
     assert 'Already recorded: Recorded' in text
     assert 'NOT ADDITIONAL PLAYS' in text
     assert 'BET $1:' not in text
     assert 'historical quote, not a fresh play' in text
 
 
-def test_research_top_ten_limit_stays_slate_wide():
+def test_nonactionable_research_rows_are_not_presented_as_bets():
     rows = [prop('early' if i < 8 else 'late', f'Research{i}', ev=i/100) for i in range(16)]
     bundle = build_bundle(DAY, schedule(), [], rows, ['frozen'], now=NOW)
-    assert json.dumps(bundle).count('Research only:') == 10
+    text = json.dumps(bundle)
+    assert 'Research only:' not in text
+    assert 'Research15' not in text
+    assert 'ACTIONABLE PROPS' in text
+
+
+def test_starting_skill_section_is_complete_and_independent_of_paper_caps():
+    def starter(player, position, rank, stat, projection, *, depth_abb=None, current_line=True):
+        row = prop(player=player, position=position, stat=stat, projection=projection,
+                   depth_pos_abb=depth_abb or position, depth_pos_rank=rank,
+                   depth_pos_slot=rank, roster_status='ACT')
+        row['forecast_outputs'] = {'point_forecast': {'value': projection - 1,
+                                                       'independent_of_offer': True}}
+        if not current_line:
+            row.update(book=None, offer_id=None, line=None, side=None, price=None, link=None,
+                       starter_current_line=False)
+        return row
+
+    rows = [
+        starter('QB1', 'QB', 1, 'passing_yards', 251),
+        starter('QB2', 'QB', 2, 'passing_yards', 220),
+        starter('RB1', 'RB', 1, 'rushing_yards', 71),
+        starter('WR1', 'WR', 1, 'receiving_yards', 81),
+        starter('WR2', 'WR', 2, 'receiving_yards', 61),
+        starter('WR3', 'WR', 3, 'receiving_yards', 41),
+        starter('Returner', 'WR', 1, 'receiving_yards', 31, depth_abb='KR'),
+        starter('TE1', 'TE', 1, 'receiving_yards', 51, current_line=False),
+    ]
+    bundle = build_bundle(DAY, schedule(), [], [], ['frozen'], now=NOW,
+                          paper_limit=1, starter_prop_rows=rows)
+    text = body(bundle, 'early')
+    assert 'STARTING SKILL PLAYER PROJECTIONS' in text
+    for player in ('QB1', 'RB1', 'WR1', 'WR2', 'TE1'):
+        assert player in text
+    assert 'QB2' not in text and 'WR3' not in text and 'Returner' not in text
+    assert 'Pass Yds 250.0' in text
+    assert 'Projection only - no current line' in text
+    assert 'FanDuel line available' in text
 
 
 def test_oversized_game_continues_without_mixing_games_or_cutting_links():
@@ -105,7 +144,8 @@ def test_unreasonably_long_link_is_not_silently_truncated():
 def test_empty_matchup_and_zero_prop_offers_are_explained():
     bundle = build_bundle(DAY, schedule(), [], [], ['frozen'], now=NOW)
     assert 'No fresh verified FanDuel prop offers' in body(bundle, 'early')
-    assert 'No current priced game picks' in body(bundle, 'early')
+    assert 'No qualifying bankroll bets' in body(bundle, 'early')
+    assert 'No current prop meets' in body(bundle, 'early')
     empty = build_bundle(DAY, [], [], [], ['frozen'], now=NOW)
     assert empty['cards'] == [] and empty['notice']
 
@@ -120,6 +160,44 @@ def test_poster_sends_separate_embeds_and_records_successes(monkeypatch):
     assert len(sent) == 2
     assert [p['game_id'] for p in publications] == ['early', 'late']
     assert all(p['allowed_mentions'] == {'parse': []} for p in sent)
+
+
+def test_readiness_issue_still_publishes_projection_and_status_cards(monkeypatch):
+    bundle = build_bundle(DAY, schedule(), [], [prop()], ['frozen'], now=NOW,
+        cash_readiness={'status': 'operational_issue', 'reason': 'cash_readiness_stale_or_mismatched'})
+    sent = []
+    async def send(payload): sent.append(payload)
+    monkeypatch.setattr(daily, '_post_payload', send)
+    publications = []
+    asyncio.run(daily._post_matchups(json.dumps(bundle), publications))
+    assert len(sent) == len(publications) == 2
+    assert all('**OPERATIONAL ISSUE**' in p['embeds'][0]['description'] for p in sent)
+    assert all('cash_readiness_stale_or_mismatched' in p['embeds'][0]['description'] for p in sent)
+    assert all(not p['forecast_manifest'] for p in publications)
+
+
+@pytest.mark.parametrize('unsafe_card', ['cash_ids', 'cash_manifest', 'cash_id_on_paper', 'unmanifested_micro'])
+def test_readiness_issue_blocks_staked_cards_before_any_delivery(monkeypatch, unsafe_card):
+    rows = [prop('late', tier='micro_projection')] if unsafe_card == 'unmanifested_micro' else []
+    bundle = build_bundle(DAY, schedule(), [], rows, ['frozen'], now=NOW,
+        cash_readiness={'status': 'operational_issue', 'reason': 'cash_readiness_stale_or_mismatched'})
+    card = bundle['cards'][-1]
+    if unsafe_card == 'cash_ids':
+        card['cash_ledger_ids'] = [123]
+    elif unsafe_card == 'cash_manifest':
+        card['forecast_manifest'] = [{'tier': 'cash_trial', 'forecast_id': 123}]
+    elif unsafe_card == 'cash_id_on_paper':
+        card['forecast_manifest'] = [{'tier': 'paper', 'forecast_id': 123, 'cash_ledger_id': 123}]
+    else:
+        assert not card['forecast_manifest']
+        assert '**$1 MICRO TEST**' in card['payload']['embeds'][0]['description']
+    sent = []
+    async def send(payload): sent.append(payload)
+    monkeypatch.setattr(daily, '_post_payload', send)
+    publications = []
+    with pytest.raises(ValueError, match='Cash publication readiness failed'):
+        asyncio.run(daily._post_matchups(json.dumps(bundle), publications))
+    assert not sent and not publications
 
 
 def test_failed_delivery_keeps_prior_successes_visible(monkeypatch):

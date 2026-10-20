@@ -1,0 +1,532 @@
+{
+  "run_id": "forecast-repair-total-20261008T170628068151Z",
+  "market": "total",
+  "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\forecast_repair\\forecast-repair-total-20261008T170628068151Z\\model.joblib",
+  "artifact_sha256": "cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96",
+  "production_release": "nfl-20260918T143342Z",
+  "training_end": "2026-09-17",
+  "scores": {
+    "reference": {
+      "expected": {
+        "rows": 302,
+        "mae": 11.02316286958484,
+        "rmse": 13.996970497524014,
+        "bias": 0.38160580124433896,
+        "interval_rows": 302,
+        "coverage_80": 0.7715231788079471,
+        "interval_width": 33.882466777772905
+      },
+      "typical": {
+        "rows": 302,
+        "mae": 11.1408940397351,
+        "rmse": 14.087813824166291,
+        "bias": 0.0591059602649002
+      },
+      "below": 0.11589403973509933,
+      "above": 0.11258278145695365,
+      "interval_score": 49.78676922064822,
+      "probability": {
+        "rows": 302,
+        "brier": 0.25452409865838926,
+        "log_loss": 0.7022101700839474,
+        "calibration_error": 0.08793473970439901,
+        "probability_bias": 0.02175343186702327
+      }
+    },
+    "small_total": {
+      "expected": {
+        "rows": 302,
+        "mae": 10.823638130537127,
+        "rmse": 13.7784285867875,
+        "bias": 0.42799488679801934,
+        "interval_rows": 302,
+        "coverage_80": 0.7582781456953642,
+        "interval_width": 32.426872742883624
+      },
+      "typical": {
+        "rows": 302,
+        "mae": 10.818426977456273,
+        "rmse": 13.775006446534945,
+        "bias": 0.15787895515775704
+      },
+      "below": 0.1291390728476821,
+      "above": 0.11258278145695365,
+      "interval_score": 49.0912213280508,
+      "probability": {
+        "rows": 302,
+        "brier": 0.24503601706791642,
+        "log_loss": 0.6831587797583748,
+        "calibration_error": 0.03846322529713613,
+        "probability_bias": 0.031796851015306264
+      }
+    }
+  },
+  "decisions": {
+    "small_total": {
+      "historical_screens": {
+        "expected": false,
+        "typical": true,
+        "probability": false
+      },
+      "weekly_gains": {
+        "expected": {
+          "clusters": 24,
+          "lower_95": -1.478786041571142,
+          "upper_95": 13.29953803114843,
+          "mean_gain": 6.070088787354702
+        },
+        "typical": {
+          "clusters": 24,
+          "lower_95": 0.03546211625188694,
+          "upper_95": 0.6126383821779052,
+          "mean_gain": 0.32246706227882593
+        },
+        "probability": {
+          "clusters": 24,
+          "lower_95": -1.3559651557899929e-05,
+          "upper_95": 0.019426582717230047,
+          "mean_gain": 0.009488081590472836
+        }
+      },
+      "forecast_deployment_approved": false,
+      "cash_approved": false
+    }
+  },
+  "folds": [
+    {
+      "fold": "2025-W01",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2024-10-07",
+          "rows": 6784,
+          "weeks": 533,
+          "regular_rows": 6501,
+          "postseason_rows": 283
+        },
+        {
+          "name": "residual",
+          "first": "2024-10-10",
+          "last": "2024-12-02",
+          "rows": 117,
+          "weeks": 8,
+          "regular_rows": 117,
+          "postseason_rows": 0
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2024-12-05",
+          "last": "2025-02-09",
+          "rows": 90,
+          "weeks": 9,
+          "regular_rows": 77,
+          "postseason_rows": 13
+        }
+      ],
+      "train_end": "2025-02-09",
+      "test_start": "2025-09-04",
+      "test_end": "2025-09-29",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 1.0
+    },
+    {
+      "fold": "2025-W05",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2024-11-04",
+          "rows": 6844,
+          "weeks": 537,
+          "regular_rows": 6561,
+          "postseason_rows": 283
+        },
+        {
+          "name": "residual",
+          "first": "2024-11-07",
+          "last": "2024-12-30",
+          "rows": 118,
+          "weeks": 8,
+          "regular_rows": 118,
+          "postseason_rows": 0
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2025-01-04",
+          "last": "2025-09-29",
+          "rows": 93,
+          "weeks": 9,
+          "regular_rows": 80,
+          "postseason_rows": 13
+        }
+      ],
+      "train_end": "2025-09-29",
+      "test_start": "2025-10-02",
+      "test_end": "2025-10-27",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 1.0
+    },
+    {
+      "fold": "2025-W09",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2024-12-09",
+          "rows": 6914,
+          "weeks": 542,
+          "regular_rows": 6631,
+          "postseason_rows": 283
+        },
+        {
+          "name": "residual",
+          "first": "2024-12-12",
+          "last": "2025-09-15",
+          "rows": 109,
+          "weeks": 10,
+          "regular_rows": 96,
+          "postseason_rows": 13
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2025-09-18",
+          "last": "2025-10-27",
+          "rows": 89,
+          "weeks": 6,
+          "regular_rows": 89,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-10-27",
+      "test_start": "2025-10-30",
+      "test_end": "2025-11-24",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 1.0
+    },
+    {
+      "fold": "2025-W13",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2025-01-13",
+          "rows": 6984,
+          "weeks": 547,
+          "regular_rows": 6695,
+          "postseason_rows": 289
+        },
+        {
+          "name": "residual",
+          "first": "2025-01-18",
+          "last": "2025-10-13",
+          "rows": 100,
+          "weeks": 9,
+          "regular_rows": 93,
+          "postseason_rows": 7
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2025-10-16",
+          "last": "2025-11-24",
+          "rows": 85,
+          "weeks": 6,
+          "regular_rows": 85,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-11-24",
+      "test_start": "2025-11-27",
+      "test_end": "2025-12-22",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 1.0
+    },
+    {
+      "fold": "2025-W17",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2025-09-15",
+          "rows": 7023,
+          "weeks": 552,
+          "regular_rows": 6727,
+          "postseason_rows": 296
+        },
+        {
+          "name": "residual",
+          "first": "2025-09-18",
+          "last": "2025-11-10",
+          "rows": 117,
+          "weeks": 8,
+          "regular_rows": 117,
+          "postseason_rows": 0
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2025-11-13",
+          "last": "2025-12-22",
+          "rows": 91,
+          "weeks": 6,
+          "regular_rows": 91,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-12-22",
+      "test_start": "2025-12-25",
+      "test_end": "2026-01-18",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 1.0
+    },
+    {
+      "fold": "2025-W21",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2025-10-06",
+          "rows": 7069,
+          "weeks": 555,
+          "regular_rows": 6773,
+          "postseason_rows": 296
+        },
+        {
+          "name": "residual",
+          "first": "2025-10-09",
+          "last": "2025-12-01",
+          "rows": 116,
+          "weeks": 8,
+          "regular_rows": 116,
+          "postseason_rows": 0
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2025-12-04",
+          "last": "2026-01-18",
+          "rows": 88,
+          "weeks": 7,
+          "regular_rows": 78,
+          "postseason_rows": 10
+        }
+      ],
+      "train_end": "2026-01-18",
+      "test_start": "2026-01-25",
+      "test_end": "2026-02-08",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 0.5
+    },
+    {
+      "fold": "2026-W01",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "1999-09-12",
+          "last": "2025-10-06",
+          "rows": 7069,
+          "weeks": 555,
+          "regular_rows": 6773,
+          "postseason_rows": 296
+        },
+        {
+          "name": "residual",
+          "first": "2025-10-09",
+          "last": "2025-12-01",
+          "rows": 116,
+          "weeks": 8,
+          "regular_rows": 116,
+          "postseason_rows": 0
+        },
+        {
+          "name": "blend_tuning",
+          "first": "2025-12-04",
+          "last": "2026-02-08",
+          "rows": 91,
+          "weeks": 9,
+          "regular_rows": 78,
+          "postseason_rows": 13
+        }
+      ],
+      "train_end": "2026-02-08",
+      "test_start": "2026-09-09",
+      "test_end": "2026-09-17",
+      "rate_strength": null,
+      "count_weight": null,
+      "total_strength": 0.5
+    }
+  ],
+  "blocks": [
+    {
+      "name": "fit",
+      "first": "1999-09-12",
+      "last": "2025-10-13",
+      "rows": 7084,
+      "weeks": 556,
+      "regular_rows": 6788,
+      "postseason_rows": 296
+    },
+    {
+      "name": "residual",
+      "first": "2025-10-16",
+      "last": "2025-12-08",
+      "rows": 115,
+      "weeks": 8,
+      "regular_rows": 115,
+      "postseason_rows": 0
+    },
+    {
+      "name": "blend_tuning",
+      "first": "2025-12-11",
+      "last": "2026-09-17",
+      "rows": 94,
+      "weeks": 10,
+      "regular_rows": 81,
+      "postseason_rows": 13
+    }
+  ],
+  "feature_support": {
+    "pf_5": 0.9971767363071711,
+    "pf_10": 0.9971767363071711,
+    "pa_5": 0.9971767363071711,
+    "pa_10": 0.9971767363071711,
+    "plays_5": 0.24491812535290797,
+    "plays_10": 0.24491812535290797,
+    "pass_rate_5": 0.24491812535290797,
+    "pass_rate_10": 0.24491812535290797,
+    "yards_per_play_5": 0.24491812535290797,
+    "yards_per_play_10": 0.24491812535290797,
+    "red_zone_td_rate_5": 0.24491812535290797,
+    "red_zone_td_rate_10": 0.24491812535290797,
+    "rest_mean": 0.9971767363071711
+  },
+  "by_season": {
+    "2025": {
+      "reference": {
+        "expected": {
+          "rows": 285,
+          "mae": 10.847722560644847,
+          "rmse": 13.688313572257517,
+          "bias": 0.8300459890571124,
+          "interval_rows": 285,
+          "coverage_80": 0.775438596491228,
+          "interval_width": 33.873540141745096
+        },
+        "typical": {
+          "rows": 285,
+          "mae": 10.975789473684213,
+          "rmse": 13.80489107323414,
+          "bias": 0.4515789473684202
+        },
+        "below": 0.11929824561403508,
+        "above": 0.10526315789473684,
+        "interval_score": 48.99637039618914,
+        "probability": {
+          "rows": 285,
+          "brier": 0.2545323881608763,
+          "log_loss": 0.7022260584525885,
+          "calibration_error": 0.08885790635529227,
+          "probability_bias": 0.027373068432670983
+        }
+      },
+      "small_total": {
+        "expected": {
+          "rows": 285,
+          "mae": 10.639882559243285,
+          "rmse": 13.435384581582719,
+          "bias": 0.9001318052125985,
+          "interval_rows": 285,
+          "coverage_80": 0.7614035087719299,
+          "interval_width": 32.39802674653996
+        },
+        "typical": {
+          "rows": 285,
+          "mae": 10.641973588354224,
+          "rmse": 13.456373780464446,
+          "bias": 0.5670838884023154
+        },
+        "below": 0.13333333333333333,
+        "above": 0.10526315789473684,
+        "interval_score": 48.246714189157345,
+        "probability": {
+          "rows": 285,
+          "brier": 0.24445142064406222,
+          "log_loss": 0.6819880802591077,
+          "calibration_error": 0.039340072034390536,
+          "probability_bias": 0.03934007203439054
+        }
+      }
+    },
+    "2026": {
+      "reference": {
+        "expected": {
+          "rows": 17,
+          "mae": 13.964368048872984,
+          "rmse": 18.416673535359767,
+          "bias": -7.136362053263919,
+          "interval_rows": 17,
+          "coverage_80": 0.7058823529411765,
+          "interval_width": 34.03211920529802
+        },
+        "typical": {
+          "rows": 17,
+          "mae": 13.908823529411764,
+          "rmse": 18.186941824869194,
+          "bias": -6.520588235294117
+        },
+        "below": 0.058823529411764705,
+        "above": 0.23529411764705882,
+        "interval_score": 63.03757304246202,
+        "probability": {
+          "rows": 17,
+          "brier": 0.2543851275872833,
+          "log_loss": 0.7019438062567267,
+          "calibration_error": 0.07245812232177652,
+          "probability_bias": -0.07245812232177652
+        }
+      },
+      "small_total": {
+        "expected": {
+          "rows": 17,
+          "mae": 13.904246237522155,
+          "rmse": 18.610550788890084,
+          "bias": -7.487241686622865,
+          "interval_rows": 17,
+          "coverage_80": 0.7058823529411765,
+          "interval_width": 32.91046738746839
+        },
+        "typical": {
+          "rows": 17,
+          "mae": 13.776616147696512,
+          "rmse": 18.30887557145959,
+          "bias": -6.702321396295135
+        },
+        "below": 0.058823529411764705,
+        "above": 0.23529411764705882,
+        "interval_score": 63.24913512714705,
+        "probability": {
+          "rows": 17,
+          "brier": 0.25483660417370757,
+          "log_loss": 0.7027852125402043,
+          "calibration_error": 0.099337748344371,
+          "probability_bias": -0.09466303077522412
+        }
+      }
+    }
+  },
+  "production_changed": false,
+  "cash_approved": false,
+  "limitations": [
+    "Historical development only; these seasons have already been examined.",
+    "One player-game or game per outcome; whole-week chronology and clustered uncertainty.",
+    "Proxy lines are not real offered lines. Reference is a chronological recipe, not hindsight live production.",
+    "Receiving pinned policy remains unchanged. No odds, ledgers, locks or Discord posts are rewritten.",
+    "Models, rate tuning, residual tails and CDF fitting use separate chronological blocks.",
+    "No current injuries or actual routes are invented; unavailable inputs remain missing.",
+    "Deployment requires later captured same-offer validation, independently of cash approval."
+  ]
+}

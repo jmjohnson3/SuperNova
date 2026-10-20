@@ -1,0 +1,51 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-10-04T13:44:08.118834+00:00",
+  "captured_at": "2026-10-04T13:44:09.308417+00:00",
+  "selected": [
+    {
+      "forecast_id": 12005,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-04",
+      "game_id": "2026_04_ARI_NYG",
+      "player_id": "00-0041027",
+      "team": "ARI",
+      "season": 2026,
+      "week": 4,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 16.5,
+      "price": -113,
+      "probability": 0.5451883661916846,
+      "market_probability": 0.5,
+      "ev": 0.02765594689229056,
+      "captured_at": "2026-10-04T13:44:09.308417+00:00"
+    },
+    {
+      "forecast_id": 11957,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-04",
+      "game_id": "2026_04_NYJ_CHI",
+      "player_id": "00-0039451",
+      "team": "NYJ",
+      "season": 2026,
+      "week": 4,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 22.5,
+      "price": -113,
+      "probability": 0.5391705069124424,
+      "market_probability": 0.5,
+      "ev": 0.016312548427878104,
+      "captured_at": "2026-10-04T13:44:09.308417+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 844,
+    "original_drift_guard_not_passed": 143,
+    "fixed_cap_or_duplicate": 3
+  }
+}

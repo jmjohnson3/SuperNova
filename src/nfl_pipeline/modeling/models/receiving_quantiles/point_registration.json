@@ -1,0 +1,14 @@
+{
+  "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\receiving_quantiles\\receiving-quantiles-20261005T204207709687Z\\model.joblib",
+  "artifact_sha256": "d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
+  "run_id": "receiving-quantiles-20261005T204207709687Z",
+  "variant": "calibrated_blend",
+  "output": "median",
+  "production_release": "nfl-20260918T143342Z",
+  "registered_at": "2026-10-05T21:51:34.867166+00:00",
+  "acceptance_start": "2026-10-05",
+  "minimum_weeks": 3,
+  "status": "prospective_only",
+  "probability_enabled": false,
+  "betting_approved": false
+}

@@ -4,7 +4,7 @@ from nfl_pipeline.repair_receiving_results import verified_receiving, verified_i
 
 def fixture():
     row=dict(game_id='g',player_id='p',team_abbr='DEN',pfr_ids=['pfr'],existing_yards=None)
-    snaps=pd.DataFrame([dict(game_id='g',pfr_player_id='pfr',team='DEN',offense_snaps=27)])
+    snaps=pd.DataFrame([dict(game_id='g',pfr_player_id='pfr',team='DEN',offense_snaps=27,st_snaps=0)])
     pbp=pd.DataFrame([
         dict(game_id='g',play_id=1,desc='pass',posteam='DEN',play_type='pass',pass_attempt=1,
              complete_pass=1,receiver_player_id='other',receiving_yards=10.,lateral_receiver_player_id=None),
@@ -18,9 +18,21 @@ def test_zero_requires_positive_snaps_complete_pbp_and_reconciled_team_totals():
     args=fixture();proof,error=verified_receiving(*args)
     assert error is None and proof['receiving_yards']==0 and proof['offense_snaps']==27
     for snaps in (args[1].iloc[:0],args[1].assign(offense_snaps=0),args[1].assign(offense_snaps=None)):
+        if not snaps.empty:
+            snaps=snaps.assign(st_snaps=0)
         assert verified_receiving(args[0],snaps,args[2],args[3])[0] is None
     assert verified_receiving(args[0],args[1],args[2].iloc[:1],args[3])[0] is None
     assert verified_receiving(*args[:3],{('g','DEN'):(2,20)})[0] is None
+
+
+def test_special_teams_participation_can_verify_zero_receiving_result():
+    row,snaps,pbp,total=fixture()
+    snaps=snaps.assign(offense_snaps=0,st_snaps=11)
+    proof,error=verified_receiving(row,snaps,pbp,total)
+    assert error is None
+    assert proof['receiving_yards']==0 and proof['offense_snaps']==0
+    assert proof['special_teams_snaps']==11 and proof['verified_game_participation'] is True
+    assert proof['evidence'].startswith('positive_special_teams_snaps')
 
 
 def test_ambiguous_identity_laterals_and_incomplete_stats_stay_unresolved():

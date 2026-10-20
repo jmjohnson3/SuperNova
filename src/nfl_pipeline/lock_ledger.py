@@ -251,7 +251,7 @@ def main() -> None:
     parser.add_argument("--date", default=None, help="ET date YYYY-MM-DD")
     parser.add_argument("--pg-dsn", default=PG_DSN)
     parser.add_argument("--tier", default="micro", choices=sorted(APPROVED_TIERS))
-    parser.add_argument("--max-rows", type=int, default=5)
+    parser.add_argument("--max-rows", type=int, default=3)
     parser.add_argument("--stake", type=float, default=1.0)
     parser.add_argument("--refresh-only", action="store_true", help="Refresh existing results; never insert bets or run schema DDL")
     args = parser.parse_args()

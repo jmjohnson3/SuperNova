@@ -44,20 +44,80 @@ def digest(value):
         separators=(',', ':')).encode()).hexdigest()
 
 
+def _validate_registration(doc):
+    if digest(doc['config']) != doc['sha256']:
+        raise ValueError('Cash policy registration checksum mismatch')
+    return doc
+
+
+def _archive_registration(doc, store):
+    path = store / 'registrations' / f"{doc['sha256']}.json"
+    if path.exists():
+        archived = _validate_registration(json.loads(path.read_text()))
+        if archived != doc:
+            raise ValueError('Cash policy registration archive collision')
+    else:
+        atomic_json(path, doc)
+
+
+def _registration_config(config, now):
+    return dict(config, policy=json.loads(json.dumps(asdict(POLICY))),
+                registered_at=now.isoformat())
+
+
 def register(config, *, store=STORE):
     """Pin an authorization cohort without changing an existing research trial."""
     path = store / 'registration.json'
     if path.exists():
-        doc = json.loads(path.read_text())
-        if digest(doc['config']) != doc['sha256']:
-            raise ValueError('Cash policy registration checksum mismatch')
+        doc = _validate_registration(json.loads(path.read_text()))
         for field in config:
             if config.get(field) != doc['config'].get(field):
                 raise ValueError('Cash cohort changed; explicit new strategy registration required')
         return doc
-    config = dict(config, policy=json.loads(json.dumps(asdict(POLICY))), registered_at=datetime.now(timezone.utc).isoformat())
+    config = _registration_config(config, datetime.now(timezone.utc))
     doc = dict(config=config, sha256=digest(config))
+    _archive_registration(doc, store)
     atomic_json(path, doc)
+    return doc
+
+
+def rollover_scoring(config, reason, *, store=STORE, now=None):
+    """Start a prospective cohort after a real scoring-code change.
+
+    Historical registrations remain immutable and are never pooled into the new
+    cohort. The scoring fingerprint and an explicitly attached dependency-freeze
+    reference may change; strategy or release changes require their own path.
+    """
+    if not str(reason or '').strip():
+        raise ValueError('Cash scoring rollover requires a reason')
+    current = load_registration(store)
+    if current is None:
+        return register(config, store=store)
+    old = current['config']
+    provenance = config.get('frozen_provenance')
+    if old.get('frozen_provenance') and not provenance:
+        raise ValueError('Cash dependency freeze cannot be removed by rollover')
+    if provenance is not None and (not isinstance(provenance, dict)
+            or set(provenance) != {'experiment_id', 'sha256'}
+            or not isinstance(provenance.get('experiment_id'), str) or not provenance['experiment_id']
+            or not isinstance(provenance.get('sha256'), str) or len(provenance['sha256']) != 64
+            or any(c not in '0123456789abcdef' for c in provenance['sha256'])):
+        raise ValueError('Invalid cash dependency freeze reference')
+    metadata = {'registered_at', 'policy', 'supersedes_registration_sha256', 'rollover_reason'}
+    unchanged = (set(config) | set(old)) - metadata - {'scoring_version', 'frozen_provenance'}
+    changed = [k for k in unchanged if config.get(k) != old.get(k)]
+    if changed:
+        raise ValueError('Cash strategy changed outside scoring version: '+','.join(sorted(changed)))
+    if (config.get('scoring_version') == old.get('scoring_version')
+            and provenance == old.get('frozen_provenance')):
+        return current
+    _archive_registration(current, store)
+    created = _registration_config(config, now or datetime.now(timezone.utc))
+    created.update(supersedes_registration_sha256=current['sha256'],
+                   rollover_reason=str(reason).strip())
+    doc = dict(config=created, sha256=digest(created))
+    _archive_registration(doc, store)
+    atomic_json(store / 'registration.json', doc)
     return doc
 
 
@@ -65,8 +125,8 @@ def load_registration(store=STORE):
     path = store / 'registration.json'
     if not path.exists():
         return None
-    doc = json.loads(path.read_text())
-    if digest(doc['config']) != doc['sha256'] or doc['config']['policy'] != json.loads(json.dumps(asdict(POLICY))):
+    doc = _validate_registration(json.loads(path.read_text()))
+    if doc['config']['policy'] != json.loads(json.dumps(asdict(POLICY))):
         raise ValueError('Cash policy registration mismatch')
     return doc
 

@@ -1,0 +1,14 @@
+{
+  "contract": "nfl-stat-candidate-evidence-v1",
+  "stat": "rushing_yards",
+  "component": "team_rushing_yards",
+  "artifact_sha256": "e27fda83f2ec4dc84c2e9ff0c86ab1cbb0f8c75b756265bc6d786f3812cc7e2b",
+  "historical_screen_outputs": [],
+  "approved_outputs": [],
+  "deployment_approved": false,
+  "betting_approved": false,
+  "blockers": [
+    "prospective_identical_fanduel_line_validation_required"
+  ],
+  "built_at": "2026-10-10T07:54:03.536287+00:00"
+}

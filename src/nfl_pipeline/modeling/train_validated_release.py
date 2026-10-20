@@ -48,10 +48,22 @@ def feature_columns(X, target, game=False):
         # Closing odds/observed weather are benchmarks, not morning-lock features.
         return [c for c in X if ("_avg_" in c or c.endswith("_rest_days") or c == "rest_diff")
                 and not any(t in c for t in ("market", "implied", "injury"))]
-    group = GROUPS[target.split("_")[0]]
-    return [c for c in X if c in {"is_home", "rest_days"} or (
+    family = target.split("_")[0]
+    if family == "receptions":
+        family = "receiving"
+    group = GROUPS[family]
+    columns = [c for c in X if c in {"is_home", "rest_days", "unexpected_partial_rate_avg_5"} or (
         c.startswith(group) and ("_avg_" in c or "_std_" in c)
         and "share_avg" not in c and "team_player" not in c)]
+    # Same-data chronological ablation accepts the role-shock history for
+    # receiving outcomes only.  Passing and rushing keep their established
+    # feature contracts until this repair improves both point and probability
+    # accuracy for those targets as well.
+    if target not in {"receiving_yards", "receptions"}:
+        columns = [c for c in columns if not any(token in c for token in (
+            "_full_role_", "_robust_", "unexpected_partial_rate_avg_5"
+        ))]
+    return columns
 
 
 def baseline(df, target, game):

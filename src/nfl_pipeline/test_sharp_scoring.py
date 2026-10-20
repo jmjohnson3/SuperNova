@@ -16,27 +16,31 @@ def market(trust):
 
 def setup(sharp_over, sharp_under, trust=0.0, enabled=False):
     row, offer, metrics, distribution = scoring_fixture()
+    consensus = props._no_vig_side_probability(sharp_over, sharp_under, 'over')
     offer = dict(offer, bookmaker_key="fanduel", over_price=-110, under_price=-110,
                  sharp_reference=dict(bookmaker_key="pinnacle", line=offer["line"], over_price=sharp_over,
-                                      under_price=sharp_under, fetched_at_utc=str(NOW)))
+                                      under_price=sharp_under, fetched_at_utc=str(NOW),
+                                      consensus_over_probability=consensus,
+                                      consensus_book_count=1, consensus_dispersion=0.0))
     metrics = dict(metrics, market_calibration=market(trust), bet_stats=["receiving_yards"], sharp_edge_bets_enabled=enabled)
     return row, offer, metrics, distribution
 
 
-def test_prices_fanduel_at_the_sharp_no_vig_line_and_takes_the_off_market_side():
+def test_external_consensus_cannot_replace_fanduel_without_approved_policy():
     row, offer, metrics, distribution = setup(sharp_over=-140, sharp_under=+120)  # sharp says over ~57%
     cand = props._candidate_from_offer(row, "receiving_yards", 30, 50, metrics, offer, distribution)
     sharp_over = (140 / 240) / (140 / 240 + 100 / 220)
-    assert cand["side"] == "over" and cand["probability"] == pytest.approx(sharp_over)
+    assert cand["probability"] == pytest.approx(.5)
     assert cand["sharp_book"] == "pinnacle" and cand["sharp_over_probability"] == pytest.approx(sharp_over)
-    assert cand["sharp_ev"] == pytest.approx(cand["ev"]) and cand["ev"] > 0.03  # FanDuel -110 is off-market
+    assert cand["ev"] < 0 and cand['fanduel_signal']['approved'] is False
     assert cand["market_no_vig_probability"] == pytest.approx(0.5)
 
 
 def test_sharp_edges_stay_research_until_enabled_and_replay_exactly():
     row, offer, metrics, distribution = setup(sharp_over=+130, sharp_under=-150)  # sharp says under
     cand = props._candidate_from_offer(row, "receiving_yards", 80, 50, metrics, offer, distribution)
-    assert cand["side"] == "under" and cand["tier"] == "paper"
+    assert cand["tier"] == "paper"
+    assert cand['probability'] == pytest.approx(.5)
     captured = capture(row, "receiving_yards", 80, 50, metrics, offer, distribution, {}, {}, .02, {"version": "frozen"})
     restored = replay(json.loads(json.dumps(captured, default=str)))
     assert restored["probability"] == cand["probability"] and restored["side"] == cand["side"]
@@ -60,7 +64,7 @@ def test_reference_index_matches_exact_line_fresh_two_sided_sharp_quotes_only():
     index = props._sharp_reference_index(offers, NOW)
     fd = dict(base, bookmaker_key="fanduel", line=45.5)
     assert props._sharp_reference_for(index, fd)["bookmaker_key"] == "pinnacle"  # preferred over exchange
-    assert props._sharp_reference_for(index, dict(fd, line=44.5)) is None
+    assert props._sharp_reference_for(index, dict(fd, line=44.5))["bookmaker_key"] == "draftkings"
 
 
 def test_discord_cards_no_longer_carry_a_snapshot_sharp_section():
@@ -70,4 +74,4 @@ def test_discord_cards_no_longer_carry_a_snapshot_sharp_section():
     edge = prop(player='EdgeGuy', sharp_ev=0.06, sharp_book='pinnacle', sharp_line=45.5, sharp_over_probability=0.58, side='over')
     text = _json.dumps(build_bundle(DAY, schedule(), [], [edge, prop(player='PlainGuy')], ['frozen'], now=CARD_NOW))
     assert 'SHARP-LINE EDGES' not in text and 'vs Pinnacle' not in text  # live alerts come from sharp_watch
-    assert 'EdgeGuy' in text and 'PlainGuy' in text  # still listed as ordinary research rows
+    assert 'EdgeGuy' not in text and 'PlainGuy' not in text

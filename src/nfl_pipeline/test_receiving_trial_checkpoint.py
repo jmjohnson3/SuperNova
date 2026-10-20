@@ -1,5 +1,6 @@
 from copy import deepcopy
 from datetime import date, datetime, timezone
+import json
 
 import pytest
 
@@ -86,8 +87,10 @@ def test_missing_close_unknown_flat_close_known_and_wrong_line_rejected():
     missing=build(data,now)['close']['fixed_research']
     assert missing['unknown']==1 and missing['average_clv'] is None
     data[-1][1]=close()
-    flat=build(data,now)['close']['fixed_research']
+    closed=build(data,now)['close']
+    flat=closed['fixed_research']
     assert flat['valid']==1 and flat['average_clv']==0 and flat['target_met']
+    assert closed['current_eligible']['valid']==1
     data[-1][1]['close_line']=31.5
     wrong=build(data,now)['close']['fixed_research']
     assert wrong['valid']==0 and wrong['average_clv'] is None
@@ -130,3 +133,61 @@ def test_verified_inactive_is_void_not_pending_or_winning_under():
     assert doc['settlement']=={'void_nonparticipant':1}
     assert doc['pending_variant_rows']==0
     assert not doc['day_metrics']['all_eligible']
+
+
+@pytest.mark.parametrize('incremental', [True, False])
+def test_report_loads_only_registered_run_and_partitions_scheduled_queries(tmp_path, monkeypatch, incremental):
+    records, documents, ledger, registration, selections, closes = inputs()
+    monkeypatch.setattr(checkpoint, 'ROOT', tmp_path)
+    monkeypatch.setattr(benchmark, 'STORE', tmp_path/'benchmarks')
+    monkeypatch.setattr(checkpoint.trial, 'load_registration', lambda: registration)
+    source = benchmark.STORE/registration['config']['run_id']/'prospective'
+    target = source/str(DAY)/'capture.json'
+    target.parent.mkdir(parents=True)
+    target.write_text(json.dumps(documents[0]))
+    # An unrelated experiment must never be opened by this trial's checkpoint.
+    other = benchmark.STORE/'unrelated-run'/'prospective'/str(DAY)/'capture.json'
+    other.parent.mkdir(parents=True)
+    other.write_text('not this experiment')
+    if incremental:
+        historical = source/'2026-09-21'/'capture.json'
+        historical.parent.mkdir()
+        historical.write_text('not this date')
+    calls = {}
+    def rows(day=None, stat=None):
+        calls['rows'] = (day, stat)
+        return records
+    def ledgers(day=None):
+        calls['ledger'] = day
+        return ledger
+    def captures(_):
+        return [{'selected': [*selections, dict(forecast_id=999, day='2026-09-21')]}]
+    monkeypatch.setattr(checkpoint, 'load_rows', rows)
+    monkeypatch.setattr(benchmark, 'load_ledger', ledgers)
+    monkeypatch.setattr(checkpoint.trial, 'captures', captures)
+    monkeypatch.setattr(checkpoint.trial, 'load_closes', lambda ids: closes)
+    doc = checkpoint.report(DAY, incremental=incremental)
+    assert calls == {'rows': (DAY if incremental else None, 'receiving_yards'),
+                     'ledger': DAY if incremental else None}
+    assert doc['capture']['paired_challenger_locks'] == 1
+    assert doc['capture']['missing_current_forecast_ids'] == []
+    assert doc['report_scope'] == ('date_partition' if incremental else 'cumulative_history')
+    assert bool(doc['cumulative_metrics']) is not incremental
+    assert ('date_partition_not_cumulative_review' in doc['forecast_deployment_review']['blockers']) is incremental
+    assert not doc['betting_approved'] and not doc['production_changed']
+    assert (tmp_path/'reports'/'nfl_receiving_trial_checkpoint_latest.json').exists()
+    assert ('this date only' in checkpoint.render(doc)) is incremental
+
+
+def test_unregistered_report_does_not_scan_database_or_history(tmp_path, monkeypatch):
+    monkeypatch.setattr(checkpoint, 'ROOT', tmp_path)
+    monkeypatch.setattr(checkpoint.trial, 'load_registration', lambda: None)
+    def unexpected(*args, **kwargs):
+        pytest.fail('Unregistered checkpoint must not load forecast history')
+    monkeypatch.setattr(checkpoint, 'load_rows', unexpected)
+    monkeypatch.setattr(benchmark, 'load_ledger', unexpected)
+    monkeypatch.setattr(checkpoint.trial, 'captures', unexpected)
+    monkeypatch.setattr(checkpoint.trial, 'load_closes', unexpected)
+    doc = checkpoint.report(DAY, incremental=True)
+    assert doc['status'] == 'not_registered'
+    assert not doc['betting_approved']

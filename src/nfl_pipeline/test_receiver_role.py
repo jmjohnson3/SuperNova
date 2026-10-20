@@ -48,6 +48,18 @@ def test_zero_target_partial_game_not_a_zero_ypt_observation():
     assert f['rr_yards_40'] == 200
 
 
+def test_positive_target_partial_game_informs_workload_but_not_efficiency():
+    state = RoleHistory()
+    for i in range(5):
+        state.update([record(i, yards=40, targets=5, snaps=50)])
+    state.update([record(5, yards=4, targets=4, snaps=20)])
+    f = state.features(record(6))
+    assert f['rr_last_partial'] == 1
+    assert f['rr_targets_3'] == pytest.approx(14 / 3)
+    assert f['rr_exposure_40'] == 25
+    assert f['rr_yards_40'] == 200
+
+
 def test_small_target_games_have_small_efficiency_weight():
     state = RoleHistory()
     state.update([record(0, yards=80, targets=10)])

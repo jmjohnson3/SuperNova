@@ -9,11 +9,11 @@ import os
 import sys
 import warnings
 from collections import Counter
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
 import joblib
@@ -22,6 +22,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 from scipy.stats import norm, poisson
+from sklearn.isotonic import IsotonicRegression
 
 from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
@@ -74,7 +75,7 @@ class PredictConfig:
     et_date: date | None = None
     top_n_per_section: int = 10
     min_ev: float = 0.02
-    max_micro_props_per_day: int = 5
+    max_micro_props_per_day: int = 3
     max_projection_recency_days: int = 120
     save_predictions: bool = True
 
@@ -159,6 +160,235 @@ def _no_vig_side_probability(over_price: Any, under_price: Any, side: str) -> fl
         return None
     p_over = over_raw / total
     return float(p_over if side == "over" else 1.0 - p_over)
+
+
+def _attach_monotone_fanduel_market(offers: list[dict[str, Any]]) -> None:
+    """Attach one coherent no-vig FanDuel curve to a player's offered lines.
+
+    Alternate-line prices can contain small timestamp/rounding inversions.  The
+    isotonic projection is the minimum squared adjustment that guarantees a
+    higher receiving-yard line never has a higher over probability.  Raw
+    no-vig probabilities remain captured for audit.
+    """
+    paired: list[tuple[int, float, float]] = []
+    for idx, offer in enumerate(offers):
+        probability = _no_vig_side_probability(
+            offer.get("over_price"), offer.get("under_price"), "over"
+        )
+        line = _clean_float(offer.get("line"))
+        if probability is not None and line is not None:
+            paired.append((idx, line, probability))
+            offer["raw_fanduel_no_vig_over_probability"] = probability
+    if not paired:
+        return
+    order = sorted(range(len(paired)), key=lambda i: (paired[i][1], paired[i][0]))
+    lines = np.asarray([paired[i][1] for i in order], dtype=float)
+    raw = np.asarray([paired[i][2] for i in order], dtype=float)
+    if len(raw) > 1:
+        fitted = IsotonicRegression(
+            increasing=False, y_min=0.001, y_max=0.999, out_of_bounds="clip"
+        ).fit_transform(lines, raw)
+    else:
+        fitted = raw
+    for ordered_idx, probability in zip(order, fitted):
+        offer_idx = paired[ordered_idx][0]
+        offers[offer_idx]["monotone_fanduel_no_vig_over_probability"] = float(probability)
+
+
+def _fanduel_residual_signal(
+    *,
+    stat: str,
+    row: dict[str, Any],
+    offer: dict[str, Any],
+    model_over_probability: float,
+) -> dict[str, Any]:
+    """Use FanDuel as baseline and permit only a small supported residual.
+
+    A deployed whole-CDF policy supplies the chronologically fitted model
+    residual.  Context and an external same-line consensus can reduce that
+    residual to zero, but can never increase its learned influence.
+    """
+    captured = offer.get('_fanduel_signal')
+    if isinstance(captured, dict):
+        return deepcopy(captured)
+    market_over = _clean_float(offer.get("monotone_fanduel_no_vig_over_probability"))
+    if market_over is None:
+        market_over = _no_vig_side_probability(
+            offer.get("over_price"), offer.get("under_price"), "over"
+        )
+    result = {
+        "contract": "nfl-fanduel-residual-signal-v1",
+        "final_over_probability": market_over,
+        "market_over_probability": market_over,
+        "model_over_probability": _clip_probability(model_over_probability),
+        "approved": False,
+        "actionable_context": False,
+        "adjustment": 0.0,
+        "trust": 0.0,
+        "reasons": [],
+    }
+    if market_over is None:
+        result["final_over_probability"] = _clip_probability(model_over_probability)
+        result["reasons"].append("missing_true_fanduel_pair")
+        return result
+
+    context = offer.get("distribution_policy_capture") or {}
+    policy = context.get("deployed") or {}
+    policy_score = offer.get("distribution_policy_score") or {}
+    policy_id = str(policy.get("policy_id") or "")
+    if not policy_id or policy_score.get("policy_id") != policy_id:
+        result["reasons"].append("no_deployed_chronological_probability_policy")
+        return result
+
+    consensus = _clean_float((offer.get("sharp_reference") or {}).get("consensus_over_probability"))
+    consensus_count = int((offer.get("sharp_reference") or {}).get("consensus_book_count") or 0)
+    dispersion = _clean_float((offer.get("sharp_reference") or {}).get("consensus_dispersion"))
+    if consensus is None or consensus_count < 1:
+        result["reasons"].append("independent_market_consensus_missing")
+        return result
+    if dispersion is None or dispersion > 0.08:
+        result["reasons"].append("independent_market_consensus_unstable")
+        return result
+
+    model_over = _clip_probability(model_over_probability)
+    model_delta = model_over - market_over
+    consensus_delta = consensus - market_over
+    if abs(model_delta) < 0.005 or abs(consensus_delta) < 0.003 or model_delta * consensus_delta <= 0:
+        result["reasons"].append("model_and_consensus_do_not_support_same_residual")
+        return result
+
+    context_quality = _usage_context_quality(row)
+    limited_risk = _limited_usage_risk(row)
+    role_stability = _clean_float(row.get("starter_role_stability_score"))
+    injury_known = _clean_float(row.get("same_week_injury_context_known")) == 1.0
+    routes_source = str(row.get("route_data_source") or "unknown")
+    source = str(policy.get("source") or "")
+    source_component = source.split(":", 1)[1] if source.startswith("stat_component:") else None
+    component_ids = {
+        str(row.get("_active_stat_component_id") or ""),
+        str(row.get("_challenger_stat_component_id") or ""),
+    }
+    component_matches = source_component is None or source_component in component_ids
+    opportunity = _clean_float(
+        row.get("_active_stat_opportunity")
+        if source_component == str(row.get("_active_stat_component_id") or "")
+        else row.get("_challenger_stat_opportunity")
+    )
+    efficiency = _clean_float(
+        row.get("_active_stat_efficiency")
+        if source_component == str(row.get("_active_stat_component_id") or "")
+        else row.get("_challenger_stat_efficiency")
+    )
+
+    blockers: list[str] = []
+    if context_quality < 0.68:
+        blockers.append("usage_context_below_68pct")
+    if limited_risk > 0.42:
+        blockers.append("limited_role_risk_above_42pct")
+    if role_stability is None or role_stability < 0.55:
+        blockers.append("role_stability_below_55pct_or_unknown")
+    if not injury_known:
+        blockers.append("same_week_injury_context_unknown")
+    if stat in {"receiving_yards", "receptions", "receiving_tds"} and routes_source == "unknown":
+        blockers.append("route_context_missing")
+    if stat == "receiving_yards":
+        if source_component is None:
+            blockers.append("receiving_opportunity_efficiency_policy_not_deployed")
+        elif not component_matches or opportunity is None or efficiency is None:
+            blockers.append("opportunity_efficiency_component_not_verified")
+    if blockers:
+        result["reasons"].extend(blockers)
+        return result
+
+    route_factor = 1.0 if routes_source == "measured_history" else 0.65
+    role_factor = float(np.clip((role_stability - 0.45) / 0.45, 0.25, 1.0))
+    consensus_factor = float(np.clip(1.0 - dispersion / 0.08, 0.25, 1.0))
+    learned_weight = float(np.clip(_clean_float(policy.get("model_weight")) or 0.0, 0.0, 0.35))
+    trust = learned_weight * context_quality * (1.0 - limited_risk) * route_factor * role_factor * consensus_factor
+    adjustment = float(np.clip(trust * model_delta, -0.04, 0.04))
+    final_over = float(np.clip(market_over + adjustment, 0.001, 0.999))
+    result.update(
+        final_over_probability=final_over,
+        approved=True,
+        actionable_context=True,
+        adjustment=adjustment,
+        trust=trust,
+        policy_id=policy_id,
+        policy_source=source,
+        consensus_over_probability=consensus,
+        consensus_book_count=consensus_count,
+        consensus_dispersion=dispersion,
+        route_source=routes_source,
+        context_quality=context_quality,
+        limited_usage_risk=limited_risk,
+        role_stability=role_stability,
+        reasons=["fanduel_baseline_regularized_residual"],
+    )
+    return result
+
+
+def _attach_fanduel_signals(
+    stat: str, row: dict[str, Any], offers: list[dict[str, Any]],
+) -> None:
+    """Capture residual signals together and fail closed on any line inversion."""
+    captured: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for offer in offers:
+        policy_score = offer.get('distribution_policy_score') or {}
+        model_over = _clean_float(policy_score.get('conditional_over'))
+        if model_over is None:
+            model_over = _clean_float(offer.get('monotone_fanduel_no_vig_over_probability'))
+        signal = _fanduel_residual_signal(
+            stat=stat,
+            row=row,
+            offer=offer,
+            model_over_probability=0.5 if model_over is None else model_over,
+        )
+        captured.append((offer, signal))
+    ordered = sorted(
+        captured,
+        key=lambda item: (_clean_float(item[0].get('line')) or -math.inf),
+    )
+    finals = [_clean_float(signal.get('final_over_probability')) for _, signal in ordered]
+    violation = any(
+        left is not None and right is not None and right > left + 1e-12
+        for left, right in zip(finals, finals[1:])
+    )
+    if violation:
+        for offer, signal in captured:
+            market = _clean_float(signal.get('market_over_probability'))
+            signal.update(
+                final_over_probability=market,
+                approved=False,
+                actionable_context=False,
+                adjustment=0.0,
+                trust=0.0,
+                reasons=list(signal.get('reasons') or ()) + ['residual_curve_nonmonotone'],
+            )
+    for offer, signal in captured:
+        offer['_fanduel_signal'] = signal
+
+
+def _conservative_actionable_score(row: dict[str, Any]) -> float:
+    """Ranking-only discount; never changes the displayed probability or EV."""
+    ev = _clean_float(row.get("ev"))
+    if ev is None:
+        return -1.0
+    signal = row.get("fanduel_signal") or {}
+    if not signal.get("approved") or not signal.get("actionable_context"):
+        return -1.0
+    quality = _clean_float(row.get("usage_context_quality")) or 0.0
+    limited = _clean_float(row.get("limited_usage_risk")) or 0.0
+    disagreement = abs(_clean_float(row.get("model_market_edge")) or 0.0)
+    dispersion = _clean_float(signal.get("consensus_dispersion")) or 0.08
+    route_penalty = 0.008 if signal.get("route_source") != "measured_history" else 0.0
+    penalty = (
+        0.018 * (1.0 - quality)
+        + 0.025 * limited
+        + route_penalty
+        + 0.30 * max(0.0, disagreement - 0.025)
+        + 0.08 * dispersion
+    )
+    return float(ev - penalty)
 
 
 YARDAGE_PROP_STATS = {"passing_yards", "rushing_yards", "receiving_yards"}
@@ -721,6 +951,9 @@ def _micro_projection_status(
     clv_guard: dict[str, float] | None = None,
     exact_line_clv_probability: float | None = None,
     game_started: bool = False,
+    signal_approved: bool = False,
+    actionable_context: bool = False,
+    execution_verified: bool = False,
 ) -> tuple[str, str]:
     if game_started:
         return "paper", "nfl_v1_projection_only_no_bankroll_gates;game_already_started_bettable_closed"
@@ -734,10 +967,18 @@ def _micro_projection_status(
         return "paper", "nfl_v1_projection_only_no_bankroll_gates;td_alternate_line_distribution_unvalidated"
     if not bool(metrics.get("accepted_live")) or not _projection_layer_accepted(metrics):
         return "paper", "nfl_v1_projection_only_no_bankroll_gates;projection_model_not_accepted"
+    if not execution_verified:
+        return "paper", "nfl_v1_projection_only_no_bankroll_gates;fresh_fanduel_execution_not_verified"
     if offer.get("over_price") is None or offer.get("under_price") is None or market_probability is None:
         return "paper", "nfl_v1_projection_only_no_bankroll_gates;not_true_paired_price"
+    if offer.get("pair_quality") in {"synthetic", "cross_book", "one_sided"}:
+        return "paper", "nfl_v1_projection_only_no_bankroll_gates;not_true_same_book_pair"
     if not link:
         return "paper", "nfl_v1_projection_only_no_bankroll_gates;missing_bet_link"
+    if not signal_approved:
+        return "paper", "nfl_v1_projection_only_no_bankroll_gates;approved_probability_residual_missing"
+    if not actionable_context:
+        return "paper", "nfl_v1_projection_only_no_bankroll_gates;context_quality_not_actionable"
     if ev is None or ev < min_ev:
         return "paper", "nfl_v1_projection_only_no_bankroll_gates;micro_ev_gate_failed"
     required_market_edge = 0.025 if stat in YARDAGE_PROP_STATS else 0.015
@@ -830,31 +1071,12 @@ def _usage_context_tags(row: dict[str, Any]) -> list[str]:
     return tags
 
 
-def _build_fd_parlay_url(links: list[str | None]) -> str | None:
-    legs: list[tuple[str, str]] = []
-    for link in links:
-        if not link or "fanduel.com" not in link:
-            continue
-        try:
-            qs = parse_qs(urlparse(link).query)
-            market = qs.get("marketId", [None])[0]
-            selection = qs.get("selectionId", [None])[0]
-            if market and selection:
-                legs.append((market, selection))
-        except Exception:
-            continue
-    if len(legs) < 2:
-        return None
-    params = "&".join(
-        f"marketId[{idx}]={market}&selectionId[{idx}]={selection}"
-        for idx, (market, selection) in enumerate(dict.fromkeys(legs).keys())
-    )
-    return f"https://sportsbook.fanduel.com/addToBetslip?{params}"
-
-
 def _load_model(cfg: PredictConfig) -> dict[str, Any]:
     released = release_artifact("players")
     if released is not None:
+        from nfl_pipeline.modeling.stat_model_registry import active_components, candidate_components
+        released["active_stat_components"] = active_components()
+        released["candidate_stat_components"] = candidate_components()
         return released
     path = cfg.model_dir / cfg.model_file
     if not path.exists():
@@ -895,6 +1117,11 @@ def _load_model(cfg: PredictConfig) -> dict[str, Any]:
         except Exception as exc:
             log.warning("Could not load NFL exact-line model artifact at %s: %s", exact_path, exc)
             artifact["exact_line_status"] = "load_failed"
+    # Forecast components deploy per stat and per output. Loading a component
+    # never authorizes a bet; registered candidates are captured in shadow.
+    from nfl_pipeline.modeling.stat_model_registry import active_components, candidate_components
+    artifact["active_stat_components"] = active_components()
+    artifact["candidate_stat_components"] = candidate_components()
     return artifact
 
 
@@ -1112,7 +1339,7 @@ def _load_prop_lines(conn, et_day: date, context_cutoff_utc: datetime) -> list[d
         cur.execute(
             """
             SELECT DISTINCT ON (player_name_norm, stat, bookmaker_key, line)
-                id AS offer_id, as_of_date, fetched_at_utc, event_id, commence_time_utc,
+                id AS offer_id, provider, as_of_date, fetched_at_utc, event_id, commence_time_utc,
                 bookmaker_key, bookmaker_title, home_team, away_team,
                 player_name, player_name_norm, market_key, stat, line::float AS line,
                 over_price, under_price, over_link, under_link
@@ -1133,12 +1360,43 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
     return pd.read_sql(
         """
         WITH roster_observations AS MATERIALIZED (
-            SELECT * FROM raw.nfl_rosters_at(%(context_cutoff_utc)s)
+            SELECT r.season,r.week,r.team_abbr,r.player_id,r.player_name,r.player_name_norm,
+                r.position,r.depth_chart_position,r.roster_status,r.status_description_abbr,
+                r.years_exp,r.height,r.weight,r.updated_at_utc,
+                o.observed_at AS context_observed_at FROM (
+              SELECT DISTINCT ON (o.payload->>'player_id') o.payload,o.observed_at
+              FROM raw.nfl_context_observations o
+              WHERE o.kind='nfl_rosters' AND o.observed_at <= %(context_cutoff_utc)s
+                AND UPPER(COALESCE(o.payload->>'position','')) IN ('QB','RB','WR','TE')
+                AND (o.payload->>'updated_at_utc')::timestamptz <= %(context_cutoff_utc)s
+                AND COALESCE((o.payload->>'week')::int,0) <= COALESCE((SELECT MIN(week) FROM raw.nfl_games WHERE game_date_et=%(game_date)s),99)
+                AND (o.payload->>'season')::int = (
+                  SELECT MAX((x.payload->>'season')::int) FROM raw.nfl_context_observations x
+                  WHERE x.kind='nfl_rosters' AND x.observed_at <= %(context_cutoff_utc)s
+                    AND (x.payload->>'season')::int <= %(season)s
+                    AND (x.payload->>'updated_at_utc')::timestamptz <= %(context_cutoff_utc)s)
+              ORDER BY o.payload->>'player_id',COALESCE((o.payload->>'week')::int,0) DESC,
+                CASE WHEN o.payload->>'roster_status'='ACT' THEN 0 ELSE 1 END,
+                o.observed_at DESC,(o.payload->>'updated_at_utc')::timestamptz DESC
+            ) o
+            CROSS JOIN LATERAL jsonb_populate_record(NULL::raw.nfl_rosters, o.payload) r
         ), depth_observations AS MATERIALIZED (
-            SELECT * FROM raw.nfl_depth_charts_at(%(context_cutoff_utc)s)
+            SELECT d.season,d.week,d.snapshot_ts_utc,d.team_abbr,d.player_id,d.player_name_norm,
+                d.pos_grp,d.pos_name,d.pos_abb,d.pos_slot,d.pos_rank,d.updated_at_utc,
+                o.observed_at AS context_observed_at
+            FROM raw.nfl_context_observations o
+            CROSS JOIN LATERAL jsonb_populate_record(NULL::raw.nfl_depth_charts, o.payload) d
+            WHERE o.kind='nfl_depth_charts' AND o.observed_at <= %(context_cutoff_utc)s
+              AND (o.payload->>'season')::int <= %(season)s
         ), injury_observations AS MATERIALIZED (
-            SELECT * FROM raw.nfl_injuries_at(%(context_cutoff_utc)s)
-        ), latest_roster_season AS (
+            SELECT i.season,i.week,i.team_abbr,i.player_id,i.player_name_norm,i.position,
+                i.report_primary_injury,i.report_status,i.practice_status,i.updated_at_utc,
+                o.observed_at AS context_observed_at
+            FROM raw.nfl_context_observations o
+            CROSS JOIN LATERAL jsonb_populate_record(NULL::raw.nfl_injuries, o.payload) i
+            WHERE o.kind='nfl_injuries' AND o.observed_at <= %(context_cutoff_utc)s
+              AND (o.payload->>'season')::int = %(season)s
+        ), latest_roster_season AS MATERIALIZED (
             SELECT MAX(season) AS season
             FROM roster_observations
             WHERE season <= %(season)s
@@ -1159,7 +1417,7 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 r.years_exp,
                 r.height,
                 r.weight
-                , r.updated_at_utc AS roster_observed_at
+                , r.context_observed_at AS roster_observed_at
             FROM roster_observations r
             JOIN latest_roster_season s ON s.season = r.season
             WHERE UPPER(COALESCE(r.position, '')) IN ('QB', 'RB', 'WR', 'TE')
@@ -1169,15 +1427,29 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 player_id,
                 COALESCE(week, 0) DESC,
                 CASE WHEN roster_status = 'ACT' THEN 0 ELSE 1 END,
-                updated_at_utc DESC
+                context_observed_at DESC, updated_at_utc DESC
         ),
-        latest_depth_season AS (
+        latest_depth_season AS MATERIALIZED (
             SELECT MAX(season) AS season
             FROM depth_observations
             WHERE season <= %(season)s
               AND COALESCE(snapshot_ts_utc, updated_at_utc) <= %(context_cutoff_utc)s
         ),
-        latest_depth AS (
+        depth_history AS MATERIALIZED (
+            SELECT player_id, team_abbr,
+                array_agg(snapshot_ts_utc ORDER BY snapshot_ts_utc DESC NULLS LAST,
+                    pos_rank NULLS LAST,
+                    CASE WHEN UPPER(pos_abb) IN ('QB','RB','WR','TE') THEN 0 ELSE 1 END,
+                    updated_at_utc DESC, pos_abb, pos_slot, pos_name, pos_grp) AS times,
+                array_agg(pos_rank ORDER BY snapshot_ts_utc DESC NULLS LAST,
+                    pos_rank NULLS LAST,
+                    CASE WHEN UPPER(pos_abb) IN ('QB','RB','WR','TE') THEN 0 ELSE 1 END,
+                    updated_at_utc DESC, pos_abb, pos_slot, pos_name, pos_grp) AS ranks
+            FROM depth_observations
+            WHERE player_id IS NOT NULL
+            GROUP BY player_id, team_abbr
+        ),
+        latest_depth AS MATERIALIZED (
             SELECT DISTINCT ON (COALESCE(player_id, player_name_norm), team_abbr)
                 season,
                 week,
@@ -1190,7 +1462,7 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 pos_abb,
                 pos_slot,
                 pos_rank
-                , d.updated_at_utc AS depth_observed_at
+                , d.context_observed_at AS depth_observed_at
             FROM depth_observations d
             JOIN latest_depth_season s USING (season)
             WHERE COALESCE(d.snapshot_ts_utc, d.updated_at_utc) <= %(context_cutoff_utc)s
@@ -1200,9 +1472,12 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 team_abbr,
                 COALESCE(week, 0) DESC,
                 snapshot_ts_utc DESC NULLS LAST,
-                pos_rank NULLS LAST
+                pos_rank NULLS LAST,
+                CASE WHEN UPPER(pos_abb) IN ('QB','RB','WR','TE') THEN 0 ELSE 1 END,
+                context_observed_at DESC, updated_at_utc DESC,
+                pos_abb, pos_slot, pos_name, pos_grp
         ),
-        latest_injury_season AS (
+        latest_injury_season AS MATERIALIZED (
             SELECT MAX(season) AS season
             FROM injury_observations
             WHERE season <= %(season)s
@@ -1219,7 +1494,7 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 report_primary_injury,
                 report_status,
                 practice_status
-                , i.updated_at_utc AS injury_observed_at
+                , i.context_observed_at AS injury_observed_at
             FROM injury_observations i
             JOIN latest_injury_season s USING (season)
             WHERE i.updated_at_utc <= %(context_cutoff_utc)s
@@ -1229,9 +1504,9 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 COALESCE(player_id, player_name_norm),
                 team_abbr,
                 COALESCE(week, 0) DESC,
-                updated_at_utc DESC
+                context_observed_at DESC, updated_at_utc DESC
         )
-        , injury_scores AS (
+        , injury_scores AS MATERIALIZED (
             SELECT
                 i.*,
                 CASE
@@ -1254,10 +1529,11 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 )::float AS injury_score
             FROM latest_injuries i
         ),
-        teammate_injury_context AS (
+        teammate_injury_context AS MATERIALIZED (
             SELECT
                 r.player_id,
                 r.roster_team_abbr AS team_abbr,
+                COUNT(s.*)::int AS teammate_injury_report_rows,
                 COUNT(*) FILTER (
                     WHERE UPPER(COALESCE(s.position, '')) IN ('RB', 'WR', 'TE')
                       AND s.injury_score > 0
@@ -1271,7 +1547,8 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
                 COUNT(*) FILTER (
                     WHERE UPPER(COALESCE(s.position, '')) IN ('WR', 'TE')
                       AND s.is_out
-                )::float AS same_week_teammate_receiver_out_count
+                )::float AS same_week_teammate_receiver_out_count,
+                MAX(s.injury_observed_at) AS teammate_injury_observed_at
             FROM latest_rosters r
             LEFT JOIN injury_scores s
               ON s.team_abbr = r.roster_team_abbr
@@ -1287,20 +1564,27 @@ def _load_player_context(conn, et_day: date, context_cutoff_utc: datetime) -> pd
             d.pos_slot,
             d.pos_rank,
             d.depth_observed_at,
-            (SELECT prev.pos_rank FROM depth_observations prev
-             WHERE prev.player_id = r.player_id AND prev.team_abbr = r.roster_team_abbr
-               AND prev.snapshot_ts_utc < d.snapshot_ts_utc - interval '6 days'
-             ORDER BY prev.snapshot_ts_utc DESC LIMIT 1) AS previous_depth_pos_rank,
+            (SELECT dh.ranks[idx] FROM generate_subscripts(dh.times,1) idx
+             WHERE dh.times[idx] < d.snapshot_ts_utc - interval '6 days'
+             ORDER BY idx LIMIT 1) AS previous_depth_pos_rank,
             i.week AS injury_week,
             i.report_primary_injury,
             i.report_status,
             i.practice_status,
             i.injury_observed_at,
-            COALESCE(tic.same_week_teammate_skill_injury_count, 0)::float AS same_week_teammate_skill_injury_count,
-            COALESCE(tic.same_week_teammate_skill_injury_score, 0)::float AS same_week_teammate_skill_injury_score,
-            COALESCE(tic.same_week_teammate_receiver_injury_score, 0)::float AS same_week_teammate_receiver_injury_score,
-            COALESCE(tic.same_week_teammate_receiver_out_count, 0)::float AS same_week_teammate_receiver_out_count
+            tic.teammate_injury_observed_at,
+            CASE WHEN tic.teammate_injury_report_rows > 0
+                THEN tic.same_week_teammate_skill_injury_count END::float AS same_week_teammate_skill_injury_count,
+            CASE WHEN tic.teammate_injury_report_rows > 0
+                THEN tic.same_week_teammate_skill_injury_score END::float AS same_week_teammate_skill_injury_score,
+            CASE WHEN tic.teammate_injury_report_rows > 0
+                THEN tic.same_week_teammate_receiver_injury_score END::float AS same_week_teammate_receiver_injury_score,
+            CASE WHEN tic.teammate_injury_report_rows > 0
+                THEN tic.same_week_teammate_receiver_out_count END::float AS same_week_teammate_receiver_out_count,
+            CASE WHEN tic.teammate_injury_report_rows > 0 THEN 1.0 ELSE 0.0 END::float
+                AS same_week_injury_context_known
         FROM latest_rosters r
+        LEFT JOIN depth_history dh ON dh.player_id=r.player_id AND dh.team_abbr=r.roster_team_abbr
         LEFT JOIN latest_depth d
           ON (
               (d.player_id IS NOT NULL AND d.player_id = r.player_id)
@@ -1581,12 +1865,14 @@ def _snapshot_players(
             "roster_observed_at": ctx.get("roster_observed_at") if ctx else None,
             "depth_observed_at": ctx.get("depth_observed_at") if ctx else None,
             "injury_observed_at": ctx.get("injury_observed_at") if ctx else None,
+            "teammate_injury_observed_at": ctx.get("teammate_injury_observed_at") if ctx else None,
             "injury_report_status": ctx.get("report_status") if ctx else None,
             "injury_practice_status": ctx.get("practice_status") if ctx else None,
             "same_week_teammate_skill_injury_count": ctx.get("same_week_teammate_skill_injury_count") if ctx else None,
             "same_week_teammate_skill_injury_score": ctx.get("same_week_teammate_skill_injury_score") if ctx else None,
             "same_week_teammate_receiver_injury_score": ctx.get("same_week_teammate_receiver_injury_score") if ctx else None,
             "same_week_teammate_receiver_out_count": ctx.get("same_week_teammate_receiver_out_count") if ctx else None,
+            "same_week_injury_context_known": ctx.get("same_week_injury_context_known") if ctx else None,
         }
         games_played = len(sub)
         row["n_games_prev_3"] = min(games_played, 3)
@@ -1618,6 +1904,17 @@ def _snapshot_players(
         row = {**matchups[team], 'game_date_et':et_day, 'player_id':str(player_id),
                'player_name':ctx.get('player_name'), 'position':position, 'team_abbr':team,
                'depth_pos_rank':ctx.get('pos_rank'), 'depth_pos_abb':ctx.get('pos_abb'),
+               'roster_observed_at':ctx.get('roster_observed_at'),
+               'depth_observed_at':ctx.get('depth_observed_at'),
+               'injury_observed_at':ctx.get('injury_observed_at'),
+               'teammate_injury_observed_at':ctx.get('teammate_injury_observed_at'),
+               'injury_report_status':ctx.get('report_status'),
+               'injury_practice_status':ctx.get('practice_status'),
+               'same_week_teammate_skill_injury_count':ctx.get('same_week_teammate_skill_injury_count'),
+               'same_week_teammate_skill_injury_score':ctx.get('same_week_teammate_skill_injury_score'),
+               'same_week_teammate_receiver_injury_score':ctx.get('same_week_teammate_receiver_injury_score'),
+               'same_week_teammate_receiver_out_count':ctx.get('same_week_teammate_receiver_out_count'),
+               'same_week_injury_context_known':ctx.get('same_week_injury_context_known'),
                'roster_status':ctx.get('roster_status'), 'cold_start':True,
                'n_games_prev_3':0,'n_games_prev_5':0,'n_games_prev_10':0}
         for stat in ROLLING_STATS:
@@ -1626,7 +1923,23 @@ def _snapshot_players(
                 row[f'{stat}_avg_{window}'] = float(value) if pd.notna(value) else None
         row.update(allowed.get(matchups[team]['opponent_abbr'],{}))
         rows.append(row)
-    return _add_context_risk_features(_add_snapshot_role_features(pd.DataFrame(rows)))
+    result = _add_context_risk_features(_add_snapshot_role_features(pd.DataFrame(rows)))
+    true_routes = pd.to_numeric(
+        result.get("has_true_route_history", pd.Series(np.nan, index=result.index)), errors="coerce"
+    )
+    route_proxy = pd.to_numeric(
+        result.get("estimated_routes_avg_5", pd.Series(np.nan, index=result.index)), errors="coerce"
+    )
+    result["route_data_source"] = np.where(
+        true_routes.eq(1.0), "measured_history",
+        np.where(route_proxy.notna() & route_proxy.gt(0), "explicit_proxy", "unknown"),
+    )
+    result["injury_context_source"] = np.where(
+        pd.to_numeric(result.get("same_week_injury_context_known"), errors="coerce").eq(1.0),
+        "timestamped_same_week_reports",
+        "unknown",
+    )
+    return result
 
 
 def _projection_layer_accepted(metrics: dict[str, Any]) -> bool:
@@ -2913,6 +3226,104 @@ def _predict_stat(snapshot: pd.DataFrame, artifact: dict[str, Any], stat: str) -
     return pred, baseline, True
 
 
+def _score_stat_component(artifact: dict[str, Any], section: str, stat: str,
+                          frame: pd.DataFrame, production_projection: np.ndarray) -> dict[str, Any] | None:
+    component = (artifact.get(section) or {}).get(stat)
+    if component is None:
+        return None
+    from nfl_pipeline.modeling.stat_model_registry import score_component
+    if section == "active_stat_components" and isinstance(component, dict):
+        scored_by_component: dict[str, dict[str, Any]] = {}
+        by_output: dict[str, dict[str, Any]] = {}
+        component_ids: dict[str, str] = {}
+        for output in (name for name in ("expected_mean", "median", "probability", "interval")
+                       if name in component):
+            owned_component = component[output]
+            entry = owned_component[0]
+            component_id = str(entry["component_id"])
+            if component_id not in scored_by_component:
+                scored_by_component[component_id] = score_component(
+                    owned_component, frame, production_projection
+                )
+            by_output[output] = scored_by_component[component_id]
+            component_ids[output] = component_id
+        priority = next(
+            (name for name in ("expected_mean", "median", "probability", "interval") if name in by_output),
+            None,
+        )
+        if priority is None:
+            return None
+        merged = dict(by_output[priority])
+        merged["outputs"] = sorted(by_output)
+        merged["component_ids"] = component_ids
+        merged["component_id"] = (
+            next(iter(set(component_ids.values())))
+            if len(set(component_ids.values())) == 1
+            else "mixed-output-components"
+        )
+        if "expected_mean" in by_output:
+            merged["mean"] = by_output["expected_mean"]["mean"]
+        if "median" in by_output:
+            merged["median"] = by_output["median"]["median"]
+        curve_source = by_output.get("probability") or by_output.get("interval")
+        if curve_source is not None:
+            for key in ("values", "weights", "p10", "p90", "limited_probability", "spike_probability"):
+                if key in curve_source:
+                    merged[key] = curve_source[key]
+        return merged
+    return score_component(component, frame, production_projection)
+
+
+def _score_stat_candidates(
+    artifact: dict[str, Any], stat: str, frame: pd.DataFrame,
+    production_projection: np.ndarray,
+) -> dict[str, dict[str, Any]]:
+    """Score every disjoint shadow candidate for a stat against production.
+
+    Candidates are capture-only: `production_projection` is already final before this
+    runs, and nothing here feeds a card. So a shadow whose frozen experiment has
+    drifted has to withhold its own evidence without stopping the cards, per
+    docs/nfl_frozen_experiments.md ("daily research failures no longer stop paper
+    cards"). Dropping the component is what withholds it -- both call sites already
+    guard on its absence, and no capture can record a candidate it never received.
+    On 19 October a dead column in an unrelated query drifted the pin and this
+    raised, which stopped every player prediction for every game.
+
+    Active components stay fatal by design: they move production projections through
+    _apply_active_expected_mean, so a drifted one must never quietly score.
+    """
+    from nfl_pipeline.modeling.stat_model_registry import score_component
+
+    components = (artifact.get("candidate_stat_components") or {}).get(stat) or {}
+    scored: dict[str, dict[str, Any]] = {}
+    for component_id, component in sorted(components.items()):
+        try:
+            scored[component_id] = score_component(component, frame, production_projection)
+        except (ValueError, OSError) as exc:
+            log.warning("shadow candidate %s (%s) withheld, predictions continue: %s",
+                        component_id, stat, exc)
+    return scored
+
+
+def _apply_active_expected_mean(
+    production_projection: np.ndarray,
+    active_component: dict[str, Any] | None,
+) -> np.ndarray:
+    """Apply only an expected-mean owner to the live point forecast.
+
+    Median, interval, and probability ownership are independent contracts. A
+    median-only deployment must not move the expected value or silently alter
+    the probability path that consumes it.
+    """
+    production=np.asarray(production_projection,dtype=float)
+    if active_component is None or 'expected_mean' not in set(active_component.get('outputs') or ()):
+        return production
+    candidate=np.asarray(active_component.get('mean'),dtype=float)
+    if candidate.shape!=production.shape or not np.isfinite(candidate).all():
+        raise ValueError('Active expected-mean component returned invalid projections')
+    return candidate
+
+
 SEASON_RUSH_PRIOR_GAMES = 3.0           # weight of last season's per-game average, in games
 SEASON_RUSH_PRIOR_GAMES_NEW_TEAM = 1.0  # less weight when the player changed teams
 SEASON_RUSH_YPC_PRIOR_CARRIES = 20.0
@@ -3131,7 +3542,11 @@ def _side_prob(
     return float(1.0 - norm.cdf(line, loc=adjusted_mean, scale=max(1.0, float(sigma))))
 
 
-def _line_outcomes(stat, projection, line, metrics, distribution=None, row=None, range_scale=1.0, center=None, shift=0.0):
+def _line_outcomes(
+    stat, projection, line, metrics, distribution=None, row=None,
+    range_scale=1.0, center=None, shift=0.0,
+    lower_tail_scale=1.0, upper_tail_scale=1.0,
+):
     """Unconditional over/under/push mass; yardages are integer-valued outcomes.
 
     range_scale > 1 widens the distribution about `center` (its median) by evaluating the
@@ -3140,9 +3555,13 @@ def _line_outcomes(stat, projection, line, metrics, distribution=None, row=None,
     """
     def point(x):
         x = x - shift
-        if range_scale == 1.0 or center is None:
+        if center is None:
             return x
-        return center + (x - center) / range_scale
+        tail_scale = lower_tail_scale if x < center else upper_tail_scale
+        effective_scale = range_scale * tail_scale
+        if effective_scale == 1.0:
+            return x
+        return center + (x - center) / effective_scale
     if float(line).is_integer():
         over = _side_prob(stat, projection, point(line + 0.5), metrics, distribution, row)
         at_least = _side_prob(stat, projection, point(line - 0.5), metrics, distribution, row)
@@ -3153,6 +3572,7 @@ def _line_outcomes(stat, projection, line, metrics, distribution=None, row=None,
 
 
 SHARP_REFERENCE_BOOKS = ("pinnacle", "betfair_ex_eu", "matchbook", "smarkets")  # preference order
+CONSENSUS_REFERENCE_BOOKS = SHARP_REFERENCE_BOOKS + ("draftkings",)
 SHARP_REFERENCE_MAX_AGE_MINUTES = 150
 SHARP_REFERENCE_COMMENCE_TOLERANCE_MINUTES = 30
 
@@ -3163,8 +3583,9 @@ def _sharp_reference_index(offers: list[dict[str, Any]], cutoff: datetime) -> di
     oldest = cutoff - timedelta(minutes=SHARP_REFERENCE_MAX_AGE_MINUTES)
     for quote in offers:
         fetched = quote.get("fetched_at_utc")
-        if (str(quote.get("bookmaker_key") or "").lower() not in SHARP_REFERENCE_BOOKS or fetched is None
-                or not (oldest <= fetched <= cutoff) or quote.get("over_price") is None or quote.get("under_price") is None):
+        if (str(quote.get("bookmaker_key") or "").lower() not in CONSENSUS_REFERENCE_BOOKS or fetched is None
+                or not (oldest <= fetched <= cutoff) or quote.get("over_price") is None or quote.get("under_price") is None
+                or quote.get("pair_quality") in {"synthetic", "cross_book", "one_sided"}):
             continue
         key = (quote.get("player_name_norm"), quote.get("stat"), float(quote["line"]))
         index.setdefault(key, []).append(quote)
@@ -3181,21 +3602,78 @@ def _sharp_reference_for(index: dict[tuple, list[dict[str, Any]]], offer: dict[s
                   or abs((q["commence_time_utc"] - start).total_seconds()) <= SHARP_REFERENCE_COMMENCE_TOLERANCE_MINUTES * 60]
     if not candidates:
         return None
-    best = min(candidates, key=lambda q: (SHARP_REFERENCE_BOOKS.index(str(q["bookmaker_key"]).lower()),
-                                          -q["fetched_at_utc"].timestamp()))
-    return {k: best.get(k) for k in ("bookmaker_key", "line", "over_price", "under_price", "fetched_at_utc",
-                                     "offer_id", "commence_time_utc")}
+    latest_by_book: dict[str, dict[str, Any]] = {}
+    for quote in candidates:
+        book = str(quote.get("bookmaker_key") or "").lower()
+        current = latest_by_book.get(book)
+        if current is None or quote["fetched_at_utc"] > current["fetched_at_utc"]:
+            latest_by_book[book] = quote
+    probabilities = [
+        _no_vig_side_probability(q.get("over_price"), q.get("under_price"), "over")
+        for q in latest_by_book.values()
+    ]
+    probabilities = [p for p in probabilities if p is not None]
+    if not probabilities:
+        return None
+    best = min(latest_by_book.values(), key=lambda q: (
+        CONSENSUS_REFERENCE_BOOKS.index(str(q["bookmaker_key"]).lower()),
+        -q["fetched_at_utc"].timestamp(),
+    ))
+    result = {k: best.get(k) for k in (
+        "bookmaker_key", "line", "over_price", "under_price", "fetched_at_utc",
+        "offer_id", "commence_time_utc",
+    )}
+    result.update(
+        consensus_over_probability=float(np.median(probabilities)),
+        consensus_book_count=len(probabilities),
+        consensus_books=sorted(latest_by_book),
+        consensus_dispersion=float(np.std(probabilities)) if len(probabilities) > 1 else 0.0,
+    )
+    return result
 
 
 MARKET_CALIBRATION_PATH = _MODEL_DIR / "market_calibration.json"
+INTERVAL_CALIBRATION_PATH = _MODEL_DIR / "interval_calibration.json"
+# A probability blend fitted before the anchored-median correction is not
+# compatible with the current scoring semantics. Artifacts must opt in to
+# this exact contract; interval/projection parameters remain independently
+# usable when old probability trust is rejected.
+PROBABILITY_SCORING_CONTRACT = "nfl-median-anchored-probability-v1"
+INTERVAL_CALIBRATION_CONTRACT = "nfl-asymmetric-interval-v1"
 
 
 def _load_market_calibration() -> dict[str, Any]:
     """Fitted market-anchoring parameters; absent file means identity (no change)."""
     try:
-        return json.loads(MARKET_CALIBRATION_PATH.read_text(encoding="utf-8"))
+        result = json.loads(MARKET_CALIBRATION_PATH.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return {}
+    if result.get("probability_scoring_contract") != PROBABILITY_SCORING_CONTRACT:
+        result = deepcopy(result)
+        disabled = []
+        for stat, rec in (result.get("stats") or {}).items():
+            if float(rec.get("probability_trust") or 0.0) > 0.0:
+                rec["probability_trust"] = 0.0
+                disabled.append(stat)
+        result["probability_compatibility"] = {
+            "status": "market_only",
+            "reason": "calibration_predates_current_scoring_contract",
+            "required_contract": PROBABILITY_SCORING_CONTRACT,
+            "disabled_stats": disabled,
+        }
+    return result
+
+
+def _load_interval_calibration() -> dict[str, Any]:
+    """Load a release-bound interval artifact; malformed/unapproved files fail closed."""
+    try:
+        result = json.loads(INTERVAL_CALIBRATION_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    if (result.get("contract") != INTERVAL_CALIBRATION_CONTRACT
+            or not result.get("deployment_approved")):
+        return {}
+    return result
 
 
 def _market_calibration_params(metrics: dict[str, Any], stat: str) -> dict[str, float]:
@@ -3207,27 +3685,49 @@ def _market_calibration_params(metrics: dict[str, Any], stat: str) -> dict[str, 
         return 1.0 if v is None else float(np.clip(v, low, high))
 
     anchorable = not stat.endswith("_tds")
+    interval = (metrics or {}).get("interval_calibration") or {}
+    interval_rec = ((interval.get("stats") or {}).get(stat) or {})
+    supported_releases = set(interval.get("model_versions") or [])
+    interval_matches_release = not supported_releases or str(metrics.get("live_model_version") or "") in supported_releases
+
+    def interval_value(key: str) -> float:
+        v = _clean_float(interval_rec.get(key)) if interval_matches_release else None
+        return 1.0 if v is None else float(np.clip(v, 1.0, 3.0))
+
     return {
         # projection' = line + projection_trust * (model projection - line)
         "projection_trust": value("projection_trust", 0.0, 1.0) if anchorable else 1.0,
         # widen the forecast distribution about its median (yardage stats only)
         "range_scale": value("range_scale", 1.0, 3.0) if not SPEC_BY_STAT[stat].count_like else 1.0,
+        # Additional one-sided scale factors learned from chronological locked
+        # intervals. Keeping both sides explicit preserves right-skewed tails.
+        "lower_tail_scale": interval_value("lower_tail_scale") if not SPEC_BY_STAT[stat].count_like else 1.0,
+        "upper_tail_scale": interval_value("upper_tail_scale") if not SPEC_BY_STAT[stat].count_like else 1.0,
         # logit(p') = logit(market) + probability_trust * (logit(p) - logit(market))
         "probability_trust": value("probability_trust", 0.0, 1.0),
     }
 
 
-def _widen_summary(summary: dict[str, Any], range_scale: float) -> dict[str, Any]:
-    if range_scale == 1.0 or summary.get("projection_p50") is None:
+def _widen_summary(
+    summary: dict[str, Any],
+    range_scale: float,
+    lower_tail_scale: float = 1.0,
+    upper_tail_scale: float = 1.0,
+) -> dict[str, Any]:
+    if (range_scale == lower_tail_scale == upper_tail_scale == 1.0
+            or summary.get("projection_p50") is None):
         return summary
     out = dict(summary)
     p50 = float(summary["projection_p50"])
-    for key in ("projection_p10", "projection_p90"):
+    scales = {"projection_p10": range_scale * lower_tail_scale,
+              "projection_p90": range_scale * upper_tail_scale}
+    for key, scale in scales.items():
         if summary.get(key) is not None:
-            out[key] = max(0.0, p50 + range_scale * (float(summary[key]) - p50))
+            out[key] = max(0.0, p50 + scale * (float(summary[key]) - p50))
     confidence = _clean_float(summary.get("projection_confidence"))
     if confidence and confidence > 0:
-        out["projection_confidence"] = float(1.0 / (1.0 + range_scale * (1.0 / confidence - 1.0)))
+        average_scale = range_scale * (lower_tail_scale + upper_tail_scale) / 2.0
+        out["projection_confidence"] = float(1.0 / (1.0 + average_scale * (1.0 / confidence - 1.0)))
     return out
 
 
@@ -3268,8 +3768,11 @@ def _candidate_from_offer(
         median_shift = float(projection) - float(distribution_summary["projection_p50"])
     raw_over_win, raw_under_win, push_probability = _line_outcomes(
         stat, projection, line, metrics, distribution, row,
-        range_scale=market_cal["range_scale"], center=distribution_summary.get("projection_p50"), shift=median_shift)
-    distribution_summary = _widen_summary(distribution_summary, market_cal["range_scale"])
+        range_scale=market_cal["range_scale"], center=distribution_summary.get("projection_p50"), shift=median_shift,
+        lower_tail_scale=market_cal["lower_tail_scale"], upper_tail_scale=market_cal["upper_tail_scale"])
+    distribution_summary = _widen_summary(
+        distribution_summary, market_cal["range_scale"],
+        market_cal["lower_tail_scale"], market_cal["upper_tail_scale"])
     if median_shift:
         distribution_summary = dict(distribution_summary, **{
             k: max(0.0, float(distribution_summary[k]) + median_shift)
@@ -3288,6 +3791,12 @@ def _candidate_from_offer(
         distribution_summary=distribution_summary,
         trace=adjustment_trace,
     )
+    if market_cal["lower_tail_scale"] != 1.0 or market_cal["upper_tail_scale"] != 1.0:
+        calibration_reasons.append(
+            "asymmetric_interval_" + str((metrics.get("interval_calibration") or {}).get("version") or "unknown"))
+    compatibility = (metrics.get("market_calibration") or {}).get("probability_compatibility") or {}
+    if stat in set(compatibility.get("disabled_stats") or []):
+        calibration_reasons.append("stale_probability_trust_forced_market_only")
     if raw_over_win == 0.0 or raw_under_win == 0.0:
         p_over = 0.0 if raw_over_win == 0.0 else 1.0
     over_ev = _ev_per_unit(p_over, offer.get("over_price"), push_probability)
@@ -3349,27 +3858,69 @@ def _candidate_from_offer(
         prob = p_over if side == 'over' else 1.0 - p_over
         calibration_reasons.append('distribution_support_boundary')
     pre_market_probability = float(prob)
-    sharp = offer.get("sharp_reference") or None
-    sharp_over = _no_vig_side_probability(sharp.get("over_price"), sharp.get("under_price"), "over") if sharp else None
-    if sharp_over is not None and raw_over_win > 0.0 and raw_under_win > 0.0:
-        # Price FanDuel against the sharp book's no-vig line for the same player/stat/line, then take the
-        # FanDuel side with the better EV: a positive EV here means FanDuel is off-market.
-        p_over = _blend_toward_market(float(p_over), sharp_over, market_cal["probability_trust"])
-        side_ev = {s: _ev_per_unit(p_over if s == "over" else 1.0 - p_over, offer.get(f"{s}_price"), push_probability)
-                   for s in ("over", "under")}
-        if any(v is not None for v in side_ev.values()):
-            side = max(side_ev, key=lambda s: side_ev[s] if side_ev[s] is not None else -math.inf)
-        prob = p_over if side == "over" else 1.0 - p_over
-        price, link = offer.get(f"{side}_price"), offer.get(f"{side}_link")
-        market_prob = _no_vig_side_probability(offer.get("over_price"), offer.get("under_price"), side)
-        edge = float(projection - line) if side == "over" else float(line - projection)
-        calibration_reasons.append(f"sharp_reference_{sharp.get('bookmaker_key')}_trust_{market_cal['probability_trust']:.2f}")
+    # A deployed whole-CDF policy is the only model probability allowed to move
+    # the FanDuel baseline. Legacy overlays remain in the trace for diagnosis,
+    # but cannot manufacture a live edge.
+    policy_score = offer.get('distribution_policy_score')
+    if policy_score:
+        p_over = float(policy_score['conditional_over'])
+        push_probability = float(policy_score['push'])
+        nonpush = 1.0 - push_probability
+        s = policy_score['summary']
+        distribution_summary.update(projection_p10=s['p10'], projection_p50=s['median'], projection_p90=s['p90'],
+                                    distribution_kind='validated_whole_cdf')
+        adjustment_trace['distribution_policy_id'] = policy_score['policy_id']
+        calibration_reasons.append('validated_whole_cdf:'+policy_score['policy_id'])
+        exact_line_model_probability = exact_line_clv_probability = exact_line_model_version = None
+    model_signal_over = float(p_over)
+    fanduel_signal = _fanduel_residual_signal(
+        stat=stat,
+        row=row,
+        offer=offer,
+        model_over_probability=model_signal_over,
+    )
+    p_over = float(fanduel_signal['final_over_probability'])
+    if raw_over_win == 0.0 or raw_under_win == 0.0:
+        p_over = 0.0 if raw_over_win == 0.0 else 1.0
+        fanduel_signal = dict(
+            fanduel_signal,
+            final_over_probability=p_over,
+            approved=False,
+            actionable_context=False,
+            adjustment=0.0,
+            reasons=list(fanduel_signal.get('reasons') or ()) + ['distribution_support_boundary'],
+        )
+    nonpush = 1.0 - push_probability
+    side_ev = {
+        candidate_side: _ev_per_unit(
+            p_over if candidate_side == 'over' else 1.0 - p_over,
+            offer.get(candidate_side + '_price'),
+            push_probability,
+        )
+        for candidate_side in ('over', 'under')
+    }
+    if any(value is not None for value in side_ev.values()):
+        side = max(
+            side_ev,
+            key=lambda candidate_side: (
+                side_ev[candidate_side] if side_ev[candidate_side] is not None else -math.inf
+            ),
+        )
     else:
-        sharp_over = None
-        prob = _blend_toward_market(float(prob), market_prob, market_cal["probability_trust"])
-        if prob != pre_market_probability:
-            p_over = prob if side == "over" else 1.0 - prob
-            calibration_reasons.append(f"market_blend_trust_{market_cal['probability_trust']:.2f}")
+        side = 'over' if model_projection > line else 'under'
+    prob = p_over if side == 'over' else 1.0 - p_over
+    price, link = offer.get(side + '_price'), offer.get(side + '_link')
+    market_over = _clean_float(fanduel_signal.get('market_over_probability'))
+    market_prob = (
+        None if market_over is None
+        else market_over if side == 'over'
+        else 1.0 - market_over
+    )
+    edge = projection - line if side == 'over' else line - projection
+    sharp = offer.get('sharp_reference') or None
+    sharp_over = _clean_float((sharp or {}).get('consensus_over_probability'))
+    calibration_reasons.extend(str(reason) for reason in fanduel_signal.get('reasons') or ())
+    adjustment_trace['fanduel_residual_signal'] = fanduel_signal
     ev = _ev_per_unit(prob, price, push_probability)
     projection_note = str(row.get("_projection_sanity_note") or "")
     if projection_note:
@@ -3390,6 +3941,9 @@ def _candidate_from_offer(
         clv_guard=clv_guard,
         exact_line_clv_probability=exact_line_clv_probability,
         game_started=_game_has_started(row),
+        signal_approved=bool(fanduel_signal.get('approved')),
+        actionable_context=bool(fanduel_signal.get('actionable_context')),
+        execution_verified=bool(offer.get('_execution_verified')),
     )
     if calibration_reasons:
         reasons = ";".join([reasons, *calibration_reasons])
@@ -3400,9 +3954,17 @@ def _candidate_from_offer(
     if tier == "micro_projection" and bet_stats is not None and stat not in bet_stats:
         tier = "paper"
         reasons += ";display_only_market_not_bet"
-    if tier == "micro_projection" and sharp_over is not None and not metrics.get("sharp_edge_bets_enabled"):
-        tier = "paper"
-        reasons += ";sharp_edge_research_until_clv_confirms"
+    forecast_policy_pre_cash_tier = tier
+    usage_context_quality = _usage_context_quality(row)
+    limited_usage_risk = _limited_usage_risk(row)
+    model_market_edge = None if market_prob is None else float(prob - market_prob)
+    actionable_score = _conservative_actionable_score({
+        'ev': ev,
+        'fanduel_signal': fanduel_signal,
+        'usage_context_quality': usage_context_quality,
+        'limited_usage_risk': limited_usage_risk,
+        'model_market_edge': model_market_edge,
+    })
     return {
         "game_date_et": row.get("game_date_et"),
         "season": row.get("season"),
@@ -3427,12 +3989,19 @@ def _candidate_from_offer(
         "projection": float(projection),
         "baseline_projection": float(baseline),
         "model_version": model_version,
+        'forecast_policy_pre_cash_tier': forecast_policy_pre_cash_tier,
+        'calibrated_distribution_mean': policy_score['summary']['mean'] if policy_score else None,
         "line": line,
         "side": side,
         "price": price,
         "book": offer.get("bookmaker_key"),
         "link": link,
         "probability": float(prob),
+        "probability_source": (
+            "fanduel_no_vig_regularized_residual"
+            if fanduel_signal.get('approved')
+            else "fanduel_no_vig_baseline"
+        ),
         "probability_basis": "win_given_no_push",
         "win_probability": float(prob * nonpush),
         "loss_probability": float((1.0 - prob) * nonpush),
@@ -3453,12 +4022,17 @@ def _candidate_from_offer(
         "edge": edge,
         "minimum_american_price": minimum_american_price,
         "drift_guard_pass": drift_guard_pass,
+        "execution_verified": bool(offer.get('_execution_verified')),
+        "quote_age_seconds": _clean_float(offer.get('quote_age_seconds')),
         "projection_p10": distribution_summary.get("projection_p10"),
         "projection_p50": distribution_summary.get("projection_p50"),
         "projection_p90": distribution_summary.get("projection_p90"),
         "distribution_kind": distribution_summary.get("distribution_kind"),
         "market_no_vig_probability": market_prob,
-        "model_market_edge": None if market_prob is None else float(prob - market_prob),
+        "model_market_edge": model_market_edge,
+        "fanduel_signal": fanduel_signal,
+        "actionable_score": actionable_score,
+        "signal_model_version": fanduel_signal.get('policy_id'),
         "sharp_book": sharp.get("bookmaker_key") if sharp_over is not None else None,
         "sharp_line": sharp.get("line") if sharp_over is not None else None,
         "sharp_fetched_at_utc": str(sharp.get("fetched_at_utc")) if sharp_over is not None else None,
@@ -3468,8 +4042,8 @@ def _candidate_from_offer(
         "exact_line_model_probability": exact_line_model_probability,
         "exact_line_clv_probability": exact_line_clv_probability,
         "exact_line_model_version": exact_line_model_version,
-        "usage_context_quality": _usage_context_quality(row),
-        "limited_usage_risk": _limited_usage_risk(row),
+        "usage_context_quality": usage_context_quality,
+        "limited_usage_risk": limited_usage_risk,
         "spike_usage_probability": _spike_usage_probability(stat, row),
         "tier": tier,
         "reasons": reasons,
@@ -3492,9 +4066,10 @@ def _projection_only_candidate(
     metrics: dict[str, Any],
     distribution: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    market_cal = _market_calibration_params(metrics, stat)
     distribution_summary = _widen_summary(
         _projection_distribution_summary(stat, projection, metrics, distribution, row=row),
-        _market_calibration_params(metrics, stat)["range_scale"])
+        market_cal["range_scale"], market_cal["lower_tail_scale"], market_cal["upper_tail_scale"])
     return {
         "game_date_et": row.get("game_date_et"),
         "season": row.get("season"),
@@ -3559,18 +4134,40 @@ def _projection_only_candidate(
 def _apply_daily_micro_cap(rows: list[dict[str, Any]], max_micro: int) -> tuple[int, int]:
     from nfl_pipeline.betting_preferences import EXECUTION_BOOK, execution_link
     for row in rows:
-        if row.get('tier') == 'micro_projection' and (row.get('book') != EXECUTION_BOOK or not execution_link(row.get('link'))):
+        if row.get('tier') != 'micro_projection':
+            continue
+        failures = []
+        if row.get('book') != EXECUTION_BOOK or not execution_link(row.get('link')):
+            failures.append('execution_book_or_link_ineligible')
+        if row.get('line') is None or row.get('side') not in {'over', 'under'}:
+            failures.append('missing_executable_side_or_line')
+        if row.get('drift_guard_pass') is not True or (_clean_float(row.get('ev')) or 0.0) <= 0.0:
+            failures.append('current_price_not_positive_ev')
+        if (_clean_float(row.get('actionable_score')) or -1.0) <= 0.0:
+            failures.append('conservative_rank_not_positive')
+        if row.get('execution_verified') is not True:
+            failures.append('fresh_quote_not_verified')
+        if not bool((row.get('fanduel_signal') or {}).get('approved')):
+            failures.append('approved_probability_residual_missing')
+        if failures:
             row['tier'] = 'paper'
-            row['reasons'] = str(row.get('reasons') or '') + ';execution_book_or_link_ineligible'
+            row['reasons'] = ';'.join(
+                part for part in (str(row.get('reasons') or ''), *failures) if part
+            )
     eligible = [
         (idx, row) for idx, row in enumerate(rows)
         if row.get("tier") == "micro_projection"
         and row.get("line") is not None
         and row.get("side") in {"over", "under"}
         and row.get("drift_guard_pass") is True
+        and (_clean_float(row.get("ev")) or 0.0) > 0.0
+        and (_clean_float(row.get("actionable_score")) or -1.0) > 0.0
+        and row.get("execution_verified") is True
+        and bool((row.get("fanduel_signal") or {}).get("approved"))
     ]
     eligible.sort(
         key=lambda item: (
+            item[1].get("actionable_score") or -999.0,
             item[1].get("ev") or -999.0,
             item[1].get("model_market_edge") or -999.0,
             item[1].get("projection_confidence") or -999.0,
@@ -3610,7 +4207,8 @@ def _save_predictions(conn, rows: list[dict[str, Any]]) -> int:
         "exact_line_clv_probability", "exact_line_model_version", "over_probability",
         "under_probability", "raw_over_probability", "minimum_american_price",
         "drift_guard_pass", "usage_context_quality", "limited_usage_risk",
-        "spike_usage_probability", "tier", "reasons", "prediction_key",
+        "spike_usage_probability", "forecast_horizon_minutes",
+        "forecast_horizon_bucket", "tier", "reasons", "prediction_key",
     ]
     fields.append("offer_id")
     from nfl_pipeline.forecast_store import save_forecasts
@@ -3618,22 +4216,42 @@ def _save_predictions(conn, rows: list[dict[str, Any]]) -> int:
 
 
 def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    from nfl_pipeline.runtime_timing import StageTimer
+    timer = StageTimer(log)
     et_day = cfg.et_date or datetime.now(_ET).date()
-    artifact = _load_model(cfg)
+    artifact = timer.call('load_model', _load_model, cfg)
     with psycopg2.connect(cfg.pg_dsn) as conn:
-        ensure_schema(conn)
-        context_cutoff_utc = _prediction_context_cutoff(conn, et_day)
-        games = _load_games(conn, et_day, context_cutoff_utc)
+        timer.call('schema_readiness', ensure_schema, conn)
+        context_cutoff_utc = timer.call('context_cutoff', _prediction_context_cutoff, conn, et_day)
+        games = timer.call('load_games', _load_games, conn, et_day, context_cutoff_utc)
         from nfl_pipeline.game_scope import filter_frame
         games = filter_frame(games)
         games = games.loc[pd.to_datetime(games.start_ts_utc, utc=True, errors="coerce") > pd.Timestamp.now(tz="UTC")].copy()
-        history = _load_history(conn, et_day)
-        offers = _load_prop_lines(conn, et_day, context_cutoff_utc)
-        context = _load_player_context(conn, et_day, context_cutoff_utc)
-        snapshot = _snapshot_players(history, games, et_day, offers, cfg.max_projection_recency_days, context)
-        clv_guard_by_key = _load_clv_guard(conn)
-        probability_calibration_by_key = _load_recent_probability_calibration(conn, et_day)
+        if games.empty:
+            return [], dict(game_date=str(et_day), games=0, snapshot_players=0, offers=0,
+                predictions=0, saved=0, prediction_context_cutoff_utc=context_cutoff_utc.isoformat(),
+                status='no_upcoming_games', stage_timings=timer.stages)
+        history = timer.call('load_history', _load_history, conn, et_day)
+        offers = timer.call('load_offers', _load_prop_lines, conn, et_day, context_cutoff_utc)
+        context = timer.call('load_player_context', _load_player_context, conn, et_day, context_cutoff_utc)
+        snapshot = timer.call('snapshot_players', _snapshot_players, history, games, et_day, offers, cfg.max_projection_recency_days, context)
+        if not snapshot.empty:
+            # Runtime opportunity/state models need the same timestamp-checked
+            # context later stored with each immutable forecast. Previously the
+            # evidence object was created only after scoring, so those models
+            # saw every live injury/depth feature as missing.
+            from nfl_pipeline.context_contract import context_evidence
+            snapshot['context_evidence'] = [
+                context_evidence(row, context_cutoff_utc)
+                for row in snapshot.to_dict('records')
+            ]
+        clv_guard_by_key = timer.call('clv_guards', _load_clv_guard, conn)
+        probability_calibration_by_key = timer.call('recent_calibration', _load_recent_probability_calibration, conn, et_day)
         market_calibration = _load_market_calibration()
+        interval_calibration = _load_interval_calibration()
+        from nfl_pipeline.modeling import distribution_policy as cdf_policy
+        cdf_challengers = cdf_policy.load_registry()
+        cdf_active = cdf_policy.load_registry('active')
         from nfl_pipeline.betting_preferences import BET_PROP_STATS, SHARP_EDGE_BETS_ENABLED
         sharp_index = _sharp_reference_index(offers, context_cutoff_utc)
         rows: list[dict[str, Any]] = []
@@ -3646,7 +4264,7 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                 sub = snapshot.loc[mask].copy()
                 if sub.empty:
                     continue
-                preds, baselines, accepted = _predict_stat(sub, artifact, stat)
+                preds, baselines, accepted = timer.call('predict_'+stat, _predict_stat, sub, artifact, stat)
                 td_any_prob = _predict_td_any_probability(sub, artifact, stat)
                 workload = _workload_adjustment_factors(sub, artifact) if artifact.get('apply_workload_adjustment',True) else {}
                 if stat == "receptions":
@@ -3660,12 +4278,31 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                     season_rush = _season_aware_rushing_estimate(history, sub, context)
                     known = np.isfinite(season_rush)
                     preds = np.where(known, SEASON_RUSH_MODEL_WEIGHT * preds + (1 - SEASON_RUSH_MODEL_WEIGHT) * np.where(known, season_rush, 0.0), preds)
+                component_base = preds.copy()
+                active_component = timer.call(
+                    'active_stat_component_'+stat, _score_stat_component,
+                    artifact, 'active_stat_components', stat, sub, component_base)
+                preds=_apply_active_expected_mean(preds,active_component)
+                challenger_components = timer.call(
+                    'candidate_stat_components_'+stat, _score_stat_candidates,
+                    artifact, stat, sub, preds.copy())
+                primary_challenger_component = next(
+                    (
+                        component for component in challenger_components.values()
+                        if set(component.get('outputs') or ()).intersection({'expected_mean', 'median'})
+                    ),
+                    next(iter(challenger_components.values()), None),
+                )
                 metrics = dict((artifact.get("metrics") or {}).get(stat) or {})
                 metrics["market_calibration"] = market_calibration
+                metrics["interval_calibration"] = interval_calibration
                 metrics["bet_stats"] = sorted(BET_PROP_STATS)
                 metrics["sharp_edge_bets_enabled"] = bool(SHARP_EDGE_BETS_ENABLED)
                 metrics["accepted_live"] = accepted
                 metrics["live_model_version"] = str(artifact.get("version") or ("trained_workload_adjusted" if accepted else "baseline_fallback"))
+                if active_component is not None:
+                    metrics['active_stat_component_id']=active_component['component_id']
+                    metrics['active_stat_component_outputs']=active_component['outputs']
                 metrics["workload_adjusted_live"] = bool(accepted and np.any(np.abs(preds - raw_preds) > 1e-6))
                 model_inputs = _make_features(sub).reindex(columns=(artifact.get('feature_columns') or {}).get(stat,[])).fillna((artifact.get('fill_values') or {}).get(stat,{}))
                 for idx, (_, player_row) in enumerate(sub.iterrows()):
@@ -3710,12 +4347,33 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                                 if "probability" in row_key or row_key.endswith("_share"):
                                     value = float(np.clip(value, 0.0, 1.0))
                                 row_dict[row_key] = max(0.0, value)
+                    if active_component is not None:
+                        row_dict['_active_stat_component_id']=active_component['component_id']
+                        row_dict['_active_stat_opportunity']=_clean_float(
+                            np.asarray(active_component.get('opportunity',np.full(len(sub),np.nan)))[idx])
+                        row_dict['_active_stat_efficiency']=_clean_float(
+                            np.asarray(active_component.get('efficiency',np.full(len(sub),np.nan)))[idx])
+                        row_dict['_active_stat_limited_probability']=_clean_float(
+                            np.asarray(active_component.get('limited_probability',np.full(len(sub),np.nan)))[idx])
+                        row_dict['_active_stat_spike_probability']=_clean_float(
+                            np.asarray(active_component.get('spike_probability',np.full(len(sub),np.nan)))[idx])
+                    if primary_challenger_component is not None:
+                        row_dict['_challenger_stat_component_id']=primary_challenger_component['component_id']
+                        row_dict['_challenger_stat_opportunity']=_clean_float(
+                            np.asarray(primary_challenger_component.get('opportunity',np.full(len(sub),np.nan)))[idx])
+                        row_dict['_challenger_stat_efficiency']=_clean_float(
+                            np.asarray(primary_challenger_component.get('efficiency',np.full(len(sub),np.nan)))[idx])
+                        row_dict['_challenger_stat_limited_probability']=_clean_float(
+                            np.asarray(primary_challenger_component.get('limited_probability',np.full(len(sub),np.nan)))[idx])
+                        row_dict['_challenger_stat_spike_probability']=_clean_float(
+                            np.asarray(primary_challenger_component.get('spike_probability',np.full(len(sub),np.nan)))[idx])
                     player_offers, offer_issues = eligible_player_offers(offers, row_dict, stat, context_cutoff_utc)
                     offer_exclusions.update(offer_issues)
                     for player_offer in player_offers:
                         reference = _sharp_reference_for(sharp_index, player_offer)
                         if reference is not None:
                             player_offer["sharp_reference"] = reference
+                    _attach_monotone_fanduel_market(player_offers)
                     distribution = dict((artifact.get("distributions") or {}).get(stat) or {})
                     if not player_offers:
                         allowed, reason = _projection_only_role_allowed(row_dict, stat, projection)
@@ -3724,6 +4382,32 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                             sanity_excluded_by_reason[reason] = sanity_excluded_by_reason.get(reason, 0) + 1
                             continue
                         row_dict["projection_only_reason"] = (reason or 'no_prop_line_available') + ';no_fresh_fanduel_offer'
+                    if player_offers:
+                        component_curves: dict[str, dict[str, Any]] = {}
+                        if active_component is not None and 'probability' in set(active_component.get('outputs') or ()):
+                            component_curves['stat_component:'+str(active_component['component_id'])] = cdf_policy.curve(
+                                active_component['values'][idx], active_component['weights'][idx])
+                        for component_id, component in challenger_components.items():
+                            if 'probability' in set(component.get('outputs') or ()):
+                                component_curves['stat_component:'+str(component_id)] = cdf_policy.curve(
+                                    component['values'][idx], component['weights'][idx])
+                        if active_component is not None and 'probability' in set(active_component.get('outputs') or ()):
+                            raw_curve=cdf_policy.curve(active_component['values'][idx],active_component['weights'][idx])
+                        else:
+                            raw_curve = cdf_policy.prop_curve(stat, projection, metrics, distribution, row_dict, _side_prob)
+                        for book in {q['bookmaker_key'] for q in player_offers}:
+                            book_offers = [q for q in player_offers if q['bookmaker_key'] == book]
+                            contexts = cdf_policy.prop_contexts(raw_curve, stat, metrics['live_model_version'], book,
+                                                               book_offers, row_dict, cdf_challengers, cdf_active,
+                                                               projection=projection, cutoff=context_cutoff_utc,
+                                                               source_curves=component_curves)
+                            policy_context = next((c for c in contexts if c['deployed']), contexts[0])
+                            for q in book_offers:
+                                q['distribution_policy_capture'] = policy_context
+                                q['distribution_policy_variants'] = contexts
+                                q['distribution_policy_score'] = cdf_policy.captured_score(policy_context, 'deployed', q['line'])
+                                q['distribution_challenger_score'] = cdf_policy.captured_score(policy_context, 'challenger', q['line'])
+                            _attach_fanduel_signals(stat, row_dict, book_offers)
                     for offer in player_offers or [None]:
                         candidate = _candidate_from_offer(
                             row_dict,
@@ -3739,6 +4423,31 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                             model_artifact=artifact,
                         ) if offer else _projection_only_candidate(row_dict, stat, projection, baseline, metrics, distribution)
                         candidate['prediction_context_cutoff_utc'] = context_cutoff_utc.isoformat()
+                        candidate['start_ts_utc'] = row_dict.get('start_ts_utc')
+                        candidate['stat_projection_expected_mean'] = float(projection)
+                        candidate['stat_projection_median'] = None
+                        candidate['stat_projection_p10'] = None
+                        candidate['stat_projection_p90'] = None
+                        candidate['stat_output_component_ids'] = {}
+                        if active_component is not None:
+                            owned=set(active_component.get('outputs') or ())
+                            candidate['stat_output_component_ids'] = dict(
+                                active_component.get('component_ids') or {
+                                    output:active_component.get('component_id') for output in owned
+                                })
+                            if 'expected_mean' in owned:
+                                candidate['stat_projection_expected_mean'] = _clean_float(
+                                    np.asarray(active_component['mean'])[idx])
+                            if 'median' in owned:
+                                candidate['stat_projection_median'] = _clean_float(
+                                    np.asarray(active_component['median'])[idx])
+                            if 'interval' in owned:
+                                candidate['stat_projection_p10'] = _clean_float(
+                                    np.asarray(active_component['p10'])[idx])
+                                candidate['stat_projection_p90'] = _clean_float(
+                                    np.asarray(active_component['p90'])[idx])
+                        from nfl_pipeline.forecast_horizon import add_horizon
+                        add_horizon(candidate, cutoff=context_cutoff_utc)
                         from nfl_pipeline.context_contract import context_evidence
                         candidate['context_evidence'] = context_evidence(row_dict, context_cutoff_utc)
                         candidate['forecast_features'] = row_dict
@@ -3751,16 +4460,77 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                         candidate['projection_semantics'] = 'central_forecast_not_certified_mean' if stat.endswith('yards') else 'expected_count_or_any_td_head'
                         candidate['model_inputs'] = model_inputs.iloc[idx].to_dict()
                         candidate['forecast_distribution'] = distribution
+                        if challenger_components:
+                            shadows = {}
+                            for component_id, challenger_component in challenger_components.items():
+                                shadow_curve=cdf_policy.curve(
+                                    challenger_component['values'][idx],challenger_component['weights'][idx])
+                                shadow_summary=cdf_policy.summary(shadow_curve)
+                                array_value = lambda key: _clean_float(np.asarray(
+                                    challenger_component.get(key,np.full(len(sub),np.nan))
+                                )[idx])
+                                shadow={'component_id':component_id,
+                                    'outputs':challenger_component['outputs'],
+                                    'artifact_sha256':challenger_component.get('artifact_sha256'),
+                                    'experiment_generation':challenger_component.get('experiment_generation'),
+                                    'projection':float(challenger_component['mean'][idx]),
+                                    'median':float(challenger_component['median'][idx]),
+                                    'p10':float(challenger_component['p10'][idx]),
+                                    'p90':float(challenger_component['p90'][idx]),
+                                    'opportunity':array_value('opportunity'),
+                                    'efficiency':array_value('efficiency'),
+                                    'limited_probability':array_value('limited_probability'),
+                                    'spike_probability':array_value('spike_probability'),
+                                    'curve':shadow_curve,'same_offer':bool(offer),'betting_approved':False}
+                                if offer:
+                                    shadow_offer=dict(offer)
+                                    shadow_offer['distribution_policy_score']={
+                                        'policy_id':'shadow:'+component_id,
+                                        'summary':shadow_summary,
+                                        **cdf_policy.outcomes(shadow_curve,float(offer['line']))}
+                                    shadow_metrics=dict(metrics,live_model_version=component_id)
+                                    shadow_artifact=dict(artifact,exact_line_artifact={})
+                                    scored=_candidate_from_offer(
+                                        row_dict,stat,float(challenger_component['mean'][idx]),baseline,
+                                        shadow_metrics,shadow_offer,distribution,min_ev=cfg.min_ev,
+                                        clv_guard_by_key=clv_guard_by_key,
+                                        probability_calibration_by_key=probability_calibration_by_key,
+                                        model_artifact=shadow_artifact)
+                                    shadow.update(line=scored['line'],side=scored['side'],price=scored['price'],
+                                        probability=scored['probability'],push_probability=scored['push_probability'],
+                                        ev=scored['ev'],market_no_vig_probability=scored['market_no_vig_probability'],
+                                        model_market_edge=scored['model_market_edge'],
+                                        probability_trace=scored['probability_trace'])
+                                shadows[component_id]=shadow
+                            candidate['stat_model_challengers']=shadows
                         if row_dict.get('cold_start') is True:
                             candidate['tier'] = 'paper'
                             candidate['reasons'] = 'cold_start_position_prior_unproven'
                         rows.append(candidate)
         micro_screen_passed, micro_selected = _apply_daily_micro_cap(rows, cfg.max_micro_props_per_day)
         if cfg.save_predictions:
-            saved = _save_predictions(conn, rows)
+            saved = timer.call('save_predictions', _save_predictions, conn, rows)
         else:
             saved = 0
+    evidence_rows=(snapshot.get('context_evidence',pd.Series(dtype=object)).tolist()
+                   if not snapshot.empty else [])
+    def evidence_count(key):
+        return sum(isinstance(value,dict) and value.get(key) is not None for value in evidence_rows)
+    context_coverage={
+        'players':len(evidence_rows),
+        'roster_observed':evidence_count('roster_observed_at'),
+        'depth_observed':evidence_count('depth_observed_at'),
+        'player_injury_observed':evidence_count('injury_observed_at'),
+        'teammate_injury_observed':evidence_count('teammate_injury_observed_at'),
+        'player_injury_unknown':sum(
+            isinstance(value,dict) and value.get('injury_missing') is True
+            for value in evidence_rows),
+        'teammate_context_unknown':sum(
+            isinstance(value,dict) and value.get('teammate_coverage')=='unknown'
+            for value in evidence_rows),
+    }
     meta = {
+        "stage_timings": timer.stages,
         "game_date": et_day.isoformat(),
         "prediction_context_cutoff_utc": context_cutoff_utc.isoformat(),
         "games": int(len(games)),
@@ -3770,6 +4540,7 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
         "offer_exclusions": dict(offer_exclusions),
         "execution_book": "fanduel",
         "player_context_rows": int(len(context)),
+        "same_week_context_coverage": context_coverage,
         "clv_guard_buckets": int(len(clv_guard_by_key)),
         "probability_calibration_buckets": int(len(probability_calibration_by_key)),
         "predictions": int(len(rows)),
@@ -3782,6 +4553,8 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
         "model_status": artifact.get("status"),
         "exact_line_status": artifact.get("exact_line_status"),
         "exact_line_models": int(len(((artifact.get("exact_line_artifact") or {}).get("models") or {}))),
+        "active_stat_components": sorted((artifact.get('active_stat_components') or {}).keys()),
+        "candidate_stat_components": sorted((artifact.get('candidate_stat_components') or {}).keys()),
         "accepted_models": [
             stat for stat, rec in (artifact.get("metrics") or {}).items()
             if isinstance(rec, dict) and _projection_layer_accepted(rec)
@@ -3802,12 +4575,6 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
 
 def _fmt_stat(stat: str) -> str:
     return SPEC_BY_STAT.get(stat).label if stat in SPEC_BY_STAT else stat
-
-
-def _print_parlay(title: str, rows: list[dict[str, Any]]) -> None:
-    url = _build_fd_parlay_url([row.get("link") for row in rows])
-    if url:
-        print(f"- {title} Parlay: [FD]({url})")
 
 
 def _row_range_summary(row: dict[str, Any]) -> str:
@@ -3907,20 +4674,19 @@ def print_discord(rows: list[dict[str, Any]], meta: dict[str, Any], cfg: Predict
     micro_rows.sort(key=lambda row: (row.get("ev") or -999.0, row.get("model_market_edge") or -999.0), reverse=True)
     if micro_rows:
         print("- Micro Props: $1 flat only; these are live evidence rows, not bankroll")
-    print("- Bet only rows marked `$1 MICRO TEST`; paper sections are research, not approved real-money plays.")
+    print("- Only rows marked `$1 MICRO TEST` or bankroll are betting instructions. There is no daily quota.")
     if not rows:
         print("")
         print("**NFL PLAYER PROPS**")
         print("- No NFL rows available for this date yet")
         return
     if micro_rows:
-        shown_micro = micro_rows[:5]
+        shown_micro = micro_rows[:3]
         print("")
-        print(f"**$1 MICRO TEST - NFL PROPS ({len(shown_micro)} selected / {len(micro_rows)} passed screen / ledger cap 5)**")
+        print(f"**$1 MICRO TEST - NFL PROPS ({len(shown_micro)} selected / {len(micro_rows)} passed screen / ledger cap 3)**")
         print("- Bet size: $1 flat only. Bet only if current book price is still at or better than Min and Drift=OK.")
         for row in shown_micro:
             print(_format_prop_row(row, action="BET $1"))
-        _print_parlay(f"Top {len(shown_micro)} NFL Micro Props", shown_micro)
     already_locked = [row for row in rows if row.get('tier') == 'locked_micro']
     if already_locked:
         print("")
@@ -3928,31 +4694,10 @@ def print_discord(rows: list[dict[str, Any]], meta: dict[str, Any], cfg: Predict
         print("- Original locked forecasts and prices. These are not refreshed betting instructions.")
         for row in already_locked:
             print(_format_prop_row(row, action='Already recorded'))
-    print("")
-    print("**PAPER NFL PROP PROJECTIONS**")
-    if int(meta.get("offers") or 0) <= 0:
-        print("- Books have not published parsed prop lines yet; these are role-sane stat forecasts, not bettable props.")
-    sections = [
-        ("QB Passing Yards", lambda row: row.get("position") == "QB" and row.get("stat") == "passing_yards"),
-        ("QB Rushing Yards", lambda row: row.get("position") == "QB" and row.get("stat") == "rushing_yards"),
-        ("QB Passing TDs", lambda row: row.get("position") == "QB" and row.get("stat") == "passing_tds"),
-        ("RB Rushing Yards", lambda row: row.get("position") == "RB" and row.get("stat") == "rushing_yards"),
-        ("RB Receiving Yards", lambda row: row.get("position") == "RB" and row.get("stat") == "receiving_yards"),
-        ("RB Rushing TDs", lambda row: row.get("position") == "RB" and row.get("stat") == "rushing_tds"),
-        ("WR/TE Receiving Yards", lambda row: row.get("position") in {"WR", "TE"} and row.get("stat") == "receiving_yards"),
-        ("WR/TE Receiving TDs", lambda row: row.get("position") in {"WR", "TE"} and row.get("stat") == "receiving_tds"),
-    ]
-    for title, predicate in sections:
-        candidates = [row for row in rows if predicate(row) and row.get("tier") not in {"micro_projection", "locked_micro"}]
-        candidates.sort(key=lambda row: (row.get("ev") is not None, row.get("ev") or -999.0, row.get("projection") or 0.0), reverse=True)
-        shown = candidates[: cfg.top_n_per_section]
-        if not shown:
-            continue
+    if not micro_rows:
         print("")
-        print(f"**Top {len(shown)} Paper {title}**")
-        for row in shown:
-            print(_format_prop_row(row, action="Research only"))
-        _print_parlay(f"Top {len(shown)} Paper {title}", shown)
+        print("**ACTIONABLE NFL PROPS**")
+        print("- None currently pass the FanDuel residual, price, freshness, approved-model, and context checks.")
 
 
 def main() -> None:

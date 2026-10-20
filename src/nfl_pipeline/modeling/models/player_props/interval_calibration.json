@@ -1,0 +1,40 @@
+{
+  "contract": "nfl-asymmetric-interval-v1",
+  "version": "asymmetric-interval-20261010T003510Z",
+  "fitted_at": "2026-10-10T00:35:10.486159+00:00",
+  "training_through": "2026-10-08",
+  "model_versions": [
+    "nfl-20260918T143342Z"
+  ],
+  "target_coverage": 0.8,
+  "method": "expanding-week asymmetric conformal scaling of immutable p10/p50/p90",
+  "stats": {
+    "receiving_yards": {
+      "lower_tail_scale": 1.2,
+      "upper_tail_scale": 1.29,
+      "evidence": {
+        "forward_base": {
+          "rows": 366,
+          "coverage": 0.7240437158469946,
+          "below_p10": 0.12295081967213115,
+          "above_p90": 0.15300546448087432,
+          "mean_interval_score": 106.8497203572151,
+          "mean_width": 55.49884204918315
+        },
+        "forward_calibrated": {
+          "rows": 366,
+          "coverage": 0.8087431693989071,
+          "below_p10": 0.08469945355191257,
+          "above_p90": 0.10655737704918032,
+          "mean_interval_score": 100.47856360825458,
+          "mean_width": 69.50423071384809
+        },
+        "relative_interval_score_gain": 0.05962726647913322,
+        "evaluated_folds": 3
+      }
+    }
+  },
+  "deployment_approved": true,
+  "betting_approved": false,
+  "scope": "forecast_distribution_only"
+}

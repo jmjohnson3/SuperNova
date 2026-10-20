@@ -1,0 +1,57 @@
+{
+  "contract": "nfl-distribution-policy-v1",
+  "policies": {
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|total|forecast_repair:cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96:small_total": {
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|total|forecast_repair:cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96:small_total",
+      "source": "forecast_repair:cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96:small_total",
+      "source_artifact": {
+        "kind": "forecast_repair",
+        "contract": "nfl-isolated-forecast-repair-v1",
+        "path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\forecast_repair\\forecast-repair-total-20261008T170628068151Z\\model.joblib",
+        "sha256": "cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96",
+        "variant": "small_total",
+        "stat": "total",
+        "training_end": "2026-09-17",
+        "production_release": "nfl-20260918T143342Z"
+      },
+      "created_at": "2026-10-08T21:45:26.825187+00:00",
+      "capture_only": true,
+      "cash_approved": false
+    },
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|rushing_yards|forecast_repair:a426cb68d3dad523560c81c234b61857d0dfc34970b916872e33f56799105c3c:joint_calibrated": {
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|rushing_yards|forecast_repair:a426cb68d3dad523560c81c234b61857d0dfc34970b916872e33f56799105c3c:joint_calibrated",
+      "source": "forecast_repair:a426cb68d3dad523560c81c234b61857d0dfc34970b916872e33f56799105c3c:joint_calibrated",
+      "source_artifact": {
+        "kind": "forecast_repair",
+        "contract": "nfl-isolated-forecast-repair-v1",
+        "path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\forecast_repair\\forecast-repair-rushing_yards-20261008T215309244711Z\\model.joblib",
+        "sha256": "a426cb68d3dad523560c81c234b61857d0dfc34970b916872e33f56799105c3c",
+        "variant": "joint_calibrated",
+        "stat": "rushing_yards",
+        "training_end": "2026-09-17",
+        "production_release": "nfl-20260918T143342Z"
+      },
+      "created_at": "2026-10-08T21:54:35.536988+00:00",
+      "capture_only": true,
+      "cash_approved": false
+    },
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|passing_yards|forecast_repair:2259ac0e8a035747d3ef41b78dc91bfc13cba8244a09a2a7f4153e90affc2487:joint_calibrated": {
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|passing_yards|forecast_repair:2259ac0e8a035747d3ef41b78dc91bfc13cba8244a09a2a7f4153e90affc2487:joint_calibrated",
+      "source": "forecast_repair:2259ac0e8a035747d3ef41b78dc91bfc13cba8244a09a2a7f4153e90affc2487:joint_calibrated",
+      "source_artifact": {
+        "kind": "forecast_repair",
+        "contract": "nfl-isolated-forecast-repair-v1",
+        "path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\forecast_repair\\forecast-repair-passing_yards-20261008T215337159170Z\\model.joblib",
+        "sha256": "2259ac0e8a035747d3ef41b78dc91bfc13cba8244a09a2a7f4153e90affc2487",
+        "variant": "joint_calibrated",
+        "stat": "passing_yards",
+        "training_end": "2026-09-17",
+        "production_release": "nfl-20260918T143342Z"
+      },
+      "created_at": "2026-10-08T21:54:35.685978+00:00",
+      "capture_only": true,
+      "cash_approved": false
+    }
+  },
+  "sha256": "55d7e135994358f2293b42b55b0c623a33e55faaa62fe35c62b633be9fc8ac75"
+}

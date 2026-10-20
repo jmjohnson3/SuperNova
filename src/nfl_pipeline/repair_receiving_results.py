@@ -38,8 +38,14 @@ def verified_receiving(row, snaps, pbp, totals):
         return None,'missing_or_ambiguous_player_identity'
     snap=snaps.loc[snaps.game_id.eq(row['game_id']) & snaps.pfr_player_id.eq(ids[0])
                    & snaps.team.map(normalize_team).eq(row['team_abbr'])]
-    if len(snap)!=1 or pd.isna(snap.iloc[0].offense_snaps) or snap.iloc[0].offense_snaps<=0:
-        return None,'no_verified_offensive_participation'
+    if len(snap)!=1:
+        return None,'no_verified_participation'
+    offense_snaps=snap.iloc[0].get('offense_snaps')
+    special_teams_snaps=snap.iloc[0].get('st_snaps')
+    offense_verified=pd.notna(offense_snaps) and float(offense_snaps)>0
+    special_teams_verified=pd.notna(special_teams_snaps) and float(special_teams_snaps)>0
+    if not offense_verified and not special_teams_verified:
+        return None,'no_verified_participation'
     game=pbp.loc[pbp.game_id.eq(row['game_id'])].sort_values('play_id')
     if game.empty or str(game.iloc[-1]['desc']).strip().upper()!='END GAME':
         return None,'play_by_play_not_complete'
@@ -59,10 +65,13 @@ def verified_receiving(row, snaps, pbp, totals):
     # A disagreeing existing stat is a review, never a silent source replacement.
     if row.get('existing_yards') is not None and float(row['existing_yards'])!=actual:
         return None,'existing_stat_conflict'
+    participation=('positive_offensive_snaps' if offense_verified else 'positive_special_teams_snaps')
     return dict(receiving_yards=actual, targets=len(player), receptions=len(caught),
-        offense_snaps=float(snap.iloc[0].offense_snaps), pfr_id=ids[0],
+        offense_snaps=0.0 if pd.isna(offense_snaps) else float(offense_snaps),
+        special_teams_snaps=0.0 if pd.isna(special_teams_snaps) else float(special_teams_snaps),
+        verified_game_participation=True, pfr_id=ids[0],
         team_pass_attempts=len(plays), team_passing_yards=yards,
-        evidence='positive_offensive_snaps_and_complete_reconciled_play_by_play',
+        evidence=participation+'_and_complete_reconciled_play_by_play',
         player_play_ids=player.play_id.astype(float).tolist()),None
 
 
@@ -85,8 +94,9 @@ def run(day, apply=False):
               WHERE p.game_date_et=%s AND p.stat='receiving_yards' AND g.status='final'
                 AND p.line IS NOT NULL AND p.side IN ('over','under')
                 AND p.created_at_utc<g.start_ts_utc AND p.integrity_version='nfl-asof-v2'
-                AND (l.receiving_yards IS NULL OR NOT (COALESCE(l.offense_snaps,0)>0 OR
-                     COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0)>0))""",(day,))
+                AND (l.receiving_yards IS NULL OR (NOT (COALESCE(l.offense_snaps,0)>0 OR
+                     COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0)>0)
+                     AND COALESCE(l.raw_json#>>'{receiving_result_repair,verified_game_participation}','false')!='true'))""",(day,))
             rows=[dict(r) for r in cur.fetchall()]
         with conn.cursor() as cur:
             cur.execute("""SELECT game_id,team_abbr,SUM(pass_attempts),SUM(passing_yards)
@@ -111,11 +121,13 @@ def run(day, apply=False):
                 entry=dict(game_id=row['game_id'],player_id=row['player_id'],player=row['player_name'],
                     team=row['team_abbr'],status=error or 'verified',proof=proof)
                 outputs.append(entry)
-                if error=='no_verified_offensive_participation' and verified_inactive(row,snaps,pbp):
+                if error=='no_verified_participation' and verified_inactive(row,snaps,pbp):
                     entry.update(status='verified_inactive_void',proof=dict(roster_status='INA',season=row['season'],week=row['week'],
                         pfr_id=row['pfr_ids'][0],roster_source='nflverse_rosters',snap_source=snap_url,pbp_source=pbp_url,
                         rule_source='https://www.fanduel.com/fanduel-sportsbook-house-rules-co',
-                        rule_effective_date='2026-07-22',observed_at=observed_at))
+                        rule_effective_date='2026-09-30' if day >= date(2026,9,30) else '2026-07-22',
+                        rule_section='American Football / Proposition bets / no snap participation',
+                        observed_at=observed_at))
                     if apply:
                         with conn.cursor() as cur:
                             cur.execute("""INSERT INTO bets.nfl_player_prop_prediction_results

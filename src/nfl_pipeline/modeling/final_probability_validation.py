@@ -1,7 +1,8 @@
 """Evaluate exact locked micro selections and final-stage calibration, offline only."""
+import argparse
 import json
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -22,13 +23,15 @@ from nfl_pipeline.modeling.selected_pick_diagnostics import (
 )
 
 
-def load_ledger():
+def load_ledger(day=None):
     with psycopg2.connect(PG_DSN) as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("SET LOCAL statement_timeout='60s'")
         cur.execute("""SELECT ledger_id,prediction_id,locked_at_utc,game_date_et,tier,stake,result,profit,
                        execution_status,book AS ledger_book,side AS ledger_side,line AS ledger_line,
                        price AS ledger_price,model_version AS ledger_model_version FROM bets.nfl_bet_ledger
-                       WHERE source_kind='prop' AND tier='micro_projection' ORDER BY locked_at_utc,ledger_id""")
+                       WHERE source_kind='prop' AND tier='micro_projection'
+                         AND (%s IS NULL OR game_date_et=%s)
+                       ORDER BY locked_at_utc,ledger_id""", (day, day))
         return [dict(r) for r in cur.fetchall()]
 
 
@@ -49,10 +52,12 @@ def attach_label_availability(records):
             continue
         for row in doc.get('rows', []):
             remember(row['prediction_id'], row['actual'], doc.get('observed_at'))
+    prediction_ids = [int(row['id']) for row in records]
     with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
         cur.execute("SET LOCAL statement_timeout='60s'")
         cur.execute("""SELECT prediction_id,actual_stat,updated_at_utc FROM bets.nfl_player_prop_prediction_results
-                       WHERE result IN ('win','loss','push') AND actual_stat IS NOT NULL""")
+                       WHERE result IN ('win','loss','push') AND actual_stat IS NOT NULL
+                         AND prediction_id=ANY(%s)""", (prediction_ids or [-1],))
         for prediction_id, actual, updated in cur.fetchall():
             # First graded time could belong to a different/pending result. The
             # current value is proven by its latest update or an immutable prior observation.
@@ -292,31 +297,42 @@ def build_report(records, ledger):
     return clean(report), artifacts
 
 
-def run():
-    records = attach_label_availability(load_rows())
-    ledger = load_ledger()
+def run(day=None):
+    records = attach_label_availability(load_rows(day))
+    ledger = load_ledger(day)
     report, artifacts = build_report(records, ledger)
+    report['validation_scope'] = {
+        'mode': 'date_partition' if day else 'full_history',
+        'date': str(day) if day else None,
+        'records': len(records),
+    }
     workload = workload_report(records)
     consistency = monotonicity_violations(records)
     write_diagnostics(report.get('selected_pick_diagnostic', {'populations': {}}), workload, consistency)
     report['diagnostic_reports'] = ['nfl_selected_pick_diagnostic_latest', 'nfl_workload_uncertainty_diagnostic_latest',
                                     'nfl_probability_consistency_latest']
     from nfl_pipeline.modeling.micro_reconciliation import load_entries, reconcile, write_report
-    reconciliation = reconcile(load_entries(), [r['prediction_id'] for r in report.get('micro_rows', [])])
+    entries = load_entries()
+    if day:
+        entries = [row for row in entries if str(row.get('game_date_et')) == str(day)]
+    reconciliation = reconcile(entries, [r['prediction_id'] for r in report.get('micro_rows', [])])
     report['micro_reconciliation'] = reconciliation
     if reconciliation['evaluable_but_unscored']:
         report['status'] = 'incomplete_micro_evaluation'
-    write_report(reconciliation)
-    prospective = prospective_report(records)
+    if not day:
+        write_report(reconciliation)
+    prospective = prospective_report(records, day=day)
     report['uncertainty_only_real_offer_cohorts'] = {key: value for key, value in prospective.get('cohorts', {}).items()
                                                    if 'receiving_conditional' in key}
-    report['uncertainty_micro_id_coverage'] = uncertainty_micro_coverage(records, ledger)
+    report['uncertainty_micro_id_coverage'] = uncertainty_micro_coverage(records, ledger, day=day)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     path = MODEL_ROOT / 'final_probability_validation' / stamp
     atomic_json(path / 'report.json', report)
     if artifacts:
         atomic_joblib(path / 'calibrators.joblib', artifacts)
     atomic_json(ROOT / 'reports' / 'nfl_final_probability_validation_latest.json', report)
+    if day:
+        atomic_json(ROOT / 'reports' / f'nfl_final_probability_validation_{day}.json', report)
     lines = ['# NFL Final Probability Validation', '', 'Production unchanged. No new real-money approval.', '',
              '## Actual Locked Micro', '', json.dumps(report.get('actual_locked_micro', {})), '',
              'Ledger coverage: ' + json.dumps(report.get('ledger_coverage', {})), '',
@@ -333,15 +349,19 @@ def run():
             lines.append(f"| {key} | {a['rows']} | {b['brier']:.4f} | {a['brier']:.4f} | {r['projection'].get('coverage_80', 0):.1%} | {r['weeks']} |")
     lines += ['', 'Exact micro-ID uncertainty coverage: ' + json.dumps(report['uncertainty_micro_id_coverage']), '',
               *['- ' + x for x in report.get('limitations', [])]]
-    (ROOT / 'reports' / 'nfl_final_probability_validation_latest.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    rendered = '\n'.join(lines) + '\n'
+    (ROOT / 'reports' / 'nfl_final_probability_validation_latest.md').write_text(rendered, encoding='utf-8')
+    if day:
+        (ROOT / 'reports' / f'nfl_final_probability_validation_{day}.md').write_text(rendered, encoding='utf-8')
     return report
 
 
-def uncertainty_micro_coverage(records, ledger):
+def uncertainty_micro_coverage(records, ledger, day=None):
     lookup = {int(r['id']): r for r in records}
     ids = {int(r['prediction_id']) for r in ledger}
     found = set()
-    for path in (MODEL_ROOT / 'challengers').glob('*receiving_conditional*/prospective/*/*.json'):
+    pattern = f'*receiving_conditional*/prospective/{day}/*.json' if day else '*receiving_conditional*/prospective/*/*.json'
+    for path in (MODEL_ROOT / 'challengers').glob(pattern):
         doc = json.loads(path.read_text(encoding='utf-8'))
         when = safe_time(doc.get('scored_at'))
         for row in doc.get('rows', []):
@@ -360,7 +380,10 @@ def uncertainty_micro_coverage(records, ledger):
 
 
 if __name__ == '__main__':
-    r = run()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--date', type=date.fromisoformat)
+    args = parser.parse_args()
+    r = run(args.date)
     print(json.dumps({k: r.get(k) for k in ('actual_locked_micro', 'calibration_experiment', 'uncertainty_micro_id_coverage')}, indent=2))
     if r.get('status') == 'incomplete_micro_evaluation':
         raise SystemExit(1)

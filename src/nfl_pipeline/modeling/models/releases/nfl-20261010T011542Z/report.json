@@ -1,0 +1,1070 @@
+{
+  "release_id": "nfl-20261010T011542Z",
+  "feature_contract": "nfl-asof-v2",
+  "status": "validated",
+  "rows": {
+    "players": 34356,
+    "games": 7341
+  },
+  "metrics": {
+    "players": {
+      "passing_yards": {
+        "status": "trained",
+        "accepted": true,
+        "projection_pass": true,
+        "projection_accepted": true,
+        "distribution_pass": true,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 87.07853401065779,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 141,
+            "mae": 71.18793749899434,
+            "baseline_mae": 74.23309692671394,
+            "bias": 7.057509357993005,
+            "brier": 0.23598592367801863,
+            "baseline_brier": 0.24839166856321324,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 131,
+            "mae": 63.08220809059676,
+            "baseline_mae": 69.08765903307888,
+            "bias": -6.767572094667471,
+            "brier": 0.220721805880778,
+            "baseline_brier": 0.2478899037152546,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 127,
+            "mae": 68.66622525606269,
+            "baseline_mae": 70.60603674540683,
+            "bias": 4.824965251220412,
+            "brier": 0.24628044795803955,
+            "baseline_brier": 0.25321272354878566,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 144,
+            "mae": 70.26130589021253,
+            "baseline_mae": 74.56562500000001,
+            "bias": 14.294999407401967,
+            "brier": 0.23742295982772704,
+            "baseline_brier": 0.2550426763363943,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 98,
+            "mae": 68.36136179191797,
+            "baseline_mae": 72.6251700680272,
+            "bias": 8.946237613106595,
+            "brier": 0.22701297048113078,
+            "baseline_brier": 0.25222829905705507,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 6,
+            "mae": 98.96701471287112,
+            "baseline_mae": 87.53333333333335,
+            "bias": -40.58662537947955,
+            "brier": 0.29367259886306446,
+            "baseline_brier": 0.21564647739742415,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 647,
+          "mae": 68.67499636293994,
+          "baseline_mae": 72.43312725399278,
+          "brier": 0.23441174901881837,
+          "baseline_brier": 0.2509941516371313
+        },
+        "temporal_test": {
+          "rows": 142,
+          "mae": 65.19150926065528,
+          "baseline_mae": 67.1299295774648,
+          "bias": -13.280705479553903,
+          "brier": 0.23760027554749555,
+          "baseline_brier": 0.2446205661483069
+        },
+        "holdout_rows": 142,
+        "mae": 65.19150926065528,
+        "baseline_mae": 67.1299295774648,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": 3.7581308910528435
+      },
+      "rushing_yards": {
+        "status": "trained",
+        "accepted": true,
+        "projection_pass": true,
+        "projection_accepted": true,
+        "distribution_pass": true,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 26.686474218305488,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 403,
+            "mae": 18.572616404875653,
+            "baseline_mae": 19.6278329197684,
+            "bias": -0.3211889148800687,
+            "brier": 0.2438590178296015,
+            "baseline_brier": 0.25347390745658027,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 421,
+            "mae": 18.4749336617317,
+            "baseline_mae": 19.292201108471893,
+            "bias": -2.1329219700231543,
+            "brier": 0.23426491465810595,
+            "baseline_brier": 0.24506678034885546,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 417,
+            "mae": 17.36123256485691,
+            "baseline_mae": 17.708153477218225,
+            "bias": -3.3325564534243868,
+            "brier": 0.24849338617766958,
+            "baseline_brier": 0.2492788571548642,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 463,
+            "mae": 16.951246480400947,
+            "baseline_mae": 17.397984161267097,
+            "bias": -2.221657968409703,
+            "brier": 0.24512314800068832,
+            "baseline_brier": 0.2510212549001872,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 315,
+            "mae": 18.097575231432682,
+            "baseline_mae": 18.705185185185186,
+            "bias": -2.4702283859844587,
+            "brier": 0.2387141918143626,
+            "baseline_brier": 0.24785532968498739,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 21,
+            "mae": 16.47269051348987,
+            "baseline_mae": 17.323809523809523,
+            "bias": 0.5673639410178752,
+            "brier": 0.2632938128594176,
+            "baseline_brier": 0.2760033049629842,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 2040,
+          "mae": 17.841880039906613,
+          "baseline_mae": 18.49388888888889,
+          "brier": 0.2425189280923387,
+          "baseline_brier": 0.24968907938197488
+        },
+        "temporal_test": {
+          "rows": 447,
+          "mae": 17.53521894185843,
+          "baseline_mae": 18.369313944817296,
+          "bias": -1.8377251540582336,
+          "brier": 0.2399898511826102,
+          "baseline_brier": 0.25293828696179854
+        },
+        "holdout_rows": 447,
+        "mae": 17.53521894185843,
+        "baseline_mae": 18.369313944817296,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": 0.6520088489822768
+      },
+      "passing_tds": {
+        "status": "trained",
+        "accepted": false,
+        "projection_pass": false,
+        "projection_accepted": false,
+        "distribution_pass": false,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 1.192735711034589,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 141,
+            "mae": 0.8381606470973482,
+            "baseline_mae": 0.8983451536643027,
+            "bias": -0.03920978215129331,
+            "brier": 0.16326910262569358,
+            "baseline_brier": 0.17550445591566868,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 131,
+            "mae": 0.9581681239722123,
+            "baseline_mae": 0.9676844783715014,
+            "bias": -0.10362842968481806,
+            "brier": 0.16652739833282357,
+            "baseline_brier": 0.18877115515574736,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 127,
+            "mae": 0.9275808710152766,
+            "baseline_mae": 1.0425196850393696,
+            "bias": 0.12273931116788726,
+            "brier": 0.20624726612739533,
+            "baseline_brier": 0.2274492305194932,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 144,
+            "mae": 0.9600190327487863,
+            "baseline_mae": 0.9596064814814815,
+            "bias": 0.007707255133159156,
+            "brier": 0.19689875076990745,
+            "baseline_brier": 0.21294219741705056,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 98,
+            "mae": 0.8549345891396868,
+            "baseline_mae": 0.8377551020408163,
+            "bias": 0.12042809626894198,
+            "brier": 0.1902938697975446,
+            "baseline_brier": 0.2132011938594393,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 6,
+            "mae": 1.0017463499075399,
+            "baseline_mae": 1.0333333333333334,
+            "bias": -0.3801085527111889,
+            "brier": 0.2518275784900193,
+            "baseline_brier": 0.2608957951908407,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 647,
+          "mae": 0.911190501778958,
+          "baseline_mae": 0.946393611540443,
+          "brier": 0.18476448264600936,
+          "baseline_brier": 0.20322097385303428
+        },
+        "temporal_test": {
+          "rows": 142,
+          "mae": 0.9091239882724517,
+          "baseline_mae": 0.8785211267605634,
+          "bias": -0.1290950308299495,
+          "brier": 0.16971353983939036,
+          "baseline_brier": 0.16855178942315127
+        },
+        "holdout_rows": 142,
+        "mae": 0.9091239882724517,
+        "baseline_mae": 0.8785211267605634,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": 0.035203109761484996,
+        "td_probability_accepted": false,
+        "rare_event": {
+          "positive_mean": 1.8867859600825878
+        },
+        "selection_target": "P(any TD), not count MAE"
+      },
+      "rushing_tds": {
+        "status": "trained",
+        "accepted": true,
+        "projection_pass": true,
+        "projection_accepted": true,
+        "distribution_pass": true,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 1.0,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 262,
+            "mae": 0.37968242073102376,
+            "baseline_mae": 0.36997455470737917,
+            "bias": 0.02650454039028045,
+            "brier": 0.1609725511901778,
+            "baseline_brier": 0.1757233825045508,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 290,
+            "mae": 0.3943243250858428,
+            "baseline_mae": 0.3840229885057472,
+            "bias": -0.02702936392010679,
+            "brier": 0.1463889617261331,
+            "baseline_brier": 0.16497031923687994,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 290,
+            "mae": 0.38431363336860336,
+            "baseline_mae": 0.3737931034482759,
+            "bias": -0.012138571474212777,
+            "brier": 0.15477012962872974,
+            "baseline_brier": 0.16520300022139187,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 319,
+            "mae": 0.3917179814163567,
+            "baseline_mae": 0.3843260188087775,
+            "bias": -0.03044857413468508,
+            "brier": 0.18467500161824796,
+            "baseline_brier": 0.19996787913722716,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 217,
+            "mae": 0.36780119702829406,
+            "baseline_mae": 0.3683563748079877,
+            "bias": 0.0711649520982934,
+            "brier": 0.12897176457666132,
+            "baseline_brier": 0.14578887568537016,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 15,
+            "mae": 0.2807406133269898,
+            "baseline_mae": 0.32000000000000006,
+            "bias": 0.2258709690352933,
+            "brier": 0.0825498500550201,
+            "baseline_brier": 0.10944090374636958,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 1393,
+          "mae": 0.38353467854284273,
+          "baseline_mae": 0.37619047619047624,
+          "brier": 0.1562436404055411,
+          "baseline_brier": 0.17146973573854088
+        },
+        "temporal_test": {
+          "rows": 305,
+          "mae": 0.37819551251974465,
+          "baseline_mae": 0.34071038251366115,
+          "bias": -0.033759290413706435,
+          "brier": 0.14192702354135434,
+          "baseline_brier": 0.14887721441166452
+        },
+        "holdout_rows": 305,
+        "mae": 0.37819551251974465,
+        "baseline_mae": 0.34071038251366115,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": -0.007344202352366491,
+        "td_probability_accepted": true,
+        "rare_event": {
+          "positive_mean": 1.2373464373464373
+        },
+        "selection_target": "P(any TD), not count MAE"
+      },
+      "receiving_yards": {
+        "status": "trained",
+        "accepted": true,
+        "projection_pass": true,
+        "projection_accepted": true,
+        "distribution_pass": true,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 24.198829811589594,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 985,
+            "mae": 17.012306536037148,
+            "baseline_mae": 18.119915397631132,
+            "bias": 0.23348976097328894,
+            "brier": 0.2446914935112001,
+            "baseline_brier": 0.25778105167863813,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 1007,
+            "mae": 17.191038071488403,
+            "baseline_mae": 18.00766302548825,
+            "bias": -3.376288002707288,
+            "brier": 0.23646658730831163,
+            "baseline_brier": 0.2461359134851859,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 1036,
+            "mae": 16.406564271462386,
+            "baseline_mae": 17.273149935649936,
+            "bias": -1.8925737414045476,
+            "brier": 0.23417973713139675,
+            "baseline_brier": 0.24572772339535537,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 1148,
+            "mae": 16.328341131689193,
+            "baseline_mae": 17.156562137049946,
+            "bias": -1.4971737038896527,
+            "brier": 0.24297221745727307,
+            "baseline_brier": 0.25213974246161325,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 767,
+            "mae": 16.068953033983192,
+            "baseline_mae": 16.95058670143416,
+            "bias": -1.5200496375908599,
+            "brier": 0.23641930326443505,
+            "baseline_brier": 0.250675827502043,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 54,
+            "mae": 19.020017126154446,
+            "baseline_mae": 19.796296296296298,
+            "bias": -2.689624332118715,
+            "brier": 0.2574519149232646,
+            "baseline_brier": 0.26178624108130805,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 4997,
+          "mae": 16.642505779923372,
+          "baseline_mae": 17.539053432059234,
+          "brier": 0.2393278560830011,
+          "baseline_brier": 0.2505920278725272
+        },
+        "temporal_test": {
+          "rows": 1094,
+          "mae": 17.572911683763657,
+          "baseline_mae": 18.34968007312614,
+          "bias": -3.6598809753248127,
+          "brier": 0.24272891411678366,
+          "baseline_brier": 0.2537431988375041
+        },
+        "holdout_rows": 1094,
+        "mae": 17.572911683763657,
+        "baseline_mae": 18.34968007312614,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": 0.8965476521358617
+      },
+      "receptions": {
+        "status": "trained",
+        "accepted": true,
+        "projection_pass": true,
+        "projection_accepted": true,
+        "distribution_pass": true,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 1.7459018801014652,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 985,
+            "mae": 1.344777942427665,
+            "baseline_mae": 1.4034517766497463,
+            "bias": 0.07693782502308369,
+            "brier": 0.2322086168260899,
+            "baseline_brier": 0.2417590331585459,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 1007,
+            "mae": 1.3230523673457817,
+            "baseline_mae": 1.3689175769612711,
+            "bias": -0.12469801352361588,
+            "brier": 0.23237968696361117,
+            "baseline_brier": 0.24040689532640888,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 1036,
+            "mae": 1.2703245083886514,
+            "baseline_mae": 1.3055501930501932,
+            "bias": -0.023975116189900506,
+            "brier": 0.2341292060794081,
+            "baseline_brier": 0.24007219978681069,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 1148,
+            "mae": 1.2532117281994857,
+            "baseline_mae": 1.3011614401858305,
+            "bias": -0.0027309296377086194,
+            "brier": 0.23052685614656052,
+            "baseline_brier": 0.238961256047846,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 767,
+            "mae": 1.2227731017247512,
+            "baseline_mae": 1.2631899174272057,
+            "bias": -0.14038989547457525,
+            "brier": 0.23586947974146596,
+            "baseline_brier": 0.24318807739686835,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 54,
+            "mae": 1.1854795129668605,
+            "baseline_mae": 1.1925925925925924,
+            "bias": -0.04447153933944226,
+            "brier": 0.22940241408714968,
+            "baseline_brier": 0.23124613479501596,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 4997,
+          "mae": 1.2834793125065438,
+          "baseline_mae": 1.3288873323994397,
+          "brier": 0.2327865003047796,
+          "baseline_brier": 0.24059981165084118
+        },
+        "temporal_test": {
+          "rows": 1094,
+          "mae": 1.3510476179690076,
+          "baseline_mae": 1.3802864107251676,
+          "bias": -0.22639478264657897,
+          "brier": 0.23614635164379516,
+          "baseline_brier": 0.24188279308907548
+        },
+        "holdout_rows": 1094,
+        "mae": 1.3510476179690076,
+        "baseline_mae": 1.3802864107251676,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": 0.04540801989289589
+      },
+      "receiving_tds": {
+        "status": "trained",
+        "accepted": true,
+        "projection_pass": true,
+        "projection_accepted": true,
+        "distribution_pass": true,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 1.0,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 723,
+            "mae": 0.326434162260894,
+            "baseline_mae": 0.3195251267865376,
+            "bias": 0.006236578018002526,
+            "brier": 0.14693864146502453,
+            "baseline_brier": 0.1619140106801105,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 717,
+            "mae": 0.32016792147723516,
+            "baseline_mae": 0.31266852626685265,
+            "bias": -0.020266205839303105,
+            "brier": 0.1470648131441629,
+            "baseline_brier": 0.16392172353139123,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 746,
+            "mae": 0.29911188512710757,
+            "baseline_mae": 0.29504021447721185,
+            "bias": 0.013878543665598786,
+            "brier": 0.12998500722329226,
+            "baseline_brier": 0.14511605507196595,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 829,
+            "mae": 0.29877447284394754,
+            "baseline_mae": 0.27967430639324486,
+            "bias": -0.0004746443215041759,
+            "brier": 0.12416601369830293,
+            "baseline_brier": 0.13499050581149735,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 550,
+            "mae": 0.272433348973529,
+            "baseline_mae": 0.26106060606060605,
+            "bias": 0.016507254505077985,
+            "brier": 0.12792945531969063,
+            "baseline_brier": 0.13954515360201153,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 39,
+            "mae": 0.28581031331626183,
+            "baseline_mae": 0.2974358974358974,
+            "bias": -0.0036644821254059835,
+            "brier": 0.14137665609589087,
+            "baseline_brier": 0.16728416897308615,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 3604,
+          "mae": 0.3044891086184889,
+          "baseline_mae": 0.2947650758416574,
+          "brier": 0.1352551164155428,
+          "baseline_brier": 0.14928782712713706
+        },
+        "temporal_test": {
+          "rows": 789,
+          "mae": 0.31859718892912026,
+          "baseline_mae": 0.3126742712294043,
+          "bias": -0.02308020058073913,
+          "brier": 0.1436380077158323,
+          "baseline_brier": 0.16125560660088895
+        },
+        "holdout_rows": 789,
+        "mae": 0.31859718892912026,
+        "baseline_mae": 0.3126742712294043,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": -0.009724032776831482,
+        "td_probability_accepted": true,
+        "rare_event": {
+          "positive_mean": 1.1443200762086212
+        },
+        "selection_target": "P(any TD), not count MAE"
+      }
+    },
+    "games": {
+      "home_margin": {
+        "status": "trained",
+        "accepted": false,
+        "projection_pass": false,
+        "projection_accepted": false,
+        "distribution_pass": false,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 12.229743146147626,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 64,
+            "mae": 9.422958057488852,
+            "baseline_mae": 8.84375,
+            "bias": -3.3783619480420413,
+            "brier": 0.2559462223038618,
+            "baseline_brier": 0.24801315666996823,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 57,
+            "mae": 11.743043036038818,
+            "baseline_mae": 11.192982456140351,
+            "bias": -0.07816147242704113,
+            "brier": 0.27715451693762555,
+            "baseline_brier": 0.25138951286245376,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 57,
+            "mae": 8.186066365413753,
+            "baseline_mae": 8.31578947368421,
+            "bias": 0.8465156392459007,
+            "brier": 0.23620064006614103,
+            "baseline_brier": 0.2477024957925535,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 62,
+            "mae": 11.08155776005998,
+            "baseline_mae": 10.89516129032258,
+            "bias": 2.7661950961734894,
+            "brier": 0.27219049652381183,
+            "baseline_brier": 0.2559109033465575,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 42,
+            "mae": 10.198904502013548,
+            "baseline_mae": 9.261904761904763,
+            "bias": -0.27695505743708326,
+            "brier": 0.2642990090903708,
+            "baseline_brier": 0.2439510718780862,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 3,
+            "mae": 8.470713244593911,
+            "baseline_mae": 4.5,
+            "bias": 6.345539630681018,
+            "brier": 0.2729629373502125,
+            "baseline_brier": 0.21923673387395404,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 285,
+          "mae": 10.104741268435623,
+          "baseline_mae": 9.670175438596491,
+          "brier": 0.26118266721047156,
+          "baseline_brier": 0.24944286929193485
+        },
+        "temporal_test": {
+          "rows": 48,
+          "mae": 10.646312932041772,
+          "baseline_mae": 10.40625,
+          "bias": 1.6450904275578504,
+          "brier": 0.25021404168154354,
+          "baseline_brier": 0.24613235145312085
+        },
+        "holdout_rows": 48,
+        "mae": 10.646312932041772,
+        "baseline_mae": 10.40625,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": -0.4345658298391317
+      },
+      "total_points_actual": {
+        "status": "trained",
+        "accepted": false,
+        "projection_pass": false,
+        "projection_accepted": false,
+        "distribution_pass": false,
+        "baseline_column": "rolling_5",
+        "residual_sigma": 13.193229747589045,
+        "evaluation": "expanding_fixed_candidate",
+        "folds": [
+          {
+            "rows": 64,
+            "mae": 11.486708031521932,
+            "baseline_mae": 11.40625,
+            "bias": -1.6814891036960966,
+            "brier": 0.25198128656767205,
+            "baseline_brier": 0.24928680004539958,
+            "weeks": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "rows": 57,
+            "mae": 10.052150121994062,
+            "baseline_mae": 9.692982456140351,
+            "bias": -1.2880971180631742,
+            "brier": 0.23867791617572715,
+            "baseline_brier": 0.2374173553191223,
+            "weeks": [
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          {
+            "rows": 57,
+            "mae": 10.783422278879367,
+            "baseline_mae": 10.359649122807017,
+            "bias": 0.23580434484088492,
+            "brier": 0.26548092166870046,
+            "baseline_brier": 0.2567594851553966,
+            "weeks": [
+              9,
+              10,
+              11,
+              12
+            ]
+          },
+          {
+            "rows": 62,
+            "mae": 10.65780259912456,
+            "baseline_mae": 9.64516129032258,
+            "bias": -3.626072259213604,
+            "brier": 0.26900599583890994,
+            "baseline_brier": 0.23872806842981178,
+            "weeks": [
+              13,
+              14,
+              15,
+              16
+            ]
+          },
+          {
+            "rows": 42,
+            "mae": 11.948242832464206,
+            "baseline_mae": 10.880952380952381,
+            "bias": 2.491709657034646,
+            "brier": 0.2717889954017549,
+            "baseline_brier": 0.25251562752910794,
+            "weeks": [
+              17,
+              18,
+              19,
+              20
+            ]
+          },
+          {
+            "rows": 3,
+            "mae": 12.31344165744322,
+            "baseline_mae": 14.166666666666666,
+            "bias": 6.812129673145468,
+            "brier": 0.21833273629979902,
+            "baseline_brier": 0.26526326192089056,
+            "weeks": [
+              21,
+              22
+            ]
+          }
+        ],
+        "oof": {
+          "rows": 285,
+          "mae": 10.955534126135923,
+          "baseline_mae": 10.42280701754386,
+          "brier": 0.2582889959833295,
+          "baseline_brier": 0.24675446138451465
+        },
+        "temporal_test": {
+          "rows": 48,
+          "mae": 12.489164749802908,
+          "baseline_mae": 11.104166666666666,
+          "bias": -2.194167862536625,
+          "brier": 0.29612303345356183,
+          "baseline_brier": 0.25248756208723494
+        },
+        "holdout_rows": 48,
+        "mae": 12.489164749802908,
+        "baseline_mae": 11.104166666666666,
+        "min_gain": 0.0,
+        "true_offer_proof": false,
+        "mae_gain_vs_baseline": -0.5327271085920628
+      }
+    }
+  },
+  "limitations": [
+    "Line Brier uses predeclared proxy lines, not executable historical offers.",
+    "2026 outcomes were examined in prior research; subsequent prospective dates remain essential.",
+    "Unavailable as-of historical context is excluded, not fabricated."
+  ]
+}

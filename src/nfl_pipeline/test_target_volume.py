@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from nfl_pipeline.context_contract import context_evidence
 from nfl_pipeline.modeling.role_context_training import RoleEvidenceIndex, join_role_context
 from nfl_pipeline.modeling.target_volume import TargetVolume, target_features
 from nfl_pipeline import cash_readiness
@@ -40,6 +41,24 @@ def test_own_unknown_does_not_erase_known_teammate_or_imply_health():
     assert result['teammate_coverage'] == 'partial_observed_reports'
     r['payload']['week'] = 2
     assert RoleEvidenceIndex([r]).resolve(request())['teammate_absences'] is None
+
+
+def test_live_teammate_context_has_independent_observation_time():
+    row = {
+        'same_week_teammate_skill_injury_count': 2,
+        'same_week_teammate_skill_injury_score': 1.25,
+        'teammate_injury_observed_at': LOCK - timedelta(minutes=5),
+        'injury_observed_at': None,
+    }
+    evidence = context_evidence(row, LOCK)
+    assert evidence['injury_missing'] is True
+    assert evidence['teammate_injury_count'] == 2
+    assert evidence['teammate_injury_score'] == 1.25
+    assert evidence['teammate_coverage'] == 'partial_observed_reports'
+    row['teammate_injury_observed_at'] = LOCK + timedelta(minutes=1)
+    evidence = context_evidence(row, LOCK)
+    assert evidence['teammate_injury_count'] is None
+    assert evidence['teammate_coverage'] == 'unknown'
 
 
 def test_team_phase_and_actual_lock_identity_are_required():

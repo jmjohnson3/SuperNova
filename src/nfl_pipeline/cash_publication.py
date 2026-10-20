@@ -6,6 +6,7 @@ import psycopg2
 
 from nfl_pipeline import cash_trial_policy as policy
 from nfl_pipeline import cash_execution
+from nfl_pipeline import cash_freeze
 from nfl_pipeline.context_contract import safe_time
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.modeling.live_scoring_replay import ROOT
@@ -28,6 +29,13 @@ def prepare(day, game_rows, prop_rows, *, reserve=False):
     if (not registration or doc.get('registration_sha256') != registration['sha256'] or not built
             or not 0 <= (now-built).total_seconds() <= 1200):
         return games, props, {'status':'operational_issue', 'reason':'cash_readiness_stale_or_mismatched'}
+    try:
+        cash_freeze.check_registration(registration)
+    except (ValueError, OSError) as exc:
+        return games, props, {'status':'operational_issue', 'reason':'cash_dependency_freeze_blocked: '+str(exc)}
+    if (doc.get('frozen_provenance') != registration['config'].get(cash_freeze.FIELD)
+            or doc.get('dependency_freeze_status') != 'verified'):
+        return games, props, {'status':'operational_issue', 'reason':'cash_readiness_missing_verified_dependency_freeze'}
     status = doc['decision']['status']
     if status != 'cash_trial_eligible':
         metrics = doc['provisional']['metrics']
@@ -48,6 +56,7 @@ def prepare(day, game_rows, prop_rows, *, reserve=False):
     selected = {r['forecast_id'] for d in trial.captures(research) for r in d['selected'] if r['day']==str(day)}
     records = benchmark.load_rows(day)
     documents = [json.loads(p.read_text()) for p in (benchmark.STORE/artifact['run_id']/'prospective'/str(day)).glob('*.json')]
+    documents = cash_freeze.eligible_documents(documents, registration)
     captured, _ = checkpoint.capture_index(records, documents, research['config'])
     candidates = []
     for row in props:
@@ -55,6 +64,8 @@ def prepare(day, game_rows, prop_rows, *, reserve=False):
         if fid not in selected or not shadow or row.get('model_version') != cfg['release']:
             continue
         if (row.get('scoring_replay') or {}).get('scoring_fingerprint') != cfg['scoring_version']:
+            continue
+        if cash_freeze.provenance_error((row.get('scoring_replay') or {}).get('cash_freeze'), registration):
             continue
         probability = float(shadow['same_side_probability'])
         push = float(shadow.get('push_probability', 0))
@@ -72,6 +83,7 @@ def prepare(day, game_rows, prop_rows, *, reserve=False):
         candidates.append(p)
     if not reserve:
         return games, props, {'status':'research', 'reason':'preview_only_no_cash_capacity_reserved'}
+    cash_freeze.check_registration(registration)
     with psycopg2.connect(PG_DSN) as conn:
         accepted, excluded = cash_execution.reserve(conn, candidates, registration, status, now)
     accepted_ids = {r['forecast_id'] for r in accepted}

@@ -1,0 +1,23 @@
+{
+  "contract": "nfl-stat-candidate-evidence-v1",
+  "stat": "passing_yards",
+  "component": "qb_tail",
+  "artifact_sha256": "b1eaa76abb3eb260230826b48fc96ca050274c002d0be01ae8164bc6aaa1f6a2",
+  "historical_screen_outputs": [
+    "expected_mean",
+    "median"
+  ],
+  "approved_outputs": [],
+  "deployment_approved": false,
+  "betting_approved": false,
+  "blockers": [
+    "needs_100_player_games_and_3_independent_weeks"
+  ],
+  "built_at": "2026-10-10T17:55:34.027492+00:00",
+  "prospective_validation": {
+    "offers": 0,
+    "player_games": 0,
+    "weeks": 0
+  },
+  "reviewed_at": "2026-10-10T18:02:45.180915+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "status": "component_prospective_only",
+  "rows": [
+    {
+      "forecast_id": 14827,
+      "game_id": "2026_05_TB_DAL",
+      "player_id": "00-0033077",
+      "stat": "passing_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 267.5,
+      "challenger_run": "components-20260929T091920539801Z-qb_tail",
+      "component": "qb_tail",
+      "source_context_cutoff": "2026-10-08T13:35:53.015905+00:00",
+      "projection_mean": 250.643994031159,
+      "distribution_mean": 250.643994031159,
+      "projection_median": 245.04513993420488,
+      "p10": 124.43690155187682,
+      "p90": 374.2254539683095,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    }
+  ],
+  "scored_at": "2026-10-08T13:50:34.355022+00:00",
+  "training_end": "2026-09-28",
+  "source_manifest": {
+    "run_id": "components-20260929T091920539801Z",
+    "production_release": "nfl-20260918T143342Z",
+    "sha256": "6b177d757cb17d363a44a9209a1126dfce747b802118e1c2fb0d06582b2b8d39"
+  },
+  "exclusions": {}
+}

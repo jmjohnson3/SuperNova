@@ -103,10 +103,10 @@ def test_checkpoint_is_immutable_and_does_not_reapprove_after_peeking(tmp_path):
     registration={'sha256':'registered'}; rows=sample()
     first=readiness.review(registration,rows,rows,0,NOW,store=tmp_path)
     assert first['status']=='cash_trial_eligible'
-    content=(tmp_path/'reviews'/'50.json').read_bytes()
+    content=(tmp_path/'cohorts'/'registered'/'reviews'/'50.json').read_bytes()
     rows[0]['profit']=-999
     second=readiness.review(registration,rows,rows,0,NOW+timedelta(days=1),store=tmp_path)
-    assert (tmp_path/'reviews'/'50.json').read_bytes()==content
+    assert (tmp_path/'cohorts'/'registered'/'reviews'/'50.json').read_bytes()==content
     assert second['status']=='paused'
     assert readiness.review(registration,sample(),sample(),0,NOW,store=tmp_path)['status']=='paused'
 
@@ -119,10 +119,26 @@ def test_register_cannot_repin_under_existing_policy(tmp_path):
         policy.register(dict(cfg,scoring_version='new'),store=tmp_path)
 
 
+def test_scoring_rollover_archives_old_cohort_and_starts_new_paths(tmp_path):
+    cfg=dict(trial_sha256='trial',release='release',scoring_version='old',variant='ensemble',artifact_sha256='artifact')
+    old=policy.register(cfg,store=tmp_path)
+    new=policy.rollover_scoring(dict(cfg,scoring_version='new'),'scoring repair',store=tmp_path,now=NOW)
+    assert new['sha256']!=old['sha256']
+    assert new['config']['supersedes_registration_sha256']==old['sha256']
+    assert new['config']['rollover_reason']=='scoring repair'
+    assert json.loads((tmp_path/'registrations'/f"{old['sha256']}.json").read_text())==old
+    assert policy.load_registration(tmp_path)==new
+    readiness.review(new,sample(),sample(),0,NOW,store=tmp_path)
+    assert (tmp_path/'cohorts'/new['sha256']/'reviews'/'50.json').exists()
+    assert not (tmp_path/'cohorts'/old['sha256']/'reviews'/'50.json').exists()
+    with pytest.raises(ValueError):
+        policy.rollover_scoring(dict(cfg,release='changed',scoring_version='third'),'bad',store=tmp_path)
+
+
 def test_pending_selected_rows_prevent_consuming_checkpoint(tmp_path):
     result=readiness.review({'sha256':'x'},sample(),sample(),1,NOW,store=tmp_path)
     assert result['status']=='research' and result['next_checkpoint']==50
-    assert not (tmp_path/'reviews'/'50.json').exists()
+    assert not (tmp_path/'cohorts'/'x'/'reviews'/'50.json').exists()
 
 
 def test_pending_future_games_do_not_pause_a_passing_strategy(tmp_path):

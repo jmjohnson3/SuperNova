@@ -103,7 +103,7 @@ class RoleHistory:
                 prior_snaps = prior_snaps[np.isfinite(prior_snaps)]
                 normal = float(np.quantile(prior_snaps, .75)) if len(prior_snaps) >= 3 else np.nan
                 snaps = finite(row.get('offense_snaps'))
-                row['partial'] = float(snaps < .5 * normal) if np.isfinite(normal) and normal > 0 and np.isfinite(snaps) else np.nan
+                row['partial'] = float(snaps < .75 * normal) if np.isfinite(normal) and normal >= 35 and np.isfinite(snaps) else np.nan
                 row['team_attempts'] = total
                 row['target_share_observed'] = finite(row.get('targets')) / total if total > 0 else np.nan
                 self.players[str(row['player_id'])].append(row)
@@ -137,7 +137,11 @@ class RoleHistory:
             rows = history[-window:]; w = weights[-window:]
             t = np.array([finite(r.get('targets')) for r in rows])
             y = np.array([finite(r.get('receiving_yards')) for r in rows])
-            valid = np.isfinite(y) & np.isfinite(t) & (t > 0)
+            partial = np.array([finite(r.get('partial')) for r in rows])
+            # A partial game still informs the workload path.  It must not teach
+            # the rate head that an established player's normal-role efficiency
+            # collapsed merely because an in-game injury shortened his night.
+            valid = np.isfinite(y) & np.isfinite(t) & (t > 0) & ~np.equal(partial, 1.0)
             out[f'rr_exposure_{window}'] = float(np.sum(t[valid] * w[valid]))
             out[f'rr_yards_{window}'] = float(np.sum(y[valid] * w[valid]))
             a = np.array([finite(r.get('receiving_air_yards')) for r in rows])

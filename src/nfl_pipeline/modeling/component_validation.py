@@ -76,10 +76,19 @@ def output_gates(rows, lines, probability, *, mean='challenger', median='median'
 
 class WorkloadTailCalibration:
     """Asymmetric interval repair fitted before a separate validation block."""
-    @staticmethod
-    def groups(opportunity):
+    def __init__(self, low_cut=20.0, high_cut=35.0):
+        if not 0 <= low_cut < high_cut:
+            raise ValueError("Workload tail cutoffs must be ordered and non-negative")
+        self.low_cut = float(low_cut)
+        self.high_cut = float(high_cut)
+
+    def groups(self, opportunity):
         x=np.asarray(opportunity,dtype=float)
-        return np.where(np.isnan(x),'unknown',np.where(x<20,'low',np.where(x<35,'normal','high')))
+        # getattr keeps previously serialized QB calibrators compatible with
+        # the original attempts-oriented 20/35 thresholds.
+        low=float(getattr(self,'low_cut',20.0))
+        high=float(getattr(self,'high_cut',35.0))
+        return np.where(np.isnan(x),'unknown',np.where(x<low,'low',np.where(x<high,'normal','high')))
 
     def fit(self, actual, summary, opportunity):
         median=summary['median']; y=np.asarray(actual)

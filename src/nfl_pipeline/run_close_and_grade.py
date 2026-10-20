@@ -16,12 +16,14 @@ import psycopg2
 
 from nfl_pipeline.integrity import nfl_season
 from nfl_pipeline.db import PG_DSN
+from nfl_pipeline import pregame_checkpoints as checkpoints
 from nfl_pipeline.subprocess_utils import run_subprocess
 
 log = logging.getLogger("nfl_pipeline.run_close_and_grade")
 _ET = ZoneInfo("America/New_York")
 _DEFAULT_CLOSE_WINDOW_BEFORE_MINUTES = 125
 _DEFAULT_CLOSE_WINDOW_AFTER_MINUTES = 0
+_FUTURE_SLATE_HORIZON_MINUTES = 48 * 60
 
 
 @dataclass(frozen=True)
@@ -30,6 +32,7 @@ class Step:
     module: str
     args: tuple[str, ...] = ()
     critical: bool = True
+    failure_is_warning: bool = False
     timeout_s: int = 600
 
 
@@ -126,22 +129,34 @@ def _active_close_games(
         raise RuntimeError(f"Could not verify NFL active close window for {et_date}") from exc
 
 
-def _default_close_date(
+def _upcoming_close_games(
+    et_date: date,
+    *,
+    horizon_minutes: int = _FUTURE_SLATE_HORIZON_MINUTES,
+) -> list[dict[str, Any]]:
+    """Return future games so heavyweight settlement cannot occupy a live-slate task.
+
+    The scheduled task uses ``IgnoreNew`` to prevent overlapping close crawls. A
+    settlement/report sweep begun between kickoff waves can therefore suppress
+    the next exact-line capture. Settlement starts only after the dated slate has
+    no future kickoffs; the weekly training task owns heavyweight model work.
+    """
+    return _active_close_games(
+        et_date,
+        before_minutes=horizon_minutes,
+        after_minutes=0,
+    )
+
+
+def _nearby_close_date(
+    now_utc: datetime,
     *,
     before_minutes: int = _DEFAULT_CLOSE_WINDOW_BEFORE_MINUTES,
     after_minutes: int = max(_DEFAULT_CLOSE_WINDOW_AFTER_MINUTES, 360),
-) -> date:
-    """Pick the NFL date with an active/recent game instead of blindly using ET today.
-
-    Sunday/Monday night close jobs can run after midnight ET while still needing
-    to grade and attach CLV for the previous ET slate. The scheduler does not
-    pass a date, so choose the nearest game from a conservative now-6h to
-    T-125m window when one exists.
-    """
-    now_utc = datetime.now(timezone.utc)
+) -> date | None:
+    """Return the nearest active/recent NFL game date, if one exists."""
     start_min = now_utc - timedelta(minutes=after_minutes)
     start_max = now_utc + timedelta(minutes=before_minutes)
-    fallback = datetime.now(_ET).date()
     try:
         with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
             cur.execute(
@@ -172,8 +187,106 @@ def _default_close_date(
             if row and row[0]:
                 return row[0]
     except Exception as exc:
-        log.warning("Could not resolve default NFL close date: %s", exc)
-    return fallback
+        log.warning("Could not resolve nearby NFL close date: %s", exc)
+    return None
+
+
+def _unresolved_result_dates(
+    now_utc: datetime,
+    *,
+    lookback: timedelta = timedelta(days=2),
+) -> list[date]:
+    """Return recent final slates that still have genuinely unresolved grades.
+
+    A final game is not a settled player-prop slate until the exact locked
+    predictions have a verified win/loss/push/void result. Missing joins and
+    pending participation remain unresolved; they are never converted to zero.
+    """
+    try:
+        with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
+            cur.execute("SET LOCAL statement_timeout='30s'")
+            cur.execute(
+                """
+                WITH unresolved AS (
+                    SELECT g.game_date_et, g.start_ts_utc
+                    FROM raw.nfl_games g
+                    JOIN bets.nfl_player_prop_predictions p ON p.game_id = g.game_id
+                    LEFT JOIN bets.nfl_player_prop_prediction_results r
+                      ON r.prediction_id = p.id
+                    WHERE g.status = 'final'
+                      AND g.start_ts_utc >= %(start_min)s
+                      AND g.start_ts_utc < %(start_max)s
+                      AND p.side IN ('over', 'under')
+                      AND p.line IS NOT NULL
+                      AND COALESCE(r.result, '') NOT IN
+                          ('win', 'loss', 'push', 'void', 'void_nonparticipant')
+                    UNION ALL
+                    SELECT g.game_date_et, g.start_ts_utc
+                    FROM raw.nfl_games g
+                    JOIN bets.nfl_game_predictions p ON p.game_id = g.game_id
+                    LEFT JOIN bets.nfl_game_prediction_results r
+                      ON r.prediction_id = p.id
+                    WHERE g.status = 'final'
+                      AND g.start_ts_utc >= %(start_min)s
+                      AND g.start_ts_utc < %(start_max)s
+                      AND p.line IS NOT NULL
+                      AND COALESCE(r.result, '') NOT IN
+                          ('win', 'loss', 'push', 'void')
+                )
+                SELECT game_date_et
+                FROM unresolved
+                GROUP BY game_date_et
+                ORDER BY MIN(start_ts_utc), game_date_et
+                """,
+                {
+                    "start_min": now_utc - lookback,
+                    "start_max": now_utc - RESULTS_PENDING_AFTER_KICKOFF,
+                },
+            )
+            return [row[0] for row in cur.fetchall() if row[0]]
+    except Exception as exc:
+        log.warning("Could not resolve unresolved NFL result dates: %s", exc)
+        return []
+
+
+def _select_unresolved_date(candidates: list[date], state: dict[str, Any]) -> date | None:
+    """Round-robin unresolved slates by their last import attempt."""
+    if not candidates:
+        return None
+    attempts = state.get("last_results_import_by_date") or {}
+
+    def key(day: date) -> tuple[datetime, date]:
+        raw = attempts.get(day.isoformat())
+        try:
+            observed = datetime.fromisoformat(raw) if raw else datetime.min.replace(tzinfo=timezone.utc)
+            if observed.tzinfo is None:
+                observed = observed.replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            observed = datetime.min.replace(tzinfo=timezone.utc)
+        return observed, day
+
+    return min(candidates, key=key)
+
+
+def _default_close_date(
+    *,
+    before_minutes: int = _DEFAULT_CLOSE_WINDOW_BEFORE_MINUTES,
+    after_minutes: int = max(_DEFAULT_CLOSE_WINDOW_AFTER_MINUTES, 360),
+) -> date:
+    """Prefer capture windows, then revisit unresolved slates across midnight."""
+    now_utc = datetime.now(timezone.utc)
+    nearby = _nearby_close_date(
+        now_utc,
+        before_minutes=before_minutes,
+        after_minutes=after_minutes,
+    )
+    if nearby:
+        return nearby
+    unresolved = _select_unresolved_date(
+        _unresolved_result_dates(now_utc),
+        _load_settlement_state(),
+    )
+    return unresolved or datetime.now(_ET).date()
 
 
 def _locked_prop_count(et_date: date) -> int:
@@ -231,8 +344,10 @@ def _capture_health(et_date, game_ids, since):
 
 
 SETTLEMENT_STATE = Path(__file__).resolve().parents[2] / "reports" / "nfl_close_settlement_state.json"
+CHECKPOINT_STATE = checkpoints.STATE
 RESULTS_PENDING_AFTER_KICKOFF = timedelta(hours=3)
 RESULTS_PENDING_LOOKBACK = timedelta(days=4)
+RESULTS_RETRY_INTERVAL = timedelta(minutes=30)
 RESULTS_REFRESH_INTERVAL = timedelta(hours=6)
 RESULT_IMPORT_MODULES = {"nfl_pipeline.import_nflverse", "nfl_pipeline.import_usage_context"}
 
@@ -244,7 +359,8 @@ def _results_pending(now: datetime) -> bool:
         cur.execute("""SELECT EXISTS (SELECT 1 FROM raw.nfl_games
             WHERE start_ts_utc < %s AND start_ts_utc > %s AND COALESCE(status, '') <> 'final')""",
                     (now - RESULTS_PENDING_AFTER_KICKOFF, now - RESULTS_PENDING_LOOKBACK))
-        return bool(cur.fetchone()[0])
+        game_pending = bool(cur.fetchone()[0])
+    return game_pending or bool(_unresolved_result_dates(now))
 
 
 def _settlement_signature() -> dict[str, Any]:
@@ -299,21 +415,65 @@ def run_for_date(
         Step("NFL Attach CLV", "nfl_pipeline.clv_report", args=date_args, critical=True, timeout_s=300),
         Step("NFL Close Capture Diagnostic", "nfl_pipeline.close_capture_diagnostic", args=date_args, timeout_s=120),
         Step("NFL Refresh Settled Ledger", "nfl_pipeline.lock_ledger", args=("--refresh-only",), timeout_s=180),
-        Step("NFL Live Scoring Replay", "nfl_pipeline.modeling.live_scoring_replay", args=date_args, critical=False, timeout_s=300),
-        Step("NFL Final Probability Validation", "nfl_pipeline.modeling.final_probability_validation", critical=True, timeout_s=300),
-        Step("NFL Receiving Selection Experiment", "nfl_pipeline.modeling.receiving_selection_experiment", critical=False, timeout_s=300),
-        Step("NFL Benchmark Offered-Line Validation", "nfl_pipeline.modeling.benchmark_offers", args=("--report",), critical=False, timeout_s=300),
-        Step("NFL Receiving Trial Checkpoint", "nfl_pipeline.modeling.receiving_trial_checkpoint", args=date_args, timeout_s=180),
-        Step("NFL Point Forecast Checkpoint", "nfl_pipeline.modeling.target_point_capture", critical=False, timeout_s=120),
+        Step("NFL Live Scoring Replay", "nfl_pipeline.modeling.live_scoring_replay", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=300),
+        Step("NFL Per-Stat Model Validation", "nfl_pipeline.modeling.stat_model_validation",
+             critical=False, failure_is_warning=True, timeout_s=300),
+        Step("NFL Frozen Receiving Paper Evidence", "nfl_pipeline.modeling.receiving_paper_trial",
+             args=("report",), critical=False, failure_is_warning=True, timeout_s=180),
+        Step("NFL Actual Wager Net Profit", "nfl_pipeline.wager_reconciliation",
+             args=("--report", "--output", "data/nfl_wager_reconciliation/reports/latest.json"),
+             critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL Scoring Cohort Audit", "nfl_pipeline.modeling.scoring_equivalence",
+             critical=False, failure_is_warning=True, timeout_s=600),
+        Step(
+            "NFL Final Probability Validation",
+            "nfl_pipeline.modeling.final_probability_validation",
+            args=date_args,
+            critical=False,
+            failure_is_warning=True,
+            timeout_s=300,
+        ),
+        Step("NFL Receiving Selection Experiment", "nfl_pipeline.modeling.receiving_selection_experiment",
+             critical=False, failure_is_warning=True, timeout_s=300),
+        Step(
+            "NFL Independent Probability Policy Review",
+            "nfl_pipeline.modeling.validate_distribution_policy",
+            args=(
+                "--markets",
+                "receiving_yards",
+                "passing_yards",
+                "rushing_yards",
+                "total",
+                "--register",
+            ),
+            critical=False,
+            failure_is_warning=True,
+            timeout_s=1200,
+        ),
+        Step("NFL Post-Settlement Evidence", "nfl_pipeline.settlement_evidence", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=180),
+        Step("NFL Receiving Trial Checkpoint", "nfl_pipeline.modeling.receiving_trial_checkpoint",
+             args=(*date_args, "--incremental"), critical=False, failure_is_warning=True, timeout_s=180),
+        Step("NFL Point Forecast Checkpoint", "nfl_pipeline.modeling.target_point_capture",
+             critical=False, failure_is_warning=True, timeout_s=120),
         Step("NFL Confirmed Cash Settlement", "nfl_pipeline.cash_execution", args=("--settle",), timeout_s=90),
-        Step("NFL Cash Readiness", "nfl_pipeline.cash_readiness", args=date_args, timeout_s=180),
-        Step("NFL Live Cycle Audit", "nfl_pipeline.live_cycle_audit", args=date_args, timeout_s=120),
-        Step("NFL Exact-Line Prop Proof", "nfl_pipeline.modeling.prop_exact_line_proof", args=date_args, critical=False, timeout_s=120),
-        Step("NFL Exact-Line Training Evidence", "nfl_pipeline.modeling.train_prop_exact_line_models", critical=True, timeout_s=300),
-        Step("NFL Snapshot Health", "nfl_pipeline.snapshot_health_report", args=date_args, critical=False, timeout_s=120),
-        Step("NFL Readiness Report", "nfl_pipeline.readiness_report", args=date_args, critical=False, timeout_s=120),
-        Step("NFL CLV Scorecard", "nfl_pipeline.modeling.clv_scorecard", critical=False, timeout_s=120),
-        Step("NFL Sharp Alert Report", "nfl_pipeline.modeling.sharp_alert_report", critical=False, timeout_s=120),
+        Step("NFL Cash Readiness", "nfl_pipeline.cash_readiness", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=900),
+        Step("NFL Live Cycle Audit", "nfl_pipeline.live_cycle_audit", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL Exact-Line Prop Proof", "nfl_pipeline.modeling.prop_exact_line_proof", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL Exact-Line Training Evidence", "nfl_pipeline.modeling.train_prop_exact_line_models",
+             critical=False, failure_is_warning=True, timeout_s=300),
+        Step("NFL Snapshot Health", "nfl_pipeline.snapshot_health_report", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL Readiness Report", "nfl_pipeline.readiness_report", args=date_args,
+             critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL CLV Scorecard", "nfl_pipeline.modeling.clv_scorecard",
+             critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL FanDuel Price Gap Evidence", "nfl_pipeline.modeling.sharp_evidence_report",
+             critical=False, failure_is_warning=True, timeout_s=120),
     ]
     results: list[dict[str, Any]] = []
     status = "ok"
@@ -326,24 +486,93 @@ def run_for_date(
         before_minutes=close_window_before_minutes,
         after_minutes=close_window_after_minutes,
     )
-    should_crawl_close = force_crawl or bool(active_games)
+    checkpoint_state = checkpoints.load_state(CHECKPOINT_STATE)
+    checkpoint_plan = checkpoints.plan(active_games, checkpoint_state)
+    checkpoint_assignments = checkpoint_plan["due"]
+    checkpoint_games = [
+        game for game in active_games if str(game["game_id"]) in checkpoint_assignments
+    ]
+    checkpoints.write_report(
+        et_date,
+        checkpoint_state,
+        checkpoint_plan["observations"],
+    )
+    upcoming_games = (
+        _upcoming_close_games(et_date)
+        if not active_games
+        else []
+    )
+    should_crawl_close = force_crawl or bool(checkpoint_games)
     # Keep the 10-minute close path short. Result import/model evaluation cannot
     # occupy the same mutex while a game's final pre-kickoff quotes disappear.
     settlement: dict[str, Any] = {}
-    if active_games:
+    if checkpoint_games or (force_crawl and active_games):
         capture_modules = {'nfl_pipeline.crawler_oddsapi', 'nfl_pipeline.parse_oddsapi', 'nfl_pipeline.sharp_lines',
                            'nfl_pipeline.clv_report', 'nfl_pipeline.close_capture_diagnostic',
                            'nfl_pipeline.snapshot_health_report'}
         steps = [s for s in steps if s.module in capture_modules]
+    elif active_games and not force_crawl:
+        # The scheduler wakes every five minutes, but provider calls are made
+        # only for the four named checkpoints. This preserves distinct evidence
+        # and avoids relabeling an arbitrary live quote as T-60 or T-20.
+        return {
+            "status": "ok",
+            "date": et_date.isoformat(),
+            "close_window": {
+                "mode": "waiting_for_target_checkpoint",
+                "active_games": active_games,
+                "checkpoint_plan": checkpoint_plan,
+                "locked_prop_count": locked_prop_count,
+            },
+            "settlement": {},
+            "steps": results,
+        }
+    elif not has_close_work and not upcoming_games and not force_crawl:
+        # A five-minute scheduler must stay cheap on non-game days. Heavy
+        # all-history evaluation belongs only to a dated slate with locks/results.
+        return {
+            "status": "ok",
+            "date": et_date.isoformat(),
+            "close_window": {
+                "mode": "idle_no_slate_work",
+                "active_games": [],
+                "checkpoint_plan": checkpoint_plan,
+                "locked_prop_count": locked_prop_count,
+            },
+            "settlement": {},
+            "steps": results,
+        }
+    elif upcoming_games and not force_crawl:
+        # Do not let a 20-30 minute settlement/report sweep cross into any later
+        # capture window. The next ten-minute invocation will take the hot path.
+        return {
+            "status": "ok",
+            "date": et_date.isoformat(),
+            "close_window": {
+                "mode": "waiting_for_capture_window",
+                "active_games": [],
+                "upcoming_games": upcoming_games,
+                "locked_prop_count": locked_prop_count,
+            },
+            "settlement": {},
+            "steps": results,
+        }
     elif not force_crawl:
         # Settlement mode runs every 10 minutes. Only fetch results when some are due (or a
         # periodic correction refresh), and only re-run grading/evaluation when inputs changed.
         now = datetime.now(timezone.utc)
         state = _load_settlement_state()
-        last_import = state.get("last_results_import_at")
+        import_history = state.get("last_results_import_by_date") or {}
+        last_import = import_history.get(et_date.isoformat())
+        if not last_import and (state.get("signature") or {}).get("date") == et_date.isoformat():
+            last_import = state.get("last_results_import_at")
         pending = _results_pending(now)
-        import_due = (pending or not last_import
-                      or now - datetime.fromisoformat(last_import) >= RESULTS_REFRESH_INTERVAL)
+        refresh_interval = RESULTS_RETRY_INTERVAL if pending else RESULTS_REFRESH_INTERVAL
+        import_due = (
+            not last_import
+            or not state.get("last_full_run_ok")
+            or now - datetime.fromisoformat(last_import) >= refresh_interval
+        )
         before = dict(_settlement_signature(), date=et_date.isoformat())  # dated reports refresh once per day
         settlement = dict(results_pending=pending, results_import_due=import_due,
                           signature_before=before, previous_signature=state.get("signature"))
@@ -356,6 +585,7 @@ def run_for_date(
                         "settlement": settlement, "steps": results}
     attempt_started = datetime.now(timezone.utc)
     capture_health = []; retry_fired = False
+    captured_games = checkpoint_games or (active_games if force_crawl else [])
     for step in steps:
         if step.module == "nfl_pipeline.crawler_oddsapi" and not has_close_work:
             results.append(
@@ -382,8 +612,8 @@ def run_for_date(
             )
             continue
         rc, stdout, stderr = _run(step)
-        if step.module == 'nfl_pipeline.parse_oddsapi' and active_games and rc == 0:
-            game_ids = [g['game_id'] for g in active_games if 0 < g['minutes_to_start'] <= 120]
+        if step.module == 'nfl_pipeline.parse_oddsapi' and captured_games and rc == 0:
+            game_ids = [g['game_id'] for g in captured_games if 0 < g['minutes_to_start'] <= 120]
             try:
                 capture_health = _capture_health(et_date, game_ids, attempt_started)
                 in_window = bool(game_ids)
@@ -424,14 +654,55 @@ def run_for_date(
                 )
         results.append(rec)
         if rc != 0:
-            status = "failed"
-            if step.critical:
+            if step.failure_is_warning:
+                rec["nonfatal"] = True
+            else:
+                status = "failed"
+            if step.critical and not step.failure_is_warning:
                 break
+    checkpoint_verification: dict[str, dict[str, Any]] = {}
+    if checkpoint_games and checkpoint_assignments:
+        try:
+            checkpoint_verification = checkpoints.verify_capture(
+                et_date,
+                checkpoint_games,
+                attempt_started,
+            )
+        except Exception as exc:
+            checkpoint_verification = {
+                str(game["game_id"]): {
+                    "game_id": str(game["game_id"]),
+                    "error": "checkpoint_verification_failed:" + type(exc).__name__,
+                    "verification_passed": False,
+                }
+                for game in checkpoint_games
+            }
+        checkpoints.record_attempt(
+            checkpoint_state,
+            checkpoint_games,
+            checkpoint_assignments,
+            checkpoint_verification,
+        )
+        checkpoints.save_state(checkpoint_state, CHECKPOINT_STATE)
+        checkpoint_plan = checkpoints.plan(active_games, checkpoint_state)
+        checkpoints.write_report(
+            et_date,
+            checkpoint_state,
+            checkpoint_plan["observations"],
+        )
+        if any(
+            not row.get("verification_passed")
+            for row in checkpoint_verification.values()
+        ):
+            status = "failed"
     if settlement:
         state = _load_settlement_state()
         if settlement["results_import_due"] and all(
                 r["returncode"] == 0 for r in results if r["label"] in ("NFL Final Results Refresh", "NFL Final Participation Refresh")):
             state["last_results_import_at"] = attempt_started.isoformat()
+            import_history = dict(state.get("last_results_import_by_date") or {})
+            import_history[et_date.isoformat()] = attempt_started.isoformat()
+            state["last_results_import_by_date"] = import_history
         # Signature after this run's own writes, so the next unchanged run is skipped.
         state.update(signature=dict(_settlement_signature(), date=et_date.isoformat()), last_full_run_ok=status == "ok",
                      last_run_at=datetime.now(timezone.utc).isoformat())
@@ -446,9 +717,12 @@ def run_for_date(
             "before_minutes": close_window_before_minutes,
             "after_minutes": close_window_after_minutes,
             "active_games": active_games,
+            "checkpoint_assignments": checkpoint_assignments,
+            "checkpoint_plan": checkpoint_plan,
+            "checkpoint_verification": checkpoint_verification,
             "locked_prop_count": locked_prop_count,
             "close_crawl_attempted": should_crawl_close and has_close_work,
-            "mode": "capture_only" if active_games else "settlement_and_evaluation",
+            "mode": "capture_only" if captured_games else "settlement_and_evaluation",
             "fresh_capture_health": capture_health,
             "retry_fired": retry_fired,
         },

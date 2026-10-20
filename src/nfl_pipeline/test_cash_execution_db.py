@@ -11,7 +11,7 @@ from nfl_pipeline.offer_selection import CONTRACT
 
 
 @pytest.mark.skipif(os.getenv('NFL_TEST_CASH_DB') != '1', reason='Opt-in transaction-rollback PostgreSQL test')
-def test_atomic_reservation_dedup_and_append_only():
+def test_atomic_reservation_dedup_and_append_only(monkeypatch):
     now = datetime.now(timezone.utc)
     row = dict(forecast_id=-987654321, source_kind='prop', game_id='cash-test-rollback-only', player_id='test',
         game_date_et=str(now.date()), season=2099,week=99,book='fanduel',stat='receiving_yards',
@@ -20,6 +20,13 @@ def test_atomic_reservation_dedup_and_append_only():
         prediction_context_cutoff_utc=now.isoformat(),start_ts_utc=(now+timedelta(hours=1)).isoformat(),
         probability=.6,push_probability=0,market_probability=.5,price=110,line=45.5,side='over',
         drift_guard_pass=True,model_version='rollback-test',prediction_key='cash-test-rollback-only')
+    reference = dict(experiment_id='rollback-test', sha256='a'*64)
+    registration = dict(sha256='test-only', config=dict(frozen_provenance=reference, release='rollback-test',
+        scoring_version='rollback-score', stat='receiving_yards', source_kind='prop', artifact_sha256='rollback-artifact',
+        variant='rollback-variant', registered_at=(now-timedelta(days=1)).isoformat()))
+    row.update(cash_artifact_sha256='rollback-artifact', probability_source='rollback-variant',
+        scoring_replay=dict(scoring_fingerprint='rollback-score',cash_freeze=dict(reference,status='verified')))
+    monkeypatch.setattr(cash.cash_freeze, 'check_registration', lambda registration: {})
     conn = psycopg2.connect(PG_DSN)
     other = psycopg2.connect(PG_DSN)
     try:
@@ -28,9 +35,9 @@ def test_atomic_reservation_dedup_and_append_only():
             cur.execute("SELECT pg_try_advisory_xact_lock(hashtext('nfl_cash_execution'))")
             assert cur.fetchone()[0] is False
         before = len(cash.states(conn))
-        accepted, errors = cash.reserve(conn,[row],{'sha256':'test-only'},'cash_trial_eligible',now)
+        accepted, errors = cash.reserve(conn,[row],registration,'cash_trial_eligible',now)
         assert len(accepted)==1 and not errors
-        again, errors = cash.reserve(conn,[row],{'sha256':'test-only'},'cash_trial_eligible',now)
+        again, errors = cash.reserve(conn,[row],registration,'cash_trial_eligible',now)
         assert not again and errors['decision_already_reserved']==1
         assert len(cash.states(conn))==before+1
         ledger_id=accepted[0]['cash_ledger_id']

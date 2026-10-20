@@ -32,6 +32,12 @@ def save_forecasts(conn, table, rows, fields):
         raise ValueError('Refusing to persist forecasts outside the requested game scope')
     now = datetime.now(timezone.utc)
     for row in rows:
+        from nfl_pipeline.forecast_horizon import add_horizon
+        add_horizon(
+            row,
+            cutoff=(row.get('prediction_context_cutoff_utc')
+                    or row.get('quote_fetched_at_utc') or now),
+        )
         if row.get('execution_contract') == EXECUTION_CONTRACT:
             error = forecast_quote_error(row, now)
             if error:

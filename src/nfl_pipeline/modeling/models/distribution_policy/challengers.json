@@ -1,0 +1,396 @@
+{
+  "contract": "nfl-distribution-policy-v1",
+  "policies": {
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|raw_distribution": {
+      "a": 1.0,
+      "b": 1.0,
+      "model_weight": 0.9,
+      "calibration_enabled": false,
+      "inner_raw": {
+        "rows": 10,
+        "brier": 0.2288136432266527,
+        "log_loss": 0.6396087295995919,
+        "calibration_error": 0.2393034825870646,
+        "probability_bias": 0.12487562189054724,
+        "player_games": 10,
+        "weeks": 1,
+        "distribution": {
+          "rows": 10,
+          "mae": 24.53034825870643,
+          "rmse": 32.093089164483665,
+          "bias": -16.929353233830764,
+          "interval_rows": 10,
+          "coverage_80": 0.8,
+          "interval_width": 53.8,
+          "expected_interval_coverage": 0.8024875621890544
+        },
+        "median": {
+          "rows": 10,
+          "mae": 26.0,
+          "rmse": 34.14381349527319,
+          "bias": -20.6
+        }
+      },
+      "inner_calibrated": {
+        "rows": 10,
+        "brier": 0.2306549616393483,
+        "log_loss": 0.6432270064038239,
+        "calibration_error": 0.147933992637813,
+        "probability_bias": 0.1286959592647216,
+        "player_games": 10,
+        "weeks": 1,
+        "distribution": {
+          "rows": 10,
+          "mae": 24.721939973314342,
+          "rmse": 32.34838222049403,
+          "bias": -17.40814586533194,
+          "interval_rows": 10,
+          "coverage_80": 0.7,
+          "interval_width": 52.3,
+          "expected_interval_coverage": 0.8085902058709612
+        },
+        "median": {
+          "rows": 10,
+          "mae": 26.1,
+          "rmse": 34.364225584174015,
+          "bias": -20.7
+        }
+      },
+      "training_periods": [
+        [
+          2026,
+          3
+        ]
+      ],
+      "tuning_period": [
+        2026,
+        4
+      ],
+      "fit_scope": "current_time_development",
+      "contract": "nfl-distribution-policy-v1",
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|raw_distribution",
+      "created_at": "2026-10-07T15:36:53.876870+00:00",
+      "training_scoring_version": "e29cbbca864ea8e37e57d7ba178ee30ff3dd371a412726d569d8f89b063c1afd",
+      "source": "raw_distribution",
+      "policy_id": "f9227307bd6c80601a2b0000ced7461a1a2de46d9c472b6f217a6cb364dd4cb1"
+    },
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|receiving_quantile:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d": {
+      "a": 1.0,
+      "b": 1.0,
+      "model_weight": 0.5,
+      "calibration_enabled": false,
+      "inner_raw": {
+        "rows": 380,
+        "brier": 0.25117707444140874,
+        "log_loss": 0.6960754179650082,
+        "calibration_error": 0.09064594741039277,
+        "probability_bias": 0.013883652382987385,
+        "player_games": 185,
+        "weeks": 1,
+        "distribution": {
+          "rows": 185,
+          "mae": 23.84639499851559,
+          "rmse": 32.69545684375534,
+          "bias": -6.5198170240584865,
+          "interval_rows": 185,
+          "coverage_80": 0.745945945945946,
+          "interval_width": 58.29189189189189,
+          "expected_interval_coverage": 0.8114952398830071
+        },
+        "median": {
+          "rows": 185,
+          "mae": 24.167567567567566,
+          "rmse": 34.207554089071564,
+          "bias": -11.108108108108109
+        }
+      },
+      "inner_calibrated": {
+        "rows": 380,
+        "brier": 0.25163699287536234,
+        "log_loss": 0.6972569340621141,
+        "calibration_error": 0.08719407282974441,
+        "probability_bias": 0.012795747217032912,
+        "player_games": 185,
+        "weeks": 1,
+        "distribution": {
+          "rows": 185,
+          "mae": 23.84764037011798,
+          "rmse": 32.742747401173986,
+          "bias": -6.713404973679302,
+          "interval_rows": 185,
+          "coverage_80": 0.7351351351351352,
+          "interval_width": 55.043243243243246,
+          "expected_interval_coverage": 0.8150697555266667
+        },
+        "median": {
+          "rows": 185,
+          "mae": 24.156756756756756,
+          "rmse": 34.14792938204425,
+          "bias": -10.924324324324324
+        }
+      },
+      "training_periods": [
+        [
+          2026,
+          2
+        ],
+        [
+          2026,
+          3
+        ]
+      ],
+      "tuning_period": [
+        2026,
+        4
+      ],
+      "fit_scope": "current_time_development",
+      "contract": "nfl-distribution-policy-v1",
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|receiving_quantile:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
+      "created_at": "2026-10-07T15:37:17.817751+00:00",
+      "training_scoring_version": "source:receiving_quantile:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
+      "source": "receiving_quantile:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
+      "source_artifact": {
+        "path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\receiving_quantiles\\receiving-quantiles-20261005T204207709687Z\\model.joblib",
+        "sha256": "d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d"
+      },
+      "policy_id": "e5a038139fcdbaaa82ec85ed1e8a59617e4e8a5476594563de1939dc88228015"
+    },
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|role_workload:658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe:combined": {
+      "a": 1.1480818682382405,
+      "b": 0.9150316066675819,
+      "model_weight": 0.5,
+      "calibration_enabled": true,
+      "inner_raw": {
+        "rows": 380,
+        "brier": 0.2592542904577546,
+        "log_loss": 0.7142623057155411,
+        "calibration_error": 0.12929597673017149,
+        "probability_bias": 0.02047743831733214,
+        "player_games": 185,
+        "weeks": 1,
+        "distribution": {
+          "rows": 185,
+          "mae": 24.238329950331885,
+          "rmse": 33.653290996315995,
+          "bias": -9.320947414451487,
+          "interval_rows": 185,
+          "coverage_80": 0.7513513513513513,
+          "interval_width": 57.83783783783784,
+          "expected_interval_coverage": 0.8145851961596956
+        },
+        "median": {
+          "rows": 185,
+          "mae": 24.616216216216216,
+          "rmse": 35.333775281954736,
+          "bias": -14.12972972972973
+        }
+      },
+      "inner_calibrated": {
+        "rows": 380,
+        "brier": 0.24514912344053544,
+        "log_loss": 0.6824359615385005,
+        "calibration_error": 0.06527171335677044,
+        "probability_bias": -0.0020488092708710877,
+        "player_games": 185,
+        "weeks": 1,
+        "distribution": {
+          "rows": 185,
+          "mae": 24.27816133321129,
+          "rmse": 32.526857672889214,
+          "bias": -4.572671419534629,
+          "interval_rows": 185,
+          "coverage_80": 0.7675675675675676,
+          "interval_width": 62.25945945945946,
+          "expected_interval_coverage": 0.8171615630007463
+        },
+        "median": {
+          "rows": 185,
+          "mae": 24.167567567567566,
+          "rmse": 33.64448470925586,
+          "bias": -9.486486486486486
+        }
+      },
+      "blend_comparisons": {
+        "0.0": {
+          "rows": 380,
+          "brier": 0.25022249479178005,
+          "log_loss": 0.6935912146618975,
+          "calibration_error": 0.011301264290605824,
+          "probability_bias": 0.009869981352687783,
+          "player_games": 185,
+          "weeks": 1,
+          "distribution": {
+            "rows": 185,
+            "mae": 23.473253201736224,
+            "rmse": 32.31884759660483,
+            "bias": -3.9476485350257646,
+            "interval_rows": 185,
+            "coverage_80": 0.7621621621621621,
+            "interval_width": 61.88648648648649,
+            "expected_interval_coverage": 0.8183075883320259
+          },
+          "median": {
+            "rows": 185,
+            "mae": 23.713513513513515,
+            "rmse": 33.378662872187306,
+            "bias": -8.935135135135136
+          }
+        },
+        "0.25": {
+          "rows": 380,
+          "brier": 0.24507223668598632,
+          "log_loss": 0.68323591963659,
+          "calibration_error": 0.041116660870122224,
+          "probability_bias": 0.00689028369679807,
+          "player_games": 185,
+          "weeks": 1,
+          "distribution": {
+            "rows": 185,
+            "mae": 23.43665530619738,
+            "rmse": 32.16226030185888,
+            "bias": -4.10390425615298,
+            "interval_rows": 185,
+            "coverage_80": 0.7837837837837838,
+            "interval_width": 62.70810810810811,
+            "expected_interval_coverage": 0.8174619571155367
+          },
+          "median": {
+            "rows": 185,
+            "mae": 23.583783783783783,
+            "rmse": 33.235523164228965,
+            "bias": -8.956756756756757
+          }
+        },
+        "0.5": {
+          "rows": 380,
+          "brier": 0.24250992209218103,
+          "log_loss": 0.6778119494638403,
+          "calibration_error": 0.023391242661672758,
+          "probability_bias": 0.003910586040908351,
+          "player_games": 185,
+          "weeks": 1,
+          "distribution": {
+            "rows": 185,
+            "mae": 23.575821541104258,
+            "rmse": 32.14488202381758,
+            "bias": -4.260159977280195,
+            "interval_rows": 185,
+            "coverage_80": 0.7621621621621621,
+            "interval_width": 62.983783783783785,
+            "expected_interval_coverage": 0.8177562469510616
+          },
+          "median": {
+            "rows": 185,
+            "mae": 23.6,
+            "rmse": 33.234791278889524,
+            "bias": -9.18918918918919
+          }
+        },
+        "0.75": {
+          "rows": 380,
+          "brier": 0.24253555101036403,
+          "log_loss": 0.6773815573498994,
+          "calibration_error": 0.04125727466723457,
+          "probability_bias": 0.0009308883850186305,
+          "player_games": 185,
+          "weeks": 1,
+          "distribution": {
+            "rows": 185,
+            "mae": 23.875556202725488,
+            "rmse": 32.26693768820398,
+            "bias": -4.416415698407411,
+            "interval_rows": 185,
+            "coverage_80": 0.7675675675675676,
+            "interval_width": 62.935135135135134,
+            "expected_interval_coverage": 0.8177073918229639
+          },
+          "median": {
+            "rows": 185,
+            "mae": 23.83783783783784,
+            "rmse": 33.37145567778028,
+            "bias": -9.405405405405405
+          }
+        },
+        "1.0": {
+          "rows": 380,
+          "brier": 0.24514912344053544,
+          "log_loss": 0.6824359615385005,
+          "calibration_error": 0.06527171335677044,
+          "probability_bias": -0.0020488092708710877,
+          "player_games": 185,
+          "weeks": 1,
+          "distribution": {
+            "rows": 185,
+            "mae": 24.27816133321129,
+            "rmse": 32.526857672889214,
+            "bias": -4.572671419534629,
+            "interval_rows": 185,
+            "coverage_80": 0.7675675675675676,
+            "interval_width": 62.25945945945946,
+            "expected_interval_coverage": 0.8171615630007463
+          },
+          "median": {
+            "rows": 185,
+            "mae": 24.167567567567566,
+            "rmse": 33.64448470925586,
+            "bias": -9.486486486486486
+          }
+        }
+      },
+      "blend_regularization": 0.002127659574468085,
+      "calibration_player_games": 169,
+      "tuning_player_games": 185,
+      "ranking_support": 0.6491228070175439,
+      "training_periods": [
+        [
+          2026,
+          3
+        ]
+      ],
+      "tuning_period": [
+        2026,
+        4
+      ],
+      "fit_scope": "current_time_development",
+      "contract": "nfl-distribution-policy-v1",
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|role_workload:658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe:combined",
+      "created_at": "2026-10-08T07:07:43.171518+00:00",
+      "training_scoring_version": "source:role_workload:658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe:combined",
+      "source": "role_workload:658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe:combined",
+      "source_artifact": {
+        "kind": "role_workload",
+        "contract": "nfl-role-workload-distribution-v1",
+        "path": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\role_workload\\role-workload-receiving_yards-20261007T212629386014Z\\model.joblib",
+        "sha256": "658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe",
+        "variant": "combined",
+        "stat": "receiving_yards",
+        "training_end": "2026-09-17",
+        "production_release": "nfl-20260918T143342Z"
+      },
+      "acceptance_scope": "new_post_registration_locks_only",
+      "development_weeks": [
+        [
+          2026,
+          3
+        ],
+        [
+          2026,
+          4
+        ],
+        [
+          2026,
+          5
+        ]
+      ],
+      "selection_experiment": {
+        "primary": "unchanged_ranking",
+        "challenger": "conservative_ranking",
+        "max_per_batch": 5,
+        "no_quota": true,
+        "automatic_cash_approval": false
+      },
+      "policy_id": "56a5b51380724620bfa61025d96b1a9cbeaf080d911e24bfb001cf22cd8da941"
+    }
+  },
+  "sha256": "f935ff631e28637967d9eceeea4a20458e9da098223a1e24b69eef57db09afed"
+}

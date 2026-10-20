@@ -539,6 +539,8 @@ ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS drift_guar
 ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS usage_context_quality NUMERIC;
 ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS limited_usage_risk NUMERIC;
 ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS spike_usage_probability NUMERIC;
+ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_minutes NUMERIC;
+ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_bucket TEXT;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_nfl_player_prop_predictions_key
     ON bets.nfl_player_prop_predictions (prediction_key)
@@ -573,6 +575,9 @@ CREATE TABLE IF NOT EXISTS bets.nfl_game_predictions (
     updated_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (game_date_et, game_id, market, side, book)
 );
+
+ALTER TABLE bets.nfl_game_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_minutes NUMERIC;
+ALTER TABLE bets.nfl_game_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_bucket TEXT;
 
 CREATE TABLE IF NOT EXISTS bets.nfl_game_prediction_results (
     prediction_id BIGINT PRIMARY KEY,
@@ -704,10 +709,34 @@ NFL_PLAYER_DERIVED_COLUMNS = (
     "starter_confidence",
     "rest_risk_score",
     "injury_downgrade_score",
+    "player_injury_context_unknown",
+    "depth_context_known",
+    "depth_context_unknown",
+    "teammate_injury_context_unknown",
+    "same_week_context_unknown_score",
+    "injury_risk_legacy_imputation",
     "same_week_teammate_skill_injury_count",
     "same_week_teammate_skill_injury_score",
     "same_week_teammate_receiver_injury_score",
     "same_week_teammate_receiver_out_count",
+    "same_week_injury_context_known",
+    "unexpected_partial_rate_avg_5",
+    "pass_attempts_full_role_avg_5",
+    "passing_yards_full_role_avg_5",
+    "carries_full_role_avg_5",
+    "rushing_yards_full_role_avg_5",
+    "targets_full_role_avg_5",
+    "receptions_full_role_avg_5",
+    "receiving_yards_full_role_avg_5",
+    "receiving_air_yards_full_role_avg_5",
+    "pass_attempts_robust_avg_5",
+    "passing_yards_robust_avg_5",
+    "carries_robust_avg_5",
+    "rushing_yards_robust_avg_5",
+    "targets_robust_avg_5",
+    "receptions_robust_avg_5",
+    "receiving_yards_robust_avg_5",
+    "receiving_air_yards_robust_avg_5",
     "same_week_context_confidence_score",
     "teammate_skill_injury_pressure_score",
     "teammate_receiver_injury_pressure_score",
@@ -1032,6 +1061,58 @@ INSERT INTO raw.nfl_schema_versions(version) VALUES('20261007_context_log_compac
 """
 
 
+POSTGAME_ROLE_REPAIR_VERSION = "20261009_postgame_role_repair"
+POSTGAME_ROLE_REPAIR_COLUMNS = (
+    "same_week_injury_context_known",
+    "unexpected_partial_rate_avg_5",
+    "pass_attempts_full_role_avg_5",
+    "passing_yards_full_role_avg_5",
+    "carries_full_role_avg_5",
+    "rushing_yards_full_role_avg_5",
+    "targets_full_role_avg_5",
+    "receptions_full_role_avg_5",
+    "receiving_yards_full_role_avg_5",
+    "receiving_air_yards_full_role_avg_5",
+    "pass_attempts_robust_avg_5",
+    "passing_yards_robust_avg_5",
+    "carries_robust_avg_5",
+    "rushing_yards_robust_avg_5",
+    "targets_robust_avg_5",
+    "receptions_robust_avg_5",
+    "receiving_yards_robust_avg_5",
+    "receiving_air_yards_robust_avg_5",
+)
+POSTGAME_ROLE_REPAIR_SQL = "\n".join(
+    f"ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS {column} NUMERIC;"
+    for column in POSTGAME_ROLE_REPAIR_COLUMNS
+) + f"\nINSERT INTO raw.nfl_schema_versions(version) VALUES('{POSTGAME_ROLE_REPAIR_VERSION}') ON CONFLICT DO NOTHING;"
+
+FORECAST_HORIZON_VERSION = "20261010_forecast_horizon"
+FORECAST_HORIZON_SQL = f"""
+ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_minutes NUMERIC;
+ALTER TABLE bets.nfl_player_prop_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_bucket TEXT;
+ALTER TABLE bets.nfl_game_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_minutes NUMERIC;
+ALTER TABLE bets.nfl_game_predictions ADD COLUMN IF NOT EXISTS forecast_horizon_bucket TEXT;
+INSERT INTO raw.nfl_schema_versions(version) VALUES('{FORECAST_HORIZON_VERSION}') ON CONFLICT DO NOTHING;
+"""
+
+MISSING_CONTEXT_VERSION = "20261010_missing_context_indicators"
+MISSING_CONTEXT_COLUMNS = (
+    "roster_context_known",
+    "player_injury_context_known",
+    "player_injury_context_unknown",
+    "depth_context_known",
+    "depth_context_unknown",
+    "teammate_injury_context_unknown",
+    "same_week_context_unknown_score",
+    "injury_risk_legacy_imputation",
+)
+MISSING_CONTEXT_SQL = "\n".join(
+    f"ALTER TABLE features.nfl_player_game_training_features ADD COLUMN IF NOT EXISTS {column} NUMERIC;"
+    for column in MISSING_CONTEXT_COLUMNS
+) + f"\nINSERT INTO raw.nfl_schema_versions(version) VALUES('{MISSING_CONTEXT_VERSION}') ON CONFLICT DO NOTHING;"
+
+
 def changed_where(table: str, cols: tuple[str, ...]) -> str:
     """ON CONFLICT ... DO UPDATE ... WHERE clause that skips no-op rewrites."""
     return (f"({', '.join(f'{table}.{c}' for c in cols)}) "
@@ -1054,16 +1135,39 @@ GAME_LINE_CHANGED = changed_where("odds.nfl_game_lines", (
 def ensure_schema(conn) -> None:
     with conn.cursor() as cur:
         cur.execute("SELECT to_regclass('raw.nfl_schema_versions')")
-        if cur.fetchone()[0]:
-            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = '20261007_context_log_compaction'")
-            if cur.fetchone():
+        version_table_exists = bool(cur.fetchone()[0])
+        base_schema_current = False
+        postgame_current = False
+        horizon_current = False
+        missing_context_current = False
+        if version_table_exists:
+            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = %s", (POSTGAME_ROLE_REPAIR_VERSION,))
+            postgame_current = bool(cur.fetchone())
+            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = %s", (FORECAST_HORIZON_VERSION,))
+            horizon_current = bool(cur.fetchone())
+            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = %s", (MISSING_CONTEXT_VERSION,))
+            missing_context_current = bool(cur.fetchone())
+            if postgame_current and horizon_current and missing_context_current:
                 conn.commit()
                 return
+            cur.execute("SELECT 1 FROM raw.nfl_schema_versions WHERE version = '20261007_context_log_compaction'")
+            base_schema_current = bool(cur.fetchone())
         cur.execute("SET LOCAL lock_timeout = '5s'")
         cur.execute("SET LOCAL statement_timeout = '60s'")
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('nfl_pipeline_schema'))")
-        cur.execute(NFL_SCHEMA_SQL)
-        cur.execute(INTEGRITY_SQL)
+        if base_schema_current:
+            if not postgame_current:
+                cur.execute(POSTGAME_ROLE_REPAIR_SQL)
+            if not horizon_current:
+                cur.execute(FORECAST_HORIZON_SQL)
+            if not missing_context_current:
+                cur.execute(MISSING_CONTEXT_SQL)
+        else:
+            cur.execute(NFL_SCHEMA_SQL)
+            cur.execute(INTEGRITY_SQL)
+            cur.execute(POSTGAME_ROLE_REPAIR_SQL)
+            cur.execute(FORECAST_HORIZON_SQL)
+            cur.execute(MISSING_CONTEXT_SQL)
     conn.commit()
 
 

@@ -36,7 +36,8 @@ from nfl_pipeline.crawler_oddsapi import OddsCrawlerConfig, _save_payload
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
 from nfl_pipeline.markets import STAT_BY_MARKET, normalize_name, normalize_team
-from nfl_pipeline.sharp_watch import BOOKMAKERS, SHARP_BOOKS, _pairs, find_edges
+from nfl_pipeline.sharp_watch import BOOKMAKERS, SHARP_BOOKS, _pairs, find_edges, quote_error
+from nfl_pipeline.context_contract import safe_time
 
 # The book list is part of the cache key, so a re-grade must ask for exactly the books the original
 # run fetched or every call is a cache miss and costs credits again. Pinned here, overridable.
@@ -134,7 +135,7 @@ def fetch_snapshots(client: Client, game: dict, event_id: str, market: str) -> d
         params = {"date": _iso(game["start_ts_utc"] - timedelta(minutes=minutes)), "markets": market,
                   "bookmakers": ",".join(FETCH_BOOKS), "oddsFormat": "american"}
         payload = client.get(f"events/{event_id}/odds", params, cost=10, as_of=game["game_date_et"])
-        snaps[minutes] = payload.get("data") or {}
+        snaps[minutes] = dict(payload.get("data") or {}, observed_at_utc=payload.get('timestamp'))
     return snaps
 
 
@@ -147,7 +148,7 @@ def _player_pairs(snapshot: dict, book: str, stat: str, who: str) -> list[tuple[
     for b in snapshot.get("bookmakers", []):
         if b["key"] == book:
             return [(line, sharp_math.no_vig_over(q["over"], q["under"])) for (s_, w, line), q in _pairs(b).items()
-                    if s_ == stat and w == who and q.get("over") is not None and q.get("under") is not None]
+                    if s_ == stat and w == who and not quote_error(q, safe_time(snapshot.get('observed_at_utc')))]
     return []
 
 
@@ -161,7 +162,10 @@ def sides(game: dict, snaps: dict[int, dict]) -> list[dict]:
     out = []
     for minutes in SNAPSHOTS:
         snap = snaps.get(minutes) or {}
-        for e in find_edges(snap, min_ev=-1.0):
+        observed = safe_time(snap.get('observed_at_utc'))
+        if observed is None:
+            continue  # Unknown historical timing cannot be replayed as an executable quote.
+        for e in find_edges(snap, min_ev=-1.0, now=observed):
             who = e["player_norm"] or "game"
             # Sharp close moved to the bet's line (nearest sharp line first, preferred book order).
             fair_close = None

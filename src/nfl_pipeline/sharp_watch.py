@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import calendar
+import hashlib
 import json
 import math
 import os
@@ -38,6 +39,7 @@ from nfl_pipeline.crawler_oddsapi import OddsCrawlerConfig, _full_url, _save_pay
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
 from nfl_pipeline.markets import STAT_BY_MARKET, normalize_name, normalize_team
+from nfl_pipeline.context_contract import safe_time
 
 ROOT = Path(__file__).resolve().parents[2]
 STATE = ROOT / "reports" / "nfl_sharp_watch_state.json"
@@ -80,6 +82,10 @@ PING_WINDOW_BY_STAT = {"receptions": 45}
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
 FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window
+QUOTE_CONTRACT = "nfl-sharp-quotes-v2"
+MAX_SOURCE_AGE_SECONDS = 300
+MAX_SOURCE_SKEW_SECONDS = 120
+EXPERIMENT_NAME = "nfl-fanduel-price-gap-v4"
 
 
 def _int_env(name: str, default: int) -> int:
@@ -91,6 +97,16 @@ def _int_env(name: str, default: int) -> int:
 
 def markets() -> list[str]:
     return [m.strip() for m in (os.getenv("NFL_SHARP_WATCH_MARKETS") or DEFAULT_MARKETS).split(",") if m.strip()]
+
+
+def experiment_config():
+    """Capture both code constants and environment-selected markets in the frozen manifest."""
+    return dict(contract=QUOTE_CONTRACT, bet_books=list(BET_BOOKS), reference_books=["pinnacle"],
+                markets=markets(), min_ev=MIN_EV, log_min_ev=LOG_MIN_EV,
+                max_source_age_seconds=MAX_SOURCE_AGE_SECONDS, max_source_skew_seconds=MAX_SOURCE_SKEW_SECONDS,
+                ping_window_minutes=PING_WINDOW_MINUTES, ping_window_by_stat=PING_WINDOW_BY_STAT,
+                devig_method=sharp_math.DEVIG_METHOD, line_model=sharp_math.LINE_MODEL,
+                cash_enabled=bool(prefs.SHARP_WATCH_BETS_ENABLED), selection="first_eligible_per_book_player_game_stat")
 
 
 def interval_minutes(minutes_to_kickoff: float) -> int | None:
@@ -186,6 +202,8 @@ def _pairs(book: dict) -> dict[tuple, dict]:
     """(stat, player_norm or side-group, line) -> {over/home: price, under/away: price, link...} for one book."""
     out: dict[tuple, dict] = {}
     for market in book.get("markets", []):
+        provenance = dict(book_updated_at=book.get("last_update"),
+                          market_updated_at=market.get("last_update"), market_key=market.get("key"))
         key = market.get("key")
         if key in GAME_MARKETS:
             stat = GAME_MARKETS[key]
@@ -196,10 +214,10 @@ def _pairs(book: dict) -> dict[tuple, dict]:
                 if line is None:
                     continue
                 if stat == "spread":  # key the pair by the home line; store each team's side separately
-                    out.setdefault((stat, side, float(line)), {})["price"] = o.get("price")
+                    out.setdefault((stat, side, float(line)), dict(provenance))["price"] = o.get("price")
                     out[(stat, side, float(line))]["link"] = o.get("link")
                 else:
-                    rec = out.setdefault((stat, "game", float(line)), {})
+                    rec = out.setdefault((stat, "game", float(line)), dict(provenance))
                     rec[side] = o.get("price"); rec[f"{side}_link"] = o.get("link")
             continue
         stat = STAT_BY_MARKET.get(key) or EXTRA_STAT_BY_MARKET.get(key)
@@ -213,13 +231,39 @@ def _pairs(book: dict) -> dict[tuple, dict]:
                 side, point = YES_NO_SIDES[side], 0.5
             if side not in ("over", "under") or not player or point is None:
                 continue
-            rec = out.setdefault((stat, normalize_name(player), float(point)), {"player": player})
+            rec = out.setdefault((stat, normalize_name(player), float(point)), dict(provenance, player=player))
             rec[side] = o.get("price"); rec[f"{side}_link"] = o.get("link")
     return out
 
 
-def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, ...] = BET_BOOKS) -> list[dict]:
+def source_time(quote: dict):
+    """Prefer the market timestamp; a book timestamp is only a documented fallback."""
+    return safe_time(quote.get("market_updated_at") or quote.get("book_updated_at"))
+
+
+def quote_error(quote: dict, observed_at: datetime) -> str | None:
+    observed_at = safe_time(observed_at)
+    updated = source_time(quote)
+    if updated is None or observed_at is None:
+        return "source_timestamp_missing"
+    # A future book timestamp is invalid even when the market timestamp looks old.
+    stamps = [safe_time(quote.get(k)) for k in ("book_updated_at", "market_updated_at") if quote.get(k)]
+    if any(t is None or t > observed_at for t in stamps):
+        return "source_timestamp_future_or_invalid"
+    if (observed_at - updated).total_seconds() > MAX_SOURCE_AGE_SECONDS:
+        return "source_quote_stale"
+    if any(sharp_math.implied(quote.get(side)) is None for side in ("over", "under")):
+        return "invalid_two_sided_prices"
+    return None
+
+
+def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, ...] = BET_BOOKS,
+               now: datetime | None = None) -> list[dict]:
     """Every bettable book's side that is at least min_ev above the sharp no-vig fair price."""
+    now = safe_time(now or datetime.now(timezone.utc))
+    kickoff = safe_time(payload.get('commence_time'))
+    if kickoff is not None and kickoff <= now:
+        return []
     books = {b["key"]: _pairs(b) for b in payload.get("bookmakers", [])}
     sharp_books = [b for b in SHARP_BOOKS if b in books]
     edges = []
@@ -227,17 +271,23 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, .
         for (stat, who, line), offer in (books.get(bet_book) or {}).items():
             if stat == "spread":
                 continue  # spreads need both teams' sides; handled as exact-line two-way below
-            if offer.get("over") is None or offer.get("under") is None:
+            if quote_error(offer, now):
                 continue
             best = None
             for book in sharp_books:  # preferred book first, then closest line
+                # Exchange prices lack the commission/liquidity fields needed to establish
+                # an executable fair reference. Keep fetching them for diagnostics only.
+                if book != "pinnacle":
+                    continue
                 for (s_stat, s_who, s_line), q in books[book].items():
-                    if s_stat != stat or s_who != who or q.get("over") is None or q.get("under") is None:
+                    if s_stat != stat or s_who != who or quote_error(q, now):
+                        continue
+                    if abs((source_time(offer) - source_time(q)).total_seconds()) > MAX_SOURCE_SKEW_SECONDS:
                         continue
                     fair_over = sharp_math.over_probability_at(stat, s_line, sharp_math.no_vig_over(q["over"], q["under"]), line)
                     if fair_over is None:
                         continue
-                    cand = (abs(s_line - line), dict(book=book, line=s_line, fair_over=fair_over))
+                    cand = (abs(s_line - line), dict(book=book, line=s_line, fair_over=fair_over, quote=q))
                     if best is None or cand[0] < best[0]:
                         best = cand
                 if best is not None and best[0] == 0:
@@ -249,13 +299,48 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, .
                 fair = sharp["fair_over"] if side == "over" else 1.0 - sharp["fair_over"]
                 value = sharp_math.ev(fair, offer[side])
                 if value is not None and value >= min_ev:
-                    edges.append(dict(book=bet_book, stat=stat, player=offer.get("player"),
+                    edges.append(dict(event_id=payload.get('id'), book=bet_book, stat=stat, player=offer.get("player"),
                                       player_norm=who if who != "game" else None,
                                       side=side, line=line, price=int(offer[side]), link=offer.get(f"{side}_link"),
                                       sharp_book=sharp["book"], sharp_line=sharp["line"], fair_probability=fair,
                                       ev=value, minimum_price=sharp_math.minimum_price(fair, MIN_PRICE_EV),
-                                      line_gap=line - sharp["line"]))
+                                      line_gap=line - sharp["line"],
+                                      quote_provenance=dict(contract=QUOTE_CONTRACT, observed_at_utc=now.isoformat(),
+                                          execution_quote=dict(offer), reference_quote=dict(sharp["quote"]),
+                                          reference_method="exact" if line == sharp["line"] else "model_inferred",
+                                          devig_method=sharp_math.DEVIG_METHOD)))
     return sorted(edges, key=lambda e: -e["ev"])
+
+
+def _digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+
+
+def quote_observations(payload, game, observed_at):
+    """Capture all pairs, including rejected ones and closes with no positive gap."""
+    rows = []
+    for book in payload.get("bookmakers", []):
+        for (stat, who, line), quote in _pairs(book).items():
+            row = dict(contract=QUOTE_CONTRACT, observed_at_utc=observed_at.isoformat(),
+                       game_id=game["game_id"], event_id=payload.get("id"),
+                       commence_time_utc=game["start"].isoformat(), book=book["key"], stat=stat,
+                       player_name_norm=None if who == "game" else who, line=line, quote=quote,
+                       validation_error=quote_error(quote, observed_at))
+            rows.append(dict(row, observation_id=_digest(row)))
+    return rows
+
+
+def decision_observation(edge, game, tier, experiment_sha256):
+    body = dict(edge, game_id=game["game_id"], commence_time_utc=game["start"].isoformat(),
+                tier=tier, experiment_sha256=experiment_sha256)
+    return dict(body, observation_id=_digest(body))
+
+
+def persist_observations(cur, quotes):
+    if quotes:
+        psycopg2.extras.execute_values(cur, """INSERT INTO bets.nfl_sharp_quote_observations
+            (observation_id,game_id,observed_at_utc,payload) VALUES %s ON CONFLICT DO NOTHING""",
+            [(r["observation_id"], r["game_id"], r["observed_at_utc"], psycopg2.extras.Json(r)) for r in quotes])
 
 
 def market_window(market: str) -> int:
@@ -308,7 +393,8 @@ def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any], stat: str |
     A zero-stake alert is still stored and graded; it just carries no money, so evidence keeps accruing.
     """
     stake = float(prefs.SHARP_WATCH_STAKE)
-    if tier != "alert" or stake <= 0 or budget["paused"]:
+    if (not prefs.SHARP_WATCH_BETS_ENABLED or tier != "alert"
+            or stake <= 0 or budget["paused"]):
         return 0.0
     if stat is not None and stat not in prefs.SHARP_WATCH_STAKED_STATS:
         return 0.0  # scanned and graded, but not backtested yet
@@ -347,14 +433,30 @@ ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS taken_price INTEGER;
 -- settled from real money rather than argued.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_projection NUMERIC;
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_agrees BOOLEAN;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS initial_observation_id TEXT;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS alert_observation_id TEXT;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS initial_provenance JSONB;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS alert_provenance JSONB;
+CREATE TABLE IF NOT EXISTS bets.nfl_sharp_quote_observations (
+ observation_id TEXT PRIMARY KEY, game_id TEXT NOT NULL,
+ observed_at_utc TIMESTAMPTZ NOT NULL, payload JSONB NOT NULL);
+CREATE INDEX IF NOT EXISTS nfl_sharp_quote_observations_game_time
+ ON bets.nfl_sharp_quote_observations(game_id, observed_at_utc);
+CREATE TABLE IF NOT EXISTS bets.nfl_sharp_observations (
+ observation_id TEXT PRIMARY KEY, observed_at_utc TIMESTAMPTZ NOT NULL, payload JSONB NOT NULL);
+CREATE OR REPLACE FUNCTION bets.nfl_sharp_observation_immutable() RETURNS trigger AS $$
+ BEGIN RAISE EXCEPTION 'NFL sharp observations are append-only'; END; $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS nfl_sharp_quote_immutable ON bets.nfl_sharp_quote_observations;
+CREATE TRIGGER nfl_sharp_quote_immutable BEFORE UPDATE OR DELETE ON bets.nfl_sharp_quote_observations
+ FOR EACH ROW EXECUTE FUNCTION bets.nfl_sharp_observation_immutable();
+DROP TRIGGER IF EXISTS nfl_sharp_observation_immutable ON bets.nfl_sharp_observations;
+CREATE TRIGGER nfl_sharp_observation_immutable BEFORE UPDATE OR DELETE ON bets.nfl_sharp_observations
+ FOR EACH ROW EXECUTE FUNCTION bets.nfl_sharp_observation_immutable();
 -- The old key omitted the book (so two books' identical lines collided) and used a nullable
 -- player_name_norm, which let every poll re-insert game totals. COALESCE closes both. Those
--- duplicate totals already exist, so drop all but the first of each before the index goes on.
+-- Preserve historical duplicates. If a legacy database lacks this index and contains
+-- duplicates, migration must stop for review instead of deleting evidence.
 ALTER TABLE bets.nfl_sharp_alerts DROP CONSTRAINT IF EXISTS nfl_sharp_alerts_event_id_stat_player_name_norm_fd_line_sid_key;
-DELETE FROM bets.nfl_sharp_alerts a USING bets.nfl_sharp_alerts b
- WHERE a.alert_id > b.alert_id AND a.event_id = b.event_id AND a.book = b.book AND a.stat = b.stat
-   AND COALESCE(a.player_name_norm, '') = COALESCE(b.player_name_norm, '')
-   AND a.fd_line = b.fd_line AND a.side = b.side AND a.fd_price = b.fd_price;
 CREATE UNIQUE INDEX IF NOT EXISTS nfl_sharp_alerts_offer_key ON bets.nfl_sharp_alerts
   (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price);
 """
@@ -455,7 +557,7 @@ def format_alert(edge: dict, game: dict, stake: float = 0.0) -> str:
 
 
 def _post(text: str) -> None:
-    from nfl_pipeline.run_daily_and_notify import _post_payload
+    from nfl_pipeline.sharp_delivery import _post_payload
     asyncio.run(_post_payload({"content": text[:1950], "allowed_mentions": {"parse": []}}))
 
 
@@ -477,6 +579,19 @@ def _games_by_day(now: datetime) -> dict[date, int]:
 
 def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
+    from nfl_pipeline.experiment_registry import check_experiment, load_experiment
+    if load_experiment(EXPERIMENT_NAME) is None:
+        return dict(status="research_not_registered", experiment_id=EXPERIMENT_NAME)
+    try:
+        experiment = check_experiment(EXPERIMENT_NAME)
+    except (ValueError, OSError) as exc:
+        # Drift has to stop this scanner collecting evidence, not raise into the task
+        # runner. Every other refusal here is reported as a status row; an exception
+        # took the whole watcher down on 19 October over one unrelated column.
+        return dict(status="experiment_source_drift", experiment_id=EXPERIMENT_NAME,
+                    detail=str(exc))
+    if experiment["config"].get("scanner") != experiment_config():
+        return dict(status="experiment_configuration_drift", experiment_id=EXPERIMENT_NAME)
     games = _games(now)
     if not games:
         return dict(status="no_games_within_24h")
@@ -534,40 +649,55 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             spent_here = len(game_markets)  # one credit per market, however many books are named
             remaining = int(response.headers.get("x-requests-remaining") or remaining - spent_here)
             payload = response.json()
+            observed_at = datetime.now(timezone.utc)
+            if safe_time(payload.get("commence_time")) != safe_time(game["start"]):
+                skipped[game["game_id"]] = "event_kickoff_mismatch"
+                continue
             for endpoint, keep in (("nfl_player_props", lambda k: k not in GAME_MARKETS), ("nfl_game_odds", lambda k: k in GAME_MARKETS)):
                 if any(keep(m.get("key")) for b in payload.get("bookmakers", []) for m in b.get("markets", [])):
                     _save_payload(conn, endpoint=endpoint, snapshot_role="live", as_of_date=game["day"],
                                   url=_full_url(url, params), payload=payload, provider=PROVIDER)
             state.setdefault("last_poll", {})[game["game_id"]] = now.isoformat()
             state.setdefault("spent", {})[today] = state.get("spent", {}).get(today, 0) + spent_here
-            edges = find_edges(payload, min_ev=LOG_MIN_EV)
+            edges = find_edges(payload, min_ev=LOG_MIN_EV, now=observed_at)
             result["polled"].append(dict(game_id=game["game_id"], markets=game_markets, credits=spent_here,
                                          books=sorted(b["key"] for b in payload.get("bookmakers", [])),
                                          edges=len(edges)))
             with conn.cursor() as cur:
+                persist_observations(cur, quote_observations(payload, game, observed_at))
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
                     projection, agrees = model_view(cur, edge, game)
-                    tier = alert_tier(edge["ev"], (game["start"] - now).total_seconds() / 60, edge["stat"])
+                    tier = alert_tier(edge["ev"], (game["start"] - observed_at).total_seconds() / 60, edge["stat"])
+                    edge.update(model_projection=projection, model_agrees=agrees)
+                    observation = decision_observation(edge, game, tier, experiment["sha256"])
+                    observation_id = observation["observation_id"]
+                    cur.execute("""INSERT INTO bets.nfl_sharp_observations(observation_id,observed_at_utc,payload)
+                        VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
+                        (observation_id, observed_at, psycopg2.extras.Json(observation)))
                     stake = stake_for(cur, tier, now, budget, edge["stat"]) if tier == "alert" else 0.0
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
                             fair_probability, ev, minimum_price, line_gap, tier, book, stake,
-                            model_projection, model_agrees)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            model_projection, model_agrees, initial_observation_id, alert_observation_id,
+                            initial_provenance, alert_provenance, alerted_at)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         ON CONFLICT (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price) DO UPDATE SET
                             tier='alert', sharp_book=EXCLUDED.sharp_book, sharp_line=EXCLUDED.sharp_line,
                             fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev, stake=EXCLUDED.stake,
                             minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap,
-                            model_projection=EXCLUDED.model_projection, model_agrees=EXCLUDED.model_agrees
+                            model_projection=EXCLUDED.model_projection, model_agrees=EXCLUDED.model_agrees,
+                            alert_observation_id=EXCLUDED.alert_observation_id, alert_provenance=EXCLUDED.alert_provenance
                           WHERE bets.nfl_sharp_alerts.tier IN ('logged', 'early') AND EXCLUDED.tier='alert'
                         RETURNING alert_id, tier, stake""",
                                 (event["id"], game["game_id"], game["start"], game["home"], game["away"], edge["stat"],
                                  edge["player"], edge["player_norm"], edge["side"], edge["line"], edge["price"], edge["link"],
                                  edge["sharp_book"], edge["sharp_line"], edge["fair_probability"], edge["ev"],
                                  edge["minimum_price"], edge["line_gap"], tier, edge["book"], stake,
-                                 projection, agrees))
+                                 projection, agrees, observation_id, observation_id if tier == "alert" else None,
+                                 psycopg2.extras.Json(observation), psycopg2.extras.Json(observation) if tier == "alert" else None,
+                                 observed_at))
                     row = cur.fetchone()
                     if row and row[1] == "alert":
                         new_alerts.append((row[0], edge, game, float(row[2] or 0.0)))

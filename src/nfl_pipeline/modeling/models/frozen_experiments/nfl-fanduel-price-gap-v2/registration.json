@@ -1,0 +1,420 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "nfl-fanduel-price-gap-v2",
+  "registered_at": "2026-10-19T05:56:59.691899+00:00",
+  "config": {
+    "change_reason": "Separate notification transport from orchestration; preserve pricing and selection rules",
+    "predecessor_experiment_id": "nfl-fanduel-price-gap-v1",
+    "predecessor_sha256": "7ed7a915bd048a3779c9fc58c5f0d62238000aee97830501bd42a74aaa08545e",
+    "scanner": {
+      "bet_books": [
+        "fanduel"
+      ],
+      "cash_enabled": false,
+      "contract": "nfl-sharp-quotes-v2",
+      "devig_method": "power",
+      "line_model": {
+        "anytime_td": {
+          "max_gap": 0.0,
+          "sigma": 1.0
+        },
+        "pass_attempts": {
+          "max_gap": 0.0,
+          "sigma": 6.0
+        },
+        "pass_completions": {
+          "max_gap": 0.0,
+          "sigma": 5.0
+        },
+        "passing_tds": {
+          "max_gap": 0.0,
+          "sigma": 0.95
+        },
+        "passing_yards": {
+          "max_gap": 6.0,
+          "sigma": 55.0
+        },
+        "receiving_yards": {
+          "max_gap": 3.0,
+          "sigma": 26.0
+        },
+        "receptions": {
+          "max_gap": 0.0,
+          "sigma": 1.9
+        },
+        "rush_attempts": {
+          "max_gap": 0.0,
+          "sigma": 4.0
+        },
+        "rushing_yards": {
+          "max_gap": 3.0,
+          "sigma": 26.0
+        },
+        "spread": {
+          "max_gap": 0.0,
+          "sigma": 13.5
+        },
+        "total": {
+          "max_gap": 1.0,
+          "sigma": 10.5
+        }
+      },
+      "log_min_ev": 0.01,
+      "markets": [
+        "player_reception_yds"
+      ],
+      "max_source_age_seconds": 300,
+      "max_source_skew_seconds": 120,
+      "min_ev": 0.03,
+      "ping_window_by_stat": {
+        "receptions": 45
+      },
+      "ping_window_minutes": 180,
+      "reference_books": [
+        "pinnacle"
+      ],
+      "selection": "first_eligible_per_book_player_game_stat"
+    }
+  },
+  "files": {
+    "nfl_pipeline": {
+      "path": "src/nfl_pipeline/__init__.py",
+      "sha256": "c1473918ab1ede3dfe915a3a95f450f52fa772267e707ea4cce06c7fa3f42368"
+    },
+    "nfl_pipeline.betting_preferences": {
+      "path": "src/nfl_pipeline/betting_preferences.py",
+      "sha256": "96804ffcd8d072b6d3e6e197c8e9a4233cc0742558f566cd4f7ceb98cb3561cc"
+    },
+    "nfl_pipeline.cash_execution": {
+      "path": "src/nfl_pipeline/cash_execution.py",
+      "sha256": "7f8af6ab53cc34b384c7d3ad98b3a0e1e0f691029b5a2a3b0a1595f159c86f2a"
+    },
+    "nfl_pipeline.cash_freeze": {
+      "path": "src/nfl_pipeline/cash_freeze.py",
+      "sha256": "22efe75d0c6a55e92a38951080ad21c0469a0cb4382aa5e6801c231547276711"
+    },
+    "nfl_pipeline.cash_trial_policy": {
+      "path": "src/nfl_pipeline/cash_trial_policy.py",
+      "sha256": "820d0aa8bc5d03fcd3df711985d399df1b9c624074a981225bfc83a6a4cdb1cc"
+    },
+    "nfl_pipeline.context_contract": {
+      "path": "src/nfl_pipeline/context_contract.py",
+      "sha256": "f79a5b28062cf643f62a50a187347f45214208a141332b7cace63ff3b96e6ea0"
+    },
+    "nfl_pipeline.crawler_oddsapi": {
+      "path": "src/nfl_pipeline/crawler_oddsapi.py",
+      "sha256": "f163ecb5e53986e7f513e09b35f0969047aeb32bfa826c1d46357726a6d2b375"
+    },
+    "nfl_pipeline.db": {
+      "path": "src/nfl_pipeline/db.py",
+      "sha256": "046bb64edfadbd37a277245c10982e6367fa7f8171a58117262cebaebd861680"
+    },
+    "nfl_pipeline.experiment_registry": {
+      "path": "src/nfl_pipeline/experiment_registry.py",
+      "sha256": "0889726a758330b7e63324130397ab2bdd2a4739123b57ac8c269dc7175c43ac"
+    },
+    "nfl_pipeline.fanduel_links": {
+      "path": "src/nfl_pipeline/fanduel_links.py",
+      "sha256": "9e6779e395b4457175b451207e2fa8562ea5381fbaee1f1a0d80f34c1160ff5c"
+    },
+    "nfl_pipeline.fanduel_state": {
+      "path": "src/nfl_pipeline/fanduel_state.py",
+      "sha256": "e92bc2faedf6f9b471c6bade959121d7c7fb90a92c701add55c0f42850c343d2"
+    },
+    "nfl_pipeline.features": {
+      "path": "src/nfl_pipeline/features.py",
+      "sha256": "6e465f3a419ebfe4f9c5de0b0f5289b751f1f325f013aee00a5ac01b5f992378"
+    },
+    "nfl_pipeline.forecast_horizon": {
+      "path": "src/nfl_pipeline/forecast_horizon.py",
+      "sha256": "0c06f2622a166bb9965fc671d774b9865f91c2017213446f35afccfc713c8713"
+    },
+    "nfl_pipeline.forecast_outputs": {
+      "path": "src/nfl_pipeline/forecast_outputs.py",
+      "sha256": "c499635b69f65f7ca0e64bfd7520b8d53010ed34297766c9fd13fc0a5b090c8a"
+    },
+    "nfl_pipeline.forecast_store": {
+      "path": "src/nfl_pipeline/forecast_store.py",
+      "sha256": "dac5ee80781e001a865117fe0fb6e35190ee31b776ecdda4edaa6956f78ac51d"
+    },
+    "nfl_pipeline.game_scope": {
+      "path": "src/nfl_pipeline/game_scope.py",
+      "sha256": "11d73e86a264624dcd939326fb7e5399dec4525e5b8dab6920f7900ba08a506a"
+    },
+    "nfl_pipeline.integrity": {
+      "path": "src/nfl_pipeline/integrity.py",
+      "sha256": "b10396b487c77db5e2854963842b03ec426b667a78c81cb5c3583fa671cca8de"
+    },
+    "nfl_pipeline.markets": {
+      "path": "src/nfl_pipeline/markets.py",
+      "sha256": "091b44fa26d3eaba07791fcbe06509723b4c3d443486772d2472f409d8850661"
+    },
+    "nfl_pipeline.modeling": {
+      "path": "src/nfl_pipeline/modeling/__init__.py",
+      "sha256": "bd17621e20dfeb8d2571299c09ac690bbc57fecf3f82fb197eb40a1ac75f2664"
+    },
+    "nfl_pipeline.modeling.benchmark_offers": {
+      "path": "src/nfl_pipeline/modeling/benchmark_offers.py",
+      "sha256": "a69489bd4f1563a2712221da5371c976db6ecc896cc527d89e4bc5f051003160"
+    },
+    "nfl_pipeline.modeling.challenger_models": {
+      "path": "src/nfl_pipeline/modeling/challenger_models.py",
+      "sha256": "26e240c29c513734542bc571fb83108384ed3435639a19b81c4c7cdb16eab7d3"
+    },
+    "nfl_pipeline.modeling.chronological_calibration": {
+      "path": "src/nfl_pipeline/modeling/chronological_calibration.py",
+      "sha256": "37012dfbb116aee5b5edd84cfe34e4beea49a815a6625269b1d59a6917b2f3e3"
+    },
+    "nfl_pipeline.modeling.component_validation": {
+      "path": "src/nfl_pipeline/modeling/component_validation.py",
+      "sha256": "0d0f6a51e2cfa2ab2faaee8c181ea1bd757593589f6eb3e7988a9547c7e4bb7f"
+    },
+    "nfl_pipeline.modeling.distribution_policy": {
+      "path": "src/nfl_pipeline/modeling/distribution_policy.py",
+      "sha256": "3cb9f8c2a02ddd1bf44f2375174d30e485fcea1ef4528a8504f0b23bd4c06349"
+    },
+    "nfl_pipeline.modeling.evaluation": {
+      "path": "src/nfl_pipeline/modeling/evaluation.py",
+      "sha256": "de7563a4c854b5633c60f6d1b36ab99b903c17603458aa2e8f63795335d42342"
+    },
+    "nfl_pipeline.modeling.exact_line_evidence": {
+      "path": "src/nfl_pipeline/modeling/exact_line_evidence.py",
+      "sha256": "d5b5385019f8ecd01661eb388f6bd3ce62111b860cbe946dceacc8ea4c13f9b5"
+    },
+    "nfl_pipeline.modeling.final_probability_validation": {
+      "path": "src/nfl_pipeline/modeling/final_probability_validation.py",
+      "sha256": "54547c95acb457bc4f82d1815f9801867fbf8b21345946bbab3638e953734fdd"
+    },
+    "nfl_pipeline.modeling.fit_market_calibration": {
+      "path": "src/nfl_pipeline/modeling/fit_market_calibration.py",
+      "sha256": "6d41a606732319cea9bd827829834c5497f5f9f11983862c5b2fcd9bd1b448b9"
+    },
+    "nfl_pipeline.modeling.forecast_repair": {
+      "path": "src/nfl_pipeline/modeling/forecast_repair.py",
+      "sha256": "187458f79fefa87d91a7a6e562758b4206acc419ebf7a636abb650790b341d23"
+    },
+    "nfl_pipeline.modeling.live_scoring_replay": {
+      "path": "src/nfl_pipeline/modeling/live_scoring_replay.py",
+      "sha256": "41c5c07b9247b75a167ba20014eba91a1066de2fa2855a44480a5dab46c3eaf5"
+    },
+    "nfl_pipeline.modeling.micro_reconciliation": {
+      "path": "src/nfl_pipeline/modeling/micro_reconciliation.py",
+      "sha256": "e8aace4db7c710f8d173c9923b9a92c0fbe7589f76bc2b10d7308ee4df2bae55"
+    },
+    "nfl_pipeline.modeling.model_benchmark": {
+      "path": "src/nfl_pipeline/modeling/model_benchmark.py",
+      "sha256": "9db8de3e1b87ee4df2c1e10ef8db75c0200b271a8f1c541c1c10c5bc1c761f9a"
+    },
+    "nfl_pipeline.modeling.predict_player_props": {
+      "path": "src/nfl_pipeline/modeling/predict_player_props.py",
+      "sha256": "2ba1f28288e935432d4b013e6eb31a3525a64a6537ff66a4a6028d3715d9e864"
+    },
+    "nfl_pipeline.modeling.prospective_market": {
+      "path": "src/nfl_pipeline/modeling/prospective_market.py",
+      "sha256": "b35f4d440d1b346725ef462adb240e4f8567a7cf6c929e2cf0374039c998b302"
+    },
+    "nfl_pipeline.modeling.qb_tail_distribution": {
+      "path": "src/nfl_pipeline/modeling/qb_tail_distribution.py",
+      "sha256": "5207e41c9d788864a39faa8fe6726f30da9a9a6b6fa5b4bb88221aa66d205e04"
+    },
+    "nfl_pipeline.modeling.receiver_role_model": {
+      "path": "src/nfl_pipeline/modeling/receiver_role_model.py",
+      "sha256": "ef2e05c57ce6ee73e42d6ee51aeb31c168b1b69478f78cea0453d351846df471"
+    },
+    "nfl_pipeline.modeling.receiving_coherent_repair": {
+      "path": "src/nfl_pipeline/modeling/receiving_coherent_repair.py",
+      "sha256": "9811471156a2d2ed874251f04da55814cd6e1bb48677175886e1342d9a42823e"
+    },
+    "nfl_pipeline.modeling.receiving_later_week_validation": {
+      "path": "src/nfl_pipeline/modeling/receiving_later_week_validation.py",
+      "sha256": "f3cb27def40a94f7ea3edfde561dadf6a5dde4a0332eda541ee502fc99cbbc67"
+    },
+    "nfl_pipeline.modeling.receiving_paper_trial": {
+      "path": "src/nfl_pipeline/modeling/receiving_paper_trial.py",
+      "sha256": "daae1955373172d01ec462ff524813fda2d7a2abe3c3f555a7b53402e5f6ddd9"
+    },
+    "nfl_pipeline.modeling.receiving_quantile_validation": {
+      "path": "src/nfl_pipeline/modeling/receiving_quantile_validation.py",
+      "sha256": "85175af59216b09a179e13a023236b08a7cca1c4337643eee086785975acb69b"
+    },
+    "nfl_pipeline.modeling.receiving_quantiles": {
+      "path": "src/nfl_pipeline/modeling/receiving_quantiles.py",
+      "sha256": "7f430c6886052f8f4eb07f2e9ca7b4ff37c0f24d1d24724011e478f3b740cb1a"
+    },
+    "nfl_pipeline.modeling.receiving_research_trial": {
+      "path": "src/nfl_pipeline/modeling/receiving_research_trial.py",
+      "sha256": "c5421977e701aeb54340a882c5727a618a01e1b7c7dd8f2e372795f4de6ee4c5"
+    },
+    "nfl_pipeline.modeling.receiving_residual_challenger": {
+      "path": "src/nfl_pipeline/modeling/receiving_residual_challenger.py",
+      "sha256": "413a68c8cf6157d9c964cd71244e07ee7f03278f38425f5a54c20323b3419f52"
+    },
+    "nfl_pipeline.modeling.receiving_selection_experiment": {
+      "path": "src/nfl_pipeline/modeling/receiving_selection_experiment.py",
+      "sha256": "e6e2b971ab0b8d22ec97f0419565414abf309323cd24b52ec55ce383d8cebe8d"
+    },
+    "nfl_pipeline.modeling.receiving_trial_checkpoint": {
+      "path": "src/nfl_pipeline/modeling/receiving_trial_checkpoint.py",
+      "sha256": "36de585298a68d6253b75c5c06bf009cca7a5fdb5fd916a8415eb95fa337d1cf"
+    },
+    "nfl_pipeline.modeling.role_context_training": {
+      "path": "src/nfl_pipeline/modeling/role_context_training.py",
+      "sha256": "3c80c0ddfb5a8e8473c376fe0d42126ef517cd27af1ab8f2f70007353057cb1a"
+    },
+    "nfl_pipeline.modeling.role_workload": {
+      "path": "src/nfl_pipeline/modeling/role_workload.py",
+      "sha256": "74d557fa284f4fc1070a4e8dcfb3f0f4fd4ade86f7bd94cf9986c9f63cbca7d2"
+    },
+    "nfl_pipeline.modeling.sample_aware_splits": {
+      "path": "src/nfl_pipeline/modeling/sample_aware_splits.py",
+      "sha256": "28834233fd7d5cb6378c1c73ddd41462b1c45d0fd0294c567758a67aca8f9b5d"
+    },
+    "nfl_pipeline.modeling.score_accuracy_components": {
+      "path": "src/nfl_pipeline/modeling/score_accuracy_components.py",
+      "sha256": "abdef031b89741b8adaec02c1684fe28b7723470755592e69c61962c7ec63aaf"
+    },
+    "nfl_pipeline.modeling.scoring_capture": {
+      "path": "src/nfl_pipeline/modeling/scoring_capture.py",
+      "sha256": "91de0d86aa0a9692d03832277ba70c89826fb6b39fa93d6863685e1ef9cb4842"
+    },
+    "nfl_pipeline.modeling.scoring_equivalence": {
+      "path": "src/nfl_pipeline/modeling/scoring_equivalence.py",
+      "sha256": "db3f1655111cf9639d083b3372dae4342aaea7d0a4ec6e7ef498479e3b4d6969"
+    },
+    "nfl_pipeline.modeling.scoring_versions": {
+      "path": "src/nfl_pipeline/modeling/scoring_versions.py",
+      "sha256": "4fff2f5a0ee36b1e3615961c6d160b928c7fc2b8a4d6667ead499cbbfc4f965a"
+    },
+    "nfl_pipeline.modeling.selected_pick_diagnostics": {
+      "path": "src/nfl_pipeline/modeling/selected_pick_diagnostics.py",
+      "sha256": "d6bc179a16d420f367fbb3746b660f889c6cd524362a6fc333daf12c816fd7ae"
+    },
+    "nfl_pipeline.modeling.sharp_alert_report": {
+      "path": "src/nfl_pipeline/modeling/sharp_alert_report.py",
+      "sha256": "76471d687481eecae1e8c9e7f29792ba5593022a36889ad9af6d718f9573caa0"
+    },
+    "nfl_pipeline.modeling.sharp_evidence_report": {
+      "path": "src/nfl_pipeline/modeling/sharp_evidence_report.py",
+      "sha256": "2bc288846f9afd9ed6fc0f61f65e48a45f8256db7a6b66559ef6b568cf003187"
+    },
+    "nfl_pipeline.modeling.stat_model_registry": {
+      "path": "src/nfl_pipeline/modeling/stat_model_registry.py",
+      "sha256": "0e5cee1f0cb244f1f55f80867792fba34ab086d136322fba3e5d96064ae792f9"
+    },
+    "nfl_pipeline.modeling.stat_runtime": {
+      "path": "src/nfl_pipeline/modeling/stat_runtime.py",
+      "sha256": "9ade4f0a262d645791a8b216a85d24852592f30d000d0b3599ffb5341edd814f"
+    },
+    "nfl_pipeline.modeling.tail_calibration": {
+      "path": "src/nfl_pipeline/modeling/tail_calibration.py",
+      "sha256": "db8f0b538f6cdbd0a36dfe9486f8ec16bcc35f415b2e11e10daf9e7a4b6d2251"
+    },
+    "nfl_pipeline.modeling.target_components": {
+      "path": "src/nfl_pipeline/modeling/target_components.py",
+      "sha256": "0cbdea2de2b3856f38b4373a08501301aeee9316b1eb4ecc003c865f2393cb92"
+    },
+    "nfl_pipeline.modeling.target_point_capture": {
+      "path": "src/nfl_pipeline/modeling/target_point_capture.py",
+      "sha256": "a33c6976de0a3f986fec9dd397bf847852b30070e7ac2993bc53582dd1aa79de"
+    },
+    "nfl_pipeline.modeling.target_volume": {
+      "path": "src/nfl_pipeline/modeling/target_volume.py",
+      "sha256": "2dbe77f6ba798bf51573fa7c4e5931d8dfd5a9590a16dacf28ec7da33bb5989a"
+    },
+    "nfl_pipeline.modeling.target_volume_validation": {
+      "path": "src/nfl_pipeline/modeling/target_volume_validation.py",
+      "sha256": "dc8c7594be12aa311b79e058b7ea47976161e47714d16d0b773be889f9f317a9"
+    },
+    "nfl_pipeline.modeling.team_workload": {
+      "path": "src/nfl_pipeline/modeling/team_workload.py",
+      "sha256": "5086e76288d5a3e42b6bd66ed184c3b0b5c4bc120942b1fd1b48d76c6b146cee"
+    },
+    "nfl_pipeline.modeling.train_accuracy_challengers": {
+      "path": "src/nfl_pipeline/modeling/train_accuracy_challengers.py",
+      "sha256": "f807a4bcfbcefdc1ab377962c0e02fa5b2e033f2fc42494ac7e701832563ac08"
+    },
+    "nfl_pipeline.modeling.train_accuracy_components": {
+      "path": "src/nfl_pipeline/modeling/train_accuracy_components.py",
+      "sha256": "db4909879d31afaa1428bbc2302194bb662b52132566691e949822381b1fe581"
+    },
+    "nfl_pipeline.modeling.train_player_stat_models": {
+      "path": "src/nfl_pipeline/modeling/train_player_stat_models.py",
+      "sha256": "6ecc585c04fa1823e097f5e28824b7e30a5771f9d77c147d4b1928d60a21562a"
+    },
+    "nfl_pipeline.modeling.train_prop_exact_line_models": {
+      "path": "src/nfl_pipeline/modeling/train_prop_exact_line_models.py",
+      "sha256": "370dd0c81e6f6b15db9a2a3d72625369e1bbbfd6a3017f7247c6bb6a56041497"
+    },
+    "nfl_pipeline.modeling.train_receiving_quantiles": {
+      "path": "src/nfl_pipeline/modeling/train_receiving_quantiles.py",
+      "sha256": "a0768001e4656f1a062bfb58b2a50915a9c7e3202ec60e94b762266f98f49ecc"
+    },
+    "nfl_pipeline.modeling.train_target_volume": {
+      "path": "src/nfl_pipeline/modeling/train_target_volume.py",
+      "sha256": "e62853987a64c691cfbb5e91fa6ff7a61ce93295d697ab7cd2a271df19b7d31c"
+    },
+    "nfl_pipeline.modeling.train_workload_depth": {
+      "path": "src/nfl_pipeline/modeling/train_workload_depth.py",
+      "sha256": "c59d546046842fdd4348f6e6318b0fd1421013e7d32a8e67fc4b4ebbd502e4ee"
+    },
+    "nfl_pipeline.modeling.validate_distribution_policy": {
+      "path": "src/nfl_pipeline/modeling/validate_distribution_policy.py",
+      "sha256": "386769a4ea9740a31b9248a638d5e7d25725d8b2aa1a584f06a5a9310721e588"
+    },
+    "nfl_pipeline.modeling.workload_depth_model": {
+      "path": "src/nfl_pipeline/modeling/workload_depth_model.py",
+      "sha256": "47597adcceced09627ff04850b80a49dea3c7d930b4f1fdeeab594451bacb1a4"
+    },
+    "nfl_pipeline.modeling.yardage_lock_validation": {
+      "path": "src/nfl_pipeline/modeling/yardage_lock_validation.py",
+      "sha256": "58559f4e856cf9bb237531ff4b4b85838b2aa09cb2bd19b63cc71a8acc803e54"
+    },
+    "nfl_pipeline.offer_selection": {
+      "path": "src/nfl_pipeline/offer_selection.py",
+      "sha256": "b459ef47d574875ee4db6ca25f17037056c914adbe6ddfc11a4f6b7f18035119"
+    },
+    "nfl_pipeline.parse_oddsapi": {
+      "path": "src/nfl_pipeline/parse_oddsapi.py",
+      "sha256": "2732169307f1d6b11444f0d006bedf1d3d67bf05a5d31a0ba79937e1fbe1e75d"
+    },
+    "nfl_pipeline.runtime_timing": {
+      "path": "src/nfl_pipeline/runtime_timing.py",
+      "sha256": "5cfac5d008417503584d1547ebdea7ed431053ddac1ba6070d98bfaa52c3f5c9"
+    },
+    "nfl_pipeline.schema": {
+      "path": "src/nfl_pipeline/schema.py",
+      "sha256": "bb699c454e511b8813e80e4dc3d011307ed8a09926910aafba721783d82c6c74"
+    },
+    "nfl_pipeline.sharp_delivery": {
+      "path": "src/nfl_pipeline/sharp_delivery.py",
+      "sha256": "dbd8a3ef24d07cc1a5de65792e505948d851665b3fe64cc4de2226f471c39451"
+    },
+    "nfl_pipeline.sharp_math": {
+      "path": "src/nfl_pipeline/sharp_math.py",
+      "sha256": "7b6fd4b99fb05a69249599d7c5f22b08427627d53c12d42afac55fbee82601e8"
+    },
+    "nfl_pipeline.sharp_watch": {
+      "path": "src/nfl_pipeline/sharp_watch.py",
+      "sha256": "4fc9f0b1d77c163d817619e95e81cdf67e681aae47b4c32f2c24e3fa5f14b9a2"
+    },
+    "supernovabets_config": {
+      "path": "src/supernovabets_config.py",
+      "sha256": "9142ba49792c093f756d15887eda3e52bdd7f8ed6d4ad09b85608539dd009287"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "e12c8284e4ff01242c6bf64cf8ec362f100fcd1b08b587bb107f56584f5aaff0"
+}

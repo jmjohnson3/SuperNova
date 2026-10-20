@@ -109,8 +109,20 @@ def isolated_settlement(monkeypatch, tmp_path):
     """Settlement gating reads the DB and a state file; keep tests off both."""
     signature = {'value': dict(final_games='1')}
     monkeypatch.setattr(runner, 'SETTLEMENT_STATE', tmp_path/'settlement_state.json')
+    monkeypatch.setattr(runner, 'CHECKPOINT_STATE', tmp_path/'checkpoint_state.json')
     monkeypatch.setattr(runner, '_results_pending', lambda now: False)
+    monkeypatch.setattr(runner, '_unresolved_result_dates', lambda now, **kwargs: [])
     monkeypatch.setattr(runner, '_settlement_signature', lambda: dict(signature['value']))
+    monkeypatch.setattr(runner.checkpoints, 'write_report', lambda *a, **k: {})
+    monkeypatch.setattr(runner.checkpoints, 'verify_capture', lambda day, games, since: {
+        str(game['game_id']): dict(game_id=str(game['game_id']), fresh_normalized_rows=1,
+            fresh_true_pair_rows=1, fresh_true_pair_rows_with_links=1,
+            current_fanduel_locks=1, receiving_locks=1, receiving_same_line_triplets=1,
+            explicit_injury_context_locks=1, known_player_injury_context_locks=0,
+            immutable_lock_violations=0, actionable_missing_links=0,
+            verification_passed=True)
+        for game in games
+    })
     return signature
 
 
@@ -133,6 +145,35 @@ def test_unchanged_settlement_inputs_skip_the_ten_minute_sweep(monkeypatch, isol
     assert third['settlement']['results_import_due'] is False
 
 
+def test_upcoming_capture_window_reserves_close_mutex(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(runner, '_has_close_work', lambda d: True)
+    monkeypatch.setattr(runner, '_locked_prop_count', lambda d: 4)
+    monkeypatch.setattr(runner, '_active_close_games', lambda *a,**k: [])
+    monkeypatch.setattr(runner, '_upcoming_close_games', lambda *a,**k: [
+        dict(game_id='early', minutes_to_start=150)
+    ])
+    monkeypatch.setattr(runner, '_run', lambda step: calls.append(step.module) or (0,'{}',''))
+    result=runner.run_for_date(date(2026,9,21))
+    assert result['status']=='ok'
+    assert result['close_window']['mode']=='waiting_for_capture_window'
+    assert result['close_window']['upcoming_games'][0]['game_id']=='early'
+    assert calls==[]
+
+
+def test_no_slate_close_check_is_idle_and_never_runs_history_reports(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(runner, '_has_close_work', lambda d: False)
+    monkeypatch.setattr(runner, '_locked_prop_count', lambda d: 0)
+    monkeypatch.setattr(runner, '_active_close_games', lambda *a,**k: [])
+    monkeypatch.setattr(runner, '_upcoming_close_games', lambda *a,**k: [])
+    monkeypatch.setattr(runner, '_run', lambda step: calls.append(step.module) or (0,'{}',''))
+    result=runner.run_for_date(date(2026,9,23))
+    assert result['status']=='ok'
+    assert result['close_window']['mode']=='idle_no_slate_work'
+    assert calls==[]
+
+
 def test_pending_results_force_import_and_failed_runs_are_not_marked_complete(monkeypatch):
     calls=[]
     monkeypatch.setattr(runner, '_has_close_work', lambda d: True)
@@ -147,10 +188,75 @@ def test_pending_results_force_import_and_failed_runs_are_not_marked_complete(mo
     assert 'nfl_pipeline.import_nflverse' in calls and 'nfl_pipeline.grade_predictions' in calls
 
 
+def test_default_date_revisits_unresolved_slate_after_midnight(monkeypatch, tmp_path):
+    unresolved = date(2026, 10, 15)
+    monkeypatch.setattr(runner, '_nearby_close_date', lambda *a, **k: None)
+    monkeypatch.setattr(runner, '_unresolved_result_dates', lambda *a, **k: [unresolved])
+    monkeypatch.setattr(runner, '_load_settlement_state', lambda: {})
+    assert runner._default_close_date() == unresolved
+
+
+def test_unresolved_date_selection_uses_oldest_date_specific_attempt():
+    first = date(2026, 10, 11); second = date(2026, 10, 12)
+    state = {'last_results_import_by_date': {
+        first.isoformat(): '2026-10-13T03:00:00+00:00',
+        second.isoformat(): '2026-10-13T01:00:00+00:00',
+    }}
+    assert runner._select_unresolved_date([first, second], state) == second
+
+
+def test_final_probability_timeout_is_nonfatal_and_date_partitioned(monkeypatch):
+    calls = []
+    monkeypatch.setattr(runner, '_has_close_work', lambda d: True)
+    monkeypatch.setattr(runner, '_locked_prop_count', lambda d: 1)
+    monkeypatch.setattr(runner, '_active_close_games', lambda *a, **k: [])
+    monkeypatch.setattr(runner, '_upcoming_close_games', lambda *a, **k: [])
+
+    def run(step):
+        calls.append(step)
+        if step.module == 'nfl_pipeline.modeling.final_probability_validation':
+            return 124, '', 'timed out'
+        return 0, '{}', ''
+
+    monkeypatch.setattr(runner, '_run', run)
+    result = runner.run_for_date(date(2026, 10, 15))
+    validation = next(s for s in calls if s.module == 'nfl_pipeline.modeling.final_probability_validation')
+    assert validation.args == ('--date', '2026-10-15')
+    assert result['status'] == 'ok'
+    row = next(s for s in result['steps'] if s['label'] == 'NFL Final Probability Validation')
+    assert row['returncode'] == 124 and row['nonfatal'] is True
+    assert any(s.module == 'nfl_pipeline.settlement_evidence' for s in calls)
+
+
 def test_close_before_lock_stays_invalid():
     row=close_record(fresh_book_rows=0,fresh_market_rows=0)
     row['fetched_at_utc']=row['created_at_utc']
     assert clv.classify_prop_close(row)['status'] == 'stale_close_before_lock'
+
+
+def test_watcher_observation_keeps_original_role_and_strict_timing():
+    row = close_record(close_provider='oddsapi_watch', lock_provider='oddsapi_watch',
+        close_snapshot_role='live', close_row_id=42, fresh_market_rows=0, fresh_book_rows=0)
+    row['fetched_at_utc'] = row['start_ts_utc'] - timedelta(minutes=5)
+    before = deepcopy(row)
+    quality = clv.classify_prop_close(row)
+    assert quality['valid'] and quality['observation_role'] == 'live'
+    assert quality['source_row_id'] == 42 and row == before
+    row['fetched_at_utc'] = row['created_at_utc']
+    assert not clv.classify_prop_close(row)['valid']
+    row['fetched_at_utc'] = row['start_ts_utc']
+    assert not clv.classify_prop_close(row)['valid']
+
+
+def test_arbitrary_live_rows_and_lock_rows_do_not_become_closes():
+    row = close_record(close_provider='sportsgameodds', lock_provider='sportsgameodds',
+        close_snapshot_role='live')
+    row['fetched_at_utc'] = row['start_ts_utc'] - timedelta(minutes=5)
+    assert clv.classify_prop_close(row)['status'] == 'unsupported_close_observation'
+    row.update(close_provider='oddsapi_watch', lock_provider='oddsapi_watch', close_snapshot_role='lock')
+    assert not clv.classify_prop_close(row)['valid']
+    row.update(close_snapshot_role='live', line=14.5)
+    assert clv.classify_prop_close(row)['status'] == 'exact_line_mismatch'
 
 
 def cross_provider_close(**changes):
@@ -250,22 +356,35 @@ def test_settlement_path_refreshes_all_dates_without_new_locks(monkeypatch):
     ledger=next(s for s in calls if s.module=='nfl_pipeline.lock_ledger')
     assert grade.args==() and ledger.args==('--refresh-only',)
     assert any(s.module=='nfl_pipeline.modeling.train_prop_exact_line_models' for s in calls)
+    policy=next(s for s in calls if s.module=='nfl_pipeline.modeling.validate_distribution_policy')
+    assert '--deploy-approved' not in policy.args
+    stat_validation=next(s for s in calls if s.module=='nfl_pipeline.modeling.stat_model_validation')
+    assert '--activate-passed' not in stat_validation.args
+    assert any(s.module=='nfl_pipeline.modeling.receiving_paper_trial' and s.args==('report',) for s in calls)
+    assert sum(s.module=='nfl_pipeline.modeling.sharp_evidence_report' for s in calls) == 1
+    cash_review=next(s for s in calls if s.module=='nfl_pipeline.cash_readiness')
+    assert not cash_review.critical and cash_review.failure_is_warning and cash_review.timeout_s == 900
+    assert any(s.module=='nfl_pipeline.wager_reconciliation' and '--report' in s.args and '--output' in s.args for s in calls)
+    assert {'receiving_yards','passing_yards','rushing_yards','total'} <= set(policy.args)
+    assert any(s.module=='nfl_pipeline.settlement_evidence' for s in calls)
     checkpoint=next(s for s in calls if s.module=='nfl_pipeline.modeling.receiving_trial_checkpoint')
-    assert checkpoint.critical and checkpoint.args==('--date','2026-09-21')
+    assert not checkpoint.critical and checkpoint.failure_is_warning
+    assert checkpoint.args==('--date','2026-09-21','--incremental')
     modules=[s.module for s in calls]
     assert modules.index('nfl_pipeline.grade_predictions') < modules.index(checkpoint.module)
     assert modules.index('nfl_pipeline.clv_report') < modules.index(checkpoint.module)
 
 
-def test_checkpoint_failure_cannot_be_reported_as_scheduler_success(monkeypatch):
+def test_checkpoint_report_failure_is_visible_but_does_not_invalidate_grading(monkeypatch):
     monkeypatch.setattr(runner,'_has_close_work',lambda d:True)
     monkeypatch.setattr(runner,'_locked_prop_count',lambda d:1)
     monkeypatch.setattr(runner,'_active_close_games',lambda *a,**k:[])
     monkeypatch.setattr(runner,'_run',lambda step:(
         (1,'capture_incomplete','') if step.module=='nfl_pipeline.modeling.receiving_trial_checkpoint' else (0,'{}','')))
     result=runner.run_for_date(date(2026,9,24))
-    assert result['status']=='failed'
-    assert result['steps'][-1]['label']=='NFL Receiving Trial Checkpoint'
+    assert result['status']=='ok'
+    checkpoint = next(row for row in result['steps'] if row['label']=='NFL Receiving Trial Checkpoint')
+    assert checkpoint['returncode']==1 and checkpoint['nonfatal'] is True
 
 
 def test_zero_or_nonfinite_close_price_is_unknown():

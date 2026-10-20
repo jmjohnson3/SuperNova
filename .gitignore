@@ -3,6 +3,7 @@ __pycache__/
 logs/
 data/external_picks/
 data/ai_picks/
+data/nfl_wager_reconciliation/
 config/mlb_external_pick_sources.json
 
 # Large model artifacts — exceed GitHub's 100 MB file size limit
@@ -19,6 +20,11 @@ src/nfl_pipeline/modeling/models/**/*.pkl
 src/nfl_pipeline/modeling/models/final_probability_validation/
 src/nfl_pipeline/modeling/models/receiving_selection_experiment/
 src/nfl_pipeline/modeling/models/receiving_result_repair/
+# Each registration's registration.json is the evidence record and stays tracked;
+# its sources/ tree is a verbatim copy of files already in the repo, and the
+# scoring archives are regenerated on demand by scoring_versions.archive_current.
+src/nfl_pipeline/modeling/models/frozen_experiments/*/sources/
+src/nfl_pipeline/modeling/models/scoring_code_versions/
 
 # Walk-forward replay scratch outputs (regenerable)
 reports/walk_forward_cache/

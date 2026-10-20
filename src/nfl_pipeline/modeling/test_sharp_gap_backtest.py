@@ -6,8 +6,11 @@ from nfl_pipeline.modeling import sharp_gap_backtest as bt
 def snap(fd_line, fd_over, fd_under, pin_line, pin_over, pin_under, player="Terry McLaurin"):
     pair = lambda line, o, u: [dict(name="Over", description=player, point=line, price=o),
                                dict(name="Under", description=player, point=line, price=u)]
-    mk = lambda key, outs: {"key": key, "markets": [{"key": "player_reception_yds", "outcomes": outs}]}
-    return {"bookmakers": [mk("fanduel", pair(fd_line, fd_over, fd_under)), mk("pinnacle", pair(pin_line, pin_over, pin_under))]}
+    stamp = '2025-10-05T15:30:00+00:00'
+    mk = lambda key, outs: {"key": key, "last_update":stamp,
+                            "markets": [{"key": "player_reception_yds", "last_update":stamp,"outcomes": outs}]}
+    return {"observed_at_utc":stamp,
+            "bookmakers": [mk("fanduel", pair(fd_line, fd_over, fd_under)), mk("pinnacle", pair(pin_line, pin_over, pin_under))]}
 
 
 def test_fanduel_line_moves_are_graded_at_the_bets_line():

@@ -1,0 +1,8 @@
+{
+  "release_id": "nfl-20261013T091509Z",
+  "feature_contract": "nfl-asof-v2",
+  "sha256": {
+    "players": "b5a02dd002734b274be9ed56e222931ba99cf9877462c949a5c36a12617bd118",
+    "games": "f6f131afc762dff98ce29d7c3450b1000f8274f92067bb3f521b15af465470fa"
+  }
+}

@@ -15,13 +15,20 @@ def describe(row):
     captured = row.get('scoring_replay') or {}
     distribution = captured.get('distribution') or row.get('forecast_distribution') or {}
     distribution_id = hashlib.sha256(json.dumps(distribution, sort_keys=True, default=str).encode()).hexdigest()
+    # The captured input precedes offer-specific market anchoring. Do not call the
+    # adjusted pricing center an independent player-stat forecast.
+    raw_projection = captured.get('projection', row.get('projection'))
+    pricing_projection = row.get('projection')
     return dict(contract=CONTRACT,
         scope={k: row.get(k) for k in ('game_id', 'player_id', 'stat', 'model_version', 'prediction_context_cutoff_utc')},
-        point_forecast=dict(value=row.get('projection'),
+        point_forecast=dict(value=raw_projection,
             semantics=row.get('projection_semantics') or 'unspecified_central_forecast',
-            model_version=row.get('model_version')),
+            model_version=row.get('model_version'),
+            source='locked_pre_offer_model' if 'projection' in captured else 'legacy_projection_unverified',
+            independent_of_offer='projection' in captured),
         expected_yards=None, typical_yards=None,
-        pricing=dict(projection_anchor=captured.get('projection', row.get('projection')),
+        pricing=dict(projection_anchor=pricing_projection, model_projection=raw_projection,
+            market_adjusted=raw_projection != pricing_projection,
             model_version=row.get('model_version'), distribution_id=distribution_id,
             distribution_kind=distribution.get('kind') or row.get('distribution_kind'),
             scoring_version=captured.get('scoring_fingerprint'),

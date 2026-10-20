@@ -1,0 +1,17 @@
+{
+  "contract": "nfl-stat-candidate-evidence-v1",
+  "stat": "receiving_yards",
+  "component": "team_receiving_yards",
+  "artifact_sha256": "2ff86bf154215c728d6449e0bdf91082a6226ef00fa2f033851f6f447778a5c7",
+  "historical_screen_outputs": [
+    "expected_mean",
+    "median"
+  ],
+  "approved_outputs": [],
+  "deployment_approved": false,
+  "betting_approved": false,
+  "blockers": [
+    "prospective_identical_fanduel_line_validation_required"
+  ],
+  "built_at": "2026-10-15T20:23:59.914587+00:00"
+}

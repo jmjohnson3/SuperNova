@@ -1,0 +1,31 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-10-11T12:07:42.878599+00:00",
+  "captured_at": "2026-10-11T12:07:43.241932+00:00",
+  "selected": [
+    {
+      "forecast_id": 15720,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-11",
+      "game_id": "2026_05_PHI_JAX",
+      "player_id": "00-0038935",
+      "team": "JAX",
+      "season": 2026,
+      "week": 5,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "under",
+      "line": 33.5,
+      "price": -113,
+      "probability": 0.5391705069124424,
+      "market_probability": 0.5,
+      "ev": 0.016312548427878104,
+      "captured_at": "2026-10-11T12:07:43.241932+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 72,
+    "original_drift_guard_not_passed": 11
+  }
+}

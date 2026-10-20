@@ -102,6 +102,20 @@ VOLATILITY_STATS = (
     "goal_line_targets",
 )
 
+# These are the components most likely to be distorted by an in-game injury or a
+# one-game usage eruption.  The ordinary rolling averages remain available; the
+# additional histories below give challengers a shock-resistant alternative.
+SHOCK_SENSITIVE_STATS = (
+    "pass_attempts",
+    "passing_yards",
+    "carries",
+    "rushing_yards",
+    "targets",
+    "receptions",
+    "receiving_yards",
+    "receiving_air_yards",
+)
+
 
 @dataclass(frozen=True)
 class FeatureBuildConfig:
@@ -205,10 +219,16 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
             d.pos_slot AS depth_pos_slot,
             i.report_status AS injury_report_status,
             i.practice_status AS injury_practice_status,
-            COALESCE(team_inj.teammate_skill_injury_count, 0)::float AS same_week_teammate_skill_injury_count,
-            COALESCE(team_inj.teammate_skill_injury_score, 0)::float AS same_week_teammate_skill_injury_score,
-            COALESCE(team_inj.teammate_receiver_injury_score, 0)::float AS same_week_teammate_receiver_injury_score,
-            COALESCE(team_inj.teammate_receiver_out_count, 0)::float AS same_week_teammate_receiver_out_count,
+            CASE WHEN team_inj.teammate_injury_report_rows > 0
+                THEN team_inj.teammate_skill_injury_count END::float AS same_week_teammate_skill_injury_count,
+            CASE WHEN team_inj.teammate_injury_report_rows > 0
+                THEN team_inj.teammate_skill_injury_score END::float AS same_week_teammate_skill_injury_score,
+            CASE WHEN team_inj.teammate_injury_report_rows > 0
+                THEN team_inj.teammate_receiver_injury_score END::float AS same_week_teammate_receiver_injury_score,
+            CASE WHEN team_inj.teammate_injury_report_rows > 0
+                THEN team_inj.teammate_receiver_out_count END::float AS same_week_teammate_receiver_out_count,
+            CASE WHEN team_inj.teammate_injury_report_rows > 0 THEN 1.0 ELSE 0.0 END::float
+                AS same_week_injury_context_known,
             g.total_line::float AS game_total_line,
             g.temp::float AS game_temp_f,
             g.wind::float AS game_wind_mph,
@@ -276,6 +296,7 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
         ) i ON TRUE
         LEFT JOIN LATERAL (
             SELECT
+                COUNT(*)::float AS teammate_injury_report_rows,
                 COUNT(*) FILTER (
                     WHERE UPPER(COALESCE(ti.position, '')) IN ('RB', 'WR', 'TE')
                       AND ti.injury_score > 0
@@ -339,6 +360,35 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
 def _add_player_rolling(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(["player_id", "season", "week", "game_id"]).copy()
     new_cols: dict[str, pd.Series] = {}
+
+    # This is a postgame observation used only after it is shifted into future
+    # rows.  It must never be consumed as a feature for the game that created it.
+    snap_share = pd.to_numeric(
+        df.get("offense_snap_share", pd.Series(np.nan, index=df.index)), errors="coerce"
+    ).fillna(pd.to_numeric(
+        df.get("snap_share", pd.Series(np.nan, index=df.index)), errors="coerce"
+    ))
+    prior_snap = snap_share.groupby(df["player_id"]).shift(1)
+    expected_snap = (
+        prior_snap.groupby(df["player_id"])
+        .rolling(5, min_periods=3)
+        .median()
+        .reset_index(level=0, drop=True)
+    )
+    unexpected_partial = (
+        expected_snap.ge(0.50)
+        & snap_share.notna()
+        & snap_share.lt(0.75 * expected_snap)
+    ).astype(float)
+    new_cols["unexpected_partial_rate_avg_5"] = (
+        unexpected_partial.groupby(df["player_id"])
+        .shift(1)
+        .groupby(df["player_id"])
+        .rolling(5, min_periods=1)
+        .mean()
+        .reset_index(level=0, drop=True)
+    )
+
     for stat in ROLLING_STATS:
         if stat not in df.columns:
             df[stat] = 0.0
@@ -363,6 +413,27 @@ def _add_player_rolling(df: pd.DataFrame) -> pd.DataFrame:
                     .std()
                     .reset_index(level=0, drop=True)
                 )
+        if stat in SHOCK_SENSITIVE_STATS:
+            # A surprise partial appearance is evidence about workload variance,
+            # but it is not a normal-role skill observation.  Keep the original
+            # average and add a full-role view so validation can choose between
+            # them without rewriting history.
+            full_role = values.mask(unexpected_partial.eq(1.0))
+            shifted_full_role = full_role.groupby(df["player_id"]).shift(1)
+            new_cols[f"{stat}_full_role_avg_5"] = (
+                shifted_full_role.groupby(df["player_id"])
+                .rolling(5, min_periods=1)
+                .mean()
+                .reset_index(level=0, drop=True)
+            )
+            rolling_median = (
+                shifted.groupby(df["player_id"])
+                .rolling(5, min_periods=1)
+                .median()
+                .reset_index(level=0, drop=True)
+            )
+            rolling_mean = new_cols[f"{stat}_avg_5"]
+            new_cols[f"{stat}_robust_avg_5"] = 0.60 * rolling_median + 0.40 * rolling_mean
     player_game_number = df.groupby("player_id").cumcount()
     new_cols["n_games_prev_3"] = np.minimum(player_game_number, 3).astype(int)
     new_cols["n_games_prev_5"] = np.minimum(player_game_number, 5).astype(int)
@@ -551,15 +622,17 @@ def _load_ruled_out(conn, min_season: int | None) -> set[tuple[int, int, str, st
 
 
 def _injury_downgrade_score(report_status: pd.Series, practice_status: pd.Series) -> pd.Series:
-    report = report_status.astype(str).str.lower().fillna("")
-    practice = practice_status.astype(str).str.lower().fillna("")
+    known = report_status.notna() | practice_status.notna()
+    report = report_status.fillna("").astype(str).str.lower()
+    practice = practice_status.fillna("").astype(str).str.lower()
     score = pd.Series(0.0, index=report_status.index, dtype=float)
     score = score.mask(report.str.contains("injured reserve|reserve|out", regex=True, na=False), 1.0)
     score = score.mask(report.str.contains("doubtful", regex=False, na=False), np.maximum(score, 0.85))
     score = score.mask(report.str.contains("questionable", regex=False, na=False), np.maximum(score, 0.45))
     score = score.mask(practice.str.contains("did not participate|dnp", regex=True, na=False), np.maximum(score, 0.65))
     score = score.mask(practice.str.contains("limited", regex=False, na=False), np.maximum(score, 0.25))
-    return score.clip(0.0, 1.0)
+    # No report is unknown context, not evidence that the player is healthy.
+    return score.clip(0.0, 1.0).where(known)
 
 
 def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -581,7 +654,11 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
 
     snap = pd.to_numeric(out.get("offense_snap_share_avg_5"), errors="coerce")
     snap = snap.fillna(pd.to_numeric(out.get("snap_share_avg_5"), errors="coerce")).clip(0.0, 1.0)
-    active = out.get("roster_is_active", pd.Series(True, index=out.index)).astype("boolean").fillna(True).astype(float)
+    active_raw = out.get("roster_is_active", pd.Series(pd.NA, index=out.index, dtype="boolean")).astype("boolean")
+    out["roster_context_known"] = active_raw.notna().astype(float)
+    # Unknown roster context receives a neutral role signal. It is retained as
+    # missing evidence through roster_context_known rather than labeled active.
+    active = active_raw.astype(float).fillna(0.50)
     depth_score = pd.Series(0.50, index=out.index, dtype=float)
     depth_score = depth_score.mask(depth <= 1.25, 0.92)
     depth_score = depth_score.mask((depth > 1.25) & (depth <= 2.25), 0.68)
@@ -592,13 +669,32 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
         out.get("injury_report_status", pd.Series(index=out.index, dtype=object)),
         out.get("injury_practice_status", pd.Series(index=out.index, dtype=object)),
     )
+    out["player_injury_context_known"] = out["injury_downgrade_score"].notna().astype(float)
+    out["player_injury_context_unknown"] = 1.0 - out["player_injury_context_known"]
+    out["depth_context_known"] = depth.notna().astype(float)
+    out["depth_context_unknown"] = 1.0 - out["depth_context_known"]
+    teammate_context_known = pd.to_numeric(
+        out.get("same_week_injury_context_known", pd.Series(np.nan, index=out.index)),
+        errors="coerce",
+    ).eq(1.0).astype(float)
+    out["teammate_injury_context_unknown"] = 1.0 - teammate_context_known
+    out["same_week_context_unknown_score"] = (
+        0.45 * out["player_injury_context_unknown"]
+        + 0.35 * out["teammate_injury_context_unknown"]
+        + 0.20 * out["depth_context_unknown"]
+    ).clip(0.0, 1.0)
+    # Preserve the legacy composite's neutral prior for production compatibility,
+    # but expose both the raw NaN and an explicit missing flag. New challengers
+    # can learn missingness instead of interpreting this imputation as healthy.
+    injury_risk = out["injury_downgrade_score"].fillna(0.10)
+    out["injury_risk_legacy_imputation"] = injury_risk
     out["starter_confidence"] = (depth_score + snap_adjustment).clip(0.0, 1.0) * active
     out["rest_risk_score"] = (
         0.35 * out["is_week_18"].astype(float)
         + 0.12 * out["is_late_season"].astype(float)
         + 0.25 * out["is_postseason"].astype(float)
         + 0.30 * (1.0 - out["starter_confidence"].astype(float))
-        + 0.35 * out["injury_downgrade_score"].astype(float)
+        + 0.35 * injury_risk.astype(float)
         + 0.08 * out["depth_rank_worse"].astype(float)
     ).clip(0.0, 1.0)
 
@@ -642,7 +738,7 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
     ).clip(0.0, 1.0)
     out["limited_workload_risk_score"] = (
         0.40 * out["rest_risk_score"].astype(float)
-        + 0.25 * out["injury_downgrade_score"].astype(float)
+        + 0.25 * injury_risk.astype(float)
         + 0.15 * out["depth_rank_worse"].astype(float)
         + 0.12 * (1.0 - snap.fillna(0.45).clip(0.0, 1.0))
         + 0.08 * out["usage_volatility_score"].astype(float)
@@ -660,7 +756,7 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
     out["starter_role_stability_score"] = (
         out["starter_confidence"].astype(float).clip(0.0, 1.0)
         * (1.0 - out["recent_snap_drop_score"].astype(float).clip(0.0, 1.0))
-        * (1.0 - out["injury_downgrade_score"].astype(float).clip(0.0, 1.0))
+        * (1.0 - injury_risk.astype(float).clip(0.0, 1.0))
     ).clip(0.0, 1.0)
     out["projected_starter_score"] = (
         0.55 * out["starter_confidence"].astype(float).clip(0.0, 1.0)
@@ -982,7 +1078,7 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
     receiver_health_gate = (
         (0.50 + 0.50 * out["workload_floor_score"].astype(float).clip(0.0, 1.0))
         * (1.0 - 0.42 * out["limited_workload_risk_score"].astype(float).clip(0.0, 1.0))
-        * (1.0 - 0.30 * out["injury_downgrade_score"].astype(float).clip(0.0, 1.0))
+        * (1.0 - 0.30 * injury_risk.astype(float).clip(0.0, 1.0))
         * (1.0 - 0.24 * out["depth_movement_risk_score"].astype(float).clip(0.0, 1.0))
         * (1.0 - 0.20 * out["weird_usage_risk_score"].astype(float).clip(0.0, 1.0))
     ).clip(0.15, 1.0)
@@ -1500,14 +1596,21 @@ FEATURE_COLUMNS = [
     "depth_pos_rank", "depth_pos_slot", "injury_report_status", "injury_practice_status",
     "same_week_teammate_skill_injury_count", "same_week_teammate_skill_injury_score",
     "same_week_teammate_receiver_injury_score", "same_week_teammate_receiver_out_count",
+    "same_week_injury_context_known",
     "game_total_line", "team_spread_line", "team_implied_points", "opponent_implied_points",
     *[f"{stat}_avg_{window}" for stat in ROLLING_STATS for window in (3, 5, 10)],
+    "unexpected_partial_rate_avg_5",
+    *[f"{stat}_full_role_avg_5" for stat in SHOCK_SENSITIVE_STATS],
+    *[f"{stat}_robust_avg_5" for stat in SHOCK_SENSITIVE_STATS],
     *[f"opp_allowed_{stat}_avg_5" for stat in TARGET_STATS],
     *[f"team_player_{stat}_avg5_sum" for stat in ROLE_SIGNAL_STATS],
     *[f"{stat}_share_avg_5" for stat in ROLE_SIGNAL_STATS],
     *[f"{stat}_role_rank" for stat in ROLE_SIGNAL_STATS],
     "is_week_18", "is_late_season", "is_postseason",
     "starter_confidence", "rest_risk_score", "injury_downgrade_score",
+    "roster_context_known", "player_injury_context_known", "player_injury_context_unknown",
+    "depth_context_known", "depth_context_unknown", "teammate_injury_context_unknown",
+    "same_week_context_unknown_score", "injury_risk_legacy_imputation",
     "depth_rank_delta", "depth_rank_worse", "depth_rank_better", "depth_rank_change_abs",
     "has_true_route_history", "estimated_routes_avg_5",
     "route_participation_proxy_avg_5", "targets_per_route_proxy_avg_5",

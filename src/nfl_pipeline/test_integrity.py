@@ -61,6 +61,23 @@ def test_live_rolling_matches_historical_replay():
         np.testing.assert_allclose(live[column],replay[column],equal_nan=True)
 
 
+def test_partial_game_is_shifted_and_does_not_pollute_full_role_history():
+    rows = []
+    for week, (yards, targets, snap_share) in enumerate(
+            [(70, 8, .85), (65, 7, .82), (80, 9, .88), (9, 5, .42), (0, 0, .80)], 1):
+        row = {**dict.fromkeys(TARGET_STATS, 0.0), 'player_id': 'p', 'player_name': 'p',
+               'position': 'WR', 'team_abbr': 'DAL', 'opponent_abbr': 'TB', 'is_home': True,
+               'game_id': f'g{week}', 'season': 2026, 'week': week,
+               'game_date_et': date(2026, 9, 1) + timedelta(days=week * 7), 'receiving_yards': yards,
+               'targets': targets, 'offense_snap_share': snap_share}
+        rows.append(row)
+    replay = _add_player_rolling(pd.DataFrame(rows)).set_index('game_id')
+    future = replay.loc['g5']
+    assert future.unexpected_partial_rate_avg_5 > 0
+    assert future.receiving_yards_avg_5 == pytest.approx((70 + 65 + 80 + 9) / 4)
+    assert future.receiving_yards_full_role_avg_5 == pytest.approx((70 + 65 + 80) / 3)
+
+
 @pytest.mark.parametrize('minutes,status',[(121,'close_outside_two_hour_window'),(120,'valid_close'),
                                           (20,'valid_close'),(0,'close_after_kickoff'),(-1,'close_after_kickoff')])
 def test_close_window_is_strictly_pregame(minutes,status):
@@ -97,6 +114,26 @@ def test_features_are_target_specific_and_exclude_unproven_context():
     assert feature_columns(X,'passing_yards') == ['passing_yards_avg_5','rest_days']
     assert feature_columns(X,'rushing_yards') == ['carries_avg_5','rest_days']
     assert feature_columns(X,'receiving_yards') == ['targets_avg_5','rest_days']
+
+
+def test_receptions_uses_receiving_feature_family():
+    X = pd.DataFrame(columns=['targets_avg_5', 'receptions_avg_5', 'carries_avg_5', 'rest_days'])
+    assert feature_columns(X, 'receptions') == ['targets_avg_5', 'receptions_avg_5', 'rest_days']
+
+
+def test_role_shock_features_are_enabled_only_for_proven_receiving_targets():
+    X = pd.DataFrame(columns=[
+        'passing_yards_avg_5', 'passing_yards_full_role_avg_5',
+        'rushing_yards_avg_5', 'rushing_yards_robust_avg_5',
+        'receiving_yards_avg_5', 'receiving_yards_full_role_avg_5',
+        'targets_robust_avg_5', 'unexpected_partial_rate_avg_5',
+    ])
+    assert 'receiving_yards_full_role_avg_5' in feature_columns(X, 'receiving_yards')
+    assert 'targets_robust_avg_5' in feature_columns(X, 'receptions')
+    assert 'unexpected_partial_rate_avg_5' in feature_columns(X, 'receiving_yards')
+    assert 'passing_yards_full_role_avg_5' not in feature_columns(X, 'passing_yards')
+    assert 'rushing_yards_robust_avg_5' not in feature_columns(X, 'rushing_yards')
+    assert 'unexpected_partial_rate_avg_5' not in feature_columns(X, 'passing_yards')
 
 
 def test_atomic_write_failure_keeps_previous_artifact(tmp_path,monkeypatch):
@@ -180,6 +217,27 @@ def test_publisher_demotes_unlocked_micro(monkeypatch):
     assert not rows[0]['ledger_locked']
 
 
+def test_publisher_keeps_stale_prop_as_starter_projection_only(monkeypatch):
+    from nfl_pipeline import publish_forecasts
+    conn = Connection([])
+    payload = {'tier': 'paper', 'game_id': 'game', 'player_id': 'player',
+               'player_name': 'Starter', 'position': 'WR', 'depth_pos_abb': 'WR',
+               'depth_pos_rank': 1, 'stat': 'receiving_yards', 'projection': 55,
+               'book': 'fanduel', 'offer_id': 1, 'line': 50.5, 'side': 'over',
+               'price': -110, 'link': None}
+    conn.cur.fetchall = lambda: [(payload, False, 123)]
+    monkeypatch.setattr(publish_forecasts, 'forecast_quote_error',
+                        lambda row, now: 'stale_quote_refresh_required')
+    fallbacks = []
+    rows = publish_forecasts.display_rows(conn, date.today(), 'prop',
+                                          projection_fallbacks=fallbacks)
+    assert rows == []
+    assert len(fallbacks) == 1
+    assert fallbacks[0]['forecast_id'] == 123
+    assert not fallbacks[0]['starter_current_line']
+    assert fallbacks[0]['starter_quote_error'] == 'stale_quote_refresh_required'
+
+
 def test_sgo_nested_teams_and_team_totals_never_replace_game_total():
     from nfl_pipeline.crawler_oddsapi import _canonical_event_from_sgo
     event={'eventID':'event','teams':{'home':{'names':{'long':'New York Jets'}},
@@ -214,14 +272,16 @@ def test_all_null_usage_values_have_explicit_numeric_types(monkeypatch):
     assert capture['template'].count('::numeric')==13
 
 
-@pytest.mark.parametrize('snaps,actions,expected', [(0,0,'pending_participation_review'),(12,0,'win'),(None,2,'win')])
-def test_zero_stat_grading_requires_verified_participation(monkeypatch,snaps,actions,expected):
+@pytest.mark.parametrize('snaps,actions,verified,expected', [
+    (0,0,False,'pending_participation_review'),(12,0,False,'win'),(None,2,False,'win'),(0,0,True,'win')])
+def test_zero_stat_grading_requires_verified_participation(monkeypatch,snaps,actions,verified,expected):
     from nfl_pipeline import grade_predictions as grading
     conn=Connection([])
     conn.cursor=lambda **kwargs:conn.cur
     conn.cur.fetchall=lambda:[{'id':1,'game_date_et':date(2026,9,10),'game_id':'g',
         'player_id':'p','player_name':'Player','stat':'receiving_yards','side':'under',
-        'line':10.5,'price':-110,'receiving_yards':0,'offense_snaps':snaps,'offensive_actions':actions}]
+        'line':10.5,'price':-110,'receiving_yards':0,'offense_snaps':snaps,'offensive_actions':actions,
+        'verified_game_participation':verified}]
     captured=[]
     monkeypatch.setattr(grading.psycopg2.extras,'execute_values',lambda c,q,rows,**kwargs:captured.extend(rows))
     assert grading.grade_player_prop_predictions(conn,grading.GradeConfig())==1

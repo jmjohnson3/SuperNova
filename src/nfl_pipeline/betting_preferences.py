@@ -19,17 +19,19 @@ SHARP_EDGE_BETS_ENABLED = False
 SHARP_EDGE_MIN_EV = 0.03
 
 # --- sharp_watch scanner (live book-vs-sharp price gaps) -------------------------------------
-# Books we can actually bet at. <= 10 named bookmakers cost one region per market at The Odds API,
-# so adding a book here costs no extra credits.
-SHARP_WATCH_BET_BOOKS = ('fanduel', 'draftkings')
+# Books we can actually bet at. Market evidence may still read other books, but execution and
+# Discord instructions follow the user's FanDuel-only preference.
+SHARP_WATCH_BET_BOOKS = ('fanduel',)
 # Only markets whose edge has been backtested may carry money. Everything else in
 # NFL_SHARP_WATCH_MARKETS is still scanned, alerted and graded, but at stake 0 until it proves out
 # on its own evidence in reports/nfl_sharp_alerts_latest.md.
 SHARP_WATCH_STAKED_STATS = frozenset({'receiving_yards', 'rushing_yards', 'receptions'})
-# Flat stake per pinged alert. 0.0 keeps every alert research-only.
-SHARP_WATCH_STAKE = 5.0
-SHARP_WATCH_MAX_STAKE_PER_DAY = 50.0
-SHARP_WATCH_MAX_STAKE_PER_WEEK = 150.0
+# This strategy has its own evidence gate. Keep it false until the sharp-alert scorecard passes and
+# the user explicitly authorizes a cash trial. The first rung is $1 micro, at most three per day.
+SHARP_WATCH_BETS_ENABLED = False
+SHARP_WATCH_STAKE = 1.0
+SHARP_WATCH_MAX_STAKE_PER_DAY = 3.0
+SHARP_WATCH_MAX_STAKE_PER_WEEK = 15.0
 # Sticky: once realized profit on placed bets reaches this, staking stops until it is raised by hand.
 SHARP_WATCH_LOSS_PAUSE = -200.0
 

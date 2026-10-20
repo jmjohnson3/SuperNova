@@ -16,7 +16,7 @@ from nfl_pipeline.betting_preferences import display_rows as preferred_rows
 from nfl_pipeline.offer_selection import forecast_quote_error
 
 
-def display_rows(conn, day, kind, *, quote_exclusions=None):
+def display_rows(conn, day, kind, *, quote_exclusions=None, projection_fallbacks=None):
     table = {"prop": "nfl_player_prop_predictions", "game": "nfl_game_predictions"}[kind]
     with conn.cursor() as cur:
         cur.execute(f"""
@@ -40,8 +40,17 @@ def display_rows(conn, day, kind, *, quote_exclusions=None):
         if error:
             if quote_exclusions is not None:
                 quote_exclusions.append(dict(game_id=str(row.get('game_id')), kind=kind, reason=error))
+            if projection_fallbacks is not None and kind == 'prop':
+                fallback = dict(row, forecast_id=record[2] if len(record)>2 else None,
+                                starter_current_line=False, starter_quote_error=error)
+                projection_fallbacks.extend(preferred_rows([fallback]))
             continue
         row["ledger_locked"] = bool(locked)
+        if kind == 'prop':
+            row['starter_current_line'] = bool(row.get('offer_id') is not None
+                                               and row.get('line') is not None
+                                               and row.get('side') in {'over', 'under'}
+                                               and row.get('price') is not None)
         if row.get("tier") != "paper" and not locked:
             row["tier"] = "paper"
             row["reasons"] = str(row.get("reasons") or "") + ";not_locked_in_daily_ledger"
@@ -108,7 +117,11 @@ def matchup_bundle(day, game_id=None, *, reserve_cash=False):
             schedule = [dict(zip(('game_id','home_team_abbr','away_team_abbr','start_ts_utc'), r)) for r in cur.fetchall()]
         quote_exclusions = []
         game_rows = display_rows(conn, day, 'game', quote_exclusions=quote_exclusions)
-        prop_rows = display_rows(conn, day, 'prop', quote_exclusions=quote_exclusions) + previously_locked_props(conn, day)
+        starter_projection_fallbacks = []
+        current_prop_rows = display_rows(conn, day, 'prop', quote_exclusions=quote_exclusions,
+                                         projection_fallbacks=starter_projection_fallbacks)
+        prop_rows = current_prop_rows + previously_locked_props(conn, day)
+        starter_prop_rows = current_prop_rows + starter_projection_fallbacks
     from nfl_pipeline.cash_publication import prepare
     # Scope before reservation, while preserving the existing global strategy selections.
     from nfl_pipeline.game_scope import game_ids
@@ -118,9 +131,11 @@ def matchup_bundle(day, game_id=None, *, reserve_cash=False):
         allowed &= {str(game_id)}
     game_rows = [r for r in game_rows if str(r['game_id']) in allowed]
     prop_rows = [r for r in prop_rows if str(r['game_id']) in allowed]
+    starter_prop_rows = [r for r in starter_prop_rows if str(r['game_id']) in allowed]
     game_rows, prop_rows, readiness = prepare(day, game_rows, prop_rows, reserve=reserve_cash)
     bundle = build_bundle(day, schedule, game_rows, prop_rows, [a['version'] for a in artifacts],
-                          quote_exclusions=quote_exclusions, cash_readiness=readiness)
+                          quote_exclusions=quote_exclusions, cash_readiness=readiness,
+                          starter_prop_rows=starter_prop_rows)
     from nfl_pipeline.game_scope import game_ids
     scope = game_ids()
     if scope is not None:

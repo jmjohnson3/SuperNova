@@ -1,0 +1,50 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-10-11T15:29:21.364981+00:00",
+  "captured_at": "2026-10-11T15:29:24.255473+00:00",
+  "selected": [
+    {
+      "forecast_id": 16781,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-11",
+      "game_id": "2026_05_HOU_TEN",
+      "player_id": "00-0040170",
+      "team": "TEN",
+      "season": 2026,
+      "week": 5,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "under",
+      "line": 17.5,
+      "price": -113,
+      "probability": 0.5342156560993127,
+      "market_probability": 0.5,
+      "ev": 0.0069728738863150674,
+      "captured_at": "2026-10-11T15:29:24.255473+00:00"
+    },
+    {
+      "forecast_id": 16772,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-11",
+      "game_id": "2026_05_CIN_MIA",
+      "player_id": "00-0039880",
+      "team": "MIA",
+      "season": 2026,
+      "week": 5,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 44.5,
+      "price": -113,
+      "probability": 0.5342156560993125,
+      "market_probability": 0.5,
+      "ev": 0.006972873886314845,
+      "captured_at": "2026-10-11T15:29:24.255473+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 770,
+    "original_drift_guard_not_passed": 128
+  }
+}

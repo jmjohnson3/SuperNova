@@ -21,9 +21,11 @@ def scoring_fingerprint():
 
 
 def capture(row, stat, projection, baseline, metrics, offer, distribution, calibration, guards, min_ev, artifact):
+    from nfl_pipeline.cash_freeze import capture_provenance
     exact = (artifact or {}).get('exact_line_artifact')
     return clean({
         'version': 'nfl-live-scoring-v1', 'scoring_fingerprint': scoring_fingerprint(),
+        'cash_freeze': capture_provenance(),
         'row': row, 'stat': stat, 'projection': projection, 'baseline': baseline,
         'metrics': metrics, 'offer': offer, 'distribution': distribution,
         'calibration': [{'key': list(k), 'value': v} for k,v in (calibration or {}).items()],

@@ -87,11 +87,13 @@ def test_every_matchup_section_and_manifest_use_new_links_without_changing_price
             prop(player='Research2', link=source('42.9', '8'), forecast_id=2),
             prop(player='Micro', tier='micro_projection', link=source('42.7', '6'), forecast_id=3),
             prop(player='Bankroll', tier='bankroll', link=source('42.5', '4'), forecast_id=4)]
-    bundle = build_bundle(DAY, schedule(), [game_pick(link=source('42.3', '2'), forecast_id=5)],
+    bundle = build_bundle(DAY, schedule(), [game_pick(link=source('42.3', '2'), forecast_id=5,
+                                                   tier='bankroll', ledger_locked=True)],
                           rows, ['frozen'], now=NOW)
     text = body(bundle, 'early')
     assert bundle['link_contract'] == links.CONTRACT
-    assert text.count('[Add to slip]') == 5 and 'Research parlay' in text
+    assert text.count('[Add to slip]') == 3 and 'Research parlay' not in text
+    assert 'Research1' not in text and 'Research2' not in text
     for card in bundle['cards']:
         assert len(card['payload']['embeds'][0]['description']) <= DESCRIPTION_LIMIT
         for row in card['forecast_manifest']:

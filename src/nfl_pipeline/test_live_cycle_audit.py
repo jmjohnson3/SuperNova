@@ -86,3 +86,18 @@ def test_later_run_failure_does_not_erase_verified_publication_or_close_blockers
     doc=audit.build(DAY,[g],[r],c,[run],now)
     assert not doc['games'][0]['discord_exact_prop_manifest_verified']
     assert 'game_aware_discord_manifest_missing_or_invalid' in doc['games'][0]['blockers']
+
+
+def test_manual_recovery_uses_the_same_manifest_validation_as_scheduler():
+    g,r,p,c=inputs()
+    run=dict(status='failed',pregame=False,run_id='manual_recovery',publications=[p])
+    doc=audit.build(DAY,[g],[r],c,[run],datetime(2026,9,23,tzinfo=timezone.utc))
+    assert doc['games'][0]['discord_exact_prop_manifest_verified']
+    assert doc['games'][0]['verified_publication_pages']==1
+    p['forecast_manifest'][0]['price']=999
+    assert not audit.build(DAY,[g],[r],c,[run],datetime(2026,9,23,tzinfo=timezone.utc))['games'][0]['discord_exact_prop_manifest_verified']
+
+
+def test_bad_manifest_id_fails_closed_without_crashing():
+    g,r,p,c=inputs();p['forecast_manifest'][0]['forecast_id']='bad'
+    assert not audit.publication_matches(p,{1:r},audit.safe_time(g['start_ts_utc']))

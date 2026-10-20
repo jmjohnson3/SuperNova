@@ -57,13 +57,16 @@ def run_training(*, season: str | None = None, skip_context: bool = False) -> di
         Step("NFL Accuracy Challengers", "nfl_pipeline.modeling.train_accuracy_challengers", timeout_s=3600),
         Step("NFL Accuracy Components", "nfl_pipeline.modeling.train_accuracy_components", timeout_s=3600),
         Step("NFL Live Scoring Replay", "nfl_pipeline.modeling.live_scoring_replay", timeout_s=300),
+        Step("NFL Per-Stat Model Validation", "nfl_pipeline.modeling.stat_model_validation", timeout_s=300),
         Step("NFL Exact-Line Prop Proof", "nfl_pipeline.modeling.prop_exact_line_proof", timeout_s=300),
         Step("NFL Train Exact-Line Prop Models", "nfl_pipeline.modeling.train_prop_exact_line_models", timeout_s=900),
         Step("NFL Active Release Report", "nfl_pipeline.modeling.model_holdout_report", timeout_s=120),
         Step("NFL Readiness Report", "nfl_pipeline.readiness_report", timeout_s=300),
-        # Report-only refit of market anchoring on all settled weeks; installing is a manual --write.
+        # Forward-only, version-specific calibration diagnostics; no live writes.
         Step("NFL Market Calibration Refit Report", "nfl_pipeline.modeling.fit_market_calibration", timeout_s=1800),
         Step("NFL Game Market Calibration Refit Report", "nfl_pipeline.modeling.fit_game_market_calibration", timeout_s=600),
+        Step("NFL Distribution Policy Validation", "nfl_pipeline.modeling.validate_distribution_policy",
+             args=("--register",), timeout_s=1800),
     ]
     if skip_context:
         steps = [step for step in steps if step.module not in {"nfl_pipeline.import_context", "nfl_pipeline.import_usage_context"}]

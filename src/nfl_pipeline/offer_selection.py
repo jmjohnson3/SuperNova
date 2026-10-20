@@ -63,6 +63,10 @@ def eligible_player_offers(offers, row, stat, cutoff, *, now=None):
         if prior is None or (safe_time(quote['fetched_at_utc']), int(quote['offer_id'])) > (
                 safe_time(prior['fetched_at_utc']), int(prior['offer_id'])):
             selected[key] = dict(quote)
+            selected[key]['_execution_verified'] = True
+            selected[key]['quote_age_seconds'] = max(
+                0.0, (safe_time(now) - safe_time(quote['fetched_at_utc'])).total_seconds()
+            )
             # An invalid opposite side is unknown, never evidence for no-vig.
             for side in ('over', 'under'):
                 if not valid_price(quote.get(side+'_price')):

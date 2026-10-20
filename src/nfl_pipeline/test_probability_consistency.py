@@ -72,7 +72,11 @@ def candidate(monkeypatch):
 def test_candidate_final_probability_ev_minimum_and_display_agree(candidate, monkeypatch):
     monkeypatch.setattr(props, '_exact_line_overlay', lambda artifact, **kw: (.7, .7, None, 'exact_line_model_blend_test'))
     row = candidate()
-    assert row['probability'] == .7
+    # An old exact-line overlay is diagnostic only. Without an approved
+    # residual policy, FanDuel's no-vig probability owns the final signal.
+    assert row['probability'] == pytest.approx(props._no_vig_side_probability(110, -110, row['side']))
+    assert row['exact_line_model_probability'] == .7
+    assert row['probability_source'] == 'fanduel_no_vig_baseline'
     assert row['win_probability'] + row['loss_probability'] + row['push_probability'] == pytest.approx(1)
     assert row['over_probability'] + row['under_probability'] + row['push_probability'] == pytest.approx(1)
     assert row[row['side']+'_probability'] == pytest.approx(row['win_probability'])
@@ -83,10 +87,58 @@ def test_candidate_final_probability_ev_minimum_and_display_agree(candidate, mon
 
 def test_zero_ev_is_not_treated_as_missing(candidate, monkeypatch):
     monkeypatch.setattr(props, '_offer_probability_calibration', lambda **kw: (.5, []))
-    row = candidate(line=.5, over=100, under=-110)
+    row = candidate(line=.5, over=100, under=100)
     assert row['side'] == 'over'
     assert row['ev'] == 0
     assert row['drift_guard_pass'] is False
+
+
+def test_fanduel_alternate_line_baseline_is_monotone():
+    offers = [
+        {'line': 39.5, 'over_price': -105, 'under_price': -115},
+        {'line': 49.5, 'over_price': -125, 'under_price': 105},  # raw inversion
+        {'line': 59.5, 'over_price': 120, 'under_price': -140},
+    ]
+    props._attach_monotone_fanduel_market(offers)
+    fitted = [q['monotone_fanduel_no_vig_over_probability'] for q in offers]
+    assert fitted == sorted(fitted, reverse=True)
+    assert all('raw_fanduel_no_vig_over_probability' in q for q in offers)
+
+
+def test_unapproved_model_cannot_move_fanduel_baseline():
+    offer = {'line': 49.5, 'over_price': -110, 'under_price': -110,
+             'monotone_fanduel_no_vig_over_probability': .5}
+    signal = props._fanduel_residual_signal(
+        stat='receiving_yards', row={}, offer=offer, model_over_probability=.8)
+    assert signal['final_over_probability'] == .5
+    assert signal['approved'] is False
+
+
+def test_approved_receiving_policy_gets_only_a_small_supported_residual():
+    policy = {'policy_id': 'pinned', 'source': 'stat_component:oe-v2', 'model_weight': .35}
+    offer = {
+        'line': 49.5, 'over_price': -110, 'under_price': -110,
+        'monotone_fanduel_no_vig_over_probability': .5,
+        'distribution_policy_capture': {'deployed': policy},
+        'distribution_policy_score': {'policy_id': 'pinned'},
+        'sharp_reference': {'consensus_over_probability': .59, 'consensus_book_count': 1,
+                            'consensus_dispersion': 0.0},
+    }
+    row = {
+        'live_usage_context_quality_v4_score': .9,
+        'limited_workload_risk_score': .1,
+        'starter_role_stability_score': .8,
+        'same_week_injury_context_known': 1,
+        'route_data_source': 'measured_history',
+        '_challenger_stat_component_id': 'oe-v2',
+        '_challenger_stat_opportunity': 7.5,
+        '_challenger_stat_efficiency': 8.2,
+    }
+    signal = props._fanduel_residual_signal(
+        stat='receiving_yards', row=row, offer=offer, model_over_probability=.68)
+    assert signal['approved'] is True
+    assert .5 < signal['final_over_probability'] <= .54
+    assert signal['adjustment'] <= .04
 
 
 def test_half_lines_unchanged_by_push_scaling(candidate):

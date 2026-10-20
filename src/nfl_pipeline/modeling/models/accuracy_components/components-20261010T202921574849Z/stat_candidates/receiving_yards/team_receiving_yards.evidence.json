@@ -1,0 +1,24 @@
+{
+  "contract": "nfl-stat-candidate-evidence-v1",
+  "stat": "receiving_yards",
+  "component": "team_receiving_yards",
+  "artifact_sha256": "016141f2bb3ccb3d8781d0241dbde10b460b9af505079c2bd435a4b2c0089f0f",
+  "historical_screen_outputs": [
+    "expected_mean",
+    "median",
+    "probability"
+  ],
+  "approved_outputs": [],
+  "deployment_approved": false,
+  "betting_approved": false,
+  "blockers": [
+    "needs_100_player_games_and_3_independent_weeks"
+  ],
+  "built_at": "2026-10-10T20:39:43.695642+00:00",
+  "prospective_validation": {
+    "offers": 0,
+    "player_games": 0,
+    "weeks": 0
+  },
+  "reviewed_at": "2026-10-10T21:52:32.108317+00:00"
+}

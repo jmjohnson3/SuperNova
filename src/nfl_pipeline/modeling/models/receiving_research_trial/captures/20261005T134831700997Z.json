@@ -1,0 +1,31 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-10-05T13:48:31.285900+00:00",
+  "captured_at": "2026-10-05T13:48:31.700997+00:00",
+  "selected": [
+    {
+      "forecast_id": 14672,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-05",
+      "game_id": "2026_04_ATL_NO",
+      "player_id": "00-0035208",
+      "team": "ATL",
+      "season": 2026,
+      "week": 4,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 7.5,
+      "price": -113,
+      "probability": 0.5342156560993125,
+      "market_probability": 0.5,
+      "ev": 0.006972873886314845,
+      "captured_at": "2026-10-05T13:48:31.700997+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 60,
+    "original_drift_guard_not_passed": 7
+  }
+}

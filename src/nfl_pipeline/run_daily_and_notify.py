@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+from time import perf_counter
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -109,8 +110,7 @@ async def _post_matchups(stdout: str, publications: list) -> None:
     bundle = json.loads(stdout)
     if bundle.get('contract') != CONTRACT or not isinstance(bundle.get('cards'), list):
         raise ValueError('Invalid NFL matchup publication bundle')
-    if bundle['cards'] and (bundle.get('cash_readiness') or {}).get('status') == 'operational_issue':
-        raise ValueError('Cash publication readiness failed; no fresh betting instructions will be published')
+    cash_blocked = (bundle.get('cash_readiness') or {}).get('status') == 'operational_issue'
     for card in bundle['cards']:
         payload = card['payload']
         embeds = payload.get('embeds', [])
@@ -122,6 +122,21 @@ async def _post_matchups(stdout: str, publications: list) -> None:
             raise ValueError('NFL matchup embed exceeds the total character limit')
         if payload.get('allowed_mentions') != {'parse': []}:
             raise ValueError('NFL matchup cards must disable automatic mentions')
+        if cash_blocked:
+            # Readiness failures must remain visible on projection/status cards.
+            # Some legacy actionable rows lack forecast IDs, so validate the
+            # rendered sections as well as the structured manifest before sending.
+            staked_headings = ('$1 CASH TRIAL ELIGIBLE', '$1 MICRO TEST',
+                               'BANKROLL GAMES', 'BANKROLL PROPS')
+            has_staked_rows = any(
+                row.get('tier') not in {'paper', 'projection', 'projection_only'}
+                or row.get('cash_ledger_id') is not None
+                for row in card.get('forecast_manifest', [])
+            )
+            if (card.get('cash_ledger_ids') or has_staked_rows
+                    or any(f'**{heading}**' in embed.get('description', '')
+                           for heading in staked_headings)):
+                raise ValueError('Cash publication readiness failed; no fresh betting instructions will be published')
     for card in bundle['cards']:
         from nfl_pipeline.context_contract import safe_time
         now = datetime.now(timezone.utc)
@@ -197,7 +212,7 @@ async def main() -> None:
         Step("NFL Context Import", "nfl_pipeline.import_context", args=context_args, critical=False, timeout_s=600),
         Step("NFL Usage Context Import", "nfl_pipeline.import_usage_context", args=context_args, critical=False, timeout_s=1200),
         # Same-day ESPN statuses (incl. game-day inactives at T-90); nflverse injury files lag days.
-        Step("NFL Live Injury Report", "nfl_pipeline.live_injuries", args=date_args, critical=False, timeout_s=120),
+        Step("NFL Live Injury Report", "nfl_pipeline.live_injuries", args=date_args, critical=False, timeout_s=300),
         Step("NFL Validated Release", "nfl_pipeline.run_training", args=("--season",context_year,"--skip-context"), timeout_s=3600),
         # Missing/stale quotes only block locking (scoring and forecast_store refuse stale quotes);
         # the morning run still publishes projections. Pregame keeps it critical so it retries.
@@ -206,25 +221,43 @@ async def main() -> None:
         Step("NFL Game Predictions", "nfl_pipeline.modeling.predict_today", args=date_args, timeout_s=600),
         Step("NFL Team Workload Snapshot", "nfl_pipeline.modeling.score_accuracy_components", args=(*date_args,"--capture-team-context"), critical=False, timeout_s=300),
         Step("NFL Player Predictions", "nfl_pipeline.modeling.predict_player_props", args=date_args, timeout_s=1200),
-        Step("NFL Lock Paper Ledger", "nfl_pipeline.lock_ledger", args=(*date_args,"--tier","paper","--max-rows","250","--stake","0"), timeout_s=120),
-        Step("NFL Lock Micro Ledger", "nfl_pipeline.lock_ledger", args=(*date_args,"--tier","micro_projection","--max-rows","5","--stake","1"), timeout_s=120),
-        Step("NFL Benchmark Offer Shadows", "nfl_pipeline.modeling.benchmark_offers", args=date_args, timeout_s=600),
-        Step("NFL Receiving Trial Checkpoint", "nfl_pipeline.modeling.receiving_trial_checkpoint", args=date_args, timeout_s=360),
+        Step("NFL Frozen Receiving Paper Trial", "nfl_pipeline.modeling.receiving_paper_trial", args=("capture", *date_args), critical=False, timeout_s=360),
+        Step("NFL FanDuel Lock Contract", "nfl_pipeline.lock_contract_audit", args=date_args, critical=False, timeout_s=120),
+        Step("NFL Lock Paper Ledger", "nfl_pipeline.lock_ledger", args=(*date_args,"--tier","paper","--max-rows","250","--stake","0"), timeout_s=300),
+        Step("NFL Lock Micro Ledger", "nfl_pipeline.lock_ledger", args=(*date_args,"--tier","micro_projection","--max-rows","3","--stake","1"), timeout_s=300),
+        # Evidence only: the cards read forecasts from the database and never reference this output, so a
+        # slow run here must not abort publication. It timed out at 616s on 19 October and took the
+        # Matchup Cards step (nine steps later) down with it.
+        Step("NFL Benchmark Offer Shadows", "nfl_pipeline.modeling.benchmark_offers", args=date_args,
+             critical=False, timeout_s=900),
+        Step("NFL Receiving Trial Checkpoint", "nfl_pipeline.modeling.receiving_trial_checkpoint", args=(*date_args,"--incremental"), critical=False, timeout_s=360),
         Step("NFL Locked Micro Uncertainty", "nfl_pipeline.modeling.score_locked_micro_uncertainty", args=date_args, critical=False, timeout_s=120),
         Step("NFL Accepted Accuracy Components", "nfl_pipeline.modeling.score_accuracy_components", args=date_args, critical=False, timeout_s=180),
         Step("NFL Readiness Report", "nfl_pipeline.readiness_report", args=date_args, critical=False, timeout_s=180),
         Step("NFL Active Release Report", "nfl_pipeline.modeling.model_holdout_report", timeout_s=120),
-        Step("NFL Cash Readiness", "nfl_pipeline.cash_readiness", args=date_args, timeout_s=180),
+        # Full-history review measured about 9.5 minutes locally. It stays out
+        # of pregame runs; a reporting timeout cannot suppress paper cards.
+        Step("NFL Cash Readiness", "nfl_pipeline.cash_readiness", args=date_args, critical=False, timeout_s=900),
         Step("NFL Matchup Cards", "nfl_pipeline.publish_forecasts", args=(*date_args,"--kind","matchups","--json","--reserve-cash"), post_output=True, timeout_s=120),
     ]
     if args.pregame:
         omitted = {'nfl_pipeline.schema','nfl_pipeline.import_nflverse','nfl_pipeline.import_usage_context',
             'nfl_pipeline.run_training','nfl_pipeline.snapshot_health_report','nfl_pipeline.readiness_report',
-            'nfl_pipeline.modeling.model_holdout_report','nfl_pipeline.modeling.score_locked_micro_uncertainty'}
+            'nfl_pipeline.modeling.model_holdout_report','nfl_pipeline.modeling.score_locked_micro_uncertainty',
+            # This is a post-settlement evaluation. It scans historical trial
+            # evidence and can take minutes, so it must never delay same-day
+            # quote refresh, immutable locks, or Discord publication.
+            'nfl_pipeline.modeling.receiving_trial_checkpoint',
+            # Publication performs its own fail-closed cash dependency check.
+            # A missing research registration must withhold cash rows without
+            # suppressing verified paper projections for an imminent kickoff.
+            'nfl_pipeline.cash_readiness'}
         steps = [s for s in steps if s.module not in omitted and not (
             s.module=='nfl_pipeline.modeling.score_accuracy_components' and '--capture-team-context' not in s.args)]
         steps = [Step(s.label,s.module,s.args,True,s.post_output,s.timeout_s)
                  if s.module in ('nfl_pipeline.import_context','nfl_pipeline.refresh_lock_quotes') else s for s in steps]
+        steps = [Step(s.label,s.module,(*s.args,'--required'),True,s.post_output,s.timeout_s)
+                 if s.module == 'nfl_pipeline.lock_contract_audit' else s for s in steps]
     results, publications = [], []
     try:
         for step in steps:
@@ -234,9 +267,10 @@ async def main() -> None:
                 log.info("Using existing release; offline training is not part of this frozen live run")
                 continue
             if args.skip_predict and (step.post_output or step.module in {
-                "nfl_pipeline.modeling.predict_today", "nfl_pipeline.modeling.predict_player_props", "nfl_pipeline.modeling.score_accuracy_components", "nfl_pipeline.modeling.score_locked_micro_uncertainty", "nfl_pipeline.modeling.benchmark_offers", "nfl_pipeline.modeling.receiving_trial_checkpoint", "nfl_pipeline.lock_ledger"}):
+                "nfl_pipeline.modeling.predict_today", "nfl_pipeline.modeling.predict_player_props", "nfl_pipeline.modeling.receiving_paper_trial", "nfl_pipeline.lock_contract_audit", "nfl_pipeline.modeling.score_accuracy_components", "nfl_pipeline.modeling.score_locked_micro_uncertainty", "nfl_pipeline.modeling.benchmark_offers", "nfl_pipeline.modeling.receiving_trial_checkpoint", "nfl_pipeline.lock_ledger"}):
                 continue
             log.info("Starting %s",step.label)
+            started=perf_counter()
             if step.module == 'nfl_pipeline.modeling.predict_today':
                 release = active_release()
                 if not release:
@@ -244,6 +278,7 @@ async def main() -> None:
                 os.environ['NFL_MODEL_RELEASE_ID'] = release['release_id']
             rc, stdout, stderr = _run(step)
             results.append({"step":step.label,"returncode":rc,"critical":step.critical,
+                            "elapsed_seconds":round(perf_counter()-started,3),"timeout_seconds":step.timeout_s,
                             "stdout_tail":stdout[-1500:],"stderr_tail":stderr[-1500:]})
             if rc:
                 # Command output may contain authenticated provider URLs; keep

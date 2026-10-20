@@ -12,18 +12,19 @@ from nfl_pipeline import fanduel_links
 
 CONTRACT = 'nfl-matchup-cards-v1'
 DESCRIPTION_LIMIT = 3900
-PAPER_SECTIONS = (
-    ('QB Passing Yards', {'QB'}, 'passing_yards'),
-    ('QB Rushing Yards', {'QB'}, 'rushing_yards'),
-    ('QB Passing TDs', {'QB'}, 'passing_tds'),
-    ('RB Rushing Yards', {'RB'}, 'rushing_yards'),
-    ('RB Receiving Yards', {'RB'}, 'receiving_yards'),
-    ('RB Receptions', {'RB'}, 'receptions'),
-    ('RB Rushing TDs', {'RB'}, 'rushing_tds'),
-    ('WR/TE Receiving Yards', {'WR', 'TE'}, 'receiving_yards'),
-    ('WR/TE Receptions', {'WR', 'TE'}, 'receptions'),
-    ('WR/TE Receiving TDs', {'WR', 'TE'}, 'receiving_tds'),
+STARTER_POSITION_LIMITS = (('QB', 1), ('RB', 1), ('WR', 2), ('TE', 1))
+STARTER_ROLE_ORDER = {'QB1': 0, 'RB1': 1, 'WR1': 2, 'WR2': 3, 'TE1': 4}
+STARTER_STAT_ORDER = (
+    ('passing_yards', 'Pass Yds'),
+    ('passing_tds', 'Pass TD'),
+    ('rushing_yards', 'Rush Yds'),
+    ('receiving_yards', 'Rec Yds'),
+    ('receptions', 'Rec'),
+    ('rushing_tds', 'Rush TD'),
+    ('receiving_tds', 'Rec TD'),
 )
+INACTIVE_ROSTER_STATUSES = {'INA', 'IR', 'RES', 'PUP', 'NFI', 'SUS'}
+INACTIVE_INJURY_STATUSES = {'OUT', 'INACTIVE', 'INJURED RESERVE'}
 
 
 def number(row, field, missing=-math.inf):
@@ -31,8 +32,104 @@ def number(row, field, missing=-math.inf):
     return float(value) if value is not None and math.isfinite(float(value)) else missing
 
 
+def independent_projection(row):
+    """Return the player forecast made independently of the offered line."""
+    point = ((row.get('forecast_outputs') or {}).get('point_forecast') or {}).get('value')
+    for value in (point, row.get('projection'), row.get('baseline_projection')):
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            return value
+    return None
+
+
+def current_fanduel_line(row):
+    marker = row.get('starter_current_line')
+    if marker is not None:
+        return bool(marker)
+    return (str(row.get('book') or '').lower() == 'fanduel'
+            and row.get('offer_id') is not None
+            and row.get('line') is not None
+            and row.get('side') in {'over', 'under'}
+            and row.get('price') is not None)
+
+
+def starting_skill_players(rows):
+    """Select each team's active QB1, RB1, WR1/WR2 and TE1 from depth context."""
+    players = {}
+    for row in preferred_rows(rows):
+        if row.get('previously_locked'):
+            continue
+        position = str(row.get('position') or '').upper()
+        if position not in dict(STARTER_POSITION_LIMITS):
+            continue
+        # Special-teams depth entries can retain an offensive roster position.
+        # Requiring the matching depth abbreviation avoids calling a KR/PR a WR1.
+        if str(row.get('depth_pos_abb') or '').upper() != position:
+            continue
+        rank = number(row, 'depth_pos_rank')
+        if not math.isfinite(rank):
+            continue
+        if str(row.get('roster_status') or '').upper() in INACTIVE_ROSTER_STATUSES:
+            continue
+        if str(row.get('injury_report_status') or '').upper() in INACTIVE_INJURY_STATUSES:
+            continue
+        game_id = str(row.get('game_id') or '')
+        team = str(row.get('team_abbr') or '').upper()
+        player_key = row.get('player_id') or row.get('player_name')
+        if not game_id or not team or not player_key:
+            continue
+        key = (game_id, team, player_key)
+        player = players.setdefault(key, {
+            'game_id': game_id,
+            'team_abbr': team,
+            'player_id': row.get('player_id'),
+            'player_name': row.get('player_name') or str(player_key),
+            'position': position,
+            'depth_rank': rank,
+            'depth_slot': number(row, 'depth_pos_slot', math.inf),
+            'stat_rows': {},
+        })
+        stat = row.get('stat')
+        if stat not in dict(STARTER_STAT_ORDER):
+            continue
+        prior = player['stat_rows'].get(stat)
+        if prior is None or current_fanduel_line(row) > current_fanduel_line(prior):
+            player['stat_rows'][stat] = row
+
+    grouped = defaultdict(list)
+    for player in players.values():
+        if player['stat_rows']:
+            grouped[(player['game_id'], player['team_abbr'], player['position'])].append(player)
+
+    selected = []
+    for (game_id, team, position), candidates in grouped.items():
+        limit = dict(STARTER_POSITION_LIMITS)[position]
+        candidates.sort(key=lambda p: (p['depth_rank'], p['depth_slot'], p['player_name']))
+        for index, player in enumerate(candidates[:limit], 1):
+            selected.append(dict(player, role=f'{position}{index}'))
+    return selected
+
+
+def starter_projection_line(player):
+    stats = []
+    for stat, label in STARTER_STAT_ORDER:
+        row = player['stat_rows'].get(stat)
+        value = independent_projection(row or {})
+        if value is None:
+            continue
+        precision = 1 if stat.endswith('_yards') or stat == 'receptions' else 2
+        stats.append(f'{label} {value:.{precision}f}')
+    details = ' | '.join(stats) if stats else 'No current stat forecast'
+    has_line = any(current_fanduel_line(row) for row in player['stat_rows'].values())
+    availability = 'FanDuel line available' if has_line else 'Projection only - no current line'
+    return f"- {player['team_abbr']} {player['role']} {player['player_name']}: {details} | {availability}"
+
+
 def selected_props(rows, paper_limit=10):
-    """Select once across the slate, before grouping; never grant five micros per game."""
+    """Select executable rows once across the slate; forecasts render elsewhere."""
     rows = preferred_rows(rows)
     selected = []
     selected.extend(('$1 CASH TRIAL ELIGIBLE', r) for r in rows
@@ -40,29 +137,12 @@ def selected_props(rows, paper_limit=10):
     micro = [r for r in rows if r.get('tier') == 'micro_projection' and r.get('ledger_locked')
              and r.get('line') is not None and r.get('side') in {'over', 'under'}]
     micro.sort(key=lambda r: (number(r, 'ev'), number(r, 'model_market_edge')), reverse=True)
-    selected.extend(('$1 MICRO TEST', r) for r in micro[:5])
+    selected.extend(('$1 MICRO TEST', r) for r in micro[:3])
     for row in rows:
         if row.get('tier') == 'bankroll' and row.get('ledger_locked'):
             selected.append(('BANKROLL PROPS', row))
         elif row.get('tier') == 'locked_micro':
             selected.append(('PREVIOUSLY LOCKED MICRO - NOT ADDITIONAL PLAYS', row))
-    # Sharp-line edges are not carded: the morning/pregame snapshot is stale by the time a gap matters.
-    # sharp_watch polls FanDuel and Pinnacle together and pings live (see docs/nfl_market_calibration.md).
-    for title, positions, stat in PAPER_SECTIONS:
-        actionable = {(r.get('game_id'), r.get('player_id') or r.get('player_name'), r.get('stat')) for _, r in selected}
-        candidates = [r for r in rows if r.get('position') in positions and r.get('stat') == stat
-                      and r.get('tier', 'paper') not in {'micro_projection', 'locked_micro', 'bankroll','cash_trial'}
-                      and (r.get('game_id'), r.get('player_id') or r.get('player_name'), stat) not in actionable]
-        candidates.sort(key=lambda r: (r.get('ev') is not None, number(r, 'ev'), number(r, 'projection', 0)), reverse=True)
-        seen = set()
-        for row in candidates:
-            key = (row.get('game_id'), row.get('player_id') or row.get('player_name'), stat)
-            if key in seen:
-                continue
-            if len(seen) >= paper_limit:
-                break
-            seen.add(key)
-            selected.append((f'PAPER - {title}', row))
     return selected
 
 
@@ -121,7 +201,8 @@ def embed_pages(title, intro, sections, footer):
             for i, body in enumerate(descriptions)]
 
 
-def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, paper_limit=10, quote_exclusions=None, cash_readiness=None):
+def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, paper_limit=10,
+                 quote_exclusions=None, cash_readiness=None, starter_prop_rows=None):
     now = now or datetime.now(timezone.utc)
     by_game = defaultdict(lambda: defaultdict(list))
     upcoming = {str(g['game_id']): g for g in schedule
@@ -129,12 +210,18 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
     current_props = [r for r in preferred_rows(prop_rows) if str(r['game_id']) in upcoming]
     for heading, row in selected_props(current_props, paper_limit):
         by_game[str(row['game_id'])][heading].append(row)
+    starter_source = current_props if starter_prop_rows is None else [
+        r for r in preferred_rows(starter_prop_rows) if str(r['game_id']) in upcoming]
+    starters_by_game = defaultdict(list)
+    for player in starting_skill_players(starter_source):
+        starters_by_game[player['game_id']].append(player)
     games_by_id = defaultdict(list)
     for row in preferred_rows(game_rows):
         if str(row['game_id']) in upcoming:
             games_by_id[str(row['game_id'])].append(row)
     cards = []
-    footer = 'Release: ' + ' / '.join(sorted(set(releases))) + ' | Paper is research. Ledger rows are not confirmed wagers.'
+    footer = ('Release: ' + ' / '.join(sorted(set(releases)))
+              + ' | Only labeled bankroll/micro rows are betting instructions.')
     for gid, game in sorted(upcoming.items(), key=lambda item: (utc(item[1]['start_ts_utc']), item[0])):
         title = f"{game['away_team_abbr']} @ {game['home_team_abbr']} | NFL {day}"
         kickoff = int(utc(game['start_ts_utc']).timestamp())
@@ -163,30 +250,30 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
             sections.append(('BANKROLL PROPS', [fanduel_links.format_prop_row(r, action='Bankroll') for r in bankroll_props]))
         if not bankroll_games and not bankroll_props:
             sections.append(('BANKROLL', ['- No qualifying bankroll bets for this matchup.']))
+        actionable_prop_count = len(cash) + len(bankroll_props)
         for heading, action in (('$1 MICRO TEST', 'BET $1'), ('PREVIOUSLY LOCKED MICRO - NOT ADDITIONAL PLAYS', 'Already recorded')):
             rows = by_game[gid].get(heading, [])
             if rows:
-                lead = ['- $1 flat only; verify Min and Drift=OK. Daily cap remains 5 across all games.'] if action == 'BET $1' else ['- Historical locked quotes, not refreshed betting instructions.']
+                if action == 'BET $1':
+                    actionable_prop_count += len(rows)
+                lead = ['- $1 flat only; verify Min and Drift=OK. Maximum 3 across all games; there is no quota.'] if action == 'BET $1' else ['- Historical locked quotes, not refreshed betting instructions.']
                 sections.append((heading, lead + [fanduel_links.format_prop_row(r, action=action) for r in rows]))
-        paper_games = [r for r in game_picks if r.get('tier', 'paper') != 'bankroll' and r.get('ev') is not None]
-        paper_games.sort(key=lambda r: number(r, 'ev'), reverse=True)
-        sections.append(('PAPER GAME PICKS', [game_line(r) for r in paper_games] or ['- No current priced game picks at FanDuel.']))
+        if not actionable_prop_count:
+            sections.append(('ACTIONABLE PROPS', ['- No current prop meets the FanDuel residual, price, freshness, model, and context requirements.']))
         prop_count = sum(r.get('offer_id') is not None for r in current_props if str(r['game_id']) == gid)
         if not prop_count:
             sections.append(('PROP ODDS', ['- No fresh verified FanDuel prop offers in this card. Any projections below are not bettable.']))
-        paper_sections = [(heading, rows) for heading, rows in by_game[gid].items() if heading.startswith('PAPER -')]
-        if not paper_sections:
-            sections.append(('PAPER PROPS', ['- No props from this matchup in the current slate-wide research shortlist.']))
-        for heading, rows in paper_sections:
-            lines = [fanduel_links.format_prop_row(r, action='Research only') for r in rows]
-            parlay = fanduel_links.parlay_betslip_url([r.get('link') for r in rows], rows)
-            if parlay:
-                lines.append(f'- Research parlay: [FanDuel](<{parlay}>)')
-            sections.append((heading, lines))
+        team_order = {str(game.get('away_team_abbr')): 0, str(game.get('home_team_abbr')): 1}
+        starters = sorted(starters_by_game.get(gid, []), key=lambda p: (
+            team_order.get(p['team_abbr'], 2), STARTER_ROLE_ORDER[p['role']], p['player_name']))
+        starter_lines = [starter_projection_line(player) for player in starters]
+        sections.append(('STARTING SKILL PLAYER PROJECTIONS',
+                         ['- Forecasts only; bankroll and micro sections remain the betting shortlist.']
+                         + (starter_lines or ['- No verified starter depth projections are available.'])))
         # Matchup-level manifest is repeated across pages. Historical locked rows
         # without a current forecast ID are not advertised as refreshed decisions.
         manifest=[]
-        displayed=[('game',r) for r in bankroll_games+paper_games]
+        displayed=[('game',r) for r in bankroll_games]
         displayed += [('prop',r) for rows in by_game[gid].values() for r in rows]
         for kind,r in displayed:
             if r.get('forecast_id') is not None:

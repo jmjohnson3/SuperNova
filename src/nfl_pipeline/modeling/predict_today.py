@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
 import joblib
@@ -175,29 +174,6 @@ def _db_value(value: Any) -> Any:
     if isinstance(value, np.generic):
         return value.item()
     return value
-
-
-def _build_fd_parlay_url(links: list[str | None]) -> str | None:
-    legs: list[tuple[str, str]] = []
-    for link in links:
-        if not link or "fanduel.com" not in link:
-            continue
-        try:
-            qs = parse_qs(urlparse(link).query)
-            market = qs.get("marketId", [None])[0]
-            selection = qs.get("selectionId", [None])[0]
-            if market and selection:
-                legs.append((market, selection))
-        except Exception:
-            continue
-    deduped = list(dict.fromkeys(legs))
-    if len(deduped) < 2:
-        return None
-    params = "&".join(
-        f"marketId[{idx}]={market}&selectionId[{idx}]={selection}"
-        for idx, (market, selection) in enumerate(deduped)
-    )
-    return f"https://sportsbook.fanduel.com/addToBetslip?{params}"
 
 
 def _apply_total_bias_calibrator(pred: np.ndarray, X: pd.DataFrame, calibrator: dict[str, Any] | None) -> np.ndarray:
@@ -602,8 +578,10 @@ def _best_spread_candidate(game: dict[str, Any], pred_margin: float, base_margin
         },
     ]
     _apply_market_calibration(choices, line, calibration)
+    _distribution_policy_choices(choices, game, line, pred_margin, sigma, 'spread')
     for choice in choices:
-        choice["ev"] = _ev_per_unit(choice["probability"], choice["price"])
+        value = _ev_per_unit(choice["probability"], choice["price"])
+        choice["ev"] = None if value is None else value*(1-choice.get('push_probability', 0))
     return max(choices, key=lambda rec: (rec.get("ev") is not None, rec.get("ev") or -999.0, abs(rec["edge"])))
 
 
@@ -644,9 +622,54 @@ def _best_total_candidate(game: dict[str, Any], pred_total: float, base_total: f
         },
     ]
     _apply_market_calibration(choices, line, calibration)
+    _distribution_policy_choices(choices, game, line, pred_total, sigma, 'total')
     for choice in choices:
-        choice["ev"] = _ev_per_unit(choice["probability"], choice["price"])
+        value = _ev_per_unit(choice["probability"], choice["price"])
+        choice["ev"] = None if value is None else value*(1-choice.get('push_probability', 0))
     return max(choices, key=lambda rec: (rec.get("ev") is not None, rec.get("ev") or -999.0, abs(rec["edge"])))
+
+
+def _distribution_policy_choices(choices, game, line, mean, sigma, market):
+    from nfl_pipeline.modeling import distribution_policy as dp
+    raw = dp.normal_curve(mean, sigma, nonnegative=market == 'total')
+    positive = 'home' if market == 'spread' else 'over'
+    threshold = -choices[0]['line'] if market == 'spread' else choices[0]['line']
+    anchor = dp.anchor_for([dict(line=threshold, over_price=choices[0]['price'], under_price=choices[1]['price'],
+        bookmaker_key=game.get('bookmaker_key'), fetched_at_utc=game.get('quote_fetched_at_utc'))], mean)
+    if market == 'spread' and not math.isclose(float(choices[0]['line']), -float(choices[1]['line']), abs_tol=1e-9):
+        anchor = None
+    contexts = dp.prop_contexts(raw, market, game.get('_model_release', 'unknown'),
+        game.get('bookmaker_key', 'fanduel'), [dict(line=threshold, over_price=choices[0]['price'],
+        under_price=choices[1]['price'], bookmaker_key=game.get('bookmaker_key'),
+        fetched_at_utc=game.get('quote_fetched_at_utc'))] if anchor else [], game,
+        game.get('_cdf_challengers', {}), game.get('_cdf_active', {}),
+        projection=mean, cutoff=game.get('prediction_context_cutoff_utc'))
+    ctx = next((c for c in contexts if c.get('deployed')), contexts[0])
+    deployed = dp.captured_score(ctx, 'deployed', threshold)
+    challenger = dp.captured_score(ctx, 'challenger', threshold)
+    winner_context = None
+    if market == 'spread':
+        winner_context = dp.context(raw, None, dp.policy_key('game_outcome', game.get('_model_release', 'unknown'),
+            game.get('bookmaker_key', 'fanduel')), game.get('_cdf_challengers', {}), game.get('_cdf_active', {}))
+    for choice in choices:
+        choice['distribution_policy_capture'] = ctx
+        choice['distribution_policy_variants'] = contexts
+        choice['distribution_challenger_score'] = challenger
+        choice['distribution_threshold'] = threshold
+        if market == 'spread':
+            # Winner probabilities from the score-margin curve, not fabricated moneyline odds.
+            choice['game_outcome_distribution'] = dp.outcomes(raw, 0)
+            choice['game_outcome_policy_capture'] = winner_context
+            choice['game_outcome_challenger_score'] = dp.captured_score(winner_context, 'challenger', 0)
+            winner_live = dp.captured_score(winner_context, 'deployed', 0)
+            if winner_live:
+                choice['game_outcome_distribution'] = winner_live
+        if deployed:
+            choice['legacy_final_probability'] = choice['probability']
+            choice['probability'] = deployed['conditional_over'] if choice['side'] == positive else 1-deployed['conditional_over']
+            choice['push_probability'] = deployed['push']
+            choice['distribution_policy_id'] = deployed['policy_id']
+            choice['market_trust'] = ctx['deployed']['model_weight']
 
 
 def _prediction_row(game: dict[str, Any], pick: dict[str, Any], *, pred_margin: float, pred_total: float, base_margin: float, base_total: float, artifact: dict[str, Any]) -> dict[str, Any]:
@@ -656,6 +679,8 @@ def _prediction_row(game: dict[str, Any], pick: dict[str, Any], *, pred_margin: 
         'quote_fetched_at_utc': game.get('quote_fetched_at_utc'),
         'prediction_context_cutoff_utc': game.get('prediction_context_cutoff_utc'),
         'start_ts_utc': game.get('start_ts_utc'),
+        'forecast_horizon_minutes': game.get('forecast_horizon_minutes'),
+        'forecast_horizon_bucket': game.get('forecast_horizon_bucket'),
         "game_date_et": game.get("game_date_et"),
         "season": game.get("season"),
         "week": game.get("week"),
@@ -676,6 +701,16 @@ def _prediction_row(game: dict[str, Any], pick: dict[str, Any], *, pred_margin: 
         "model_probability": pick.get("model_probability"),
         "market_no_vig_probability": pick.get("market_no_vig_probability"),
         "market_trust": pick.get("market_trust"),
+        'distribution_policy_capture': pick.get('distribution_policy_capture'),
+        'distribution_policy_variants': pick.get('distribution_policy_variants'),
+        'distribution_challenger_score': pick.get('distribution_challenger_score'),
+        'distribution_threshold': pick.get('distribution_threshold'),
+        'distribution_policy_id': pick.get('distribution_policy_id'),
+        'legacy_final_probability': pick.get('legacy_final_probability'),
+        'game_outcome_distribution': pick.get('game_outcome_distribution'),
+        'game_outcome_policy_capture': pick.get('game_outcome_policy_capture'),
+        'game_outcome_challenger_score': pick.get('game_outcome_challenger_score'),
+        'push_probability': pick.get('push_probability', 0),
         "ev": pick.get("ev"),
         "edge": pick.get("edge"),
         "tier": "paper",
@@ -699,7 +734,8 @@ def _save_predictions(conn, rows: list[dict[str, Any]]) -> int:
         "market", "side", "book", "line", "price", "link",
         "predicted_home_margin", "predicted_total_points",
         "baseline_home_margin", "baseline_total_points",
-        "probability", "ev", "edge", "tier", "model_version", "reasons", "prediction_key",
+        "probability", "ev", "edge", "forecast_horizon_minutes",
+        "forecast_horizon_bucket", "tier", "model_version", "reasons", "prediction_key",
     ]
     from nfl_pipeline.forecast_store import save_forecasts
     return save_forecasts(conn, "nfl_game_predictions", rows, fields)
@@ -726,6 +762,8 @@ def build_predictions(cfg: PredictGameConfig) -> tuple[list[dict[str, Any]], dic
                     snapshot[f'{prefix}_{feature}'] = [injuries.get((int(r.season),int(r.week),r[f'{prefix}_team_abbr']),{}).get(feature) for _,r in snapshot.iterrows()]
         rows: list[dict[str, Any]] = []
         market_calibration = _load_market_calibration()
+        from nfl_pipeline.modeling import distribution_policy as cdf_policy
+        cdf_challengers, cdf_active = cdf_policy.load_registry(), cdf_policy.load_registry('active')
         if not snapshot.empty:
             margin_pred, margin_base, margin_accepted = _predict_target(
                 snapshot,
@@ -747,11 +785,15 @@ def build_predictions(cfg: PredictGameConfig) -> tuple[list[dict[str, Any]], dic
                 for _, line_row in line_rows.iterrows():
                     game_with_book = {
                         **game_dict,
+                        '_model_release': artifact.get('version'),
+                        '_cdf_challengers': cdf_challengers, '_cdf_active': cdf_active,
                         'quote_fetched_at_utc': str(line_row.get('fetched_at_utc')),
                         'prediction_context_cutoff_utc': cutoff.isoformat(),
                         "bookmaker_key": line_row.get("bookmaker_key"),
                         "bookmaker_title": line_row.get("bookmaker_title"),
                     }
+                    from nfl_pipeline.forecast_horizon import add_horizon
+                    add_horizon(game_with_book, cutoff=cutoff)
                     spread_pick = _best_spread_candidate(
                         game_with_book,
                         float(margin_pred[idx]),
@@ -809,12 +851,6 @@ def _book_label(row: dict[str, Any]) -> str:
     return str(row.get("book") or "").upper() or "BOOK"
 
 
-def _print_parlay(title: str, rows: list[dict[str, Any]]) -> None:
-    url = _build_fd_parlay_url([row.get("link") for row in rows])
-    if url:
-        print(f"- {title} Parlay: [FD]({url})")
-
-
 def print_discord(rows: list[dict[str, Any]], meta: dict[str, Any], cfg: PredictGameConfig) -> None:
     print(f"NFL {meta['game_date']} - Game Bets v1")
     print("")
@@ -854,7 +890,6 @@ def print_discord(rows: list[dict[str, Any]], meta: dict[str, Any], cfg: Predict
                 f"{projection_s} p={float(row['probability']):.0%} "
                 f"EV={float(row['ev']):+.2f}{link_s}"
             )
-        _print_parlay(f"Top {len(shown)} {title}", shown)
 
 
 def main() -> None:

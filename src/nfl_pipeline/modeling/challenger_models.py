@@ -10,6 +10,8 @@ from scipy.special import expit, logit
 OPPORTUNITY = {'receiving_yards':'targets', 'rushing_yards':'carries', 'passing_yards':'pass_attempts'}
 POSITIONS = {'receiving_yards':('RB','WR','TE'), 'rushing_yards':('QB','RB'), 'passing_yards':('QB',)}
 FLOORS = {'receiving_yards':5., 'rushing_yards':4., 'passing_yards':20.}
+ROLE_QUANTILE_MIN_ROWS = 20
+ROLE_QUANTILE_PRIOR_ROWS = 160.0
 BASES = {
     'receiving_yards':('receiving_yards','receiving_air_yards','receiving_yards_after_catch','targets','receptions','offense_snaps','offense_snap_share','air_yards_share','wopr','routes_run','route_participation','first_read_targets','red_zone_targets'),
     'rushing_yards':('rushing_yards','carries','offense_snaps','offense_snap_share','red_zone_carries','goal_line_carries'),
@@ -32,8 +34,18 @@ def player_features(frame, stat):
     out['role_volatility'] = numeric(frame,f'{op}_std_5')/(numeric(frame,f'{op}_avg_5')+1)
     out['prior_yards_per_opportunity'] = numeric(frame,f'{stat}_avg_5')/numeric(frame,f'{op}_avg_5').replace(0,np.nan)
     contexts=frame.get('context_evidence',pd.Series(None,index=frame.index,dtype=object))
-    for key in ('depth_rank','depth_movement','expected_starter_from_depth','teammate_injury_count'):
+    for key in (
+        'depth_rank','depth_movement','expected_starter_from_depth',
+        'teammate_injury_count','teammate_injury_score',
+        'teammate_receiver_injury_score',
+    ):
         out[f'asof_{key}'] = contexts.map(lambda c:c.get(key) if isinstance(c,dict) else None)
+    out['asof_injury_context_known'] = contexts.map(
+        lambda c: float(not bool(c.get('injury_missing')))
+        if isinstance(c,dict) and c.get('contract') else np.nan)
+    out['asof_teammate_context_known'] = contexts.map(
+        lambda c: float(c.get('teammate_coverage') != 'unknown')
+        if isinstance(c,dict) and c.get('contract') else np.nan)
     for key in ('injury_status','practice_status'):
         for label in ('out','doubtful','questionable','limited','did not participate','full'):
             out[f'asof_{key}_{label.replace(" ","_")}'] = contexts.map(
@@ -42,6 +54,29 @@ def player_features(frame, stat):
     out=out.apply(pd.to_numeric,errors='coerce').replace([np.inf,-np.inf],np.nan)
     missing=out.isna().astype(float).add_suffix('__missing')
     return pd.concat([out,missing],axis=1)
+
+
+def uncertainty_role_keys(X):
+    """Stable, pregame role buckets for player-specific residual tails."""
+    position=np.full(len(X),'UNK',dtype=object)
+    for label in ('QB','RB','WR','TE'):
+        column=f'position_{label}'
+        if column in X:
+            position[np.asarray(X[column].fillna(0)>0,dtype=bool)]=label
+    op_column=next((name for name in ('targets_avg_5','carries_avg_5','pass_attempts_avg_5')
+                    if name in X),None)
+    opportunity=(pd.to_numeric(X[op_column],errors='coerce') if op_column
+                 else pd.Series(np.nan,index=X.index))
+    established_cut=np.select(
+        [position=='QB',position=='RB',np.isin(position,['WR','TE'])],
+        [24.,8.,4.],default=4.)
+    established=np.where(opportunity.isna(),'unknown',
+                         np.where(opportunity.to_numpy()>=established_cut,'established','secondary'))
+    volatility=pd.to_numeric(X.get('role_volatility',pd.Series(np.nan,index=X.index)),errors='coerce')
+    stability=np.where(volatility.isna(),'unknown',
+                       np.where(volatility.to_numpy()<=.45,'stable',
+                                np.where(volatility.to_numpy()>=.85,'volatile','normal')))
+    return np.asarray([f'{p}|{r}|{s}' for p,r,s in zip(position,established,stability)],dtype=object)
 
 
 def workload_state(frame, stat):
@@ -98,7 +133,7 @@ class FittedHead:
 
 class OpportunityRateModel:
     """Conditional workload states; efficiency learns only from positive exposure."""
-    def fit(self,frame,stat):
+    def fit(self,frame,stat,sample_weights=None):
         self.stat=stat
         X=player_features(frame,stat)
         states=workload_state(frame,stat)
@@ -106,21 +141,28 @@ class OpportunityRateModel:
         if not (exposure>0).any():
             raise ValueError('Opportunity training requires positive observed exposure')
         y=numeric(frame,stat).to_numpy()
-        self.state_head=FittedHead(classifier=True).fit(X,states)
+        weights=(np.ones(len(frame),dtype=float) if sample_weights is None
+                 else np.asarray(sample_weights,dtype=float))
+        if weights.shape!=(len(frame),) or not np.isfinite(weights).all() or (weights<=0).any():
+            raise ValueError('Opportunity sample weights must be finite and positive')
+        self.state_head=FittedHead(classifier=True).fit(X,states,weights)
         self.op_heads={}
         self.rate_heads={}
         for state in range(3):
             mask=states==state
             if mask.sum()<150:
                 mask=np.ones(len(X),dtype=bool)
-            self.op_heads[state]=FittedHead('poisson').fit(X.loc[mask],exposure[mask])
+            self.op_heads[state]=FittedHead('poisson').fit(
+                X.loc[mask],exposure[mask],weights[mask])
             positive=mask & (exposure>0)
             if not positive.any():
                 positive=exposure>0
             rate=y[positive]/exposure[positive]
             # Per-opportunity loss: a one-target outlier has less influence than a full game.
-            self.rate_heads[state]=FittedHead().fit(X.loc[positive],rate,np.minimum(exposure[positive],40))
-        self.state_prior=np.bincount(states,minlength=3)/len(states)
+            self.rate_heads[state]=FittedHead().fit(
+                X.loc[positive],rate,
+                np.minimum(exposure[positive],40)*weights[positive])
+        self.state_prior=np.bincount(states,weights=weights,minlength=3)/weights.sum()
         return self
 
     def components(self,frame):
@@ -152,11 +194,30 @@ class ConditionalResidual:
         z=np.asarray(errors)/self.scale(X)
         grid=np.linspace(.005,.995,101)
         self.quantiles={-1:np.quantile(z,grid)}
+        state_values=np.full(len(z),-1,dtype=int) if states is None else np.asarray(states,dtype=int)
         if states is not None:
             for state in range(3):
-                vals=z[np.asarray(states)==state]
+                vals=z[state_values==state]
                 if len(vals)>=60:
                     self.quantiles[state]=np.quantile(vals,grid)
+        self.role_quantiles={}
+        self.role_support={}
+        keys=uncertainty_role_keys(X)
+        for state in sorted(set(state_values).union({-1})):
+            state_mask=np.ones(len(z),dtype=bool) if state==-1 else state_values==state
+            parent=self.quantiles.get(state,self.quantiles[-1])
+            for key in sorted(set(keys[state_mask])):
+                mask=state_mask & (keys==key)
+                n=int(mask.sum())
+                self.role_support[f'{state}:{key}']=n
+                if n<ROLE_QUANTILE_MIN_ROWS:
+                    continue
+                empirical=np.quantile(z[mask],grid)
+                # Calibration blocks are intentionally smaller than training.
+                # Admit modest role samples, then shrink them heavily so a
+                # short streak cannot manufacture an extreme player tail.
+                shrink=n/(n+ROLE_QUANTILE_PRIOR_ROWS)
+                self.role_quantiles[(state,key)]=shrink*empirical+(1-shrink)*parent
         return self
 
     def confidence(self,X):
@@ -167,11 +228,18 @@ class ConditionalResidual:
             centers=centers[:,None]
             weights=np.ones_like(centers)
         scale=self.scale(X)
+        role_keys=uncertainty_role_keys(X)
         values=[]; masses=[]
+        role_quantiles=getattr(self,'role_quantiles',{})
         for state in range(centers.shape[1]):
-            q=self.quantiles.get(state,self.quantiles[-1])
+            parent=self.quantiles.get(state,self.quantiles[-1])
+            q=np.asarray([
+                role_quantiles.get((state,key),
+                    role_quantiles.get((-1,key),parent))
+                for key in role_keys
+            ])
             values.append(centers[:,state,None]+scale[:,None]*q)
-            masses.append(np.broadcast_to(weights[:,state,None]/len(q),(len(X),len(q))))
+            masses.append(np.broadcast_to(weights[:,state,None]/q.shape[1],q.shape))
         return np.concatenate(values,axis=1),np.concatenate(masses,axis=1)
 
 

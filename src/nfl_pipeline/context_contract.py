@@ -30,7 +30,10 @@ def validate_evidence(evidence, lock):
     cutoff=safe_time(evidence.get('cutoff')); lock=safe_time(lock)
     if not cutoff or not lock or cutoff>lock:
         return None
-    for key in ('injury_observed_at','depth_observed_at','roster_observed_at'):
+    for key in (
+        'injury_observed_at', 'teammate_injury_observed_at',
+        'depth_observed_at', 'roster_observed_at',
+    ):
         value=evidence.get(key)
         when=safe_time(value)
         if present(value) and (not when or when>cutoff):
@@ -48,6 +51,7 @@ def context_evidence(row, cutoff):
     injury_at = observed('injury_observed_at')
     depth_at = observed('depth_observed_at')
     roster_at = observed('roster_observed_at')
+    teammate_injury_at = observed('teammate_injury_observed_at')
     rank = number(row.get('depth_pos_rank')) if depth_at else None
     previous = number(row.get('previous_depth_pos_rank')) if depth_at else None
     routes = number(row.get('routes_run_avg_5'))
@@ -62,8 +66,24 @@ def context_evidence(row, cutoff):
         'expected_starter_from_depth': rank == 1 if rank is not None else None,
         'depth_observed_at': depth_at.isoformat() if depth_at else None,
         'roster_observed_at': roster_at.isoformat() if roster_at else None,
-        'teammate_injury_count': number(row.get('same_week_teammate_skill_injury_count')) if injury_at else None,
-        'teammate_coverage': 'partial_observed_reports' if injury_at else 'unknown',
+        # Teammate reports are a team-level observation. A player does not need
+        # an individual injury row for the teammate evidence to be known.
+        'teammate_injury_count': (
+            number(row.get('same_week_teammate_skill_injury_count'))
+            if teammate_injury_at else None
+        ),
+        'teammate_injury_score': (
+            number(row.get('same_week_teammate_skill_injury_score'))
+            if teammate_injury_at else None
+        ),
+        'teammate_receiver_injury_score': (
+            number(row.get('same_week_teammate_receiver_injury_score'))
+            if teammate_injury_at else None
+        ),
+        'teammate_injury_observed_at': (
+            teammate_injury_at.isoformat() if teammate_injury_at else None
+        ),
+        'teammate_coverage': 'partial_observed_reports' if teammate_injury_at else 'unknown',
         'routes_run_history': routes,
         'routes_source': 'observed_prior_games' if routes is not None else 'proxy_only' if proxy is not None else 'missing',
         'route_participation_proxy': proxy,

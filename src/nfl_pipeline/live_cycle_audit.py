@@ -2,6 +2,7 @@
 import argparse
 from datetime import date, datetime, timezone
 import json
+from collections import Counter
 
 import psycopg2
 import psycopg2.extras
@@ -23,7 +24,11 @@ def publication_matches(publication,lookup,start):
         return False
     verified = 0
     for m in manifests:
-        r=lookup.get(int(m['forecast_id']));p=(r or {}).get('forecast_payload') or {}
+        try:
+            r=lookup.get(int(m['forecast_id']))
+        except (TypeError,ValueError,KeyError):
+            return False
+        p=(r or {}).get('forecast_payload') or {}
         # Projection-only research rows are not offers. Verify their identity,
         # but do not demand a nonexistent price or treat them as betting proof.
         if r and all(p.get(k) is None and m.get(k) is None for k in ('book','side','line','price')):
@@ -57,7 +62,7 @@ def build(day,games,records,checkpoint,daily_runs,now):
         ids={i for i in eligible if i in lookup and lookup[i]['game_id']==g['game_id']}
         # Successful sends are recorded individually. A later close/audit failure
         # must not erase an already delivered, independently verifiable manifest.
-        publications=[p for d in daily_runs if d.get('pregame')
+        publications=[p for d in daily_runs
             for p in d.get('publications',[]) if str(p.get('game_id'))==str(g['game_id'])]
         matched=any(publication_matches(p,lookup,start) for p in publications)
         blockers=[]
@@ -69,6 +74,8 @@ def build(day,games,records,checkpoint,daily_runs,now):
         if due and not ids:
             blockers.append('no_eligible_receiving_trial_offers')
         closed=[i for i in ids if observed.get(i,{}).get('valid_exact_capture')]
+        close_reasons=Counter(observed.get(i,{}).get('reason') or observed.get(i,{}).get('status') or 'missing_close_observation'
+            for i in ids if i not in closed)
         coverage=len(closed)/len(ids) if remaining<=0 and ids else None
         if coverage is not None and coverage<.9:
             blockers.append('valid_exact_close_coverage_below_90_percent')
@@ -83,6 +90,9 @@ def build(day,games,records,checkpoint,daily_runs,now):
         game_rows.append(dict(game_id=g['game_id'],kickoff=start.isoformat(),phase=phase,
             eligible_forecasts=len(ids),challenger_captures=len(ids&paired),
             discord_exact_prop_manifest_verified=matched,valid_close_coverage=coverage,
+            recorded_publication_pages=len(publications),
+            verified_publication_pages=sum(publication_matches(p,lookup,start) for p in publications),
+            close_unknown_reasons=dict(close_reasons) if remaining<=0 else {},
             unknown_closes=len(ids)-len(closed) if remaining<=0 else None,
             unresolved_forecast_ids=unresolved,blockers=blockers))
     blockers=[f"{g['game_id']}:{b}" for g in game_rows for b in g['blockers']]
@@ -101,10 +111,36 @@ def report(day):
     checkpoint_path=ROOT/'reports'/f'nfl_receiving_trial_checkpoint_{day}.json'
     checkpoint=json.loads(checkpoint_path.read_text()) if checkpoint_path.exists() else {}
     runs=[]
-    for path in (ROOT/'reports').glob('nfl_daily_run_pregame_*.json'):
+    seen=set()
+    for path in (ROOT/'reports').glob('nfl_daily_run_*.json'):
+        if path.name == 'nfl_daily_run_latest.json':
+            continue
         d=json.loads(path.read_text())
-        if d.get('date')==str(day):runs.append(d)
-    doc=build(day,games,load_rows(day),checkpoint,runs,datetime.now(timezone.utc))
+        key=json.dumps(d.get('publications',[]),sort_keys=True)
+        if d.get('date')==str(day) and key not in seen:
+            runs.append(d);seen.add(key)
+    records=load_rows(day)
+    # A pregame checkpoint's close labels may be hours old. Reconcile against
+    # immutable snapshots now, without changing any lock or writing derived labels.
+    from nfl_pipeline.clv_report import ClvConfig, prop_close_rows, classify_prop_close
+    with psycopg2.connect(PG_DSN) as conn:
+        conn.set_session(readonly=True)
+        with conn.cursor() as cur:cur.execute("SET LOCAL statement_timeout='90s'")
+        raw=prop_close_rows(conn,ClvConfig(game_date=day))
+    old={r['forecast_id']:r for r in checkpoint.get('close',{}).get('all_eligible',{}).get('observations',[])}
+    eligible=set((checkpoint.get('capture') or {}).get('eligible_forecast_ids',[]))
+    observations=[]
+    for row in raw:
+        if row['prediction_id'] not in eligible:continue
+        q=classify_prop_close(row)
+        observations.append(dict(forecast_id=row['prediction_id'],valid_exact_capture=q['valid'],reason=q['status'],
+            match_method=q.get('match_method')))
+    checkpoint.setdefault('close',{}).setdefault('all_eligible',{})['observations']=observations
+    doc=build(day,games,records,checkpoint,runs,datetime.now(timezone.utc))
+    doc['close_reconciliation']=dict(source='immutable_exact_snapshots',checkpoint_built_at=checkpoint.get('built_at'),
+        observed=len(observations),changed_since_checkpoint=sum(old.get(r['forecast_id'],{}).get('valid_exact_capture')!=r['valid_exact_capture'] for r in observations),
+        historical_locks_changed=False)
+    doc['close_reconciliation']['match_methods']=dict(Counter(r['match_method'] for r in observations if r['valid_exact_capture']))
     for suffix in (str(day),'latest'):
         atomic_json(ROOT/'reports'/f'nfl_live_cycle_{suffix}.json',doc)
         lines=['# NFL Live Cycle', '',f"Date: {day}; status: {doc['status']}",doc['note'],'',

@@ -7,15 +7,20 @@ import pytest
 
 from nfl_pipeline.context_contract import context_evidence
 from nfl_pipeline.modeling.component_validation import WorkloadTailCalibration, output_gates, calibrate_curve
-from nfl_pipeline.modeling.challenger_models import curve_summary, curve_over
+from nfl_pipeline.modeling.challenger_models import (
+    ConditionalResidual, curve_summary, curve_over,
+)
 from nfl_pipeline.modeling.score_accuracy_components import (
     empirical_residuals, full_path, score_records, snapshot_before,
 )
 from nfl_pipeline.modeling.scoring_capture import capture
 from nfl_pipeline.modeling.team_workload import (
-    COUNTS, YARDS, TeamAllocationModel, prepare_history, roster_features, team_features,
+    COUNTS, YARDS, TeamAllocationModel, prepare_history, roster_features,
+    season_recency_weights, team_features,
 )
-from nfl_pipeline.modeling.train_accuracy_components import prospective_outputs
+from nfl_pipeline.modeling.train_accuracy_components import (
+    _blend_opportunity, _preserve_curve_mean, prospective_outputs,
+)
 from nfl_pipeline.test_accuracy_challengers import locked_record, scoring_fixture
 
 
@@ -92,6 +97,36 @@ def test_tail_disabled_is_identity_and_enabled_preserves_mass_and_median():
     assert np.all(np.diff(repaired[0]) > 0)
     assert curve_summary(repaired, mass)['median'][0] == 30
     assert set(tail.groups([np.nan, 10, 25, 40])) == {'unknown', 'low', 'normal', 'high'}
+
+
+def test_tail_groups_use_stat_specific_workload_cutoffs():
+    rushing = WorkloadTailCalibration(6, 14)
+    assert list(rushing.groups([np.nan, 5.9, 6, 13.9, 14])) == [
+        'unknown', 'low', 'normal', 'normal', 'high'
+    ]
+    receiving = WorkloadTailCalibration(4, 10)
+    assert list(receiving.groups([3.9, 4, 9.9, 10])) == [
+        'low', 'normal', 'normal', 'high'
+    ]
+    with pytest.raises(ValueError, match='cutoffs'):
+        WorkloadTailCalibration(10, 4)
+
+
+def test_receiving_opportunity_shrinks_team_signal_toward_long_role():
+    frame = pd.DataFrame({'targets_avg_5': [8., 3.], 'targets_avg_10': [6., 4.]})
+    result = _blend_opportunity(frame, [10., 12.], [True, False], 'receiving_yards', .25)
+    np.testing.assert_allclose(result, [7., 4.])
+    with pytest.raises(ValueError, match='Opportunity blend'):
+        _blend_opportunity(frame, [10., 12.], [True, True], 'receiving_yards', 1.1)
+
+
+def test_receiving_tail_shape_cannot_move_expected_yards():
+    values = np.array([[0., 20., 100.], [4., 8., 12.]])
+    weights = np.array([[.2, .5, .3], [.25, .5, .25]])
+    shifted, mass = _preserve_curve_mean(values, weights, [30., 10.])
+    np.testing.assert_array_equal(mass, weights)
+    np.testing.assert_allclose((shifted * mass).sum(axis=1), [30., 10.])
+    np.testing.assert_allclose(np.diff(shifted, axis=1), np.diff(values, axis=1))
 
 
 def test_tail_cannot_pass_by_widening_interval_only():
@@ -185,6 +220,68 @@ def test_team_feature_whitelists_exclude_actual_labels():
     teams, players = prepare_history(raw_history())
     assert not any(c.startswith(('actual_', 'unallocated_')) for c in team_features(teams))
     assert not any(c.startswith('actual_') for c in roster_features(players))
+
+
+def test_current_season_weighting_is_moderate_and_can_be_disabled():
+    frame = pd.DataFrame({'season': [2023, 2024, 2025, 2026, 2026]})
+    np.testing.assert_array_equal(season_recency_weights(frame, 0), np.ones(len(frame)))
+    weights = season_recency_weights(frame, .7)
+    assert weights[-1] > weights[0]
+    assert weights.max() <= 1.75
+    assert weights.min() >= .5
+
+
+def test_player_specific_uncertainty_separates_stable_and_volatile_roles():
+    rows = 160
+    X = pd.DataFrame({
+        'position_WR': np.ones(rows * 2),
+        'targets_avg_5': np.full(rows * 2, 7.),
+        'role_volatility': np.r_[np.full(rows, .2), np.full(rows, 1.2)],
+    })
+    errors = np.r_[np.linspace(-1.5, 1.5, rows), np.linspace(-5., 8., rows)]
+    model = ConditionalResidual()
+    model.floor = 1.
+    model.global_scale = 1.
+    model.scale_head = ConstantHead(1.)
+    model.fit_residuals(X, errors, np.ones(rows * 2, dtype=int))
+    scored = pd.DataFrame({
+        'position_WR': [1., 1.], 'targets_avg_5': [7., 7.],
+        'role_volatility': [.2, 1.2],
+    })
+    values, weights = model.mixture(scored, np.array([[40.], [40.]]), np.ones((2, 1)))
+    summary = curve_summary(values, weights)
+    assert summary['p90'][1] > summary['p90'][0]
+
+
+def test_role_tail_small_samples_stay_on_the_parent_distribution():
+    rows = 19
+    X = pd.DataFrame({
+        'position_WR': np.ones(rows),
+        'targets_avg_5': np.full(rows, 7.),
+        'role_volatility': np.full(rows, 1.2),
+    })
+    model = ConditionalResidual()
+    model.floor = 1.
+    model.global_scale = 1.
+    model.scale_head = ConstantHead(1.)
+    model.fit_residuals(X, np.linspace(-3., 5., rows), np.ones(rows, dtype=int))
+    assert not model.role_quantiles
+
+
+def test_live_receiver_subframe_uses_repeated_full_team_volume():
+    frame = pd.DataFrame({
+        'game_id': ['g1', 'g1'], 'team_abbr': ['A', 'A'],
+        'player_id': ['wr1', 'wr2'], 'season': [2026, 2026], 'week': [1, 1],
+        'position': ['WR', 'WR'], 'n_games_prev_5': [5, 5],
+        'n_games_prev_10': [8, 8], 'rest_days': [7, 7],
+        'pass_attempts_avg_5': [0., 0.],
+        'team_player_pass_attempts_avg5_sum': [36., 36.],
+        'targets_avg_5': [8., 5.],
+        'team_player_targets_avg5_sum': [24., 24.],
+    })
+    teams, _ = TeamAllocationModel._snapshot_inputs(frame)
+    assert teams.prior_pass_attempts_5.iloc[0] == pytest.approx(36)
+    assert teams.prior_targets_5.iloc[0] == pytest.approx(24)
 
 
 class ConstantHead:
@@ -295,6 +392,39 @@ def test_only_accepted_outputs_score_and_receiving_point_is_preserved():
     payload['context_evidence']['injury_observed_at'] = '2099-09-20T13:00:00Z'
     results, excluded = score_records([(1, payload)], artifact)
     assert not results and excluded['missing_or_invalid_lock_inputs'] == 1
+
+
+def test_team_prospective_scorer_uses_validated_distribution_path(monkeypatch):
+    from nfl_pipeline.modeling import score_accuracy_components as scorer
+    record = component_record()
+    payload = record['forecast_payload']
+    seen = {}
+
+    def curve(bundle, frame, teams, roster, stat, **kwargs):
+        seen['base'] = np.asarray(kwargs['base'])
+        return np.array([[10., 20., 30.]]), np.full((1, 3), 1 / 3), {
+            'covered': np.array([True]),
+        }
+
+    monkeypatch.setattr(scorer, 'team_curve', curve)
+    cutoff = pd.Timestamp(payload['prediction_context_cutoff_utc'])
+    snapshots = [{
+        'contract': 'nfl-team-context-v1',
+        'source_cutoff': (cutoff - pd.Timedelta(hours=2)).isoformat(),
+        'captured_at': (cutoff - pd.Timedelta(hours=1)).isoformat(),
+        'teams': [], 'roster': [],
+    }]
+    artifact = {'production_release': payload['model_version'], 'run_id': 'team-test', 'models': {
+        'team_receiving_yards': {
+            'stat': 'receiving_yards', 'enabled_outputs': ['expected_mean', 'median'], 'bundle': {},
+        },
+    }}
+    results, excluded = scorer.score_records([(1, payload)], artifact, snapshots)
+    assert not excluded
+    row = results['team_receiving_yards'][0]
+    assert row['projection_mean'] == pytest.approx(20.)
+    assert row['projection_median'] == pytest.approx(20.)
+    assert seen['base'][0] == pytest.approx(payload['projection'])
 
 
 def test_qb_point_only_approval_cannot_price_a_bet(monkeypatch):

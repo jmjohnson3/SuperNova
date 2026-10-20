@@ -35,8 +35,8 @@ def test_mixed_books_filtered_before_micro_cap_and_research_rank():
         dk+fd+[prop(player='ResearchFD'), prop(player='ResearchDK', book='draftkings', ev=100)], ['frozen'], now=NOW)
     text = json.dumps(bundle)
     assert 'draftkings' not in text.lower() and 'ResearchDK' not in text
-    assert text.count('BET $1:') == 5 and 'FD5' in text
-    assert 'ResearchFD' in text and 'FanDuel only' in text
+    assert text.count('BET $1:') == 3 and 'FD5' in text
+    assert 'ResearchFD' not in text and 'FanDuel only' in text
 
 
 def test_wrong_book_url_never_becomes_a_fanduel_bet_or_parlay():
@@ -57,14 +57,15 @@ def test_projection_only_survives_but_never_keeps_untrusted_link():
     assert len(result) == 1 and result[0]['link'] is None
 
 
-def test_paper_parlays_use_only_fanduel_selections():
+def test_paper_rows_never_create_parlays_or_betting_instructions():
     def link(market, selection):
         return f'https://sportsbook.fanduel.com/addToBetslip?marketId={market}&selectionId={selection}'
     rows = [prop(player='FD1', link=link('1.1', 11)), prop(player='FD2', link=link('1.2', 22)),
             prop(player='DK', book='draftkings', link=link('9.9', 999))]
     bundle = build_bundle(DAY, schedule(), [], rows, ['frozen'], now=NOW)
     text = json.dumps(bundle)
-    assert 'Research parlay' in text and '999' not in text
+    assert 'Research parlay' not in text and '999' not in text
+    assert 'Research only:' not in text
 
 
 class Cursor:

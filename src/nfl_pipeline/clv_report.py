@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 
 from nfl_pipeline.db import PG_DSN
-from nfl_pipeline.markets import normalize_name
+from nfl_pipeline.markets import normalize_name, normalize_team
 
 log = logging.getLogger("nfl_pipeline.clv_report")
 
@@ -190,15 +190,41 @@ def attach_game_clv(conn, cfg: ClvConfig) -> int:
     return _upsert_clv_rows(conn, out_rows)
 
 
+def close_event_identity_sql(alias):
+    if alias not in {'c','q'}:
+        raise ValueError('Unsupported close query alias')
+    return f"""(({alias}.provider=o.provider AND {alias}.event_id=o.event_id) OR (
+        {alias}.provider<>o.provider AND LOWER(TRIM({alias}.home_team))=LOWER(TRIM(o.home_team))
+        AND LOWER(TRIM({alias}.away_team))=LOWER(TRIM(o.away_team))
+        AND ABS(EXTRACT(EPOCH FROM ({alias}.commence_time_utc-g.start_ts_utc)))<=300
+        AND ABS(EXTRACT(EPOCH FROM (o.commence_time_utc-g.start_ts_utc)))<=300
+        AND {alias}.as_of_date=p.game_date_et))"""
+
+
+def close_observation_sql(alias):
+    if alias not in {'c', 'q'}:
+        raise ValueError('Unsupported close query alias')
+    # The immutable watcher records role=live even before kickoff. It is a
+    # measured quote, not a backfill; all exact-identity/timing gates still apply.
+    return f"({alias}.snapshot_role='close' OR ({alias}.snapshot_role='live' AND {alias}.provider='oddsapi_watch'))"
+
+
 def prop_close_rows(conn, cfg: ClvConfig):
-    # One indexed batch join. Identity comes from the immutable lock offer, not
-    # a same-name player on another event or another provider's event ID.
+    # Provider IDs are not interchangeable. Cross-provider matches must agree
+    # on the same book, exact offer, matchup and authoritative kickoff.
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("""
+        cur.execute(f"""
             SELECT p.id AS prediction_id, p.game_date_et, p.player_name, p.stat, p.side, p.book,
                    p.line::float AS locked_line, p.price AS locked_price,
                    p.created_at_utc, p.integrity_version, o.id AS lock_offer_id,
                    g.start_ts_utc, p.is_current,
+                   g.home_team_abbr AS game_home_team,g.away_team_abbr AS game_away_team,
+                   o.provider AS lock_provider,o.event_id AS lock_event_id,
+                   o.commence_time_utc AS lock_commence_time_utc,
+                   o.home_team AS lock_home_team,o.away_team AS lock_away_team,
+                   c.provider AS close_provider,c.event_id AS close_event_id,
+                   c.id AS close_row_id,c.snapshot_role AS close_snapshot_role,
+                   c.home_team AS close_home_team,c.away_team AS close_away_team,
                    EXISTS (SELECT 1 FROM bets.nfl_bet_ledger l
                            WHERE l.source_kind='prop' AND l.prediction_id=p.id
                              AND l.tier <> 'paper') AS selected_real_tier,
@@ -213,8 +239,8 @@ def prop_close_rows(conn, cfg: ClvConfig):
               AND o.player_name_norm=p.offer_player_name_norm
             LEFT JOIN LATERAL (
                 SELECT c.* FROM odds.nfl_player_prop_lines c
-                WHERE c.snapshot_role='close' AND c.provider=o.provider
-                  AND c.event_id=o.event_id AND c.bookmaker_key=o.bookmaker_key
+                WHERE {close_observation_sql('c')} AND {close_event_identity_sql('c')}
+                  AND c.bookmaker_key=o.bookmaker_key
                   AND c.player_name_norm=o.player_name_norm
                   AND c.stat=o.stat AND c.line=o.line
                   AND c.as_of_date=p.game_date_et
@@ -229,21 +255,36 @@ def prop_close_rows(conn, cfg: ClvConfig):
             LEFT JOIN LATERAL (
                 SELECT count(*)::int AS fresh_market_rows,array_agg(DISTINCT q.line) AS observed_lines
                 FROM odds.nfl_player_prop_lines q
-                WHERE q.provider=o.provider AND q.event_id=o.event_id AND q.bookmaker_key=o.bookmaker_key
-                  AND q.player_name_norm=o.player_name_norm AND q.stat=o.stat AND q.snapshot_role='close'
+                WHERE {close_event_identity_sql('q')} AND q.bookmaker_key=o.bookmaker_key
+                  AND q.player_name_norm=o.player_name_norm AND q.stat=o.stat AND {close_observation_sql('q')}
+                  AND q.as_of_date=p.game_date_et
                   AND q.fetched_at_utc>p.created_at_utc
                   AND q.fetched_at_utc>=g.start_ts_utc-interval '120 minutes' AND q.fetched_at_utc<g.start_ts_utc
             ) m ON TRUE
             LEFT JOIN LATERAL (
                 SELECT count(*)::int AS fresh_book_rows FROM odds.nfl_player_prop_lines q
-                WHERE q.provider=o.provider AND q.event_id=o.event_id AND q.bookmaker_key=o.bookmaker_key
-                  AND q.snapshot_role='close' AND q.fetched_at_utc>p.created_at_utc
+                WHERE {close_event_identity_sql('q')} AND q.bookmaker_key=o.bookmaker_key
+                  AND {close_observation_sql('q')} AND q.fetched_at_utc>p.created_at_utc
+                  AND q.as_of_date=p.game_date_et
                   AND q.fetched_at_utc>=g.start_ts_utc-interval '120 minutes' AND q.fetched_at_utc<g.start_ts_utc
             ) b ON TRUE
             WHERE (%(game_date)s IS NULL OR p.game_date_et=%(game_date)s)
               AND p.side IN ('over','under') AND p.line IS NOT NULL
         """, {"game_date": cfg.game_date})
         return cur.fetchall()
+
+
+def cross_provider_game_verified(p):
+    for side in ('home', 'away'):
+        team = normalize_team(p.get('game_' + side + '_team'))
+        if not team or any(normalize_team(p.get(source + '_' + side + '_team')) != team
+                           for source in ('lock', 'close')):
+            return False
+    for field in ('lock_commence_time_utc', 'commence_time_utc'):
+        minutes = _minutes_to_start(p.get(field), p.get('start_ts_utc'))
+        if minutes is None or abs(minutes) > 5:
+            return False
+    return True
 
 
 def classify_prop_close(p):
@@ -255,6 +296,13 @@ def classify_prop_close(p):
         status, valid = 'legacy_lock_unverified', False
     elif p['lock_offer_id'] is None:
         status, valid = 'missing_lock_offer', False
+    elif p.get('close_snapshot_role') not in (None, 'close') and not (
+            p.get('close_snapshot_role') == 'live' and p.get('close_provider') == 'oddsapi_watch'):
+        status, valid = 'unsupported_close_observation', False
+    elif p.get('close_provider') and p.get('close_provider') != p.get('lock_provider') and not cross_provider_game_verified(p):
+        status, valid = 'cross_provider_game_identity_unverified', False
+    elif close_line is not None and close_line != _clean_float(p.get('locked_line')):
+        status, valid = 'exact_line_mismatch', False
     elif not valid and status in ('missing_close', 'close_outside_two_hour_window', 'stale_close_before_lock', 'close_after_kickoff'):
         if p.get('fresh_market_rows') and p['locked_line'] not in (p.get('observed_lines') or []):
             status = 'exact_line_unavailable_in_captured_feed'
@@ -262,7 +310,10 @@ def classify_prop_close(p):
             status = 'player_market_not_observed_in_capture'
     # A partial feed cannot prove that a sportsbook removed a line. Keep actual
     # bookability unknown unless the exact quote was observed at valid timing.
+    method = 'same_provider_event' if p.get('close_provider') == p.get('lock_provider') else 'verified_same_book_matchup_cross_provider'
     return dict(close_line=close_line, close_price=close_price, status=status, minutes=minutes,
+                match_method=method if valid else None,
+                observation_role=p.get('close_snapshot_role'), source_row_id=p.get('close_row_id'),
                 valid=valid, start=start, available=True if valid else None)
 
 

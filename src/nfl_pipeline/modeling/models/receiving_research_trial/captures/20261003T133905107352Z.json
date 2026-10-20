@@ -1,0 +1,31 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-10-03T13:39:04.624526+00:00",
+  "captured_at": "2026-10-03T13:39:05.107352+00:00",
+  "selected": [
+    {
+      "forecast_id": 11100,
+      "variant": "stable_ensemble_calibrated",
+      "day": "2026-10-04",
+      "game_id": "2026_04_IND_WAS",
+      "player_id": "00-0038997",
+      "team": "IND",
+      "season": 2026,
+      "week": 4,
+      "book": "fanduel",
+      "stat": "receiving_yards",
+      "side": "over",
+      "line": 62.5,
+      "price": -114,
+      "probability": 0.5432014773058607,
+      "market_probability": 0.5,
+      "ev": 0.019694001258369953,
+      "captured_at": "2026-10-03T13:39:05.107352+00:00"
+    }
+  ],
+  "exclusions": {
+    "outside_trial": 850,
+    "original_drift_guard_not_passed": 141
+  }
+}

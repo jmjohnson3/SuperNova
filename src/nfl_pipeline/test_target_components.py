@@ -128,6 +128,23 @@ def test_lock_identity_refreshes_price_without_relabeling_legacy_projection():
     assert outputs['point_forecast']['semantics'] == 'central_forecast_not_certified_mean'
 
 
+def test_market_adjusted_pricing_is_not_independent_stat_accuracy():
+    row = forecast()
+    row['scoring_replay'] = dict(projection=65., scoring_fingerprint='pricing-v1',
+        distribution={'kind':'empirical_oof_residual', 'residual_quantiles':[-20.,0.,40.]})
+    first = forecast_outputs.for_lock(row)
+    assert first['point_forecast']['value'] == 65.
+    assert first['point_forecast']['independent_of_offer'] is True
+    assert first['pricing']['projection_anchor'] == 50.
+    assert first['pricing']['market_adjusted'] is True
+    changed = dict(row, projection=35., line=34.5, price=120)
+    second = forecast_outputs.for_lock(changed)
+    assert second['point_forecast'] == first['point_forecast']
+    assert second['pricing']['projection_anchor'] == 35.
+    assert second['pricing']['price'] == 120
+    assert forecast_outputs.for_lock(forecast())['point_forecast']['independent_of_offer'] is False
+
+
 def test_point_forecast_cannot_transfer_to_another_player_or_lock():
     row = forecast_outputs.apply_point_forecast(forecast(), output='expected_yards', value=54.,
         model_version='component-1', decision=approval())
@@ -154,6 +171,7 @@ def test_median_capture_is_independent_of_failed_probability_screen(tmp_path, mo
         'uncertainty_only':(np.array([[20.,30.,40.]]),np.array([[.25,.5,.25]]),np.array([5.]))})
     row = dict(forecast(), season=2099, week=4, projection_p50=25.,
         prediction_context_cutoff_utc='2099-10-01T20:00:00Z', scoring_replay={
+            'scoring_fingerprint':'frozen-scoring',
             'row':{'start_ts_utc':'2099-10-01T23:00:00Z','_pred_receiver_targets':5.,'position':'WR','targets_avg_5':5.,
                    'receiver_projected_targets_v3':5.},
             'distribution':{'kind':'empirical_oof_residual','residual_quantiles':[-10,0,10]}})
@@ -164,6 +182,11 @@ def test_median_capture_is_independent_of_failed_probability_screen(tmp_path, mo
     assert document['rows'][0]['candidate'] == 30.
     assert document['betting_approved'] is False and document['production_changed'] is False
     assert all(k not in document['rows'][0] for k in ('actual','outcome','probability'))
+    missing_version = deepcopy(row)
+    missing_version['scoring_replay'].pop('scoring_fingerprint')
+    missing = capture.capture_records([(2,missing_version)],store=tmp_path,now=now)
+    assert missing['captured'] == 0
+    assert missing['exclusions'] == {'missing_scoring_version':1}
     row['prediction_context_cutoff_utc'] = '2020-10-01T20:00:00Z'
     assert capture.capture_records([(1,row)],store=tmp_path,now=now)['captured'] == 0
     assert capture.capture_records([(1,dict(row,prediction_context_cutoff_utc='2099-10-01T20:00:00Z'))],
@@ -189,3 +212,63 @@ def test_point_capture_registration_is_pinned(tmp_path, monkeypatch):
         capture.register(path,store=tmp_path)
     with pytest.raises(ValueError,match='checksum'):
         capture.capture_records([],store=tmp_path)
+
+
+def evaluate_point_rows(tmp_path, monkeypatch, rows, records):
+    from datetime import datetime, timezone
+    from nfl_pipeline.integrity import atomic_json
+    from nfl_pipeline.modeling import live_scoring_replay, target_point_capture
+    registration = dict(run_id='component', variant='uncertainty_only', output='median',
+        production_release='production', minimum_weeks=3)
+    atomic_json(tmp_path/'point_registration.json', registration)
+    atomic_json(tmp_path/'point_prospective'/'capture.json', dict(registration=registration, rows=rows))
+    monkeypatch.setattr(live_scoring_replay, 'load_rows', lambda **kwargs: records)
+    monkeypatch.setattr(live_scoring_replay, 'ROOT', tmp_path)
+    return target_point_capture.evaluate(store=tmp_path, now=datetime(2026,10,2,tzinfo=timezone.utc))
+
+
+def captured_point(fid, scoring, week=1):
+    row = dict(forecast_id=fid, game_id=f'g{fid}', player_id='p', season=2026, week=week,
+        model_version='production', scoring_version=scoring, run_id='component',
+        variant='uncertainty_only', output='median', kickoff='2026-09-20T20:00:00Z',
+        reference=50., candidate=40.)
+    record = dict(id=fid, game_id=row['game_id'], player_id='p', status='final', actual=40.,
+        forecast_payload=dict(model_version='production', scoring_replay={'scoring_fingerprint':scoring}))
+    return row, record
+
+
+def test_point_review_cannot_pool_weeks_from_different_scoring_versions(tmp_path, monkeypatch):
+    pairs = [captured_point(i, f'scoring-{i}', week=i) for i in range(1,4)]
+    result = evaluate_point_rows(tmp_path, monkeypatch, [p[0] for p in pairs], [p[1] for p in pairs])
+    assert result['status'] == 'separate_cohort_review_required'
+    assert not result['prospective_screen_passed']
+    assert 'reference' not in result
+    assert len(result['cohorts']) == 3
+    assert all(c['clustered_absolute_error_gain']['clusters'] == 1 for c in result['cohorts'])
+    assert not any(c['prospective_screen_passed'] for c in result['cohorts'])
+
+
+def test_point_review_deduplicates_within_cohort_and_never_approves_cash(tmp_path, monkeypatch):
+    pairs = [captured_point(i, 'same-scoring', week=i) for i in range(1,4)]
+    rows = [p[0] for p in pairs]
+    result = evaluate_point_rows(tmp_path, monkeypatch, rows+[deepcopy(rows[0])], [p[1] for p in pairs])
+    assert result['status'] == 'ready_for_point_deployment_review'
+    assert result['prospective_screen_passed']
+    assert result['player_games'] == result['unique_player_games'] == 3
+    assert result['exclusions']['duplicate_player_game_in_cohort'] == 1
+    assert not result['deployment_approved']
+    assert not result['betting_approved']
+    assert not result['probability_enabled']
+
+
+def test_point_review_preserves_unknown_results_and_future_pending(tmp_path, monkeypatch):
+    pairs = [captured_point(i, 'same-scoring') for i in range(1,6)]
+    pairs[0][0]['kickoff'] = '2026-10-04T20:00:00Z'
+    pairs[1][1]['actual'] = None
+    pairs[2][0]['scoring_version'] = None
+    pairs[3][0]['variant'] = 'combined'
+    pairs[4][1]['forecast_payload']['scoring_replay']['scoring_fingerprint'] = 'different'
+    result = evaluate_point_rows(tmp_path, monkeypatch, [p[0] for p in pairs], [p[1] for p in pairs])
+    assert result['player_games'] == 0
+    assert result['exclusions'] == dict(future_game_pending=1, pending_or_missing_verified_result=1,
+        missing_scoring_version=1, point_component_identity_mismatch=1, original_forecast_identity_mismatch=1)

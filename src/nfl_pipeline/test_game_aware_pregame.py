@@ -42,7 +42,7 @@ def test_due_wave_only_and_success_is_not_repeated():
     assert result['status']=='idle' and not result['pipeline_invoked'] and len(calls)==1
 
 
-@pytest.mark.parametrize('minutes,action', [(91,'waiting_for_window'),(90,'due'),(21,'due'),
+@pytest.mark.parametrize('minutes,action', [(121,'waiting_for_window'),(120,'due'),(21,'due'),
     (20,'missed_pregame_window'),(-5,'missed_pregame_window')])
 def test_window_boundaries(minutes,action):
     _, rows = runner.plan([game(minutes=minutes)],state(),NOW)
@@ -55,7 +55,7 @@ def test_any_weekday_and_dst_use_actual_kickoff(local_start):
     g=game(); g['start_ts_utc']=kickoff
     groups, rows=runner.plan([g],state(),kickoff-timedelta(minutes=85))
     assert len(groups)==1 and rows[0]['action']=='due'
-    assert datetime.fromisoformat(rows[0]['target_at'])==kickoff-timedelta(minutes=90)
+    assert datetime.fromisoformat(rows[0]['target_at'])==kickoff-timedelta(minutes=120)
 
 
 def test_no_games_never_executes_or_writes_state():
@@ -137,12 +137,21 @@ def test_fast_pipeline_order_and_scope(monkeypatch,tmp_path):
     assert 'nfl_pipeline.run_training' not in modules and 'nfl_pipeline.schema' not in modules
     assert modules.index('nfl_pipeline.refresh_lock_quotes')<modules.index('nfl_pipeline.modeling.predict_today')
     assert next(s for s in steps if s.module=='nfl_pipeline.refresh_lock_quotes').critical  # pregame retries for fresh quotes
+    lock_audit=next(s for s in steps if s.module=='nfl_pipeline.lock_contract_audit')
+    assert lock_audit.critical and '--required' in lock_audit.args
+    assert modules.index('nfl_pipeline.modeling.predict_player_props') < modules.index('nfl_pipeline.lock_contract_audit')
+    assert modules.index('nfl_pipeline.lock_contract_audit') < modules.index('nfl_pipeline.lock_ledger')
     assert modules.index('nfl_pipeline.modeling.benchmark_offers')<modules.index('nfl_pipeline.publish_forecasts')
     doc=json.loads((tmp_path/'reports/nfl_daily_run_test.json').read_text())
     assert doc['pregame'] and doc['game_ids']==['early']
 
 
-def test_morning_run_publishes_projections_when_quotes_are_missing(monkeypatch,tmp_path):
+@pytest.mark.parametrize('failed_module', [
+    'nfl_pipeline.refresh_lock_quotes',
+    'nfl_pipeline.modeling.receiving_trial_checkpoint',
+    'nfl_pipeline.cash_readiness',
+])
+def test_morning_run_preserves_paper_cards_when_research_or_quotes_fail(monkeypatch,tmp_path,failed_module):
     from nfl_pipeline import run_daily_and_notify as daily
     monkeypatch.setattr('sys.argv',['daily','--date','2099-09-27','--skip-train','--run-id','morning'])
     monkeypatch.setattr(daily,'_repo_root',lambda:tmp_path)
@@ -151,7 +160,13 @@ def test_morning_run_publishes_projections_when_quotes_are_missing(monkeypatch,t
     steps=[]; posted=[]
     def execute(step):
         steps.append(step.module)
-        return (1,'{"status":"no_fresh_quotes"}','') if step.module=='nfl_pipeline.refresh_lock_quotes' else (0,'{}','')
+        if step.module == 'nfl_pipeline.modeling.receiving_trial_checkpoint':
+            assert '--incremental' in step.args and not step.critical
+        if step.module == 'nfl_pipeline.cash_readiness':
+            assert not step.critical and step.timeout_s == 900
+        if step.module == 'nfl_pipeline.modeling.receiving_paper_trial':
+            assert not step.critical and step.timeout_s == 360
+        return (1,'{"status":"unavailable"}','') if step.module==failed_module else (0,'{}','')
     async def post_section(header, body):
         posted.append(header)
     async def post(*a):
@@ -160,17 +175,26 @@ def test_morning_run_publishes_projections_when_quotes_are_missing(monkeypatch,t
     monkeypatch.setattr(daily,'_post_section',post_section)
     monkeypatch.setattr(daily,'_post_matchups',post)
     with pytest.raises(SystemExit):
-        asyncio.run(daily.main())  # still reported as a failed run: quotes were missing
+        asyncio.run(daily.main())  # Evidence failure remains visible, while paper cards continue.
     assert 'nfl_pipeline.modeling.predict_player_props' in steps and 'cards' in posted
-    assert any('Fresh Lock Quotes' in h for h in posted)
+    assert failed_module in steps and any(h.startswith('FAILED') for h in posted)
 
 
-def test_task_replaces_fixed_refresh_with_ten_minute_checker():
+def test_task_uses_five_minute_checker_for_t120_lock():
     root=Path(__file__).resolve().parents[2]
     tree=ET.parse(root/'scripts/tasks/NFL-PrimeTime-Refresh.xml')
     ns={'t':'http://schemas.microsoft.com/windows/2004/02/mit/task'}
-    assert tree.find('.//t:Repetition/t:Interval',ns).text=='PT10M'
+    assert tree.find('.//t:Repetition/t:Interval',ns).text=='PT5M'
     assert tree.find('.//t:Exec/t:Arguments',ns).text=='--game-aware'
+
+
+def test_close_task_covers_early_international_kickoffs():
+    root=Path(__file__).resolve().parents[2]
+    tree=ET.parse(root/'scripts/tasks/NFL-Close.xml')
+    ns={'t':'http://schemas.microsoft.com/windows/2004/02/mit/task'}
+    assert tree.find('.//t:CalendarTrigger/t:StartBoundary',ns).text.endswith('T00:00:00')
+    assert tree.find('.//t:Repetition/t:Interval',ns).text=='PT5M'
+    assert tree.find('.//t:Repetition/t:Duration',ns).text=='P1D'
 
 
 def test_scoped_quote_health_cannot_borrow_freshness_from_other_game(monkeypatch):

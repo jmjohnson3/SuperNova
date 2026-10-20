@@ -136,6 +136,8 @@ def grade_player_prop_predictions(conn, cfg: GradeConfig) -> int:
                 l.receiving_tds::float AS receiving_tds,
                 l.receptions::float AS receptions,
                 l.offense_snaps::float AS offense_snaps,
+                ((l.raw_json #> '{receiving_result_repair,verified_game_participation}') = 'true'::jsonb)
+                    AS verified_game_participation,
                 prior.result AS prior_result,
                 (COALESCE(l.pass_attempts,0)+COALESCE(l.carries,0)+COALESCE(l.targets,0))::float AS offensive_actions
             FROM bets.nfl_player_prop_predictions p
@@ -157,7 +159,8 @@ def grade_player_prop_predictions(conn, cfg: GradeConfig) -> int:
         stat = str(row["stat"] or "")
         actual = _clean_float(row.get(stat))
         result = _grade_side(actual, _clean_float(row["line"]), str(row["side"] or "").lower())
-        if not ((row.get('offense_snaps') or 0)>0 or (row.get('offensive_actions') or 0)>0):
+        if not ((stat == 'receiving_yards' and row.get('verified_game_participation') is True) or
+                (row.get('offense_snaps') or 0)>0 or (row.get('offensive_actions') or 0)>0):
             # Do not turn an unverified appearance into a winning under.
             actual, result = None, ('void_nonparticipant' if row.get('prior_result')=='void_nonparticipant'
                                     else 'pending_participation_review')

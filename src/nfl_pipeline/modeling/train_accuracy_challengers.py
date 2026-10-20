@@ -5,10 +5,12 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
@@ -28,16 +30,34 @@ log=logging.getLogger(__name__)
 ROOT=Path(__file__).resolve().parents[3]
 
 
-def load_training():
+def load_training(*, use_cache: bool = True):
     engine=create_engine(PG_DSN)
     with engine.connect() as conn:
-        conn.execute(text("SET statement_timeout='180s'"))
+        timeout_seconds=max(60,int(os.getenv('NFL_TRAINING_SQL_TIMEOUT_SECONDS','600')))
+        conn.execute(text(f"SET statement_timeout='{timeout_seconds}s'"))
+        signature=dict(pd.read_sql(text("""
+            SELECT
+              (SELECT COUNT(*) FROM features.nfl_player_game_training_features) AS player_rows,
+              (SELECT MAX(updated_at_utc) FROM features.nfl_player_game_training_features) AS player_updated,
+              (SELECT COUNT(*) FROM features.nfl_game_training_features) AS game_rows,
+              (SELECT MAX(updated_at_utc) FROM features.nfl_game_training_features) AS game_updated,
+              (SELECT MAX(created_at_utc) FROM bets.nfl_player_prop_predictions
+                WHERE forecast_payload->'context_evidence' IS NOT NULL) AS context_updated
+        """),conn).iloc[0])
+        signature={key:str(value) for key,value in signature.items()}
+        cache_path=MODEL_ROOT/'accuracy_components'/'training_rows_cache.joblib'
+        cached=joblib.load(cache_path) if use_cache and cache_path.exists() else None
+        if isinstance(cached,dict) and cached.get('contract')=='nfl-accuracy-training-cache-v1' \
+                and cached.get('signature')==signature:
+            log.info('Using cached NFL player-game accuracy rows (%s players, %s games)',
+                     len(cached['players']),len(cached['games']))
+            return cached['players'],cached['games']
         players=pd.read_sql(text("""
             SELECT f.* FROM features.nfl_player_game_training_features f
             JOIN raw.nfl_games g USING(game_id)
-            JOIN raw.nfl_player_gamelogs p ON p.game_id=f.game_id AND p.player_id=f.player_id AND p.team_abbr=f.team_abbr
             WHERE g.status='final' AND f.n_games_prev_3>=3
-              AND (COALESCE(p.offense_snaps,0)>0 OR COALESCE(p.pass_attempts,0)+COALESCE(p.carries,0)+COALESCE(p.targets,0)>0)
+              AND (COALESCE(f.offense_snaps,0)>0 OR
+                   COALESCE(f.pass_attempts,0)+COALESCE(f.carries,0)+COALESCE(f.targets,0)>0)
             ORDER BY f.season,f.week,f.game_id,f.player_id
         """),conn)
         games=pd.read_sql(text("""SELECT f.* FROM features.nfl_game_training_features f
@@ -52,7 +72,12 @@ def load_training():
     contexts=contexts.drop(columns=['created_at_utc'])
     players=players.drop_duplicates(['game_id','player_id']).copy()
     players=players.merge(contexts,on=['game_id','player_id'],how='left',validate='one_to_one')
-    return players,games.drop_duplicates('game_id').copy()
+    games=games.drop_duplicates('game_id').copy()
+    if use_cache:
+        atomic_joblib(cache_path,{'contract':'nfl-accuracy-training-cache-v1',
+            'signature':signature,'players':players,'games':games,
+            'built_at':datetime.now(timezone.utc).isoformat()})
+    return players,games
 
 
 class ReferenceRecipe:

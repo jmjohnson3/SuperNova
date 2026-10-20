@@ -13,6 +13,7 @@ STORE = MODEL_ROOT/'scoring_code_versions'
 SOURCE = Path(__file__).resolve().parent
 FILES = ('predict_player_props.py', 'scoring_capture.py')
 _loaded = {}
+_verified_sources = {}
 
 
 def source_hash(root):
@@ -43,8 +44,11 @@ def archived_candidate(fingerprint):
         raise ValueError('scoring_code_version_unavailable')
     root = STORE/fingerprint
     try:
-        if source_hash(root) != fingerprint:
-            raise ValueError('archived_scoring_checksum_mismatch')
+        stamp = tuple((p.stat().st_mtime_ns, p.stat().st_size) for p in (root/name for name in FILES))
+        if _verified_sources.get(fingerprint) != stamp:
+            if source_hash(root) != fingerprint:
+                raise ValueError('archived_scoring_checksum_mismatch')
+            _verified_sources[fingerprint] = stamp
     except FileNotFoundError as exc:
         raise ValueError('scoring_code_version_unavailable') from exc
     if fingerprint not in _loaded:

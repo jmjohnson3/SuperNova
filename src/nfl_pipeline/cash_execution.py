@@ -7,6 +7,7 @@ import psycopg2
 import psycopg2.extras
 
 from nfl_pipeline import cash_trial_policy as policy
+from nfl_pipeline import cash_freeze
 from nfl_pipeline.betting_preferences import execution_link
 from nfl_pipeline.fanduel_links import single_betslip_url
 from nfl_pipeline.context_contract import safe_time
@@ -81,12 +82,25 @@ def candidate_error(row, now):
 
 def reserve(conn, rows, registration, decision, now):
     """Reserve before network publication. Uncertain sends remain reserved."""
-    lock(conn)
-    existing = states(conn)
     if decision != 'cash_trial_eligible' or (policy.STORE/'pause.json').exists():
         return [], {'policy_not_eligible': len(rows)}
+    cash_freeze.check_registration(registration)
+    cfg = registration['config']
+    lock(conn)
+    existing = states(conn)
     accepted = []; excluded = {}
     for row in rows:
+        replay = row.get('scoring_replay') or {}
+        error = cash_freeze.provenance_error(replay.get('cash_freeze'), registration)
+        cutoff, registered = safe_time(row.get('prediction_context_cutoff_utc')), safe_time(cfg.get('registered_at'))
+        if (row.get('model_version') != cfg.get('release') or replay.get('scoring_fingerprint') != cfg.get('scoring_version')
+                or row.get('stat') != cfg.get('stat') or row.get('source_kind', 'prop') != cfg.get('source_kind')
+                or row.get('cash_artifact_sha256') != cfg.get('artifact_sha256')
+                or row.get('probability_source') != cfg.get('variant') or not cutoff or not registered or cutoff < registered):
+            error = error or 'different_cash_execution_cohort'
+        if error:
+            excluded[error] = excluded.get(error, 0)+1
+            continue
         q = (row.get('scoring_replay') or {}).get('offer') or {}
         start = safe_time(row.get('start_ts_utc') or q.get('commence_time_utc'))
         expires = min(start, safe_time(row['quote_fetched_at_utc'])+timedelta(minutes=20)) if start else now

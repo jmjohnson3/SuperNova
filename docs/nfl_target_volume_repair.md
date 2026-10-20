@@ -204,3 +204,117 @@ Follow-up reports: `nfl_target_components_latest.md`,
 
 Follow-up validation: 455 tests passed, one skipped; production release and
 scoring fingerprint remained unchanged.
+
+## October 2: Prospective cohort integrity
+
+The point checkpoint now evaluates each production release/scoring fingerprint
+separately. Changing scoring baselines cannot be pooled to meet the independent
+week minimum or pass a point deployment review. Repeated offers/captures count
+once per player-game within each cohort; unique player-games are also reported
+across cohorts. Multiple cohorts require an explicit cohort-specific review, not
+an aggregate pass. Captures without scoring identity are excluded.
+
+The refreshed checkpoint has nine settled player-games from one week. Reference
+median MAE is 19.145 versus 19.063 for the candidate. Candidate RMSE and bias are
+worse; these remain visible even though the pinned output is a median, not an
+expected mean. This is insufficient evidence for deployment. The other 130
+player-games are future games, now labeled `future_game_pending` rather than
+combined with missing verified results.
+
+No production forecasts, betting probabilities, fixed selections, registration,
+or cash authorization were changed. This repair improves evaluation integrity;
+it is not evidence of improved production prediction accuracy.
+
+## October 5: Isolated receiving-efficiency experiment
+
+Built and trained an independent yards-per-target model, leaving projected targets
+and the reference distribution shape unchanged. It uses lagged player exposure,
+position-shrunk rate priors, target depth, catch rate, YAC and matchup context.
+Observed targets weight training, so a one-target appearance does not carry the
+same skill evidence as a full-workload game. Missing history remains explicitly
+unknown; current-game outcomes and offered prices are not features.
+
+Chronological tuning selected shrinkage and blending before each later test fold.
+Evaluation used 5,279 unique player-games over seven folds, with week-grouped
+resampling and separate decisions for expected yards, typical yards and line
+probabilities. Previously examined 2026 Week 3+ rows were excluded. These historical
+development folds and proxy lines do not establish prospective or betting edge.
+
+| Output | Conservative reference | Rate repair | Rolling baseline |
+|---|---:|---:|---:|
+| Expected-yards RMSE | 24.232 | 24.285 | 25.036 |
+| Expected-yards bias | 0.082 | 0.632 | -0.062 |
+| Median MAE | 16.548 | 16.683 | 17.339 |
+| Brier | 0.2296 | 0.2330 | 0.2387 |
+| Calibration error | 3.27% | 4.90% | 4.46% |
+| 80% coverage | 80.05% | 79.64% | 79.33% |
+
+All three output screens rejected the challenger. Beating the rolling baseline
+does not justify replacing the stronger reference. The artifact is offline only;
+production forecasts, scoring probabilities and betting approval remain unchanged.
+
+Separately, the forecast-output contract now preserves the captured pre-offer
+projection as the independent stat forecast. A projection adjusted toward an
+offered line is labeled as the pricing anchor instead. Legacy rows without a
+captured original are explicitly unverified. This changes metadata for new locks,
+not probabilities, historical locks or the numerical scoring path.
+
+```powershell
+.\.venv\Scripts\python.exe -m nfl_pipeline.modeling.train_receiving_efficiency --cache src/nfl_pipeline/modeling/models/target_volume/target-volume-20260930T021306134180Z/training.joblib --through 2026-09-17 --seasons 2025 2026
+```
+
+Artifact: `models/receiving_efficiency/receiving-efficiency-20261005T202840002708Z/`.
+Report: `reports/nfl_receiving_efficiency_latest.md`.
+Validation: 526 tests passed, one skipped.
+
+## October 5: Direct receiving quantiles and calibrated blend
+
+The follow-up model predicts 15 receiving-yard quantiles from lagged workload,
+yardage, target depth, catch/YAC and role-variability features. Quantile
+rearrangement prevents crossing. A subsequent held-out block corrects quantile
+bias. A fixed 50/50 distribution blend with the conservative conditional model
+is calibrated on separate fitting, tuning and selection weeks. Calibration
+changes one survival distribution rather than pricing each line independently.
+
+On the same 5,279 later player-games:
+
+| Output | Conservative reference | Calibrated blend |
+|---|---:|---:|
+| Expected-yards RMSE | 24.246 | 23.864 |
+| Expected-yards bias | +0.126 | +0.753 |
+| Median MAE | 16.541 | 16.149 |
+| Proxy-line Brier | 0.2296 | 0.2244 |
+| Calibration error | 3.49% | 2.13% |
+| 80% coverage | 80.4% | 82.9% |
+
+The median passed against both the pooled and conditional references with
+week-grouped resampling. Expected yards did not pass the no-worse-bias screen;
+probabilities did not pass the no-worse-coverage screen. The unblended quantile
+model also had poor downside coverage. These failures remain visible, without
+loosening the screens after inspecting their results.
+
+Replayed 1,547 immutable FanDuel offer forecasts from Weeks 3-4 through their
+archived scoring versions. Offers are not independent player-games. One earlier
+cohort improved final Brier from 0.2507 to 0.2484, but its seven fixed research
+picks worsened slightly from 0.2568 to 0.2575. The newer cohort's final probabilities
+were unchanged: its market calibration assigns zero model probability weight.
+Training better raw forecasts cannot change those final probabilities under the
+existing pricing policy. No market-weight overrides were installed.
+
+The calibrated-blend median is independently pinned in
+`models/receiving_quantiles/point_registration.json`. The existing daily accuracy
+capture calls it, and the existing point checkpoint evaluates it. Only forecasts
+locked after registration qualify. The comparison uses the original pre-offer
+distribution median, not the line-anchored pricing projection. At least three
+independent weeks are needed for review, not automatic deployment. The older
+point registration, fixed FanDuel research selections and cash policy are intact.
+
+```powershell
+.\.venv\Scripts\python.exe -m nfl_pipeline.modeling.train_receiving_quantiles --cache src/nfl_pipeline/modeling/models/target_volume/target-volume-20260930T021306134180Z/training.joblib --through 2026-09-17 --seasons 2025 2026
+.\.venv\Scripts\python.exe -m nfl_pipeline.modeling.receiving_quantile_validation --artifact src/nfl_pipeline/modeling/models/receiving_quantiles/receiving-quantiles-20261005T204207709687Z/model.joblib --season 2026 --weeks 3 4
+.\.venv\Scripts\python.exe -m nfl_pipeline.modeling.target_point_capture --quantiles
+```
+
+Reports: `nfl_receiving_quantiles_latest.md`,
+`nfl_receiving_quantiles_offers_latest.md`, and
+`nfl_receiving_quantile_prospective_latest.json` in `reports/`.

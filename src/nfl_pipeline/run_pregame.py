@@ -1,4 +1,4 @@
-"""Run each NFL kickoff wave once near T-90; retry known failures, never uncertain posts."""
+"""Run each NFL kickoff wave once near T-120; retry known failures, never uncertain posts."""
 import argparse
 from collections import defaultdict
 from contextlib import contextmanager
@@ -20,7 +20,7 @@ from nfl_pipeline.subprocess_utils import run_subprocess
 ROOT = Path(__file__).resolve().parents[2]
 STATE = ROOT/'reports'/'nfl_pregame_state.json'
 CONTRACT = 'nfl-game-aware-pregame-v1'
-WINDOW_MINUTES = 90
+WINDOW_MINUTES = 120
 MIN_REMAINING_MINUTES = 20
 MAX_ATTEMPTS = 3
 
