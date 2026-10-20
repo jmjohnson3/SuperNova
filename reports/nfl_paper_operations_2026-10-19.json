@@ -1,0 +1,86 @@
+{
+  "contract": "nfl-paper-operations-v1",
+  "day": "2026-10-19",
+  "built_at": "2026-10-19T18:55:50.198193+00:00",
+  "status": "needs_attention",
+  "freezes": {
+    "status": "blocked",
+    "reason": "Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.modeling.predict_player_props"
+  },
+  "games": [
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kickoff": "2026-10-20T00:15:00+00:00",
+      "minutes_to_start": 319.2,
+      "game_status": "scheduled",
+      "stages": {
+        "quotes": {
+          "status": "not_due",
+          "fresh_paired_rows": 0,
+          "observed_rows": 9
+        },
+        "forecasts": {
+          "status": "not_due",
+          "current_rows": 9,
+          "verified_generation_rows": 0,
+          "missing_provider_rows": 9
+        },
+        "capture": {
+          "status": "not_due",
+          "rows": 0,
+          "selected": 0
+        },
+        "exact_close": {
+          "status": "not_due",
+          "required": 0,
+          "valid": 0,
+          "unknown_reasons": {}
+        },
+        "grading": {
+          "status": "not_due",
+          "accounting": {}
+        }
+      },
+      "blockers": []
+    }
+  ],
+  "blockers": [
+    "active_freeze_verification_failed"
+  ],
+  "next_action": "restore_or_explicitly_register_correct_source_cohort",
+  "earliest_kickoff": "2026-10-20T00:15:00+00:00",
+  "next_collection_due_at": "2026-10-19T22:15:00+00:00",
+  "collection_receipt": {
+    "status": "unknown",
+    "ended_at": null,
+    "exclusions": {}
+  },
+  "legacy_missing": {
+    "day": "2026-10-18",
+    "checkpoint_built_at": "2026-10-19T09:27:55.137168+00:00",
+    "previously_current_missing_count": 13,
+    "previously_current_missing_ids": [
+      22882,
+      22883,
+      22885,
+      22886,
+      22887,
+      22888,
+      22890,
+      22892,
+      22893,
+      22894,
+      22895,
+      22896,
+      22897
+    ],
+    "historical_missing_count": 237,
+    "status": "verified_exclusion",
+    "excluded_from_paper_evidence": true,
+    "unexpected_admitted_ids": []
+  },
+  "source_report_success_used": false,
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Only original immutable captures count. Future close/grade stages are not due; missing participation remains unknown."
+}

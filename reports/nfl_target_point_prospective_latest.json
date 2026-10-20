@@ -1,10 +1,180 @@
 {
-  "status": "waiting_for_prospective_results",
-  "player_games": 0,
-  "exclusions": {},
+  "status": "separate_cohort_review_required",
+  "player_games": 524,
+  "exclusions": {
+    "pending_or_missing_verified_result": 23,
+    "duplicate_player_game_in_cohort": 275
+  },
+  "unique_player_games": 414,
   "deployment_approved": false,
   "betting_approved": false,
   "probability_enabled": false,
+  "prospective_screen_passed": false,
+  "cohorts": [
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4",
+      "status": "not_yet_proven",
+      "player_games": 146,
+      "reference": {
+        "rows": 146,
+        "mae": 24.99360103416545,
+        "rmse": 35.53024714989338,
+        "bias": -9.830684809681792
+      },
+      "candidate": {
+        "rows": 146,
+        "mae": 25.327754833574204,
+        "rmse": 36.06725917092812,
+        "bias": -11.486107092783302
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "1aca1b617d26af98dbe85949a8d3aac233caf09f15cb0b7054f8f4f232d1a767",
+      "status": "not_yet_proven",
+      "player_games": 91,
+      "reference": {
+        "rows": 91,
+        "mae": 19.192307692307693,
+        "rmse": 25.732937374774494,
+        "bias": -3.0824175824175826
+      },
+      "candidate": {
+        "rows": 91,
+        "mae": 19.120814581070416,
+        "rmse": 26.313641361387443,
+        "bias": -6.12054595296859
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "2f3fc174a850326939e0410fcf6bfdd7c1d1b37b54836a6d83f9b7accc02cfa9",
+      "status": "not_yet_proven",
+      "player_games": 9,
+      "reference": {
+        "rows": 9,
+        "mae": 19.14480972771198,
+        "rmse": 27.769695136362984,
+        "bias": -13.41439866051893
+      },
+      "candidate": {
+        "rows": 9,
+        "mae": 19.06256203534974,
+        "rmse": 28.22130159146227,
+        "bias": -14.506044300901948
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "58fb8dac7a026bf4aa9978e87680b773fcf85f1fe82f681afaaf3047891a4eb6",
+      "status": "not_yet_proven",
+      "player_games": 147,
+      "reference": {
+        "rows": 147,
+        "mae": 20.153061224489797,
+        "rmse": 26.748863539976277,
+        "bias": -3.431972789115646
+      },
+      "candidate": {
+        "rows": 147,
+        "mae": 20.258441959523076,
+        "rmse": 27.42967824726126,
+        "bias": -6.680965069028941
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 2,
+        "lower_95": -0.19552587940716662,
+        "upper_95": 0.8238076762052782,
+        "mean_gain": -0.10538073503327693
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "893b9e1c71ee6d5664bbe01be2e9db25b7906b99dbf1cdacf084ac55b9e3cfe7",
+      "status": "not_yet_proven",
+      "player_games": 117,
+      "reference": {
+        "rows": 117,
+        "mae": 21.405982905982906,
+        "rmse": 28.3074165027441,
+        "bias": -4.1752136752136755
+      },
+      "candidate": {
+        "rows": 117,
+        "mae": 21.453988287350096,
+        "rmse": 28.977907699465085,
+        "bias": -7.3366339056909595
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "af37343232f12aec46617d918e34a087a80c03acef39e32677957806d492f359",
+      "status": "not_yet_proven",
+      "player_games": 14,
+      "reference": {
+        "rows": 14,
+        "mae": 15.571428571428571,
+        "rmse": 20.363658105275963,
+        "bias": -2.2857142857142856
+      },
+      "candidate": {
+        "rows": 14,
+        "mae": 14.915722805343377,
+        "rmse": 20.8108392415119,
+        "bias": -5.703822977940056
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    }
+  ],
   "registration": {
     "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\target_components\\target-components-20260930T065356571923Z\\model.joblib",
     "artifact_sha256": "4951e9339454420e3c3c3f8282c932cd6608c04e50c1690f5ee8e11bc2f312ff",

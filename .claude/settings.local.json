@@ -35,7 +35,8 @@
       "Bash(PGPASSWORD=password psql:*)",
       "Bash(cmd.exe:*)",
       "Bash(powershell.exe:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(cd /c/Users/josh/Git/SuperNovaBets && .venv/Scripts/python -m pytest src/mlb_pipeline/modeling/test_pipeline_safeguards.py::test_batter_ab_floor_gate_present_in_both_train_and_predict src/mlb_pipeline/modeling/test_pipeline_safeguards.py::test_crawler_weather_is_scheduled_in_crawl_block src/mlb_pipeline/modeling/test_pipeline_safeguards.py::test_run_daily_step_names_are_unique src/mlb_pipeline/modeling/test_pipeline_safeguards.py::test_series_game_number_uses_strict_lt_boundary src/mlb_pipeline/modeling/test_pipeline_safeguards.py::test_head_ablation_runs_before_hitter_model_training -v 2>&1)"
     ]
   }
 }

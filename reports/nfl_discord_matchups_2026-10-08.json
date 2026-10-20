@@ -1,0 +1,649 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-10-08",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_05_TB_DAL",
+      "page": 1,
+      "forecast_manifest": [
+        {
+          "kind": "prop",
+          "forecast_id": 14837,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14832,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14833,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14848,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14860,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14853,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14841,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14844,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14840,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14845,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14842,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14843,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14850,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14871,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14876,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14879,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14878,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14883,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14877,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14884,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14881,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14875,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14880,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        },
+        {
+          "kind": "prop",
+          "forecast_id": 14882,
+          "book": null,
+          "side": null,
+          "line": null,
+          "price": null,
+          "model_version": "nfl-20260918T143342Z",
+          "tier": "paper",
+          "cash_ledger_id": null,
+          "cash_policy": null,
+          "probability": null,
+          "probability_source": null,
+          "scoring_version": null,
+          "cash_expires_at": null,
+          "provider_link": null,
+          "betslip_link": null
+        }
+      ],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "TB @ DAL | NFL 2026-10-08",
+            "description": "Kickoff: <t:1791504900:f> (<t:1791504900:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**CASH TRIAL STATUS**\n- Research only: 4 settled decisions / 50 at the next review, 2 independent weeks / 3 minimum under the registered cash policy. Counts alone do not approve cash bets.\n\n**QUOTE HEALTH**\n- 36 saved quotes withheld: stale or unverified timing/book. Refresh required; no current betting instruction for those rows.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**PAPER GAME PICKS**\n- No current priced game picks at FanDuel.\n\n**PROP ODDS**\n- No fresh verified FanDuel prop offers in this card. Any projections below are not bettable.\n\n**PAPER - RB Rushing Yards**\n- Research only: Dominic Richardson (DAL vs TB) Rushing Yards proj=20.80 range=0.0-54.5 [ctx=90% spike=22%]\n- Research only: E.Demercado (DAL vs TB) Rushing Yards proj=14.33 range=0.0-48.0 [ctx=90% spike=18% limited=23% depth=3]\n- Research only: H.Luepke (DAL vs TB) Rushing Yards proj=5.66 range=0.0-39.4 [ctx=78% spike=17% depth=1]\n\n**PAPER - RB Receiving Yards**\n- Research only: K.Gainwell (TB vs DAL) Receiving Yards proj=13.19 range=0.0-52.9 [ctx=90% spike=25% depth=2]\n- Research only: Dominic Richardson (DAL vs TB) Receiving Yards proj=7.98 range=0.0-47.7 [ctx=90% spike=19%]\n- Research only: E.Demercado (DAL vs TB) Receiving Yards proj=5.15 range=0.0-44.8 [ctx=90% spike=23% limited=23% depth=3]\n\n**PAPER - RB Rushing TDs**\n- Research only: J.Williams (DAL vs TB) Rushing TDs proj=0.66 range=0.0-1.0 [ctx=90% spike=100% depth=1]\n- Research only: B.Irving (TB vs DAL) Rushing TDs proj=0.38 range=0.0-1.0 [ctx=90% spike=57% depth=1]\n- Research only: K.Gainwell (TB vs DAL) Rushing TDs proj=0.13 range=0.0-1.0 [ctx=90% spike=13% depth=2]\n- Research only: Dominic Richardson (DAL vs TB) Rushing TDs proj=0.13 range=0.0-1.0 [ctx=90% spike=26%]\n- Research only: T.Goodson (DAL vs TB) Rushing TDs proj=0.04 range=0.0-0.0 [ctx=90% spike=3% depth=2 prac=Full Participation in Practice]\n- Research only: H.Luepke (DAL vs TB) Rushing TDs proj=0.03 range=0.0-0.0 [ctx=78% spike=5% depth=1]\n\n**PAPER - WR/TE Receiving Yards**\n- Research only: G.Pickens (DAL vs TB) Receiving Yards proj=44.64 range=17.0-84.3 [ctx=79% spike=52% depth=2]\n\n**PAPER - WR/TE Receptions**\n- Research only: B.Spann-Ford (DAL vs TB) Receptions proj=0.75 range=0.0-2.0 [ctx=77% depth=2]\n\n**PAPER - WR/TE Receiving TDs**\n- Research only: C.Lamb (DAL vs TB) Receiving TDs proj=0.44 range=0.0-1.0 [ctx=81% spike=100% depth=1 prac=Full Participation in Practice]\n- Research only: C.Otton (TB vs DAL) Receiving TDs proj=0.32 range=0.0-1.0 [ctx=82% spike=24% depth=1]\n- Research only: J.Ferguson (DAL vs TB) Receiving TDs proj=0.30 range=0.0-1.0 [ctx=81% spike=84% depth=1]\n- Research only: E.Egbuka (TB vs DAL) Receiving TDs proj=0.25 range=0.0-1.0 [ctx=81% spike=39% depth=1]\n- Research only: G.Pickens (DAL vs TB) Receiving TDs proj=0.24 range=0.0-1.0 [ctx=79% spike=100% depth=2]\n- Research only: T.Hurst (TB vs DAL) Receiving TDs proj=0.23 range=0.0-1.0 [ctx=76% spike=6% depth=3]\n- Research only: R.Flournoy (DAL vs TB) Receiving TDs proj=0.21 range=0.0-1.0 [ctx=77% spike=31% depth=3]\n- Research only: C.Godwin (TB vs DAL) Receiving TDs proj=0.19 range=0.0-1.0 [ctx=79% spike=0% depth=2]\n- Research only: P.Durham (TB vs DAL) Receiving TDs proj=0.08 range=0.0-0.0 [ctx=77% spike=3% depth=2]\n- Research only: B.Spann-Ford (DAL vs TB) Receiving TDs proj=0.06 range=0.0-0.0 [ctx=77% spike=0% depth=2]",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Paper is research. Ledger rows are not confirmed wagers."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "research",
+    "reason": "Research only: 4 settled decisions / 50 at the next review, 2 independent weeks / 3 minimum under the registered cash policy. Counts alone do not approve cash bets."
+  },
+  "quote_exclusions": [
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_05_TB_DAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    }
+  ],
+  "notice": null
+}

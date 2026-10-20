@@ -1,0 +1,462 @@
+{
+  "contract": "nfl-asymmetric-interval-v1",
+  "version": "asymmetric-interval-20261010T003510Z",
+  "fitted_at": "2026-10-10T00:35:10.486159+00:00",
+  "training_through": "2026-10-08",
+  "model_versions": [
+    "nfl-20260918T143342Z"
+  ],
+  "target_coverage": 0.8,
+  "method": "expanding-week asymmetric conformal scaling of immutable p10/p50/p90",
+  "stats": {
+    "receiving_yards": {
+      "lower_tail_scale": 1.2,
+      "upper_tail_scale": 1.29,
+      "evidence": {
+        "forward_base": {
+          "rows": 366,
+          "coverage": 0.7240437158469946,
+          "below_p10": 0.12295081967213115,
+          "above_p90": 0.15300546448087432,
+          "mean_interval_score": 106.8497203572151,
+          "mean_width": 55.49884204918315
+        },
+        "forward_calibrated": {
+          "rows": 366,
+          "coverage": 0.8087431693989071,
+          "below_p10": 0.08469945355191257,
+          "above_p90": 0.10655737704918032,
+          "mean_interval_score": 100.47856360825458,
+          "mean_width": 69.50423071384809
+        },
+        "relative_interval_score_gain": 0.05962726647913322,
+        "evaluated_folds": 3
+      }
+    }
+  },
+  "all_stat_results": {
+    "passing_yards": {
+      "status": "rejected",
+      "accepted": false,
+      "lower_tail_scale": 1.0,
+      "upper_tail_scale": 1.13,
+      "forward_base": {
+        "rows": 64,
+        "coverage": 0.875,
+        "below_p10": 0.015625,
+        "above_p90": 0.109375,
+        "mean_interval_score": 274.63428006594995,
+        "mean_width": 213.06012353352037
+      },
+      "forward_calibrated": {
+        "rows": 64,
+        "coverage": 0.875,
+        "below_p10": 0.015625,
+        "above_p90": 0.109375,
+        "mean_interval_score": 275.0804795157028,
+        "mean_width": 220.19931472956603
+      },
+      "relative_interval_score_gain": -0.0016247041325128469,
+      "evaluated_folds": 3,
+      "folds": [
+        {
+          "test_season": 2026,
+          "test_week": 3,
+          "cutoff": "2026-09-24T22:53:42.602827+00:00",
+          "earlier_rows": 30,
+          "eligible_train_rows": 30,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 30,
+          "lower_tail_scale": 1.0,
+          "upper_tail_scale": 1.0,
+          "base": {
+            "rows": 32,
+            "coverage": 0.875,
+            "below_p10": 0.0,
+            "above_p90": 0.125,
+            "mean_interval_score": 276.3281175109489,
+            "mean_width": 212.2991936445997
+          },
+          "calibrated": {
+            "rows": 32,
+            "coverage": 0.875,
+            "below_p10": 0.0,
+            "above_p90": 0.125,
+            "mean_interval_score": 276.3281175109489,
+            "mean_width": 212.2991936445997
+          }
+        },
+        {
+          "test_season": 2026,
+          "test_week": 4,
+          "cutoff": "2026-10-01T23:31:14.091517+00:00",
+          "earlier_rows": 62,
+          "eligible_train_rows": 62,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ],
+            [
+              2026,
+              3
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 62,
+          "lower_tail_scale": 1.0,
+          "upper_tail_scale": 1.13,
+          "base": {
+            "rows": 30,
+            "coverage": 0.8666666666666667,
+            "below_p10": 0.03333333333333333,
+            "above_p90": 0.1,
+            "mean_interval_score": 276.88173523418493,
+            "mean_width": 213.8210534224411
+          },
+          "calibrated": {
+            "rows": 30,
+            "coverage": 0.8666666666666667,
+            "below_p10": 0.03333333333333333,
+            "above_p90": 0.1,
+            "mean_interval_score": 276.881735234185,
+            "mean_width": 228.0994358145325
+          }
+        },
+        {
+          "test_season": 2026,
+          "test_week": 5,
+          "cutoff": "2026-10-08T22:54:10.481791+00:00",
+          "earlier_rows": 92,
+          "eligible_train_rows": 92,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ],
+            [
+              2026,
+              3
+            ],
+            [
+              2026,
+              4
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 92,
+          "lower_tail_scale": 1.0,
+          "upper_tail_scale": 1.13,
+          "base": {
+            "rows": 2,
+            "coverage": 1.0,
+            "below_p10": 0.0,
+            "above_p90": 0.0,
+            "mean_interval_score": 213.82105342244114,
+            "mean_width": 213.82105342244114
+          },
+          "calibrated": {
+            "rows": 2,
+            "coverage": 1.0,
+            "below_p10": 0.0,
+            "above_p90": 0.0,
+            "mean_interval_score": 228.09943581453246,
+            "mean_width": 228.09943581453246
+          }
+        }
+      ]
+    },
+    "receiving_yards": {
+      "status": "accepted",
+      "accepted": true,
+      "lower_tail_scale": 1.2,
+      "upper_tail_scale": 1.29,
+      "forward_base": {
+        "rows": 366,
+        "coverage": 0.7240437158469946,
+        "below_p10": 0.12295081967213115,
+        "above_p90": 0.15300546448087432,
+        "mean_interval_score": 106.8497203572151,
+        "mean_width": 55.49884204918315
+      },
+      "forward_calibrated": {
+        "rows": 366,
+        "coverage": 0.8087431693989071,
+        "below_p10": 0.08469945355191257,
+        "above_p90": 0.10655737704918032,
+        "mean_interval_score": 100.47856360825458,
+        "mean_width": 69.50423071384809
+      },
+      "relative_interval_score_gain": 0.05962726647913322,
+      "evaluated_folds": 3,
+      "folds": [
+        {
+          "test_season": 2026,
+          "test_week": 3,
+          "cutoff": "2026-09-24T22:53:42.602827+00:00",
+          "earlier_rows": 146,
+          "eligible_train_rows": 146,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 146,
+          "lower_tail_scale": 1.41,
+          "upper_tail_scale": 1.29,
+          "base": {
+            "rows": 169,
+            "coverage": 0.727810650887574,
+            "below_p10": 0.1242603550295858,
+            "above_p90": 0.14792899408284024,
+            "mean_interval_score": 96.95590818627616,
+            "mean_width": 50.172309098016335
+          },
+          "calibrated": {
+            "rows": 169,
+            "coverage": 0.8402366863905325,
+            "below_p10": 0.0650887573964497,
+            "above_p90": 0.09467455621301775,
+            "mean_interval_score": 92.20202285653613,
+            "mean_width": 63.918597167417
+          }
+        },
+        {
+          "test_season": 2026,
+          "test_week": 4,
+          "cutoff": "2026-10-01T23:31:14.091517+00:00",
+          "earlier_rows": 315,
+          "eligible_train_rows": 315,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ],
+            [
+              2026,
+              3
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 315,
+          "lower_tail_scale": 1.23,
+          "upper_tail_scale": 1.28,
+          "base": {
+            "rows": 185,
+            "coverage": 0.7297297297297297,
+            "below_p10": 0.11891891891891893,
+            "above_p90": 0.15135135135135136,
+            "mean_interval_score": 113.35443412384771,
+            "mean_width": 60.03892181528482
+          },
+          "calibrated": {
+            "rows": 185,
+            "coverage": 0.7891891891891892,
+            "below_p10": 0.0972972972972973,
+            "above_p90": 0.11351351351351352,
+            "mean_interval_score": 106.24305308182713,
+            "mean_width": 74.20492525616298
+          }
+        },
+        {
+          "test_season": 2026,
+          "test_week": 5,
+          "cutoff": "2026-10-08T22:54:10.481791+00:00",
+          "earlier_rows": 500,
+          "eligible_train_rows": 500,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ],
+            [
+              2026,
+              3
+            ],
+            [
+              2026,
+              4
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 500,
+          "lower_tail_scale": 1.19,
+          "upper_tail_scale": 1.29,
+          "base": {
+            "rows": 12,
+            "coverage": 0.5833333333333334,
+            "below_p10": 0.16666666666666666,
+            "above_p90": 0.25,
+            "mean_interval_score": 145.90657119568638,
+            "mean_width": 60.52128471738198
+          },
+          "calibrated": {
+            "rows": 12,
+            "coverage": 0.6666666666666666,
+            "below_p10": 0.16666666666666666,
+            "above_p90": 0.16666666666666666,
+            "mean_interval_score": 128.17063314404527,
+            "mean_width": 75.69952896539802
+          }
+        }
+      ]
+    },
+    "rushing_yards": {
+      "status": "rejected",
+      "accepted": false,
+      "lower_tail_scale": 1.14,
+      "upper_tail_scale": 1.01,
+      "forward_base": {
+        "rows": 170,
+        "coverage": 0.7823529411764706,
+        "below_p10": 0.10588235294117647,
+        "above_p90": 0.11176470588235295,
+        "mean_interval_score": 95.05074035170776,
+        "mean_width": 53.39423051080335
+      },
+      "forward_calibrated": {
+        "rows": 170,
+        "coverage": 0.8,
+        "below_p10": 0.08823529411764706,
+        "above_p90": 0.11176470588235295,
+        "mean_interval_score": 94.24014401341569,
+        "mean_width": 56.25817081249965
+      },
+      "relative_interval_score_gain": 0.008528038133029736,
+      "evaluated_folds": 3,
+      "folds": [
+        {
+          "test_season": 2026,
+          "test_week": 3,
+          "cutoff": "2026-09-24T22:53:42.602827+00:00",
+          "earlier_rows": 73,
+          "eligible_train_rows": 73,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 73,
+          "lower_tail_scale": 1.17,
+          "upper_tail_scale": 1.0,
+          "base": {
+            "rows": 76,
+            "coverage": 0.7236842105263158,
+            "below_p10": 0.13157894736842105,
+            "above_p90": 0.14473684210526316,
+            "mean_interval_score": 90.78154533630979,
+            "mean_width": 53.96567656885308
+          },
+          "calibrated": {
+            "rows": 76,
+            "coverage": 0.7368421052631579,
+            "below_p10": 0.11842105263157894,
+            "above_p90": 0.14473684210526316,
+            "mean_interval_score": 89.19426930890775,
+            "mean_width": 56.01163715632949
+          }
+        },
+        {
+          "test_season": 2026,
+          "test_week": 4,
+          "cutoff": "2026-10-01T13:35:27.044864+00:00",
+          "earlier_rows": 149,
+          "eligible_train_rows": 149,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ],
+            [
+              2026,
+              3
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 149,
+          "lower_tail_scale": 1.28,
+          "upper_tail_scale": 1.01,
+          "base": {
+            "rows": 88,
+            "coverage": 0.8409090909090909,
+            "below_p10": 0.07954545454545454,
+            "above_p90": 0.07954545454545454,
+            "mean_interval_score": 92.7744695084707,
+            "mean_width": 53.04967707260527
+          },
+          "calibrated": {
+            "rows": 88,
+            "coverage": 0.8636363636363636,
+            "below_p10": 0.056818181818181816,
+            "above_p90": 0.07954545454545454,
+            "mean_interval_score": 92.57436362891737,
+            "mean_width": 56.63996677429645
+          }
+        },
+        {
+          "test_season": 2026,
+          "test_week": 5,
+          "cutoff": "2026-10-08T22:54:10.481791+00:00",
+          "earlier_rows": 237,
+          "eligible_train_rows": 237,
+          "excluded_unavailable_or_overlapping": 0,
+          "train_periods": [
+            [
+              2026,
+              2
+            ],
+            [
+              2026,
+              3
+            ],
+            [
+              2026,
+              4
+            ]
+          ],
+          "status": "evaluated",
+          "training_rows": 237,
+          "lower_tail_scale": 1.14,
+          "upper_tail_scale": 1.01,
+          "base": {
+            "rows": 6,
+            "coverage": 0.6666666666666666,
+            "below_p10": 0.16666666666666666,
+            "above_p90": 0.16666666666666666,
+            "mean_interval_score": 182.51251624755844,
+            "mean_width": 51.209364202412104
+          },
+          "calibrated": {
+            "rows": 6,
+            "coverage": 0.6666666666666666,
+            "below_p10": 0.16666666666666666,
+            "above_p90": 0.16666666666666666,
+            "mean_interval_score": 182.5860025764913,
+            "mean_width": 53.78125635096841
+          }
+        }
+      ]
+    }
+  },
+  "deployment_approved": true,
+  "betting_approved": false,
+  "scope": "forecast_distribution_only"
+}

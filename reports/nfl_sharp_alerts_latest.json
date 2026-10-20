@@ -1,57 +1,30 @@
 {
-  "built_at": "2026-10-12T20:16:21.875401+00:00",
+  "built_at": "2026-10-19T05:58:35.632897+00:00",
   "pass_bar": {
     "min_alerts": 100,
     "min_weeks": 3,
     "min_beat_close": 0.55,
-    "min_sharp_close_ev": 0.01
+    "min_sharp_close_ev": 0.01,
+    "min_exact_close_coverage": 0.9,
+    "min_sharp_close_coverage": 0.9,
+    "alpha": 0.05
   },
   "summary": {
-    "alerts": 36,
-    "weeks": 2,
-    "with_fd_close": 10,
-    "beat_fd_close": 0.2,
-    "mean_fd_clv": 0.006131526079322524,
-    "with_sharp_close": 29,
-    "mean_ev_at_sharp_close": 0.03221569806240674,
-    "positive_at_sharp_close": 0.8620689655172413,
-    "settled": 34,
-    "roi": 0.5913035690612337,
-    "mean_alert_ev": 0.04412984798949849,
-    "staked": 40.0,
-    "mean_slippage": null,
-    "realized_profit": 9.855185394315827,
+    "alerts": 0,
+    "weeks": 0,
+    "primary_book": "fanduel",
+    "experiment_sha256": "e12c8284e4ff01242c6bf64cf8ec362f100fcd1b08b587bb107f56584f5aaff0",
+    "raw_alerts": 47,
+    "captured_decisions": 0,
+    "excluded_alerts": 47,
+    "repeated_alerts_removed": 0,
     "logged": {
-      "alerts": 158,
-      "weeks": 2,
-      "with_fd_close": 77,
-      "beat_fd_close": 0.2987012987012987,
-      "mean_fd_clv": 0.007222245343587371,
-      "with_sharp_close": 115,
-      "mean_ev_at_sharp_close": 0.004831717986538245,
-      "positive_at_sharp_close": 0.7739130434782608,
-      "settled": 155,
-      "roi": -0.1204871940096017,
-      "mean_alert_ev": 0.018854163370004715,
-      "staked": 0.0,
-      "mean_slippage": null,
-      "realized_profit": 0.0
+      "alerts": 0,
+      "weeks": 0
     },
     "early": {
-      "alerts": 19,
-      "weeks": 2,
-      "with_fd_close": 13,
-      "beat_fd_close": 0.23076923076923078,
-      "mean_fd_clv": 0.005218707002954711,
-      "with_sharp_close": 18,
-      "mean_ev_at_sharp_close": 0.020671644958276166,
-      "positive_at_sharp_close": 0.7777777777777778,
-      "settled": 17,
-      "roi": -0.16236112796860458,
-      "mean_alert_ev": 0.04482686287158113,
-      "staked": 10.0,
-      "mean_slippage": null,
-      "realized_profit": -10.0
+      "alerts": 0,
+      "weeks": 0
     },
     "placed": {
       "alerts": 0,
@@ -59,78 +32,66 @@
     },
     "by_book": {
       "draftkings": {
-        "alerts": 25,
-        "weeks": 1,
-        "with_fd_close": 6,
-        "beat_fd_close": 0.3333333333333333,
-        "mean_fd_clv": 0.010219210132204207,
-        "with_sharp_close": 25,
-        "mean_ev_at_sharp_close": 0.03493141313624215,
-        "positive_at_sharp_close": 0.88,
-        "settled": 24,
-        "roi": 0.2747470496341334,
-        "mean_alert_ev": 0.04131350867230463,
-        "staked": 35.0,
-        "mean_slippage": null,
-        "realized_profit": 4.455185394315826
+        "alerts": 27,
+        "weeks": 2,
+        "with_fd_close": 0,
+        "beat_fd_close": null,
+        "exact_close_coverage": 0.0,
+        "sharp_close_coverage": 0.0,
+        "mean_clv_lower": null,
+        "sharp_close_ev_lower": null,
+        "player_games": 27,
+        "mean_fd_clv": null,
+        "with_sharp_close": 0,
+        "mean_ev_at_sharp_close": null,
+        "positive_at_sharp_close": null,
+        "settled": 26,
+        "roi": 0.10631397273490076,
+        "mean_alert_ev": 0.04190771919922292
       },
       "fanduel": {
-        "alerts": 11,
-        "weeks": 2,
-        "with_fd_close": 4,
-        "beat_fd_close": 0.0,
-        "mean_fd_clv": 0.0,
-        "with_sharp_close": 4,
-        "mean_ev_at_sharp_close": 0.01524247885093545,
-        "positive_at_sharp_close": 0.75,
+        "alerts": 12,
+        "weeks": 3,
+        "with_fd_close": 0,
+        "beat_fd_close": null,
+        "exact_close_coverage": 0.0,
+        "sharp_close_coverage": 0.0,
+        "mean_clv_lower": null,
+        "sharp_close_ev_lower": null,
+        "player_games": 12,
+        "mean_fd_clv": null,
+        "with_sharp_close": 0,
+        "mean_ev_at_sharp_close": null,
+        "positive_at_sharp_close": null,
         "settled": 10,
-        "roi": 1.3510392156862745,
-        "mean_alert_ev": 0.05053061916493908,
-        "staked": 5.0,
-        "mean_slippage": null,
-        "realized_profit": 5.4
+        "roi": 0.40995732611878105,
+        "mean_alert_ev": 0.05384790859121946
       }
     },
-    "model": {
-      "disagrees": {
-        "alerts": 9,
-        "weeks": 1,
-        "with_fd_close": 7,
-        "beat_fd_close": 0.14285714285714285,
-        "mean_fd_clv": 0.008733497035591715,
-        "with_sharp_close": 9,
-        "mean_ev_at_sharp_close": 0.03860678344418075,
-        "positive_at_sharp_close": 0.8888888888888888,
-        "settled": 9,
-        "roi": -0.08504672897196258,
-        "mean_alert_ev": 0.04800278601911859,
-        "staked": 20.0,
-        "mean_slippage": null,
-        "realized_profit": 1.1999999999999993
+    "inferred_close_diagnostics": {
+      "inferred_clv": {
+        "rows": 0,
+        "mean": null
       },
-      "agrees": {
-        "alerts": 31,
-        "weeks": 1,
-        "with_fd_close": 9,
-        "beat_fd_close": 0.3333333333333333,
-        "mean_fd_clv": 0.013605526671374145,
-        "with_sharp_close": 30,
-        "mean_ev_at_sharp_close": 0.03666006642945182,
-        "positive_at_sharp_close": 0.9,
-        "settled": 31,
-        "roi": 0.23030976559236552,
-        "mean_alert_ev": 0.04212983981139797,
-        "staked": 30.0,
-        "mean_slippage": null,
-        "realized_profit": -1.3448146056841725
+      "inferred_ev_at_sharp_close": {
+        "rows": 0,
+        "mean": null
       }
     },
+    "model": {},
     "checks": {
       "enough_alerts": false,
       "enough_weeks": false,
       "beats_fd_close": false,
-      "positive_at_sharp_close": true
+      "positive_at_sharp_close": false,
+      "exact_close_coverage": false,
+      "sharp_close_coverage": false,
+      "weekly_clv_confirmed": false,
+      "weekly_sharp_ev_confirmed": false,
+      "registered": true
     },
-    "verdict": "keep collecting"
-  }
+    "verdict": "keep collecting",
+    "execution_accounting": "Paper stakes excluded; placed is legacy confirmation only; receipt net profit is separate."
+  },
+  "reporting_contract": "nfl-sharp-paper-money-separation-v1"
 }

@@ -1,0 +1,10 @@
+{
+  "seconds": 223.68607010040432,
+  "status": "evaluated",
+  "settled_unique_offers": 2037,
+  "exact_replay_status": {
+    "matched": 1797,
+    "missing_lock_time_scoring_inputs": 240
+  },
+  "production_changed": false
+}

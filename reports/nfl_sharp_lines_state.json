@@ -1,0 +1,612 @@
+{
+  "captured": {
+    "2026_04_PIT_CLE|lock": {
+      "at": "2026-10-01T22:51:34.605647+00:00",
+      "event_id": "d55cb69fed50a09170560b5b75d8de86",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_PIT_CLE|close": {
+      "at": "2026-10-01T23:50:29.763631+00:00",
+      "event_id": "d55cb69fed50a09170560b5b75d8de86",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_IND_WAS|lock": {
+      "at": "2026-10-04T12:01:55.719464+00:00",
+      "event_id": "c9d8ed8aa4889486eaf10a630138ede0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_IND_WAS|close": {
+      "at": "2026-10-04T13:11:13.905146+00:00",
+      "event_id": "c9d8ed8aa4889486eaf10a630138ede0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_TEN_BAL|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "f01589b0e7e6dd4f4ac1220a1db81f53",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_NE_BUF|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "573cc0ef39631a4f6673ec843a8bedd4",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_JAX_CIN|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "2ea94ddf20f66432b9024fe2e2eaba5f",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_NYJ_CHI|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "164e6eb68f31bac190381903c3cccd31",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_ARI_NYG|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "664e6bda5721dc63be16bcf7d962a436",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_DAL_HOU|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "daf55e2df5341c007fee5a0fc5bbc2d4",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_LA_PHI|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "1b4f2e60ce83fa1d63a5dff83769d27c",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_GB_TB|lock": {
+      "at": "2026-10-04T15:31:21.144334+00:00",
+      "event_id": "99a9bae4dc0dc2590496bd3102b211f2",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_TEN_BAL|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "f01589b0e7e6dd4f4ac1220a1db81f53",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_NE_BUF|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "573cc0ef39631a4f6673ec843a8bedd4",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_JAX_CIN|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "2ea94ddf20f66432b9024fe2e2eaba5f",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_NYJ_CHI|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "164e6eb68f31bac190381903c3cccd31",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_ARI_NYG|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "664e6bda5721dc63be16bcf7d962a436",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_DAL_HOU|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "daf55e2df5341c007fee5a0fc5bbc2d4",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_LA_PHI|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "1b4f2e60ce83fa1d63a5dff83769d27c",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_GB_TB|close": {
+      "at": "2026-10-04T16:41:00.907374+00:00",
+      "event_id": "99a9bae4dc0dc2590496bd3102b211f2",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_MIA_MIN|lock": {
+      "at": "2026-10-04T18:41:35.508217+00:00",
+      "event_id": "c327223d76a3b7b0db8c6c104442f44b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_KC_LV|lock": {
+      "at": "2026-10-04T19:01:22.234941+00:00",
+      "event_id": "e0cbd266dcf997089203a1b33ba0333d",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_LAC_SEA|lock": {
+      "at": "2026-10-04T19:01:22.234941+00:00",
+      "event_id": "96d2373cda647873b971f268482bced0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_DEN_SF|lock": {
+      "at": "2026-10-04T19:01:22.234941+00:00",
+      "event_id": "a7e7efb75a9792ac63480ae6328dca18",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_MIA_MIN|close": {
+      "at": "2026-10-04T19:41:20.161197+00:00",
+      "event_id": "c327223d76a3b7b0db8c6c104442f44b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_KC_LV|close": {
+      "at": "2026-10-04T20:00:45.367631+00:00",
+      "event_id": "e0cbd266dcf997089203a1b33ba0333d",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_LAC_SEA|close": {
+      "at": "2026-10-04T20:00:45.367631+00:00",
+      "event_id": "96d2373cda647873b971f268482bced0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_DEN_SF|close": {
+      "at": "2026-10-04T20:00:45.367631+00:00",
+      "event_id": "a7e7efb75a9792ac63480ae6328dca18",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_DET_CAR|lock": {
+      "at": "2026-10-04T22:51:32.971793+00:00",
+      "event_id": "a73a76599a4f3422803e57bd8f61b626",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_DET_CAR|close": {
+      "at": "2026-10-04T23:56:07.518324+00:00",
+      "event_id": "a73a76599a4f3422803e57bd8f61b626",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_ATL_NO|lock": {
+      "at": "2026-10-05T22:52:32.935333+00:00",
+      "event_id": "8bd90781e17e6d97df3941063cedae1e",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_04_ATL_NO|close": {
+      "at": "2026-10-05T23:53:35.175168+00:00",
+      "event_id": "8bd90781e17e6d97df3941063cedae1e",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_TB_DAL|lock": {
+      "at": "2026-10-08T22:52:12.678709+00:00",
+      "event_id": "259b5df9aa0d10257f56de78523495e0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_TB_DAL|close": {
+      "at": "2026-10-08T23:50:31.574833+00:00",
+      "event_id": "259b5df9aa0d10257f56de78523495e0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_PHI_JAX|lock": {
+      "at": "2026-10-11T12:02:09.323165+00:00",
+      "event_id": "21b26266f3d78af02eb672e606275d95",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_CIN_MIA|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "c4647ca1201e6768501877267ca8251b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_LV_NE|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "6b024bad1abb54f597225e4ab9b39d89",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_CLE_NYJ|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "9db4ed15fe34fca1fb62f040cd244591",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_IND_PIT|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "448d7cf18c6db4c811ed82ded1b72867",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_CHI_GB|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "2caea57b1e5cfbba1334cfbfd46f6771",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_NYG_WAS|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "fbffd0b7722fd81d68d5d62472dc80e8",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_MIN_NO|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "2cda9bf0fbe35a2735f0dd8aaafe9eff",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_HOU_TEN|lock": {
+      "at": "2026-10-11T15:22:32.442447+00:00",
+      "event_id": "cc52bba56e74f5cddbe9011046181c3d",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_DEN_LAC|lock": {
+      "at": "2026-10-11T18:41:33.693559+00:00",
+      "event_id": "d1d408fdfd272046fb517fe992a1c5a0",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_SF_SEA|lock": {
+      "at": "2026-10-11T19:01:23.250353+00:00",
+      "event_id": "8e5d515b10d8a5ffb324640ed60bcc55",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_DET_ARI|lock": {
+      "at": "2026-10-11T19:01:23.250353+00:00",
+      "event_id": "f8e7f43f73aa983c5c99c189587f0118",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_BAL_ATL|lock": {
+      "at": "2026-10-11T22:52:19.385968+00:00",
+      "event_id": "86457f91112732f21ad4bb7d37bd291c",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_BUF_LA|lock": {
+      "at": "2026-10-12T23:07:52.943589+00:00",
+      "event_id": "e6d00eedd87d367e510314bd8cab8f6f",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_05_BUF_LA|close": {
+      "at": "2026-10-12T23:52:09.565410+00:00",
+      "event_id": "e6d00eedd87d367e510314bd8cab8f6f",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_SEA_DEN|lock": {
+      "at": "2026-10-15T22:16:40.128961+00:00",
+      "event_id": "855f58fad5f0f14b239f4f63df27998b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_SEA_DEN|close": {
+      "at": "2026-10-15T23:55:28.205080+00:00",
+      "event_id": "855f58fad5f0f14b239f4f63df27998b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_HOU_JAX|lock": {
+      "at": "2026-10-18T11:35:35.546988+00:00",
+      "event_id": "57418b2cf5aca558b3c98eafac1e264a",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_HOU_JAX|close": {
+      "at": "2026-10-18T13:11:49.334816+00:00",
+      "event_id": "57418b2cf5aca558b3c98eafac1e264a",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_NO_NYG|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "1cf74afd313e9fd300e1462012b174cb",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_NYJ_NE|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "0b0b582b32b09ab6ff6664ffae0c9653",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_CHI_ATL|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "7c312fdf24fb35f58b0e07c2932cc997",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_BAL_CLE|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "e86227938fd3cf008fc5648fb5128344",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_TEN_IND|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "84aa9e190e625d7e9cd67e1f157a45b4",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_CAR_PHI|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "caca2d752fe1a1779029082e95332fcc",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_PIT_TB|lock": {
+      "at": "2026-10-18T15:02:51.031874+00:00",
+      "event_id": "27f3994841ce8081c0b7349cf3d1e3d7",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_NO_NYG|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "1cf74afd313e9fd300e1462012b174cb",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_NYJ_NE|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "0b0b582b32b09ab6ff6664ffae0c9653",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_CHI_ATL|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "7c312fdf24fb35f58b0e07c2932cc997",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_BAL_CLE|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "e86227938fd3cf008fc5648fb5128344",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_TEN_IND|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "84aa9e190e625d7e9cd67e1f157a45b4",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_CAR_PHI|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "caca2d752fe1a1779029082e95332fcc",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_PIT_TB|close": {
+      "at": "2026-10-18T16:41:34.742638+00:00",
+      "event_id": "27f3994841ce8081c0b7349cf3d1e3d7",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_ARI_LA|lock": {
+      "at": "2026-10-18T18:07:36.165871+00:00",
+      "event_id": "3729ac6d2a66b642850caf2044cdc658",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_LAC_KC|lock": {
+      "at": "2026-10-18T18:27:16.854263+00:00",
+      "event_id": "20fefae8c296247460ba5773caa42218",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_BUF_LV|lock": {
+      "at": "2026-10-18T18:27:16.854263+00:00",
+      "event_id": "45b2690b350ed45145c7a716b18e8e66",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_ARI_LA|close": {
+      "at": "2026-10-18T19:45:52.717932+00:00",
+      "event_id": "3729ac6d2a66b642850caf2044cdc658",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_LAC_KC|close": {
+      "at": "2026-10-18T20:01:16.299832+00:00",
+      "event_id": "20fefae8c296247460ba5773caa42218",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_BUF_LV|close": {
+      "at": "2026-10-18T20:01:16.299832+00:00",
+      "event_id": "45b2690b350ed45145c7a716b18e8e66",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_DAL_GB|lock": {
+      "at": "2026-10-18T22:23:58.216486+00:00",
+      "event_id": "82fd5a159fa130e67abab93a9537f70b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_DAL_GB|close": {
+      "at": "2026-10-19T00:00:56.942729+00:00",
+      "event_id": "82fd5a159fa130e67abab93a9537f70b",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    },
+    "2026_06_WAS_SF|lock": {
+      "at": "2026-10-19T22:38:37.233240+00:00",
+      "event_id": "f122527f003276d3bca19efa48c902c1",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
+    }
+  }
+}

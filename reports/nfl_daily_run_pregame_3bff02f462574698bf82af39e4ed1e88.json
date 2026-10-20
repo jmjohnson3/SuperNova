@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-18",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 98.396,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 3043\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 668543,\n      \"rows_selected\": 2333,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 1789\n    }\n  ],\n  \"roster_rows_upserted\": 3042,\n  \"depth_rows_upserted\": 2330,\n  \"injury_rows_upserted\": 1789\n}\n",
+      "stderr_tail": "2026-10-18 12:05:31,591 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-10-18 12:06:03,367 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-10-18 12:06:49,300 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Live Injury Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 20.074,
+      "timeout_seconds": 120,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"day\": \"2026-10-18\",\n  \"games\": [\n    {\n      \"game_id\": \"2026_06_ARI_LA\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 9,\n      \"out\": [\n        \"Andrew Wingard\"\n      ]\n    }\n  ],\n  \"unmatched\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 40.711,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-10-18\",\n  \"built_at\": \"2026-10-18T18:07:16.384435+00:00\",\n  \"games\": 1,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 377,\n      \"fresh_rows\": 34,\n      \"latest_quote\": \"2026-10-18T18:07:25.501917+00:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 11,\n      \"fresh_rows\": 1,\n      \"latest_quote\": \"2026-10-18T18:07:25.486293+00:00\"\n    }\n  },\n  \"game_ids\": [\n    \"2026_06_ARI_LA\"\n  ],\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"sharp_lines\": {\n    \"provider\": \"oddsapi_eu\",\n    \"role\": \"lock\",\n    \"day\": \"2026-10-18\",\n    \"due_games\": [\n      \"2026_06_ARI_LA\"\n    ],\n    \"captured\": [\n      {\n        \"game_id\": \"2026_06_ARI_LA\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      }\n    ],\n    \"skipped\": {},\n    \"credits_remaining\": 4995,\n    \"markets\": [\n      \"player_reception_yds\"\n    ],\n    \"status\": \"ok\"\n  },\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 37.489,
+      "timeout_seconds": 600,
+      "stdout_tail": "uel\",\n            \"over_price\": -110.0,\n            \"under_price\": -110.0,\n            \"quote_time\": \"2026-10-18 18:07:25.486293+00:00\",\n            \"offer_id\": \"None\"\n          },\n          \"challenger\": null,\n          \"deployed\": null,\n          \"captured_at\": \"2026-10-18T18:08:29.202361+00:00\",\n          \"source_artifact\": {\n            \"kind\": \"forecast_repair\",\n            \"contract\": \"nfl-isolated-forecast-repair-v1\",\n            \"path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\src\\\\nfl_pipeline\\\\modeling\\\\models\\\\forecast_repair\\\\forecast-repair-total-20261008T170628068151Z\\\\model.joblib\",\n            \"sha256\": \"cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96\",\n            \"variant\": \"small_total\",\n            \"stat\": \"total\",\n            \"training_end\": \"2026-09-17\",\n            \"production_release\": \"nfl-20260918T143342Z\"\n          }\n        }\n      ],\n      \"distribution_challenger_score\": null,\n      \"distribution_threshold\": 51.5,\n      \"distribution_policy_id\": null,\n      \"legacy_final_probability\": null,\n      \"game_outcome_distribution\": null,\n      \"game_outcome_policy_capture\": null,\n      \"game_outcome_challenger_score\": null,\n      \"push_probability\": 0,\n      \"ev\": -0.04545454545454547,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"db73f6eeb8be9f8b14d5c6b2e1d862d42423a55e99d1e1d81119d78ab8c560fc\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 261.789,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"captured\",\n  \"teams\": 2,\n  \"roster_rows\": 99\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 178.524,
+      "timeout_seconds": 1200,
+      "stdout_tail": "history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"projection_semantics\": \"expected_count_or_any_td_head\",\n      \"forecast_outputs\": {\n        \"contract\": \"nfl-forecast-outputs-v1\",\n        \"scope\": {\n          \"game_id\": \"2026_06_ARI_LA\",\n          \"player_id\": \"00-0038559\",\n          \"stat\": \"receiving_tds\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"prediction_context_cutoff_utc\": \"2026-10-18T18:14:36.661947+00:00\"\n        },\n        \"point_forecast\": {\n          \"value\": 0.3762619151983589,\n          \"semantics\": \"expected_count_or_any_td_head\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"source\": \"legacy_projection_unverified\",\n          \"independent_of_offer\": false\n        },\n        \"expected_yards\": null,\n        \"typical_yards\": null,\n        \"pricing\": {\n          \"projection_anchor\": 0.3762619151983589,\n          \"model_projection\": 0.3762619151983589,\n          \"market_adjusted\": false,\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"distribution_id\": \"fe38d1215db10eca149fbc673ee6bcdbd79367cfcd7990f6cb98908af570424d\",\n          \"distribution_kind\": \"empirical_oof_residual\",\n          \"scoring_version\": null,\n          \"line\": null,\n          \"side\": null,\n          \"price\": null,\n          \"probability\": null,\n          \"push_probability\": null,\n          \"ev\": null\n        },\n        \"betting_approval_inherited\": false\n      }\n    }\n  ]\n}\n",
+      "stderr_tail": "onents_receptions\n2026-10-18 12:15:35,516 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receptions', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-10-18 12:15:35,940 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: predict_receiving_tds\n2026-10-18 12:15:36,141 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'predict_receiving_tds', 'status': 'ok', 'result_parts': 3, 'seconds': 0.202}\n2026-10-18 12:15:36,341 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: active_stat_component_receiving_tds\n2026-10-18 12:15:36,341 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'active_stat_component_receiving_tds', 'status': 'ok', 'seconds': 0.0}\n2026-10-18 12:15:36,341 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: candidate_stat_components_receiving_tds\n2026-10-18 12:15:36,341 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receiving_tds', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-10-18 12:15:36,558 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: save_predictions\n2026-10-18 12:15:42,119 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'save_predictions', 'status': 'ok', 'seconds': 5.554}\n"
+    },
+    {
+      "step": "NFL Frozen Receiving Paper Trial",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 18.782,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"not_registered\",\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL FanDuel Lock Contract",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 5.355,
+      "timeout_seconds": 120,
+      "stdout_tail": "{'contract': 'nfl-fanduel-lock-contract-v1', 'generated_at_utc': '2026-10-18T18:16:16.815629+00:00', 'date': '2026-10-18', 'required': True, 'game_scope': ['2026_06_ARI_LA'], 'status': 'passed', 'summary': {'games': 1, 'passed': 1, 'waiting': 0, 'failed': 0}, 'games': [{'game_id': '2026_06_ARI_LA', 'home_team_abbr': 'LA', 'away_team_abbr': 'ARI', 'start_ts_utc': datetime.datetime(2026, 10, 18, 13, 5, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=61200))), 'status': 'passed', 'verification': {'game_id': '2026_06_ARI_LA', 'current_fanduel_locks': 32, 'receiving_locks': 12, 'receiving_same_line_triplets': 12, 'explicit_injury_context_locks': 32, 'known_player_injury_context_locks': 6, 'immutable_lock_violations': 0, 'all_locks_missing_links': 0, 'actionable_missing_links': 0, 'lock_verification_passed': True, 'injury_context_note': 'known_player_status'}}]}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 3.233,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 0,\n  \"prop_locked\": 8,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 2.631,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 412.932,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 72,\n  \"run_id\": \"benchmark-20260921T230305171980Z\",\n  \"eligible_original_locks\": 66,\n  \"missing_forecast_ids\": [],\n  \"missing_variants\": [],\n  \"capture_errors\": {},\n  \"receiving_research_trial\": {\n    \"status\": \"research_only\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"outside_trial\": 60,\n      \"original_drift_guard_not_passed\": 12\n    },\n    \"betting_approved\": false\n  },\n  \"receiving_residual_trial\": {\n    \"status\": \"paper_residual_trial\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"residual_not_supported\": 12,\n      \"missing_residual_signal\": 5\n    },\n    \"paper_only\": true\n  },\n  \"exclusions\": {\n    \"not_an_offered_line\": 34\n  },\n  \"production_changed\": false,\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 32.805,
+      "timeout_seconds": 120,
+      "stdout_tail": "_refresh_required\"}, {\"game_id\": \"2026_06_BUF_LV\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_BUF_LV\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_DAL_GB\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_BUF_LV\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_BUF_LV\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_LAC_KC\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_DAL_GB\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_DAL_GB\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_DAL_GB\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_LAC_KC\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_BUF_LV\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_LAC_KC\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_BUF_LV\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_LAC_KC\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_LAC_KC\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}, {\"game_id\": \"2026_06_DAL_GB\", \"kind\": \"prop\", \"reason\": \"stale_quote_refresh_required\"}], \"notice\": null, \"scope_game_ids\": [\"2026_06_ARI_LA\"]}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "Discord or runner",
+      "returncode": 1,
+      "critical": true,
+      "error_type": "ValueError"
+    }
+  ],
+  "publications": [],
+  "run_id": "pregame_3bff02f462574698bf82af39e4ed1e88",
+  "pregame": true,
+  "game_ids": [
+    "2026_06_ARI_LA"
+  ]
+}

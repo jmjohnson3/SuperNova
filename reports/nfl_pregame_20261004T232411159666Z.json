@@ -1,0 +1,36 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-04T23:24:11.110600+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_04_DET_CAR",
+      "kickoff": "2026-10-05T00:20:00+00:00",
+      "target_at": "2026-10-04T22:50:00+00:00",
+      "minutes_to_start": 55.8,
+      "action": "due",
+      "attempts": 2
+    },
+    {
+      "game_id": "2026_04_ATL_NO",
+      "kickoff": "2026-10-06T00:15:00+00:00",
+      "target_at": "2026-10-05T22:45:00+00:00",
+      "minutes_to_start": 1490.8,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_874c36ee1b744659b06f9cbeefafc027",
+      "game_ids": [
+        "2026_04_DET_CAR"
+      ],
+      "status": "failed",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

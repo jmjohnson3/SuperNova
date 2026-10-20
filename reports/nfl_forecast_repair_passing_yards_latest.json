@@ -1,0 +1,1406 @@
+{
+  "run_id": "forecast-repair-passing_yards-20261008T215337159170Z",
+  "market": "passing_yards",
+  "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\forecast_repair\\forecast-repair-passing_yards-20261008T215337159170Z\\model.joblib",
+  "artifact_sha256": "2259ac0e8a035747d3ef41b78dc91bfc13cba8244a09a2a7f4153e90affc2487",
+  "production_release": "nfl-20260918T143342Z",
+  "training_end": "2026-09-17",
+  "scores": {
+    "efficiency": {
+      "expected": {
+        "rows": 688,
+        "mae": 71.24143516919537,
+        "rmse": 89.6263423909047,
+        "bias": 0.5324325997364039,
+        "interval_rows": 688,
+        "coverage_80": 0.7906976744186046,
+        "interval_width": 217.44237699661974
+      },
+      "typical": {
+        "rows": 688,
+        "mae": 71.16745036047031,
+        "rmse": 90.05529756125821,
+        "bias": -4.755858142693549
+      },
+      "below": 0.11046511627906977,
+      "above": 0.09883720930232558,
+      "interval_score": 318.742420202231,
+      "probability": {
+        "rows": 2061,
+        "brier": 0.21339064543612768,
+        "log_loss": 0.614571951643991,
+        "calibration_error": 0.021191090405051648,
+        "probability_bias": -0.007169580060578099
+      }
+    },
+    "joint": {
+      "expected": {
+        "rows": 688,
+        "mae": 68.20798112925054,
+        "rmse": 85.39386481557254,
+        "bias": -1.1483183296284083,
+        "interval_rows": 688,
+        "coverage_80": 0.8270348837209303,
+        "interval_width": 219.20837689218092
+      },
+      "typical": {
+        "rows": 688,
+        "mae": 67.73844829914161,
+        "rmse": 86.69861329740017,
+        "bias": -8.871616582168718
+      },
+      "below": 0.08284883720930232,
+      "above": 0.09011627906976744,
+      "interval_score": 287.7409519270997,
+      "probability": {
+        "rows": 2061,
+        "brier": 0.2025325647861902,
+        "log_loss": 0.5893437450282382,
+        "calibration_error": 0.029276721084244624,
+        "probability_bias": -0.015588903434467926
+      }
+    },
+    "joint_calibrated": {
+      "expected": {
+        "rows": 688,
+        "mae": 68.0402710362879,
+        "rmse": 85.2729679174227,
+        "bias": -0.49427072458477567,
+        "interval_rows": 688,
+        "coverage_80": 0.8241279069767442,
+        "interval_width": 218.4905786069782
+      },
+      "typical": {
+        "rows": 688,
+        "mae": 67.56574577383601,
+        "rmse": 86.49124612215451,
+        "bias": -7.993874674332366
+      },
+      "below": 0.08575581395348837,
+      "above": 0.09011627906976744,
+      "interval_score": 287.14220165081866,
+      "probability": {
+        "rows": 2061,
+        "brier": 0.20195595468918984,
+        "log_loss": 0.5879995063628388,
+        "calibration_error": 0.028006121977514297,
+        "probability_bias": -0.012380319831613569
+      }
+    },
+    "reference": {
+      "expected": {
+        "rows": 688,
+        "mae": 69.42509168489111,
+        "rmse": 88.52034189609635,
+        "bias": 4.107102784579874,
+        "interval_rows": 688,
+        "coverage_80": 0.7747093023255814,
+        "interval_width": 211.45064572169213
+      },
+      "typical": {
+        "rows": 688,
+        "mae": 69.68396543285252,
+        "rmse": 88.7456461792124,
+        "bias": 4.336666180279497
+      },
+      "below": 0.125,
+      "above": 0.1002906976744186,
+      "interval_score": 320.69404200264273,
+      "probability": {
+        "rows": 2061,
+        "brier": 0.20749878286312076,
+        "log_loss": 0.6023530012151547,
+        "calibration_error": 0.021093228605164552,
+        "probability_bias": 0.01764720981569893
+      }
+    },
+    "workload": {
+      "expected": {
+        "rows": 688,
+        "mae": 68.1920096042512,
+        "rmse": 86.02378479225648,
+        "bias": -0.17102327705491238,
+        "interval_rows": 688,
+        "coverage_80": 0.8343023255813954,
+        "interval_width": 225.77072049323417
+      },
+      "typical": {
+        "rows": 688,
+        "mae": 67.79301887666189,
+        "rmse": 87.25146763802195,
+        "bias": -7.695045012044266
+      },
+      "below": 0.07412790697674419,
+      "above": 0.09156976744186046,
+      "interval_score": 294.21316818232265,
+      "probability": {
+        "rows": 2061,
+        "brier": 0.2025021894864533,
+        "log_loss": 0.5906622061016178,
+        "calibration_error": 0.02474138816160998,
+        "probability_bias": -0.017650418399301843
+      }
+    }
+  },
+  "decisions": {
+    "efficiency": {
+      "historical_screens": {
+        "expected": false,
+        "typical": false,
+        "probability": false
+      },
+      "weekly_gains": {
+        "expected": {
+          "clusters": 24,
+          "lower_95": -493.5851212660807,
+          "upper_95": 92.40861347118911,
+          "mean_gain": -197.03032096988952
+        },
+        "typical": {
+          "clusters": 24,
+          "lower_95": -3.11661515799454,
+          "upper_95": 0.17351376486170375,
+          "mean_gain": -1.4834849276177968
+        },
+        "probability": {
+          "clusters": 24,
+          "lower_95": -0.011746915187566334,
+          "upper_95": -0.0003298293115431232,
+          "mean_gain": -0.005891862573006967
+        }
+      },
+      "forecast_deployment_approved": false,
+      "cash_approved": false
+    },
+    "joint": {
+      "historical_screens": {
+        "expected": true,
+        "typical": true,
+        "probability": false
+      },
+      "weekly_gains": {
+        "expected": {
+          "clusters": 24,
+          "lower_95": 221.61622356158554,
+          "upper_95": 844.232746104843,
+          "mean_gain": 543.738781261511
+        },
+        "typical": {
+          "clusters": 24,
+          "lower_95": 0.3695597047094945,
+          "upper_95": 3.684958719533695,
+          "mean_gain": 1.9455171337108976
+        },
+        "probability": {
+          "clusters": 24,
+          "lower_95": -4.6810031964776516e-05,
+          "upper_95": 0.009653180140072349,
+          "mean_gain": 0.0049662180769305285
+        }
+      },
+      "forecast_deployment_approved": false,
+      "cash_approved": false
+    },
+    "joint_calibrated": {
+      "historical_screens": {
+        "expected": true,
+        "typical": true,
+        "probability": false
+      },
+      "weekly_gains": {
+        "expected": {
+          "clusters": 24,
+          "lower_95": 240.52168309228776,
+          "upper_95": 870.2733608457926,
+          "mean_gain": 564.3718719559877
+        },
+        "typical": {
+          "clusters": 24,
+          "lower_95": 0.5245615640232111,
+          "upper_95": 3.7971266950298386,
+          "mean_gain": 2.118219659016495
+        },
+        "probability": {
+          "clusters": 24,
+          "lower_95": 0.0004176445869884001,
+          "upper_95": 0.010030586672353018,
+          "mean_gain": 0.005542828173930898
+        }
+      },
+      "forecast_deployment_approved": false,
+      "cash_approved": false
+    },
+    "workload": {
+      "historical_screens": {
+        "expected": true,
+        "typical": false,
+        "probability": false
+      },
+      "weekly_gains": {
+        "expected": {
+          "clusters": 24,
+          "lower_95": 24.40313193640089,
+          "upper_95": 871.1327158959176,
+          "mean_gain": 435.7593794173328
+        },
+        "typical": {
+          "clusters": 24,
+          "lower_95": -0.029941670909920937,
+          "upper_95": 4.274575055843348,
+          "mean_gain": 1.8909465561906316
+        },
+        "probability": {
+          "clusters": 24,
+          "lower_95": -0.0012557219504160152,
+          "upper_95": 0.011226455118285385,
+          "mean_gain": 0.004996593376667484
+        }
+      },
+      "forecast_deployment_approved": false,
+      "cash_approved": false
+    }
+  },
+  "folds": [
+    {
+      "fold": "2025-W01",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2023-12-25",
+          "rows": 2803,
+          "weeks": 99,
+          "regular_rows": 2695,
+          "postseason_rows": 108
+        },
+        {
+          "name": "count_tail",
+          "first": "2023-12-28",
+          "last": "2024-09-23",
+          "rows": 211,
+          "weeks": 9,
+          "regular_rows": 184,
+          "postseason_rows": 27
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2024-09-26",
+          "last": "2024-10-28",
+          "rows": 175,
+          "weeks": 5,
+          "regular_rows": 175,
+          "postseason_rows": 0
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2024-10-31",
+          "last": "2024-11-25",
+          "rows": 129,
+          "weeks": 4,
+          "regular_rows": 129,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2024-11-28",
+          "last": "2024-12-16",
+          "rows": 111,
+          "weeks": 3,
+          "regular_rows": 111,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2024-12-19",
+          "last": "2025-02-09",
+          "rows": 148,
+          "weeks": 7,
+          "regular_rows": 115,
+          "postseason_rows": 33
+        }
+      ],
+      "train_end": "2025-02-09",
+      "test_start": "2025-09-04",
+      "test_end": "2025-09-29",
+      "rate_strength": 1.0,
+      "cdf_validation": {
+        "accepted": false,
+        "scores": {
+          "joint": {
+            "rows": 440,
+            "brier": 0.2076939390598879,
+            "log_loss": 0.6009438993364562,
+            "calibration_error": 0.04593252192589946,
+            "probability_bias": -0.009702583378080092,
+            "below": 0.14189189189189189,
+            "above": 0.08783783783783784,
+            "coverage": 0.7702702702702703,
+            "interval_score": 280.1136546233298
+          },
+          "joint_calibrated": {
+            "rows": 440,
+            "brier": 0.2079864226754714,
+            "log_loss": 0.601693192128107,
+            "calibration_error": 0.05356929777459583,
+            "probability_bias": -0.012447049698705354,
+            "below": 0.14189189189189189,
+            "above": 0.10135135135135136,
+            "coverage": 0.7567567567567568,
+            "interval_score": 280.9054054054054
+          }
+        },
+        "rows": 148,
+        "first": "2024-12-19",
+        "last": "2025-02-09",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    },
+    {
+      "fold": "2025-W05",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2024-09-09",
+          "rows": 2943,
+          "weeks": 106,
+          "regular_rows": 2808,
+          "postseason_rows": 135
+        },
+        {
+          "name": "count_tail",
+          "first": "2024-09-12",
+          "last": "2024-10-21",
+          "rows": 211,
+          "weeks": 6,
+          "regular_rows": 211,
+          "postseason_rows": 0
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2024-10-24",
+          "last": "2024-11-25",
+          "rows": 164,
+          "weeks": 5,
+          "regular_rows": 164,
+          "postseason_rows": 0
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2024-11-28",
+          "last": "2024-12-23",
+          "rows": 145,
+          "weeks": 4,
+          "regular_rows": 145,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2024-12-25",
+          "last": "2025-02-09",
+          "rows": 114,
+          "weeks": 6,
+          "regular_rows": 81,
+          "postseason_rows": 33
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2025-09-04",
+          "last": "2025-09-29",
+          "rows": 141,
+          "weeks": 4,
+          "regular_rows": 141,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-09-29",
+      "test_start": "2025-10-02",
+      "test_end": "2025-10-27",
+      "rate_strength": 1.0,
+      "cdf_validation": {
+        "accepted": true,
+        "scores": {
+          "joint": {
+            "rows": 421,
+            "brier": 0.2028052769864206,
+            "log_loss": 0.5873287183493995,
+            "calibration_error": 0.08192820127440394,
+            "probability_bias": -0.03614985987819583,
+            "below": 0.028368794326241134,
+            "above": 0.09929078014184398,
+            "coverage": 0.8723404255319149,
+            "interval_score": 288.59095629127
+          },
+          "joint_calibrated": {
+            "rows": 421,
+            "brier": 0.20173568763262942,
+            "log_loss": 0.5849852938359756,
+            "calibration_error": 0.0690902259170542,
+            "probability_bias": -0.01993017393891006,
+            "below": 0.07092198581560284,
+            "above": 0.09929078014184398,
+            "coverage": 0.8297872340425532,
+            "interval_score": 286.90070921985813
+          }
+        },
+        "rows": 141,
+        "first": "2025-09-04",
+        "last": "2025-09-29",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    },
+    {
+      "fold": "2025-W09",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2024-10-07",
+          "rows": 3085,
+          "weeks": 110,
+          "regular_rows": 2950,
+          "postseason_rows": 135
+        },
+        {
+          "name": "count_tail",
+          "first": "2024-10-10",
+          "last": "2024-11-18",
+          "rows": 201,
+          "weeks": 6,
+          "regular_rows": 201,
+          "postseason_rows": 0
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2024-11-21",
+          "last": "2024-12-23",
+          "rows": 177,
+          "weeks": 5,
+          "regular_rows": 177,
+          "postseason_rows": 0
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2024-12-25",
+          "last": "2025-09-08",
+          "rows": 145,
+          "weeks": 7,
+          "regular_rows": 112,
+          "postseason_rows": 33
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2025-09-11",
+          "last": "2025-09-29",
+          "rows": 110,
+          "weeks": 3,
+          "regular_rows": 110,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2025-10-02",
+          "last": "2025-10-27",
+          "rows": 131,
+          "weeks": 4,
+          "regular_rows": 131,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-10-27",
+      "test_start": "2025-10-30",
+      "test_end": "2025-11-24",
+      "rate_strength": 0.0,
+      "cdf_validation": {
+        "accepted": false,
+        "scores": {
+          "joint": {
+            "rows": 393,
+            "brier": 0.18777646130202985,
+            "log_loss": 0.5586093332912876,
+            "calibration_error": 0.07097720034376424,
+            "probability_bias": -0.05237348971235027,
+            "below": 0.04580152671755725,
+            "above": 0.09923664122137404,
+            "coverage": 0.8549618320610687,
+            "interval_score": 264.4035493280856
+          },
+          "joint_calibrated": {
+            "rows": 393,
+            "brier": 0.19020559899107142,
+            "log_loss": 0.5644965676239233,
+            "calibration_error": 0.08501423925315543,
+            "probability_bias": -0.07419577709249621,
+            "below": 0.04580152671755725,
+            "above": 0.1450381679389313,
+            "coverage": 0.8091603053435115,
+            "interval_score": 266.87786259541986
+          }
+        },
+        "rows": 131,
+        "first": "2025-10-02",
+        "last": "2025-10-27",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    },
+    {
+      "fold": "2025-W13",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2024-11-04",
+          "rows": 3223,
+          "weeks": 114,
+          "regular_rows": 3088,
+          "postseason_rows": 135
+        },
+        {
+          "name": "count_tail",
+          "first": "2024-11-07",
+          "last": "2024-12-16",
+          "rows": 206,
+          "weeks": 6,
+          "regular_rows": 206,
+          "postseason_rows": 0
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2024-12-19",
+          "last": "2025-09-08",
+          "rows": 179,
+          "weeks": 8,
+          "regular_rows": 146,
+          "postseason_rows": 33
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2025-09-11",
+          "last": "2025-10-06",
+          "rows": 141,
+          "weeks": 4,
+          "regular_rows": 141,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2025-10-09",
+          "last": "2025-10-27",
+          "rows": 100,
+          "weeks": 3,
+          "regular_rows": 100,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2025-10-30",
+          "last": "2025-11-24",
+          "rows": 127,
+          "weeks": 4,
+          "regular_rows": 127,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-11-24",
+      "test_start": "2025-11-27",
+      "test_end": "2025-12-22",
+      "rate_strength": 0.5,
+      "cdf_validation": {
+        "accepted": false,
+        "scores": {
+          "joint": {
+            "rows": 381,
+            "brier": 0.2011870133706204,
+            "log_loss": 0.5857083321558977,
+            "calibration_error": 0.04859988527924075,
+            "probability_bias": 0.018981071074724895,
+            "below": 0.08661417322834646,
+            "above": 0.05511811023622047,
+            "coverage": 0.8582677165354331,
+            "interval_score": 291.8063666680378
+          },
+          "joint_calibrated": {
+            "rows": 381,
+            "brier": 0.201452692190942,
+            "log_loss": 0.5853230366523259,
+            "calibration_error": 0.048773704611426896,
+            "probability_bias": 0.0066398984895099725,
+            "below": 0.09448818897637795,
+            "above": 0.08661417322834646,
+            "coverage": 0.8188976377952756,
+            "interval_score": 284.2992125984252
+          }
+        },
+        "rows": 127,
+        "first": "2025-10-30",
+        "last": "2025-11-24",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    },
+    {
+      "fold": "2025-W17",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2024-12-09",
+          "rows": 3386,
+          "weeks": 119,
+          "regular_rows": 3251,
+          "postseason_rows": 135
+        },
+        {
+          "name": "count_tail",
+          "first": "2024-12-12",
+          "last": "2025-02-09",
+          "rows": 191,
+          "weeks": 8,
+          "regular_rows": 158,
+          "postseason_rows": 33
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2025-09-04",
+          "last": "2025-10-06",
+          "rows": 172,
+          "weeks": 5,
+          "regular_rows": 172,
+          "postseason_rows": 0
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2025-10-09",
+          "last": "2025-11-03",
+          "rows": 128,
+          "weeks": 4,
+          "regular_rows": 128,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2025-11-06",
+          "last": "2025-11-24",
+          "rows": 99,
+          "weeks": 3,
+          "regular_rows": 99,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2025-11-27",
+          "last": "2025-12-22",
+          "rows": 146,
+          "weeks": 4,
+          "regular_rows": 146,
+          "postseason_rows": 0
+        }
+      ],
+      "train_end": "2025-12-22",
+      "test_start": "2025-12-25",
+      "test_end": "2026-01-18",
+      "rate_strength": 1.0,
+      "cdf_validation": {
+        "accepted": false,
+        "scores": {
+          "joint": {
+            "rows": 438,
+            "brier": 0.20251835465840137,
+            "log_loss": 0.5914889790940084,
+            "calibration_error": 0.05352444887961534,
+            "probability_bias": 0.018778916810305697,
+            "below": 0.08904109589041095,
+            "above": 0.08904109589041095,
+            "coverage": 0.821917808219178,
+            "interval_score": 286.1403449224077
+          },
+          "joint_calibrated": {
+            "rows": 438,
+            "brier": 0.20272863142468117,
+            "log_loss": 0.5932581605160154,
+            "calibration_error": 0.040642293386555395,
+            "probability_bias": 0.017055248117572325,
+            "below": 0.11643835616438356,
+            "above": 0.10273972602739725,
+            "coverage": 0.7808219178082192,
+            "interval_score": 288.041095890411
+          }
+        },
+        "rows": 146,
+        "first": "2025-11-27",
+        "last": "2025-12-22",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    },
+    {
+      "fold": "2025-W21",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2024-12-23",
+          "rows": 3463,
+          "weeks": 121,
+          "regular_rows": 3328,
+          "postseason_rows": 135
+        },
+        {
+          "name": "count_tail",
+          "first": "2024-12-25",
+          "last": "2025-09-22",
+          "rows": 218,
+          "weeks": 9,
+          "regular_rows": 185,
+          "postseason_rows": 33
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2025-09-25",
+          "last": "2025-10-27",
+          "rows": 168,
+          "weeks": 5,
+          "regular_rows": 168,
+          "postseason_rows": 0
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2025-10-30",
+          "last": "2025-11-24",
+          "rows": 127,
+          "weeks": 4,
+          "regular_rows": 127,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2025-11-27",
+          "last": "2025-12-15",
+          "rows": 107,
+          "weeks": 3,
+          "regular_rows": 107,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2025-12-18",
+          "last": "2026-01-18",
+          "rows": 138,
+          "weeks": 5,
+          "regular_rows": 116,
+          "postseason_rows": 22
+        }
+      ],
+      "train_end": "2026-01-18",
+      "test_start": "2026-01-25",
+      "test_end": "2026-02-08",
+      "rate_strength": 1.0,
+      "cdf_validation": {
+        "accepted": false,
+        "scores": {
+          "joint": {
+            "rows": 413,
+            "brier": 0.20549336021578848,
+            "log_loss": 0.5975009175500722,
+            "calibration_error": 0.06539335188917682,
+            "probability_bias": 0.023434750615862015,
+            "below": 0.10144927536231885,
+            "above": 0.10144927536231885,
+            "coverage": 0.7971014492753623,
+            "interval_score": 286.07553342978804
+          },
+          "joint_calibrated": {
+            "rows": 413,
+            "brier": 0.20581000451925258,
+            "log_loss": 0.598340136617802,
+            "calibration_error": 0.05659532264772696,
+            "probability_bias": -0.026873980228428865,
+            "below": 0.08695652173913043,
+            "above": 0.11594202898550725,
+            "coverage": 0.7971014492753623,
+            "interval_score": 287.04347826086956
+          }
+        },
+        "rows": 138,
+        "first": "2025-12-18",
+        "last": "2026-01-18",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    },
+    {
+      "fold": "2026-W01",
+      "blocks": [
+        {
+          "name": "fit",
+          "first": "2019-09-26",
+          "last": "2024-12-23",
+          "rows": 3463,
+          "weeks": 121,
+          "regular_rows": 3328,
+          "postseason_rows": 135
+        },
+        {
+          "name": "count_tail",
+          "first": "2024-12-25",
+          "last": "2025-09-22",
+          "rows": 218,
+          "weeks": 9,
+          "regular_rows": 185,
+          "postseason_rows": 33
+        },
+        {
+          "name": "rate_tuning",
+          "first": "2025-09-25",
+          "last": "2025-10-27",
+          "rows": 168,
+          "weeks": 5,
+          "regular_rows": 168,
+          "postseason_rows": 0
+        },
+        {
+          "name": "efficiency_tail",
+          "first": "2025-10-30",
+          "last": "2025-11-24",
+          "rows": 127,
+          "weeks": 4,
+          "regular_rows": 127,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_fit",
+          "first": "2025-11-27",
+          "last": "2025-12-15",
+          "rows": 107,
+          "weeks": 3,
+          "regular_rows": 107,
+          "postseason_rows": 0
+        },
+        {
+          "name": "cdf_gate",
+          "first": "2025-12-18",
+          "last": "2026-02-08",
+          "rows": 144,
+          "weeks": 7,
+          "regular_rows": 116,
+          "postseason_rows": 28
+        }
+      ],
+      "train_end": "2026-02-08",
+      "test_start": "2026-09-09",
+      "test_end": "2026-09-17",
+      "rate_strength": 1.0,
+      "cdf_validation": {
+        "accepted": false,
+        "scores": {
+          "joint": {
+            "rows": 431,
+            "brier": 0.20827272439317962,
+            "log_loss": 0.6033532696966878,
+            "calibration_error": 0.047967255334805,
+            "probability_bias": 0.01140544518027959,
+            "below": 0.10416666666666667,
+            "above": 0.1111111111111111,
+            "coverage": 0.7847222222222222,
+            "interval_score": 289.16786970932725
+          },
+          "joint_calibrated": {
+            "rows": 431,
+            "brier": 0.209917896713432,
+            "log_loss": 0.6075815600205163,
+            "calibration_error": 0.06387969094922741,
+            "probability_bias": -0.038922614667647806,
+            "below": 0.09027777777777778,
+            "above": 0.125,
+            "coverage": 0.7847222222222222,
+            "interval_score": 291.6458333333333
+          }
+        },
+        "rows": 144,
+        "first": "2025-12-18",
+        "last": "2026-02-08",
+        "scope": "later_inner_gate_not_outer_test"
+      },
+      "count_weight": 1.0,
+      "total_strength": null
+    }
+  ],
+  "blocks": [
+    {
+      "name": "fit",
+      "first": "2019-09-26",
+      "last": "2024-12-23",
+      "rows": 3463,
+      "weeks": 121,
+      "regular_rows": 3328,
+      "postseason_rows": 135
+    },
+    {
+      "name": "count_tail",
+      "first": "2024-12-25",
+      "last": "2025-09-22",
+      "rows": 218,
+      "weeks": 9,
+      "regular_rows": 185,
+      "postseason_rows": 33
+    },
+    {
+      "name": "rate_tuning",
+      "first": "2025-09-25",
+      "last": "2025-11-03",
+      "rows": 196,
+      "weeks": 6,
+      "regular_rows": 196,
+      "postseason_rows": 0
+    },
+    {
+      "name": "efficiency_tail",
+      "first": "2025-11-06",
+      "last": "2025-12-01",
+      "rows": 135,
+      "weeks": 4,
+      "regular_rows": 135,
+      "postseason_rows": 0
+    },
+    {
+      "name": "cdf_fit",
+      "first": "2025-12-04",
+      "last": "2025-12-22",
+      "rows": 110,
+      "weeks": 3,
+      "regular_rows": 110,
+      "postseason_rows": 0
+    },
+    {
+      "name": "cdf_gate",
+      "first": "2025-12-25",
+      "last": "2026-09-17",
+      "rows": 143,
+      "weeks": 8,
+      "regular_rows": 115,
+      "postseason_rows": 28
+    }
+  ],
+  "feature_support": {
+    "pass_attempts_avg_3": {
+      "nonmissing": 3463,
+      "distinct": 157
+    },
+    "pass_attempts_avg_5": {
+      "nonmissing": 3463,
+      "distinct": 355
+    },
+    "pass_attempts_avg_10": {
+      "nonmissing": 3463,
+      "distinct": 695
+    },
+    "pass_attempts_std_3": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "pass_attempts_std_5": {
+      "nonmissing": 3463,
+      "distinct": 2742
+    },
+    "pass_attempts_std_10": {
+      "nonmissing": 3463,
+      "distinct": 3263
+    },
+    "offense_snap_share_avg_3": {
+      "nonmissing": 3460,
+      "distinct": 441
+    },
+    "offense_snap_share_avg_5": {
+      "nonmissing": 3462,
+      "distinct": 639
+    },
+    "offense_snap_share_avg_10": {
+      "nonmissing": 3463,
+      "distinct": 972
+    },
+    "offense_snap_share_std_3": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "offense_snap_share_std_5": {
+      "nonmissing": 3461,
+      "distinct": 1444
+    },
+    "offense_snap_share_std_10": {
+      "nonmissing": 3463,
+      "distinct": 1870
+    },
+    "is_home": {
+      "nonmissing": 3463,
+      "distinct": 2
+    },
+    "rest_days": {
+      "nonmissing": 3463,
+      "distinct": 138
+    },
+    "n_games_prev_5": {
+      "nonmissing": 3463,
+      "distinct": 3
+    },
+    "n_games_prev_10": {
+      "nonmissing": 3463,
+      "distinct": 8
+    },
+    "volume_trend": {
+      "nonmissing": 3463,
+      "distinct": 1414
+    },
+    "volume_volatility": {
+      "nonmissing": 3463,
+      "distinct": 3306
+    },
+    "position_WR": {
+      "nonmissing": 3463,
+      "distinct": 1
+    },
+    "position_TE": {
+      "nonmissing": 3463,
+      "distinct": 1
+    },
+    "position_RB": {
+      "nonmissing": 3463,
+      "distinct": 1
+    },
+    "position_QB": {
+      "nonmissing": 3463,
+      "distinct": 1
+    },
+    "role_depth_rank": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_depth_movement": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_expected_starter": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_teammate_absences": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_teammate_limited": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_injury_status_out": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_injury_status_limited": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_practice_status_out": {
+      "nonmissing": 0,
+      "distinct": 0
+    },
+    "role_practice_status_limited": {
+      "nonmissing": 0,
+      "distinct": 0
+    }
+  },
+  "by_season": {
+    "2025": {
+      "efficiency": {
+        "expected": {
+          "rows": 650,
+          "mae": 71.36135148342386,
+          "rmse": 89.60583575165539,
+          "bias": 1.4762196463796864,
+          "interval_rows": 650,
+          "coverage_80": 0.7923076923076923,
+          "interval_width": 217.0329299831473
+        },
+        "typical": {
+          "rows": 650,
+          "mae": 71.28965103763093,
+          "rmse": 90.01800810872349,
+          "bias": -3.9696629449535856
+        },
+        "below": 0.11384615384615385,
+        "above": 0.09384615384615384,
+        "interval_score": 317.89902092388166,
+        "probability": {
+          "rows": 1947,
+          "brier": 0.21296107120807795,
+          "log_loss": 0.6133766949297059,
+          "calibration_error": 0.02159789437935139,
+          "probability_bias": -0.004277466462896964
+        }
+      },
+      "joint": {
+        "expected": {
+          "rows": 650,
+          "mae": 67.87064254943006,
+          "rmse": 84.72056646571258,
+          "bias": 0.8984149238770862,
+          "interval_rows": 650,
+          "coverage_80": 0.8276923076923077,
+          "interval_width": 217.08803974421207
+        },
+        "typical": {
+          "rows": 650,
+          "mae": 67.2911365883195,
+          "rmse": 85.86935318239199,
+          "bias": -7.052168674354651
+        },
+        "below": 0.08461538461538462,
+        "above": 0.0876923076923077,
+        "interval_score": 283.87945939304575,
+        "probability": {
+          "rows": 1947,
+          "brier": 0.20016194746294308,
+          "log_loss": 0.5839149623346906,
+          "calibration_error": 0.025948378332484347,
+          "probability_bias": -0.0092528442859569
+        }
+      },
+      "joint_calibrated": {
+        "expected": {
+          "rows": 650,
+          "mae": 67.6931278664173,
+          "rmse": 84.59157788664028,
+          "bias": 1.590699158138655,
+          "interval_rows": 650,
+          "coverage_80": 0.8246153846153846,
+          "interval_width": 216.3282778669513
+        },
+        "typical": {
+          "rows": 650,
+          "mae": 67.10833760768836,
+          "rmse": 85.64772234367376,
+          "bias": -6.123112624214022
+        },
+        "below": 0.0876923076923077,
+        "above": 0.0876923076923077,
+        "interval_score": 283.24570525445915,
+        "probability": {
+          "rows": 1947,
+          "brier": 0.1995516278525796,
+          "log_loss": 0.5824921374088525,
+          "calibration_error": 0.024603498047206712,
+          "probability_bias": -0.005856681949397217
+        }
+      },
+      "reference": {
+        "expected": {
+          "rows": 650,
+          "mae": 69.5327447674059,
+          "rmse": 88.48890482235836,
+          "bias": 5.318855660900888,
+          "interval_rows": 650,
+          "coverage_80": 0.7769230769230769,
+          "interval_width": 212.66850343666331
+        },
+        "typical": {
+          "rows": 650,
+          "mae": 69.76653589638498,
+          "rmse": 88.68363640233844,
+          "bias": 5.772772748407607
+        },
+        "below": 0.1276923076923077,
+        "above": 0.09538461538461539,
+        "interval_score": 319.328706112884,
+        "probability": {
+          "rows": 1947,
+          "brier": 0.2065015816895121,
+          "log_loss": 0.6000543961506146,
+          "calibration_error": 0.026544404822550542,
+          "probability_bias": 0.022876549499066028
+        }
+      },
+      "workload": {
+        "expected": {
+          "rows": 650,
+          "mae": 67.90124833823273,
+          "rmse": 85.45134221752865,
+          "bias": 2.1912100467861566,
+          "interval_rows": 650,
+          "coverage_80": 0.8369230769230769,
+          "interval_width": 224.28763852443834
+        },
+        "typical": {
+          "rows": 650,
+          "mae": 67.35933179896489,
+          "rmse": 86.49078842471852,
+          "bias": -5.552019780408574
+        },
+        "below": 0.07538461538461538,
+        "above": 0.0876923076923077,
+        "interval_score": 291.11255790462377,
+        "probability": {
+          "rows": 1947,
+          "brier": 0.19988093189794873,
+          "log_loss": 0.5846886873052043,
+          "calibration_error": 0.025056885719137424,
+          "probability_bias": -0.010439803022584508
+        }
+      }
+    },
+    "2026": {
+      "efficiency": {
+        "expected": {
+          "rows": 38,
+          "mae": 69.19023505739206,
+          "rmse": 89.9763901439088,
+          "bias": -15.611293198109218,
+          "interval_rows": 38,
+          "coverage_80": 0.7631578947368421,
+          "interval_width": 224.44607591128036
+        },
+        "typical": {
+          "rows": 38,
+          "mae": 69.07717561956515,
+          "rmse": 90.69076931154213,
+          "bias": -18.203933893508726
+        },
+        "below": 0.05263157894736842,
+        "above": 0.18421052631578946,
+        "interval_score": 333.16898680557534,
+        "probability": {
+          "rows": 114,
+          "brier": 0.2207386256527684,
+          "log_loss": 0.635017132283078,
+          "calibration_error": 0.06024166376205413,
+          "probability_bias": -0.056639944231439567
+        }
+      },
+      "joint": {
+        "expected": {
+          "rows": 38,
+          "mae": 73.97824631039047,
+          "rmse": 96.18373446091512,
+          "bias": -36.15822924485399,
+          "interval_rows": 38,
+          "coverage_80": 0.8157894736842105,
+          "interval_width": 255.47730179164856
+        },
+        "typical": {
+          "rows": 38,
+          "mae": 75.38983282636187,
+          "rmse": 99.82222466869024,
+          "bias": -39.99375184740933
+        },
+        "below": 0.05263157894736842,
+        "above": 0.13157894736842105,
+        "interval_score": 353.79279790433804,
+        "probability": {
+          "rows": 114,
+          "brier": 0.24308259794699677,
+          "log_loss": 0.6822045016283917,
+          "calibration_error": 0.13163703961891488,
+          "probability_bias": -0.12396886255373536
+        }
+      },
+      "joint_calibrated": {
+        "expected": {
+          "rows": 38,
+          "mae": 73.97824631039047,
+          "rmse": 96.18373446091512,
+          "bias": -36.15822924485399,
+          "interval_rows": 38,
+          "coverage_80": 0.8157894736842105,
+          "interval_width": 255.47730179164856
+        },
+        "typical": {
+          "rows": 38,
+          "mae": 75.38983282636187,
+          "rmse": 99.82222466869024,
+          "bias": -39.99375184740933
+        },
+        "below": 0.05263157894736842,
+        "above": 0.13157894736842105,
+        "interval_score": 353.79279790433804,
+        "probability": {
+          "rows": 114,
+          "brier": 0.24308259794699677,
+          "log_loss": 0.6822045016283917,
+          "calibration_error": 0.13163703961891488,
+          "probability_bias": -0.12396886255373536
+        }
+      },
+      "reference": {
+        "expected": {
+          "rows": 38,
+          "mae": 67.58365737871732,
+          "rmse": 89.05636293340066,
+          "bias": -16.620249047226938,
+          "interval_rows": 38,
+          "coverage_80": 0.7368421052631579,
+          "interval_width": 190.61886901823695
+        },
+        "typical": {
+          "rows": 38,
+          "mae": 68.27157592506008,
+          "rmse": 89.79970941879047,
+          "bias": -20.228314590332936
+        },
+        "below": 0.07894736842105263,
+        "above": 0.18421052631578946,
+        "interval_score": 344.0484716958841,
+        "probability": {
+          "rows": 114,
+          "brier": 0.2245561713590586,
+          "log_loss": 0.6416712457401818,
+          "calibration_error": 0.07528755663994419,
+          "probability_bias": -0.07180202161031723
+        }
+      },
+      "workload": {
+        "expected": {
+          "rows": 38,
+          "mae": 73.16555757561977,
+          "rmse": 95.2845130156787,
+          "bias": -40.57764592170476,
+          "interval_rows": 38,
+          "coverage_80": 0.7894736842105263,
+          "interval_width": 251.13922785421494
+        },
+        "typical": {
+          "rows": 38,
+          "mae": 75.21135046884714,
+          "rmse": 99.36541899767369,
+          "bias": -44.35205555318114
+        },
+        "below": 0.05263157894736842,
+        "above": 0.15789473684210525,
+        "interval_score": 347.2499229324355,
+        "probability": {
+          "rows": 114,
+          "brier": 0.2473394903424519,
+          "log_loss": 0.6928408170929014,
+          "calibration_error": 0.14098989194841416,
+          "probability_bias": -0.14098989194841413
+        }
+      }
+    }
+  },
+  "production_changed": false,
+  "cash_approved": false,
+  "limitations": [
+    "Historical development only; these seasons have already been examined.",
+    "One player-game or game per outcome; whole-week chronology and clustered uncertainty.",
+    "Proxy lines are not real offered lines. Reference is a chronological recipe, not hindsight live production.",
+    "Receiving pinned policy remains unchanged. No odds, ledgers, locks or Discord posts are rewritten.",
+    "Models, rate tuning, residual tails, CDF fitting and CDF gating use separate chronological blocks.",
+    "No current injuries or actual routes are invented; unavailable inputs remain missing.",
+    "Deployment requires later captured same-offer validation, independently of cash approval."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-19T23:18:38.037409+00:00",
+  "status": "failed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kickoff": "2026-10-20T00:15:00+00:00",
+      "target_at": "2026-10-19T22:15:00+00:00",
+      "minutes_to_start": 56.4,
+      "action": "retry_limit_reached",
+      "attempts": 3
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_fbf8d18a8064465bb5799e247edb9a3f",
+      "game_ids": [
+        "2026_06_WAS_SF"
+      ],
+      "status": "failed",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

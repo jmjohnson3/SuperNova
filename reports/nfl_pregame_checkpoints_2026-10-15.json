@@ -1,0 +1,112 @@
+{
+  "contract": "nfl-fanduel-pregame-checkpoints-v1",
+  "built_at": "2026-10-16T06:01:05.921903+00:00",
+  "date": "2026-10-15",
+  "offsets_minutes": [
+    120,
+    60,
+    20,
+    5
+  ],
+  "games": [],
+  "state": {
+    "contract": "nfl-fanduel-pregame-checkpoints-v1",
+    "games": {
+      "2026_06_SEA_DEN@2026-10-16T00:15:00+00:00": {
+        "game_id": "2026_06_SEA_DEN",
+        "kickoff": "2026-10-16T00:15:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 2,
+            "captured_at": "2026-10-15T22:21:23.233805+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 38,
+              "fresh_true_pair_rows": 38,
+              "fresh_true_pair_rows_with_links": 38,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-15T23:20:54.477303+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 38,
+              "fresh_true_pair_rows": 37,
+              "fresh_true_pair_rows_with_links": 37,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-16T00:00:56.809589+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 37,
+              "fresh_true_pair_rows": 36,
+              "fresh_true_pair_rows_with_links": 36,
+              "verification_passed": false
+            }
+          },
+          "5": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-16T00:11:01.818574+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 37,
+              "fresh_true_pair_rows": 36,
+              "fresh_true_pair_rows_with_links": 36,
+              "verification_passed": false
+            }
+          }
+        }
+      }
+    },
+    "updated_at": "2026-10-16T00:11:01.818574+00:00"
+  }
+}

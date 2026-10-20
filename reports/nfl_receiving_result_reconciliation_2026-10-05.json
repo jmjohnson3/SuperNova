@@ -1,0 +1,28 @@
+{
+  "built_at": "2026-10-07T01:04:35.476396+00:00",
+  "counts": {
+    "void_nonparticipant": 1
+  },
+  "unresolved_final_rows": 0,
+  "rows": [
+    {
+      "forecast_id": 14673,
+      "game_id": "2026_04_ATL_NO",
+      "player_id": "00-0035644",
+      "player": "N.Fant",
+      "team": "NO",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-10-06T19:11:42.085250+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    }
+  ],
+  "unique_unresolved_player_games": 0,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

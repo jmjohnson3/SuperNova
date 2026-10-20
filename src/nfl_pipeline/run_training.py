@@ -51,7 +51,11 @@ def run_training(*, season: str | None = None, skip_context: bool = False) -> di
         Step("NFL Results/History", "nfl_pipeline.import_nflverse", args=("--seasons",f"{int(season)-1}-{season}"), timeout_s=1200),
         Step("NFL Context Import", "nfl_pipeline.import_context", args=context_args, timeout_s=600),
         Step("NFL Usage Context Import", "nfl_pipeline.import_usage_context", args=context_args, timeout_s=1800),
-        Step("NFL Features", "nfl_pipeline.features", timeout_s=900),
+        # Grows with the in-season context log: 2m26s on 22 September, 5m26s on
+        # 13 October, past the old 900s budget on 6 and 20 October. Compacting
+        # raw.nfl_context_observations is the real fix; this only stops a slow
+        # build failing the run outright.
+        Step("NFL Features", "nfl_pipeline.features", timeout_s=1800),
         Step("NFL Game Features", "nfl_pipeline.game_features", timeout_s=600),
         Step("NFL Validated Release", "nfl_pipeline.modeling.train_validated_release", args=("--season",season, *(("--publish",) if not production_freeze() else ())), timeout_s=1800),
         Step("NFL Accuracy Challengers", "nfl_pipeline.modeling.train_accuracy_challengers", timeout_s=3600),

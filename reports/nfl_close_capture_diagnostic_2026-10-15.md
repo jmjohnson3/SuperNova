@@ -1,0 +1,48 @@
+# NFL Close Capture Diagnostic
+
+Date: 2026-10-15; completed-window valid closes: 191/223
+Observed alternative lines do not establish availability or price CLV at the locked line. Unknown CLV stays null.
+
+Future games are not counted as failed closes. Counts are locked forecast rows, not independent bets.
+
+| Scope | Completed rows | Valid | Coverage | Meets 90% |
+|---|---:|---:|---:|---|
+| all_locked | 223 | 191 | 85.7% | False |
+| current_fanduel | 39 | 39 | 100.0% | True |
+| selected_real_tier | 0 | 0 | pending | None |
+| fanduel | 223 | 191 | 85.7% | False |
+
+| Prediction | Player | Book | Locked line | Status / Phase | Observed lines |
+|---|---|---|---:|---|---|
+| 18486 | S.Darnold | fanduel | 220.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('149.5'), Decimal('174.5'), Decimal('199.5'), Decimal('224.5'), Decimal('226.5'), Decimal('249.5'), Decimal('274.5'), Decimal('299.5'), Decimal('324.5'), Decimal('349.5')] |
+| 18487 | B.Nix | fanduel | 202.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('124.5'), Decimal('149.5'), Decimal('174.5'), Decimal('197.5'), Decimal('199.5'), Decimal('224.5'), Decimal('249.5'), Decimal('274.5'), Decimal('299.5'), Decimal('324.5')] |
+| 18488 | J.Dobbins | fanduel | 47.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('48.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5')] |
+| 18503 | E.Engram | fanduel | 23.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('20.5'), Decimal('21.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5')] |
+| 18504 | C.Kupp | fanduel | 20.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('21.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18508 | J.Waddle | fanduel | 49.5 | same_line_missing_side_price / completed_window | [Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('46.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5')] |
+| 18510 | J.Smith-Njigba | fanduel | 90.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('93.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5'), Decimal('149.5'), Decimal('174.5'), Decimal('199.5')] |
+| 18512 | M.Mims | fanduel | 14.5 | same_line_missing_side_price / completed_window | [Decimal('4.5'), Decimal('8.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5')] |
+| 18513 | G.Holani | fanduel | 8.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('10.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5')] |
+| 18514 | A.Barner | fanduel | 20.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('27.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18515 | T.Franklin | fanduel | 16.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('17.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18516 | T.Horton | fanduel | 5.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('3.5'), Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5')] |
+| 18517 | R.Harvey | fanduel | 20.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('21.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18548 | S.Darnold | fanduel | 220.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('149.5'), Decimal('174.5'), Decimal('199.5'), Decimal('224.5'), Decimal('226.5'), Decimal('249.5'), Decimal('274.5'), Decimal('299.5'), Decimal('324.5'), Decimal('349.5')] |
+| 18549 | B.Nix | fanduel | 200.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('124.5'), Decimal('149.5'), Decimal('174.5'), Decimal('197.5'), Decimal('199.5'), Decimal('224.5'), Decimal('249.5'), Decimal('274.5'), Decimal('299.5'), Decimal('324.5')] |
+| 18550 | J.Dobbins | fanduel | 47.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('48.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5')] |
+| 18553 | G.Holani | fanduel | 12.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('13.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5')] |
+| 18554 | B.Nix | fanduel | 15.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('13.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5')] |
+| 18565 | E.Engram | fanduel | 22.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('20.5'), Decimal('21.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5')] |
+| 18566 | C.Kupp | fanduel | 20.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('21.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18572 | J.Smith-Njigba | fanduel | 91.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('93.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5'), Decimal('149.5'), Decimal('174.5'), Decimal('199.5')] |
+| 18574 | M.Mims | fanduel | 11.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('8.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5')] |
+| 18575 | G.Holani | fanduel | 8.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('10.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5')] |
+| 18576 | A.Barner | fanduel | 23.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('27.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18577 | T.Franklin | fanduel | 16.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('17.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18578 | T.Horton | fanduel | 5.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('3.5'), Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5')] |
+| 18579 | R.Harvey | fanduel | 20.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('21.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |
+| 18631 | L.Humphrey | fanduel | 6.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('5.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5')] |
+| 18634 | J.Waddle | fanduel | 47.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5'), Decimal('46.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5')] |
+| 18636 | J.Smith-Njigba | fanduel | 92.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5'), Decimal('89.5'), Decimal('93.5'), Decimal('99.5'), Decimal('109.5'), Decimal('124.5'), Decimal('149.5'), Decimal('174.5'), Decimal('199.5')] |
+| 18638 | M.Mims | fanduel | 10.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('4.5'), Decimal('8.5'), Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('29.5'), Decimal('39.5')] |
+| 18640 | A.Barner | fanduel | 23.5 | exact_line_unavailable_in_captured_feed / completed_window | [Decimal('9.5'), Decimal('14.5'), Decimal('19.5'), Decimal('24.5'), Decimal('27.5'), Decimal('29.5'), Decimal('39.5'), Decimal('49.5'), Decimal('59.5'), Decimal('69.5'), Decimal('79.5')] |

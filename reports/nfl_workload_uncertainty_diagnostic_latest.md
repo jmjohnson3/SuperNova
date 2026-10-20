@@ -4,15 +4,12 @@ Diagnostic only. No model deployment or betting approval.
 
 | Stat / prior-volume role | Rows | Intervals | Below | Above | Coverage | Known opportunity |
 |---|---:|---:|---:|---:|---:|---:|
-| passing_yards / prior_pass_attempts_ge_25 | 28 | 28 | 3.6% | 7.1% | 89.3% | 0 |
-| passing_yards / prior_pass_attempts_lt_25 | 6 | 6 | 0.0% | 33.3% | 66.7% | 0 |
-| passing_yards / unknown | 28 | 28 | 7.1% | 10.7% | 82.1% | 0 |
-| receiving_yards / prior_targets_ge_4 | 102 | 102 | 20.6% | 16.7% | 62.7% | 102 |
-| receiving_yards / prior_targets_lt_4 | 134 | 134 | 7.5% | 11.2% | 81.3% | 134 |
-| receiving_yards / unknown | 179 | 179 | 15.1% | 11.2% | 73.7% | 0 |
-| rushing_yards / prior_carries_ge_8 | 45 | 45 | 22.2% | 22.2% | 55.6% | 45 |
-| rushing_yards / prior_carries_lt_8 | 57 | 57 | 5.3% | 7.0% | 87.7% | 57 |
-| rushing_yards / unknown | 89 | 89 | 19.1% | 7.9% | 73.0% | 0 |
+| passing_yards / prior_pass_attempts_ge_25 | 20 | 20 | 0.0% | 0.0% | 100.0% | 0 |
+| passing_yards / prior_pass_attempts_lt_25 | 4 | 4 | 0.0% | 0.0% | 100.0% | 0 |
+| receiving_yards / prior_targets_ge_4 | 73 | 73 | 9.6% | 5.5% | 84.9% | 73 |
+| receiving_yards / prior_targets_lt_4 | 90 | 90 | 15.6% | 5.6% | 78.9% | 90 |
+| rushing_yards / prior_carries_ge_8 | 23 | 23 | 43.5% | 4.3% | 52.2% | 23 |
+| rushing_yards / prior_carries_lt_8 | 47 | 47 | 6.4% | 6.4% | 87.2% | 47 |
 
 - One earliest valid settled lock per release/player-game/stat; later revisions are not substituted.
 - Opportunity is a saved lock-time feature with its exact source, not necessarily the driver of the yardage head.

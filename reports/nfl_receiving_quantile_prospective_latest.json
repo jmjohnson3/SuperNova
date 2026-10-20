@@ -1,0 +1,83 @@
+{
+  "status": "separate_cohort_review_required",
+  "player_games": 235,
+  "exclusions": {
+    "pending_or_missing_verified_result": 20,
+    "duplicate_player_game_in_cohort": 13
+  },
+  "unique_player_games": 137,
+  "deployment_approved": false,
+  "betting_approved": false,
+  "probability_enabled": false,
+  "prospective_screen_passed": false,
+  "cohorts": [
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "58fb8dac7a026bf4aa9978e87680b773fcf85f1fe82f681afaaf3047891a4eb6",
+      "status": "not_yet_proven",
+      "player_games": 118,
+      "reference": {
+        "rows": 118,
+        "mae": 21.894859056449295,
+        "rmse": 28.701807819130163,
+        "bias": -3.8586985919755348
+      },
+      "candidate": {
+        "rows": 118,
+        "mae": 21.393443652888113,
+        "rmse": 28.31620002960983,
+        "bias": -5.067813851337283
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "893b9e1c71ee6d5664bbe01be2e9db25b7906b99dbf1cdacf084ac55b9e3cfe7",
+      "status": "not_yet_proven",
+      "player_games": 117,
+      "reference": {
+        "rows": 117,
+        "mae": 22.74973166207714,
+        "rmse": 29.90117254086949,
+        "bias": -4.868323834222274
+      },
+      "candidate": {
+        "rows": 117,
+        "mae": 22.285460187477895,
+        "rmse": 29.471878824530503,
+        "bias": -6.04821548471176
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    }
+  ],
+  "registration": {
+    "artifact": "C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\modeling\\models\\receiving_quantiles\\receiving-quantiles-20261005T204207709687Z\\model.joblib",
+    "artifact_sha256": "d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
+    "run_id": "receiving-quantiles-20261005T204207709687Z",
+    "variant": "calibrated_blend",
+    "output": "median",
+    "production_release": "nfl-20260918T143342Z",
+    "registered_at": "2026-10-05T21:51:34.867166+00:00",
+    "acceptance_start": "2026-10-05",
+    "minimum_weeks": 3,
+    "status": "prospective_only",
+    "probability_enabled": false,
+    "betting_approved": false
+  }
+}

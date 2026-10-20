@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-04",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 3020\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 603971,\n      \"rows_selected\": 2319,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 1052\n    }\n  ],\n  \"roster_rows_upserted\": 3019,\n  \"depth_rows_upserted\": 2316,\n  \"injury_rows_upserted\": 1052\n}\n",
+      "stderr_tail": "2026-10-04 09:30:18,121 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-10-04 09:30:25,319 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-10-04 09:30:46,316 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Live Injury Report",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": " Canada\",\n        \"T.J. Sanders\",\n        \"Tyrell Shavers\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_04_JAX_CIN\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 8,\n      \"out\": [\n        \"Kyle Dugger\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_04_NYJ_CHI\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 8,\n      \"out\": [\n        \"Adonai Mitchell\",\n        \"Anthony Johnson Jr.\",\n        \"Breece Hall\",\n        \"Caleb Williams\",\n        \"Cam Lewis\",\n        \"Dylan Parham\",\n        \"Kiko Mauigoa\",\n        \"Kyler Gordon\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_04_ARI_NYG\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 10,\n      \"out\": [\n        \"Dadrion Taylor-Demerson\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_04_DAL_HOU\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 9,\n      \"out\": [\n        \"Azeez Al-Shaair\",\n        \"Cobie Durant\",\n        \"DeMarvion Overshown\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_04_LA_PHI\",\n      \"entries\": 10,\n      \"rows\": 12,\n      \"mapped\": 8,\n      \"out\": [\n        \"Aaron Donald\",\n        \"DeVonta Smith\",\n        \"Fred Johnson\",\n        \"Jaylen Watson\",\n        \"Marcus Epps\",\n        \"Zack Baun\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_04_GB_TB\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 6,\n      \"out\": [\n        \"Aaron Banks\",\n        \"Anthony Campbell\",\n        \"Baker Mayfield\",\n        \"Benjamin Morrison\",\n        \"Jacob Monk\",\n        \"Ko Kieft\"\n      ]\n    }\n  ],\n  \"unmatched\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "04_NE_BUF\",\n      \"2026_04_JAX_CIN\",\n      \"2026_04_NYJ_CHI\",\n      \"2026_04_ARI_NYG\",\n      \"2026_04_DAL_HOU\",\n      \"2026_04_LA_PHI\",\n      \"2026_04_GB_TB\"\n    ],\n    \"captured\": [\n      {\n        \"game_id\": \"2026_04_TEN_BAL\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_NE_BUF\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_JAX_CIN\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_NYJ_CHI\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_ARI_NYG\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_DAL_HOU\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_LA_PHI\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      },\n      {\n        \"game_id\": \"2026_04_GB_TB\",\n        \"books\": [\n          \"betonlineag\",\n          \"pinnacle\"\n        ]\n      }\n    ],\n    \"skipped\": {},\n    \"credits_remaining\": 12108,\n    \"markets\": [\n      \"player_reception_yds\"\n    ],\n    \"status\": \"ok\"\n  },\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "dge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"f918c52f09e17ef0f07c6e3a66e203808243767e63952e62cb31290ceab1376e\"\n    },\n    {\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"quote_fetched_at_utc\": \"2026-10-04 15:31:13.675354+00:00\",\n      \"prediction_context_cutoff_utc\": \"2026-10-04T15:31:51.580780+00:00\",\n      \"start_ts_utc\": \"2026-10-04 17:00:00+00:00\",\n      \"game_date_et\": \"2026-10-04\",\n      \"season\": 2026,\n      \"week\": 4,\n      \"game_id\": \"2026_04_GB_TB\",\n      \"home_team_abbr\": \"TB\",\n      \"away_team_abbr\": \"GB\",\n      \"market\": \"total\",\n      \"side\": \"under\",\n      \"book\": \"fanduel\",\n      \"line\": 38.5,\n      \"price\": -106,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.187887334&selectionId=7017917\",\n      \"predicted_home_margin\": -3.0,\n      \"predicted_total_points\": 38.5,\n      \"baseline_home_margin\": -3.0,\n      \"baseline_total_points\": 38.5,\n      \"probability\": 0.4913359902963092,\n      \"model_probability\": 0.49246231155778897,\n      \"market_no_vig_probability\": 0.49133599029630914,\n      \"market_trust\": 0.0,\n      \"ev\": -0.045139490556229234,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"517de323dd21adbf0ee4131874ea156b1e1fb8c78d7604037a94a12d42bb8bb1\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"no_accepted_team_component\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "      \"first_read_history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"quote_fetched_at_utc\": \"2026-10-04 08:31:13.702515-07:00\",\n      \"projection_semantics\": \"central_forecast_not_certified_mean\",\n      \"forecast_outputs\": {\n        \"contract\": \"nfl-forecast-outputs-v1\",\n        \"scope\": {\n          \"game_id\": \"2026_04_TEN_BAL\",\n          \"player_id\": \"00-0039032\",\n          \"stat\": \"rushing_yards\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"prediction_context_cutoff_utc\": \"2026-10-04T15:32:09.129264+00:00\"\n        },\n        \"point_forecast\": {\n          \"value\": 14.5,\n          \"semantics\": \"central_forecast_not_certified_mean\",\n          \"model_version\": \"nfl-20260918T143342Z\"\n        },\n        \"expected_yards\": null,\n        \"typical_yards\": null,\n        \"pricing\": {\n          \"projection_anchor\": 17.141984428161255,\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"distribution_id\": \"f8c89f3f956874387f8f35ffc4074dd7cb5798f290db2cc88884916366ffe6b9\",\n          \"distribution_kind\": \"empirical_oof_residual\",\n          \"scoring_version\": \"16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4\",\n          \"line\": 14.5,\n          \"side\": \"under\",\n          \"price\": -113,\n          \"probability\": 0.5306148308457712,\n          \"push_probability\": 0.0,\n          \"ev\": 0.00018547761194043222\n        },\n        \"betting_approval_inherited\": false\n      }\n    }\n  ]\n}\n",
+      "stderr_tail": "PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"receiver_spike_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1335: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_carry_under_correction_v4_score\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1347: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_rush_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1356: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"yardage_projection_volatility_v4_score\"] = pd.concat([\n"
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 2,\n  \"prop_locked\": 84,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 124,
+      "critical": true,
+      "stdout_tail": "",
+      "stderr_tail": "Timed out after 300s; killed process tree rooted at PID 9448"
+    }
+  ],
+  "publications": [],
+  "run_id": "pregame_b6e14016d66149aabb75f02937e29197",
+  "pregame": true,
+  "game_ids": [
+    "2026_04_ARI_NYG",
+    "2026_04_DAL_HOU",
+    "2026_04_GB_TB",
+    "2026_04_JAX_CIN",
+    "2026_04_LA_PHI",
+    "2026_04_NE_BUF",
+    "2026_04_NYJ_CHI",
+    "2026_04_TEN_BAL"
+  ]
+}

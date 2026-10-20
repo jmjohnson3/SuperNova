@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-05",
+  "cutoff": "2026-10-05T23:45:00+00:00",
+  "built_at": "2026-10-06T15:50:58.957393+00:00",
+  "stages": [
+    {
+      "stage": "current",
+      "seconds": 75.63399320002645,
+      "rows": 1012,
+      "status": "ok"
+    },
+    {
+      "stage": "archived_reference",
+      "seconds": 128.420427700039,
+      "rows": 1012,
+      "status": "ok"
+    }
+  ],
+  "reference_fingerprint": "d387051d16ae9cbc7785d49e1ea03a2a4552e09bdc9517a2081ce33cc12d6470",
+  "identical_context_values": true,
+  "query_memory_mb": 128,
+  "reference_materialized": true,
+  "reference_tie_rule": "deterministic_date_rank_role_observed",
+  "reference_execution": "single_json_expansion_narrow_ctes",
+  "context_scope": "all_teams",
+  "differences": [],
+  "predictions_locked": false,
+  "discord_sent": false
+}

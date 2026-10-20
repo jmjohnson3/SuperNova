@@ -1,0 +1,36 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-11T23:41:30.427684+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_05_BAL_ATL",
+      "kickoff": "2026-10-12T00:20:00+00:00",
+      "target_at": "2026-10-11T22:50:00+00:00",
+      "minutes_to_start": 38.5,
+      "action": "retry_limit_reached",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_05_BUF_LA",
+      "kickoff": "2026-10-13T00:15:00+00:00",
+      "target_at": "2026-10-12T22:45:00+00:00",
+      "minutes_to_start": 1473.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_7d63047104f44b00abb23cf21b22187a",
+      "game_ids": [
+        "2026_05_BAL_ATL"
+      ],
+      "status": "failed",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

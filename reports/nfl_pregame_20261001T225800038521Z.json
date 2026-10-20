@@ -1,0 +1,28 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-01T22:58:00.010829+00:00",
+  "status": "completed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_04_PIT_CLE",
+      "kickoff": "2026-10-02T00:15:00+00:00",
+      "target_at": "2026-10-01T22:45:00+00:00",
+      "minutes_to_start": 77.0,
+      "action": "already_completed",
+      "attempts": 1
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_8cf408b420a84040b3f32261eb8d9ef0",
+      "game_ids": [
+        "2026_04_PIT_CLE"
+      ],
+      "status": "completed",
+      "returncode": 0
+    }
+  ],
+  "pipeline_invoked": true
+}

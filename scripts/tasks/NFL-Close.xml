@@ -6,10 +6,10 @@
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2026-01-01T07:00:00</StartBoundary>
+      <StartBoundary>2026-01-01T00:00:00</StartBoundary>
       <Repetition>
-        <Interval>PT10M</Interval>
-        <Duration>PT16H</Duration>
+        <Interval>PT5M</Interval>
+        <Duration>P1D</Duration>
         <StopAtDurationEnd>false</StopAtDurationEnd>
       </Repetition>
       <Enabled>true</Enabled>
@@ -28,7 +28,7 @@
     <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
     <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
-    <ExecutionTimeLimit>PT30M</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT60M</ExecutionTimeLimit>
     <StartWhenAvailable>true</StartWhenAvailable>
     <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
     <WakeToRun>true</WakeToRun>

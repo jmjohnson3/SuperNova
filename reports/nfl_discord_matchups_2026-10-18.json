@@ -1,0 +1,13 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-10-18",
+  "games": 0,
+  "cards": [],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_stale_or_mismatched"
+  },
+  "quote_exclusions": [],
+  "notice": "No upcoming NFL games remain on this date."
+}

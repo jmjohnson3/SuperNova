@@ -1,0 +1,51 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-11T20:50:22.843478+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_05_DEN_LAC",
+      "kickoff": "2026-10-11T20:05:00+00:00",
+      "target_at": "2026-10-11T18:35:00+00:00",
+      "minutes_to_start": -45.4,
+      "action": "missed_pregame_window",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_05_DET_ARI",
+      "kickoff": "2026-10-11T20:25:00+00:00",
+      "target_at": "2026-10-11T18:55:00+00:00",
+      "minutes_to_start": -25.4,
+      "action": "missed_pregame_window",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_05_SF_SEA",
+      "kickoff": "2026-10-11T20:25:00+00:00",
+      "target_at": "2026-10-11T18:55:00+00:00",
+      "minutes_to_start": -25.4,
+      "action": "missed_pregame_window",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_05_BAL_ATL",
+      "kickoff": "2026-10-12T00:20:00+00:00",
+      "target_at": "2026-10-11T22:50:00+00:00",
+      "minutes_to_start": 209.6,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_05_BUF_LA",
+      "kickoff": "2026-10-13T00:15:00+00:00",
+      "target_at": "2026-10-12T22:45:00+00:00",
+      "minutes_to_start": 1644.6,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [],
+  "pipeline_invoked": false
+}

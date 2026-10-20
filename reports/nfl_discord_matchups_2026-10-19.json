@@ -1,0 +1,186 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-10-19",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_06_WAS_SF",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "WAS @ SF | NFL 2026-10-19",
+            "description": "Kickoff: <t:1792455300:f> (<t:1792455300:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**OPERATIONAL ISSUE**\n- cash_readiness_missing\n\n**QUOTE HEALTH**\n- 30 saved quotes withheld: stale or unverified timing/book. Refresh required; no current betting instruction for those rows.\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**ACTIONABLE PROPS**\n- No current prop meets the FanDuel residual, price, freshness, model, and context requirements.\n\n**PROP ODDS**\n- No fresh verified FanDuel prop offers in this card. Any projections below are not bettable.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only; bankroll and micro sections remain the betting shortlist.\n- WAS QB1 J.Daniels: Pass Yds 163.9 | Pass TD 0.60 | Rush Yds 50.1 | Projection only - no current line\n- WAS RB1 A.Ekeler: Rush Yds 17.2 | Rec Yds 14.1 | Rec 2.1 | Projection only - no current line\n- WAS WR1 T.McLaurin: Rec Yds 49.6 | Rec 3.6 | Rec TD 0.30 | Projection only - no current line\n- WAS WR2 S.Diggs: Rec Yds 36.7 | Rec 4.3 | Rec TD 0.32 | Projection only - no current line\n- WAS TE1 C.Okonkwo: Rec Yds 25.6 | Rec 2.8 | Rec TD 0.22 | Projection only - no current line\n- SF QB1 B.Purdy: Pass Yds 239.3 | Pass TD 2.60 | Rush Yds 23.0 | Projection only - no current line\n- SF RB1 C.McCaffrey: Rush Yds 58.1 | Rec Yds 27.1 | Rec 3.6 | Rush TD 0.59 | Projection only - no current line\n- SF WR1 M.Evans: Rec Yds 57.6 | Rec 4.1 | Rec TD 0.42 | Projection only - no current line\n- SF WR2 B.Cooks: Rec Yds 32.0 | Rec 1.6 | Rec TD 0.17 | Projection only - no current line\n- SF TE1 G.Kittle: Rec Yds 49.0 | Rec 4.4 | Rec TD 0.40 | Projection only - no current line",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    }
+  ],
+  "notice": null
+}

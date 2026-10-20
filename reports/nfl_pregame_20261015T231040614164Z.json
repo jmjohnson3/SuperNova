@@ -1,0 +1,28 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-15T23:10:40.520245+00:00",
+  "status": "completed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_06_SEA_DEN",
+      "kickoff": "2026-10-16T00:15:00+00:00",
+      "target_at": "2026-10-15T22:15:00+00:00",
+      "minutes_to_start": 64.3,
+      "action": "already_completed",
+      "attempts": 3
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_e82b28f15f72446caf0fbf6596128009",
+      "game_ids": [
+        "2026_06_SEA_DEN"
+      ],
+      "status": "completed",
+      "returncode": 0
+    }
+  ],
+  "pipeline_invoked": true
+}

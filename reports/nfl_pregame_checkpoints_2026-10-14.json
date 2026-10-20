@@ -1,0 +1,16 @@
+{
+  "contract": "nfl-fanduel-pregame-checkpoints-v1",
+  "built_at": "2026-10-15T03:55:30.260957+00:00",
+  "date": "2026-10-14",
+  "offsets_minutes": [
+    120,
+    60,
+    20,
+    5
+  ],
+  "games": [],
+  "state": {
+    "contract": "nfl-fanduel-pregame-checkpoints-v1",
+    "games": {}
+  }
+}

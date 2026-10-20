@@ -1,0 +1,70 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-04T19:51:58.002753+00:00",
+  "status": "failed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_04_MIA_MIN",
+      "kickoff": "2026-10-04T20:05:00+00:00",
+      "target_at": "2026-10-04T18:35:00+00:00",
+      "minutes_to_start": 13.0,
+      "action": "missed_pregame_window",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_04_DEN_SF",
+      "kickoff": "2026-10-04T20:25:00+00:00",
+      "target_at": "2026-10-04T18:55:00+00:00",
+      "minutes_to_start": 33.0,
+      "action": "retry_limit_reached",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_04_KC_LV",
+      "kickoff": "2026-10-04T20:25:00+00:00",
+      "target_at": "2026-10-04T18:55:00+00:00",
+      "minutes_to_start": 33.0,
+      "action": "retry_limit_reached",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_04_LAC_SEA",
+      "kickoff": "2026-10-04T20:25:00+00:00",
+      "target_at": "2026-10-04T18:55:00+00:00",
+      "minutes_to_start": 33.0,
+      "action": "retry_limit_reached",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_04_DET_CAR",
+      "kickoff": "2026-10-05T00:20:00+00:00",
+      "target_at": "2026-10-04T22:50:00+00:00",
+      "minutes_to_start": 268.0,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_04_ATL_NO",
+      "kickoff": "2026-10-06T00:15:00+00:00",
+      "target_at": "2026-10-05T22:45:00+00:00",
+      "minutes_to_start": 1703.0,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_271919d2cf244bd69828efb278ace6da",
+      "game_ids": [
+        "2026_04_DEN_SF",
+        "2026_04_KC_LV",
+        "2026_04_LAC_SEA"
+      ],
+      "status": "failed",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

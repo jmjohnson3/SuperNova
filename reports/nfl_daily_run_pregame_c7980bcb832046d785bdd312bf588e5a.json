@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-04",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 3020\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 603971,\n      \"rows_selected\": 2319,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 1052\n    }\n  ],\n  \"roster_rows_upserted\": 3019,\n  \"depth_rows_upserted\": 2316,\n  \"injury_rows_upserted\": 1052\n}\n",
+      "stderr_tail": "2026-10-04 17:30:16,927 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-10-04 17:30:24,586 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-10-04 17:30:52,109 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Live Injury Report",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"day\": \"2026-10-04\",\n  \"games\": [\n    {\n      \"game_id\": \"2026_04_DET_CAR\",\n      \"entries\": 10,\n      \"rows\": 13,\n      \"mapped\": 7,\n      \"out\": [\n        \"Ahmed Hassanein\",\n        \"Albert Reese IV\",\n        \"Bishop Fitzgerald\",\n        \"Cam Jackson\",\n        \"Damien Lewis\",\n        \"Devin White\",\n        \"Haynes King\",\n        \"Ja'Tavion Sanders\",\n        \"Mekhi Wingo\",\n        \"Tyler Conklin\"\n      ]\n    }\n  ],\n  \"unmatched\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-10-04\",\n  \"built_at\": \"2026-10-04T23:31:00.801151+00:00\",\n  \"games\": 1,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 1044,\n      \"fresh_rows\": 67,\n      \"latest_quote\": \"2026-10-04T23:31:08.086624+00:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 35,\n      \"fresh_rows\": 2,\n      \"latest_quote\": \"2026-10-04T23:31:08.070994+00:00\"\n    }\n  },\n  \"game_ids\": [\n    \"2026_04_DET_CAR\"\n  ],\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"sharp_lines\": {\n    \"provider\": \"oddsapi_eu\",\n    \"role\": \"lock\",\n    \"day\": \"2026-10-04\",\n    \"due_games\": [],\n    \"captured\": [],\n    \"skipped\": {},\n    \"credits_remaining\": null,\n    \"markets\": [\n      \"player_reception_yds\"\n    ],\n    \"status\": \"nothing_due\"\n  },\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": ",\n      \"ev\": -0.04860516857778541,\n      \"edge\": -0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"112200c9959f45b28e545733bd0aa4b12dc797a4def0df517f6991e95617efb1\"\n    },\n    {\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"quote_fetched_at_utc\": \"2026-10-04 23:31:08.070994+00:00\",\n      \"prediction_context_cutoff_utc\": \"2026-10-04T23:31:39.935961+00:00\",\n      \"start_ts_utc\": \"2026-10-05 00:20:00+00:00\",\n      \"game_date_et\": \"2026-10-04\",\n      \"season\": 2026,\n      \"week\": 4,\n      \"game_id\": \"2026_04_DET_CAR\",\n      \"home_team_abbr\": \"CAR\",\n      \"away_team_abbr\": \"DET\",\n      \"market\": \"total\",\n      \"side\": \"over\",\n      \"book\": \"fanduel\",\n      \"line\": 51.5,\n      \"price\": -110,\n      \"link\": \"https://sportsbook.fanduel.com/addToBetslip?marketId=717.187887788&selectionId=7017916\",\n      \"predicted_home_margin\": -3.5,\n      \"predicted_total_points\": 51.5,\n      \"baseline_home_margin\": -3.5,\n      \"baseline_total_points\": 51.5,\n      \"probability\": 0.5,\n      \"model_probability\": 0.5,\n      \"market_no_vig_probability\": 0.5,\n      \"market_trust\": 0.0,\n      \"ev\": -0.04545454545454547,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"ea0e28189e412a161d8683b0ab99d53d8b529908f591728c5871e6a3ec6efc83\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "stdout_tail": "{\n  \"status\": \"no_accepted_team_component\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "artial_observed_reports\",\n        \"routes_run_history\": null,\n        \"routes_source\": \"proxy_only\",\n        \"route_participation_proxy\": 0.5276442307692308,\n        \"first_read_history\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"projection_semantics\": \"expected_count_or_any_td_head\",\n      \"forecast_outputs\": {\n        \"contract\": \"nfl-forecast-outputs-v1\",\n        \"scope\": {\n          \"game_id\": \"2026_04_DET_CAR\",\n          \"player_id\": \"00-0031610\",\n          \"stat\": \"receiving_tds\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"prediction_context_cutoff_utc\": \"2026-10-04T23:31:58.814217+00:00\"\n        },\n        \"point_forecast\": {\n          \"value\": 0.2635858562595363,\n          \"semantics\": \"expected_count_or_any_td_head\",\n          \"model_version\": \"nfl-20260918T143342Z\"\n        },\n        \"expected_yards\": null,\n        \"typical_yards\": null,\n        \"pricing\": {\n          \"projection_anchor\": 0.2635858562595363,\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"distribution_id\": \"fe38d1215db10eca149fbc673ee6bcdbd79367cfcd7990f6cb98908af570424d\",\n          \"distribution_kind\": \"empirical_oof_residual\",\n          \"scoring_version\": null,\n          \"line\": null,\n          \"side\": null,\n          \"price\": null,\n          \"probability\": null,\n          \"push_probability\": null,\n          \"ev\": null\n        },\n        \"betting_approval_inherited\": false\n      }\n    }\n  ]\n}\n",
+      "stderr_tail": "PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"receiver_spike_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1335: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_carry_under_correction_v4_score\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1347: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"rb_rush_yards_anchor_v4\"] = (\nC:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\features.py:1356: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`\n  out[\"yardage_projection_volatility_v4_score\"] = pd.concat([\n"
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 0,\n  \"prop_locked\": 2,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 124,
+      "critical": true,
+      "stdout_tail": "",
+      "stderr_tail": "Timed out after 300s; killed process tree rooted at PID 4200"
+    }
+  ],
+  "publications": [],
+  "run_id": "pregame_c7980bcb832046d785bdd312bf588e5a",
+  "pregame": true,
+  "game_ids": [
+    "2026_04_DET_CAR"
+  ]
+}

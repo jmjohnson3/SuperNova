@@ -1,0 +1,28 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-12T23:48:33.994734+00:00",
+  "status": "completed",
+  "target_minutes": 90,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_05_BUF_LA",
+      "kickoff": "2026-10-13T00:15:00+00:00",
+      "target_at": "2026-10-12T22:45:00+00:00",
+      "minutes_to_start": 26.4,
+      "action": "already_completed",
+      "attempts": 2
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_dcb3005957024bb4bc91abd2c6ebc9bc",
+      "game_ids": [
+        "2026_05_BUF_LA"
+      ],
+      "status": "completed",
+      "returncode": 0
+    }
+  ],
+  "pipeline_invoked": true
+}

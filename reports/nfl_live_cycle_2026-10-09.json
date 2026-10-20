@@ -1,0 +1,19 @@
+{
+  "day": "2026-10-09",
+  "built_at": "2026-10-10T04:06:26.319482+00:00",
+  "effective_date": "2026-09-24",
+  "status": "no_games",
+  "games": [],
+  "blockers": [],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
+  "close_reconciliation": {
+    "source": "immutable_exact_snapshots",
+    "checkpoint_built_at": "2026-10-10T04:04:42.906926+00:00",
+    "observed": 0,
+    "changed_since_checkpoint": 0,
+    "historical_locks_changed": false,
+    "match_methods": {}
+  }
+}

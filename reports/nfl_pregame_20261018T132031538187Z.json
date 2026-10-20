@@ -1,0 +1,115 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-18T13:20:31.391740+00:00",
+  "status": "failed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_06_HOU_JAX",
+      "kickoff": "2026-10-18T13:30:00+00:00",
+      "target_at": "2026-10-18T11:30:00+00:00",
+      "minutes_to_start": 9.5,
+      "action": "missed_pregame_window",
+      "attempts": 3
+    },
+    {
+      "game_id": "2026_06_BAL_CLE",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_CAR_PHI",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_CHI_ATL",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_NO_NYG",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_NYJ_NE",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_PIT_TB",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_TEN_IND",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "target_at": "2026-10-18T15:00:00+00:00",
+      "minutes_to_start": 219.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kickoff": "2026-10-18T20:05:00+00:00",
+      "target_at": "2026-10-18T18:05:00+00:00",
+      "minutes_to_start": 404.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_BUF_LV",
+      "kickoff": "2026-10-18T20:25:00+00:00",
+      "target_at": "2026-10-18T18:25:00+00:00",
+      "minutes_to_start": 424.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_LAC_KC",
+      "kickoff": "2026-10-18T20:25:00+00:00",
+      "target_at": "2026-10-18T18:25:00+00:00",
+      "minutes_to_start": 424.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kickoff": "2026-10-19T00:20:00+00:00",
+      "target_at": "2026-10-18T22:20:00+00:00",
+      "minutes_to_start": 659.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kickoff": "2026-10-20T00:15:00+00:00",
+      "target_at": "2026-10-19T22:15:00+00:00",
+      "minutes_to_start": 2094.5,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [],
+  "pipeline_invoked": false
+}

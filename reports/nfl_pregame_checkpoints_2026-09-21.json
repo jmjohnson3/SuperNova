@@ -1,0 +1,34 @@
+{
+  "contract": "nfl-fanduel-pregame-checkpoints-v1",
+  "built_at": "2026-10-14T23:57:41.474121+00:00",
+  "date": "2026-09-21",
+  "offsets_minutes": [
+    120,
+    60,
+    20,
+    5
+  ],
+  "games": [],
+  "state": {
+    "contract": "nfl-fanduel-pregame-checkpoints-v1",
+    "games": {
+      "g@unknown": {
+        "game_id": "g",
+        "kickoff": null,
+        "checkpoints": {
+          "20": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-14T23:57:40.537215+00:00",
+            "verification": {
+              "game_id": "g",
+              "error": "checkpoint_verification_failed:AmbiguousColumn",
+              "verification_passed": false
+            }
+          }
+        }
+      }
+    },
+    "updated_at": "2026-10-14T23:57:40.537215+00:00"
+  }
+}

@@ -1,0 +1,459 @@
+{
+  "contract": "nfl-receiving-market-blend-v1",
+  "built_at": "2026-10-06T15:44:05.679910+00:00",
+  "cohorts": {
+    "nfl-20260918T143342Z|16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4|production_curve": {
+      "status": "waiting_for_earlier_available_labels",
+      "cohort": {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4",
+        "variant": "production_curve"
+      },
+      "projection_trust": 0.25,
+      "range_scale": 1.55,
+      "probability_trust": 0.0,
+      "deployment_approved": false,
+      "evidence": {
+        "weeks": [
+          4
+        ],
+        "season_weeks": [
+          [
+            2026,
+            4
+          ]
+        ],
+        "evaluated_folds": 0,
+        "forward_test_rows": 0,
+        "fit_coverage_p10_p90": 0.8044692737430168,
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": false,
+        "mae_model": 24.678377334300823,
+        "mae_line": 24.02513966480447,
+        "mae_anchored": 23.832298202373316,
+        "in_sample": {
+          "n_offers": 348,
+          "player_games": 179,
+          "log_loss": 0.6937788575656222,
+          "log_loss_market": 0.6932952308789003,
+          "brier": 0.25031598626220525,
+          "brier_market": 0.2500752359461306,
+          "probability": {
+            "rows": 348,
+            "brier": 0.25031598626220525,
+            "log_loss": 0.6937788575656222,
+            "calibration_error": 0.052314424193079904,
+            "probability_bias": -0.052314424193079904
+          },
+          "market": {
+            "rows": 348,
+            "brier": 0.2500752359461306,
+            "log_loss": 0.6932952308789003,
+            "calibration_error": 0.05396967769757592,
+            "probability_bias": -0.05396967769757592
+          },
+          "intervals": {
+            "rows": 179,
+            "mae": 23.832298202373316,
+            "rmse": 33.52452940391092,
+            "bias": -8.439519697468326,
+            "interval_rows": 179,
+            "coverage_80": 0.8044692737430168,
+            "interval_width": 72.86313216845825,
+            "below_p10": 0.0782122905027933,
+            "above_p90": 0.11731843575418995
+          }
+        },
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|2f3fc174a850326939e0410fcf6bfdd7c1d1b37b54836a6d83f9b7accc02cfa9|production_curve": {
+      "status": "waiting_for_earlier_available_labels",
+      "cohort": {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "2f3fc174a850326939e0410fcf6bfdd7c1d1b37b54836a6d83f9b7accc02cfa9",
+        "variant": "production_curve"
+      },
+      "projection_trust": 1.0,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "deployment_approved": false,
+      "evidence": {
+        "weeks": [
+          4
+        ],
+        "season_weeks": [
+          [
+            2026,
+            4
+          ]
+        ],
+        "evaluated_folds": 0,
+        "forward_test_rows": 0,
+        "fit_coverage_p10_p90": 0.8888888888888888,
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": false,
+        "mae_model": 18.217558334661575,
+        "mae_line": 18.944444444444443,
+        "mae_anchored": 18.217558334661575,
+        "in_sample": {
+          "n_offers": 9,
+          "player_games": 9,
+          "log_loss": 0.6899554232335395,
+          "log_loss_market": 0.6899554232335395,
+          "brier": 0.2484045698803592,
+          "brier_market": 0.2484045698803592,
+          "probability": {
+            "rows": 9,
+            "brier": 0.2484045698803592,
+            "log_loss": 0.6899554232335395,
+            "calibration_error": 0.165047645480618,
+            "probability_bias": -0.05717457674160421
+          },
+          "market": {
+            "rows": 9,
+            "brier": 0.2484045698803592,
+            "log_loss": 0.6899554232335395,
+            "calibration_error": 0.165047645480618,
+            "probability_bias": -0.05717457674160421
+          },
+          "intervals": {
+            "rows": 9,
+            "mae": 18.217558334661575,
+            "rmse": 23.25770686436242,
+            "bias": -6.693733783654516,
+            "interval_rows": 9,
+            "coverage_80": 0.8888888888888888,
+            "interval_width": 50.39318799717545,
+            "below_p10": 0.0,
+            "above_p90": 0.1111111111111111
+          }
+        },
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|6a639c59d1f6814d6d512b98d6ca79db735128851eff58c3903595257b15ca77|production_curve": {
+      "status": "no_binary_outcomes",
+      "evidence": {
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|d387051d16ae9cbc7785d49e1ea03a2a4552e09bdc9517a2081ce33cc12d6470|production_curve": {
+      "status": "waiting_for_earlier_available_labels",
+      "cohort": {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "d387051d16ae9cbc7785d49e1ea03a2a4552e09bdc9517a2081ce33cc12d6470",
+        "variant": "production_curve"
+      },
+      "projection_trust": 1.0,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "deployment_approved": false,
+      "evidence": {
+        "weeks": [
+          4
+        ],
+        "season_weeks": [
+          [
+            2026,
+            4
+          ]
+        ],
+        "evaluated_folds": 0,
+        "forward_test_rows": 0,
+        "fit_coverage_p10_p90": 0.8461538461538461,
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": false,
+        "mae_model": 14.64902997639399,
+        "mae_line": 15.653846153846153,
+        "mae_anchored": 14.64902997639399,
+        "in_sample": {
+          "n_offers": 13,
+          "player_games": 13,
+          "log_loss": 0.6950846302463554,
+          "log_loss_market": 0.6954222155729872,
+          "brier": 0.2509675207513392,
+          "brier_market": 0.2511371930978545,
+          "probability": {
+            "rows": 13,
+            "brier": 0.2509675207513392,
+            "log_loss": 0.6950846302463554,
+            "calibration_error": 0.19321941494292277,
+            "probability_bias": -0.19321941494292275
+          },
+          "market": {
+            "rows": 13,
+            "brier": 0.2511371930978545,
+            "log_loss": 0.6954222155729872,
+            "calibration_error": 0.19342855312880292,
+            "probability_bias": -0.19342855312880294
+          },
+          "intervals": {
+            "rows": 13,
+            "mae": 14.64902997639399,
+            "rmse": 19.239513940680556,
+            "bias": -6.0608912481959205,
+            "interval_rows": 13,
+            "coverage_80": 0.8461538461538461,
+            "interval_width": 47.409701603651484,
+            "below_p10": 0.07692307692307693,
+            "above_p90": 0.07692307692307693
+          }
+        },
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4|calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d": {
+      "status": "waiting_for_earlier_available_labels",
+      "cohort": {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4",
+        "variant": "calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d"
+      },
+      "projection_trust": 0.3,
+      "range_scale": 1.2,
+      "probability_trust": 0.0,
+      "deployment_approved": false,
+      "evidence": {
+        "weeks": [
+          4
+        ],
+        "season_weeks": [
+          [
+            2026,
+            4
+          ]
+        ],
+        "evaluated_folds": 0,
+        "forward_test_rows": 0,
+        "fit_coverage_p10_p90": 0.8100558659217877,
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": false,
+        "mae_model": 24.44543414629532,
+        "mae_line": 23.991620111731844,
+        "mae_anchored": 23.833306393188106,
+        "in_sample": {
+          "n_offers": 348,
+          "player_games": 179,
+          "log_loss": 0.6937788575656222,
+          "log_loss_market": 0.6932952308789003,
+          "brier": 0.25031598626220525,
+          "brier_market": 0.2500752359461306,
+          "probability": {
+            "rows": 348,
+            "brier": 0.25031598626220525,
+            "log_loss": 0.6937788575656222,
+            "calibration_error": 0.052314424193079904,
+            "probability_bias": -0.052314424193079904
+          },
+          "market": {
+            "rows": 348,
+            "brier": 0.2500752359461306,
+            "log_loss": 0.6932952308789003,
+            "calibration_error": 0.05396967769757592,
+            "probability_bias": -0.05396967769757592
+          },
+          "intervals": {
+            "rows": 179,
+            "mae": 23.833306393188106,
+            "rmse": 33.700010165822775,
+            "bias": -9.342869904951279,
+            "interval_rows": 179,
+            "coverage_80": 0.8100558659217877,
+            "interval_width": 67.78922834258876,
+            "below_p10": 0.0782122905027933,
+            "above_p90": 0.11173184357541899
+          }
+        },
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|2f3fc174a850326939e0410fcf6bfdd7c1d1b37b54836a6d83f9b7accc02cfa9|calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d": {
+      "status": "waiting_for_earlier_available_labels",
+      "cohort": {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "2f3fc174a850326939e0410fcf6bfdd7c1d1b37b54836a6d83f9b7accc02cfa9",
+        "variant": "calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d"
+      },
+      "projection_trust": 1.0,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "deployment_approved": false,
+      "evidence": {
+        "weeks": [
+          4
+        ],
+        "season_weeks": [
+          [
+            2026,
+            4
+          ]
+        ],
+        "evaluated_folds": 0,
+        "forward_test_rows": 0,
+        "fit_coverage_p10_p90": 0.8888888888888888,
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": false,
+        "mae_model": 18.352186554292025,
+        "mae_line": 18.944444444444443,
+        "mae_anchored": 18.352186554292025,
+        "in_sample": {
+          "n_offers": 9,
+          "player_games": 9,
+          "log_loss": 0.6899554232335395,
+          "log_loss_market": 0.6899554232335395,
+          "brier": 0.2484045698803592,
+          "brier_market": 0.2484045698803592,
+          "probability": {
+            "rows": 9,
+            "brier": 0.2484045698803592,
+            "log_loss": 0.6899554232335395,
+            "calibration_error": 0.165047645480618,
+            "probability_bias": -0.05717457674160421
+          },
+          "market": {
+            "rows": 9,
+            "brier": 0.2484045698803592,
+            "log_loss": 0.6899554232335395,
+            "calibration_error": 0.165047645480618,
+            "probability_bias": -0.05717457674160421
+          },
+          "intervals": {
+            "rows": 9,
+            "mae": 18.352186554292025,
+            "rmse": 24.421617314525232,
+            "bias": -9.34251966241043,
+            "interval_rows": 9,
+            "coverage_80": 0.8888888888888888,
+            "interval_width": 56.130953814767196,
+            "below_p10": 0.0,
+            "above_p90": 0.1111111111111111
+          }
+        },
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|6a639c59d1f6814d6d512b98d6ca79db735128851eff58c3903595257b15ca77|calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d": {
+      "status": "no_binary_outcomes",
+      "evidence": {
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    },
+    "nfl-20260918T143342Z|d387051d16ae9cbc7785d49e1ea03a2a4552e09bdc9517a2081ce33cc12d6470|calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d": {
+      "status": "waiting_for_earlier_available_labels",
+      "cohort": {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "d387051d16ae9cbc7785d49e1ea03a2a4552e09bdc9517a2081ce33cc12d6470",
+        "variant": "calibrated_blend:receiving-quantiles-20261005T204207709687Z:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d"
+      },
+      "projection_trust": 0.0,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "deployment_approved": false,
+      "evidence": {
+        "weeks": [
+          4
+        ],
+        "season_weeks": [
+          [
+            2026,
+            4
+          ]
+        ],
+        "evaluated_folds": 0,
+        "forward_test_rows": 0,
+        "fit_coverage_p10_p90": 0.8461538461538461,
+        "fitted_probability_trust": 0.35,
+        "market_gate_passed": false,
+        "mae_model": 16.8759858509932,
+        "mae_line": 15.653846153846153,
+        "mae_anchored": 15.653846153846153,
+        "in_sample": {
+          "n_offers": 13,
+          "player_games": 13,
+          "log_loss": 0.6950846302463554,
+          "log_loss_market": 0.6954222155729872,
+          "brier": 0.2509675207513392,
+          "brier_market": 0.2511371930978545,
+          "probability": {
+            "rows": 13,
+            "brier": 0.2509675207513392,
+            "log_loss": 0.6950846302463554,
+            "calibration_error": 0.19321941494292277,
+            "probability_bias": -0.19321941494292275
+          },
+          "market": {
+            "rows": 13,
+            "brier": 0.2511371930978545,
+            "log_loss": 0.6954222155729872,
+            "calibration_error": 0.19342855312880292,
+            "probability_bias": -0.19342855312880294
+          },
+          "intervals": {
+            "rows": 13,
+            "mae": 15.653846153846153,
+            "rmse": 18.825616753611186,
+            "bias": -6.423076923076923,
+            "interval_rows": 13,
+            "coverage_80": 0.8461538461538461,
+            "interval_width": 57.4205676472365,
+            "below_p10": 0.15384615384615385,
+            "above_p90": 0.0
+          }
+        },
+        "forward_folds": []
+      },
+      "selected_comparison": {
+        "status": "no_forward_test_rows"
+      }
+    }
+  },
+  "input_rows": 3589,
+  "exclusions": {
+    "stale_original_quote": 234,
+    "archived_code_has_no_market_calibration_layer": 929,
+    "missing_true_paired_market": 13,
+    "later_revision_same_decision": 567,
+    "outside_common_line_strategy": 1441
+  },
+  "offer_exclusions": {
+    "not_fanduel_receiving_side": 544
+  },
+  "challenger": {
+    "run_id": "receiving-quantiles-20261005T204207709687Z",
+    "sha256": "d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
+    "training_end": "2026-09-17"
+  },
+  "production_changed": false,
+  "deployment_approved": false,
+  "betting_approved": false,
+  "limitations": [
+    "Retrospective development, not prospective acceptance or cash authorization.",
+    "Earlier observed labels only; no current context or replacement of historical locks.",
+    "Forecast version, scoring version and challenger checksum remain separate.",
+    "Rankings are counterfactual on archived offers, not the complete market or actual wagers.",
+    "Fixed research and exact micro IDs are never reselected after settlement.",
+    "Whole-distribution coverage and line-level blending are different claims."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-18T22:05:21.087806+00:00",
+  "status": "failed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_06_BUF_LV",
+      "kickoff": "2026-10-18T20:25:00+00:00",
+      "target_at": "2026-10-18T18:25:00+00:00",
+      "minutes_to_start": -100.4,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_06_LAC_KC",
+      "kickoff": "2026-10-18T20:25:00+00:00",
+      "target_at": "2026-10-18T18:25:00+00:00",
+      "minutes_to_start": -100.4,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kickoff": "2026-10-19T00:20:00+00:00",
+      "target_at": "2026-10-18T22:20:00+00:00",
+      "minutes_to_start": 134.6,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_06_WAS_SF",
+      "kickoff": "2026-10-20T00:15:00+00:00",
+      "target_at": "2026-10-19T22:15:00+00:00",
+      "minutes_to_start": 1569.6,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [],
+  "pipeline_invoked": false
+}

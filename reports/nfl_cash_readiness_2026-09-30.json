@@ -1,7 +1,7 @@
 {
   "contract": "nfl-cash-trial-v1",
   "day": "2026-09-30",
-  "built_at": "2026-09-30T18:46:00.557108+00:00",
+  "built_at": "2026-10-01T03:55:29.251548+00:00",
   "registration_sha256": "d868a14c4857995b2da380673dcebb9b014caaa9576f67baf427725bab057be0",
   "strategy_id": "fanduel-common-receiving-v1",
   "release": "nfl-20260918T143342Z",
@@ -105,7 +105,7 @@
         "status": "post_policy_pending_game"
       }
     ],
-    "current_scoring_matches_registration": true,
+    "current_scoring_matches_registration": false,
     "historical_slots_replaced": false
   },
   "forecast_deployment_review": {

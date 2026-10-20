@@ -1,0 +1,255 @@
+{
+  "season": 2025,
+  "matched": 7050,
+  "total": 7710,
+  "model_vs_line": [
+    {
+      "stat": "receiving_yards",
+      "n": 947,
+      "corr": -0.05280601693159302,
+      "corr_baseline": -0.03268116916113823,
+      "model_mae": 21.039695660635154,
+      "mean_bias": -1.1014581793888878,
+      "model_side_wins_ge0": [
+        0.515311510031679,
+        947
+      ],
+      "model_side_wins_ge5": [
+        0.47738693467336685,
+        398
+      ],
+      "model_side_wins_ge10": [
+        0.4482758620689655,
+        145
+      ],
+      "model_side_wins_ge15": [
+        0.38,
+        50
+      ]
+    },
+    {
+      "stat": "rushing_yards",
+      "n": 226,
+      "corr": -0.08426037767445715,
+      "corr_baseline": -0.06572465429968757,
+      "model_mae": 21.993249033293317,
+      "mean_bias": -1.4941204248521087,
+      "model_side_wins_ge0": [
+        0.4557522123893805,
+        226
+      ],
+      "model_side_wins_ge5": [
+        0.44761904761904764,
+        105
+      ],
+      "model_side_wins_ge10": [
+        0.40816326530612246,
+        49
+      ],
+      "model_side_wins_ge15": [
+        0.38095238095238093,
+        21
+      ]
+    }
+  ],
+  "confluence": [
+    {
+      "stat": "receiving_yards",
+      "bucket": "all sides",
+      "group": "model agrees",
+      "n": 2850,
+      "mean_ev": -0.051949760058195835,
+      "ev_at_sharp_close": -0.05234006449102886,
+      "win_rate": 0.5140350877192983,
+      "roi": -0.02704408541756146,
+      "settled": 2850
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": "all sides",
+      "group": "model disagrees",
+      "n": 2850,
+      "mean_ev": -0.055284201479895025,
+      "ev_at_sharp_close": -0.05489916817444762,
+      "win_rate": 0.48596491228070177,
+      "roi": -0.08019838515641127,
+      "settled": 2850
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": "all sides",
+      "group": "agrees by 5+",
+      "n": 1207,
+      "mean_ev": -0.052300155743620735,
+      "ev_at_sharp_close": -0.05272592003997544,
+      "win_rate": 0.47970173985086995,
+      "roi": -0.09214358935266635,
+      "settled": 1207
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": ">= +1%",
+      "group": "model agrees",
+      "n": 158,
+      "mean_ev": 0.02763312146694521,
+      "ev_at_sharp_close": 0.017734191713565422,
+      "win_rate": 0.569620253164557,
+      "roi": 0.07734774879700862,
+      "settled": 158
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": ">= +1%",
+      "group": "model disagrees",
+      "n": 141,
+      "mean_ev": 0.028479040877800264,
+      "ev_at_sharp_close": 0.018447903562669697,
+      "win_rate": 0.49645390070921985,
+      "roi": -0.05842124083676024,
+      "settled": 141
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": ">= +1%",
+      "group": "agrees by 5+",
+      "n": 60,
+      "mean_ev": 0.026819375465237032,
+      "ev_at_sharp_close": 0.021427440558523223,
+      "win_rate": 0.48333333333333334,
+      "roi": -0.08738902340597253,
+      "settled": 60
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": ">= +3%",
+      "group": "model agrees",
+      "n": 62,
+      "mean_ev": 0.04085107591428867,
+      "ev_at_sharp_close": 0.027338968465686713,
+      "win_rate": 0.5806451612903226,
+      "roi": 0.09907834101382493,
+      "settled": 62
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": ">= +3%",
+      "group": "model disagrees",
+      "n": 48,
+      "mean_ev": 0.04830256129145396,
+      "ev_at_sharp_close": 0.041348193226387026,
+      "win_rate": 0.4791666666666667,
+      "roi": -0.09300595238095237,
+      "settled": 48
+    },
+    {
+      "stat": "receiving_yards",
+      "bucket": ">= +3%",
+      "group": "agrees by 5+",
+      "n": 25,
+      "mean_ev": 0.04001223164165703,
+      "ev_at_sharp_close": 0.03227351997987203,
+      "win_rate": 0.36,
+      "roi": -0.31857142857142856,
+      "settled": 25
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": "all sides",
+      "group": "model agrees",
+      "n": 675,
+      "mean_ev": -0.057910231886199946,
+      "ev_at_sharp_close": -0.05597997957578692,
+      "win_rate": 0.46074074074074073,
+      "roi": -0.12611034277851602,
+      "settled": 675
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": "all sides",
+      "group": "model disagrees",
+      "n": 675,
+      "mean_ev": -0.049507794236319735,
+      "ev_at_sharp_close": -0.05147033345770723,
+      "win_rate": 0.5392592592592592,
+      "roi": 0.018236761803974415,
+      "settled": 675
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": "all sides",
+      "group": "agrees by 5+",
+      "n": 317,
+      "mean_ev": -0.058054362372735605,
+      "ev_at_sharp_close": -0.058106454020215095,
+      "win_rate": 0.45110410094637227,
+      "roi": -0.14612438035150968,
+      "settled": 317
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": ">= +1%",
+      "group": "model agrees",
+      "n": 31,
+      "mean_ev": 0.025353242726920296,
+      "ev_at_sharp_close": 0.015652625861729542,
+      "win_rate": 0.8709677419354839,
+      "roi": 0.6807474810591266,
+      "settled": 31
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": ">= +1%",
+      "group": "model disagrees",
+      "n": 69,
+      "mean_ev": 0.03195782663158406,
+      "ev_at_sharp_close": 0.01909822871202579,
+      "win_rate": 0.6521739130434783,
+      "roi": 0.23447204968944096,
+      "settled": 69
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": ">= +1%",
+      "group": "agrees by 5+",
+      "n": 12,
+      "mean_ev": 0.02422675613398734,
+      "ev_at_sharp_close": 0.00406765976597381,
+      "win_rate": 0.75,
+      "roi": 0.4196428571428572,
+      "settled": 12
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": ">= +3%",
+      "group": "model agrees",
+      "n": 8,
+      "mean_ev": 0.043707180157400584,
+      "ev_at_sharp_close": 0.012838553737475965,
+      "win_rate": 1.0,
+      "roi": 0.8928571428571429,
+      "settled": 8
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": ">= +3%",
+      "group": "model disagrees",
+      "n": 29,
+      "mean_ev": 0.052097821766110386,
+      "ev_at_sharp_close": 0.042613746877224565,
+      "win_rate": 0.6896551724137931,
+      "roi": 0.30541871921182273,
+      "settled": 29
+    },
+    {
+      "stat": "rushing_yards",
+      "bucket": ">= +3%",
+      "group": "agrees by 5+",
+      "n": 4,
+      "mean_ev": 0.0357660253222336,
+      "ev_at_sharp_close": -0.022934708316331723,
+      "win_rate": 1.0,
+      "roi": 0.8928571428571429,
+      "settled": 4
+    }
+  ]
+}

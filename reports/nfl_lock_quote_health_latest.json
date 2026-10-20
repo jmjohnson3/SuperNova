@@ -1,26 +1,39 @@
 {
   "status": "fresh_quotes_ready",
-  "day": "2026-10-01",
-  "built_at": "2026-09-29T13:32:31.499824+00:00",
+  "day": "2026-10-22",
+  "built_at": "2026-10-20T13:56:43.121513+00:00",
   "games": 1,
   "api_called": true,
   "provider_status": "ok",
   "provider": "fallback_chain",
   "quote_health": {
     "props": {
-      "observed_rows": 19,
-      "fresh_rows": 19,
-      "latest_quote": "2026-09-29 06:32:37.452392-07:00"
+      "observed_rows": 34,
+      "fresh_rows": 34,
+      "latest_quote": "2026-10-20 06:56:48.753335-07:00"
     },
     "games": {
       "observed_rows": 1,
       "fresh_rows": 1,
-      "latest_quote": "2026-09-29 06:32:37.452392-07:00"
+      "latest_quote": "2026-10-20 06:56:48.735264-07:00"
     }
   },
   "game_ids": null,
   "stale_kinds": [],
   "max_quote_age_minutes": 20,
+  "sharp_lines": {
+    "provider": "oddsapi_eu",
+    "role": "lock",
+    "day": "2026-10-22",
+    "due_games": [],
+    "captured": [],
+    "skipped": {},
+    "credits_remaining": null,
+    "markets": [
+      "player_reception_yds"
+    ],
+    "status": "nothing_due"
+  },
   "ready_for_scoring": true,
   "note": "Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten."
 }

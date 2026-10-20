@@ -1,0 +1,298 @@
+{
+  "contract": "nfl-receiving-efficiency-v1",
+  "run_id": "receiving-efficiency-20261005T202840002708Z",
+  "production_release": "nfl-20260918T143342Z",
+  "training_end": "2026-09-17",
+  "output_decisions": {
+    "expected_mean": {
+      "historical_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "status": "rejected"
+    },
+    "median": {
+      "historical_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "status": "rejected"
+    },
+    "probability": {
+      "historical_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "status": "rejected"
+    }
+  },
+  "deployment_approved": false,
+  "betting_approved": false,
+  "metrics": {
+    "rate_repair": {
+      "expected": {
+        "rows": 5279,
+        "mae": 17.130615601946936,
+        "rmse": 24.284684712508415,
+        "bias": 0.6324517150989367
+      },
+      "typical": {
+        "rows": 5279,
+        "mae": 16.68292263348263,
+        "rmse": 24.493635852370698,
+        "bias": -3.107039729308978
+      },
+      "distribution": {
+        "rows": 5279,
+        "mae": 17.130615601946936,
+        "rmse": 24.284684712508415,
+        "bias": 0.6324517150989367,
+        "interval_rows": 5279,
+        "coverage_80": 0.7963629475279409,
+        "interval_width": 54.27641069414136
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.23304202502609095,
+        "log_loss": 0.6611686194899974,
+        "calibration_error": 0.04899511546153679,
+        "probability_bias": 0.042567005327166674
+      },
+      "interval_score": 89.7961855555707
+    },
+    "reference": {
+      "expected": {
+        "rows": 5279,
+        "mae": 17.032178904904633,
+        "rmse": 24.232171868310626,
+        "bias": 0.08200250028336774
+      },
+      "typical": {
+        "rows": 5279,
+        "mae": 16.548002554023274,
+        "rmse": 24.492203672369747,
+        "bias": -3.6574889441245464
+      },
+      "distribution": {
+        "rows": 5279,
+        "mae": 17.032178904904633,
+        "rmse": 24.232171868310626,
+        "bias": 0.08200250028336774,
+        "interval_rows": 5279,
+        "coverage_80": 0.8005304034855086,
+        "interval_width": 54.27641069414136
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.22958082232669838,
+        "log_loss": 0.6516934555682111,
+        "calibration_error": 0.03272509482431488,
+        "probability_bias": 0.026291983242650963
+      },
+      "interval_score": 89.38021975368063
+    },
+    "rolling_baseline": {
+      "expected": {
+        "rows": 5279,
+        "mae": 17.528539820635597,
+        "rmse": 25.03647158527366,
+        "bias": -0.06180727669944815
+      },
+      "typical": {
+        "rows": 5279,
+        "mae": 17.339044642293363,
+        "rmse": 25.168432480546233,
+        "bias": -2.616041548273037
+      },
+      "distribution": {
+        "rows": 5279,
+        "mae": 17.528539820635597,
+        "rmse": 25.03647158527366,
+        "bias": -0.06180727669944815,
+        "interval_rows": 5279,
+        "coverage_80": 0.7933320704678917,
+        "interval_width": 55.92488092441749
+      },
+      "probability": {
+        "rows": 15116,
+        "brier": 0.23872058348171632,
+        "log_loss": 0.6722904815339016,
+        "calibration_error": 0.04461791130808487,
+        "probability_bias": 0.036654356854514895
+      },
+      "interval_score": 92.83892120982509
+    }
+  },
+  "comparisons": {
+    "reference": {
+      "expected_mean": {
+        "clusters": 24,
+        "lower_95": -8.074685097781183,
+        "upper_95": 3.162326031248257,
+        "mean_gain": -2.54775813059489
+      },
+      "median": {
+        "clusters": 24,
+        "lower_95": -0.2854452162998226,
+        "upper_95": 0.017773856335297607,
+        "mean_gain": -0.13492007945935341
+      },
+      "probability": {
+        "clusters": 24,
+        "lower_95": -0.007158359179663019,
+        "upper_95": -2.6281971673832285e-05,
+        "mean_gain": -0.0034612026993925287
+      }
+    },
+    "rolling_baseline": {
+      "expected_mean": {
+        "clusters": 24,
+        "lower_95": 30.069773549764264,
+        "upper_95": 44.97519020457331,
+        "mean_gain": 37.07899785427551
+      },
+      "median": {
+        "clusters": 24,
+        "lower_95": 0.5082596785326232,
+        "upper_95": 0.8191288754023645,
+        "mean_gain": 0.6561220088107369
+      },
+      "probability": {
+        "clusters": 24,
+        "lower_95": 0.001792317962950494,
+        "upper_95": 0.009449393384368638,
+        "mean_gain": 0.005678558455625372
+      }
+    }
+  },
+  "folds": [
+    {
+      "fold": "2025-W01",
+      "model_fit_end": "2024-12-09",
+      "residual_end": "2024-12-23",
+      "tuning_end": "2025-01-05",
+      "test_start": "2025-09-04",
+      "tuning": {
+        "prior_targets": 120.0,
+        "residual_weight": 0.0,
+        "alpha": 1.0,
+        "tuning_mse": 593.7469709253346
+      }
+    },
+    {
+      "fold": "2025-W05",
+      "model_fit_end": "2025-01-05",
+      "residual_end": "2025-01-19",
+      "tuning_end": "2025-02-09",
+      "test_start": "2025-10-02",
+      "tuning": {
+        "prior_targets": 20.0,
+        "residual_weight": 0.0,
+        "alpha": 1.0,
+        "tuning_mse": 611.8468765080046
+      }
+    },
+    {
+      "fold": "2025-W09",
+      "model_fit_end": "2025-02-09",
+      "residual_end": "2025-09-15",
+      "tuning_end": "2025-09-29",
+      "test_start": "2025-10-30",
+      "tuning": {
+        "prior_targets": 20.0,
+        "residual_weight": 1.0,
+        "alpha": 0.25,
+        "tuning_mse": 541.1852740711754
+      }
+    },
+    {
+      "fold": "2025-W13",
+      "model_fit_end": "2025-09-29",
+      "residual_end": "2025-10-13",
+      "tuning_end": "2025-10-27",
+      "test_start": "2025-11-27",
+      "tuning": {
+        "prior_targets": 120.0,
+        "residual_weight": 1.0,
+        "alpha": 0.75,
+        "tuning_mse": 586.0962023541233
+      }
+    },
+    {
+      "fold": "2025-W17",
+      "model_fit_end": "2025-10-27",
+      "residual_end": "2025-11-10",
+      "tuning_end": "2025-11-24",
+      "test_start": "2025-12-25",
+      "tuning": {
+        "prior_targets": 120.0,
+        "residual_weight": 0.0,
+        "alpha": 0.25,
+        "tuning_mse": 602.5878938390878
+      }
+    },
+    {
+      "fold": "2025-W21",
+      "model_fit_end": "2025-11-24",
+      "residual_end": "2025-12-08",
+      "tuning_end": "2025-12-22",
+      "test_start": "2026-01-25",
+      "tuning": {
+        "prior_targets": 120.0,
+        "residual_weight": 1.0,
+        "alpha": 0.5,
+        "tuning_mse": 579.9104231723664
+      }
+    },
+    {
+      "fold": "2026-W01",
+      "model_fit_end": "2025-12-08",
+      "residual_end": "2025-12-22",
+      "tuning_end": "2026-01-04",
+      "test_start": "2026-09-09",
+      "tuning": {
+        "prior_targets": 120.0,
+        "residual_weight": 0.0,
+        "alpha": 0.75,
+        "tuning_mse": 509.54945971313134
+      }
+    }
+  ],
+  "excluded_missing_targets_or_outcomes": 0,
+  "feature_support": {
+    "shrunk_ypt": 29444,
+    "player_history_known": 29444,
+    "ypt_3": 29044,
+    "adot_3": 29044,
+    "catch_rate_3": 29044,
+    "yac_per_catch_3": 28669,
+    "target_history_3": 29444,
+    "ypt_5": 29278,
+    "adot_5": 29278,
+    "catch_rate_5": 29278,
+    "yac_per_catch_5": 29131,
+    "target_history_5": 29444,
+    "ypt_10": 29345,
+    "adot_10": 29345,
+    "catch_rate_10": 29345,
+    "yac_per_catch_10": 29270,
+    "target_history_10": 29444,
+    "ypt_trend": 29044,
+    "depth_trend": 29044,
+    "opp_allowed_receiving_yards_avg_5": 29437,
+    "rest_days": 29444,
+    "is_home": 29444,
+    "n_games_prev_10": 29444,
+    "position_WR": 29444,
+    "position_TE": 29444,
+    "position_RB": 29444
+  },
+  "source_cache_sha256": "a48f7d047c892fb947497b6ff76a2cbd1a07a5c2901cb57786ac49dfbf41af96",
+  "artifact_sha256": "b73c73543819a263ac09855b34c14b83a46d6e443937aa7631c052a8d2cbcc87",
+  "production_changed": false,
+  "limitations": [
+    "Historical refit of the conservative architecture, not the actual locked production forecasts.",
+    "Proxy-line Brier is not evidence of profit or offered-line pricing accuracy.",
+    "Targets and uncertainty shape are fixed; this experiment changes efficiency only.",
+    "Current-game results, odds, injuries and route proxies are not rate-model features.",
+    "Previously examined historical folds are a development screen, not prospective acceptance.",
+    "No automatic model deployment or change to cash approval."
+  ]
+}

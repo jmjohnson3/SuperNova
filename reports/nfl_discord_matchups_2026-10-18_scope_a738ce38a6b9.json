@@ -1,0 +1,411 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-10-18",
+  "games": 2,
+  "cards": [
+    {
+      "game_id": "2026_06_BUF_LV",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "BUF @ LV | NFL 2026-10-18",
+            "description": "Kickoff: <t:1792355100:f> (<t:1792355100:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**OPERATIONAL ISSUE**\n- cash_readiness_stale_or_mismatched\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**ACTIONABLE PROPS**\n- No current prop meets the FanDuel residual, price, freshness, model, and context requirements.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only; bankroll and micro sections remain the betting shortlist.\n- BUF QB1 J.Allen: Pass Yds 248.9 | Pass TD 1.40 | Rush Yds 45.2 | FanDuel line available\n- BUF RB1 J.Cook: Rush Yds 99.2 | Rec Yds 7.7 | Rush TD 0.68 | Projection only - no current line\n- BUF WR1 D.Moore: Rec Yds 38.7 | Rec 2.9 | Rec TD 0.31 | FanDuel line available\n- BUF WR2 K.Shakir: Rec Yds 46.6 | Rec 3.8 | Rec TD 0.21 | FanDuel line available\n- BUF TE1 D.Kincaid: Rec Yds 46.7 | Rec 2.7 | Rec TD 0.26 | FanDuel line available\n- LV QB1 K.Cousins: Pass Yds 265.7 | Pass TD 2.40 | FanDuel line available\n- LV RB1 A.Jeanty: Rush Yds 57.6 | Rec Yds 37.2 | Rec 4.2 | Rush TD 0.31 | FanDuel line available\n- LV WR1 T.Tucker: Rec Yds 48.3 | Rec 3.4 | Rec TD 0.25 | FanDuel line available\n- LV WR2 J.Nailor: Rec Yds 18.1 | Rec 1.7 | Rec TD 0.14 | FanDuel line available\n- LV TE1 B.Bowers: Rec Yds 69.0 | Rec 8.1 | Rec TD 0.57 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    },
+    {
+      "game_id": "2026_06_LAC_KC",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "LAC @ KC | NFL 2026-10-18",
+            "description": "Kickoff: <t:1792355100:f> (<t:1792355100:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.\n\n**OPERATIONAL ISSUE**\n- cash_readiness_stale_or_mismatched\n\n**BANKROLL**\n- No qualifying bankroll bets for this matchup.\n\n**ACTIONABLE PROPS**\n- No current prop meets the FanDuel residual, price, freshness, model, and context requirements.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only; bankroll and micro sections remain the betting shortlist.\n- LAC QB1 J.Herbert: Pass Yds 195.2 | Pass TD 1.00 | Rush Yds 26.1 | FanDuel line available\n- LAC RB1 O.Hampton: Rush Yds 52.7 | Rec Yds 7.3 | Rec 1.0 | Rush TD 0.38 | FanDuel line available\n- LAC WR1 L.McConkey: Rec Yds 37.3 | Rec 2.5 | Rec TD 0.22 | FanDuel line available\n- LAC WR2 Q.Johnston: Rec Yds 23.7 | Rec 2.2 | Rec TD 0.18 | FanDuel line available\n- LAC TE1 C.Kolar: Rec Yds 14.1 | Rec 1.7 | Rec TD 0.07 | FanDuel line available\n- KC QB1 P.Mahomes: Pass Yds 240.0 | Pass TD 1.80 | Rush Yds 13.3 | FanDuel line available\n- KC RB1 K.Walker: Rush Yds 125.7 | Rec Yds 18.1 | Rush TD 0.64 | Projection only - no current line\n- KC WR1 X.Worthy: Rec Yds 24.3 | Rec 2.9 | Rec TD 0.23 | FanDuel line available\n- KC WR2 J.Royals: Rec 0.9 | Rec TD 0.13 | FanDuel line available\n- KC TE1 T.Kelce: Rec Yds 43.2 | Rec 3.6 | Rec TD 0.28 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_stale_or_mismatched"
+  },
+  "quote_exclusions": [
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    }
+  ],
+  "notice": null,
+  "scope_game_ids": [
+    "2026_06_BUF_LV",
+    "2026_06_LAC_KC"
+  ]
+}

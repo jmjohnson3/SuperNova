@@ -1,0 +1,41 @@
+{
+  "built_at": "2026-10-12T17:43:36.513125+00:00",
+  "counts": {
+    "void_nonparticipant": 2
+  },
+  "unresolved_final_rows": 0,
+  "rows": [
+    {
+      "forecast_id": 15294,
+      "game_id": "2026_05_DET_ARI",
+      "player_id": "00-0039849",
+      "player": "M.Harrison",
+      "team": "ARI",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-10-12T17:41:46.321168+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 16057,
+      "game_id": "2026_05_MIN_NO",
+      "player_id": "00-0038994",
+      "player": "J.Addison",
+      "team": "MIN",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-10-12T17:41:46.321168+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    }
+  ],
+  "unique_unresolved_player_games": 0,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

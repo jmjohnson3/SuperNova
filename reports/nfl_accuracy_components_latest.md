@@ -6,15 +6,15 @@ Mean, median, and probability approvals are independent. These are historical sc
 
 | Component | Mean RMSE (candidate / reference) | Brier (candidate / reference) | 80% coverage | Prospective outputs |
 |---|---:|---:|---:|---|
-| receiving_conditional | 25.015 / 25.015 | 0.2289 / 0.2315 | 78.5% | probability |
-| qb_tail | 83.434 / 85.780 | 0.2036 / 0.2123 | 84.8% | expected_mean, median |
-| team_receiving_yards | 25.156 / 25.015 | 0.2364 / 0.2315 | 79.7% | none |
-| team_rushing_yards | 26.891 / 26.533 | 0.2397 / 0.2390 | 79.6% | none |
-| team_passing_yards | 94.973 / 85.780 | 0.2391 / 0.2123 | 73.2% | none |
+| receiving_conditional | 25.101 / 25.101 | 0.2294 / 0.2320 | 78.5% | probability |
+| qb_tail | 83.687 / 85.775 | 0.2041 / 0.2142 | 84.6% | none |
+| team_receiving_yards | 24.105 / 24.680 | 0.2254 / 0.2319 | 84.2% | expected_mean, median |
+| team_rushing_yards | 27.197 / 26.533 | 0.2313 / 0.2365 | 88.0% | none |
+| team_passing_yards | 88.693 / 86.926 | 0.2127 / 0.2152 | 76.9% | none |
 
 ## Latest Calibration Block
 
-- qb_tail: disabled; coverage 91.8% -> 86.3%; interval score 303.481 -> 284.873; Brier 0.2051 -> 0.2051 (73 rows).
+- qb_tail: enabled; coverage 86.4% -> 83.3%; interval score 297.526 -> 295.212; Brier 0.2027 -> 0.2027 (66 rows).
 
 - Historical tests use proxy lines, not executable sportsbook prices.
 - Previously inspected seasons are research evidence, not an untouched final test.

@@ -1,0 +1,155 @@
+{
+  "stage_timings": [
+    {
+      "stage": "load_model",
+      "status": "ok",
+      "rows": 9,
+      "seconds": 0.202
+    },
+    {
+      "stage": "schema_readiness",
+      "status": "ok",
+      "seconds": 0.164
+    },
+    {
+      "stage": "context_cutoff",
+      "status": "ok",
+      "seconds": 0.799
+    },
+    {
+      "stage": "load_games",
+      "status": "ok",
+      "rows": 1,
+      "seconds": 0.249
+    },
+    {
+      "stage": "load_history",
+      "status": "ok",
+      "rows": 39494,
+      "seconds": 4.295
+    },
+    {
+      "stage": "load_offers",
+      "status": "ok",
+      "rows": 57,
+      "seconds": 0.202
+    },
+    {
+      "stage": "load_player_context",
+      "status": "ok",
+      "rows": 1012,
+      "seconds": 46.311
+    },
+    {
+      "stage": "snapshot_players",
+      "status": "ok",
+      "rows": 34,
+      "seconds": 3.905
+    },
+    {
+      "stage": "clv_guards",
+      "status": "ok",
+      "rows": 18,
+      "seconds": 0.571
+    },
+    {
+      "stage": "recent_calibration",
+      "status": "ok",
+      "rows": 1357,
+      "seconds": 0.549
+    },
+    {
+      "stage": "predict_passing_yards",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.279
+    },
+    {
+      "stage": "predict_rushing_yards",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.214
+    },
+    {
+      "stage": "predict_passing_tds",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.212
+    },
+    {
+      "stage": "predict_rushing_tds",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.212
+    },
+    {
+      "stage": "predict_receiving_yards",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.218
+    },
+    {
+      "stage": "predict_receptions",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.001
+    },
+    {
+      "stage": "predict_receiving_tds",
+      "status": "ok",
+      "rows": 3,
+      "seconds": 0.219
+    }
+  ],
+  "game_date": "2026-10-08",
+  "prediction_context_cutoff_utc": "2026-10-06T15:36:52.321998+00:00",
+  "games": 1,
+  "history_rows": 39494,
+  "snapshot_players": 34,
+  "offers": 57,
+  "offer_exclusions": {
+    "other_book": 26,
+    "stale_quote_refresh_required": 31
+  },
+  "execution_book": "fanduel",
+  "player_context_rows": 1012,
+  "clv_guard_buckets": 18,
+  "probability_calibration_buckets": 1357,
+  "predictions": 52,
+  "micro_screen_passed": 0,
+  "micro_selected": 0,
+  "micro_daily_cap": 5,
+  "projection_sanity_excluded": 44,
+  "projection_sanity_excluded_by_reason": {
+    "projection_only_qb_backup": 11,
+    "projection_only_non_rb_depth_slot": 2,
+    "projection_only_low_rb_rush_role": 1,
+    "projection_only_low_rb_td_role": 2,
+    "projection_only_low_receiver_role": 13,
+    "projection_only_special_teams_depth_slot": 7,
+    "projection_only_low_rb_receiving_role": 1,
+    "projection_only_role_unknown": 7
+  },
+  "saved": 0,
+  "model_status": "ready",
+  "exact_line_status": null,
+  "exact_line_models": 0,
+  "accepted_models": [
+    "passing_yards",
+    "rushing_yards",
+    "rushing_tds",
+    "receiving_yards",
+    "receiving_tds"
+  ],
+  "accepted_projection_models": [
+    "passing_yards",
+    "rushing_yards",
+    "rushing_tds",
+    "receiving_yards",
+    "receiving_tds"
+  ],
+  "accepted_probability_models": [],
+  "elapsed_seconds": 63.436746099963784,
+  "discord_sent": false,
+  "database_read_only": true
+}

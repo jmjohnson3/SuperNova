@@ -2,35 +2,47 @@
 
 Verdict: **keep collecting**
 
-Alerts graded: 36 over 2 week(s) (pass bar: 100 over 3). Early gaps graded: 19. Logged gaps graded: 158.
+Primary: registered FanDuel receiving-yard decisions with an exact Pinnacle reference. First eligible observation per book/player-game/stat; later prices do not add independent decisions.
+
+Alerts graded: 0 over 0 week(s) (pass bar: 100 over 3). Early gaps graded: 0. Logged gaps graded: 0.
 
 | Evidence (most reliable first) | Alerts (>= +3%, last 180 min, pinged) | Early (>= +3%, earlier) | Logged (+1% to +3%) | Pass bar (alerts) |
 |---|---:|---:|---:|---:|
-| Mean EV at the sharp close | +3.22% | +2.07% | +0.48% | >= +1% |
-| Share positive at the sharp close | 86.2% | 77.8% | 77.4% | - |
-| Beat FanDuel's close (no-vig, at the alert's line) | 20.0% | 23.1% | 29.9% | >= 55% |
-| Mean FanDuel CLV (no-vig prob) | +0.61% | +0.52% | +0.72% | > 0 |
-| EV claimed when seen | +4.41% | +4.48% | +1.89% | - |
-| Flat ROI | +59.13% | -16.24% | -12.05% | noise for weeks |
-| Settled | 34 | 17 | 155 | - |
+| Exact execution close coverage | - | - | - | >= 90% |
+| Exact reference close coverage | - | - | - | >= 90% |
+| Mean EV at exact reference close | - | - | - | >= +1% |
+| Share positive at the sharp close | - | - | - | - |
+| Beat exact FanDuel close | - | - | - | >= 55% |
+| Mean FanDuel CLV (no-vig prob) | - | - | - | > 0 |
+| EV claimed when seen | - | - | - | - |
+| Simulated flat ROI | - | - | - | descriptive |
+| Settled | - | - | - | - |
 
-| Our projection | Alerts | EV at sharp close | Beat close | ROI |
-|---|---:|---:|---:|---:|
-| model agrees with the price edge | 31 | +3.67% | 33.3% | +23.03% |
-| model disagrees with the price edge | 9 | +3.86% | 14.3% | -8.50% |
+Per-book historical diagnostics, excluded from pooled approval:
 
-_A consistent gap here, over a few hundred alerts, is what would justify staking the model's side more heavily. 2025 backtests put the standalone model edge near +1%._
-
-| Book | Alerts | EV at sharp close | Beat close |
+| Book | Decisions | Exact reference-close EV | Beat exact close |
 |---|---:|---:|---:|
-| draftkings | 25 | +3.49% | 33.3% |
-| fanduel | 11 | +1.52% | 0.0% |
+| draftkings | 27 | - | - |
+| fanduel | 12 | - | - |
 
-| Week | Tier | Count | Beat FD close | Mean EV at sharp close |
+Model-inferred movement and legacy closes (diagnostic only):
+- inferred_clv: 0 rows; mean -.
+- inferred_ev_at_sharp_close: 0 rows; mean -.
+
+Legacy alerts: 47; captured candidate decisions: 0; excluded from primary: 47; repeated eligible alerts removed: 0.
+Missing exact closes remain unknown. Weekly confidence bounds use equal week weights. No cash authorization is granted by this report. Slippage is positive when the taken price is worse.
+Quote observations do not establish that a bet was available or placed. Receipt-confirmed wagers, execution attempts, availability and actual-price slippage belong to the private wager_reconciliation report.
+
+Historical raw observations by week (not independent decisions):
+
+| Week | Tier | Count | Beat exact close | Exact reference-close EV |
 |---|---|---:|---:|---:|
-| 2026-4 | alert | 1 | 0.0% | -5.96% |
-| 2026-4 | early | 6 | 16.7% | -1.98% |
-| 2026-4 | logged | 30 | 43.3% | -0.70% |
-| 2026-5 | alert | 35 | 22.2% | +3.55% |
-| 2026-5 | early | 13 | 28.6% | +4.09% |
-| 2026-5 | logged | 128 | 21.3% | +0.85% |
+| 2026-4 | alert | 1 | - | - |
+| 2026-4 | early | 6 | - | - |
+| 2026-4 | logged | 30 | - | - |
+| 2026-5 | alert | 42 | - | - |
+| 2026-5 | early | 14 | - | - |
+| 2026-5 | logged | 148 | - | - |
+| 2026-6 | alert | 4 | - | - |
+| 2026-6 | early | 3 | - | - |
+| 2026-6 | logged | 4 | - | - |

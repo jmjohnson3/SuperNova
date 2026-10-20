@@ -1,0 +1,45 @@
+{
+  "day": "2026-10-05",
+  "built_at": "2026-10-07T09:07:13.766772+00:00",
+  "effective_date": "2026-09-24",
+  "status": "needs_attention",
+  "games": [
+    {
+      "game_id": "2026_04_ATL_NO",
+      "kickoff": "2026-10-06T00:15:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 21,
+      "challenger_captures": 21,
+      "discord_exact_prop_manifest_verified": true,
+      "valid_close_coverage": 0.8095238095238095,
+      "recorded_publication_pages": 7,
+      "verified_publication_pages": 7,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 3,
+        "same_line_missing_side_price": 1
+      },
+      "unknown_closes": 4,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    }
+  ],
+  "blockers": [
+    "2026_04_ATL_NO:valid_exact_close_coverage_below_90_percent"
+  ],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
+  "close_reconciliation": {
+    "source": "immutable_exact_snapshots",
+    "checkpoint_built_at": "2026-10-07T09:06:13.880802+00:00",
+    "observed": 21,
+    "changed_since_checkpoint": 0,
+    "historical_locks_changed": false,
+    "match_methods": {
+      "same_provider_event": 6,
+      "verified_same_book_matchup_cross_provider": 11
+    }
+  }
+}

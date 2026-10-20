@@ -1,0 +1,36 @@
+{
+  "built_at": "2026-10-13T06:03:10.912194+00:00",
+  "status": "waiting_for_settled_versioned_forecasts",
+  "records_scanned": 187,
+  "unique_offer_decisions": 71,
+  "settled_offer_decisions": 0,
+  "replay_status": {
+    "matched": 71
+  },
+  "exclusions": {
+    "later_revision_same_decision": 50
+  },
+  "probability_stages": {},
+  "projection_scores": {},
+  "limitations": [
+    "Missing old scoring inputs are never replaced with current context or calibration.",
+    "Stored-probability evaluation is separate from exact reproducibility; inspect replay_status.",
+    "Multiple books/lines share one player-game outcome and receive inverse multiplicity weights.",
+    "Intervals without locked bounds cannot establish interval coverage.",
+    "Locked p10/p90 describe the stat forecast, not a distribution inferred from independently adjusted book probabilities."
+  ],
+  "prospective_challengers": {
+    "status": "waiting_for_settled_prospective_challengers",
+    "pending": 40,
+    "unique_pending_player_games": 22,
+    "pending_by_cohort": {
+      "components-20261010T222543607583Z-qb_tail|nfl-20260918T143342Z|passing_yards": 2,
+      "components-20261010T222543607583Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": 20,
+      "components-20261010T222543607583Z-team_receiving_yards|nfl-20260918T143342Z|receiving_yards": 18
+    },
+    "settled_player_games": 0,
+    "cohorts": {},
+    "exclusions": {},
+    "automatic_promotion": false
+  }
+}
