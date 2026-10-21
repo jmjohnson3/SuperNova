@@ -1,0 +1,337 @@
+{
+  "day": "2026-10-18",
+  "built_at": "2026-10-21T12:59:35.297718+00:00",
+  "effective_date": "2026-09-24",
+  "status": "needs_attention",
+  "games": [
+    {
+      "game_id": "2026_06_HOU_JAX",
+      "kickoff": "2026-10-18T13:30:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 59,
+      "challenger_captures": 49,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.8983050847457628,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 6
+      },
+      "unknown_closes": 6,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_NYJ_NE",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 65,
+      "challenger_captures": 49,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.8769230769230769,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 8
+      },
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_PIT_TB",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 78,
+      "challenger_captures": 55,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.8974358974358975,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 8
+      },
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_BAL_CLE",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 56,
+      "challenger_captures": 42,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.8571428571428571,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 6,
+        "player_market_not_observed_in_capture": 2
+      },
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_TEN_IND",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 79,
+      "challenger_captures": 56,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.6708860759493671,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 24,
+        "player_market_not_observed_in_capture": 2
+      },
+      "unknown_closes": 26,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_CAR_PHI",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 59,
+      "challenger_captures": 41,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.8305084745762712,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 10
+      },
+      "unknown_closes": 10,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_NO_NYG",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 64,
+      "challenger_captures": 46,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.953125,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 2,
+        "player_market_not_observed_in_capture": 1
+      },
+      "unknown_closes": 3,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_CHI_ATL",
+      "kickoff": "2026-10-18T17:00:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 73,
+      "challenger_captures": 53,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.8904109589041096,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 8
+      },
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_ARI_LA",
+      "kickoff": "2026-10-18T20:05:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 44,
+      "challenger_captures": 23,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.6818181818181818,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 14
+      },
+      "unknown_closes": 14,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_BUF_LV",
+      "kickoff": "2026-10-18T20:25:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 38,
+      "challenger_captures": 19,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.7894736842105263,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 7,
+        "player_market_not_observed_in_capture": 1
+      },
+      "unknown_closes": 8,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_LAC_KC",
+      "kickoff": "2026-10-18T20:25:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 31,
+      "challenger_captures": 13,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.7741935483870968,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 7
+      },
+      "unknown_closes": 7,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    },
+    {
+      "game_id": "2026_06_DAL_GB",
+      "kickoff": "2026-10-19T00:20:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 48,
+      "challenger_captures": 11,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.875,
+      "recorded_publication_pages": 2,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 6
+      },
+      "unknown_closes": 6,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "eligible_receiving_challenger_capture_missing",
+        "valid_exact_close_coverage_below_90_percent",
+        "settled_offers_missing_validated_evaluation"
+      ]
+    }
+  ],
+  "blockers": [
+    "2026_06_HOU_JAX:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_HOU_JAX:eligible_receiving_challenger_capture_missing",
+    "2026_06_HOU_JAX:valid_exact_close_coverage_below_90_percent",
+    "2026_06_HOU_JAX:settled_offers_missing_validated_evaluation",
+    "2026_06_NYJ_NE:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_NYJ_NE:eligible_receiving_challenger_capture_missing",
+    "2026_06_NYJ_NE:valid_exact_close_coverage_below_90_percent",
+    "2026_06_NYJ_NE:settled_offers_missing_validated_evaluation",
+    "2026_06_PIT_TB:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_PIT_TB:eligible_receiving_challenger_capture_missing",
+    "2026_06_PIT_TB:valid_exact_close_coverage_below_90_percent",
+    "2026_06_PIT_TB:settled_offers_missing_validated_evaluation",
+    "2026_06_BAL_CLE:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_BAL_CLE:eligible_receiving_challenger_capture_missing",
+    "2026_06_BAL_CLE:valid_exact_close_coverage_below_90_percent",
+    "2026_06_BAL_CLE:settled_offers_missing_validated_evaluation",
+    "2026_06_TEN_IND:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_TEN_IND:eligible_receiving_challenger_capture_missing",
+    "2026_06_TEN_IND:valid_exact_close_coverage_below_90_percent",
+    "2026_06_TEN_IND:settled_offers_missing_validated_evaluation",
+    "2026_06_CAR_PHI:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_CAR_PHI:eligible_receiving_challenger_capture_missing",
+    "2026_06_CAR_PHI:valid_exact_close_coverage_below_90_percent",
+    "2026_06_CAR_PHI:settled_offers_missing_validated_evaluation",
+    "2026_06_NO_NYG:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_NO_NYG:eligible_receiving_challenger_capture_missing",
+    "2026_06_NO_NYG:settled_offers_missing_validated_evaluation",
+    "2026_06_CHI_ATL:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_CHI_ATL:eligible_receiving_challenger_capture_missing",
+    "2026_06_CHI_ATL:valid_exact_close_coverage_below_90_percent",
+    "2026_06_CHI_ATL:settled_offers_missing_validated_evaluation",
+    "2026_06_ARI_LA:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_ARI_LA:eligible_receiving_challenger_capture_missing",
+    "2026_06_ARI_LA:valid_exact_close_coverage_below_90_percent",
+    "2026_06_ARI_LA:settled_offers_missing_validated_evaluation",
+    "2026_06_BUF_LV:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_BUF_LV:eligible_receiving_challenger_capture_missing",
+    "2026_06_BUF_LV:valid_exact_close_coverage_below_90_percent",
+    "2026_06_BUF_LV:settled_offers_missing_validated_evaluation",
+    "2026_06_LAC_KC:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_LAC_KC:eligible_receiving_challenger_capture_missing",
+    "2026_06_LAC_KC:valid_exact_close_coverage_below_90_percent",
+    "2026_06_LAC_KC:settled_offers_missing_validated_evaluation",
+    "2026_06_DAL_GB:game_aware_discord_manifest_missing_or_invalid",
+    "2026_06_DAL_GB:eligible_receiving_challenger_capture_missing",
+    "2026_06_DAL_GB:valid_exact_close_coverage_below_90_percent",
+    "2026_06_DAL_GB:settled_offers_missing_validated_evaluation"
+  ],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
+  "close_reconciliation": {
+    "source": "immutable_exact_snapshots",
+    "checkpoint_built_at": "2026-10-21T12:54:13.574648+00:00",
+    "observed": 694,
+    "changed_since_checkpoint": 0,
+    "historical_locks_changed": false,
+    "match_methods": {
+      "same_provider_event": 582
+    }
+  }
+}

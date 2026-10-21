@@ -16,21 +16,18 @@ FanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.
 **ACTIONABLE PROPS**
 - No current prop meets the FanDuel residual, price, freshness, model, and context requirements.
 
-**PROP ODDS**
-- No fresh verified FanDuel prop offers in this card. Any projections below are not bettable.
-
 **STARTING SKILL PLAYER PROJECTIONS**
 - Forecasts only; bankroll and micro sections remain the betting shortlist.
-- NE QB1 D.Maye: Pass Yds 249.0 | Pass TD 2.00 | Rush Yds 26.3 | Projection only - no current line
-- NE RB1 R.Stevenson: Rush Yds 42.6 | Rec Yds 13.1 | Rush TD 0.31 | Projection only - no current line
-- NE WR1 A.Brown: Rec Yds 50.7 | Rec 4.4 | Rec TD 0.26 | Projection only - no current line
-- NE WR2 R.Doubs: Rec Yds 45.7 | Rec 2.4 | Rec TD 0.32 | Projection only - no current line
-- NE TE1 H.Henry: Rec Yds 35.8 | Rec 3.2 | Rec TD 0.32 | Projection only - no current line
-- CHI QB1 C.Williams: Pass Yds 255.3 | Pass TD 1.40 | Rush Yds 29.5 | Projection only - no current line
-- CHI RB1 D.Swift: Rush Yds 59.9 | Rec Yds 22.3 | Rush TD 0.56 | Projection only - no current line
-- CHI WR1 R.Odunze: Rec Yds 48.3 | Rec 3.2 | Rec TD 0.24 | Projection only - no current line
-- CHI WR2 L.Burden: Rec Yds 54.0 | Rec 4.7 | Rec TD 0.30 | Projection only - no current line
-- CHI TE1 C.Loveland: Rec Yds 37.2 | Rec 3.6 | Rec TD 0.30 | Projection only - no current line
+- NE QB1 D.Maye: Pass Yds 249.0 | Pass TD 2.00 | Rush Yds 26.3 | FanDuel line available
+- NE RB1 R.Stevenson: Rush Yds 42.6 | Rec Yds 13.1 | Rec 2.0 | Rush TD 0.31 | FanDuel line available
+- NE WR1 A.Brown: Rec Yds 50.7 | Rec 4.5 | Rec TD 0.26 | FanDuel line available
+- NE WR2 D.Douglas: Rec Yds 36.0 | Rec 3.2 | Rec TD 0.30 | FanDuel line available
+- NE TE1 H.Henry: Rec Yds 35.8 | Rec 3.2 | Rec TD 0.32 | FanDuel line available
+- CHI QB1 C.Williams: Pass Yds 255.3 | Pass TD 1.40 | Rush Yds 29.5 | FanDuel line available
+- CHI RB1 D.Swift: Rush Yds 59.9 | Rec Yds 22.3 | Rec 3.3 | Rush TD 0.56 | FanDuel line available
+- CHI WR1 R.Odunze: Rec Yds 48.3 | Rec 3.3 | Rec TD 0.24 | FanDuel line available
+- CHI WR2 L.Burden: Rec Yds 54.0 | Rec 4.8 | Rec TD 0.30 | FanDuel line available
+- CHI TE1 C.Loveland: Rec Yds 37.2 | Rec 3.6 | Rec TD 0.30 | FanDuel line available
 
 Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions.
 

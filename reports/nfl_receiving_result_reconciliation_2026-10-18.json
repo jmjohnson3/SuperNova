@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-20T14:08:36.353497+00:00",
+  "built_at": "2026-10-20T16:38:41.840055+00:00",
   "counts": {
     "void_nonparticipant": 13
   },
@@ -13,7 +13,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -26,7 +26,7 @@
       "team": "NYG",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -39,7 +39,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -52,7 +52,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -65,7 +65,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -78,7 +78,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -91,7 +91,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -104,7 +104,7 @@
       "team": "CLE",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -117,7 +117,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -130,7 +130,7 @@
       "team": "CLE",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -143,7 +143,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -156,7 +156,7 @@
       "team": "CLE",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -169,7 +169,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-20T14:05:54.360218+00:00",
+      "snap_source_observed_at": "2026-10-20T16:38:04.234921+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false

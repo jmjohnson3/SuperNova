@@ -301,8 +301,12 @@ def captures(manifest):
     for path in sorted((STORE/"captures").glob("*.json")):
         doc = json.loads(path.read_text(encoding="utf-8"))
         body = {k:v for k,v in doc.items() if k != "sha256"}
-        if doc.get("registration_sha256") != manifest["sha256"] or doc.get("sha256") != digest(body):
-            raise ValueError("Paper capture checksum or registration mismatch")
+        if doc.get("sha256") != digest(body):
+            raise ValueError("Paper capture checksum mismatch")
+        # Registrations are immutable cohorts. Preserve older captures on disk, but never
+        # pool their selections or probabilities into the currently registered trial.
+        if doc.get("registration_sha256") != manifest["sha256"]:
+            continue
         result.append(doc)
     return result
 

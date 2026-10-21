@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-20T12:08:32.791327+00:00",
+  "built_at": "2026-10-21T12:53:44.372871+00:00",
   "status": "evaluated",
   "settled_unique_offers": 820,
   "exact_replay_status": {
@@ -488,7 +488,7 @@
     "nfl_probability_consistency_latest"
   ],
   "micro_reconciliation": {
-    "built_at": "2026-10-20T12:08:35.990775+00:00",
+    "built_at": "2026-10-21T12:53:47.011404+00:00",
     "ledger_rows": 0,
     "accounted_rows": 0,
     "categories": {},

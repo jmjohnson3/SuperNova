@@ -1,0 +1,351 @@
+{
+  "built_at": "2026-10-21T13:03:11.523213+00:00",
+  "day": "2026-10-19",
+  "status": "capture_incomplete",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "variant": "stable_ensemble_calibrated",
+  "production_release": "nfl-20260918T143342Z",
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "capture": {
+    "day_eligible_locks": 9,
+    "current_eligible_locks": 9,
+    "eligible_forecast_ids": [
+      22938,
+      22939,
+      22940,
+      22941,
+      22942,
+      22943,
+      22945,
+      22947,
+      22951
+    ],
+    "captured_forecast_ids": [],
+    "current_quotes_fresh_now": 0,
+    "paired_challenger_locks": 0,
+    "missing_current_forecast_ids": [
+      22938,
+      22939,
+      22940,
+      22941,
+      22942,
+      22943,
+      22945,
+      22947,
+      22951
+    ],
+    "selected_research": 0,
+    "missing_historical_forecast_ids": [
+      22938,
+      22939,
+      22940,
+      22941,
+      22942,
+      22943,
+      22945,
+      22947,
+      22951
+    ],
+    "capture_errors": {},
+    "eligibility_exclusions": {
+      "outside_market": 7
+    }
+  },
+  "settlement": {
+    "missing_validated_capture": 9
+  },
+  "validation_exclusions": {},
+  "pending_variant_rows": 0,
+  "day_metrics": {
+    "all_eligible": {},
+    "fixed_research": {}
+  },
+  "cumulative_metrics": {},
+  "scoring_cohorts": {},
+  "close": {
+    "current_eligible": {
+      "started": 9,
+      "valid": 4,
+      "unknown": 5,
+      "valid_coverage": 0.4444444444444444,
+      "required_coverage": 0.9,
+      "target_met": false,
+      "unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 3,
+        "player_market_not_observed_in_capture": 2
+      },
+      "observations": [
+        {
+          "forecast_id": 22938,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 71.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "exact_line_unavailable_in_captured_feed",
+          "clv": null
+        },
+        {
+          "forecast_id": 22939,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 38.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-20T00:13:00.802455+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 22940,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 39.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-20T00:13:00.802455+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0067069081153587895"
+        },
+        {
+          "forecast_id": 22941,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 66.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-19T23:55:54.065192+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 22942,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 7.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "player_market_not_observed_in_capture",
+          "clv": null
+        },
+        {
+          "forecast_id": 22943,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 49.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-20T00:13:00.802455+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.011285662694113352"
+        },
+        {
+          "forecast_id": 22945,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 13.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "exact_line_unavailable_in_captured_feed",
+          "clv": null
+        },
+        {
+          "forecast_id": 22947,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 26.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "exact_line_unavailable_in_captured_feed",
+          "clv": null
+        },
+        {
+          "forecast_id": 22951,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 23.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "player_market_not_observed_in_capture",
+          "clv": null
+        }
+      ],
+      "average_clv": -0.004498142702368035
+    },
+    "all_eligible": {
+      "started": 9,
+      "valid": 4,
+      "unknown": 5,
+      "valid_coverage": 0.4444444444444444,
+      "required_coverage": 0.9,
+      "target_met": false,
+      "unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 3,
+        "player_market_not_observed_in_capture": 2
+      },
+      "observations": [
+        {
+          "forecast_id": 22938,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 71.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "exact_line_unavailable_in_captured_feed",
+          "clv": null
+        },
+        {
+          "forecast_id": 22939,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 38.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-20T00:13:00.802455+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 22940,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 39.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-20T00:13:00.802455+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0067069081153587895"
+        },
+        {
+          "forecast_id": 22941,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 66.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-19T23:55:54.065192+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 22942,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 7.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "player_market_not_observed_in_capture",
+          "clv": null
+        },
+        {
+          "forecast_id": 22943,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 49.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": "2026-10-20T00:13:00.802455+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.011285662694113352"
+        },
+        {
+          "forecast_id": 22945,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 13.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "exact_line_unavailable_in_captured_feed",
+          "clv": null
+        },
+        {
+          "forecast_id": 22947,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 26.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "exact_line_unavailable_in_captured_feed",
+          "clv": null
+        },
+        {
+          "forecast_id": 22951,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 23.5,
+          "side": "over",
+          "locked_at": "2026-10-19T13:58:43.776117+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "player_market_not_observed_in_capture",
+          "clv": null
+        }
+      ],
+      "average_clv": -0.004498142702368035
+    },
+    "fixed_research": {
+      "started": 0,
+      "valid": 0,
+      "unknown": 0,
+      "valid_coverage": null,
+      "required_coverage": 0.9,
+      "target_met": null,
+      "unknown_reasons": {},
+      "observations": [],
+      "average_clv": null
+    }
+  },
+  "forecast_deployment_review": {
+    "status": "collecting_evidence",
+    "blockers": [
+      "real_offers:missing_matches",
+      "missing_current_challenger_captures",
+      "missing_prospective_capture_history",
+      "date_partition_not_cumulative_review"
+    ],
+    "deployment_approved": false,
+    "betting_approved": false,
+    "market_evidence_blockers": [
+      "real_offers:missing_true_pair_matches",
+      "exact_micro:missing_true_pair_matches"
+    ],
+    "automatic_promotion": false
+  },
+  "forecast_next_action": "keep_frozen_collect_evidence",
+  "deployment_requires_bankroll_approval": false,
+  "betting_approved": false,
+  "production_changed": false,
+  "limitations": [
+    "Research selections are fixed; this report never reselects after results.",
+    "Freshness at original lock/capture is separate from whether a price is executable now.",
+    "Forecast review does not require ROI or CLV gates. Cash approval remains separate.",
+    "A positive checkpoint prepares a controlled release review; it never overwrites model artifacts."
+  ],
+  "report_scope": "date_partition"
+}

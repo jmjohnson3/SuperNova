@@ -225,6 +225,30 @@ def test_capture_reruns_keep_original_decisions_and_checksums(tmp_path,monkeypat
         trial.captures(manifest())
 
 
+def test_capture_registrations_remain_separate_immutable_cohorts(tmp_path,monkeypatch):
+    monkeypatch.setattr(trial,"STORE",tmp_path)
+    capture_dir=tmp_path/"captures";capture_dir.mkdir()
+    current=manifest();current["sha256"]="current-registration"
+    old_body=dict(contract=trial.CONTRACT,registration_sha256="old-registration",
+        captured_at=NOW.isoformat(),rows=[{"cohort":"old"}],exclusions={},
+        research_only=True,betting_approved=False)
+    current_body=dict(contract=trial.CONTRACT,registration_sha256=current["sha256"],
+        captured_at=(NOW+timedelta(seconds=1)).isoformat(),rows=[{"cohort":"current"}],exclusions={},
+        research_only=True,betting_approved=False)
+    old_path=capture_dir/"old.json"
+    old_path.write_text(json.dumps(dict(old_body,sha256=trial.digest(old_body))))
+    (capture_dir/"current.json").write_text(json.dumps(dict(current_body,sha256=trial.digest(current_body))))
+    old_bytes=old_path.read_bytes()
+
+    docs=trial.captures(current)
+    assert [row["cohort"] for doc in docs for row in doc["rows"]]==["current"]
+    assert old_path.read_bytes()==old_bytes
+    modified=json.loads(old_path.read_text());modified["rows"][0]["cohort"]="tampered"
+    old_path.write_text(json.dumps(modified))
+    with pytest.raises(ValueError,match="checksum"):
+        trial.captures(current)
+
+
 def test_code_or_artifact_drift_cannot_create_capture(tmp_path,monkeypatch):
     monkeypatch.setattr(trial,"STORE",tmp_path)
     monkeypatch.setattr(trial.experiments,"load_experiment",lambda name:manifest())
