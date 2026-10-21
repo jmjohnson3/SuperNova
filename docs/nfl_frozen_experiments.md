@@ -3,6 +3,48 @@
 These changes repair evidence collection. Profitability still has to be demonstrated
 on later offers, and paper results do not authorize cash betting.
 
+## Registered October 21, 2026: `nfl-sharp-gap-cash-v5`
+
+The price-gap scanner is now the cash strategy (`docs/nfl_cash_readiness.md`). `nfl-sharp-gap-cash-v5`
+succeeds `nfl-fanduel-price-gap-v4` with new rules:
+
+- bets at FanDuel, ESPN Bet and DraftKings;
+- stakes only gaps seen 15-45 minutes before kickoff, polled every 5 minutes through the final hour;
+- one decision per player-game-stat across books;
+- the documented cash limits;
+- a shadow model filter;
+- EV at the sharp close graded on Pinnacle's nearest closing line moved to the bet's line when it has
+  moved (yardage only).
+
+**Why v4 collected nothing.** It last collected a decision on October 15. `bets.nfl_sharp_quote_observations`
+and `bets.nfl_sharp_observations` were empty, so no decision had a close. The scanner refused every run,
+and nothing reported it:
+
+| Dates | Refusal | Cause |
+|---|---|---|
+| Oct 16, Oct 18 | `research_not_registered` | v2-v4 did not exist yet. |
+| Oct 18-20 | `experiment_configuration_drift` | v4 was registered with one market, but the scheduled task's `NFL_SHARP_WATCH_MARKETS` lists four. |
+| Oct 21 | `experiment_source_drift` | An edit to `receiving_paper_trial.py` drifted v4. |
+
+That file has nothing to do with pricing. v1-v4 pinned the scanner's whole import closure: 79 files,
+from the model trainers to the cash ledger. A display helper in `fanduel_links` and `schema`'s import
+of `cash_execution` pull in the rest.
+
+**What v5 changes.**
+
+- **Narrow pin.** v5 pins only the modules that price, select, stake and grade: `sharp_watch`,
+  `sharp_strategy`, `sharp_math`, `markets`, `context_contract` and `modeling/sharp_alert_report`.
+  Transport, raw storage, prop parsing and link display are not pinned.
+- **Outage warning.** A refusal while a game is within 24 hours now posts one Discord warning per
+  day and reason.
+- **Kickoff tolerance.** In the final minutes The Odds API moves `commence_time` to the actual
+  kickoff (PHI-JAX on October 11: 13:30Z became 13:35Z). The exact-kickoff check rejected those
+  payloads, which are the closing snapshots. The same matchup within 15 minutes is now accepted.
+  In the replay this lifted close coverage in the stake window from 89% to 97%.
+
+v1-v4 remain blocked and their observations are not pooled. Registered with the scheduled task's
+four markets (`player_reception_yds,player_rush_yds,player_receptions,alternate_totals`).
+
 ## Registered October 19, 2026
 
 Two repairs were made in sequence, so each trial has two new registrations. Only

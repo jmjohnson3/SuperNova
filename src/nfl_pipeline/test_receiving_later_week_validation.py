@@ -79,9 +79,11 @@ def test_post_registration_selection_enters_new_cohort_without_rewriting_old_slo
     from nfl_pipeline import cash_readiness as module
     monkeypatch.setattr(module,'source_hash',lambda _: 's')
     at=datetime(2026,9,27,tzinfo=timezone.utc)
-    cfg={'config':{'registered_at':at.isoformat(),'scoring_version':'s','release':'r'}}
+    freeze={'experiment_id':'cash-freeze','sha256':'f'}
+    cfg={'config':{'registered_at':at.isoformat(),'scoring_version':'s','release':'r','frozen_provenance':freeze}}
     old=dict(id=1,created_at_utc=at-timedelta(days=1),status='final',actual=10,
-             forecast_payload={'model_version':'r','scoring_replay':{'scoring_fingerprint':'s'}})
+             forecast_payload={'model_version':'r','scoring_replay':{'scoring_fingerprint':'s',
+                 'cash_freeze':dict(freeze,status='verified')}})
     future=dict(old,id=2,created_at_utc=at+timedelta(days=1),status='scheduled',actual=None)
     selections=[{'forecast_id':1},{'forecast_id':2}]; saved=deepcopy(selections)
     result=selection_cohort_accounting([old,future],selections,cfg)
@@ -96,9 +98,13 @@ def test_fixed_research_capture_enters_cash_evidence_after_registration():
     from nfl_pipeline.test_receiving_trial_checkpoint import inputs, NOW
     from nfl_pipeline.cash_readiness import evidence
     records, documents, _, research, selections, closes = inputs()
-    records[0]['forecast_payload']['scoring_replay']['scoring_fingerprint']='s'
+    freeze={'experiment_id':'cash-freeze','sha256':'f'}
+    records[0]['forecast_payload']['scoring_replay'].update(scoring_fingerprint='s',
+        cash_freeze=dict(freeze,status='verified'))
+    for document in documents:
+        document['cash_freeze']=dict(freeze,status='verified')
     registration={'config':{'research_registration':research,'release':'production','scoring_version':'s',
-                           'registered_at':'2026-09-22T10:00:45Z'}}
+                           'registered_at':'2026-09-22T10:00:45Z','frozen_provenance':freeze}}
     selected, all_rows, _, unresolved, pending=evidence(records,documents,registration,selections,closes,NOW+timedelta(days=1))
     assert len(selected)==len(all_rows)==1 and unresolved==pending==0
     assert selected[0]['forecast_id']==1 and selected[0]['clv'] is None

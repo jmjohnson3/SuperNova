@@ -1,5 +1,59 @@
 # NFL Forecast and Cash Trial Contract
 
+## October 21, 2026: the cash strategy is the sharp price gap
+
+From October 21 the only NFL strategy that carries money is the sharp price-gap scanner
+(`sharp_watch`, rules in `sharp_strategy.py`, registration `nfl-sharp-gap-cash-v5`). The model
+receiving trial below keeps every gate it had, but it is research: on 338 player-games its
+probabilities scored worse than FanDuel's no-vig line (Brier 0.2540 vs 0.2501) with -0.1% average
+CLV, so it has no price edge to stake.
+
+**Why the gap strategy.** A soft book's price that beats Pinnacle's no-vig price is an edge you
+can measure at kickoff, without needing any model. In the 2025 backtest, receiving-yard gaps of
++3% or more kept +2.7% to +3.7% EV at Pinnacle's close. Replaying this season's saved scanner
+payloads with the v5 rules (`reports/nfl_sharp_replay_2026.md`, retrospective only) gives 30
+decisions in the 15-45 minute window at +3.9% EV at the close, with 93% still positive. Gaps
+seen earlier decayed to +2.6% to +3.0%.
+
+**Rules.**
+- Books: FanDuel, ESPN Bet and DraftKings.
+- Markets: receiving yards, rushing yards and receptions.
+- A gap must be +3% or better against Pinnacle's no-vig price when seen, 15-45 minutes before
+  kickoff.
+- One decision per player-game-stat: the best book when first seen.
+- Limits: $1 flat, at most 5 bets a day and 2 per game, at most $20 per NFL week, and a sticky
+  pause at $30 cumulative confirmed loss.
+- Bets are placed by hand and confirmed with `python -m nfl_pipeline.sharp_bets --confirm ID`.
+
+**Gates.** Only these four apply to this strategy. The frozen-model gates below guard model
+probabilities the strategy does not use.
+
+| Gate | Rule |
+|---|---|
+| Close capture | Pause when fewer than 90% of the last 30 decisions have a sharp close (once 10 exist). A missing close is a scanner bug, not bad luck. |
+| Closing EV | Pause when mean EV at the sharp close is at or below 0 after 50 decisions. Review a larger stake at +1.5% or better over 150+ decisions and 3+ weeks. |
+| Loss pause | Sticky at the lowest cumulative confirmed profit of -$30. |
+| Concentration | No player above 20% or team above 35% of decisions before scaling. |
+
+The verdict (`trial`, `paused`, `scale_review_ready`) is in `reports/nfl_sharp_alerts_latest.md`.
+The close task rebuilds it, and the scanner reads it before staking. Win/loss is reported but
+never gates anything: with 50 bets at -110, ROI has a standard error of about 14 points. EV at
+the sharp close is known for every decision at kickoff.
+
+**Model as a filter.** Each decision records a shadow verdict:
+
+- `pass`: no concern.
+- `flag`: an injury tag or limited-usage role on an over, a non-active roster status, or the model
+  giving the bet side 15+ points less than the sharp price at the same line.
+- `no_forecast`: no forecast exists for the player.
+
+The verdict never skips or sizes a bet. It becomes a rule only if skipping the flagged gaps raises
+EV at the close over at least 60 decisions. In the replay it flagged none of the 30 decisions, so
+it has not been tested yet.
+
+The remainder of this document is the model receiving trial's contract, which still applies to
+that research trial.
+
 ## What Changes
 
 Production remains pinned. Forecast deployment is still a separate, manual review;

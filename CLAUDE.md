@@ -228,15 +228,30 @@ per state, see `docs/nfl_fanduel_links.md`), `NFL_SHARP_WATCH_MARKETS`, `NFL_SHA
 - Never rewrite historical locks/forecasts or reconstruct missing legacy inputs; exclude
   and count them instead. Proxy-line results are not betting-edge evidence.
 
-### Flow and cash policy
+### Cash strategy: sharp price gaps (since 2026-10-21)
+The only NFL strategy that carries money is `sharp_watch` (rules in `sharp_strategy.py`,
+registration `nfl-sharp-gap-cash-v5`): FanDuel, ESPN Bet or DraftKings at +3% or better against
+Pinnacle's no-vig price, seen 15-45 minutes before kickoff, in receiving yards, rushing yards and
+receptions. The model forecasts do not beat FanDuel's line and stay research; they are only a
+recorded shadow filter beside each decision.
+- `NFL-Sharp-Watch` polls every game every 5 minutes through its final hour (stake window plus the
+  closing snapshot). Discord pings only staked bets; confirm placement with `sharp_bets --confirm`.
+- Limits: $1 flat, ≤5 bets/day, ≤2 per game, one per player-game-stat across books, ≤$20 per NFL
+  week, sticky pause at $30 cumulative confirmed loss. No automated wager placement.
+- Gates (`modeling/sharp_alert_report`, run by the close task): close capture ≥90% of recent
+  decisions, EV at the sharp close (pause if ≤0 after 50; scale review at ≥+1.5% over 150+ and 3+
+  weeks), the loss pause, player/team concentration ≤20%/35%. Raising stakes is a manual decision.
+- A scan that refuses (unregistered/drifted) while games are near posts one Discord warning a day.
+  The registration pins only the pricing, selection, staking and grading modules; changing any of
+  them, `sharp_strategy` or `NFL_SHARP_WATCH_MARKETS` needs a new one (`sharp_watch --register`).
+- `modeling/sharp_replay` replays the rules over saved scanner payloads (retrospective only).
+
+### Model forecast flow (research)
 Fresh FanDuel quote → frozen forecast (`forecast_store` / `forecast_outputs`) → immutable
 ledger → pinned challenger capture → fixed research selection → `cash_readiness` →
 reservation (`cash_execution`) → Discord → exact close → settled result → evidence refresh.
-- Only the registered FanDuel receiving trial (`models/cash_trial/registration.json`) can
-  become cash-eligible; everything else is research. No automated wager placement.
-- Risk limits: $1 flat, ≤5 recommendations/day, ≤$20 per NFL week, sticky global pause at
-  $30 cumulative confirmed loss. Reviews are at 50/100/200 settled decisions, ≥3 weeks.
-- `docs/nfl_cash_readiness.md` holds the full gate list.
+- The registered FanDuel receiving trial (`models/cash_trial/registration.json`) keeps its
+  frozen-model gates (`docs/nfl_cash_readiness.md`) but is research, not the cash strategy.
 
 ### Bet scope, market calibration, CLV (see `docs/nfl_market_calibration.md`)
 - Only stats in `betting_preferences.BET_PROP_STATS` (receiving yards) can lock into staked tiers;

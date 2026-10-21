@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "built_at": "2026-10-21T17:03:28+00:00",
+    "season": 2026,
+    "payloads": 621,
+    "skipped": {},
+    "first": "2026-10-01 14:15:48.151030-07:00",
+    "last": "2026-10-15 17:10:45.122563-07:00",
+    "experiment_id": "nfl-sharp-gap-cash-v5",
+    "retrospective": true,
+    "prospective_evidence": false
+  },
+  "summary": {
+    "by_bucket": {
+      "T-15..kickoff": {
+        "decisions": 25,
+        "with_close": 25,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.04531324080590343,
+        "ev_at_sharp_close": 0.04531324080590343,
+        "still_positive": 1.0,
+        "settled": 25,
+        "roi": -0.04062065408993074
+      },
+      "T-240..T-90": {
+        "decisions": 38,
+        "with_close": 38,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.043893233854302965,
+        "ev_at_sharp_close": 0.029801958393950886,
+        "still_positive": 0.7631578947368421,
+        "settled": 34,
+        "roi": -0.13454314670765719
+      },
+      "T-45..T-15 (stake window)": {
+        "decisions": 30,
+        "with_close": 29,
+        "close_coverage": 0.9666666666666667,
+        "ev_when_seen": 0.04511773778786002,
+        "ev_at_sharp_close": 0.038880929206425524,
+        "still_positive": 0.9310344827586207,
+        "settled": 28,
+        "roi": -0.07490641591713211
+      },
+      "T-90..T-45": {
+        "decisions": 24,
+        "with_close": 24,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.04358021387751126,
+        "ev_at_sharp_close": 0.026221201294352157,
+        "still_positive": 0.875,
+        "settled": 22,
+        "roi": 0.002649851792737518
+      }
+    },
+    "stake_window": {
+      "decisions": 30,
+      "with_close": 29,
+      "close_coverage": 0.9666666666666667,
+      "ev_when_seen": 0.04511773778786002,
+      "ev_at_sharp_close": 0.038880929206425524,
+      "still_positive": 0.9310344827586207,
+      "settled": 28,
+      "roi": -0.07490641591713211
+    },
+    "by_book": {
+      "draftkings": {
+        "decisions": 14,
+        "with_close": 14,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.041272114764429525,
+        "ev_at_sharp_close": 0.03695798102722025,
+        "still_positive": 0.9285714285714286,
+        "settled": 14,
+        "roi": 0.11230201410411111
+      },
+      "espnbet": {
+        "decisions": 13,
+        "with_close": 13,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.046793911734201284,
+        "ev_at_sharp_close": 0.04036582739101664,
+        "still_positive": 0.9230769230769231,
+        "settled": 12,
+        "roi": -0.3041666666666667
+      },
+      "fanduel": {
+        "decisions": 3,
+        "with_close": 2,
+        "close_coverage": 0.6666666666666666,
+        "ev_when_seen": 0.0558005581297236,
+        "ev_at_sharp_close": 0.042689728261020105,
+        "still_positive": 1.0,
+        "settled": 2,
+        "roi": -0.009803921568627472
+      }
+    },
+    "by_stat": {
+      "receiving_yards": {
+        "decisions": 10,
+        "with_close": 9,
+        "close_coverage": 0.9,
+        "ev_when_seen": 0.04272961457227091,
+        "ev_at_sharp_close": 0.03273829455524539,
+        "still_positive": 0.8888888888888888,
+        "settled": 9,
+        "roi": -0.10579740560852272
+      },
+      "receptions": {
+        "decisions": 11,
+        "with_close": 11,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.045039900098210954,
+        "ev_at_sharp_close": 0.04225708117798767,
+        "still_positive": 1.0,
+        "settled": 10,
+        "roi": 0.013571428571428568
+      },
+      "rushing_yards": {
+        "decisions": 9,
+        "with_close": 9,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.04786634298141901,
+        "ev_at_sharp_close": 0.040897155892363014,
+        "still_positive": 0.8888888888888888,
+        "settled": 9,
+        "roi": -0.14232414232414234
+      }
+    },
+    "by_week": {
+      "2026-5": {
+        "decisions": 29,
+        "with_close": 28,
+        "close_coverage": 0.9655172413793104,
+        "ev_when_seen": 0.0442993608483344,
+        "ev_at_sharp_close": 0.036882023682865785,
+        "still_positive": 0.9285714285714286,
+        "settled": 27,
+        "roi": -0.040643690580729606
+      },
+      "2026-6": {
+        "decisions": 1,
+        "with_close": 1,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.06885066903410308,
+        "ev_at_sharp_close": 0.09485028386609828,
+        "still_positive": 1.0,
+        "settled": 1,
+        "roi": -1.0
+      }
+    },
+    "by_close_method": {
+      "exact": {
+        "decisions": 12,
+        "with_close": 12,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.044805720068033884,
+        "ev_at_sharp_close": 0.034947778958609836,
+        "still_positive": 0.9166666666666666,
+        "settled": 11,
+        "roi": -0.07857142857142856
+      },
+      "none": {
+        "decisions": 1,
+        "with_close": 0,
+        "close_coverage": 0.0,
+        "ev_when_seen": 0.0820222178671306,
+        "ev_at_sharp_close": null,
+        "still_positive": null,
+        "settled": 0,
+        "roi": null
+      },
+      "shifted": {
+        "decisions": 17,
+        "with_close": 17,
+        "close_coverage": 1.0,
+        "ev_when_seen": 0.043167133820721376,
+        "ev_at_sharp_close": 0.041657270557824824,
+        "still_positive": 0.9411764705882353,
+        "settled": 17,
+        "roi": -0.07253493714082268
+      }
+    },
+    "shadow_filter": {
+      "pass": {
+        "decisions": 30,
+        "with_close": 29,
+        "close_coverage": 0.9666666666666667,
+        "ev_when_seen": 0.04511773778786002,
+        "ev_at_sharp_close": 0.038880929206425524,
+        "still_positive": 0.9310344827586207,
+        "settled": 28,
+        "roi": -0.07490641591713211
+      }
+    },
+    "flag_reasons": {},
+    "capped_stakes": {
+      "decisions": 9,
+      "with_close": 8,
+      "close_coverage": 0.8888888888888888,
+      "ev_when_seen": 0.053544104061644886,
+      "ev_at_sharp_close": 0.052021919816603514,
+      "still_positive": 1.0,
+      "settled": 7,
+      "roi": 0.4035996216668485
+    }
+  }
+}

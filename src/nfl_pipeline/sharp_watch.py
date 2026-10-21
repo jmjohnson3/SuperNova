@@ -1,18 +1,23 @@
-"""Poll FanDuel and sharp books together and alert when FanDuel is off-market.
+"""Poll the bettable books and Pinnacle together and alert when a book is off the sharp price.
 
-A stale FanDuel price is usually corrected within minutes, so one lock-time snapshot catches little.
-This polls The Odds API for FanDuel + Pinnacle/exchanges in the same call (named bookmakers: <=10
-books cost one region, so a poll is 1 credit per market per game), prices FanDuel at the sharp
-no-vig line (moved to FanDuel's line when they differ slightly), and posts a Discord alert with the
-FanDuel link and the worst price still worth taking. Every alert is stored once per distinct price in
-bets.nfl_sharp_alerts (rows are never deleted) and graded by CLV in sharp_alert_report. Alerts are research, not
-bets, until that report shows the edge survives to the close.
+This is the NFL cash strategy (rules in sharp_strategy). A stale book price is usually corrected
+within minutes, so one lock-time snapshot catches little. This polls The Odds API for FanDuel,
+ESPN Bet and DraftKings plus Pinnacle in the same call (named bookmakers: <=10 books cost one
+region, so a poll is 1 credit per market per game), prices each book at Pinnacle's no-vig line
+(moved to the book's line when they differ slightly), and posts a Discord alert with the book link
+and the worst price still worth taking. Gaps seen 15-45 minutes before kickoff carry a $1 stake,
+within the strategy's daily, weekly, per-game and loss limits. Every alert is stored once per
+distinct price in bets.nfl_sharp_alerts (rows are never deleted) and graded at the sharp close in
+sharp_alert_report, which also decides whether staking may continue.
 
-It runs on the existing 10-minute close task and decides itself whether a poll is worth the credits:
-hourly from 24h before kickoff, every 10 minutes in the last 4 hours (the final 90 minutes have first
-claim on a tight budget). The daily allowance is today's share, by games, of the spare credits left
-before the plan resets (NFL_ODDS_API_RESET_DAY; live remaining-credit count), never below a credit floor
-(NFL_SHARP_CREDIT_FLOOR). Add markets with NFL_SHARP_WATCH_MARKETS once the plan has credits for them.
+It runs every 5 minutes and polls each game every 5 minutes through its final hour, which is both
+the stake window and the closing snapshot every decision is graded against. The daily allowance is
+today's share, by games, of the spare credits left before the plan resets (NFL_ODDS_API_RESET_DAY;
+live remaining-credit count), never below a credit floor (NFL_SHARP_CREDIT_FLOOR). Markets come from
+NFL_SHARP_WATCH_MARKETS and are part of the registration, so changing them needs a new one.
+
+A scan that refuses to run (unregistered or drifted registration) while games are close posts one
+Discord warning per day and reason: an outage here silently loses every decision and every close.
 """
 from __future__ import annotations
 
@@ -33,8 +38,8 @@ import psycopg2
 import psycopg2.extras
 import requests
 
-from nfl_pipeline import betting_preferences as prefs
 from nfl_pipeline import sharp_math
+from nfl_pipeline import sharp_strategy as strategy
 from nfl_pipeline.crawler_oddsapi import OddsCrawlerConfig, _full_url, _save_payload
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
@@ -47,10 +52,11 @@ PROVIDER = "oddsapi_watch"
 BASE = "https://api.the-odds-api.com/v4/sports/americanfootball_nfl"
 _ET = ZoneInfo("America/New_York")
 SHARP_BOOKS = ("pinnacle", "betfair_ex_eu", "matchbook", "smarkets")
-BET_BOOKS = tuple(prefs.SHARP_WATCH_BET_BOOKS)  # books we can bet at, priced against SHARP_BOOKS
+BET_BOOKS = tuple(strategy.BET_BOOKS)  # books we can bet at, priced against SHARP_BOOKS
 # Books we cannot bet at today. Naming them is free (<= 10 books cost one region per market) and
-# their prices tell us whether opening an account somewhere else would be worth it.
-REFERENCE_BOOKS = ("betmgm", "williamhill_us", "espnbet", "fanatics")
+# their prices tell us whether opening an account somewhere else would be worth it. Caesars
+# (williamhill_us) returned no player props when scanned in October, so it is not named.
+REFERENCE_BOOKS = ("betmgm", "fanatics")
 BOOKMAKERS = tuple(dict.fromkeys(BET_BOOKS + SHARP_BOOKS + REFERENCE_BOOKS))[:10]
 BOOK_LABEL = {"fanduel": "FanDuel", "draftkings": "DraftKings", "betmgm": "BetMGM",
               "williamhill_us": "Caesars", "espnbet": "ESPN BET", "fanatics": "Fanatics"}
@@ -68,24 +74,27 @@ EXTRA_STAT_BY_MARKET = {"player_pass_completions": "pass_completions",
 # proportional de-vig overstates a +650 yes by ~3 points, which is larger than any edge we would bet.
 YES_NO_SIDES = {"yes": "over", "no": "under"}
 DEFAULT_MARKETS = "player_reception_yds"
-MIN_EV = 0.03            # Discord alert threshold vs the sharp fair price
+MIN_EV = strategy.MIN_EV  # Discord alert threshold vs the sharp fair price
 LOG_MIN_EV = 0.01        # smaller gaps are logged (tier 'logged', no ping) so CLV evidence accrues faster
-# Pings only where a gap still holds its edge at the sharp close, which decays at a different rate
-# per market. 2025 backtests, >= +3% gaps, EV measured at Pinnacle's close:
+# Pings and stakes only where a gap still holds its edge at the sharp close. 2025 backtests, >= +3%
+# gaps, EV measured at Pinnacle's close:
 #   receiving  T-720 -0.05% | T-360 +1.74% | T-180 +2.70% | T-90 +2.70% | T-15 +3.32%
 #   receptions                              | T-90  -0.02% | T-45 +1.58% | T-15 +3.49%
 #   rushing                                 | T-90  +3.75% | T-45 +3.48% | T-15 +4.77%
-# Counts sit on integer lines, so a one-reception move is a large probability move and books correct
-# it within the hour; continuous yardage drifts slowly and holds its edge for hours.
-PING_WINDOW_MINUTES = 180  # continuous yardage; rushing assumes receiving's T-180 result, untested
-PING_WINDOW_BY_STAT = {"receptions": 45}
+# One window for every staked market: 45 minutes is inside the range where all three hold their
+# edge, and 15 minutes leaves time to place the bet by hand.
+STAKE_WINDOW_MINUTES = tuple(strategy.STAKE_WINDOW_MINUTES)
+# Fetch a little before the window opens so a forming gap is seen, and through kickoff so every
+# decision has a closing snapshot inside MAX_CLOSE_AGE (sharp_alert_report).
+POLL_HORIZON_MINUTES = STAKE_WINDOW_MINUTES[1] + 15
 MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much EV
 MAX_ALERTS_PER_RUN = 10
-FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and FanDuel is slowest to react; never starve this window
+FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and books are slowest to react; never starve this window
 QUOTE_CONTRACT = "nfl-sharp-quotes-v2"
 MAX_SOURCE_AGE_SECONDS = 300
 MAX_SOURCE_SKEW_SECONDS = 120
-EXPERIMENT_NAME = "nfl-fanduel-price-gap-v4"
+EXPERIMENT_NAME = strategy.EXPERIMENT_NAME
+READINESS_REPORT = ROOT / "reports" / "nfl_sharp_alerts_latest.json"
 
 
 def _int_env(name: str, default: int) -> int:
@@ -104,25 +113,25 @@ def experiment_config():
     return dict(contract=QUOTE_CONTRACT, bet_books=list(BET_BOOKS), reference_books=["pinnacle"],
                 markets=markets(), min_ev=MIN_EV, log_min_ev=LOG_MIN_EV,
                 max_source_age_seconds=MAX_SOURCE_AGE_SECONDS, max_source_skew_seconds=MAX_SOURCE_SKEW_SECONDS,
-                ping_window_minutes=PING_WINDOW_MINUTES, ping_window_by_stat=PING_WINDOW_BY_STAT,
+                stake_window_minutes=list(STAKE_WINDOW_MINUTES), poll_horizon_minutes=POLL_HORIZON_MINUTES,
                 devig_method=sharp_math.DEVIG_METHOD, line_model=sharp_math.LINE_MODEL,
-                cash_enabled=bool(prefs.SHARP_WATCH_BETS_ENABLED), selection="first_eligible_per_book_player_game_stat")
+                cash_enabled=bool(strategy.BETS_ENABLED), staked_stats=sorted(strategy.STAKED_STATS),
+                stake=strategy.STAKE, max_bets_per_day=strategy.MAX_BETS_PER_DAY,
+                max_stake_per_week=strategy.MAX_STAKE_PER_WEEK, max_bets_per_game=strategy.MAX_BETS_PER_GAME,
+                loss_pause=strategy.LOSS_PAUSE, gates=strategy.GATES, shadow_filter=strategy.SHADOW_FILTER,
+                selection="best_ev_first_eligible_per_player_game_stat_across_books")
 
 
 def interval_minutes(minutes_to_kickoff: float) -> int | None:
     """Poll cadence by time to kickoff, or None when a poll would buy nothing actionable.
 
-    The 2025 decay curve (docs/nfl_market_calibration.md) puts a >= +3% gap seen 12h out at -0.05%
-    EV by the close and 3h out at +2.70%, so polling before T-4h spent credits on gaps we would
-    never bet. The last hour is both the strongest window (+3.3%) and the one books move least.
+    Only the final hour is polled: it holds the whole stake window (T-45 to T-15) and the closing
+    snapshot every decision is graded against. Earlier gaps are never staked, and the 2025 decay
+    curve shows they are worth less by the close, so polling them only spent credits.
     """
-    if minutes_to_kickoff <= 0:
+    if minutes_to_kickoff <= 0 or minutes_to_kickoff > POLL_HORIZON_MINUTES:
         return None
-    if minutes_to_kickoff <= 60:
-        return 5
-    if minutes_to_kickoff <= 240:
-        return 10
-    return None
+    return 5
 
 
 def daily_allowance(remaining: int, today: date, floor: int) -> float:
@@ -343,67 +352,111 @@ def persist_observations(cur, quotes):
             [(r["observation_id"], r["game_id"], r["observed_at_utc"], psycopg2.extras.Json(r)) for r in quotes])
 
 
-def market_window(market: str) -> int:
-    """How close to kickoff a market's gaps are still worth acting on, plus a little lead so the
-    gap can be seen forming. Fetching a market outside this buys data we would never bet."""
-    stat = STAT_BY_MARKET.get(market) or EXTRA_STAT_BY_MARKET.get(market) or GAME_MARKETS.get(market)
-    return PING_WINDOW_BY_STAT.get(stat or "", PING_WINDOW_MINUTES) + 15
-
-
 def markets_for(minutes_to_kickoff: float, wanted: list[str]) -> list[str]:
-    return [m for m in wanted if minutes_to_kickoff <= market_window(m)]
+    """Every wanted market inside the poll horizon, none outside it: a poll outside buys data we
+    would never bet or grade against."""
+    return list(wanted) if 0 < minutes_to_kickoff <= POLL_HORIZON_MINUTES else []
 
 
 def alert_tier(ev: float, minutes_to_kickoff: float, stat: str | None = None) -> str:
+    """'alert' (pinged, may be staked) only inside the stake window; 'early' before it opens and
+    'late' after it closes are stored and graded but never pinged; 'logged' is below MIN_EV."""
     if ev < MIN_EV:
         return "logged"
-    window = PING_WINDOW_BY_STAT.get(stat or "", PING_WINDOW_MINUTES)
-    return "alert" if minutes_to_kickoff <= window else "early"
+    closes_at, opens_at = STAKE_WINDOW_MINUTES
+    if minutes_to_kickoff > opens_at:
+        return "early"
+    if minutes_to_kickoff < closes_at:
+        return "late"
+    return "alert"
 
 
-ALERT_REPORT = ROOT / "reports" / "nfl_sharp_alerts_latest.json"
+ALERT_REPORT = READINESS_REPORT
+
+
+def _report_summary() -> dict:
+    try:
+        return json.loads(ALERT_REPORT.read_text(encoding="utf-8")).get("summary") or {}
+    except (FileNotFoundError, ValueError, TypeError, AttributeError):
+        return {}
 
 
 def realized_profit() -> float:
     """Settled profit on bets actually placed, as the alert report graded them (0.0 if unknown)."""
     try:
-        placed = (json.loads(ALERT_REPORT.read_text(encoding="utf-8")).get("summary") or {}).get("placed") or {}
-        return float(placed.get("realized_profit") or 0.0)
-    except (FileNotFoundError, ValueError, TypeError, AttributeError):
+        return float(((_report_summary().get("placed") or {}).get("realized_profit")) or 0.0)
+    except (TypeError, ValueError):
         return 0.0
+
+
+def readiness() -> dict:
+    """The gate verdict the alert report last computed. Missing means no evidence yet, not a pause."""
+    value = _report_summary().get("readiness")
+    return value if isinstance(value, dict) else {}
 
 
 def risk_budget(cur, now: datetime) -> dict[str, Any]:
-    """Stake already committed today and this NFL week, plus the sticky loss pause."""
+    """Bets already staked today, stake this NFL week, what is already staked per game and per
+    player-game-stat, and whether a loss or readiness pause holds."""
     et_now = now.astimezone(_ET)
     day_start = et_now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = day_start - timedelta(days=(et_now.weekday() - 1) % 7)  # NFL week starts Tuesday ET
-    cur.execute("""SELECT COALESCE(SUM(stake) FILTER (WHERE alerted_at >= %s), 0),
+    cur.execute("""SELECT COUNT(*) FILTER (WHERE alerted_at >= %s),
                           COALESCE(SUM(stake) FILTER (WHERE alerted_at >= %s), 0)
                    FROM bets.nfl_sharp_alerts WHERE stake > 0""", (day_start, week_start))
-    today, week = (float(v) for v in cur.fetchone())
+    today, week = cur.fetchone()
+    cur.execute("""SELECT game_id, stat, COALESCE(player_name_norm, '') FROM bets.nfl_sharp_alerts
+                   WHERE stake > 0 AND commence_time_utc > %s""", (now - timedelta(hours=6),))
+    keys = {tuple(r) for r in cur.fetchall()}
+    per_game: dict[str, int] = {}
+    for game_id, _, _ in keys:
+        per_game[game_id] = per_game.get(game_id, 0) + 1
     profit = realized_profit()
-    return dict(today=today, week=week, staked=0.0,
-                paused=profit <= prefs.SHARP_WATCH_LOSS_PAUSE, realized_profit=profit)
+    gate = readiness()
+    loss_paused = profit <= strategy.LOSS_PAUSE
+    readiness_paused = gate.get("status") == "paused"
+    return dict(today=int(today), week=float(week), staked=0.0, staked_count=0,
+                staked_keys=keys, per_game=per_game, realized_profit=profit,
+                loss_paused=loss_paused, readiness_paused=readiness_paused,
+                readiness_reasons=list(gate.get("pause_reasons") or []),
+                paused=loss_paused or readiness_paused)
 
 
-def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any], stat: str | None = None) -> float:
-    """Flat stake for a pinged alert, or 0.0 when a cap, the loss pause, or an unproven market binds.
+def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any], stat: str | None = None,
+              key: tuple | None = None) -> float:
+    """Flat stake for a pinged alert, or 0.0 when a cap, a pause, or an unproven market binds.
 
-    A zero-stake alert is still stored and graded; it just carries no money, so evidence keeps accruing.
+    `key` is (game_id, stat, player_name_norm): one stake per player-game-stat across all books,
+    and at most MAX_BETS_PER_GAME per game. A zero-stake alert is still stored and graded; it
+    just carries no money, so evidence keeps accruing.
     """
-    stake = float(prefs.SHARP_WATCH_STAKE)
-    if (not prefs.SHARP_WATCH_BETS_ENABLED or tier != "alert"
-            or stake <= 0 or budget["paused"]):
+    stake = float(strategy.STAKE)
+    if not strategy.BETS_ENABLED or tier != "alert" or stake <= 0 or budget["paused"]:
         return 0.0
-    if stat is not None and stat not in prefs.SHARP_WATCH_STAKED_STATS:
+    if stat is not None and stat not in strategy.STAKED_STATS:
         return 0.0  # scanned and graded, but not backtested yet
-    committed = budget["staked"]
-    if budget["today"] + committed + stake > prefs.SHARP_WATCH_MAX_STAKE_PER_DAY:
+    if budget["today"] + budget.get("staked_count", 0) + 1 > strategy.MAX_BETS_PER_DAY:
         return 0.0
-    if budget["week"] + committed + stake > prefs.SHARP_WATCH_MAX_STAKE_PER_WEEK:
+    if budget["week"] + budget["staked"] + stake > strategy.MAX_STAKE_PER_WEEK:
         return 0.0
+    if key is not None:
+        if key in budget.get("staked_keys", set()):
+            return 0.0  # already staked at another book or an earlier price
+        if budget.get("per_game", {}).get(key[0], 0) >= strategy.MAX_BETS_PER_GAME:
+            return 0.0
     return stake
+
+
+def commit_stake(budget: dict[str, Any], stake: float, key: tuple | None) -> None:
+    """Count a stake just written so later alerts in the same run respect the same caps."""
+    if stake <= 0:
+        return
+    budget["staked"] += stake
+    budget["staked_count"] = budget.get("staked_count", 0) + 1
+    if key is not None:
+        budget.setdefault("staked_keys", set()).add(key)
+        per_game = budget.setdefault("per_game", {})
+        per_game[key[0]] = per_game.get(key[0], 0) + 1
 
 
 SCHEMA_SQL = """
@@ -417,8 +470,9 @@ CREATE TABLE IF NOT EXISTS bets.nfl_sharp_alerts (
   ev NUMERIC NOT NULL, minimum_price INTEGER, line_gap NUMERIC, posted BOOLEAN NOT NULL DEFAULT FALSE,
   UNIQUE (event_id, stat, player_name_norm, fd_line, side, fd_price)
 );
--- 'alert' = pinged in Discord (EV >= MIN_EV within PING_WINDOW_MINUTES of kickoff);
--- 'early' = EV >= MIN_EV but earlier than that (logged, no ping); 'logged' = LOG_MIN_EV <= EV < MIN_EV.
+-- 'alert' = EV >= MIN_EV inside the stake window (T-45..T-15), pinged when it carries a stake;
+-- 'early' / 'late' = EV >= MIN_EV before / after that window (stored, no ping);
+-- 'logged' = LOG_MIN_EV <= EV < MIN_EV. Rows written before the stake window existed keep their tier.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'alert';
 -- fd_line/fd_price/fd_link predate multi-book scanning; they hold the bettable book's own numbers.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS book TEXT NOT NULL DEFAULT 'fanduel';
@@ -433,6 +487,10 @@ ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS taken_price INTEGER;
 -- settled from real money rather than argued.
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_projection NUMERIC;
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_agrees BOOLEAN;
+-- Shadow model filter (sharp_strategy.SHADOW_FILTER): 'pass', 'flag' or 'no_forecast', with reasons.
+-- Graded beside EV at the sharp close; it never skips or sizes a bet until it has earned that.
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_filter TEXT;
+ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS model_filter_reasons JSONB;
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS initial_observation_id TEXT;
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS alert_observation_id TEXT;
 ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS initial_provenance JSONB;
@@ -463,22 +521,77 @@ CREATE UNIQUE INDEX IF NOT EXISTS nfl_sharp_alerts_offer_key ON bets.nfl_sharp_a
 
 
 def model_view(cur, edge: dict, game: dict) -> tuple[float | None, bool | None]:
-    """(projection, agrees) from the current frozen forecast for this player and stat, if one exists.
+    """(projection, agrees) from the current frozen forecast for this player and stat, if one exists."""
+    context = model_context(cur, edge, game)
+    return context["projection"], context["agrees"]
+
+
+FORECAST_SQL = """SELECT projection, line, over_probability, under_probability, injury_report_status,
+        roster_status, limited_usage_risk FROM bets.nfl_player_prop_predictions
+    WHERE game_id=%s AND stat=%s AND offer_player_name_norm=%s AND is_current
+    ORDER BY id DESC LIMIT 1"""
+FORECAST_FIELDS = ("projection", "line", "over_probability", "under_probability", "injury_report_status",
+                   "roster_status", "limited_usage_risk")
+
+
+def _number(value) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def shadow_filter(edge: dict, forecast: dict | None) -> tuple[str, list[str]]:
+    """('pass' | 'flag' | 'no_forecast', reasons): does the model disagree on playing time or role?
+
+    The price gap selects the bet. This asks whether the model knows something the sharp price
+    may not have absorbed yet: an injury or a reduced role for an over, or a strongly different
+    view of either side. It is recorded and graded, never applied (sharp_strategy.SHADOW_FILTER).
+    """
+    if not forecast or _number(forecast.get("projection")) is None:
+        return "no_forecast", []
+    rules, reasons = strategy.SHADOW_FILTER, []
+    status = str(forecast.get("injury_report_status") or "").strip().lower()
+    roster = str(forecast.get("roster_status") or "").strip().upper()
+    if status in rules["unavailable_injury"]:
+        reasons.append(f"injury_{status}")
+    if roster and roster != "ACT":
+        reasons.append(f"roster_{roster.lower()}")
+    if edge["side"] == "over":
+        if status in rules["over_risky_injury"]:
+            reasons.append(f"over_with_{status}_tag")
+        risk = _number(forecast.get("limited_usage_risk"))
+        if risk is not None and risk >= rules["over_max_limited_usage_risk"]:
+            reasons.append("over_with_limited_usage_risk")
+    line = _number(forecast.get("line"))
+    side_probability = _number(forecast.get(f"{edge['side']}_probability"))
+    fair = _number(edge.get("fair_probability"))
+    if (line is not None and side_probability is not None and fair is not None
+            and abs(line - float(edge["line"])) < 1e-9
+            and side_probability <= fair - rules["max_side_probability_gap"]):
+        reasons.append("model_strongly_prefers_other_side")
+    return ("flag" if reasons else "pass"), reasons
+
+
+def model_context(cur, edge: dict, game: dict) -> dict:
+    """The current frozen forecast for this player and stat, and the shadow filter's verdict.
 
     Matched on the book's own spelling of the player, which is what the forecast stores alongside its
-    own short display name.
+    own short display name. Game markets have no player forecast.
     """
+    empty = dict(projection=None, agrees=None, filter=None, filter_reasons=[])
     if edge["player_norm"] is None:
-        return None, None
-    cur.execute("""SELECT projection FROM bets.nfl_player_prop_predictions
-        WHERE game_id=%s AND stat=%s AND offer_player_name_norm=%s AND is_current
-        ORDER BY id DESC LIMIT 1""", (game["game_id"], edge["stat"], edge["player_norm"]))
+        return empty
+    cur.execute(FORECAST_SQL, (game["game_id"], edge["stat"], edge["player_norm"]))
     row = cur.fetchone()
-    if not row or row[0] is None:
-        return None, None
-    projection = float(row[0])
+    forecast = dict(zip(FORECAST_FIELDS, row)) if row else None
+    verdict, reasons = shadow_filter(edge, forecast)
+    projection = _number((forecast or {}).get("projection"))
+    if projection is None:
+        return dict(empty, filter=verdict, filter_reasons=reasons)
     model_side = "over" if projection > float(edge["line"]) else "under"
-    return projection, model_side == edge["side"]
+    return dict(projection=projection, agrees=model_side == edge["side"], filter=verdict, filter_reasons=reasons)
 
 
 def _fallback_link(cur, edge: dict, game: dict) -> str | None:
@@ -561,6 +674,108 @@ def _post(text: str) -> None:
     asyncio.run(_post_payload({"content": text[:1950], "allowed_mentions": {"parse": []}}))
 
 
+# The Odds API moves an event's commence_time to the actual kickoff in the last minutes (13:30Z became
+# 13:35Z for PHI-JAX on 11 October). Requiring an exact match threw away exactly the snapshots each
+# decision is graded against. The same matchup within this tolerance is the same game; the schedule's
+# kickoff stays the reference for every window and close.
+KICKOFF_TOLERANCE_MINUTES = 15
+
+
+def same_kickoff(api_commence, scheduled) -> bool:
+    api, start = safe_time(api_commence), safe_time(scheduled)
+    return api is not None and start is not None and abs((api - start).total_seconds()) <= KICKOFF_TOLERANCE_MINUTES * 60
+
+
+def _has_games_soon(now: datetime) -> bool:
+    """Whether any game kicks off in the next 24 hours; False when the database cannot say."""
+    try:
+        with psycopg2.connect(PG_DSN, connect_timeout=10) as conn, conn.cursor() as cur:
+            cur.execute("SET LOCAL statement_timeout='15s'")
+            cur.execute("SELECT 1 FROM raw.nfl_games WHERE start_ts_utc > %s AND start_ts_utc <= %s LIMIT 1",
+                        (now, now + timedelta(hours=24)))
+            return cur.fetchone() is not None
+    except psycopg2.Error:
+        return False
+
+
+def _load_state() -> dict:
+    try:
+        return json.loads(STATE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def warn_once(state: dict, now: datetime, reason: str, text: str, post) -> bool:
+    """Post one Discord warning per ET day and reason. Returns whether it was sent.
+
+    The scanner refused every run from 16 to 21 October (unregistered, then a market list that did
+    not match its registration, then source drift) and nothing said so; every decision and close
+    for those games was lost. A refusal while games are close is an outage, so it is announced.
+    """
+    day = str(now.astimezone(_ET).date())
+    sent = state.setdefault("warnings", {})
+    if sent.get(reason) == day:
+        return False
+    try:
+        post(text)
+    except Exception:  # an unsent warning is retried on the next run
+        return False
+    sent[reason] = day
+    return True
+
+
+def _refuse(result: dict, now: datetime, post) -> dict:
+    """Return a refusal row, warning once a day if games are close enough for it to cost evidence."""
+    if _has_games_soon(now):
+        state = _load_state()
+        text = (f"**NFL sharp scanner is not running: {result['status']}**\n"
+                f"Registration `{EXPERIMENT_NAME}`. No gaps, stakes or closing prices are being captured.\n"
+                + (f"{str(result.get('detail'))[:300]}\n" if result.get("detail") else "")
+                + "Fix the drift, or register a successor with `python -m nfl_pipeline.sharp_watch --register`.")
+        if warn_once(state, now, result["status"], text, post):
+            atomic_json(STATE, state)
+            result = dict(result, warned=True)
+    return result
+
+
+# Pricing, selection, staking and grading. A registration pins these and nothing else: the
+# previous registrations pinned their whole import closure (79 files, from the model trainers to
+# the cash ledger), so an unrelated edit to a model trial stopped the scanner. Transport (Discord,
+# raw payload storage, prop parsing) and link display are deliberately left out.
+PINNED_MODULES = ("nfl_pipeline.sharp_watch", "nfl_pipeline.sharp_strategy", "nfl_pipeline.sharp_math",
+                  "nfl_pipeline.markets", "nfl_pipeline.context_contract",
+                  "nfl_pipeline.modeling.sharp_alert_report")
+
+
+def pinned_files(root: Path = ROOT) -> dict[str, Path]:
+    return {module: root / "src" / Path(*module.split(".")).with_suffix(".py") for module in PINNED_MODULES}
+
+
+def normalized_config() -> dict:
+    """The scanner config as a registration stores it (JSON: tuples become lists, keys sorted)."""
+    return json.loads(json.dumps(experiment_config(), sort_keys=True))
+
+
+def register(now: datetime | None = None) -> dict:
+    """Create the strategy's immutable registration from the current code and market list.
+
+    Create-once: rerunning with identical rules and files returns the same registration; anything
+    else needs a new EXPERIMENT_NAME in sharp_strategy.
+    """
+    from nfl_pipeline import experiment_registry as registry
+    try:
+        predecessor = registry.load_experiment(strategy.PREDECESSOR)
+    except ValueError:
+        predecessor = None
+    config = dict(scanner=normalized_config(), predecessor_experiment_id=strategy.PREDECESSOR,
+                  predecessor_sha256=(predecessor or {}).get("sha256"),
+                  pinned_scope="pricing, selection, staking and grading modules only",
+                  change_reason=("Cash strategy: FanDuel, ESPN Bet and DraftKings at +3% or better against "
+                                 "Pinnacle no-vig, staked 15-45 minutes before kickoff, judged by EV at the "
+                                 "sharp close; pin only the modules that price, select, stake and grade"))
+    return registry.register_experiment(EXPERIMENT_NAME, config, pinned_files(), now=now)
+
+
 def _games(now: datetime) -> list[dict]:
     with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
         cur.execute("SET LOCAL statement_timeout='30s'")
@@ -581,27 +796,28 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
     now = now or datetime.now(timezone.utc)
     from nfl_pipeline.experiment_registry import check_experiment, load_experiment
     if load_experiment(EXPERIMENT_NAME) is None:
-        return dict(status="research_not_registered", experiment_id=EXPERIMENT_NAME)
+        return _refuse(dict(status="research_not_registered", experiment_id=EXPERIMENT_NAME), now, post)
     try:
         experiment = check_experiment(EXPERIMENT_NAME)
     except (ValueError, OSError) as exc:
         # Drift has to stop this scanner collecting evidence, not raise into the task
         # runner. Every other refusal here is reported as a status row; an exception
         # took the whole watcher down on 19 October over one unrelated column.
-        return dict(status="experiment_source_drift", experiment_id=EXPERIMENT_NAME,
-                    detail=str(exc))
-    if experiment["config"].get("scanner") != experiment_config():
-        return dict(status="experiment_configuration_drift", experiment_id=EXPERIMENT_NAME)
+        return _refuse(dict(status="experiment_source_drift", experiment_id=EXPERIMENT_NAME,
+                            detail=str(exc)), now, post)
+    if experiment["config"].get("scanner") != normalized_config():
+        registered = experiment["config"].get("scanner") or {}
+        current = normalized_config()
+        changed = sorted(k for k in set(registered) | set(current) if registered.get(k) != current.get(k))
+        return _refuse(dict(status="experiment_configuration_drift", experiment_id=EXPERIMENT_NAME,
+                            detail="changed: " + ", ".join(changed)), now, post)
     games = _games(now)
     if not games:
         return dict(status="no_games_within_24h")
     cfg = OddsCrawlerConfig()
     if not cfg.oddsapi_key:
         return dict(status="skipped", reason="ODDS_API_KEY is not set")
-    try:
-        state = json.loads(STATE.read_text(encoding="utf-8"))
-    except (FileNotFoundError, ValueError):
-        state = {}
+    state = _load_state()
     wanted = markets()
     cost = len(wanted)  # named bookmakers <= 10 -> one region-equivalent per market
     floor = _int_env("NFL_SHARP_CREDIT_FLOOR", 150)
@@ -627,7 +843,13 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
         conn.commit()
         with conn.cursor() as cur:
             budget = risk_budget(cur, now)
-        result["risk"] = {k: v for k, v in budget.items() if k != "staked"}
+        result["risk"] = {k: v for k, v in budget.items() if k not in ("staked", "staked_keys", "per_game")}
+        if budget["paused"]:
+            why = (["loss pause: realized ${:+.2f}".format(budget["realized_profit"])] if budget["loss_paused"] else []) \
+                + budget["readiness_reasons"]
+            warn_once(state, now, "staking_paused",
+                      "**NFL sharp strategy: staking is paused**\n" + "; ".join(why or ["readiness pause"])
+                      + "\nGaps are still scanned and graded at stake 0. See reports/nfl_sharp_alerts_latest.md.", post)
         for game in due:
             event = by_matchup.get((normalize_team(game["home"]), normalize_team(game["away"])))
             if event is None:
@@ -650,7 +872,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             remaining = int(response.headers.get("x-requests-remaining") or remaining - spent_here)
             payload = response.json()
             observed_at = datetime.now(timezone.utc)
-            if safe_time(payload.get("commence_time")) != safe_time(game["start"]):
+            if not same_kickoff(payload.get("commence_time"), game["start"]):
                 skipped[game["game_id"]] = "event_kickoff_mismatch"
                 continue
             for endpoint, keep in (("nfl_player_props", lambda k: k not in GAME_MARKETS), ("nfl_game_odds", lambda k: k in GAME_MARKETS)):
@@ -667,27 +889,31 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                 persist_observations(cur, quote_observations(payload, game, observed_at))
                 for edge in edges:
                     edge["link"] = edge["link"] or _fallback_link(cur, edge, game)
-                    projection, agrees = model_view(cur, edge, game)
+                    context = model_context(cur, edge, game)
+                    projection, agrees = context["projection"], context["agrees"]
                     tier = alert_tier(edge["ev"], (game["start"] - observed_at).total_seconds() / 60, edge["stat"])
-                    edge.update(model_projection=projection, model_agrees=agrees)
+                    edge.update(model_projection=projection, model_agrees=agrees,
+                                model_filter=context["filter"], model_filter_reasons=context["filter_reasons"])
                     observation = decision_observation(edge, game, tier, experiment["sha256"])
                     observation_id = observation["observation_id"]
                     cur.execute("""INSERT INTO bets.nfl_sharp_observations(observation_id,observed_at_utc,payload)
                         VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
                         (observation_id, observed_at, psycopg2.extras.Json(observation)))
-                    stake = stake_for(cur, tier, now, budget, edge["stat"]) if tier == "alert" else 0.0
+                    key = (game["game_id"], edge["stat"], edge["player_norm"] or "")
+                    stake = stake_for(cur, tier, now, budget, edge["stat"], key) if tier == "alert" else 0.0
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
                             fair_probability, ev, minimum_price, line_gap, tier, book, stake,
                             model_projection, model_agrees, initial_observation_id, alert_observation_id,
-                            initial_provenance, alert_provenance, alerted_at)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            initial_provenance, alert_provenance, alerted_at, model_filter, model_filter_reasons)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         ON CONFLICT (event_id, book, stat, COALESCE(player_name_norm, ''), fd_line, side, fd_price) DO UPDATE SET
                             tier='alert', sharp_book=EXCLUDED.sharp_book, sharp_line=EXCLUDED.sharp_line,
                             fair_probability=EXCLUDED.fair_probability, ev=EXCLUDED.ev, stake=EXCLUDED.stake,
                             minimum_price=EXCLUDED.minimum_price, line_gap=EXCLUDED.line_gap,
                             model_projection=EXCLUDED.model_projection, model_agrees=EXCLUDED.model_agrees,
+                            model_filter=EXCLUDED.model_filter, model_filter_reasons=EXCLUDED.model_filter_reasons,
                             alert_observation_id=EXCLUDED.alert_observation_id, alert_provenance=EXCLUDED.alert_provenance
                           WHERE bets.nfl_sharp_alerts.tier IN ('logged', 'early') AND EXCLUDED.tier='alert'
                         RETURNING alert_id, tier, stake""",
@@ -697,17 +923,19 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                                  edge["minimum_price"], edge["line_gap"], tier, edge["book"], stake,
                                  projection, agrees, observation_id, observation_id if tier == "alert" else None,
                                  psycopg2.extras.Json(observation), psycopg2.extras.Json(observation) if tier == "alert" else None,
-                                 observed_at))
+                                 observed_at, context["filter"], psycopg2.extras.Json(context["filter_reasons"])))
                     row = cur.fetchone()
-                    if row and row[1] == "alert":
-                        new_alerts.append((row[0], edge, game, float(row[2] or 0.0)))
-                        budget["staked"] += float(row[2] or 0.0)
+                    if row and row[1] == "alert" and float(row[2] or 0.0) > 0:
+                        new_alerts.append((row[0], edge, game, float(row[2])))
+                        commit_stake(budget, float(row[2]), key)
                     elif row:
+                        # Unstaked alerts (cap, pause, duplicate at another book, unbacktested market)
+                        # are graded like the rest but not pinged: Discord carries only bets to place.
                         result["logged"] = result.get("logged", 0) + 1
             conn.commit()
         for alert_id, edge, game, stake in new_alerts[:MAX_ALERTS_PER_RUN]:
             try:
-                post(format_alert(edge, game, stake) + (f"\nConfirm with: sharp_bets --confirm {alert_id}" if stake > 0 else ""))
+                post(format_alert(edge, game, stake) + f"\nConfirm with: sharp_bets --confirm {alert_id}")
                 with conn.cursor() as cur:
                     cur.execute("UPDATE bets.nfl_sharp_alerts SET posted=TRUE WHERE alert_id=%s", (alert_id,))
                 conn.commit()
@@ -723,7 +951,16 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--register", action="store_true",
+                    help="create the strategy registration from the current code and NFL_SHARP_WATCH_MARKETS")
+    args = ap.parse_args()
+    if args.register:
+        doc = register()
+        print(json.dumps(dict(experiment_id=doc["experiment_id"], sha256=doc["sha256"],
+                              registered_at=doc["registered_at"], pinned=sorted(doc["files"]),
+                              markets=doc["config"]["scanner"]["markets"]), indent=2))
+        return
     print(json.dumps(run(), indent=2, default=str))
 
 

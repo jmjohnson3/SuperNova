@@ -59,46 +59,40 @@ def game(gid, minutes):
 
 
 def test_poll_schedule_budget_and_floor():
-    # Only the last 4 hours are polled at all: a gap seen earlier decays to nothing by the close.
-    games = [game("last_hour", 30), game("window", 200), game("early", 600), game("far", 3000)]
+    # Only the final hour is polled: it holds the stake window and the closing snapshot.
+    games = [game("last_hour", 30), game("window", 55), game("early", 200), game("far", 3000)]
     due, skipped = w.plan_polls(games, {}, NOW, remaining=5000, cost=1, floor=150)
     assert [g["game_id"] for g in due] == ["last_hour", "window"]
     recent = {"last_poll": {"last_hour": (NOW - timedelta(minutes=3)).isoformat(),
-                            "window": (NOW - timedelta(minutes=5)).isoformat()}}
+                            "window": (NOW - timedelta(minutes=4)).isoformat()}}
     due, _ = w.plan_polls(games, recent, NOW, remaining=5000, cost=1, floor=150)
-    assert due == []  # 5-minute cadence inside the last hour, 10-minute from T-4h
+    assert due == []  # 5-minute cadence
     due, _ = w.plan_polls(games, {"last_poll": {"last_hour": (NOW - timedelta(minutes=6)).isoformat()}},
                           NOW, remaining=5000, cost=1, floor=150)
     assert [g["game_id"] for g in due] == ["last_hour", "window"]  # 6 min > the 5-minute cadence
     due, skipped = w.plan_polls(games, {}, NOW, remaining=150, cost=1, floor=150)
     assert due == [] and skipped == {"last_hour": "credit_floor", "window": "credit_floor"}
-    tight = w.daily_allowance(200, NOW.date(), 150)  # 50 spare credits over the rest of October
-    assert tight == pytest.approx(50 / 28)
+    assert w.daily_allowance(200, NOW.date(), 150) == pytest.approx(50 / 28)
+    # Every poll is inside the final window, so only the floor binds, never the daily allowance.
     due, skipped = w.plan_polls(games, {}, NOW, remaining=200, cost=1, floor=150)
-    assert len(due) == 1 and skipped == {"window": "daily_allowance"}  # soonest game gets the budget
+    assert len(due) == 2 and skipped == {}
 
 
-def test_tight_budget_is_saved_for_the_final_window():
-    # Tonight's case: ~11 checks/day, one game. Early checks may only spend what the last 90 min won't need.
+def test_every_five_minutes_through_kickoff_so_each_decision_has_a_close():
     start = NOW + timedelta(minutes=180)
     g = [dict(game_id="tnf", start=start, home="CLE", away="PIT", day=NOW.date())]
-    remaining, spent, polled = 496, 3, []  # 3 early polls already spent today (allowance ~11.3)
-    t = NOW
+    polled, t = [], NOW
     while t < start:
-        state = {"spent": {str(t.astimezone(w._ET).date()): spent},
-                 "last_poll": {"tnf": polled[-1].isoformat()} if polled else {}}
-        due, _ = w.plan_polls(g, state, t, remaining, cost=1, floor=150)
+        due, _ = w.plan_polls(g, {"last_poll": {"tnf": polled[-1].isoformat()}} if polled else {}, t,
+                              remaining=496, cost=1, floor=150)
         if due:
-            polled.append(t); spent += 1; remaining -= 1
-        t += timedelta(minutes=10)
-    in_window = [p for p in polled if (start - p).total_seconds() <= 90 * 60]
-    assert len(in_window) == 9 and len(polled) == 9  # no early polls; every slot of the final 90 minutes
-    # The floor still binds inside the window.
+            polled.append(t)
+        t += timedelta(minutes=5)
+    minutes = [(start - p).total_seconds() / 60 for p in polled]
+    assert minutes[0] == 60 and minutes[-1] == 5 and len(polled) == 12
+    # The floor still binds.
     due, skipped = w.plan_polls(g, {}, start - timedelta(minutes=30), remaining=150, cost=1, floor=150)
     assert due == [] and skipped == {"tnf": "credit_floor"}
-    # With plenty of credits nothing is held back.
-    due, skipped = w.plan_polls(g, {}, NOW, remaining=20000, cost=1, floor=150)
-    assert [x["game_id"] for x in due] == ["tnf"] and skipped == {}
 
 
 def test_small_gaps_are_logged_but_not_alerted():
@@ -120,18 +114,18 @@ def test_budget_follows_games_until_the_plan_resets():
     assert w.game_share(date(2026, 10, 4), by_day, 3) == pytest.approx(14 / 16)  # Nov 8 is next cycle
     assert w.game_share(date(2026, 10, 6), by_day, 3) == 0.0  # no games today: nothing early is spent
     assert w.game_share(date(2026, 10, 4), {}, 3) is None
-    # Sunday with 14 games gets the bulk of the spare credits, so early checks are not starved.
-    games = [dict(game_id=f"g{i}", start=NOW + timedelta(minutes=200), home="CLE", away="PIT", day=NOW.date()) for i in range(14)]
+    games = [dict(game_id=f"g{i}", start=NOW + timedelta(minutes=40), home="CLE", away="PIT", day=NOW.date()) for i in range(14)]
     due, skipped = w.plan_polls(games, {}, NOW, remaining=20000, cost=4, floor=150, share=14 / 62)
     assert len(due) == 14 and skipped == {}
-    sunday_need = 14 * 44 * 4  # 14 games x 44 checks x 4 markets
-    assert w.daily_allowance(20000, NOW.date(), 150) < sunday_need <= (20000 - 150) * 14 / 62  # calendar split starves Sunday
 
 
-def test_pings_only_inside_the_backtested_window():
-    assert w.alert_tier(0.05, 60) == "alert" and w.alert_tier(0.05, 180) == "alert"
-    assert w.alert_tier(0.05, 181) == "early"  # still logged, upgraded and pinged if it holds into the window
+def test_only_gaps_seen_15_to_45_minutes_out_are_alerts():
+    assert w.alert_tier(0.05, 45) == "alert" and w.alert_tier(0.05, 30) == "alert" and w.alert_tier(0.05, 15) == "alert"
+    assert w.alert_tier(0.05, 46) == "early"  # still stored; upgraded and staked if it holds into the window
+    assert w.alert_tier(0.05, 14) == "late"   # too close to kickoff to place by hand
     assert w.alert_tier(0.02, 30) == "logged"
+    for stat in ("receiving_yards", "rushing_yards", "receptions", None):  # one window for every market
+        assert w.alert_tier(0.05, 30, stat) == "alert" and w.alert_tier(0.05, 60, stat) == "early"
 
 
 def test_every_bettable_book_is_priced_against_the_sharp_line():
@@ -146,11 +140,14 @@ def test_every_bettable_book_is_priced_against_the_sharp_line():
     assert w.find_edges(payload, bet_books=("fanduel",)) == [e for e in edges if e["book"] == "fanduel"]
 
 
-def test_default_execution_scan_is_fanduel_only():
+def test_default_scan_bets_fanduel_espn_bet_and_draftkings():
     payload = {"bookmakers": [book("fanduel", pair("DK Metcalf", 45.5, -200, +170)),
+                              book("espnbet", pair("DK Metcalf", 45.5, +125, -145)),
                               book("draftkings", pair("DK Metcalf", 45.5, +120, -140)),
+                              book("betmgm", pair("DK Metcalf", 45.5, +150, -190)),
                               book("pinnacle", pair("DK Metcalf", 45.5, -140, +120))]}
-    assert {edge["book"] for edge in w.find_edges(payload)} == {"fanduel"}
+    assert {edge["book"] for edge in w.find_edges(payload)} == {"fanduel", "espnbet", "draftkings"}
+    assert len(w.BOOKMAKERS) <= 10 and "williamhill_us" not in w.BOOKMAKERS  # one region per market
 
 
 def test_other_books_keep_only_their_own_verified_links():
@@ -170,45 +167,49 @@ def test_other_books_keep_only_their_own_verified_links():
     assert "bet $5 at DraftKings" in text and "DraftKings +120" in text and "Open this bet on DraftKings" in text
 
 
-def test_stake_respects_caps_and_the_loss_pause(monkeypatch):
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_BETS_ENABLED", True)
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_STAKE", 5.0)
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_MAX_STAKE_PER_DAY", 10.0)
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_MAX_STAKE_PER_WEEK", 100.0)
-    budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
-    assert w.stake_for(None, "alert", NOW, budget) == 5.0
-    assert w.stake_for(None, "logged", NOW, budget) == 0.0  # only pinged alerts carry money
-    assert w.stake_for(None, "early", NOW, budget) == 0.0
-    budget["staked"] = 10.0  # daily cap reached within this run
-    assert w.stake_for(None, "alert", NOW, budget) == 0.0
-    assert w.stake_for(None, "alert", NOW, dict(budget, staked=0.0, week=100.0)) == 0.0  # weekly cap
-    assert w.stake_for(None, "alert", NOW, dict(budget, staked=0.0, paused=True)) == 0.0  # sticky pause
+def budget(**changes):
+    return dict(dict(today=0, week=0.0, staked=0.0, staked_count=0, staked_keys=set(), per_game={},
+                     paused=False), **changes)
 
 
-def test_ping_window_is_per_market_because_counts_decay_faster():
-    # Receptions sit on integer lines; books correct them within the hour, so a 2025 +3% gap seen at
-    # T-90 is worth -0.02% at the close while the same receiving-yards gap is worth +2.70%.
-    assert w.alert_tier(0.05, 150, "receiving_yards") == "alert"
-    assert w.alert_tier(0.05, 150, "receptions") == "early"
-    assert w.alert_tier(0.05, 40, "receptions") == "alert"
-    assert w.alert_tier(0.05, 150, None) == "alert"  # unknown market falls back to the default window
-    assert w.alert_tier(0.02, 10, "receptions") == "logged"  # threshold still rules
+def test_stake_respects_caps_and_the_pauses():
+    assert w.strategy.STAKE == 1.0 and w.strategy.MAX_BETS_PER_DAY == 5
+    assert w.strategy.MAX_STAKE_PER_WEEK == 20.0 and w.strategy.LOSS_PAUSE == -30.0
+    assert w.stake_for(None, "alert", NOW, budget()) == 1.0
+    for tier in ("logged", "early", "late"):  # only alerts inside the stake window carry money
+        assert w.stake_for(None, tier, NOW, budget()) == 0.0
+    assert w.stake_for(None, "alert", NOW, budget(today=5)) == 0.0               # five bets today already
+    assert w.stake_for(None, "alert", NOW, budget(today=4, staked_count=1)) == 0.0  # ...counting this run
+    assert w.stake_for(None, "alert", NOW, budget(week=19.5)) == 0.0              # weekly cap
+    assert w.stake_for(None, "alert", NOW, budget(paused=True)) == 0.0            # loss or readiness pause
 
 
-def test_only_backtested_markets_carry_money(monkeypatch):
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_BETS_ENABLED", True)
-    budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
-    assert w.stake_for(None, "alert", NOW, budget, "receiving_yards") > 0
-    assert w.stake_for(None, "alert", NOW, budget, "receptions") > 0
-    assert w.stake_for(None, "alert", NOW, budget, "total") == 0.0  # scanned and graded, not staked
-    assert w.stake_for(None, "alert", NOW, budget, "passing_yards") == 0.0
+def test_one_stake_per_player_game_stat_across_books_and_two_per_game():
+    b = budget()
+    first = ("g1", "receiving_yards", "a")
+    assert w.stake_for(None, "alert", NOW, b, "receiving_yards", first) == 1.0
+    w.commit_stake(b, 1.0, first)
+    # The same player and stat at another book, or at a later price, is graded but not staked again.
+    assert w.stake_for(None, "alert", NOW, b, "receiving_yards", first) == 0.0
+    second = ("g1", "rushing_yards", "b")
+    assert w.stake_for(None, "alert", NOW, b, "rushing_yards", second) == 1.0
+    w.commit_stake(b, 1.0, second)
+    assert w.stake_for(None, "alert", NOW, b, "receptions", ("g1", "receptions", "c")) == 0.0  # game cap
+    assert w.stake_for(None, "alert", NOW, b, "receptions", ("g2", "receptions", "c")) == 1.0
+    assert b["staked"] == 2.0 and b["staked_count"] == 2
 
 
-def test_unapproved_sharp_strategy_is_always_research_only(monkeypatch):
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_BETS_ENABLED", False)
-    monkeypatch.setattr(w.prefs, "SHARP_WATCH_STAKE", 5.0)
-    budget = dict(today=0.0, week=0.0, staked=0.0, paused=False)
-    assert w.stake_for(None, "alert", NOW, budget, "receiving_yards") == 0.0
+def test_only_backtested_markets_carry_money():
+    assert w.stake_for(None, "alert", NOW, budget(), "receiving_yards") > 0
+    assert w.stake_for(None, "alert", NOW, budget(), "receptions") > 0
+    assert w.stake_for(None, "alert", NOW, budget(), "rushing_yards") > 0
+    assert w.stake_for(None, "alert", NOW, budget(), "total") == 0.0  # scanned and graded, not staked
+    assert w.stake_for(None, "alert", NOW, budget(), "passing_yards") == 0.0
+
+
+def test_disabled_strategy_is_always_research_only(monkeypatch):
+    monkeypatch.setattr(w.strategy, "BETS_ENABLED", False)
+    assert w.stake_for(None, "alert", NOW, budget(), "receiving_yards") == 0.0
 
 
 def test_anytime_td_is_normalised_onto_the_over_under_shape():
@@ -223,18 +224,25 @@ def test_anytime_td_is_normalised_onto_the_over_under_shape():
     assert fair < w.sharp_math.no_vig_over(600, -950, method="proportional") - 0.01
 
 
-def test_markets_are_only_fetched_while_they_could_still_be_bet():
+def test_markets_are_only_fetched_in_the_final_hour():
     wanted = ["player_reception_yds", "player_receptions", "alternate_totals"]
-    assert w.markets_for(200, wanted) == []                       # before any window opens
-    assert "player_receptions" not in w.markets_for(150, wanted)   # counts decay fast; not yet worth paying for
-    assert w.markets_for(30, wanted) == wanted                     # inside every window
+    assert w.markets_for(61, wanted) == []       # before the poll horizon
+    assert w.markets_for(60, wanted) == wanted   # a little before the stake window opens
+    assert w.markets_for(3, wanted) == wanted    # through kickoff, for the close
+    assert w.markets_for(0, wanted) == []
+
+
+class FakeCur:
+    def __init__(self, projection, **fields):
+        self.row = None if projection is None else tuple(
+            dict(dict(projection=projection, line=None, over_probability=None, under_probability=None,
+                      injury_report_status=None, roster_status="ACT", limited_usage_risk=0.1), **fields)[k]
+            for k in w.FORECAST_FIELDS)
+    def execute(self, *a, **k): pass
+    def fetchone(self): return self.row
 
 
 def test_model_view_records_which_side_our_projection_takes():
-    class FakeCur:
-        def __init__(self, projection): self.projection = projection
-        def execute(self, *a, **k): pass
-        def fetchone(self): return None if self.projection is None else (self.projection,)
     game = dict(game_id="2026_05_TB_DAL")
     edge = dict(player_norm="emeka egbuka", stat="receptions", line=2.5, side="over")
     assert w.model_view(FakeCur(2.67), edge, game) == (2.67, True)      # projection above the line
@@ -242,6 +250,31 @@ def test_model_view_records_which_side_our_projection_takes():
     assert w.model_view(FakeCur(2.10), dict(edge, side="under"), game) == (2.10, True)
     assert w.model_view(FakeCur(None), edge, game) == (None, None)      # no frozen forecast for this bet
     assert w.model_view(FakeCur(2.67), dict(edge, player_norm=None), game) == (None, None)  # game totals
+
+
+def test_shadow_filter_flags_playing_time_and_role_disagreement():
+    over = dict(side="over", line=45.5, fair_probability=0.56)
+    fine = dict(projection=50.0, line=45.5, over_probability=0.55, under_probability=0.45,
+                injury_report_status=None, roster_status="ACT", limited_usage_risk=0.1)
+    assert w.shadow_filter(over, fine) == ("pass", [])
+    assert w.shadow_filter(over, None) == ("no_forecast", [])
+    assert w.shadow_filter(over, dict(fine, injury_report_status="Questionable")) == ("flag", ["over_with_questionable_tag"])
+    assert w.shadow_filter(dict(over, side="under"), dict(fine, injury_report_status="Questionable"))[0] == "pass"
+    assert w.shadow_filter(over, dict(fine, injury_report_status="Out"))[1][0] == "injury_out"
+    assert w.shadow_filter(over, dict(fine, limited_usage_risk=0.45)) == ("flag", ["over_with_limited_usage_risk"])
+    assert w.shadow_filter(over, dict(fine, roster_status="RES"))[1] == ["roster_res"]
+    # A strong side disagreement only counts at the same line; across lines the model is not comparable.
+    assert w.shadow_filter(over, dict(fine, over_probability=0.40)) == ("flag", ["model_strongly_prefers_other_side"])
+    assert w.shadow_filter(over, dict(fine, over_probability=0.40, line=47.5)) == ("pass", [])
+    assert w.shadow_filter(over, dict(fine, over_probability=0.45)) == ("pass", [])  # 11 points is not strong
+
+
+def test_model_context_carries_the_filter_verdict():
+    game = dict(game_id="g")
+    edge = dict(player_norm="x", stat="receiving_yards", line=45.5, side="over", fair_probability=0.56)
+    context = w.model_context(FakeCur(40.0, injury_report_status="Questionable"), edge, game)
+    assert context == dict(projection=40.0, agrees=False, filter="flag", filter_reasons=["over_with_questionable_tag"])
+    assert w.model_context(FakeCur(None), edge, game)["filter"] == "no_forecast"
 
 
 @pytest.mark.parametrize('book_index,stamp', [(0, None), (1, None), (0, NOW-timedelta(seconds=301)),
@@ -282,6 +315,7 @@ def test_unregistered_scan_exits_before_reading_games_or_network(monkeypatch):
     from nfl_pipeline import experiment_registry
     monkeypatch.setattr(experiment_registry, 'load_experiment', lambda name: None)
     monkeypatch.setattr(w, '_games', lambda now: pytest.fail('unregistered scan must not start'))
+    monkeypatch.setattr(w, '_has_games_soon', lambda now: False)
     assert w.run(now=NOW)['status'] == 'research_not_registered'
 
 
@@ -296,6 +330,45 @@ def test_source_drift_exits_before_reading_games_or_network(monkeypatch):
     monkeypatch.setattr(experiment_registry, 'load_experiment', lambda name: {'config': {}})
     monkeypatch.setattr(experiment_registry, 'check_experiment', drifted)
     monkeypatch.setattr(w, '_games', lambda now: pytest.fail('drifted scan must not start'))
+    monkeypatch.setattr(w, '_has_games_soon', lambda now: False)
     result = w.run(now=NOW)
     assert result['status'] == 'experiment_source_drift'
     assert result['experiment_id'] == w.EXPERIMENT_NAME
+
+
+def test_a_refusal_with_games_close_is_announced_once_a_day(monkeypatch, tmp_path):
+    # 16-21 October: every run refused and nothing said so.
+    from nfl_pipeline import experiment_registry
+    monkeypatch.setattr(experiment_registry, 'load_experiment', lambda name: {'config': {'scanner': {'markets': ['a']}}})
+    monkeypatch.setattr(experiment_registry, 'check_experiment', lambda name, **k: {'config': {'scanner': {'markets': ['a']}}})
+    monkeypatch.setattr(w, 'STATE', tmp_path / 'state.json')
+    monkeypatch.setattr(w, '_has_games_soon', lambda now: True)
+    sent = []
+    first = w.run(now=NOW, post=sent.append)
+    assert first['status'] == 'experiment_configuration_drift' and 'markets' in first['detail'] and first['warned']
+    assert w.run(now=NOW + timedelta(minutes=5), post=sent.append).get('warned') is None
+    assert len(sent) == 1 and 'not running' in sent[0]
+    w.run(now=NOW + timedelta(days=1), post=sent.append)
+    assert len(sent) == 2
+    monkeypatch.setattr(w, '_has_games_soon', lambda now: False)  # nothing to lose: stay quiet
+    w.run(now=NOW + timedelta(days=2), post=sent.append)
+    assert len(sent) == 2
+
+
+def test_registration_pins_only_the_strategy_modules():
+    files = w.pinned_files()
+    assert all(path.is_file() for path in files.values())
+    assert set(files) == set(w.PINNED_MODULES)
+    assert not any(name in module for module in files for name in
+                   ("predict_player_props", "features", "receiving_paper_trial", "cash_", "betting_preferences"))
+    config = w.normalized_config()
+    assert config == w.normalized_config() and config["stake_window_minutes"] == [15, 45]
+    assert config["bet_books"] == ["fanduel", "espnbet", "draftkings"]
+
+
+def test_the_api_moving_kickoff_a_few_minutes_does_not_drop_the_closing_snapshot():
+    # 11 October: PHI-JAX was scheduled 13:30Z; the last two polls reported 13:35Z and were discarded.
+    assert w.same_kickoff("2026-10-11T13:35:00Z", datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))
+    assert w.same_kickoff("2026-10-11T13:30:00Z", datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))
+    assert not w.same_kickoff("2026-10-11T17:00:00Z", datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))
+    assert not w.same_kickoff(None, datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))

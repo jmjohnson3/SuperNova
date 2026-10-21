@@ -635,10 +635,55 @@ def _injury_downgrade_score(report_status: pd.Series, practice_status: pd.Series
     return score.clip(0.0, 1.0).where(known)
 
 
+class _ColumnBuffer:
+    """Reads and writes like the DataFrame it wraps, but holds new columns until materialize().
+
+    _add_context_risk_features derives ~140 columns one at a time, each from earlier ones. Inserting
+    them into the frame one by one fragments it into ~140 blocks (pandas' PerformanceWarning) and
+    makes every later operation on it slower. Here each assignment is aligned and stored exactly as
+    DataFrame.__setitem__ would store it, and the frame is rebuilt once at the end. Values, dtypes
+    and column order are the same as the one-at-a-time version.
+    """
+
+    def __init__(self, frame: pd.DataFrame):
+        self._frame = frame
+        self._new: dict[str, pd.Series] = {}
+        self.index = frame.index
+
+    def __contains__(self, key) -> bool:
+        return key in self._new or key in self._frame.columns
+
+    @property
+    def columns(self) -> list:
+        return list(self._frame.columns) + [k for k in self._new if k not in self._frame.columns]
+
+    def __getitem__(self, key) -> pd.Series:
+        return self._new[key] if key in self._new else self._frame[key]
+
+    def get(self, key, default=None):
+        return self[key] if key in self else default
+
+    def __setitem__(self, key, value) -> None:
+        if isinstance(value, pd.Series):
+            value = value.reindex(self.index) if not value.index.equals(self.index) else value.copy()
+        else:  # scalars broadcast and arrays must match the length, as in DataFrame.__setitem__
+            value = pd.Series(value, index=self.index)
+        self._new[key] = value.rename(key)
+
+    def materialize(self) -> pd.DataFrame:
+        frame = self._frame.copy()
+        for key in [k for k in self._new if k in frame.columns]:
+            frame[key] = self._new[key]
+        added = {k: v for k, v in self._new.items() if k not in frame.columns}
+        if not added:
+            return frame
+        return pd.concat([frame, pd.DataFrame(added, index=self.index)], axis=1)
+
+
 def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
-    out = df.copy()
+    out = _ColumnBuffer(df)
     week = pd.to_numeric(out.get("week"), errors="coerce")
     season_type = out.get("season_type", pd.Series(index=out.index, dtype=object)).astype(str).str.lower()
     out["is_week_18"] = (week >= 18).astype(float).fillna(0.0)
@@ -1553,7 +1598,7 @@ def _add_context_risk_features(df: pd.DataFrame) -> pd.DataFrame:
         out["usage_volatility_score"].astype(float).clip(0.0, 1.0),
         out["high_usage_fragility_score"].astype(float).clip(0.0, 1.0),
     ], axis=1).max(axis=1).fillna(0.0).clip(0.0, 1.0)
-    return out
+    return out.materialize()
 
 
 def build_feature_frame(conn, cfg: FeatureBuildConfig) -> pd.DataFrame:

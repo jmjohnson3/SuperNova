@@ -150,6 +150,7 @@ def test_cash_history_loading_happens_before_writer_transaction(monkeypatch):
     calls = []
     monkeypatch.setattr(cash_readiness.policy, 'load_registration', lambda: {'sha256':'p', 'config':{'trial_sha256':'t'}})
     monkeypatch.setattr(cash_readiness.trial, 'load_registration', lambda: {'sha256':'t'})
+    monkeypatch.setattr(cash_readiness.cash_freeze, 'check_registration', lambda registration: {})
     def load(*args):
         calls.append('load')
         return [], [], ([], [], {}, 0, 0)

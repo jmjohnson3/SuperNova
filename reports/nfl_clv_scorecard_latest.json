@@ -1,30 +1,62 @@
 {
   "contract": "nfl-clv-scorecard-v1",
-  "built_at": "2026-10-04T04:28:20.852264+00:00",
+  "built_at": "2026-10-21T17:15:26.881405+00:00",
   "stats": {
     "passing_tds": {
       "market-calibration-20261001T030458Z": {
         "all_offers": {
-          "forecasts": 59,
-          "player_games": 29,
-          "valid_close_rate": 0.06896551724137931,
-          "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.33333333333333337,
-          "avg_clv_prob": -0.0020122107541245553,
-          "valid_close_n": 6,
-          "settled_n": 6,
-          "brier_model": 0.25047674857510915,
-          "brier_market": 0.2504767485751091,
-          "roi_flat": -1.0
+          "forecasts": 298,
+          "player_games": 65,
+          "valid_close_rate": 0.594871794871795,
+          "clv_beat_rate": 0.28448275862068967,
+          "clv_worse_rate": 0.35344827586206895,
+          "avg_clv_prob": -0.0008935216580160716,
+          "valid_close_n": 181,
+          "settled_n": 298,
+          "brier_model": 0.2318637967004445,
+          "brier_market": 0.2318637967004445,
+          "roi_flat": -0.09608029037227583
         },
         "selected": {
-          "forecasts": 2,
-          "player_games": 2,
-          "valid_close_rate": 0.0,
-          "clv_beat_rate": null,
-          "clv_worse_rate": null,
-          "avg_clv_prob": null,
-          "valid_close_n": 0
+          "forecasts": 65,
+          "player_games": 62,
+          "valid_close_rate": 0.5725806451612904,
+          "clv_beat_rate": 0.22535211267605634,
+          "clv_worse_rate": 0.3380281690140845,
+          "avg_clv_prob": 0.0003788542702094273,
+          "valid_close_n": 37,
+          "settled_n": 65,
+          "brier_model": 0.23678183528204433,
+          "brier_market": 0.23678183528204433,
+          "roi_flat": -0.06234610875710568
+        }
+      },
+      "market-calibration-20261001T030458Z | sharp-priced": {
+        "all_offers": {
+          "forecasts": 151,
+          "player_games": 30,
+          "valid_close_rate": 1.0,
+          "clv_beat_rate": 0.32372448979591845,
+          "clv_worse_rate": 0.35204081632653067,
+          "avg_clv_prob": 0.00013368411894465487,
+          "valid_close_n": 147,
+          "settled_n": 147,
+          "brier_model": 0.23245764766433588,
+          "brier_market": 0.23245764766433588,
+          "roi_flat": 0.010709692231304423
+        },
+        "selected": {
+          "forecasts": 39,
+          "player_games": 30,
+          "valid_close_rate": 1.0,
+          "clv_beat_rate": 0.3333333333333333,
+          "clv_worse_rate": 0.45238095238095244,
+          "avg_clv_prob": -0.001549755044082851,
+          "valid_close_n": 37,
+          "settled_n": 37,
+          "brier_model": 0.2302950364146705,
+          "brier_market": 0.2302950364146705,
+          "roi_flat": 0.11193271388744962
         }
       },
       "pre-calibration": {
@@ -59,30 +91,58 @@
     "passing_yards": {
       "market-calibration-20261001T030458Z": {
         "all_offers": {
-          "forecasts": 58,
-          "player_games": 28,
-          "valid_close_rate": 0.05952380952380952,
+          "forecasts": 407,
+          "player_games": 90,
+          "valid_close_rate": 0.5267045454545455,
+          "clv_beat_rate": 0.021574973031283712,
+          "clv_worse_rate": 0.19848975188781015,
+          "avg_clv_prob": -0.00021508242219195328,
+          "valid_close_n": 229,
+          "settled_n": 403,
+          "brier_model": 0.25,
+          "brier_market": 0.25,
+          "roi_flat": -0.06369565977157964
+        },
+        "selected": {
+          "forecasts": 146,
+          "player_games": 89,
+          "valid_close_rate": 0.48754789272030646,
+          "clv_beat_rate": 0.023575638506876224,
+          "clv_worse_rate": 0.518664047151277,
+          "avg_clv_prob": -0.0008840085060598359,
+          "valid_close_n": 61,
+          "settled_n": 144,
+          "brier_model": 0.25,
+          "brier_market": 0.25,
+          "roi_flat": -0.05997587295468862
+        }
+      },
+      "market-calibration-20261001T030458Z | sharp-priced": {
+        "all_offers": {
+          "forecasts": 21,
+          "player_games": 10,
+          "valid_close_rate": 0.8000000000000002,
           "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.0,
-          "valid_close_n": 5,
+          "clv_worse_rate": 0.125,
+          "avg_clv_prob": -0.0002742310561186373,
+          "valid_close_n": 18,
+          "settled_n": 21,
+          "brier_model": 0.25,
+          "brier_market": 0.25,
+          "roi_flat": -0.24757025306629407
+        },
+        "selected": {
+          "forecasts": 6,
+          "player_games": 6,
+          "valid_close_rate": 0.6666666666666666,
+          "clv_beat_rate": 0.0,
+          "clv_worse_rate": 0.25,
+          "avg_clv_prob": -0.0005484621122372746,
+          "valid_close_n": 4,
           "settled_n": 6,
           "brier_model": 0.25,
           "brier_market": 0.25,
-          "roi_flat": -1.0
-        },
-        "selected": {
-          "forecasts": 34,
-          "player_games": 28,
-          "valid_close_rate": 0.05357142857142857,
-          "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.0,
-          "valid_close_n": 2,
-          "settled_n": 3,
-          "brier_model": 0.25,
-          "brier_market": 0.25,
-          "roi_flat": -1.0
+          "roi_flat": -0.06010971381255503
         }
       },
       "pre-calibration": {
@@ -117,58 +177,58 @@
     "receiving_yards": {
       "market-calibration-20261001T030458Z": {
         "all_offers": {
-          "forecasts": 286,
-          "player_games": 155,
-          "valid_close_rate": 0.035483870967741936,
-          "clv_beat_rate": 0.060606060606060615,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.002911599363927527,
-          "valid_close_n": 10,
-          "settled_n": 20,
-          "brier_model": 0.24704276438618641,
-          "brier_market": 0.24704276438618641,
-          "roi_flat": -0.43036560293197446
+          "forecasts": 1101,
+          "player_games": 488,
+          "valid_close_rate": 0.7135270040930418,
+          "clv_beat_rate": 0.02154629655539077,
+          "clv_worse_rate": 0.4418040126479558,
+          "avg_clv_prob": -0.0011301577523478205,
+          "valid_close_n": 787,
+          "settled_n": 1059,
+          "brier_model": 0.24996869322358417,
+          "brier_market": 0.24996869322358417,
+          "roi_flat": -0.059739499016827
         },
         "selected": {
-          "forecasts": 181,
-          "player_games": 154,
-          "valid_close_rate": 0.022727272727272728,
-          "clv_beat_rate": 0.14285714285714285,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.006863055643543455,
-          "valid_close_n": 5,
-          "settled_n": 12,
-          "brier_model": 0.24744020001688707,
-          "brier_market": 0.24744020001688707,
-          "roi_flat": -0.5313421828908554
+          "forecasts": 614,
+          "player_games": 463,
+          "valid_close_rate": 0.6938325991189427,
+          "clv_beat_rate": 0.02486772486772487,
+          "clv_worse_rate": 0.5865079365079365,
+          "avg_clv_prob": -0.0011957374448392662,
+          "valid_close_n": 389,
+          "settled_n": 584,
+          "brier_model": 0.24995319326345342,
+          "brier_market": 0.24995319326345342,
+          "roi_flat": -0.062037281052143005
         }
       },
       "market-calibration-20261001T030458Z | sharp-priced": {
         "all_offers": {
-          "forecasts": 21,
-          "player_games": 14,
-          "valid_close_rate": 0.5,
-          "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.0,
-          "valid_close_n": 13,
-          "settled_n": 15,
-          "brier_model": 0.2453510025944347,
-          "brier_market": 0.2523889117520241,
-          "roi_flat": 0.42328965282505115
+          "forecasts": 1353,
+          "player_games": 459,
+          "valid_close_rate": 0.8574754513778903,
+          "clv_beat_rate": 0.0202988493008995,
+          "clv_worse_rate": 0.04312812840545981,
+          "avg_clv_prob": 0.00025908704208262175,
+          "valid_close_n": 1198,
+          "settled_n": 1300,
+          "brier_model": 0.24964030286299396,
+          "brier_market": 0.25000558832655456,
+          "roi_flat": -0.03430594666639106
         },
         "selected": {
-          "forecasts": 12,
-          "player_games": 12,
-          "valid_close_rate": 0.5833333333333334,
-          "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.0,
-          "valid_close_n": 7,
-          "settled_n": 8,
-          "brier_model": 0.24535100259443474,
-          "brier_market": 0.2523889117520241,
-          "roi_flat": 0.4232896528250511
+          "forecasts": 388,
+          "player_games": 348,
+          "valid_close_rate": 0.858600583090379,
+          "clv_beat_rate": 0.0209394453876627,
+          "clv_worse_rate": 0.08432371250707413,
+          "avg_clv_prob": -0.00015570426148652967,
+          "valid_close_n": 318,
+          "settled_n": 371,
+          "brier_model": 0.2502385250648592,
+          "brier_market": 0.2502414022631875,
+          "roi_flat": -0.04938412535639565
         }
       },
       "pre-calibration": {
@@ -203,60 +263,160 @@
     "receptions": {
       "market-calibration-20261001T030458Z": {
         "all_offers": {
-          "forecasts": 312,
-          "player_games": 160,
-          "valid_close_rate": 0.075,
-          "clv_beat_rate": 0.13888888888888887,
-          "clv_worse_rate": 0.16666666666666663,
-          "avg_clv_prob": 0.0002469646941358081,
-          "valid_close_n": 36,
-          "settled_n": 36,
-          "brier_model": 0.25995136231487237,
-          "brier_market": 0.25995136231487237,
-          "roi_flat": 0.4097247913629982
+          "forecasts": 970,
+          "player_games": 382,
+          "valid_close_rate": 0.9653508771929825,
+          "clv_beat_rate": 0.24007269422989547,
+          "clv_worse_rate": 0.15016550918413704,
+          "avg_clv_prob": 0.005899585821121941,
+          "valid_close_n": 936,
+          "settled_n": 944,
+          "brier_model": 0.2485653513573086,
+          "brier_market": 0.2485653513573086,
+          "roi_flat": -0.024585131499701922
         },
         "selected": {
-          "forecasts": 45,
-          "player_games": 45,
-          "valid_close_rate": 0.26666666666666666,
-          "clv_beat_rate": 0.4166666666666667,
-          "clv_worse_rate": 0.3333333333333333,
-          "avg_clv_prob": 0.003659954378516896,
-          "valid_close_n": 12,
-          "settled_n": 12,
-          "brier_model": 0.26124729122776813,
-          "brier_market": 0.26124729122776813,
-          "roi_flat": 0.4092952487293451
+          "forecasts": 239,
+          "player_games": 225,
+          "valid_close_rate": 0.9641255605381166,
+          "clv_beat_rate": 0.30465116279069765,
+          "clv_worse_rate": 0.1883720930232558,
+          "avg_clv_prob": 0.007071548598949779,
+          "valid_close_n": 227,
+          "settled_n": 229,
+          "brier_model": 0.2502035935374931,
+          "brier_market": 0.2502035935374931,
+          "roi_flat": -0.05207373854137792
+        }
+      },
+      "market-calibration-20261001T030458Z | sharp-edge": {
+        "all_offers": {
+          "forecasts": 2,
+          "player_games": 2,
+          "valid_close_rate": 1.0,
+          "clv_beat_rate": 0.0,
+          "clv_worse_rate": 0.0,
+          "avg_clv_prob": 0.0,
+          "valid_close_n": 2,
+          "settled_n": 2,
+          "brier_model": 0.31690800852765416,
+          "brier_market": 0.30444266814864374,
+          "roi_flat": 0.26
+        },
+        "selected": {
+          "forecasts": 2,
+          "player_games": 2,
+          "valid_close_rate": 1.0,
+          "clv_beat_rate": 0.0,
+          "clv_worse_rate": 0.0,
+          "avg_clv_prob": 0.0,
+          "valid_close_n": 2,
+          "settled_n": 2,
+          "brier_model": 0.31690800852765416,
+          "brier_market": 0.30444266814864374,
+          "roi_flat": 0.26
+        }
+      },
+      "market-calibration-20261001T030458Z | sharp-priced": {
+        "all_offers": {
+          "forecasts": 1535,
+          "player_games": 478,
+          "valid_close_rate": 0.9610272988505748,
+          "clv_beat_rate": 0.10628186987745947,
+          "clv_worse_rate": 0.08395226526416957,
+          "avg_clv_prob": 0.001466978849713952,
+          "valid_close_n": 1464,
+          "settled_n": 1463,
+          "brier_model": 0.24899706525379184,
+          "brier_market": 0.24839869703110512,
+          "roi_flat": -0.052224122024398176
+        },
+        "selected": {
+          "forecasts": 422,
+          "player_games": 381,
+          "valid_close_rate": 0.9552845528455285,
+          "clv_beat_rate": 0.1574468085106383,
+          "clv_worse_rate": 0.10921985815602837,
+          "avg_clv_prob": 0.0025380799800440545,
+          "valid_close_n": 393,
+          "settled_n": 393,
+          "brier_model": 0.24837163249389174,
+          "brier_market": 0.24779619956569895,
+          "roi_flat": -0.06499970787739642
         }
       }
     },
     "rushing_yards": {
       "market-calibration-20261001T030458Z": {
         "all_offers": {
-          "forecasts": 141,
-          "player_games": 72,
-          "valid_close_rate": 0.046296296296296294,
-          "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.0,
-          "valid_close_n": 9,
-          "settled_n": 12,
-          "brier_model": 0.25277643150734425,
-          "brier_market": 0.26062365862896103,
-          "roi_flat": 0.17398230088495578
+          "forecasts": 595,
+          "player_games": 226,
+          "valid_close_rate": 0.6814695108812756,
+          "clv_beat_rate": 0.005533246909286369,
+          "clv_worse_rate": 0.419894394030417,
+          "avg_clv_prob": -0.0009505659136272126,
+          "valid_close_n": 423,
+          "settled_n": 583,
+          "brier_model": 0.24833289333164,
+          "brier_market": 0.25009715100205443,
+          "roi_flat": -0.011014509624635037
         },
         "selected": {
-          "forecasts": 84,
-          "player_games": 71,
-          "valid_close_rate": 0.056338028169014086,
+          "forecasts": 283,
+          "player_games": 205,
+          "valid_close_rate": 0.6861788617886179,
+          "clv_beat_rate": 0.007109004739336493,
+          "clv_worse_rate": 0.5248815165876777,
+          "avg_clv_prob": -0.0011430793227778773,
+          "valid_close_n": 181,
+          "settled_n": 278,
+          "brier_model": 0.24851580459246303,
+          "brier_market": 0.2501121655628781,
+          "roi_flat": -0.02094973076872805
+        }
+      },
+      "market-calibration-20261001T030458Z | sharp-edge": {
+        "all_offers": {
+          "forecasts": 1,
+          "player_games": 1,
+          "valid_close_rate": 0.0,
+          "clv_beat_rate": null,
+          "clv_worse_rate": null,
+          "avg_clv_prob": null,
+          "valid_close_n": 0,
+          "settled_n": 1,
+          "brier_model": 0.31164537507302675,
+          "brier_market": 0.25,
+          "roi_flat": -1.0
+        },
+        "selected": null
+      },
+      "market-calibration-20261001T030458Z | sharp-priced": {
+        "all_offers": {
+          "forecasts": 511,
+          "player_games": 189,
+          "valid_close_rate": 0.8153153153153153,
+          "clv_beat_rate": 0.009944751381215469,
+          "clv_worse_rate": 0.08732438831886344,
+          "avg_clv_prob": 0.00010800545359026365,
+          "valid_close_n": 447,
+          "settled_n": 504,
+          "brier_model": 0.24915842393584245,
+          "brier_market": 0.24985614974331108,
+          "roi_flat": -0.07180787251912037
+        },
+        "selected": {
+          "forecasts": 117,
+          "player_games": 108,
+          "valid_close_rate": 0.7644230769230769,
           "clv_beat_rate": 0.0,
-          "clv_worse_rate": 0.0,
-          "avg_clv_prob": 0.0,
-          "valid_close_n": 4,
-          "settled_n": 4,
-          "brier_model": 0.2563693851219792,
-          "brier_market": 0.2632795732862012,
-          "roi_flat": -0.003761061946902622
+          "clv_worse_rate": 0.22012578616352202,
+          "avg_clv_prob": -0.0006299168813814278,
+          "valid_close_n": 85,
+          "settled_n": 111,
+          "brier_model": 0.2500750017857483,
+          "brier_market": 0.25,
+          "roi_flat": -0.16026542584119502
         }
       },
       "pre-calibration": {

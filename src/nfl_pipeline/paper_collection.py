@@ -18,6 +18,8 @@ import sys
 import tempfile
 import uuid
 
+from nfl_pipeline.integrity import nfl_season
+
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports"
 TOKEN = re.compile(r"[A-Za-z0-9_:-]{1,120}")
@@ -33,7 +35,7 @@ class Step:
 
 def steps(day):
     when = ("--date", str(day))
-    season = day.year if day.month >= 8 else day.year - 1
+    season = nfl_season(day)
     return (
         Step("context", "nfl_pipeline.import_context", ("--seasons", str(season)), 600),
         Step("live_injuries", "nfl_pipeline.live_injuries", when, 180),
