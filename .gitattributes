@@ -3,3 +3,11 @@ src/mlb_pipeline/modeling/models/player_props/walks_xgb.json filter=lfs diff=lfs
 src/nfl_pipeline/modeling/predict_player_props.py text eol=lf
 src/nfl_pipeline/modeling/scoring_capture.py text eol=lf
 src/nfl_pipeline/modeling/models/scoring_code_versions/** -text
+# The sharp-gap cash registration (nfl-sharp-gap-cash-v5) hashes these files' raw bytes; a checkout
+# that changed their line endings would stop the scanner. Keep each exactly as registered.
+src/nfl_pipeline/sharp_strategy.py text eol=lf
+src/nfl_pipeline/sharp_math.py text eol=lf
+src/nfl_pipeline/markets.py text eol=lf
+src/nfl_pipeline/context_contract.py text eol=lf
+src/nfl_pipeline/modeling/sharp_alert_report.py text eol=lf
+src/nfl_pipeline/sharp_watch.py text eol=crlf
