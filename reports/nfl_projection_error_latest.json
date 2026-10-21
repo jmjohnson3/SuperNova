@@ -1,0 +1,1122 @@
+{
+  "meta": {
+    "built_at": "2026-10-21T21:18:00+00:00",
+    "season": 2026,
+    "rows_loaded": 2199,
+    "raw_projection_rule": "forecast_outputs.pricing.model_projection, else probability_trace.model_projection, else projection when unpriced or made before market calibration (2026-10-01T03:04:58Z)"
+  },
+  "per_stat": {
+    "receiving_yards": {
+      "player_games": 1005,
+      "weeks": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "actual_mean": 32.03383084577114,
+      "projection_mean": 28.453642773653637,
+      "mae": 20.795723049255315,
+      "bias": -3.580188072117506,
+      "rmse": 28.78691234417776,
+      "above_share": 0.44975124378109455,
+      "median_error": -3.298215379112257,
+      "slope": 0.9051721526403488,
+      "intercept": 6.278385765883576,
+      "correlation": 0.5282125647721588,
+      "decomposition": {
+        "player_games": 989,
+        "mae": 20.905254059832526,
+        "knew_volume_mae": 14.844917776282061,
+        "knew_efficiency_mae": 15.256914753773923,
+        "volume_share": 0.5066486804539535,
+        "efficiency_share": 0.5742641378294949,
+        "interaction_share": -0.08091281828344837,
+        "volume_mae": 2.0676272328951804,
+        "volume_bias": -0.19293899561846986,
+        "implied_efficiency_mean": 6.795920042948315,
+        "actual_efficiency_mean": 7.466324865998602,
+        "volume_sources": {
+          "targets_avg_5": 989
+        }
+      },
+      "vs_market": {
+        "player_games": 814,
+        "model_mae": 22.224923597585097,
+        "line_mae": 20.965601965601966,
+        "anchored_mae": 21.49442963131208,
+        "model_bias": -5.391644245466319,
+        "line_bias": -5.823095823095823
+      },
+      "by_projection_quartile": [
+        {
+          "range": "5.0-13.5",
+          "player_games": 252,
+          "projection_mean": 9.013168269993523,
+          "actual_mean": 13.59920634920635,
+          "mae": 12.057027148449311,
+          "bias": -4.586038079212826,
+          "above_share": 0.4523809523809524
+        },
+        {
+          "range": "13.5-22.7",
+          "player_games": 251,
+          "projection_mean": 18.05757563503342,
+          "actual_mean": 21.334661354581673,
+          "mae": 18.072001553338627,
+          "bias": -3.2770857195482512,
+          "above_share": 0.41434262948207173
+        },
+        {
+          "range": "22.7-38.5",
+          "player_games": 251,
+          "projection_mean": 30.560665511931866,
+          "actual_mean": 33.7609561752988,
+          "mae": 21.95451547686228,
+          "bias": -3.200290663366937,
+          "above_share": 0.4581673306772908
+        },
+        {
+          "range": "38.5-110.3",
+          "player_games": 251,
+          "projection_mean": 56.26061376731175,
+          "actual_mean": 59.51394422310757,
+          "mae": 31.13416353988818,
+          "bias": -3.2533304557958123,
+          "above_share": 0.47410358565737054
+        }
+      ]
+    },
+    "receptions": {
+      "player_games": 586,
+      "weeks": [
+        4,
+        5,
+        6
+      ],
+      "actual_mean": 3.008532423208191,
+      "projection_mean": 2.790301948875198,
+      "mae": 1.6235415989262698,
+      "bias": -0.2182304743329932,
+      "rmse": 2.238483050989147,
+      "above_share": 0.48464163822525597,
+      "median_error": -0.08063262244388436,
+      "slope": 0.7984999958799021,
+      "intercept": 0.7804763285276629,
+      "correlation": 0.5286010527078446,
+      "decomposition": {
+        "player_games": 583,
+        "mae": 1.6277211376037473,
+        "knew_volume_mae": 0.8497878658245812,
+        "knew_efficiency_mae": 1.420606308590026,
+        "volume_share": 0.7590049311097391,
+        "efficiency_share": 0.2820017019537292,
+        "interaction_share": -0.04100663306346824,
+        "volume_mae": 2.1108061749571183,
+        "volume_bias": -0.34139508290451687,
+        "implied_efficiency_mean": 0.6745252556459163,
+        "actual_efficiency_mean": 0.6675511751326763,
+        "volume_sources": {
+          "targets_avg_5": 583
+        }
+      },
+      "vs_market": {
+        "player_games": 524,
+        "model_mae": 1.7061035867365488,
+        "line_mae": 1.6583969465648856,
+        "anchored_mae": 1.6355508352049215,
+        "model_bias": -0.2568018132459358,
+        "line_bias": -0.30725190839694655
+      },
+      "by_projection_quartile": [
+        {
+          "range": "0.5-1.5",
+          "player_games": 147,
+          "projection_mean": 1.0413602125243884,
+          "actual_mean": 1.530612244897959,
+          "mae": 1.153522308930225,
+          "bias": -0.4892520323735707,
+          "above_share": 0.5238095238095238
+        },
+        {
+          "range": "1.5-2.5",
+          "player_games": 146,
+          "projection_mean": 1.9394600717701524,
+          "actual_mean": 2.047945205479452,
+          "mae": 1.2950783973462312,
+          "bias": -0.10848513370929946,
+          "above_share": 0.4520547945205479
+        },
+        {
+          "range": "2.5-3.7",
+          "player_games": 146,
+          "projection_mean": 3.0043636507209754,
+          "actual_mean": 3.5136986301369864,
+          "mae": 1.7901588656380867,
+          "bias": -0.5093349794160109,
+          "above_share": 0.5616438356164384
+        },
+        {
+          "range": "3.7-9.7",
+          "player_games": 147,
+          "projection_mean": 5.171692022558341,
+          "actual_mean": 4.938775510204081,
+          "mae": 2.2543058310363318,
+          "bias": 0.23291651235425978,
+          "above_share": 0.4013605442176871
+        }
+      ]
+    },
+    "rushing_yards": {
+      "player_games": 458,
+      "weeks": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "actual_mean": 32.73144104803494,
+      "projection_mean": 32.50810329954133,
+      "mae": 18.966937462360423,
+      "bias": -0.22333774849360194,
+      "rmse": 25.805154049967054,
+      "above_share": 0.4126637554585153,
+      "median_error": -4.04826176758811,
+      "slope": 0.8872178054259952,
+      "intercept": 3.8896729800543097,
+      "correlation": 0.6406612082036048,
+      "decomposition": {
+        "player_games": 447,
+        "mae": 19.02076122738055,
+        "knew_volume_mae": 11.599733344040564,
+        "knew_efficiency_mae": 14.068044416310942,
+        "volume_share": 0.5315389560161493,
+        "efficiency_share": 0.435966849145862,
+        "interaction_share": 0.032494194837988766,
+        "volume_mae": 3.370432513049963,
+        "volume_bias": -0.03493661446681579,
+        "implied_efficiency_mean": 4.079358882541647,
+        "actual_efficiency_mean": 4.130650496141125,
+        "volume_sources": {
+          "carries_avg_5": 447
+        }
+      },
+      "vs_market": {
+        "player_games": 378,
+        "model_mae": 19.512995779345744,
+        "line_mae": 17.67195767195767,
+        "anchored_mae": 18.92283118577578,
+        "model_bias": -0.6504930287483515,
+        "line_bias": -0.22486772486772486
+      },
+      "by_projection_quartile": [
+        {
+          "range": "5.1-14.6",
+          "player_games": 115,
+          "projection_mean": 9.704101264937465,
+          "actual_mean": 11.6,
+          "mae": 9.155523527104954,
+          "bias": -1.8958987350625376,
+          "above_share": 0.391304347826087
+        },
+        {
+          "range": "14.6-24.1",
+          "player_games": 114,
+          "projection_mean": 19.636248658693702,
+          "actual_mean": 21.114035087719298,
+          "mae": 17.08031712109335,
+          "bias": -1.4777864290255946,
+          "above_share": 0.4298245614035088
+        },
+        {
+          "range": "24.1-47.9",
+          "player_games": 114,
+          "projection_mean": 32.936889383318814,
+          "actual_mean": 33.56140350877193,
+          "mae": 21.664999478412927,
+          "bias": -0.6245141254531177,
+          "above_share": 0.40350877192982454
+        },
+        {
+          "range": "47.9-135.0",
+          "player_games": 115,
+          "projection_mean": 67.64697329506691,
+          "actual_mean": 64.55652173913043,
+          "mae": 27.973965737393822,
+          "bias": 3.0904515559364807,
+          "above_share": 0.4260869565217391
+        }
+      ]
+    },
+    "passing_yards": {
+      "player_games": 150,
+      "weeks": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "actual_mean": 229.84666666666666,
+      "projection_mean": 215.28564980654687,
+      "mae": 59.854291858525464,
+      "bias": -14.56101686011981,
+      "rmse": 75.43944722091446,
+      "above_share": 0.6133333333333333,
+      "median_error": 9.621826648722944,
+      "slope": 0.5873868909642898,
+      "intercept": 103.39069815757237,
+      "correlation": 0.3371180956239792,
+      "decomposition": {
+        "player_games": 150,
+        "mae": 59.854291858525464,
+        "knew_volume_mae": 48.57380079581936,
+        "knew_efficiency_mae": 57.25353675788145,
+        "volume_share": 1.086330154400206,
+        "efficiency_share": 0.6689842135618025,
+        "interaction_share": -0.7553143679620082,
+        "volume_mae": 8.423111111111112,
+        "volume_bias": -3.0391111111111107,
+        "implied_efficiency_mean": 7.304733220303974,
+        "actual_efficiency_mean": 6.952409760032265,
+        "volume_sources": {
+          "pass_attempts_avg_5": 150
+        }
+      },
+      "vs_market": {
+        "player_games": 148,
+        "model_mae": 60.32893202603061,
+        "line_mae": 54.57432432432432,
+        "anchored_mae": 57.36614353458793,
+        "model_bias": -15.078087318227084,
+        "line_bias": -7.391891891891892
+      },
+      "by_projection_quartile": [
+        {
+          "range": "60.6-192.9",
+          "player_games": 38,
+          "projection_mean": 159.96890480128226,
+          "actual_mean": 198.5,
+          "mae": 66.8045313628469,
+          "bias": -38.53109519871773,
+          "above_share": 0.7368421052631579
+        },
+        {
+          "range": "192.9-220.5",
+          "player_games": 37,
+          "projection_mean": 206.60583829127242,
+          "actual_mean": 210.13513513513513,
+          "mae": 55.086415174909,
+          "bias": -3.5292968438627055,
+          "above_share": 0.5945945945945946
+        },
+        {
+          "range": "220.5-242.3",
+          "player_games": 37,
+          "projection_mean": 230.15984625443,
+          "actual_mean": 249.02702702702703,
+          "mae": 52.31129110569384,
+          "bias": -18.867180772597074,
+          "above_share": 0.6216216216216216
+        },
+        {
+          "range": "242.3-305.6",
+          "player_games": 38,
+          "projection_mean": 264.57102000900824,
+          "actual_mean": 261.7105263157895,
+          "mae": 64.89095933179824,
+          "bias": 2.860493693218794,
+          "above_share": 0.5
+        }
+      ]
+    }
+  },
+  "by_position": {
+    "receiving_yards": {
+      "RB": {
+        "player_games": 248,
+        "weeks": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 15.80241935483871,
+        "projection_mean": 14.280211352066406,
+        "mae": 13.03683169441291,
+        "bias": -1.522208002772305,
+        "rmse": 17.60160583948811,
+        "above_share": 0.4274193548387097,
+        "median_error": -2.066097664986059,
+        "slope": 0.6096682440364521,
+        "intercept": 7.096227975354974,
+        "correlation": 0.2930697659988281,
+        "decomposition": {
+          "player_games": 241,
+          "mae": 13.066993302360382,
+          "knew_volume_mae": 8.406440071683992,
+          "knew_efficiency_mae": 8.70460247676243,
+          "volume_share": 0.41065524558367056,
+          "efficiency_share": 0.5190156343723494,
+          "interaction_share": 0.07032912004397973,
+          "volume_mae": 1.6235822959889348,
+          "volume_bias": 0.05802213001383126,
+          "implied_efficiency_mean": 5.273258462040563,
+          "actual_efficiency_mean": 5.673076923076923,
+          "volume_sources": {
+            "targets_avg_5": 241
+          }
+        },
+        "vs_market": {
+          "player_games": 188,
+          "model_mae": 13.557400129786219,
+          "line_mae": 13.00531914893617,
+          "anchored_mae": 13.470167745211887,
+          "model_bias": -2.006057320339047,
+          "line_bias": -2.74468085106383
+        },
+        "by_projection_quartile": [
+          {
+            "range": "5.0-7.9",
+            "player_games": 62,
+            "projection_mean": 6.580237283387892,
+            "actual_mean": 10.870967741935484,
+            "mae": 9.02519039206548,
+            "bias": -4.290730458547591,
+            "above_share": 0.532258064516129
+          },
+          {
+            "range": "7.9-11.6",
+            "player_games": 62,
+            "projection_mean": 9.374743092781374,
+            "actual_mean": 12.290322580645162,
+            "mae": 10.452945527240205,
+            "bias": -2.9155794878637886,
+            "above_share": 0.43548387096774194
+          },
+          {
+            "range": "11.6-17.9",
+            "player_games": 62,
+            "projection_mean": 14.64309826766955,
+            "actual_mean": 15.258064516129032,
+            "mae": 14.750841633664832,
+            "bias": -0.6149662484594829,
+            "above_share": 0.3387096774193548
+          },
+          {
+            "range": "17.9-53.2",
+            "player_games": 62,
+            "projection_mean": 26.522766764426805,
+            "actual_mean": 24.79032258064516,
+            "mae": 17.918349224681126,
+            "bias": 1.7324441837816413,
+            "above_share": 0.4032258064516129
+          }
+        ]
+      },
+      "TE": {
+        "player_games": 258,
+        "weeks": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 27.364341085271317,
+        "projection_mean": 26.317885009045476,
+        "mae": 18.628871602538524,
+        "bias": -1.0464560762258432,
+        "rmse": 25.20770850376593,
+        "above_share": 0.4069767441860465,
+        "median_error": -3.981021512169402,
+        "slope": 0.8163263473726649,
+        "intercept": 5.88035814526341,
+        "correlation": 0.4452880463865832,
+        "decomposition": {
+          "player_games": 257,
+          "mae": 18.658733359746844,
+          "knew_volume_mae": 12.615578643951961,
+          "knew_efficiency_mae": 12.478563832174641,
+          "volume_share": 0.48938975254146666,
+          "efficiency_share": 0.47845902629511167,
+          "interaction_share": 0.032151221163421936,
+          "volume_mae": 1.8452010376134889,
+          "volume_bias": -0.1235408560311284,
+          "implied_efficiency_mean": 6.756283032855049,
+          "actual_efficiency_mean": 6.843840931134821,
+          "volume_sources": {
+            "targets_avg_5": 257
+          }
+        },
+        "vs_market": {
+          "player_games": 211,
+          "model_mae": 20.244693090004468,
+          "line_mae": 18.912322274881518,
+          "anchored_mae": 19.386514610797068,
+          "model_bias": -1.952476365992892,
+          "line_bias": -2.670616113744076
+        },
+        "by_projection_quartile": [
+          {
+            "range": "5.1-13.8",
+            "player_games": 65,
+            "projection_mean": 10.076140431503068,
+            "actual_mean": 9.646153846153846,
+            "mae": 10.183259941250604,
+            "bias": 0.4299865853492211,
+            "above_share": 0.3076923076923077
+          },
+          {
+            "range": "13.8-22.5",
+            "player_games": 64,
+            "projection_mean": 18.063674836474934,
+            "actual_mean": 21.0,
+            "mae": 15.714230829089184,
+            "bias": -2.9363251635250647,
+            "above_share": 0.40625
+          },
+          {
+            "range": "22.5-35.4",
+            "player_games": 64,
+            "projection_mean": 29.113196170777687,
+            "actual_mean": 35.421875,
+            "mae": 22.607728293024532,
+            "bias": -6.308678829222313,
+            "above_share": 0.5
+          },
+          {
+            "range": "35.4-71.9",
+            "player_games": 65,
+            "projection_mean": 47.93454553572101,
+            "actual_mean": 43.41538461538462,
+            "mae": 26.02663989935957,
+            "bias": 4.519160920336388,
+            "above_share": 0.4153846153846154
+          }
+        ]
+      },
+      "WR": {
+        "player_games": 499,
+        "weeks": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 42.51503006012024,
+        "projection_mean": 36.60201250476093,
+        "mae": 25.77218142451352,
+        "bias": -5.913017555359308,
+        "rmse": 34.445352857350294,
+        "above_share": 0.48296593186372744,
+        "median_error": -1.1986430358580407,
+        "slope": 0.8366457960540938,
+        "intercept": 11.892110170892652,
+        "correlation": 0.46404639622565097,
+        "decomposition": {
+          "player_games": 491,
+          "mae": 25.92842445183417,
+          "knew_volume_mae": 19.17203240727386,
+          "knew_efficiency_mae": 19.92726800349039,
+          "volume_share": 0.5237241379196039,
+          "efficiency_share": 0.6079466044314126,
+          "interaction_share": -0.13167074235101636,
+          "volume_mae": 2.4020027155465034,
+          "volume_bias": -0.3524439918533604,
+          "implied_efficiency_mean": 7.564042553320489,
+          "actual_efficiency_mean": 8.183823529411764,
+          "volume_sources": {
+            "targets_avg_5": 491
+          }
+        },
+        "vs_market": {
+          "player_games": 415,
+          "model_mae": 27.158232149502453,
+          "line_mae": 25.61566265060241,
+          "anchored_mae": 26.201252050385587,
+          "model_bias": -8.673944882798416,
+          "line_bias": -8.820481927710844
+        },
+        "by_projection_quartile": [
+          {
+            "range": "5.0-20.2",
+            "player_games": 125,
+            "projection_mean": 14.291910225398825,
+            "actual_mean": 25.376,
+            "mae": 21.411096008129213,
+            "bias": -11.084089774601178,
+            "above_share": 0.544
+          },
+          {
+            "range": "20.2-32.5",
+            "player_games": 125,
+            "projection_mean": 25.950726635399832,
+            "actual_mean": 29.608,
+            "mae": 22.10879572075402,
+            "bias": -3.6572733646001745,
+            "above_share": 0.416
+          },
+          {
+            "range": "32.5-48.9",
+            "player_games": 124,
+            "projection_mean": 39.95384526419262,
+            "actual_mean": 46.91935483870968,
+            "mae": 26.15295684333382,
+            "bias": -6.965509574517055,
+            "above_share": 0.5
+          },
+          {
+            "range": "48.9-110.3",
+            "player_games": 125,
+            "projection_mean": 66.23838255612792,
+            "actual_mean": 68.192,
+            "mae": 33.41892332918759,
+            "bias": -1.9536174438720861,
+            "above_share": 0.472
+          }
+        ]
+      }
+    },
+    "receptions": {
+      "RB": {
+        "player_games": 125,
+        "weeks": [
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 2.4,
+        "projection_mean": 2.334128900107644,
+        "mae": 1.5445237900442874,
+        "bias": -0.06587109989235665,
+        "rmse": 2.119856199890925,
+        "above_share": 0.432,
+        "median_error": -0.17618728302077713,
+        "slope": 0.5205908170572557,
+        "intercept": 1.1848739287760082,
+        "correlation": 0.28107209507852016,
+        "decomposition": {
+          "player_games": 125,
+          "mae": 1.5445237900442874,
+          "knew_volume_mae": 0.6807918389871992,
+          "knew_efficiency_mae": 1.3758252124172912,
+          "volume_share": 0.7840192938020094,
+          "efficiency_share": 0.2012748824942555,
+          "interaction_share": 0.014705823703734822,
+          "volume_mae": 1.7938666666666665,
+          "volume_bias": -0.18453333333333335,
+          "implied_efficiency_mean": 0.8082972336771107,
+          "actual_efficiency_mean": 0.7614213197969543,
+          "volume_sources": {
+            "targets_avg_5": 125
+          }
+        },
+        "vs_market": {
+          "player_games": 125,
+          "model_mae": 1.5445237900442874,
+          "line_mae": 1.476,
+          "anchored_mae": 1.480005812987376,
+          "model_bias": -0.06587109989235665,
+          "line_bias": -0.164
+        },
+        "by_projection_quartile": [
+          {
+            "range": "0.6-1.4",
+            "player_games": 32,
+            "projection_mean": 1.096028729971076,
+            "actual_mean": 1.71875,
+            "mae": 1.1883098289948584,
+            "bias": -0.622721270028924,
+            "above_share": 0.59375
+          },
+          {
+            "range": "1.4-2.2",
+            "player_games": 31,
+            "projection_mean": 1.8475103941597497,
+            "actual_mean": 2.096774193548387,
+            "mae": 1.2872527756837602,
+            "bias": -0.2492637993886372,
+            "above_share": 0.5161290322580645
+          },
+          {
+            "range": "2.2-2.8",
+            "player_games": 31,
+            "projection_mean": 2.4884565590632857,
+            "actual_mean": 2.129032258064516,
+            "mae": 1.3181278721102156,
+            "bias": 0.3594243009987698,
+            "above_share": 0.3548387096774194
+          },
+          {
+            "range": "2.8-6.8",
+            "player_games": 31,
+            "projection_mean": 3.9444586324021573,
+            "actual_mean": 3.6774193548387095,
+            "mae": 2.395895456325392,
+            "bias": 0.2670392775634474,
+            "above_share": 0.25806451612903225
+          }
+        ]
+      },
+      "TE": {
+        "player_games": 162,
+        "weeks": [
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 2.876543209876543,
+        "projection_mean": 2.725901130910933,
+        "mae": 1.5323551626160656,
+        "bias": -0.1506420789656102,
+        "rmse": 2.0562367290187242,
+        "above_share": 0.5,
+        "median_error": -0.026875569803638033,
+        "slope": 0.8082681741160324,
+        "intercept": 0.6732840799743344,
+        "correlation": 0.5666861097578971,
+        "decomposition": {
+          "player_games": 161,
+          "mae": 1.5396038299299486,
+          "knew_volume_mae": 0.7728634857023281,
+          "knew_efficiency_mae": 1.2442124579610832,
+          "volume_share": 0.6944681599035505,
+          "efficiency_share": 0.28683653657155767,
+          "interaction_share": 0.018695303524891765,
+          "volume_mae": 1.7926501035196687,
+          "volume_bias": -0.2468944099378882,
+          "implied_efficiency_mean": 0.6898140538379729,
+          "actual_efficiency_mean": 0.7056145675265554,
+          "volume_sources": {
+            "targets_avg_5": 161
+          }
+        },
+        "vs_market": {
+          "player_games": 135,
+          "model_mae": 1.6492048577096172,
+          "line_mae": 1.6481481481481481,
+          "anchored_mae": 1.605272772047322,
+          "model_bias": -0.14300921471491976,
+          "line_bias": -0.25555555555555554
+        },
+        "by_projection_quartile": [
+          {
+            "range": "0.5-1.4",
+            "player_games": 41,
+            "projection_mean": 0.947290692660162,
+            "actual_mean": 1.170731707317073,
+            "mae": 1.0647140147548229,
+            "bias": -0.22344101465691116,
+            "above_share": 0.43902439024390244
+          },
+          {
+            "range": "1.4-2.5",
+            "player_games": 40,
+            "projection_mean": 1.8821633212965359,
+            "actual_mean": 1.975,
+            "mae": 1.1842456828042993,
+            "bias": -0.09283667870346404,
+            "above_share": 0.475
+          },
+          {
+            "range": "2.5-3.6",
+            "player_games": 40,
+            "projection_mean": 3.017402196403803,
+            "actual_mean": 3.825,
+            "mae": 1.9796401551924299,
+            "bias": -0.807597803596197,
+            "above_share": 0.675
+          },
+          {
+            "range": "3.6-9.1",
+            "player_games": 41,
+            "projection_mean": 5.043279124402218,
+            "actual_mean": 4.536585365853658,
+            "mae": 1.90323971265819,
+            "bias": 0.5066937585485597,
+            "above_share": 0.4146341463414634
+          }
+        ]
+      },
+      "WR": {
+        "player_games": 299,
+        "weeks": [
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 3.3344481605351173,
+        "projection_mean": 3.015902496052975,
+        "mae": 1.7059811601052028,
+        "bias": -0.31854566448214244,
+        "rmse": 2.3771874329663283,
+        "above_share": 0.4983277591973244,
+        "median_error": -0.028456251355252427,
+        "slope": 0.8146027815305967,
+        "intercept": 0.8776855984252964,
+        "correlation": 0.5458081045241844,
+        "decomposition": {
+          "player_games": 297,
+          "mae": 1.7105041510058148,
+          "knew_volume_mae": 0.9626138878931185,
+          "knew_efficiency_mae": 1.5350744802157894,
+          "volume_share": 0.7768737607548712,
+          "efficiency_share": 0.30691864757429266,
+          "interaction_share": -0.08379240832916397,
+          "volume_mae": 2.4166666666666665,
+          "volume_bias": -0.458641975308642,
+          "implied_efficiency_mean": 0.6099360510572951,
+          "actual_efficiency_mean": 0.628391167192429,
+          "volume_sources": {
+            "targets_avg_5": 297
+          }
+        },
+        "vs_market": {
+          "player_games": 264,
+          "model_mae": 1.811705113271278,
+          "line_mae": 1.75,
+          "anchored_mae": 1.7246821469604863,
+          "model_bias": -0.40539401010534704,
+          "line_bias": -0.4015151515151515
+        },
+        "by_projection_quartile": [
+          {
+            "range": "0.5-1.6",
+            "player_games": 75,
+            "projection_mean": 1.0818457252458036,
+            "actual_mean": 1.5733333333333333,
+            "mae": 1.2077088345888556,
+            "bias": -0.49148760808752967,
+            "above_share": 0.52
+          },
+          {
+            "range": "1.6-2.7",
+            "player_games": 75,
+            "projection_mean": 2.0687175045789528,
+            "actual_mean": 2.3066666666666666,
+            "mae": 1.372381952596791,
+            "bias": -0.23794916208771327,
+            "above_share": 0.48
+          },
+          {
+            "range": "2.7-4.2",
+            "player_games": 74,
+            "projection_mean": 3.3203777295661197,
+            "actual_mean": 3.9324324324324325,
+            "mae": 1.8262085637157994,
+            "bias": -0.6120547028663128,
+            "above_share": 0.5540540540540541
+          },
+          {
+            "range": "4.2-9.7",
+            "player_games": 75,
+            "projection_mean": 5.596728694601197,
+            "actual_mean": 5.533333333333333,
+            "mae": 2.4192283215675072,
+            "bias": 0.0633953612678637,
+            "above_share": 0.44
+          }
+        ]
+      }
+    },
+    "rushing_yards": {
+      "QB": {
+        "player_games": 122,
+        "weeks": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 17.87704918032787,
+        "projection_mean": 18.281379261923103,
+        "mae": 13.407483090478488,
+        "bias": 0.4043300815952344,
+        "rmse": 19.01164419604679,
+        "above_share": 0.3442622950819672,
+        "median_error": -3.593498334682228,
+        "slope": 0.7337490665218454,
+        "intercept": 4.463104212159965,
+        "correlation": 0.36559335611680294,
+        "decomposition": {
+          "player_games": 122,
+          "mae": 13.407483090478488,
+          "knew_volume_mae": 9.965429682937206,
+          "knew_efficiency_mae": 9.668242244020751,
+          "volume_share": 0.3924812007943084,
+          "efficiency_share": 0.6246710829686983,
+          "interaction_share": -0.017152283763006614,
+          "volume_mae": 1.8937158469945354,
+          "volume_bias": 0.3969945355191256,
+          "implied_efficiency_mean": 4.352732309927125,
+          "actual_efficiency_mean": 4.8039647577092515,
+          "volume_sources": {
+            "carries_avg_5": 122
+          }
+        },
+        "vs_market": {
+          "player_games": 120,
+          "model_mae": 13.55032504424973,
+          "line_mae": 12.133333333333333,
+          "anchored_mae": 12.967753249505714,
+          "model_bias": 0.4249515975806011,
+          "line_bias": -0.225
+        },
+        "by_projection_quartile": [
+          {
+            "range": "5.1-9.6",
+            "player_games": 31,
+            "projection_mean": 7.306992301855484,
+            "actual_mean": 8.419354838709678,
+            "mae": 8.112865553936867,
+            "bias": -1.1123625368541932,
+            "above_share": 0.25806451612903225
+          },
+          {
+            "range": "9.6-15.7",
+            "player_games": 30,
+            "projection_mean": 12.406242861012158,
+            "actual_mean": 11.0,
+            "mae": 8.181454034573205,
+            "bias": 1.4062428610121567,
+            "above_share": 0.3
+          },
+          {
+            "range": "15.7-25.6",
+            "player_games": 30,
+            "projection_mean": 21.34129129297103,
+            "actual_mean": 22.7,
+            "mae": 13.315450287086607,
+            "bias": -1.3587087070289738,
+            "above_share": 0.5
+          },
+          {
+            "range": "25.6-50.1",
+            "player_games": 31,
+            "projection_mean": 31.980176902503324,
+            "actual_mean": 29.322580645161292,
+            "mae": 23.84861210375929,
+            "bias": 2.6575962573420346,
+            "above_share": 0.3225806451612903
+          }
+        ]
+      },
+      "RB": {
+        "player_games": 336,
+        "weeks": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 38.125,
+        "projection_mean": 37.673759051295576,
+        "mae": 20.985548871198507,
+        "bias": -0.4512409487044299,
+        "rmse": 27.864945216463898,
+        "above_share": 0.4375,
+        "median_error": -4.354840098890239,
+        "slope": 0.8718960155626323,
+        "intercept": 5.277399591908769,
+        "correlation": 0.6283119019383134,
+        "decomposition": {
+          "player_games": 325,
+          "mae": 21.1278994818484,
+          "knew_volume_mae": 12.213225795285519,
+          "knew_efficiency_mae": 15.719662462524491,
+          "volume_share": 0.5553802799401723,
+          "efficiency_share": 0.4036136822388632,
+          "interaction_share": 0.041006037820964625,
+          "volume_mae": 3.9247692307692312,
+          "volume_bias": -0.19707692307692312,
+          "implied_efficiency_mean": 3.976738703646175,
+          "actual_efficiency_mean": 4.034341524889729,
+          "volume_sources": {
+            "carries_avg_5": 325
+          }
+        },
+        "vs_market": {
+          "player_games": 258,
+          "model_mae": 22.286331004971796,
+          "line_mae": 20.248062015503876,
+          "anchored_mae": 21.692634877064187,
+          "model_bias": -1.1506998316920505,
+          "line_bias": -0.2248062015503876
+        },
+        "by_projection_quartile": [
+          {
+            "range": "5.1-17.6",
+            "player_games": 84,
+            "projection_mean": 11.856311224158768,
+            "actual_mean": 15.714285714285714,
+            "mae": 12.339200673357832,
+            "bias": -3.8579744901269457,
+            "above_share": 0.4880952380952381
+          },
+          {
+            "range": "17.6-28.7",
+            "player_games": 84,
+            "projection_mean": 22.56995802972589,
+            "actual_mean": 23.30952380952381,
+            "mae": 18.771327021756747,
+            "bias": -0.7395657797979243,
+            "above_share": 0.40476190476190477
+          },
+          {
+            "range": "28.7-55.5",
+            "player_games": 84,
+            "projection_mean": 42.756072882404204,
+            "actual_mean": 45.035714285714285,
+            "mae": 23.960372880535413,
+            "bias": -2.279641403310081,
+            "above_share": 0.4642857142857143
+          },
+          {
+            "range": "55.5-135.0",
+            "player_games": 84,
+            "projection_mean": 73.51269406889341,
+            "actual_mean": 68.44047619047619,
+            "mae": 28.87129490914405,
+            "bias": 5.0722178784172325,
+            "above_share": 0.39285714285714285
+          }
+        ]
+      }
+    },
+    "passing_yards": {
+      "QB": {
+        "player_games": 150,
+        "weeks": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "actual_mean": 229.84666666666666,
+        "projection_mean": 215.28564980654687,
+        "mae": 59.854291858525464,
+        "bias": -14.56101686011981,
+        "rmse": 75.43944722091446,
+        "above_share": 0.6133333333333333,
+        "median_error": 9.621826648722944,
+        "slope": 0.5873868909642898,
+        "intercept": 103.39069815757237,
+        "correlation": 0.3371180956239792,
+        "decomposition": {
+          "player_games": 150,
+          "mae": 59.854291858525464,
+          "knew_volume_mae": 48.57380079581936,
+          "knew_efficiency_mae": 57.25353675788145,
+          "volume_share": 1.086330154400206,
+          "efficiency_share": 0.6689842135618025,
+          "interaction_share": -0.7553143679620082,
+          "volume_mae": 8.423111111111112,
+          "volume_bias": -3.0391111111111107,
+          "implied_efficiency_mean": 7.304733220303974,
+          "actual_efficiency_mean": 6.952409760032265,
+          "volume_sources": {
+            "pass_attempts_avg_5": 150
+          }
+        },
+        "vs_market": {
+          "player_games": 148,
+          "model_mae": 60.32893202603061,
+          "line_mae": 54.57432432432432,
+          "anchored_mae": 57.36614353458793,
+          "model_bias": -15.078087318227084,
+          "line_bias": -7.391891891891892
+        },
+        "by_projection_quartile": [
+          {
+            "range": "60.6-192.9",
+            "player_games": 38,
+            "projection_mean": 159.96890480128226,
+            "actual_mean": 198.5,
+            "mae": 66.8045313628469,
+            "bias": -38.53109519871773,
+            "above_share": 0.7368421052631579
+          },
+          {
+            "range": "192.9-220.5",
+            "player_games": 37,
+            "projection_mean": 206.60583829127242,
+            "actual_mean": 210.13513513513513,
+            "mae": 55.086415174909,
+            "bias": -3.5292968438627055,
+            "above_share": 0.5945945945945946
+          },
+          {
+            "range": "220.5-242.3",
+            "player_games": 37,
+            "projection_mean": 230.15984625443,
+            "actual_mean": 249.02702702702703,
+            "mae": 52.31129110569384,
+            "bias": -18.867180772597074,
+            "above_share": 0.6216216216216216
+          },
+          {
+            "range": "242.3-305.6",
+            "player_games": 38,
+            "projection_mean": 264.57102000900824,
+            "actual_mean": 261.7105263157895,
+            "mae": 64.89095933179824,
+            "bias": 2.860493693218794,
+            "above_share": 0.5
+          }
+        ]
+      }
+    }
+  },
+  "volume_sources": [
+    {
+      "volume": "targets",
+      "source": "receiver_projected_targets_v3",
+      "player_games": 989,
+      "mae": 2.151728152091522,
+      "bias": -0.3315733734729636
+    },
+    {
+      "volume": "targets",
+      "source": "targets_avg_5",
+      "player_games": 989,
+      "mae": 2.0676272328951804,
+      "bias": -0.19293899561846986
+    },
+    {
+      "volume": "targets",
+      "source": "targets_avg_10",
+      "player_games": 989,
+      "mae": 2.057626350169323,
+      "bias": -0.18730279101866568
+    },
+    {
+      "volume": "carries",
+      "source": "rb_projected_carries_v3",
+      "player_games": 451,
+      "mae": 4.279853407078419,
+      "bias": 0.3700686968159602
+    },
+    {
+      "volume": "carries",
+      "source": "carries_avg_5",
+      "player_games": 451,
+      "mae": 3.344974131559497,
+      "bias": -0.039061345158906136
+    },
+    {
+      "volume": "carries",
+      "source": "carries_avg_10",
+      "player_games": 451,
+      "mae": 3.375110864745011,
+      "bias": 0.08910797874212505
+    }
+  ]
+}
