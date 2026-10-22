@@ -1,0 +1,114 @@
+{
+  "rows": [
+    {
+      "lever": "current rules",
+      "games": 17,
+      "decisions": 30,
+      "per_game": 1.7647058823529411,
+      "ev_when_seen": 0.04511773778786002,
+      "ev_at_close": 0.038880929206425524,
+      "still_positive": 0.9310344827586207,
+      "close_coverage": 0.9666666666666667,
+      "expected_dollars_per_game": 0.06632629099919649
+    },
+    {
+      "lever": "threshold +2.5%",
+      "games": 17,
+      "decisions": 39,
+      "per_game": 2.2941176470588234,
+      "ev_when_seen": 0.04074656513545718,
+      "ev_at_close": 0.035771320948634625,
+      "still_positive": 0.9473684210526315,
+      "close_coverage": 0.9743589743589743,
+      "expected_dollars_per_game": 0.07995942329694798
+    },
+    {
+      "lever": "threshold +2%",
+      "games": 17,
+      "decisions": 53,
+      "per_game": 3.1176470588235294,
+      "ev_when_seen": 0.03409456127831814,
+      "ev_at_close": 0.026771587646726505,
+      "still_positive": 0.9038461538461539,
+      "close_coverage": 0.9811320754716981,
+      "expected_dollars_per_game": 0.08188956221351637
+    },
+    {
+      "lever": "threshold +4%",
+      "games": 17,
+      "decisions": 20,
+      "per_game": 1.1764705882352942,
+      "ev_when_seen": 0.05436200894838278,
+      "ev_at_close": 0.04401046661112586,
+      "still_positive": 0.8947368421052632,
+      "close_coverage": 0.95,
+      "expected_dollars_per_game": 0.049188168565375966
+    },
+    {
+      "lever": "window T-60..T-15",
+      "games": 17,
+      "decisions": 32,
+      "per_game": 1.8823529411764706,
+      "ev_when_seen": 0.045027456005133776,
+      "ev_at_close": 0.03752525018267164,
+      "still_positive": 0.9354838709677419,
+      "close_coverage": 0.96875,
+      "expected_dollars_per_game": 0.06842839739193063
+    },
+    {
+      "lever": "window T-90..T-15",
+      "games": 17,
+      "decisions": 38,
+      "per_game": 2.235294117647059,
+      "ev_when_seen": 0.04437737869250441,
+      "ev_at_close": 0.03459593447341805,
+      "still_positive": 0.918918918918919,
+      "close_coverage": 0.9736842105263158,
+      "expected_dollars_per_game": 0.07529703385390987
+    },
+    {
+      "lever": "window T-45..T-5",
+      "games": 17,
+      "decisions": 34,
+      "per_game": 2.0,
+      "ev_when_seen": 0.04760397693344243,
+      "ev_at_close": 0.04219848572992672,
+      "still_positive": 0.9393939393939394,
+      "close_coverage": 0.9705882352941176,
+      "expected_dollars_per_game": 0.08191470759338715
+    },
+    {
+      "lever": "add BetMGM",
+      "games": 17,
+      "decisions": 32,
+      "per_game": 1.8823529411764706,
+      "ev_when_seen": 0.045176327137469795,
+      "ev_at_close": 0.03917245523500414,
+      "still_positive": 0.9354838709677419,
+      "close_coverage": 0.96875,
+      "expected_dollars_per_game": 0.07143212425206638
+    },
+    {
+      "lever": "add BetMGM + Fanatics",
+      "games": 17,
+      "decisions": 32,
+      "per_game": 1.8823529411764706,
+      "ev_when_seen": 0.045176327137469795,
+      "ev_at_close": 0.03917245523500414,
+      "still_positive": 0.9354838709677419,
+      "close_coverage": 0.96875,
+      "expected_dollars_per_game": 0.07143212425206638
+    },
+    {
+      "lever": "add game totals",
+      "games": 17,
+      "decisions": 34,
+      "per_game": 2.0,
+      "ev_when_seen": 0.04576438080356477,
+      "ev_at_close": 0.03974518674073379,
+      "still_positive": 0.9393939393939394,
+      "close_coverage": 0.9705882352941176,
+      "expected_dollars_per_game": 0.07715242132024794
+    }
+  ]
+}

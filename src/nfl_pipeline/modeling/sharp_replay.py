@@ -20,6 +20,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import psycopg2
 import psycopg2.extras
@@ -266,3 +267,110 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# --- Levers: what would more bets cost? ----------------------------------------------------------
+ALL_BOOKS = ("fanduel", "espnbet", "draftkings", "betmgm", "fanatics")
+BASE = dict(min_ev=strategy.MIN_EV, window=tuple(strategy.STAKE_WINDOW_MINUTES), books=tuple(strategy.BET_BOOKS),
+            stats=tuple(sorted(strategy.STAKED_STATS)))
+LEVERS = [
+    ("current rules", {}),
+    ("threshold +2.5%", dict(min_ev=0.025)),
+    ("threshold +2%", dict(min_ev=0.02)),
+    ("threshold +4%", dict(min_ev=0.04)),
+    ("window T-60..T-15", dict(window=(15, 60))),
+    ("window T-90..T-15", dict(window=(15, 90))),
+    ("window T-45..T-5", dict(window=(5, 45))),
+    ("add BetMGM", dict(books=BASE["books"] + ("betmgm",))),
+    ("add BetMGM + Fanatics", dict(books=BASE["books"] + ("betmgm", "fanatics"))),
+    ("add game totals", dict(stats=BASE["stats"] + ("total",))),
+]
+
+
+def all_edges(payloads: list[dict], games: dict) -> tuple[list[dict], dict]:
+    """Every +1% gap at any scanned book, once, with its lead time and Pinnacle's close."""
+    edges, closes = [], defaultdict(list)
+    for record in payloads:
+        payload, fetched = record["payload"], safe_time(record["fetched_at_utc"])
+        game = match_game(payload, games)
+        if game is None:
+            continue
+        kick = safe_time(game["start_ts_utc"])
+        books = {b.get("key") for b in payload.get("bookmakers", [])}
+        pinnacle = next((b for b in payload.get("bookmakers", []) if b.get("key") == "pinnacle"), None)
+        if pinnacle is not None and fetched < kick:
+            closes[game["game_id"]].append((fetched, watch._pairs(pinnacle)))
+        for edge in watch.find_edges(payload, min_ev=0.01, bet_books=ALL_BOOKS, now=fetched):
+            edges.append(dict(edge, game_id=game["game_id"], week=game["week"], kickoff=kick, decided_at=fetched,
+                              minutes=(kick - fetched).total_seconds() / 60, books_scanned=books))
+    return edges, closes
+
+
+def close_ev(edge: dict, closes: list) -> float | None:
+    best = None
+    for fetched, pairs in closes:
+        if not edge["decided_at"] <= fetched < edge["kickoff"] or (edge["kickoff"] - fetched).total_seconds() > CLOSE_MAX_AGE_MINUTES * 60:
+            continue
+        for (stat, who, line), quote in pairs.items():
+            if stat != edge["stat"] or who != (edge["player_norm"] or "game") or watch.quote_error(quote, fetched):
+                continue
+            rank = (fetched, -abs(line - float(edge["line"])))
+            if best is None or rank > best[0]:
+                best = (rank, line, quote)
+    if best is None:
+        return None
+    _, line, quote = best
+    p_over = sharp_math.no_vig_over(quote["over"], quote["under"])
+    if abs(line - float(edge["line"])) > 1e-9:
+        p_over = sharp_math.shift_probability(edge["stat"], line, p_over, float(edge["line"]))
+    if p_over is None:
+        return None
+    return sharp_math.ev(p_over if edge["side"] == "over" else 1 - p_over, edge["price"])
+
+
+def lever_table(edges: list[dict], closes: dict) -> list[dict]:
+    """Each lever on its own, on games where every candidate book was scanned (fair comparison)."""
+    full = {e["game_id"] for e in edges if set(ALL_BOOKS) <= e["books_scanned"]}
+    pool = [e for e in edges if e["game_id"] in full]
+    cache = {}
+    rows = []
+    for name, change in LEVERS:
+        cfg = dict(BASE, **change)
+        lo, hi = cfg["window"]
+        chosen = {}
+        for e in sorted(pool, key=lambda e: (e["decided_at"], -e["ev"])):
+            if (e["ev"] < cfg["min_ev"] or e["book"] not in cfg["books"] or e["stat"] not in cfg["stats"]
+                    or not lo <= e["minutes"] <= hi):
+                continue
+            chosen.setdefault((e["game_id"], e["stat"], e["player_norm"] or "game"), e)
+        evs = []
+        for e in chosen.values():
+            key = id(e)
+            if key not in cache:
+                cache[key] = close_ev(e, closes.get(e["game_id"], []))
+            evs.append(cache[key])
+        graded = [v for v in evs if v is not None]
+        games = len(full)
+        rows.append(dict(lever=name, games=games, decisions=len(chosen), per_game=len(chosen) / games if games else 0,
+                         ev_when_seen=float(np.mean([e["ev"] for e in chosen.values()])) if chosen else None,
+                         ev_at_close=float(np.mean(graded)) if graded else None,
+                         still_positive=float(np.mean([v > 0 for v in graded])) if graded else None,
+                         close_coverage=len(graded) / len(chosen) if chosen else None,
+                         expected_dollars_per_game=float(np.sum(graded)) / games if games else 0.0))
+    return rows
+
+
+def lever_markdown(rows: list[dict]) -> str:
+    lines = ["# NFL Sharp-Gap Levers", "",
+             f"Retrospective, on the {rows[0]['games']} October games where FanDuel, theScore Bet (espnbet), DraftKings, "
+             "BetMGM and Fanatics were all scanned. Each row changes one rule from the current strategy. A decision is the "
+             "first qualifying gap per player-game-stat (best book first); EV at close is the bet price valued at "
+             "Pinnacle's last fresh quote before kickoff. Expected $ per game assumes $1 on every decision, no caps.", "",
+             "| Lever | Decisions | Per game | Per 14-game Sunday | EV when seen | EV at close | Still +EV | Expected $ per game |",
+             "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    pct = lambda v: "-" if v is None else f"{v:+.2%}"
+    for r in rows:
+        lines.append(f"| {r['lever']} | {r['decisions']} | {r['per_game']:.2f} | {14 * r['per_game']:.0f} | {pct(r['ev_when_seen'])} | "
+                     f"{pct(r['ev_at_close'])} | {'-' if r['still_positive'] is None else f'{r['still_positive']:.0%}'} | "
+                     f"{r['expected_dollars_per_game']:+.3f} |")
+    return "\n".join(lines) + "\n"
