@@ -1,50 +1,37 @@
 {
-  "day": "2026-10-19",
-  "built_at": "2026-10-21T13:03:25.677214+00:00",
+  "day": "2026-10-22",
+  "built_at": "2026-10-22T22:20:59.900308+00:00",
   "effective_date": "2026-09-24",
-  "status": "needs_attention",
+  "status": "pending",
   "games": [
     {
-      "game_id": "2026_06_WAS_SF",
-      "kickoff": "2026-10-20T00:15:00+00:00",
-      "phase": "settled",
-      "eligible_forecasts": 9,
-      "challenger_captures": 0,
+      "game_id": "2026_07_NE_CHI",
+      "kickoff": "2026-10-23T00:15:00+00:00",
+      "phase": "waiting_for_pregame_window",
+      "eligible_forecasts": 39,
+      "challenger_captures": 27,
       "discord_exact_prop_manifest_verified": false,
-      "valid_close_coverage": 0.4444444444444444,
-      "recorded_publication_pages": 0,
+      "valid_close_coverage": null,
+      "recorded_publication_pages": 3,
       "verified_publication_pages": 0,
-      "close_unknown_reasons": {
-        "exact_line_unavailable_in_captured_feed": 3,
-        "player_market_not_observed_in_capture": 2
-      },
-      "unknown_closes": 5,
+      "close_unknown_reasons": {},
+      "unknown_closes": null,
       "unresolved_forecast_ids": [],
-      "blockers": [
-        "game_aware_discord_manifest_missing_or_invalid",
-        "eligible_receiving_challenger_capture_missing",
-        "valid_exact_close_coverage_below_90_percent",
-        "settled_offers_missing_validated_evaluation"
-      ]
+      "blockers": []
     }
   ],
-  "blockers": [
-    "2026_06_WAS_SF:game_aware_discord_manifest_missing_or_invalid",
-    "2026_06_WAS_SF:eligible_receiving_challenger_capture_missing",
-    "2026_06_WAS_SF:valid_exact_close_coverage_below_90_percent",
-    "2026_06_WAS_SF:settled_offers_missing_validated_evaluation"
-  ],
+  "blockers": [],
   "production_changed": false,
   "betting_approved": false,
   "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
   "close_reconciliation": {
     "source": "immutable_exact_snapshots",
-    "checkpoint_built_at": "2026-10-21T13:03:11.523213+00:00",
-    "observed": 9,
-    "changed_since_checkpoint": 0,
+    "checkpoint_built_at": "2026-10-22T13:38:17.518571+00:00",
+    "observed": 39,
+    "changed_since_checkpoint": 19,
     "historical_locks_changed": false,
     "match_methods": {
-      "verified_same_book_matchup_cross_provider": 4
+      "same_provider_event": 19
     }
   }
 }

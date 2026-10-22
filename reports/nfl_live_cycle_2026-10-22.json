@@ -1,0 +1,37 @@
+{
+  "day": "2026-10-22",
+  "built_at": "2026-10-22T22:20:59.900308+00:00",
+  "effective_date": "2026-09-24",
+  "status": "pending",
+  "games": [
+    {
+      "game_id": "2026_07_NE_CHI",
+      "kickoff": "2026-10-23T00:15:00+00:00",
+      "phase": "waiting_for_pregame_window",
+      "eligible_forecasts": 39,
+      "challenger_captures": 27,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": null,
+      "recorded_publication_pages": 3,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {},
+      "unknown_closes": null,
+      "unresolved_forecast_ids": [],
+      "blockers": []
+    }
+  ],
+  "blockers": [],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
+  "close_reconciliation": {
+    "source": "immutable_exact_snapshots",
+    "checkpoint_built_at": "2026-10-22T13:38:17.518571+00:00",
+    "observed": 39,
+    "changed_since_checkpoint": 19,
+    "historical_locks_changed": false,
+    "match_methods": {
+      "same_provider_event": 19
+    }
+  }
+}

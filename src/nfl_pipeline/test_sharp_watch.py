@@ -372,3 +372,29 @@ def test_the_api_moving_kickoff_a_few_minutes_does_not_drop_the_closing_snapshot
     assert w.same_kickoff("2026-10-11T13:30:00Z", datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))
     assert not w.same_kickoff("2026-10-11T17:00:00Z", datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))
     assert not w.same_kickoff(None, datetime(2026, 10, 11, 13, 30, tzinfo=timezone.utc))
+
+
+def test_thescore_bet_links_are_accepted_as_espn_bet_and_foreign_hosts_are_not():
+    # Since the rebrand every Odds API `espnbet` link is on sportsbook.thescore.bet (all 22,282 in October).
+    game = dict(start=NOW + timedelta(minutes=30), home="CHI", away="NE")
+    edge = dict(book="espnbet", stat="receiving_yards", player="X", player_norm="x", side="over", line=45.5,
+                price=120, sharp_book="pinnacle", sharp_line=45.5, line_gap=0.0, fair_probability=0.58, ev=0.05,
+                minimum_price=110,
+                link="https://sportsbook.thescore.bet/?market_selection_id[0]=da7f2abf&odds_numerator[0]=2&odds_denominator[0]=1")
+    assert w.book_link(edge, game) == (edge["link"], "selection")
+    assert "Open this bet on theScore Bet (ESPN Bet)" in w.format_alert(edge, game, stake=1.0)
+    assert w.book_link(dict(edge, link="https://thescore.bet.evil.example/?market_selection_id[0]=1"), game) == (None, None)
+
+
+def test_a_fanduel_fallback_with_another_states_ids_is_labelled_manual(monkeypatch):
+    from nfl_pipeline import fanduel_links, fanduel_state
+    monkeypatch.setattr(fanduel_state, "state", lambda: "co")
+    monkeypatch.setattr(fanduel_links, "betslip_for_row", lambda row: None)  # line moved / not in Colorado's feed
+    game = dict(start=NOW + timedelta(minutes=30), home="CHI", away="NE")
+    edge = dict(book="fanduel", stat="receptions", player="X", player_norm="x", side="over", line=3.5, price=120,
+                sharp_book="pinnacle", sharp_line=3.5, line_gap=0.0, fair_probability=0.58, ev=0.05, minimum_price=110,
+                link="https://sportsbook.fanduel.com/addToBetslip?marketId=42.6156&selectionId=15290705")
+    url, kind = w.book_link(edge, game)
+    assert kind == "page" and "find it manually" in w.format_alert(edge, game, stake=1.0)
+    monkeypatch.setattr(fanduel_links, "betslip_for_row", lambda row: "https://account.sportsbook.fanduel.com/x")
+    assert w.book_link(edge, game)[1] == "betslip"

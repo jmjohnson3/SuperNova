@@ -11,8 +11,10 @@ Changing anything here is a strategy change and needs a new registration (sharp_
 """
 from __future__ import annotations
 
-EXPERIMENT_NAME = "nfl-sharp-gap-cash-v5"
-PREDECESSOR = "nfl-fanduel-price-gap-v4"
+# v6 (22 October): links and alert text moved to the unpinned sharp_links (theScore Bet links were all
+# rejected); pricing, selection, staking and grading are unchanged from v5.
+EXPERIMENT_NAME = "nfl-sharp-gap-cash-v6"
+PREDECESSOR = "nfl-sharp-gap-cash-v5"
 
 # Books with an account. Order breaks EV ties only; each poll takes the best price first.
 BET_BOOKS = ("fanduel", "espnbet", "draftkings")

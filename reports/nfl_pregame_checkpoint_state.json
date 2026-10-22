@@ -1294,7 +1294,35 @@
           }
         }
       }
+    },
+    "2026_07_NE_CHI@2026-10-23T00:15:00+00:00": {
+      "game_id": "2026_07_NE_CHI",
+      "kickoff": "2026-10-23T00:15:00+00:00",
+      "checkpoints": {
+        "120": {
+          "status": "verified",
+          "attempts": 2,
+          "captured_at": "2026-10-22T22:20:39.353990+00:00",
+          "verification": {
+            "game_id": "2026_07_NE_CHI",
+            "current_fanduel_locks": 40,
+            "receiving_locks": 15,
+            "receiving_same_line_triplets": 15,
+            "explicit_injury_context_locks": 40,
+            "known_player_injury_context_locks": 8,
+            "immutable_lock_violations": 0,
+            "all_locks_missing_links": 0,
+            "actionable_missing_links": 0,
+            "lock_verification_passed": true,
+            "injury_context_note": "known_player_status",
+            "fresh_normalized_rows": 40,
+            "fresh_true_pair_rows": 40,
+            "fresh_true_pair_rows_with_links": 40,
+            "verification_passed": true
+          }
+        }
+      }
     }
   },
-  "updated_at": "2026-10-20T00:13:11.763767+00:00"
+  "updated_at": "2026-10-22T22:20:39.353990+00:00"
 }

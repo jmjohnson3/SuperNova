@@ -3,6 +3,18 @@
 These changes repair evidence collection. Profitability still has to be demonstrated
 on later offers, and paper results do not authorize cash betting.
 
+## Registered October 22, 2026: `nfl-sharp-gap-cash-v6`
+
+v5's pricing, selection, staking and grading are unchanged. ESPN Bet has become theScore Bet, and
+The Odds API still keys it `espnbet`. Every link it returned in October (22,282) was on
+`sportsbook.thescore.bet`, which the `espnbet.com`-only host check rejected. ESPN Bet alerts would
+therefore have said "search manually", although ESPN Bet supplies most of the edges.
+
+Link building and alert text moved to the new `sharp_links.py`, which is not pinned. It accepts both
+domains, labels the book "theScore Bet (ESPN Bet)", and labels a FanDuel fallback as "find it
+manually" when the Colorado lookup fails, because the provider's IDs belong to another state.
+Registered before tonight's first poll; v5 recorded no decisions.
+
 ## Registered October 22, 2026: `fanduel-receiving-oe-paper-v5`
 
 v4 was blocked, and its shadow was withheld from every prediction run, after its pinned sources

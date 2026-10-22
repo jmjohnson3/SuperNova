@@ -610,6 +610,16 @@
       "kickoff": "2026-10-20T00:15:00+00:00",
       "returncode": 1,
       "finished_at": "2026-10-19T23:18:37.968417+00:00"
+    },
+    "2026_07_NE_CHI@2026-10-23T00:15:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_63ecd68cccb647ad8bace44bca4ab718",
+      "attempted_at": "2026-10-22T22:15:07.097137+00:00",
+      "attempts": 1,
+      "game_id": "2026_07_NE_CHI",
+      "kickoff": "2026-10-23T00:15:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-10-22T22:21:00.648063+00:00"
     }
   }
 }

@@ -10,8 +10,9 @@ within the strategy's daily, weekly, per-game and loss limits. Every alert is st
 distinct price in bets.nfl_sharp_alerts (rows are never deleted) and graded at the sharp close in
 sharp_alert_report, which also decides whether staking may continue.
 
-It runs every 5 minutes and polls each game every 5 minutes through its final hour, which is both
-the stake window and the closing snapshot every decision is graded against. The daily allowance is
+The NFL-Sharp-Watch task runs every 10 minutes and polls each game on every run through its final
+hour (the scanner allows 5), which covers the stake window and the closing snapshot every decision is
+graded against. The daily allowance is
 today's share, by games, of the spare credits left before the plan resets (NFL_ODDS_API_RESET_DAY;
 live remaining-credit count), never below a credit floor (NFL_SHARP_CREDIT_FLOOR). Markets come from
 NFL_SHARP_WATCH_MARKETS and are part of the registration, so changing them needs a new one.
@@ -31,7 +32,6 @@ import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import psycopg2
@@ -40,6 +40,8 @@ import requests
 
 from nfl_pipeline import sharp_math
 from nfl_pipeline import sharp_strategy as strategy
+# Links and alert text live outside the pinned modules: a book renaming its domain must not stop the scanner.
+from nfl_pipeline.sharp_links import BOOK_LABEL, book_link, format_alert  # noqa: F401  (re-exported)
 from nfl_pipeline.crawler_oddsapi import OddsCrawlerConfig, _full_url, _save_payload
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
@@ -58,10 +60,6 @@ BET_BOOKS = tuple(strategy.BET_BOOKS)  # books we can bet at, priced against SHA
 # (williamhill_us) returned no player props when scanned in October, so it is not named.
 REFERENCE_BOOKS = ("betmgm", "fanatics")
 BOOKMAKERS = tuple(dict.fromkeys(BET_BOOKS + SHARP_BOOKS + REFERENCE_BOOKS))[:10]
-BOOK_LABEL = {"fanduel": "FanDuel", "draftkings": "DraftKings", "betmgm": "BetMGM",
-              "williamhill_us": "Caesars", "espnbet": "ESPN BET", "fanatics": "Fanatics"}
-BOOK_DOMAIN = {"fanduel": "fanduel.com", "draftkings": "draftkings.com", "betmgm": "betmgm.com",
-               "williamhill_us": "caesars.com", "espnbet": "espnbet.com", "fanatics": "fanatics.com"}
 GAME_MARKETS = {"spreads": "spread", "totals": "total", "alternate_totals": "total",
                 "alternate_spreads": "spread"}
 # Markets the scanner can price but the modeling pipeline has no stat spec for. Kept local so
@@ -605,68 +603,6 @@ def _fallback_link(cur, edge: dict, game: dict) -> str | None:
                  game["start"] - timedelta(minutes=30), game["start"] + timedelta(minutes=30)))
     row = cur.fetchone()
     return row[0] if row else None
-
-
-# Query parameters a book uses to carry one specific selection into its betslip.
-SELECTION_PARAMS = ("outcomes", "selectionids", "selectionid", "marketid", "addtobetslip", "bet")
-
-
-def _carries_a_selection(url) -> bool:
-    query = (url.query or "").lower()
-    return any(p in query for p in SELECTION_PARAMS) or "addtobetslip" in (url.path or "").lower()
-
-
-def book_link(edge: dict, game: dict) -> tuple[str | None, str | None]:
-    """(url, kind) where kind is:
-       'betslip'   - resolved to the bettor's own state, one tap adds the exact selection (FanDuel)
-       'selection' - the book's own deep link carrying this selection, not state-resolved
-       'page'      - a valid link to the book, but it does not name the bet
-    Host-checked throughout, so a bad link can never be rendered as the book's own."""
-    book = edge.get("book") or "fanduel"
-    if book == "fanduel":
-        from nfl_pipeline.fanduel_links import betslip_for_row, provider_link
-        row = dict(edge, away=game["away"], home=game["home"],
-                   market=edge["stat"] if edge["stat"] in ("spread", "total") else None)
-        slip = betslip_for_row(row)
-        if slip:
-            return slip, "betslip"
-        fallback = provider_link(edge.get("link"))
-        if not fallback:
-            return None, None
-        return fallback, ("selection" if _carries_a_selection(urlsplit(fallback)) else "page")
-    link = str(edge.get("link") or "").strip()
-    domain = BOOK_DOMAIN.get(book)
-    if not link or not domain or any(c.isspace() or ord(c) < 32 or c in "<>\\" for c in link):
-        return None, None
-    try:
-        url = urlsplit(link)
-        host = url.hostname or ""
-    except ValueError:
-        return None, None
-    if url.scheme != "https" or url.username or url.password or url.port is not None:
-        return None, None
-    if not (host == domain or host.endswith("." + domain)):
-        return None, None
-    return link, ("selection" if _carries_a_selection(url) else "page")
-
-
-def format_alert(edge: dict, game: dict, stake: float = 0.0) -> str:
-    who = edge["player"] or f"{game['away']} @ {game['home']}"
-    label = edge["stat"].replace("_", " ").title()
-    book = edge.get("book") or "fanduel"
-    book_name = BOOK_LABEL.get(book, book.title())
-    gap = f" ({edge['sharp_book'].title()} {edge['sharp_line']:g})" if edge["line_gap"] else f" ({edge['sharp_book'].title()})"
-    link, kind = book_link(edge, game)
-    kickoff = int(game["start"].timestamp())
-    heading = f"**SHARP EDGE - bet ${stake:g} at {book_name}**" if stake > 0 else "**SHARP EDGE - research, not a bet**"
-    return (f"{heading}\n{who} {edge['side'].upper()} {edge['line']:g} {label} "
-            f"({game['away']} @ {game['home']}, <t:{kickoff}:R>)\n{book_name} {edge['price']:+d} | "
-            f"fair {edge['fair_probability']:.1%}{gap} | "
-            f"EV {edge['ev']:+.1%} | take at {edge['minimum_price']:+d} or better"
-            + (f"\n[Add to slip](<{link}>)" if kind == "betslip"
-               else f"\n[Open this bet on {book_name}](<{link}>)" if kind == "selection"
-               else f"\n[Open {book_name} - find it manually](<{link}>)" if link
-               else f"\nNo {book_name} link captured; search manually."))
 
 
 def _post(text: str) -> None:

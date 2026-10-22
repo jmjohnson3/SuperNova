@@ -1,9 +1,11 @@
 {
   "contract": "nfl-fanduel-lock-contract-v1",
-  "generated_at_utc": "2026-10-22T13:36:22.709139+00:00",
+  "generated_at_utc": "2026-10-22T22:19:03.386333+00:00",
   "date": "2026-10-22",
-  "required": false,
-  "game_scope": null,
+  "required": true,
+  "game_scope": [
+    "2026_07_NE_CHI"
+  ],
   "status": "passed",
   "summary": {
     "games": 1,
@@ -20,11 +22,11 @@
       "status": "passed",
       "verification": {
         "game_id": "2026_07_NE_CHI",
-        "current_fanduel_locks": 38,
-        "receiving_locks": 13,
-        "receiving_same_line_triplets": 13,
-        "explicit_injury_context_locks": 38,
-        "known_player_injury_context_locks": 7,
+        "current_fanduel_locks": 40,
+        "receiving_locks": 15,
+        "receiving_same_line_triplets": 15,
+        "explicit_injury_context_locks": 40,
+        "known_player_injury_context_locks": 8,
         "immutable_lock_violations": 0,
         "all_locks_missing_links": 0,
         "actionable_missing_links": 0,
