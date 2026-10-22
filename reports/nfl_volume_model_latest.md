@@ -1,6 +1,8 @@
 # NFL Volume Model (challenger)
 
-Run `volume-20261022T025415Z`. Walk-forward 4-week blocks over seasons 2023, 2024, 2025, 2026; each block trained only on earlier games, fixed hyperparameters. Players who played. Never changes a live forecast.
+Run `volume-20261022T151821Z`. Walk-forward 4-week blocks over seasons 2023, 2024, 2025, 2026; each block trained only on earlier games, fixed hyperparameters. Players who played. Never changes a live forecast.
+
+Serving parity: 191 features match their archived live values on 1293 player-games and are used; 172 are excluded (live_differs 99, not_in_live_snapshot 33, too_few_comparable_rows 28, live_coverage 12).
 
 ## targets: ACCEPTED on volume
 
@@ -8,26 +10,26 @@ Run `volume-20261022T025415Z`. Walk-forward 4-week blocks over seasons 2023, 202
 
 | Estimate | MAE | RMSE | Bias |
 |---|---:|---:|---:|
-| model | 1.643 | 2.230 | -0.013 |
+| model | 1.651 | 2.242 | -0.046 |
 | targets_avg_3 | 1.766 | 2.420 | +0.024 |
 | targets_avg_5 | 1.724 | 2.341 | +0.036 |
 | targets_avg_10 | 1.719 | 2.306 | +0.077 |
 | receiver_projected_targets_v3 | 1.752 | 2.478 | -0.644 |
 
-Weekly MAE difference, model minus `targets_avg_10`: -0.067 (95% interval -0.083 to -0.051, 72 weeks; negative = model better).
+Weekly MAE difference, model minus `targets_avg_10`: -0.059 (95% interval -0.075 to -0.043, 72 weeks; negative = model better).
 
 | Season | Model MAE | Baseline MAE | Change |
 |---|---:|---:|---:|
-| 2023 | 1.684 | 1.753 | -3.9% |
-| 2024 | 1.695 | 1.769 | -4.2% |
-| 2025 | 1.537 | 1.628 | -5.6% |
-| 2026 | 1.730 | 1.777 | -2.6% |
+| 2023 | 1.686 | 1.753 | -3.9% |
+| 2024 | 1.705 | 1.769 | -3.6% |
+| 2025 | 1.543 | 1.628 | -5.2% |
+| 2026 | 1.753 | 1.777 | -1.4% |
 
 | Position | Model MAE | Baseline MAE | Change |
 |---|---:|---:|---:|
-| RB | 1.307 | 1.363 | -4.1% |
-| TE | 1.523 | 1.573 | -3.2% |
-| WR | 1.913 | 2.012 | -5.0% |
+| RB | 1.319 | 1.363 | -3.2% |
+| TE | 1.519 | 1.573 | -3.4% |
+| WR | 1.923 | 2.012 | -4.4% |
 
 Checks: beats_best_mae yes, beats_best_rmse yes, weekly_interval_excludes_zero yes, no_season_worse_than_2pct yes.
 
@@ -37,25 +39,25 @@ Checks: beats_best_mae yes, beats_best_rmse yes, weekly_interval_excludes_zero y
 
 | Estimate | MAE | RMSE | Bias |
 |---|---:|---:|---:|
-| model | 2.929 | 4.034 | -0.103 |
+| model | 3.003 | 4.153 | -0.157 |
 | carries_avg_3 | 3.167 | 4.405 | +0.039 |
 | carries_avg_5 | 3.132 | 4.344 | +0.063 |
 | carries_avg_10 | 3.158 | 4.362 | +0.115 |
 | rb_projected_carries_v3 | 3.431 | 4.876 | -0.368 |
 
-Weekly MAE difference, model minus `carries_avg_5`: -0.212 (95% interval -0.264 to -0.160, 72 weeks; negative = model better).
+Weekly MAE difference, model minus `carries_avg_5`: -0.133 (95% interval -0.185 to -0.081, 72 weeks; negative = model better).
 
 | Season | Model MAE | Baseline MAE | Change |
 |---|---:|---:|---:|
-| 2023 | 3.062 | 3.244 | -5.6% |
-| 2024 | 2.983 | 3.198 | -6.7% |
-| 2025 | 2.777 | 2.970 | -6.5% |
-| 2026 | 2.868 | 3.133 | -8.5% |
+| 2023 | 3.108 | 3.244 | -4.2% |
+| 2024 | 3.053 | 3.198 | -4.5% |
+| 2025 | 2.883 | 2.970 | -2.9% |
+| 2026 | 2.933 | 3.133 | -6.4% |
 
 | Position | Model MAE | Baseline MAE | Change |
 |---|---:|---:|---:|
-| QB | 1.772 | 1.892 | -6.4% |
-| RB | 3.466 | 3.707 | -6.5% |
+| QB | 1.784 | 1.892 | -5.8% |
+| RB | 3.569 | 3.707 | -3.7% |
 
 Checks: beats_best_mae yes, beats_best_rmse yes, weekly_interval_excludes_zero yes, no_season_worse_than_2pct yes.
 
@@ -65,8 +67,8 @@ Rescaled: the live projection moved from the 5-game-average volume to the model'
 
 | Stat | Rows | Production MAE | Rescaled MAE | Volume x efficiency MAE | Above: production / rescaled / built |
 |---|---:|---:|---:|---:|---|
-| receiving_yards | 989 | 20.91 | 21.30 | 21.12 | 45% / 48% / 45% |
-| receptions | 583 | 1.63 | 1.67 | 1.66 | 49% / 53% / 51% |
-| rushing_yards | 447 | 19.02 | 18.03 | 18.28 | 42% / 45% / 42% |
+| receiving_yards | 989 | 20.91 | 21.38 | 21.22 | 45% / 49% / 46% |
+| receptions | 583 | 1.63 | 1.69 | 1.68 | 49% / 53% / 52% |
+| rushing_yards | 447 | 19.02 | 18.16 | 18.29 | 42% / 47% / 44% |
 
 Promotion is a manual decision recorded in a doc; this report changes nothing live.

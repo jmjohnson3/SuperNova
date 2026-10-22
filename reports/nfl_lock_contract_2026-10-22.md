@@ -11,8 +11,8 @@ A pass requires current immutable FanDuel locks, working FanDuel links, explicit
 
 - Status: `passed`
 - Kickoff: `2026-10-22 17:15:00-07:00`
-- FanDuel locks: 36
-- Receiving same-line triplets: 14 / 14
-- Explicit injury contexts: 36 / 36
+- FanDuel locks: 38
+- Receiving same-line triplets: 13 / 13
+- Explicit injury contexts: 38 / 38
 - Missing links: 0
 - Immutable lock violations: 0

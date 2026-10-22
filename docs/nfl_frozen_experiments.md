@@ -3,6 +3,20 @@
 These changes repair evidence collection. Profitability still has to be demonstrated
 on later offers, and paper results do not authorize cash betting.
 
+## Registered October 22, 2026: `fanduel-receiving-oe-paper-v5`
+
+v4 was blocked, and its shadow was withheld from every prediction run, after its pinned sources
+changed:
+
+- the paper-cohort repair in `receiving_paper_trial.py` (captures from other registrations are kept
+  on disk but never pooled);
+- the batched context-risk columns in `features.py` (proven identical on a full rebuild);
+- projection placement and the targets model in `predict_player_props.py`.
+
+v5 keeps the same rules and OE artifact. It also pins `placement_calibration.json` and
+`targets_model.json` (present or absent) beside the market and interval calibrations, because both
+now move the production numbers the scorer receives. v4's captures remain their own cohort.
+
 ## Registered October 21, 2026: `nfl-sharp-gap-cash-v5`
 
 The price-gap scanner is now the cash strategy (`docs/nfl_cash_readiness.md`). `nfl-sharp-gap-cash-v5`

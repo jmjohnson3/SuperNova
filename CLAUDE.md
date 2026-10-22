@@ -264,8 +264,12 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
 - `modeling/projection_error` measures raw projection error by stat and splits it into volume and
   efficiency. `models/player_props/placement_calibration.json` (`fit_placement_calibration`, validated on
   held-out weeks) moves the raw projection before anchoring; missing file = identity.
-- `modeling/volume_model` is the targets/carries challenger (`docs/nfl_volume_and_placement.md`):
-  accepted on volume, not wired live.
+- `modeling/volume_model` is the targets/carries model (`docs/nfl_volume_and_placement.md`), trained on
+  live/table parity-safe features only. Its targets feed the receptions projection through
+  `models/player_props/targets_model.json`; its carries run as the prospective rushing challenger
+  (`modeling/rushing_volume_challenger`, captured in daily/pregame runs, graded by the close task).
+- The live snapshot and the training table disagree on team-relative features (shares, ranks, team
+  sums); production is trained on one and scored on the other. Check parity before training on a feature.
 
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`

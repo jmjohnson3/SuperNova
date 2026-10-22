@@ -8,8 +8,8 @@ NFL bankroll remains closed. Approved props may lock as $1 micro_projection tria
 - Game lock/close coverage: 0.0%
 - Prop lock/close coverage: 0.0%
 - True-paired prop coverage: 100.0%
-- Game predictions: 4 | Prop predictions: 240
-- Ledger rows: 38 | CLV rows: 0
+- Game predictions: 6 | Prop predictions: 300
+- Ledger rows: 56 | CLV rows: 0
 - Valid prop CLV capture: 0.0%
 - Exact-line prop model status: insufficient_independent_history | true-paired rows: 918
 
@@ -17,29 +17,29 @@ NFL bankroll remains closed. Approved props may lock as $1 micro_projection tria
 
 | Check | Status | Detail |
 |---|---|---|
-| Roster context | pass | 18151 rows |
-| Depth context | pass | 489101 rows |
-| Injury context | pass | 4812 rows |
+| Roster context | pass | 18159 rows |
+| Depth context | pass | 491388 rows |
+| Injury context | pass | 5087 rows |
 | Snap context | pass | 100.0% coverage |
 | Route proxy context | pass | 100.0% coverage from training season 2026 |
 | Red-zone context | pass | 100.0% coverage |
-| Game odds parsed | pass | 4 rows |
-| Prop odds parsed | pass | 134 rows; player prop rows parsed |
+| Game odds parsed | pass | 6 rows |
+| Prop odds parsed | pass | 212 rows; player prop rows parsed |
 | Game lock/close | watch | 0.0% |
 | Prop lock/close | watch | 0.0% |
 | Exact-line prop models | watch | insufficient_independent_history; true-paired rows: 918 |
-| Game predictions | pass | 4 rows |
-| Prop projections | pass | 240 rows |
-| Ledger | pass | 38 rows |
+| Game predictions | pass | 6 rows |
+| Prop projections | pass | 300 rows |
+| Ledger | pass | 56 rows |
 | CLV | watch | 0 rows |
 
 ## Context Freshness
 
 | Data | Rows | Teams | Latest Timestamp |
 |---|---:|---:|---|
-| roster 2026 | 18151 | 33 | 2026-10-21 06:30:38.190473-07:00 |
-| depth 2026 | 489101 | 32 | 2026-10-21 05:53:27-07:00 |
-| injury 2026 | 4812 | 32 | 2026-10-21 06:32:27.854107-07:00 |
+| roster 2026 | 18159 | 33 | 2026-10-22 06:31:01.990456-07:00 |
+| depth 2026 | 491388 | 32 | 2026-10-22 05:59:29-07:00 |
+| injury 2026 | 5087 | 32 | 2026-10-22 06:33:10.660758-07:00 |
 
 ## Player Usage Coverage
 
@@ -50,16 +50,16 @@ NFL bankroll remains closed. Approved props may lock as $1 micro_projection tria
 | pass-route opportunities | 0 | 0.0% |
 | pass-route opportunity share | 0 | 0.0% |
 | route participation | 0 | 0.0% |
-| route participation proxy, training 2026 | 2027 | 100.0% |
-| estimated routes proxy, training 2026 | 1937 | 95.6% |
-| starter confidence, training 2026 | 2027 | 100.0% |
-| rest-risk score, training 2026 | 2027 | 100.0% |
-| receiving usage quality v4, training 2026 | 2027 | 100.0% |
-| RB usage quality v4, training 2026 | 2027 | 100.0% |
-| TD usage quality v4, training 2026 | 2027 | 100.0% |
-| live usage context quality v4, training 2026 | 2027 | 100.0% |
-| receiver spike correction v4, training 2026 | 2027 | 100.0% |
-| RB spike correction v4, training 2026 | 2027 | 100.0% |
+| route participation proxy, training 2026 | 2030 | 100.0% |
+| estimated routes proxy, training 2026 | 1940 | 95.6% |
+| starter confidence, training 2026 | 2030 | 100.0% |
+| rest-risk score, training 2026 | 2030 | 100.0% |
+| receiving usage quality v4, training 2026 | 2030 | 100.0% |
+| RB usage quality v4, training 2026 | 2030 | 100.0% |
+| TD usage quality v4, training 2026 | 2030 | 100.0% |
+| live usage context quality v4, training 2026 | 2030 | 100.0% |
+| receiver spike correction v4, training 2026 | 2030 | 100.0% |
+| RB spike correction v4, training 2026 | 2030 | 100.0% |
 | target share | 2106 | 99.3% |
 | air-yards share | 2106 | 99.3% |
 | WOPR | 2106 | 99.3% |
@@ -73,9 +73,9 @@ NFL bankroll remains closed. Approved props may lock as $1 micro_projection tria
 
 | Endpoint | Role | Payloads | Latest Fetch |
 |---|---|---:|---|
-| nfl_game_odds | lock | 2 | 2026-10-21 06:32:35.693589-07:00 |
-| nfl_player_props | lock | 2 | 2026-10-21 06:32:35.724903-07:00 |
-| nfl_sportsgameodds_events_raw | lock | 2 | 2026-10-21 06:32:35.365528-07:00 |
+| nfl_game_odds | lock | 3 | 2026-10-22 06:33:18.861952-07:00 |
+| nfl_player_props | lock | 3 | 2026-10-22 06:33:18.893267-07:00 |
+| nfl_sportsgameodds_events_raw | lock | 3 | 2026-10-22 06:33:18.460380-07:00 |
 
 ## Prop Payload Diagnostic
 
@@ -93,28 +93,28 @@ NFL bankroll remains closed. Approved props may lock as $1 micro_projection tria
 
 | Type | Rows | Distinct Entities |
 |---|---:|---:|
-| game odds | 4 | 1 |
-| player props | 134 | 16 |
+| game odds | 6 | 1 |
+| player props | 212 | 18 |
 
 ## Lock To Close Coverage
 
 | Type | Locked | Closed Same Market | Coverage |
 |---|---:|---:|---:|
 | game | 2 | 0 | 0.0% |
-| prop | 98 | 0 | 0.0% |
+| prop | 126 | 0 | 0.0% |
 
 ## Prop Odds Proof
 
 | Proof Layer | Rows | Coverage / Detail |
 |---|---:|---|
-| parsed prop offers | 134 | raw parser output |
-| true paired over/under offers | 134 | 100.0% |
-| lock markets | 98 | exact book/player/stat/line locked |
+| parsed prop offers | 212 | raw parser output |
+| true paired over/under offers | 212 | 100.0% |
+| lock markets | 126 | exact book/player/stat/line locked |
 | close markets | 0 | exact book/player/stat/line closed |
 | lock-close exact matches | 0 | 0.0% |
 | CLV labels | 0 | valid: 0 |
 | graded prop predictions | 0 | line-level result rows |
-| prop ledger rows | 36 | locked paper/micro/bankroll rows |
+| prop ledger rows | 54 | locked paper/micro/bankroll rows |
 
 ## Prop CLV Quality
 
@@ -127,4 +127,4 @@ NFL bankroll remains closed. Approved props may lock as $1 micro_projection tria
 | Source | Tier | Rows |
 |---|---|---:|
 | game | paper | 2 |
-| prop | paper | 36 |
+| prop | paper | 54 |

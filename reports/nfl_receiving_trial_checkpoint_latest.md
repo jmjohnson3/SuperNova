@@ -4,10 +4,10 @@ Date: 2026-10-22; status: awaiting_settlement
 Scope: this date only; cumulative deployment review requires an offline history report.
 Pinned variant: stable_ensemble_calibrated (benchmark-20260921T230305171980Z)
 
-Eligible original locks: 26; paired challenger captures: 14.
-Current eligible locks: 14; quotes still fresh now: 14.
+Eligible original locks: 39; paired challenger captures: 27.
+Current eligible locks: 13; quotes still fresh now: 13.
 Fixed research selections: 0; missing current captures: [].
-Settlement: {'pending_game': 26}
+Settlement: {'pending_game': 39}
 
 | Period / scope | Rows | Player-games | Weeks | Production Brier / calibration | Challenger Brier / calibration | Market Brier | Production / challenger 80% coverage |
 |---|---:|---:|---:|---|---|---|---|

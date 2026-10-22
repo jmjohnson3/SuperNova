@@ -1,6 +1,6 @@
 {
-  "run_id": "volume-20261022T025415Z",
-  "built_at": "2026-10-22T02:54:40.217236+00:00",
+  "run_id": "volume-20261022T151821Z",
+  "built_at": "2026-10-22T15:19:27.240761+00:00",
   "seasons": [
     2023,
     2024,
@@ -28,9 +28,9 @@
       "scores": {
         "model": {
           "rows": 16658,
-          "mae": 1.6433142447379256,
-          "rmse": 2.2296451114467413,
-          "bias": -0.013377267309559234
+          "mae": 1.6508858451900794,
+          "rmse": 2.241588846365997,
+          "bias": -0.04550913209054534
         },
         "targets_avg_3": {
           "rows": 16658,
@@ -61,9 +61,9 @@
         "2023": {
           "model": {
             "rows": 4744,
-            "mae": 1.6839511895575987,
-            "rmse": 2.243271329579182,
-            "bias": -0.013862605908986598
+            "mae": 1.6855482147420022,
+            "rmse": 2.2525949328481496,
+            "bias": -0.05343070230377879
           },
           "targets_avg_10": {
             "rows": 4744,
@@ -75,9 +75,9 @@
         "2024": {
           "model": {
             "rows": 4679,
-            "mae": 1.6947117200760047,
-            "rmse": 2.285261649544424,
-            "bias": 0.02200072151936627
+            "mae": 1.705083182474518,
+            "rmse": 2.295222320244911,
+            "bias": 0.029832694646444627
           },
           "targets_avg_10": {
             "rows": 4679,
@@ -89,9 +89,9 @@
         "2025": {
           "model": {
             "rows": 5495,
-            "mae": 1.5368977556391965,
-            "rmse": 2.0914889004137596,
-            "bias": 0.083417513519863
+            "mae": 1.5425650949220757,
+            "rmse": 2.099280717733708,
+            "bias": 0.03626519302698116
           },
           "targets_avg_10": {
             "rows": 5495,
@@ -103,9 +103,9 @@
         "2026": {
           "model": {
             "rows": 1740,
-            "mae": 1.73037640236213,
-            "rmse": 2.452597204032283,
-            "bias": -0.4128706489604409
+            "mae": 1.7527219948535688,
+            "rmse": 2.487246669872216,
+            "bias": -0.4847587842351456
           },
           "targets_avg_10": {
             "rows": 1740,
@@ -119,9 +119,9 @@
         "RB": {
           "model": {
             "rows": 4840,
-            "mae": 1.3069117284065181,
-            "rmse": 1.7515906461525754,
-            "bias": 0.010259011936271848
+            "mae": 1.319031450664527,
+            "rmse": 1.76683308223057,
+            "bias": -0.0038010883631432084
           },
           "targets_avg_10": {
             "rows": 4840,
@@ -133,9 +133,9 @@
         "TE": {
           "model": {
             "rows": 3987,
-            "mae": 1.5228398459359456,
-            "rmse": 2.0824760809096756,
-            "bias": 0.011619366152973746
+            "mae": 1.5189607771348088,
+            "rmse": 2.082214680266825,
+            "bias": -0.0245203248086033
           },
           "targets_avg_10": {
             "rows": 3987,
@@ -147,9 +147,9 @@
         "WR": {
           "model": {
             "rows": 7831,
-            "mae": 1.9125671635308648,
-            "rmse": 2.543763217194559,
-            "bias": -0.040712367445549694
+            "mae": 1.9231576515800728,
+            "rmse": 2.559636353209921,
+            "bias": -0.08197309662556379
           },
           "targets_avg_10": {
             "rows": 7831,
@@ -161,11 +161,11 @@
       },
       "weekly_mae_difference_vs_best": {
         "weeks": 72,
-        "mean": -0.06698397574777949,
-        "lower": -0.08301432409961489,
-        "upper": -0.0509536273959441
+        "mean": -0.059153255398395284,
+        "lower": -0.07547765547381627,
+        "upper": -0.04282885532297429
       },
-      "worst_season_change": -0.026437093146836732,
+      "worst_season_change": -0.013864776538944912,
       "checks": {
         "beats_best_mae": true,
         "beats_best_rmse": true,
@@ -173,7 +173,7 @@
         "no_season_worse_than_2pct": true
       },
       "volume_accepted": true,
-      "features": 363,
+      "features": 191,
       "leak_guard_dropped": {}
     },
     "carries": {
@@ -182,9 +182,9 @@
       "scores": {
         "model": {
           "rows": 7088,
-          "mae": 2.9285037093342328,
-          "rmse": 4.033757300606622,
-          "bias": -0.10290122335311731
+          "mae": 3.00273013483193,
+          "rmse": 4.153083634093389,
+          "bias": -0.15735215489018137
         },
         "carries_avg_3": {
           "rows": 7088,
@@ -215,9 +215,9 @@
         "2023": {
           "model": {
             "rows": 2056,
-            "mae": 3.062247191631853,
-            "rmse": 4.199455852637424,
-            "bias": -0.14096233212815007
+            "mae": 3.107974311500686,
+            "rmse": 4.297018230092591,
+            "bias": -0.175928215183498
           },
           "carries_avg_5": {
             "rows": 2056,
@@ -229,9 +229,9 @@
         "2024": {
           "model": {
             "rows": 2064,
-            "mae": 2.983106086726766,
-            "rmse": 4.073840478580772,
-            "bias": -0.03990420008216798
+            "mae": 3.0533821507280736,
+            "rmse": 4.173102880000736,
+            "bias": -0.06147838729029853
           },
           "carries_avg_5": {
             "rows": 2064,
@@ -243,9 +243,9 @@
         "2025": {
           "model": {
             "rows": 2279,
-            "mae": 2.776638186661288,
-            "rmse": 3.846103570329232,
-            "bias": 0.06619153716951033
+            "mae": 2.8828422801022437,
+            "rmse": 3.9843184375933447,
+            "bias": 0.018493554351415382
           },
           "carries_avg_5": {
             "rows": 2279,
@@ -257,9 +257,9 @@
         "2026": {
           "model": {
             "rows": 689,
-            "mae": 2.868163534631099,
-            "rmse": 4.014697964089279,
-            "bias": -0.7373491444283576
+            "mae": 2.9334944786466646,
+            "rmse": 4.202605992046231,
+            "bias": -0.9707678990479434
           },
           "carries_avg_5": {
             "rows": 689,
@@ -273,9 +273,9 @@
         "QB": {
           "model": {
             "rows": 2248,
-            "mae": 1.772116879236516,
-            "rmse": 2.336521289471793,
-            "bias": -0.0005556237239833944
+            "mae": 1.7835644538226507,
+            "rmse": 2.3529498410535084,
+            "bias": -0.01586518319897528
           },
           "carries_avg_5": {
             "rows": 2248,
@@ -287,9 +287,9 @@
         "RB": {
           "model": {
             "rows": 4840,
-            "mae": 3.4656023857928413,
-            "rmse": 4.6144238781311,
-            "bias": -0.15043694813954153
+            "mae": 3.5689872527883058,
+            "rmse": 4.763167751581778,
+            "bias": -0.22306759132857623
           },
           "carries_avg_5": {
             "rows": 4840,
@@ -301,11 +301,11 @@
       },
       "weekly_mae_difference_vs_best": {
         "weeks": 72,
-        "mean": -0.21189345252792055,
-        "lower": -0.2642760780605876,
-        "upper": -0.15951082699525349
+        "mean": -0.13316256830328502,
+        "lower": -0.1849352184418318,
+        "upper": -0.08138991816473824
       },
-      "worst_season_change": -0.05603011247484169,
+      "worst_season_change": -0.029346511651340612,
       "checks": {
         "beats_best_mae": true,
         "beats_best_rmse": true,
@@ -313,8 +313,186 @@
         "no_season_worse_than_2pct": true
       },
       "volume_accepted": true,
-      "features": 363,
+      "features": 191,
       "leak_guard_dropped": {}
+    }
+  },
+  "serving_parity": {
+    "player_games": 1293,
+    "allowed": 191,
+    "rejected": {
+      "is_indoor": "not_in_live_snapshot",
+      "wind_mph": "not_in_live_snapshot",
+      "temp_f": "not_in_live_snapshot",
+      "is_high_wind": "not_in_live_snapshot",
+      "is_cold": "not_in_live_snapshot",
+      "is_grass": "not_in_live_snapshot",
+      "opp_allowed_receiving_yards_wr_avg_5": "not_in_live_snapshot",
+      "opp_allowed_receiving_yards_te_avg_5": "not_in_live_snapshot",
+      "opp_allowed_receiving_yards_rb_avg_5": "not_in_live_snapshot",
+      "opp_allowed_yards_per_target_wr_avg_5": "not_in_live_snapshot",
+      "opp_allowed_yards_per_target_te_avg_5": "not_in_live_snapshot",
+      "opp_allowed_yards_per_target_rb_avg_5": "not_in_live_snapshot",
+      "opp_allowed_air_yards_per_target_wr_avg_5": "not_in_live_snapshot",
+      "opp_allowed_air_yards_per_target_te_avg_5": "not_in_live_snapshot",
+      "opp_allowed_air_yards_per_target_rb_avg_5": "not_in_live_snapshot",
+      "opp_allowed_yards_per_carry_rb_avg_5": "not_in_live_snapshot",
+      "roster_status": "too_few_comparable_rows",
+      "depth_chart_position": "too_few_comparable_rows",
+      "depth_pos_abb": "too_few_comparable_rows",
+      "depth_pos_slot": "live_differs_0.023",
+      "injury_report_status": "too_few_comparable_rows",
+      "injury_practice_status": "too_few_comparable_rows",
+      "same_week_teammate_skill_injury_count": "live_differs_0.378",
+      "same_week_teammate_skill_injury_score": "live_differs_0.287",
+      "same_week_teammate_receiver_injury_score": "live_differs_0.254",
+      "same_week_teammate_receiver_out_count": "live_differs_0.165",
+      "same_week_injury_context_known": "live_coverage_0.37",
+      "team_spread_line": "live_differs_0.033",
+      "routes_run_avg_3": "too_few_comparable_rows",
+      "routes_run_avg_5": "too_few_comparable_rows",
+      "routes_run_avg_10": "too_few_comparable_rows",
+      "route_participation_avg_3": "too_few_comparable_rows",
+      "route_participation_avg_5": "too_few_comparable_rows",
+      "route_participation_avg_10": "too_few_comparable_rows",
+      "targets_per_route_run_avg_3": "too_few_comparable_rows",
+      "targets_per_route_run_avg_5": "too_few_comparable_rows",
+      "targets_per_route_run_avg_10": "too_few_comparable_rows",
+      "yards_per_route_run_avg_3": "too_few_comparable_rows",
+      "yards_per_route_run_avg_5": "too_few_comparable_rows",
+      "yards_per_route_run_avg_10": "too_few_comparable_rows",
+      "first_read_targets_avg_3": "too_few_comparable_rows",
+      "first_read_targets_avg_5": "too_few_comparable_rows",
+      "first_read_targets_avg_10": "too_few_comparable_rows",
+      "first_read_target_share_avg_3": "too_few_comparable_rows",
+      "first_read_target_share_avg_5": "too_few_comparable_rows",
+      "first_read_target_share_avg_10": "too_few_comparable_rows",
+      "end_zone_target_share_avg_3": "too_few_comparable_rows",
+      "end_zone_target_share_avg_5": "too_few_comparable_rows",
+      "end_zone_target_share_avg_10": "too_few_comparable_rows",
+      "unexpected_partial_rate_avg_5": "not_in_live_snapshot",
+      "pass_attempts_full_role_avg_5": "not_in_live_snapshot",
+      "passing_yards_full_role_avg_5": "not_in_live_snapshot",
+      "carries_full_role_avg_5": "not_in_live_snapshot",
+      "rushing_yards_full_role_avg_5": "not_in_live_snapshot",
+      "targets_full_role_avg_5": "not_in_live_snapshot",
+      "receptions_full_role_avg_5": "not_in_live_snapshot",
+      "receiving_yards_full_role_avg_5": "not_in_live_snapshot",
+      "receiving_air_yards_full_role_avg_5": "not_in_live_snapshot",
+      "pass_attempts_robust_avg_5": "not_in_live_snapshot",
+      "passing_yards_robust_avg_5": "not_in_live_snapshot",
+      "carries_robust_avg_5": "not_in_live_snapshot",
+      "rushing_yards_robust_avg_5": "not_in_live_snapshot",
+      "targets_robust_avg_5": "not_in_live_snapshot",
+      "receptions_robust_avg_5": "not_in_live_snapshot",
+      "receiving_yards_robust_avg_5": "not_in_live_snapshot",
+      "receiving_air_yards_robust_avg_5": "not_in_live_snapshot",
+      "opp_allowed_receptions_avg_5": "live_coverage_0.59",
+      "team_player_pass_attempts_avg5_sum": "live_differs_0.610",
+      "team_player_carries_avg5_sum": "live_differs_0.274",
+      "team_player_targets_avg5_sum": "live_differs_0.200",
+      "team_player_receptions_avg5_sum": "live_differs_0.192",
+      "team_player_passing_yards_avg5_sum": "live_differs_0.524",
+      "team_player_rushing_yards_avg5_sum": "live_differs_0.254",
+      "team_player_receiving_yards_avg5_sum": "live_differs_0.182",
+      "pass_attempts_share_avg_5": "live_differs_0.370",
+      "carries_share_avg_5": "live_differs_0.230",
+      "targets_share_avg_5": "live_differs_0.176",
+      "receptions_share_avg_5": "live_differs_0.173",
+      "passing_yards_share_avg_5": "live_differs_0.341",
+      "rushing_yards_share_avg_5": "live_differs_0.217",
+      "receiving_yards_share_avg_5": "live_differs_0.165",
+      "pass_attempts_role_rank": "live_differs_1.208",
+      "carries_role_rank": "live_differs_0.423",
+      "targets_role_rank": "live_differs_0.231",
+      "receptions_role_rank": "live_differs_0.221",
+      "passing_yards_role_rank": "live_differs_1.227",
+      "rushing_yards_role_rank": "live_differs_0.443",
+      "receiving_yards_role_rank": "live_differs_0.238",
+      "starter_confidence": "live_differs_0.021",
+      "rest_risk_score": "live_differs_0.266",
+      "injury_downgrade_score": "live_differs_0.872",
+      "roster_context_known": "live_coverage_0.37",
+      "player_injury_context_known": "live_coverage_0.37",
+      "player_injury_context_unknown": "live_coverage_0.37",
+      "depth_context_known": "live_coverage_0.37",
+      "depth_context_unknown": "live_coverage_0.37",
+      "teammate_injury_context_unknown": "live_coverage_0.37",
+      "same_week_context_unknown_score": "live_coverage_0.37",
+      "injury_risk_legacy_imputation": "live_coverage_0.37",
+      "depth_rank_delta": "live_coverage_0.79",
+      "depth_rank_worse": "live_differs_0.382",
+      "depth_rank_better": "live_differs_0.850",
+      "depth_rank_change_abs": "live_coverage_0.79",
+      "target_share_trend_3_10": "live_differs_0.024",
+      "limited_workload_risk_score": "live_differs_0.217",
+      "full_workload_score": "live_differs_0.051",
+      "high_usage_fragility_score": "live_differs_0.274",
+      "same_week_context_confidence_score": "live_differs_0.021",
+      "teammate_skill_injury_pressure_score": "live_differs_0.249",
+      "teammate_receiver_injury_pressure_score": "live_differs_0.185",
+      "receiver_teammate_vacancy_score": "live_differs_0.237",
+      "receiver_target_eruption_score": "live_differs_0.067",
+      "air_yards_spike_path_score": "live_differs_0.076",
+      "receiver_air_yards_eruption_score": "live_differs_0.072",
+      "receiver_explosive_spike_score": "live_differs_0.133",
+      "receiver_contextual_spike_score": "live_differs_0.174",
+      "backup_role_score": "live_differs_0.064",
+      "starter_role_stability_score": "live_differs_0.088",
+      "projected_starter_score": "live_differs_0.035",
+      "depth_movement_risk_score": "live_differs_0.189",
+      "weird_usage_risk_score": "live_differs_0.139",
+      "role_continuity_score": "live_differs_0.061",
+      "normal_usage_path_score": "live_differs_0.047",
+      "target_spike_path_score": "live_differs_0.038",
+      "carry_spike_path_score": "live_differs_0.031",
+      "pass_spike_path_score": "live_differs_0.033",
+      "receiver_route_quality_score": "live_differs_0.024",
+      "receiver_route_env_score": "live_differs_0.055",
+      "receiver_spike_yards_score": "live_differs_0.065",
+      "rb_rush_role_env_score": "live_differs_0.108",
+      "rb_carry_trend_env_score": "live_differs_0.048",
+      "rb_spike_rush_score": "live_differs_0.105",
+      "td_goal_line_env_score": "live_differs_0.049",
+      "receiving_td_role_score": "live_differs_0.052",
+      "receiving_td_route_redzone_score": "live_differs_0.048",
+      "receiving_td_any_score": "live_differs_0.042",
+      "receiver_usage_spike_signal": "live_differs_0.024",
+      "role_change_upside_score": "live_differs_0.161",
+      "workload_floor_score": "live_differs_0.090",
+      "receiver_spike_volume_score": "live_differs_0.087",
+      "receiver_spike_volume_anchor_yards": "live_differs_0.020",
+      "receiver_target_command_score": "live_differs_0.082",
+      "receiver_route_spike_readiness_score": "live_differs_0.087",
+      "receiver_target_route_spike_score": "live_differs_0.116",
+      "receiver_target_route_spike_anchor_yards": "live_differs_0.021",
+      "workload_downside_v2_score": "live_differs_0.180",
+      "workload_upside_v2_score": "live_differs_0.036",
+      "receiver_projected_targets_v2": "live_differs_0.027",
+      "receiver_high_value_target_score": "live_differs_0.151",
+      "receiver_target_spike_v2_score": "live_differs_0.117",
+      "receiver_air_yards_spike_v2_score": "live_differs_0.076",
+      "receiver_ypt_efficiency_spike_score": "live_differs_0.113",
+      "receiver_spike_yards_anchor_v2": "live_differs_0.033",
+      "rb_projected_carries_v2": "live_differs_0.035",
+      "rb_carry_spike_v2_score": "live_differs_0.045",
+      "receiving_td_rare_event_score_v2": "live_differs_0.079",
+      "same_week_usage_confidence_v3_score": "live_differs_0.025",
+      "receiver_live_spike_v3_score": "live_differs_0.157",
+      "receiver_projected_targets_v3": "live_differs_0.029",
+      "receiver_spike_yards_anchor_v3": "live_differs_0.031",
+      "rb_live_carry_v3_score": "live_differs_0.044",
+      "rb_projected_carries_v3": "live_differs_0.033",
+      "rb_rush_yards_anchor_v3": "live_differs_0.023",
+      "yardage_projection_volatility_v3_score": "live_differs_0.086",
+      "rb_usage_history_quality_score": "live_differs_0.023",
+      "receiver_spike_under_correction_v4_score": "live_differs_0.167",
+      "receiver_spike_yards_anchor_v4": "live_differs_0.027",
+      "rb_carry_under_correction_v4_score": "live_differs_0.056",
+      "rb_rush_yards_anchor_v4": "live_differs_0.024",
+      "yardage_projection_volatility_v4_score": "live_differs_0.086",
+      "routes_run_std_5": "too_few_comparable_rows",
+      "routes_run_std_10": "too_few_comparable_rows"
     }
   },
   "research_only": true,
@@ -323,73 +501,73 @@
     "receiving_yards": {
       "rows": 989,
       "production_mae": 20.905254059832526,
-      "rescaled_mae": 21.29846840229391,
-      "volume_x_efficiency_mae": 21.120527567485496,
+      "rescaled_mae": 21.376713890403014,
+      "volume_x_efficiency_mae": 21.220081793840233,
       "production_above": 0.4529828109201213,
-      "rescaled_above": 0.47724974721941354,
-      "volume_x_efficiency_above": 0.448938321536906,
+      "rescaled_above": 0.48938321536905965,
+      "volume_x_efficiency_above": 0.46107178968655205,
       "by_position": {
         "RB": {
           "rows": 241,
           "production_mae": 13.066993302360382,
-          "rescaled_mae": 12.642376583530709
+          "rescaled_mae": 12.741281448642113
         },
         "TE": {
           "rows": 257,
           "production_mae": 18.658733359746844,
-          "rescaled_mae": 19.02144405207912
+          "rescaled_mae": 18.894325333984153
         },
         "WR": {
           "rows": 491,
           "production_mae": 25.92842445183417,
-          "rescaled_mae": 26.739025197257522
+          "rescaled_mae": 26.914622398476382
         }
       }
     },
     "receptions": {
       "rows": 583,
       "production_mae": 1.6277211376037473,
-      "rescaled_mae": 1.6738587246030778,
-      "volume_x_efficiency_mae": 1.6631492460812496,
+      "rescaled_mae": 1.6919162590393135,
+      "volume_x_efficiency_mae": 1.676597597695175,
       "production_above": 0.48713550600343053,
       "rescaled_above": 0.5317324185248714,
-      "volume_x_efficiency_above": 0.5094339622641509,
+      "volume_x_efficiency_above": 0.5231560891938251,
       "by_position": {
         "RB": {
           "rows": 125,
           "production_mae": 1.5445237900442874,
-          "rescaled_mae": 1.4925119664498228
+          "rescaled_mae": 1.4879444901425063
         },
         "TE": {
           "rows": 161,
           "production_mae": 1.5396038299299486,
-          "rescaled_mae": 1.590299836956231
+          "rescaled_mae": 1.6037958510179493
         },
         "WR": {
           "rows": 297,
           "production_mae": 1.7105041510058148,
-          "rescaled_mae": 1.7954793497892705
+          "rescaled_mae": 1.825531938512514
         }
       }
     },
     "rushing_yards": {
       "rows": 447,
       "production_mae": 19.02076122738055,
-      "rescaled_mae": 18.029789129602666,
-      "volume_x_efficiency_mae": 18.27881073361776,
+      "rescaled_mae": 18.15812405672971,
+      "volume_x_efficiency_mae": 18.289561621706394,
       "production_above": 0.4228187919463087,
-      "rescaled_above": 0.4541387024608501,
-      "volume_x_efficiency_above": 0.4228187919463087,
+      "rescaled_above": 0.4742729306487696,
+      "volume_x_efficiency_above": 0.43847874720357943,
       "by_position": {
         "QB": {
           "rows": 122,
           "production_mae": 13.407483090478488,
-          "rescaled_mae": 13.038420443260964
+          "rescaled_mae": 13.018509074563218
         },
         "RB": {
           "rows": 325,
           "production_mae": 21.1278994818484,
-          "rescaled_mae": 19.903472144167853
+          "rescaled_mae": 20.087456450035287
         }
       }
     }

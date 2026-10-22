@@ -12,6 +12,13 @@ built from earlier games or same-week pregame context; same-game outcome columns
 guard drops any feature that tracks the outcome too closely to be pregame. Players who played only,
 which is the population a prop settles on.
 
+Serving parity: live forecasts are scored from a snapshot built by a different path, and the two
+disagree on team-relative features (the table is rebuilt after games, so its team groups are the
+players who actually played; live sees the pregame roster). On 2026 weeks 5-6 the teammate carry
+total averaged 34 live against 28 in the table. A model trained on the table and scored live would
+see inputs it never trained on, so only features whose archived live values match the table on the
+same player-games (present live, relative mean difference <= 2%) are used.
+
 Evaluation is walk-forward in 4-week blocks over 2023-2026, each block trained only on earlier games,
 with fixed hyperparameters (nothing is tuned on a test block). The model must beat the best simple
 baseline on MAE and RMSE overall, with a week-clustered interval on the MAE gain that excludes zero,
@@ -54,6 +61,9 @@ IDENTIFIERS = {"season", "week", "season_type", "game_id", "game_date_et", "play
                "team_abbr", "opponent_abbr", "position"}
 OUTCOMES = set(feature_contract.TARGET_STATS) | set(feature_contract.USAGE_STATS)
 LEAK_CORRELATION = 0.95
+PARITY_MAX_RELATIVE_DIFFERENCE = 0.02
+PARITY_MIN_LIVE_COVERAGE = 0.90
+PARITY_MIN_ROWS = 100
 BLOCK_WEEKS = ((1, 4), (5, 8), (9, 12), (13, 16), (17, 22))
 PARAMS = dict(objective="poisson", learning_rate=0.03, num_leaves=31, min_data_in_leaf=80,
               feature_fraction=0.7, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0,
@@ -96,6 +106,42 @@ def leak_guard(frame: pd.DataFrame, target: str, features: list[str]) -> tuple[l
         if abs(r) >= LEAK_CORRELATION:
             dropped[column] = round(r, 4)
     return [c for c in features if c not in dropped], dropped
+
+
+def _numeric(series: pd.Series) -> pd.Series:
+    return pd.to_numeric(series.astype(object).map(lambda v: float(v) if isinstance(v, (bool, np.bool_)) else v),
+                         errors="coerce")
+
+
+def serving_parity(conn, table: pd.DataFrame, features: list[str]) -> tuple[list[str], dict]:
+    """Features whose archived live values match the training table on the same player-games."""
+    live = pd.read_sql("""SELECT DISTINCT ON (game_id, player_id) game_id, player_id,
+                                 forecast_payload->'forecast_features' AS features
+                          FROM bets.nfl_player_prop_predictions
+                          WHERE integrity_version='nfl-asof-v2' AND forecast_payload ? 'forecast_features'
+                          ORDER BY game_id, player_id, created_at_utc DESC""", conn)
+    archived = pd.DataFrame(list(live.features)).assign(game_id=live.game_id, player_id=live.player_id)
+    joined = archived.merge(table, on=["game_id", "player_id"], suffixes=("_live", "_table"))
+    allowed, rejected = [], {}
+    for feature in features:
+        live_col, table_col = feature + "_live", feature + "_table"
+        if live_col not in joined:
+            rejected[feature] = "not_in_live_snapshot"
+            continue
+        x, y = _numeric(joined[live_col]), _numeric(joined[table_col])
+        coverage = float(x.notna().mean()) if len(x) else 0.0
+        both = x.notna() & y.notna()
+        if both.sum() < PARITY_MIN_ROWS:
+            rejected[feature] = "too_few_comparable_rows"
+            continue
+        relative = float((x[both] - y[both]).abs().mean() / (y[both].abs().mean() + 1e-9))
+        if coverage < PARITY_MIN_LIVE_COVERAGE and y.notna().mean() >= PARITY_MIN_LIVE_COVERAGE:
+            rejected[feature] = f"live_coverage_{coverage:.2f}"
+        elif relative > PARITY_MAX_RELATIVE_DIFFERENCE:
+            rejected[feature] = f"live_differs_{relative:.3f}"
+        else:
+            allowed.append(feature)
+    return allowed, dict(player_games=int(len(joined)), allowed=len(allowed), rejected=rejected)
 
 
 def blocks(frame: pd.DataFrame, seasons: list[int]):
@@ -222,6 +268,12 @@ def markdown(doc: dict) -> str:
     lines = ["# NFL Volume Model (challenger)", "", f"Run `{doc['run_id']}`. Walk-forward 4-week blocks over seasons "
              f"{', '.join(map(str, doc['seasons']))}; each block trained only on earlier games, fixed hyperparameters. "
              "Players who played. Never changes a live forecast.", ""]
+    parity = doc.get("serving_parity") or {}
+    if parity:
+        reasons = pd.Series(list(parity["rejected"].values()), dtype=object).str.replace(r"_[0-9.]+$", "", regex=True)
+        lines += [f"Serving parity: {parity['allowed']} features match their archived live values on "
+                  f"{parity['player_games']} player-games and are used; {len(parity['rejected'])} are excluded "
+                  f"({', '.join(f'{k} {v}' for k, v in reasons.value_counts().items())}).", ""]
     for target, ev in doc["volume"].items():
         lines += [f"## {target}: {'ACCEPTED on volume' if ev['volume_accepted'] else 'not accepted'}", "",
                   f"{ev['rows']} player-games where every baseline exists. Best simple baseline: `{ev['best_baseline']}`.", "",
@@ -263,12 +315,14 @@ def run(seasons: list[int], save: bool = True) -> dict:
     with psycopg2.connect(PG_DSN) as conn:
         conn.set_session(readonly=True)
         frame = load(conn)
+        servable, parity = serving_parity(conn, frame, candidate_features())
         doc = dict(run_id=run_id, built_at=datetime.now(timezone.utc).isoformat(), seasons=seasons,
-                   params=PARAMS, rounds=ROUNDS, volume={}, research_only=True, production_changed=False)
+                   params=PARAMS, rounds=ROUNDS, volume={}, serving_parity=parity,
+                   research_only=True, production_changed=False)
         oof, finals = {}, {}
         for target, spec in TARGETS.items():
             population = frame[frame.position.isin(spec["positions"]) & frame[target].notna()]
-            features, dropped = leak_guard(population[population.season.lt(min(seasons))], target, candidate_features())
+            features, dropped = leak_guard(population[population.season.lt(min(seasons))], target, servable)
             oof[target] = walk_forward(frame, target, features, seasons)
             evaluation = evaluate(oof[target], target)
             evaluation.update(features=len(features), leak_guard_dropped=dropped)
@@ -292,11 +346,36 @@ def run(seasons: list[int], save: bool = True) -> dict:
     return doc
 
 
+TARGETS_POINTER = MODEL_ROOT / "player_props" / "targets_model.json"
+TARGETS_POINTER_CONTRACT = "nfl-targets-model-pointer-v1"
+
+
+def install_targets_pointer(run_id: str, *, pointer: Path = TARGETS_POINTER) -> dict:
+    """Point live receptions scoring at a run's targets model. Only a run that passed on volume."""
+    folder = STORE / run_id
+    report = json.loads((folder / "report.json").read_text(encoding="utf-8"))
+    if not report["volume"]["targets"]["volume_accepted"]:
+        raise ValueError("This run's targets model did not pass its volume checks")
+    artifact = folder / "models.joblib"
+    import hashlib
+    doc = dict(contract=TARGETS_POINTER_CONTRACT, run_id=run_id,
+               sha256=hashlib.sha256(artifact.read_bytes()).hexdigest(),
+               features=len(joblib.load(artifact)["targets"]["features"]),
+               evidence=f"reports/nfl_volume_model_latest.md ({run_id})", used_by="receptions projection targets",
+               installed_at=datetime.now(timezone.utc).isoformat())
+    atomic_json(pointer, doc)
+    return doc
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seasons", type=int, nargs="+", default=[2023, 2024, 2025, 2026])
     ap.add_argument("--no-save", action="store_true")
+    ap.add_argument("--install-targets", metavar="RUN_ID", help="point live receptions scoring at this run")
     args = ap.parse_args()
+    if args.install_targets:
+        print(json.dumps(install_targets_pointer(args.install_targets), indent=2))
+        return
     run(args.seasons, save=not args.no_save)
     print((ROOT / "reports" / "nfl_volume_model_latest.md").read_text(encoding="utf-8"))
 

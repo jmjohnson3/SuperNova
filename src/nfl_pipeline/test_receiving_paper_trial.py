@@ -343,7 +343,8 @@ def test_registration_pins_scorer_artifact_production_and_absent_overlays(tmp_pa
     result=trial.register()
     assert result["files"]["oe_probability_artifact"]==artifact_path
     assert result["files"]["production_release_players.joblib"]==release/"players.joblib"
-    assert set(result["absent_paths"])=={"market_calibration","interval_calibration","production_distribution_policy"}
+    assert set(result["absent_paths"])=={"market_calibration","interval_calibration","production_distribution_policy",
+        "placement_calibration","targets_model_pointer"}
     assert result["config"]["production_stat_active"]=={}
     (modelroot/"active_release.json").write_text(json.dumps(dict(release_id="another")))
     with pytest.raises(ValueError,match="Active production pointer"):

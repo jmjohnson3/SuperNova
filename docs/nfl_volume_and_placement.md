@@ -89,3 +89,72 @@ Refit after each slate with `python -m nfl_pipeline.modeling.fit_placement_calib
   stay line-anchored (`projection_trust` 0), so no price, probability or bet changes.
 - Because `predict_player_props.py` is part of the scoring fingerprint, the fingerprint moves;
   earlier captures still replay from their archived sources.
+
+## October 22: serving parity, the live rushing challenger, and the targets swap
+
+**Serving parity.** Live forecasts are scored from a snapshot built by a different path from the
+training table, and the two disagree on team-relative features. The table is rebuilt after games,
+so its team groups are the players who actually played; live sees the pregame roster. Measured on
+the same 2026 player-games:
+
+| Feature | Live mean | Training mean |
+|---|---:|---:|
+| Teammate carry total | 34.0 | 28.4 |
+| Carry share | 0.085 | 0.103 |
+| Carry role rank | 7.1 | 5.4 |
+
+Player-level averages, depth and game lines match exactly. Of the 363 candidate features, 103 shared
+ones differ by more than 5% of rows and 33 are not in the live snapshot at all. **The production
+model is trained on the table and scored on the snapshot, so it has this skew too.** It is a likely
+contributor to the model trailing the line, and the next accuracy problem to fix.
+
+The volume model now trains only on the 191 features whose archived live values match the table
+(relative mean difference of 2% or less). Run `volume-20261022T151821Z`, still accepted on volume:
+
+| Volume | Model MAE | Best baseline | Weekly 95% interval |
+|---|---:|---:|---|
+| Targets | 1.651 | 1.719 | -0.075 to -0.043 |
+| Carries | 3.003 | 3.132 | -0.185 to -0.081 |
+
+**Rushing challenger, registered and capturing.** `modeling/rushing_volume_challenger` (registration
+`models/rushing_volume_challenger/registration.json`, pinned to that run's checksum) scores every
+current pregame RB and QB rushing forecast as:
+
+    candidate = production model projection x model carries / 5-game average carries
+
+- **When it runs.** Captures run in the daily and pregame runs after player predictions
+  ("NFL Rushing Volume Challenger"). The close task grades them ("NFL Rushing Volume Challenger
+  Review", `reports/nfl_rushing_volume_challenger_latest.md`).
+- **What counts.** Grading keeps the last capture before kickoff per player-game, and judges carries
+  first, then yards.
+- **When it is reviewable.** After 3+ weeks with a 95% lower bound on the weekly MAE gain above
+  zero. Deployment remains manual.
+
+The live path was dry-run on weeks 5-6 before registering, with archived live features and a model
+trained only on earlier games (172 settled player-games):
+
+- carries MAE 3.30 to 3.15;
+- rushing-yard MAE 18.25 to 18.09;
+- RBs improved (19.40 to 19.03), QBs worsened (15.02 to 15.43);
+- the weekly interval still spanned zero, so it is not yet proven.
+
+**Targets swap.** `receiver_projected_targets_v3` was used as an input in two live places.
+
+- **Receptions projection: swapped.** The production receptions forecast blends recent receptions
+  with targets x catch rate. With the targets model in place of v3, on 17,070 walk-forward 2023-26
+  player-games:
+  - MAE improves 1.320 to 1.308, better in every season;
+  - bias improves -0.22 to -0.02;
+  - the weekly interval is -0.017 to +0.001, so the gain is just short of 95% significance;
+  - outcomes above the projection fall from 48% to 43%.
+
+  It is installed through `models/player_props/targets_model.json`, pinned by checksum; a missing
+  or mismatched artifact falls back to v3. Each receiver row carries `_pred_targets_model`, so
+  replays see the same input. On today's live snapshot, all 24 receivers were scored.
+- **Receiving spike heuristic: not swapped yet.** Its signal feeds fitted calibrators (signal to
+  spike probability) that were fitted on v3, which runs about 0.64 targets low. Swapping first would
+  push every target-spike probability through a calibration never fitted for it. It needs the
+  calibrators refit with the model targets first.
+- **Feature table and training feature lists: unchanged.** These feed the pinned production model
+  and future retrains. Changing them would alter production inputs without a retrain. The right
+  change is a new release that trains on model targets (out of fold) and on parity-safe features.

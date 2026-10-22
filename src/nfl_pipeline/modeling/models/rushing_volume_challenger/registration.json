@@ -1,0 +1,18 @@
+{
+  "contract": "nfl-rushing-volume-challenger-v1",
+  "volume_run_id": "volume-20261022T151821Z",
+  "artifact": "src/nfl_pipeline/modeling/models/volume_model/volume-20261022T151821Z/models.joblib",
+  "artifact_sha256": "4d25aa4e4df31000a7c51191b5898fd6cb2884ecb7af9afe6a93dd0db531c57c",
+  "production_release": "nfl-20260918T143342Z",
+  "method": "reference * carries_model / carries_avg_5",
+  "positions": [
+    "RB",
+    "QB"
+  ],
+  "registered_at": "2026-10-22T15:25:26.980851+00:00",
+  "acceptance_start": "2026-10-22",
+  "minimum_weeks": 3,
+  "status": "prospective_only",
+  "deployment_approved": false,
+  "betting_approved": false
+}

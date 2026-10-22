@@ -455,6 +455,8 @@ def run_for_date(
              critical=False, failure_is_warning=True, timeout_s=180),
         Step("NFL Receiving Trial Checkpoint", "nfl_pipeline.modeling.receiving_trial_checkpoint",
              args=(*date_args, "--incremental"), critical=False, failure_is_warning=True, timeout_s=180),
+        Step("NFL Rushing Volume Challenger Review", "nfl_pipeline.modeling.rushing_volume_challenger",
+             args=("evaluate",), critical=False, failure_is_warning=True, timeout_s=120),
         Step("NFL Point Forecast Checkpoint", "nfl_pipeline.modeling.target_point_capture",
              critical=False, failure_is_warning=True, timeout_s=120),
         Step("NFL Confirmed Cash Settlement", "nfl_pipeline.cash_execution", args=("--settle",), timeout_s=90),

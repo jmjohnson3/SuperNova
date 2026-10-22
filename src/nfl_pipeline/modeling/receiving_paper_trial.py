@@ -26,7 +26,11 @@ from nfl_pipeline.modeling.distribution_policy import curve, outcomes, summary
 from nfl_pipeline.modeling.evaluation import clustered_gain, probability_metrics, projection_metrics
 from nfl_pipeline.modeling.prospective_market import implied, locked_market
 
-NAME = "fanduel-receiving-oe-paper-v4"
+# v5 (22 October 2026) succeeds v4, which drifted when its pinned sources changed: the paper-cohort
+# repair in this module, then features.py (batched context-risk columns, proven identical), and
+# predict_player_props (projection placement and the targets model). Rules are unchanged; v4's
+# captures stay on disk as their own cohort and are never pooled (captures()).
+NAME = "fanduel-receiving-oe-paper-v5"
 CONTRACT = "nfl-receiving-independent-paper-v2"
 STORE = MODEL_ROOT / "receiving_paper_trial"
 ROOT = Path(__file__).resolve().parents[3]
@@ -95,6 +99,9 @@ def register(artifact_path=None, *, extra_files=None):
     for label, file in {
         "market_calibration": MODEL_ROOT/"player_props/market_calibration.json",
         "interval_calibration": MODEL_ROOT/"player_props/interval_calibration.json",
+        # Both move production numbers the scorer receives, so a change to either is drift.
+        "placement_calibration": MODEL_ROOT/"player_props/placement_calibration.json",
+        "targets_model_pointer": MODEL_ROOT/"player_props/targets_model.json",
         "production_distribution_policy": MODEL_ROOT/"distribution_policy/active.json",
     }.items():
         if file.exists():

@@ -1,21 +1,21 @@
 {
   "status": "fresh_quotes_ready",
   "day": "2026-10-22",
-  "built_at": "2026-10-21T13:32:30.405814+00:00",
+  "built_at": "2026-10-22T13:33:13.480062+00:00",
   "games": 1,
   "api_called": true,
   "provider_status": "ok",
   "provider": "fallback_chain",
   "quote_health": {
     "props": {
-      "observed_rows": 70,
-      "fresh_rows": 36,
-      "latest_quote": "2026-10-21 06:32:35.724903-07:00"
+      "observed_rows": 108,
+      "fresh_rows": 38,
+      "latest_quote": "2026-10-22 06:33:18.893267-07:00"
     },
     "games": {
-      "observed_rows": 2,
+      "observed_rows": 3,
       "fresh_rows": 1,
-      "latest_quote": "2026-10-21 06:32:35.693589-07:00"
+      "latest_quote": "2026-10-22 06:33:18.861952-07:00"
     }
   },
   "game_ids": null,

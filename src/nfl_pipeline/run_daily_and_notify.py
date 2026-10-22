@@ -222,6 +222,9 @@ async def main() -> None:
         Step("NFL Team Workload Snapshot", "nfl_pipeline.modeling.score_accuracy_components", args=(*date_args,"--capture-team-context"), critical=False, timeout_s=300),
         Step("NFL Player Predictions", "nfl_pipeline.modeling.predict_player_props", args=date_args, timeout_s=1200),
         Step("NFL Frozen Receiving Paper Trial", "nfl_pipeline.modeling.receiving_paper_trial", args=("capture", *date_args), critical=False, timeout_s=360),
+        # Prospective rushing challenger (carries model). Capture only; kept in pregame runs so the last
+        # forecast before kickoff is the one graded.
+        Step("NFL Rushing Volume Challenger", "nfl_pipeline.modeling.rushing_volume_challenger", args=("capture", *date_args), critical=False, timeout_s=180),
         Step("NFL FanDuel Lock Contract", "nfl_pipeline.lock_contract_audit", args=date_args, critical=False, timeout_s=120),
         Step("NFL Lock Paper Ledger", "nfl_pipeline.lock_ledger", args=(*date_args,"--tier","paper","--max-rows","250","--stake","0"), timeout_s=300),
         Step("NFL Lock Micro Ledger", "nfl_pipeline.lock_ledger", args=(*date_args,"--tier","micro_projection","--max-rows","3","--stake","1"), timeout_s=300),
@@ -267,7 +270,7 @@ async def main() -> None:
                 log.info("Using existing release; offline training is not part of this frozen live run")
                 continue
             if args.skip_predict and (step.post_output or step.module in {
-                "nfl_pipeline.modeling.predict_today", "nfl_pipeline.modeling.predict_player_props", "nfl_pipeline.modeling.receiving_paper_trial", "nfl_pipeline.lock_contract_audit", "nfl_pipeline.modeling.score_accuracy_components", "nfl_pipeline.modeling.score_locked_micro_uncertainty", "nfl_pipeline.modeling.benchmark_offers", "nfl_pipeline.modeling.receiving_trial_checkpoint", "nfl_pipeline.lock_ledger"}):
+                "nfl_pipeline.modeling.predict_today", "nfl_pipeline.modeling.predict_player_props", "nfl_pipeline.modeling.receiving_paper_trial", "nfl_pipeline.modeling.rushing_volume_challenger", "nfl_pipeline.lock_contract_audit", "nfl_pipeline.modeling.score_accuracy_components", "nfl_pipeline.modeling.score_locked_micro_uncertainty", "nfl_pipeline.modeling.benchmark_offers", "nfl_pipeline.modeling.receiving_trial_checkpoint", "nfl_pipeline.lock_ledger"}):
                 continue
             log.info("Starting %s",step.label)
             started=perf_counter()

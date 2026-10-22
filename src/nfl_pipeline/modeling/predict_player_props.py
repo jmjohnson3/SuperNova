@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import hashlib
 import joblib
 import numpy as np
 import pandas as pd
@@ -3450,7 +3451,9 @@ def _receptions_projection(snapshot: pd.DataFrame) -> np.ndarray:
     prior = snapshot.get("position", pd.Series("", index=snapshot.index)).astype(str).str.upper().map(RECEPTIONS_CATCH_RATE_PRIOR).fillna(0.66)
     k = RECEPTIONS_CATCH_RATE_PSEUDO_TARGETS
     rate = ((avg10.fillna(0.0) * 10 + prior * k) / (targets10.fillna(0.0) * 10 + k)).clip(0.3, 0.95)
-    targets = col("receiver_projected_targets_v3")
+    # The pinned targets model when attached (_attach_targets_model), else the v3 estimate it replaced:
+    # on 17,070 walk-forward 2023-26 player-games this blend's MAE fell 1.320 -> 1.308 with it.
+    targets = col("_pred_targets_model").fillna(col("receiver_projected_targets_v3"))
     targets = targets.where(targets > 0, col("targets_avg_5"))
     blended = 0.5 * recent + 0.5 * targets * rate
     return blended.fillna(recent).fillna(0.0).clip(lower=0.0).to_numpy(dtype=float)
@@ -3636,6 +3639,11 @@ MARKET_CALIBRATION_PATH = _MODEL_DIR / "market_calibration.json"
 INTERVAL_CALIBRATION_PATH = _MODEL_DIR / "interval_calibration.json"
 PLACEMENT_CALIBRATION_PATH = _MODEL_DIR / "placement_calibration.json"
 PLACEMENT_CALIBRATION_CONTRACT = "nfl-projection-placement-v1"
+# Pointer to the accepted targets model (modeling/volume_model, run pinned by checksum). Its
+# walk-forward targets beat every average and receiver_projected_targets_v3, which also differs
+# between the live snapshot and training. Missing or mismatched means the v3 estimate is used.
+TARGETS_MODEL_POINTER = _MODEL_DIR / "targets_model.json"
+TARGETS_MODEL_CONTRACT = "nfl-targets-model-pointer-v1"
 # A probability blend fitted before the anchored-median correction is not
 # compatible with the current scoring semantics. Artifacts must opt in to
 # this exact contract; interval/projection parameters remain independently
@@ -3692,6 +3700,41 @@ def _placed_projection(metrics: dict[str, Any], stat: str, row: dict[str, Any], 
     if family == "linear":
         return max(0.0, float(params["a"]) + float(params["b"]) * float(projection))
     return float(projection)
+
+
+def _load_targets_model() -> dict[str, Any] | None:
+    """The pinned targets model, or None (fall back to v3) when absent, foreign or not on disk."""
+    try:
+        pointer = json.loads(TARGETS_MODEL_POINTER.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    if pointer.get("contract") != TARGETS_MODEL_CONTRACT:
+        return None
+    path = _MODEL_DIR.parent / "volume_model" / str(pointer.get("run_id")) / "models.joblib"
+    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != pointer.get("sha256"):
+        log.warning("Targets model %s missing or checksum mismatch; using receiver_projected_targets_v3",
+                    pointer.get("run_id"))
+        return None
+    return dict(pointer, model=joblib.load(path)["targets"])
+
+
+def _attach_targets_model(snapshot: pd.DataFrame, loaded: dict[str, Any] | None) -> pd.DataFrame:
+    """Add `_pred_targets_model` to receiver rows from their live pregame features."""
+    if loaded is None or snapshot.empty:
+        return snapshot
+    model = loaded["model"]
+    positions = tuple(model["positions"])
+    position = snapshot.get("position", pd.Series("", index=snapshot.index)).astype(str).str.upper()
+    receivers = position.isin(positions)
+    if not receivers.any():
+        return snapshot
+    rows = snapshot.loc[receivers].reindex(columns=model["features"])
+    rows = rows.apply(lambda s: pd.to_numeric(
+        s.astype(object).map(lambda v: float(v) if isinstance(v, (bool, np.bool_)) else v), errors="coerce"))
+    flags = pd.DataFrame({f"pos_{p}": position[receivers].eq(p).astype(float) for p in positions}, index=rows.index)
+    out = snapshot.copy()
+    out.loc[receivers, "_pred_targets_model"] = model["booster"].predict(pd.concat([rows.astype(float), flags], axis=1))
+    return out
 
 
 def _load_interval_calibration() -> dict[str, Any]:
@@ -4282,6 +4325,8 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
         market_calibration = _load_market_calibration()
         interval_calibration = _load_interval_calibration()
         placement_calibration = _load_placement_calibration()
+        targets_model = _load_targets_model()
+        snapshot = timer.call('targets_model', _attach_targets_model, snapshot, targets_model)
         from nfl_pipeline.modeling import distribution_policy as cdf_policy
         cdf_challengers = cdf_policy.load_registry()
         cdf_active = cdf_policy.load_registry('active')
@@ -4330,6 +4375,8 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                 metrics["market_calibration"] = market_calibration
                 metrics["interval_calibration"] = interval_calibration
                 metrics["placement_calibration"] = placement_calibration
+                if stat == "receptions" and targets_model is not None:
+                    metrics["targets_model"] = {k: targets_model[k] for k in ("run_id", "sha256")}
                 metrics["bet_stats"] = sorted(BET_PROP_STATS)
                 metrics["sharp_edge_bets_enabled"] = bool(SHARP_EDGE_BETS_ENABLED)
                 metrics["accepted_live"] = accepted

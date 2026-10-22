@@ -1,19 +1,19 @@
 # NFL Prop Parse Diagnostic
 
-- Raw prop payloads: 2
-- Events seen: 2
+- Raw prop payloads: 3
+- Events seen: 3
 - Events with zero books: 0
-- Bookmaker entries: 4
-- Market entries: 28
-- Outcomes seen: 268
-- Prop rows upserted: 134
+- Bookmaker entries: 6
+- Market entries: 42
+- Outcomes seen: 424
+- Prop rows upserted: 212
 
 ## Unknown Markets
 
 | Market | Count |
 |---|---:|
-| spreads | 4 |
-| totals | 4 |
+| spreads | 6 |
+| totals | 6 |
 
 ## Skipped Outcomes
 
