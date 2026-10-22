@@ -151,10 +151,17 @@ trained only on earlier games (172 settled player-games):
   It is installed through `models/player_props/targets_model.json`, pinned by checksum; a missing
   or mismatched artifact falls back to v3. Each receiver row carries `_pred_targets_model`, so
   replays see the same input. On today's live snapshot, all 24 receivers were scored.
-- **Receiving spike heuristic: not swapped yet.** Its signal feeds fitted calibrators (signal to
-  spike probability) that were fitted on v3, which runs about 0.64 targets low. Swapping first would
-  push every target-spike probability through a calibration never fitted for it. It needs the
-  calibrators refit with the model targets first.
+- **Receiving spike heuristic: no swap needed.** *(Corrected October 22.)* This was first held back
+  for a calibrator refit, but the heuristic is not on the live path. Its only consumer is the
+  `receiver_spike_mixture_v1` distribution, which was rejected at training
+  (`receiver_spike_mixture_accepted` false; Brier -0.0018 against the current mixture), and every
+  live receiving forecast prices with `empirical_oof_residual`. Refitting its calibrators would
+  change no forecast. If a future release retrains that challenger, it should use the model targets.
+
+The remaining v3 dependence is indirect. `receiver_spike_yards_anchor_v3` and its v2 siblings are
+built from v3 inside `features.py`, feed the workload adjustment, and differ about 3% between the
+live snapshot and the table. They belong to the serving-parity rebuild of the feature contract.
+
 - **Feature table and training feature lists: unchanged.** These feed the pinned production model
   and future retrains. Changing them would alter production inputs without a retrain. The right
   change is a new release that trains on model targets (out of fold) and on parity-safe features.
