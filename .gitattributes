@@ -3,11 +3,94 @@ src/mlb_pipeline/modeling/models/player_props/walks_xgb.json filter=lfs diff=lfs
 src/nfl_pipeline/modeling/predict_player_props.py text eol=lf
 src/nfl_pipeline/modeling/scoring_capture.py text eol=lf
 src/nfl_pipeline/modeling/models/scoring_code_versions/** -text
-# The sharp-gap cash registration (nfl-sharp-gap-cash-v5) hashes these files' raw bytes; a checkout
-# that changed their line endings would stop the scanner. Keep each exactly as registered.
-src/nfl_pipeline/sharp_strategy.py text eol=lf
-src/nfl_pipeline/sharp_math.py text eol=lf
-src/nfl_pipeline/markets.py text eol=lf
+
+# --- BEGIN registered line endings (generated) ---
+# Active frozen registrations hash raw bytes. With core.autocrlf a checkout can rewrite a file's
+# line endings and block the registration, so each pinned file keeps exactly the endings it was
+# registered with. Registrations: fanduel-receiving-oe-paper-v5, nfl-sharp-gap-cash-v5.
+src/nfl_pipeline/__init__.py text eol=lf
+src/nfl_pipeline/betting_preferences.py text eol=lf
+src/nfl_pipeline/cash_execution.py text eol=lf
+src/nfl_pipeline/cash_freeze.py text eol=lf
+src/nfl_pipeline/cash_trial_policy.py text eol=lf
 src/nfl_pipeline/context_contract.py text eol=lf
+src/nfl_pipeline/db.py text eol=lf
+src/nfl_pipeline/experiment_registry.py text eol=lf
+src/nfl_pipeline/fanduel_links.py text eol=lf
+src/nfl_pipeline/fanduel_state.py text eol=lf
+src/nfl_pipeline/features.py text eol=crlf
+src/nfl_pipeline/forecast_horizon.py text eol=lf
+src/nfl_pipeline/forecast_outputs.py text eol=lf
+src/nfl_pipeline/forecast_store.py text eol=lf
+src/nfl_pipeline/game_scope.py text eol=lf
+src/nfl_pipeline/integrity.py text eol=lf
+src/nfl_pipeline/markets.py text eol=lf
+src/nfl_pipeline/modeling/__init__.py text eol=lf
+src/nfl_pipeline/modeling/benchmark_offers.py text eol=lf
+src/nfl_pipeline/modeling/challenger_models.py text eol=lf
+src/nfl_pipeline/modeling/chronological_calibration.py text eol=lf
+src/nfl_pipeline/modeling/component_validation.py text eol=lf
+src/nfl_pipeline/modeling/distribution_policy.py text eol=lf
+src/nfl_pipeline/modeling/evaluation.py text eol=lf
+src/nfl_pipeline/modeling/exact_line_evidence.py text eol=lf
+src/nfl_pipeline/modeling/final_probability_validation.py text eol=lf
+src/nfl_pipeline/modeling/fit_market_calibration.py text eol=lf
+src/nfl_pipeline/modeling/forecast_repair.py text eol=lf
+src/nfl_pipeline/modeling/live_scoring_replay.py text eol=lf
+src/nfl_pipeline/modeling/micro_reconciliation.py text eol=lf
+src/nfl_pipeline/modeling/model_benchmark.py text eol=lf
+src/nfl_pipeline/modeling/models/active_release.json text eol=crlf
+src/nfl_pipeline/modeling/models/player_props/interval_calibration.json text eol=crlf
+src/nfl_pipeline/modeling/models/player_props/market_calibration.json text eol=crlf
+src/nfl_pipeline/modeling/models/player_props/placement_calibration.json text eol=crlf
+src/nfl_pipeline/modeling/models/player_props/targets_model.json text eol=crlf
+src/nfl_pipeline/modeling/models/releases/nfl-20260918T143342Z/manifest.json text eol=crlf
+src/nfl_pipeline/modeling/models/releases/nfl-20260918T143342Z/report.json text eol=crlf
+src/nfl_pipeline/modeling/predict_player_props.py text eol=lf
+src/nfl_pipeline/modeling/prospective_market.py text eol=lf
+src/nfl_pipeline/modeling/qb_tail_distribution.py text eol=lf
+src/nfl_pipeline/modeling/receiver_role_model.py text eol=lf
+src/nfl_pipeline/modeling/receiving_coherent_repair.py text eol=lf
+src/nfl_pipeline/modeling/receiving_later_week_validation.py text eol=lf
+src/nfl_pipeline/modeling/receiving_paper_trial.py text eol=lf
+src/nfl_pipeline/modeling/receiving_quantile_validation.py text eol=lf
+src/nfl_pipeline/modeling/receiving_quantiles.py text eol=lf
+src/nfl_pipeline/modeling/receiving_research_trial.py text eol=lf
+src/nfl_pipeline/modeling/receiving_residual_challenger.py text eol=lf
+src/nfl_pipeline/modeling/receiving_selection_experiment.py text eol=lf
+src/nfl_pipeline/modeling/receiving_trial_checkpoint.py text eol=lf
+src/nfl_pipeline/modeling/role_context_training.py text eol=lf
+src/nfl_pipeline/modeling/role_workload.py text eol=lf
+src/nfl_pipeline/modeling/sample_aware_splits.py text eol=lf
+src/nfl_pipeline/modeling/score_accuracy_components.py text eol=lf
+src/nfl_pipeline/modeling/scoring_capture.py text eol=lf
+src/nfl_pipeline/modeling/scoring_equivalence.py text eol=lf
+src/nfl_pipeline/modeling/scoring_versions.py text eol=lf
+src/nfl_pipeline/modeling/selected_pick_diagnostics.py text eol=lf
 src/nfl_pipeline/modeling/sharp_alert_report.py text eol=lf
+src/nfl_pipeline/modeling/stat_model_registry.py text eol=lf
+src/nfl_pipeline/modeling/stat_runtime.py text eol=lf
+src/nfl_pipeline/modeling/tail_calibration.py text eol=lf
+src/nfl_pipeline/modeling/target_components.py text eol=lf
+src/nfl_pipeline/modeling/target_point_capture.py text eol=lf
+src/nfl_pipeline/modeling/target_volume.py text eol=lf
+src/nfl_pipeline/modeling/target_volume_validation.py text eol=lf
+src/nfl_pipeline/modeling/team_workload.py text eol=lf
+src/nfl_pipeline/modeling/train_accuracy_challengers.py text eol=lf
+src/nfl_pipeline/modeling/train_accuracy_components.py text eol=lf
+src/nfl_pipeline/modeling/train_player_stat_models.py text eol=lf
+src/nfl_pipeline/modeling/train_prop_exact_line_models.py text eol=lf
+src/nfl_pipeline/modeling/train_receiving_quantiles.py text eol=lf
+src/nfl_pipeline/modeling/train_target_volume.py text eol=lf
+src/nfl_pipeline/modeling/train_workload_depth.py text eol=lf
+src/nfl_pipeline/modeling/validate_distribution_policy.py text eol=lf
+src/nfl_pipeline/modeling/workload_depth_model.py text eol=lf
+src/nfl_pipeline/modeling/yardage_lock_validation.py text eol=lf
+src/nfl_pipeline/offer_selection.py text eol=lf
+src/nfl_pipeline/runtime_timing.py text eol=lf
+src/nfl_pipeline/schema.py text eol=lf
+src/nfl_pipeline/sharp_math.py text eol=lf
+src/nfl_pipeline/sharp_strategy.py text eol=lf
 src/nfl_pipeline/sharp_watch.py text eol=crlf
+src/supernovabets_config.py text eol=lf
+# --- END registered line endings ---
