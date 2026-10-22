@@ -183,7 +183,7 @@ def test_full_live_scoring_roundtrips_exactly():
     assert set(live['probability_trace'])=={'raw_over','heuristic_over','post_exact_side','final_side','side',
         'probability_basis','push_probability','context_blend_over','market_anchor_over','context_trust',
         'pre_market_side','model_projection','market_calibration','market_calibration_version','median_shift',
-        'fanduel_residual_signal'}
+        'fanduel_residual_signal','unplaced_model_projection','placement_calibration_version'}
     assert live['probability_trace']['probability_basis']=='win_given_no_push'
     captured['scoring_fingerprint']='old'
     with pytest.raises(ValueError,match='code_version'):

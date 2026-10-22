@@ -261,6 +261,11 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
   (report-only in Tuesday training; `--write` installs). Missing file = identity.
 - Judge changes by `reports/nfl_clv_scorecard_latest.md` (CLV first, ROI last).
 - Official nflverse box-score stats win in `raw.nfl_player_gamelogs`; play-by-play only fills gaps.
+- `modeling/projection_error` measures raw projection error by stat and splits it into volume and
+  efficiency. `models/player_props/placement_calibration.json` (`fit_placement_calibration`, validated on
+  held-out weeks) moves the raw projection before anchoring; missing file = identity.
+- `modeling/volume_model` is the targets/carries challenger (`docs/nfl_volume_and_placement.md`):
+  accepted on volume, not wired live.
 
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`

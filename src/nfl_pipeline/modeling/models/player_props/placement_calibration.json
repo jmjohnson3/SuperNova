@@ -1,0 +1,117 @@
+{
+  "contract": "nfl-projection-placement-v1",
+  "version": "placement-20261022T024505Z",
+  "fitted_at": "2026-10-22T02:45:05.858959+00:00",
+  "season": 2026,
+  "applies_to": "raw model projection, before market anchoring",
+  "stats": {
+    "rushing_yards": {
+      "QB": {
+        "family": "scale",
+        "k": 0.7513031005859376
+      },
+      "RB": {
+        "family": "identity"
+      }
+    },
+    "passing_yards": {
+      "QB": {
+        "family": "linear",
+        "a": 9.585941050345667,
+        "b": 1.0
+      }
+    }
+  },
+  "evidence": {
+    "rushing_yards|QB": {
+      "status": "corrected",
+      "rows": 122,
+      "heldout": {
+        "identity": {
+          "rows": 97,
+          "mae": 13.53139675332848,
+          "bias": -0.32259779093052865,
+          "above_share": 0.3402061855670103
+        },
+        "scale": {
+          "rows": 97,
+          "mae": 13.128682272574702,
+          "bias": -6.609593239276397,
+          "above_share": 0.5567010309278351
+        },
+        "linear": {
+          "rows": 97,
+          "mae": 13.133261430032704,
+          "bias": -3.7160141400633586,
+          "above_share": 0.4948453608247423
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "rushing_yards|RB": {
+      "status": "kept_identity",
+      "rows": 336,
+      "heldout": {
+        "identity": {
+          "rows": 264,
+          "mae": 20.827295501999156,
+          "bias": -2.0812683409862105,
+          "above_share": 0.4621212121212121
+        },
+        "scale": {
+          "rows": 264,
+          "mae": 21.097155586894296,
+          "bias": -10.850666616137419,
+          "above_share": 0.5757575757575758
+        },
+        "linear": {
+          "rows": 264,
+          "mae": 20.99453652958691,
+          "bias": -9.573053753281535,
+          "above_share": 0.5833333333333334
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "passing_yards|QB": {
+      "status": "corrected",
+      "rows": 150,
+      "heldout": {
+        "identity": {
+          "rows": 120,
+          "mae": 57.291290473292094,
+          "bias": -17.897137821122147,
+          "above_share": 0.625
+        },
+        "scale": {
+          "rows": 120,
+          "mae": 56.662175730121014,
+          "bias": -12.683355232468164,
+          "above_share": 0.55
+        },
+        "linear": {
+          "rows": 120,
+          "mae": 56.207530361209585,
+          "bias": -9.927153342695116,
+          "above_share": 0.525
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ]
+    }
+  }
+}

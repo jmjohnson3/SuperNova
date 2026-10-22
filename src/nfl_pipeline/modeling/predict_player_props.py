@@ -3634,6 +3634,8 @@ def _sharp_reference_for(index: dict[tuple, list[dict[str, Any]]], offer: dict[s
 
 MARKET_CALIBRATION_PATH = _MODEL_DIR / "market_calibration.json"
 INTERVAL_CALIBRATION_PATH = _MODEL_DIR / "interval_calibration.json"
+PLACEMENT_CALIBRATION_PATH = _MODEL_DIR / "placement_calibration.json"
+PLACEMENT_CALIBRATION_CONTRACT = "nfl-projection-placement-v1"
 # A probability blend fitted before the anchored-median correction is not
 # compatible with the current scoring semantics. Artifacts must opt in to
 # this exact contract; interval/projection parameters remain independently
@@ -3662,6 +3664,34 @@ def _load_market_calibration() -> dict[str, Any]:
             "disabled_stats": disabled,
         }
     return result
+
+
+def _load_placement_calibration() -> dict[str, Any]:
+    """Where the raw projection should sit, per stat and position (fit_placement_calibration).
+
+    Fitted on settled live forecasts and kept only where it improved held-out weeks. Absent,
+    unreadable or another contract means identity: the model's number is used as it is.
+    """
+    try:
+        result = json.loads(PLACEMENT_CALIBRATION_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return result if result.get("contract") == PLACEMENT_CALIBRATION_CONTRACT else {}
+
+
+def _placed_projection(metrics: dict[str, Any], stat: str, row: dict[str, Any], projection: float) -> float:
+    """The raw model projection moved by the captured placement for this stat and position.
+
+    Read from the metrics so replays use what live scoring used. Applied before market anchoring.
+    """
+    stats = (((metrics or {}).get("placement_calibration") or {}).get("stats") or {})
+    params = (stats.get(stat) or {}).get(str(row.get("position") or "").upper()) or {}
+    family = params.get("family")
+    if family == "scale":
+        return max(0.0, float(params["k"]) * float(projection))
+    if family == "linear":
+        return max(0.0, float(params["a"]) + float(params["b"]) * float(projection))
+    return float(projection)
 
 
 def _load_interval_calibration() -> dict[str, Any]:
@@ -4017,6 +4047,8 @@ def _candidate_from_offer(
                               "model_projection":model_projection, "market_calibration":market_cal,
                               "median_shift":median_shift,
                               "market_calibration_version":(metrics.get("market_calibration") or {}).get("version"),
+                              "unplaced_model_projection":row.get("_unplaced_projection"),
+                              "placement_calibration_version":(metrics.get("placement_calibration") or {}).get("version"),
                               **adjustment_trace},
         "ev": ev,
         "edge": edge,
@@ -4249,6 +4281,7 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
         probability_calibration_by_key = timer.call('recent_calibration', _load_recent_probability_calibration, conn, et_day)
         market_calibration = _load_market_calibration()
         interval_calibration = _load_interval_calibration()
+        placement_calibration = _load_placement_calibration()
         from nfl_pipeline.modeling import distribution_policy as cdf_policy
         cdf_challengers = cdf_policy.load_registry()
         cdf_active = cdf_policy.load_registry('active')
@@ -4296,6 +4329,7 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                 metrics = dict((artifact.get("metrics") or {}).get(stat) or {})
                 metrics["market_calibration"] = market_calibration
                 metrics["interval_calibration"] = interval_calibration
+                metrics["placement_calibration"] = placement_calibration
                 metrics["bet_stats"] = sorted(BET_PROP_STATS)
                 metrics["sharp_edge_bets_enabled"] = bool(SHARP_EDGE_BETS_ENABLED)
                 metrics["accepted_live"] = accepted
@@ -4314,6 +4348,10 @@ def build_predictions(cfg: PredictConfig) -> tuple[list[dict[str, Any]], dict[st
                         projection, projection_note = _position_adjusted_projection(row_dict, stat, projection, baseline)
                     if projection_note:
                         row_dict["_projection_sanity_note"] = projection_note
+                    placed = _placed_projection(metrics, stat, row_dict, projection)
+                    if placed != projection:
+                        row_dict["_unplaced_projection"] = projection
+                        projection = placed
                     if projection < SPEC_BY_STAT[stat].min_projection:
                         continue
                     if td_any_prob is not None:

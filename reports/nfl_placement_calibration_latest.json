@@ -1,0 +1,497 @@
+{
+  "contract": "nfl-projection-placement-v1",
+  "version": "placement-20261022T024505Z",
+  "fitted_at": "2026-10-22T02:45:05.858959+00:00",
+  "season": 2026,
+  "applies_to": "raw model projection, before market anchoring",
+  "stats": {
+    "rushing_yards": {
+      "QB": {
+        "family": "scale",
+        "k": 0.7513031005859376
+      },
+      "RB": {
+        "family": "identity"
+      }
+    },
+    "passing_yards": {
+      "QB": {
+        "family": "linear",
+        "a": 9.585941050345667,
+        "b": 1.0
+      }
+    }
+  },
+  "evidence": {
+    "rushing_yards|QB": {
+      "status": "corrected",
+      "rows": 122,
+      "heldout": {
+        "identity": {
+          "rows": 97,
+          "mae": 13.53139675332848,
+          "bias": -0.32259779093052865,
+          "above_share": 0.3402061855670103
+        },
+        "scale": {
+          "rows": 97,
+          "mae": 13.128682272574702,
+          "bias": -6.609593239276397,
+          "above_share": 0.5567010309278351
+        },
+        "linear": {
+          "rows": 97,
+          "mae": 13.133261430032704,
+          "bias": -3.7160141400633586,
+          "above_share": 0.4948453608247423
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "rushing_yards|RB": {
+      "status": "kept_identity",
+      "rows": 336,
+      "heldout": {
+        "identity": {
+          "rows": 264,
+          "mae": 20.827295501999156,
+          "bias": -2.0812683409862105,
+          "above_share": 0.4621212121212121
+        },
+        "scale": {
+          "rows": 264,
+          "mae": 21.097155586894296,
+          "bias": -10.850666616137419,
+          "above_share": 0.5757575757575758
+        },
+        "linear": {
+          "rows": 264,
+          "mae": 20.99453652958691,
+          "bias": -9.573053753281535,
+          "above_share": 0.5833333333333334
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "passing_yards|QB": {
+      "status": "corrected",
+      "rows": 150,
+      "heldout": {
+        "identity": {
+          "rows": 120,
+          "mae": 57.291290473292094,
+          "bias": -17.897137821122147,
+          "above_share": 0.625
+        },
+        "scale": {
+          "rows": 120,
+          "mae": 56.662175730121014,
+          "bias": -12.683355232468164,
+          "above_share": 0.55
+        },
+        "linear": {
+          "rows": 120,
+          "mae": 56.207530361209585,
+          "bias": -9.927153342695116,
+          "above_share": 0.525
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ]
+    }
+  },
+  "groups": {
+    "rushing_yards|QB": {
+      "status": "corrected",
+      "rows": 122,
+      "weeks": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "heldout": {
+        "identity": {
+          "rows": 97,
+          "mae": 13.53139675332848,
+          "bias": -0.32259779093052865,
+          "above_share": 0.3402061855670103
+        },
+        "scale": {
+          "rows": 97,
+          "mae": 13.128682272574702,
+          "bias": -6.609593239276397,
+          "above_share": 0.5567010309278351
+        },
+        "linear": {
+          "rows": 97,
+          "mae": 13.133261430032704,
+          "bias": -3.7160141400633586,
+          "above_share": 0.4948453608247423
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "best_candidate": "scale",
+      "improves_heldout_mae": true,
+      "moves_toward_median": true,
+      "chosen": {
+        "family": "scale",
+        "k": 0.7513031005859376
+      },
+      "folds": [
+        {
+          "test_week": 3,
+          "train_rows": 25,
+          "test_rows": 25,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.6118499755859372
+          },
+          "linear": {
+            "family": "linear",
+            "a": -2.6147187735081547,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 4,
+          "train_rows": 50,
+          "test_rows": 27,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.6118499755859372
+          },
+          "linear": {
+            "family": "linear",
+            "a": -3.3265000000000047,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 5,
+          "train_rows": 77,
+          "test_rows": 24,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.6272384643554684
+          },
+          "linear": {
+            "family": "linear",
+            "a": -4.415397664802743,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 6,
+          "train_rows": 101,
+          "test_rows": 21,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.751302337646484
+          },
+          "linear": {
+            "family": "linear",
+            "a": -3.238493932043557,
+            "b": 1.0
+          }
+        }
+      ],
+      "in_sample_before": {
+        "rows": 122,
+        "mae": 13.407483090478488,
+        "bias": 0.4043300815952344,
+        "above_share": 0.3442622950819672
+      },
+      "in_sample_after": {
+        "rows": 122,
+        "mae": 12.729143892273251,
+        "bias": -4.142192257857581,
+        "above_share": 0.5081967213114754
+      }
+    },
+    "rushing_yards|RB": {
+      "status": "kept_identity",
+      "rows": 336,
+      "weeks": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "heldout": {
+        "identity": {
+          "rows": 264,
+          "mae": 20.827295501999156,
+          "bias": -2.0812683409862105,
+          "above_share": 0.4621212121212121
+        },
+        "scale": {
+          "rows": 264,
+          "mae": 21.097155586894296,
+          "bias": -10.850666616137419,
+          "above_share": 0.5757575757575758
+        },
+        "linear": {
+          "rows": 264,
+          "mae": 20.99453652958691,
+          "bias": -9.573053753281535,
+          "above_share": 0.5833333333333334
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "best_candidate": "linear",
+      "improves_heldout_mae": false,
+      "moves_toward_median": false,
+      "chosen": {
+        "family": "identity"
+      },
+      "folds": [
+        {
+          "test_week": 3,
+          "train_rows": 72,
+          "test_rows": 67,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.6637298583984375
+          },
+          "linear": {
+            "family": "linear",
+            "a": -9.727500000000017,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 4,
+          "train_rows": 139,
+          "test_rows": 72,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.7673835754394529
+          },
+          "linear": {
+            "family": "linear",
+            "a": -8.34957303584089,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 5,
+          "train_rows": 211,
+          "test_rows": 65,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.8212516784667969
+          },
+          "linear": {
+            "family": "linear",
+            "a": -6.711408295985322,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 6,
+          "train_rows": 276,
+          "test_rows": 60,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 0.8250366210937499
+          },
+          "linear": {
+            "family": "linear",
+            "a": -5.137876953125005,
+            "b": 1.0
+          }
+        }
+      ],
+      "in_sample_before": {
+        "rows": 336,
+        "mae": 20.985548871198507,
+        "bias": -0.4512409487044299,
+        "above_share": 0.4375
+      },
+      "in_sample_after": {
+        "rows": 336,
+        "mae": 20.985548871198507,
+        "bias": -0.4512409487044299,
+        "above_share": 0.4375
+      }
+    },
+    "passing_yards|QB": {
+      "status": "corrected",
+      "rows": 150,
+      "weeks": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "heldout": {
+        "identity": {
+          "rows": 120,
+          "mae": 57.291290473292094,
+          "bias": -17.897137821122147,
+          "above_share": 0.625
+        },
+        "scale": {
+          "rows": 120,
+          "mae": 56.662175730121014,
+          "bias": -12.683355232468164,
+          "above_share": 0.55
+        },
+        "linear": {
+          "rows": 120,
+          "mae": 56.207530361209585,
+          "bias": -9.927153342695116,
+          "above_share": 0.525
+        }
+      },
+      "heldout_weeks": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "best_candidate": "linear",
+      "improves_heldout_mae": true,
+      "moves_toward_median": true,
+      "chosen": {
+        "family": "linear",
+        "a": 9.585941050345667,
+        "b": 1.0
+      },
+      "folds": [
+        {
+          "test_week": 3,
+          "train_rows": 30,
+          "test_rows": 32,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 1.0267044067382813
+          },
+          "linear": {
+            "family": "linear",
+            "a": 7.723049704670919,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 4,
+          "train_rows": 62,
+          "test_rows": 30,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 1.0167037963867185
+          },
+          "linear": {
+            "family": "linear",
+            "a": 7.360395972888492,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 5,
+          "train_rows": 92,
+          "test_rows": 30,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 1.0267059326171875
+          },
+          "linear": {
+            "family": "linear",
+            "a": 7.954027484059347,
+            "b": 1.0
+          }
+        },
+        {
+          "test_week": 6,
+          "train_rows": 122,
+          "test_rows": 28,
+          "identity": {
+            "family": "identity"
+          },
+          "scale": {
+            "family": "scale",
+            "k": 1.0267059326171875
+          },
+          "linear": {
+            "family": "linear",
+            "a": 8.922422969762096,
+            "b": 1.0
+          }
+        }
+      ],
+      "in_sample_before": {
+        "rows": 150,
+        "mae": 59.854291858525464,
+        "bias": -14.56101686011981,
+        "above_share": 0.6133333333333333
+      },
+      "in_sample_after": {
+        "rows": 150,
+        "mae": 58.881380850629164,
+        "bias": -4.975075809774143,
+        "above_share": 0.5
+      }
+    }
+  }
+}
