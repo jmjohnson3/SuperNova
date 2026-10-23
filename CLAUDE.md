@@ -279,6 +279,25 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
 are gitignored (several exceed GitHub's 100 MB limit). Pointer, registration, manifest and
 summary JSON files are tracked. A fresh clone must retrain or copy artifacts before predicting.
 
+## Sharp-gap research: NBA and NCAAF (`src/sharp_pipeline/`)
+
+The NFL price-gap test applied to other sports, research only (no stakes, no pings). NBA player props
+(points, rebounds, assists, threes) and NBA and NCAAF spreads, moneylines and totals; no college props
+(not bettable in Colorado). Exact-line pricing against Pinnacle no-vig at FanDuel, theScore Bet
+(`espnbet`) and DraftKings; +3% seen 15-45 minutes before the start is a decision, graded at
+Pinnacle's last quote before the start.
+- Task `\SuperNovaBets\Sharp-Multi-Watch` (`scripts/sharp_multi_watch.bat`, every 10 minutes at :05) runs
+  `python -m sharp_pipeline.scan`, then `python -m sharp_pipeline.report --digest`. The digest goes to Discord
+  after 9 AM ET, one per sport, via `NBA_`/`NCAAF_DISCORD_WEBHOOK_URL`, falling back to
+  `MLB_DISCORD_WEBHOOK_URL`.
+- Credits: game lines use one bulk call per sport (3 credits for every game); NBA props cost 4 credits per
+  game per poll (about T-40/-30/-20/-10). The daily allowance holds back NFL Sunday/primetime reserves
+  until the plan resets.
+- Tables `bets.sharp_multi_quotes` (append-only quotes) and `bets.sharp_multi_decisions`; report
+  `reports/sharp_multi_latest.md`. A sport is ready for a stake review at 50+ graded decisions over 7+
+  days, +1.5% at the close and 90% close coverage. Staking it is a separate decision.
+- Shares no tables or registration with NFL; it only imports the NFL price math.
+
 ## Key Gotchas
 
 - **MSF team abbrs**: NBA uses `BRO` (not BKN) and `OKL` (not OKC). MLB uses `SFG→SF`, `SDP→SD`, `KCR→KC`, `TBR→TB`, `WSN→WAS`, `CHW→CWS`. See `TEAM_ABBR_NORMALIZE` in each crawler.
