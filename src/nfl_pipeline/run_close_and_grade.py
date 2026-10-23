@@ -476,6 +476,8 @@ def run_for_date(
              critical=False, failure_is_warning=True, timeout_s=120),
         Step("NFL FanDuel Price Gap Evidence", "nfl_pipeline.modeling.sharp_evidence_report",
              critical=False, failure_is_warning=True, timeout_s=120),
+        Step("NFL Research Parlays", "nfl_pipeline.modeling.sharp_parlay_report",
+             critical=False, failure_is_warning=True, timeout_s=120),
     ]
     results: list[dict[str, Any]] = []
     status = "ok"

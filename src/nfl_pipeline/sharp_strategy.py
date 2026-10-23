@@ -11,16 +11,23 @@ Changing anything here is a strategy change and needs a new registration (sharp_
 """
 from __future__ import annotations
 
-# v6 (22 October): links and alert text moved to the unpinned sharp_links (theScore Bet links were all
-# rejected); pricing, selection, staking and grading are unchanged from v5.
-EXPERIMENT_NAME = "nfl-sharp-gap-cash-v6"
-PREDECESSOR = "nfl-sharp-gap-cash-v5"
+# v7 (22 October): game totals carry stakes; alternate player-prop ladders are scanned and graded as
+# research (never staked). v6 moved links and alert text to the unpinned sharp_links.
+EXPERIMENT_NAME = "nfl-sharp-gap-cash-v7"
+PREDECESSOR = "nfl-sharp-gap-cash-v6"
 
 # Books with an account. Order breaks EV ties only; each poll takes the best price first.
 BET_BOOKS = ("fanduel", "espnbet", "draftkings")
 # Markets whose gaps were backtested against the sharp close. Other scanned markets are graded
 # at stake 0 until they prove out on their own.
-STAKED_STATS = frozenset({"receiving_yards", "rushing_yards", "receptions"})
+STAKED_STATS = frozenset({"receiving_yards", "rushing_yards", "receptions", "total"})
+# Alternate player-prop ladders ("60+ receiving yards"): over-only at every book and absent at Pinnacle,
+# so each rung is priced from Pinnacle's main line through modeling/alt_line_model. That model beats a
+# normal curve on 2026 rungs but still misses long receiving rungs by 4-6 points of probability, more
+# than any edge it would find, so ladders are scanned and graded at the close, never staked.
+LADDER_MARKETS = {"player_reception_yds_alternate": "receiving_yards",
+                  "player_rush_yds_alternate": "rushing_yards",
+                  "player_receptions_alternate": "receptions"}
 
 # A gap must be worth at least this much against the sharp no-vig price when seen.
 MIN_EV = 0.03

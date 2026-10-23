@@ -7,7 +7,7 @@ src/nfl_pipeline/modeling/models/scoring_code_versions/** -text
 # --- BEGIN registered line endings (generated) ---
 # Active frozen registrations hash raw bytes. With core.autocrlf a checkout can rewrite a file's
 # line endings and block the registration, so each pinned file keeps exactly the endings it was
-# registered with. Registrations: fanduel-receiving-oe-paper-v5, nfl-sharp-gap-cash-v6.
+# registered with. Registrations: nfl-sharp-gap-cash-v7, fanduel-receiving-oe-paper-v5.
 src/nfl_pipeline/__init__.py text eol=lf
 src/nfl_pipeline/betting_preferences.py text eol=lf
 src/nfl_pipeline/cash_execution.py text eol=lf
@@ -40,6 +40,7 @@ src/nfl_pipeline/modeling/live_scoring_replay.py text eol=lf
 src/nfl_pipeline/modeling/micro_reconciliation.py text eol=lf
 src/nfl_pipeline/modeling/model_benchmark.py text eol=lf
 src/nfl_pipeline/modeling/models/active_release.json text eol=crlf
+src/nfl_pipeline/modeling/models/player_props/alt_line_model.json text eol=crlf
 src/nfl_pipeline/modeling/models/player_props/interval_calibration.json text eol=crlf
 src/nfl_pipeline/modeling/models/player_props/market_calibration.json text eol=crlf
 src/nfl_pipeline/modeling/models/player_props/placement_calibration.json text eol=crlf

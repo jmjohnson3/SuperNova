@@ -1,14 +1,14 @@
 {
-  "built_at": "2026-10-22T13:38:17.518571+00:00",
+  "built_at": "2026-10-23T04:36:20.135264+00:00",
   "day": "2026-10-22",
-  "status": "awaiting_settlement",
+  "status": "evaluated",
   "run_id": "benchmark-20260921T230305171980Z",
   "variant": "stable_ensemble_calibrated",
   "production_release": "nfl-20260918T143342Z",
   "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
   "capture": {
-    "day_eligible_locks": 39,
-    "current_eligible_locks": 13,
+    "day_eligible_locks": 54,
+    "current_eligible_locks": 15,
     "eligible_forecast_ids": [
       23117,
       23118,
@@ -48,7 +48,22 @@
       23248,
       23249,
       23250,
-      23251
+      23251,
+      23298,
+      23299,
+      23300,
+      23301,
+      23302,
+      23303,
+      23304,
+      23305,
+      23306,
+      23307,
+      23308,
+      23309,
+      23310,
+      23311,
+      23312
     ],
     "captured_forecast_ids": [
       23177,
@@ -77,28 +92,56 @@
       23248,
       23249,
       23250,
-      23251
+      23251,
+      23298,
+      23299,
+      23300,
+      23301,
+      23302,
+      23303,
+      23304,
+      23305,
+      23306,
+      23307,
+      23308,
+      23309,
+      23310,
+      23311,
+      23312
     ],
-    "current_quotes_fresh_now": 13,
-    "paired_challenger_locks": 27,
+    "current_quotes_fresh_now": 0,
+    "paired_challenger_locks": 42,
     "missing_current_forecast_ids": [],
     "selected_research": 0,
-    "missing_historical_forecast_ids": [],
+    "missing_historical_forecast_ids": [
+      23117,
+      23118,
+      23119,
+      23120,
+      23121,
+      23122,
+      23123,
+      23125,
+      23126,
+      23127,
+      23129,
+      23130
+    ],
     "capture_errors": {
       "quote_expired_before_challenger_capture": 12,
-      "original_offer_or_timing_mismatch": 21
+      "original_offer_or_timing_mismatch": 29
     },
     "eligibility_exclusions": {
-      "outside_market": 47
+      "outside_market": 49
     }
   },
   "settlement": {
-    "pending_game": 39
+    "result_or_participation_unresolved": 54
   },
   "validation_exclusions": {
-    "unknown_forecast": 96
+    "unknown_forecast": 130
   },
-  "pending_variant_rows": 156,
+  "pending_variant_rows": 216,
   "day_metrics": {
     "all_eligible": {},
     "fixed_research": {}
@@ -107,181 +150,207 @@
   "scoring_cohorts": {},
   "close": {
     "current_eligible": {
-      "started": 0,
-      "valid": 0,
+      "started": 15,
+      "valid": 15,
       "unknown": 0,
-      "valid_coverage": null,
+      "valid_coverage": 1.0,
       "required_coverage": 0.9,
-      "target_met": null,
+      "target_met": true,
       "unknown_reasons": {},
       "observations": [
         {
-          "forecast_id": 23239,
+          "forecast_id": 23298,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 24.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23299,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 33.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23240,
+          "forecast_id": 23300,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 69.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23241,
+          "forecast_id": 23301,
           "book": "fanduel",
           "stat": "receiving_yards",
-          "line": 19.5,
+          "line": 20.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23242,
+          "forecast_id": 23302,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 8.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23243,
+          "forecast_id": 23303,
           "book": "fanduel",
           "stat": "receiving_yards",
-          "line": 18.5,
+          "line": 17.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23244,
+          "forecast_id": 23304,
           "book": "fanduel",
           "stat": "receiving_yards",
-          "line": 37.5,
+          "line": 38.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23245,
+          "forecast_id": 23305,
           "book": "fanduel",
           "stat": "receiving_yards",
-          "line": 7.5,
-          "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "line": 6.5,
+          "side": "under",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23246,
+          "forecast_id": 23306,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 44.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23247,
+          "forecast_id": 23307,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 43.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23248,
+          "forecast_id": 23308,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 19.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23249,
+          "forecast_id": 23309,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 17.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23310,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 2.5,
-          "side": "under",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23250,
+          "forecast_id": 23311,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 56.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
-          "forecast_id": 23251,
+          "forecast_id": 23312,
           "book": "fanduel",
           "stat": "receiving_yards",
           "line": 15.5,
           "side": "over",
-          "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         }
       ],
-      "average_clv": null
+      "average_clv": 0.0
     },
     "all_eligible": {
-      "started": 0,
-      "valid": 0,
-      "unknown": 0,
-      "valid_coverage": null,
+      "started": 54,
+      "valid": 34,
+      "unknown": 20,
+      "valid_coverage": 0.6296296296296297,
       "required_coverage": 0.9,
-      "target_met": null,
-      "unknown_reasons": {},
+      "target_met": false,
+      "unknown_reasons": {
+        "exact_line_unavailable_in_captured_feed": 20
+      },
       "observations": [
         {
           "forecast_id": 23117,
@@ -292,7 +361,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -302,10 +371,10 @@
           "line": 33.5,
           "side": "over",
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23119,
@@ -316,7 +385,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -326,10 +395,10 @@
           "line": 19.5,
           "side": "over",
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.02869322839809807"
         },
         {
           "forecast_id": 23121,
@@ -338,10 +407,10 @@
           "line": 8.5,
           "side": "over",
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23122,
@@ -352,7 +421,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -364,7 +433,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -376,7 +445,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -386,10 +455,10 @@
           "line": 43.5,
           "side": "over",
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23127,
@@ -400,7 +469,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -412,7 +481,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -424,7 +493,7 @@
           "locked_at": "2026-10-20T14:05:50.428828+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -436,7 +505,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -446,10 +515,10 @@
           "line": 33.5,
           "side": "over",
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23179,
@@ -460,7 +529,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -472,7 +541,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -482,10 +551,10 @@
           "line": 8.5,
           "side": "over",
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23182,
@@ -496,7 +565,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -508,7 +577,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -520,7 +589,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -532,7 +601,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -542,10 +611,10 @@
           "line": 19.5,
           "side": "over",
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23189,
@@ -556,7 +625,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -566,10 +635,10 @@
           "line": 2.5,
           "side": "under",
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.05645301372242484"
         },
         {
           "forecast_id": 23191,
@@ -578,10 +647,10 @@
           "line": 56.5,
           "side": "over",
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.0021938484489490984"
         },
         {
           "forecast_id": 23192,
@@ -592,7 +661,7 @@
           "locked_at": "2026-10-21T13:34:11.836041+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -602,10 +671,10 @@
           "line": 33.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23240,
@@ -614,10 +683,10 @@
           "line": 69.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23241,
@@ -626,10 +695,10 @@
           "line": 19.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.030887076847047168"
         },
         {
           "forecast_id": 23242,
@@ -638,10 +707,10 @@
           "line": 8.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23243,
@@ -652,7 +721,7 @@
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -664,7 +733,7 @@
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -676,7 +745,7 @@
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
           "close_at": null,
           "valid_exact_capture": false,
-          "status": "missing_close_label",
+          "status": "exact_line_unavailable_in_captured_feed",
           "clv": null
         },
         {
@@ -686,10 +755,10 @@
           "line": 44.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23247,
@@ -698,10 +767,10 @@
           "line": 43.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23248,
@@ -710,10 +779,10 @@
           "line": 19.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23249,
@@ -722,10 +791,10 @@
           "line": 2.5,
           "side": "under",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "-0.050605060506050625"
         },
         {
           "forecast_id": 23250,
@@ -734,10 +803,10 @@
           "line": 56.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         },
         {
           "forecast_id": 23251,
@@ -746,13 +815,193 @@
           "line": 15.5,
           "side": "over",
           "locked_at": "2026-10-22T13:36:05.077973+00:00",
-          "close_at": null,
-          "valid_exact_capture": false,
-          "status": "missing_close_label",
-          "clv": null
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23298,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 24.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23299,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 33.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23300,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 69.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23301,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 20.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23302,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 8.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23303,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 17.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23304,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 38.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23305,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 6.5,
+          "side": "under",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23306,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 44.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23307,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 43.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23308,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 19.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23309,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 17.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23310,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 2.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23311,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 56.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
+        },
+        {
+          "forecast_id": 23312,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 15.5,
+          "side": "over",
+          "locked_at": "2026-10-22T22:18:39.167661+00:00",
+          "close_at": "2026-10-23T00:10:15.759822+00:00",
+          "valid_exact_capture": true,
+          "status": "valid_close",
+          "clv": "0.0"
         }
       ],
-      "average_clv": null
+      "average_clv": -0.0018480796507639387
     },
     "fixed_research": {
       "started": 0,
@@ -770,6 +1019,7 @@
     "status": "collecting_evidence",
     "blockers": [
       "real_offers:missing_matches",
+      "missing_prospective_capture_history",
       "date_partition_not_cumulative_review"
     ],
     "deployment_approved": false,

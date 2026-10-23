@@ -3,6 +3,26 @@
 These changes repair evidence collection. Profitability still has to be demonstrated
 on later offers, and paper results do not authorize cash betting.
 
+## Registered October 22, 2026: `nfl-sharp-gap-cash-v7`
+
+Two changes requested after the lever analysis (`reports/nfl_sharp_levers_2026.md`). That analysis
+also found that the 5-bets-a-day and $20-a-week caps, not a shortage of gaps, limit how many bets are
+staked: the current rules found about 25 decisions per 14-game Sunday at +3.9% EV at the close.
+
+- **Game totals now carry stakes.** They are priced against Pinnacle's alternate totals, as before.
+  In the replay they added 3 decisions per Sunday at +4.0% EV at the close.
+- **Alternate player-prop ladders are scanned as research.** These are the "60+ receiving yards"
+  rungs: over-only at every book, and absent at Pinnacle. Each rung is priced from Pinnacle's main
+  line through `modeling/alt_line_model` (pinned, `models/player_props/alt_line_model.json`).
+  - Fitted on 2025 and validated on 2026, that model beats the scanner's normal curve on every stat.
+    On a +45-yard receiving rung, the normal curve said 4% and the model 8%; 12% actually hit.
+  - It still misses long receiving rungs by 4-6 points of probability, more than any edge it would
+    flag. Rungs are therefore stored and graded at the close (valued with the same model) and on
+    results, but never staked or pinged.
+  - The rungs cost 3 more credits per poll per game.
+
+Unders were already covered: both sides of every two-sided prop are priced.
+
 ## Registered October 22, 2026: `nfl-sharp-gap-cash-v6`
 
 v5's pricing, selection, staking and grading are unchanged. ESPN Bet has become theScore Bet, and

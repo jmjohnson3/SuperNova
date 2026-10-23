@@ -19,7 +19,11 @@
     "betting_approved": false
   },
   "player_games": 0,
-  "exclusions": {},
+  "exclusions": {
+    "earlier_capture_of_same_player_game": 0
+  },
   "deployment_approved": false,
-  "betting_approved": false
+  "betting_approved": false,
+  "captured_player_games": 9,
+  "pending_or_did_not_play": 9
 }

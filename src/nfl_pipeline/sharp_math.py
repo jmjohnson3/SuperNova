@@ -8,6 +8,7 @@ shifted (key numbers 3/7 make a smooth curve wrong).
 """
 from __future__ import annotations
 
+import bisect
 import math
 
 from scipy.stats import norm
@@ -102,6 +103,38 @@ def shift_probability(stat: str, from_line: float, p_over: float | None, to_line
         return None
     mean = float(from_line) + model["sigma"] * norm.ppf(p_over)
     return float(1.0 - norm.cdf(float(to_line), loc=mean, scale=model["sigma"]))
+
+
+def ladder_over_probability(model: dict | None, stat: str, main_line: float, p_over_main: float | None,
+                            threshold: float) -> float | None:
+    """P(stat > threshold) for an alternate-ladder rung, from the sharp main line's no-vig probability.
+
+    Uses the empirical line-relative distribution fitted by modeling/alt_line_model (its curve per stat
+    and line band), shifted on the logit scale so the main line keeps the market's probability. None
+    when there is no model or no curve for the stat.
+    """
+    curves = (model or {}).get("curves", {}).get(stat)
+    if not curves or p_over_main is None or not 0.0 < p_over_main < 1.0:
+        return None
+    edges = model["bands"][stat]
+    band = max(0, min(len(edges) - 2, int(sum(1 for e in edges if e <= main_line) - 1)))
+    curve, grid, c = curves[str(band)], model["grid"], model["offsets"][stat]
+
+    def tail(x: float) -> float:
+        """Survival curve at the rung's ratio to the line, linearly interpolated (clamped at the ends)."""
+        ratio = (float(x) + c) / (float(main_line) + c)
+        i = bisect.bisect_left(grid, ratio)
+        if i <= 0:
+            return curve[0]
+        if i >= len(grid):
+            return curve[-1]
+        w = (ratio - grid[i - 1]) / (grid[i] - grid[i - 1])
+        return curve[i - 1] + w * (curve[i] - curve[i - 1])
+
+    logit = lambda p: math.log(p / (1.0 - p))
+    anchor, raw = min(max(tail(main_line), 1e-6), 1 - 1e-6), min(max(tail(threshold), 1e-6), 1 - 1e-6)
+    z = logit(raw) + logit(p_over_main) - logit(anchor)
+    return 1.0 / (1.0 + math.exp(-z))
 
 
 def ev(probability: float, price) -> float | None:

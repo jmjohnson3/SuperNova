@@ -615,6 +615,14 @@
         "betonlineag",
         "pinnacle"
       ]
+    },
+    "2026_07_NE_CHI|close": {
+      "at": "2026-10-22T23:55:20.371088+00:00",
+      "event_id": "ffebea881c1d7b2dfb85b3e590c35985",
+      "books": [
+        "betonlineag",
+        "pinnacle"
+      ]
     }
   }
 }

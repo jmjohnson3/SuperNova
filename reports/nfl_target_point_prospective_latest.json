@@ -1,11 +1,11 @@
 {
   "status": "separate_cohort_review_required",
-  "player_games": 524,
+  "player_games": 527,
   "exclusions": {
-    "pending_or_missing_verified_result": 23,
+    "pending_or_missing_verified_result": 47,
     "duplicate_player_game_in_cohort": 275
   },
-  "unique_player_games": 414,
+  "unique_player_games": 417,
   "deployment_approved": false,
   "betting_approved": false,
   "probability_enabled": false,
@@ -42,18 +42,18 @@
       "production_release": "nfl-20260918T143342Z",
       "scoring_version": "1aca1b617d26af98dbe85949a8d3aac233caf09f15cb0b7054f8f4f232d1a767",
       "status": "not_yet_proven",
-      "player_games": 91,
+      "player_games": 94,
       "reference": {
-        "rows": 91,
-        "mae": 19.192307692307693,
-        "rmse": 25.732937374774494,
-        "bias": -3.0824175824175826
+        "rows": 94,
+        "mae": 19.074468085106382,
+        "rmse": 25.47286833626311,
+        "bias": -2.4893617021276597
       },
       "candidate": {
-        "rows": 91,
-        "mae": 19.120814581070416,
-        "rmse": 26.313641361387443,
-        "bias": -6.12054595296859
+        "rows": 94,
+        "mae": 18.865308077046272,
+        "rmse": 25.96889467757234,
+        "bias": -5.570477120799998
       },
       "clustered_absolute_error_gain": {
         "clusters": 1,

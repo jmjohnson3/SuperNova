@@ -89,6 +89,19 @@ MIN_PRICE_EV = 0.01      # "take it at or better than" keeps at least this much 
 MAX_ALERTS_PER_RUN = 10
 FINAL_WINDOW_MINUTES = 90  # inactives land ~T-90 and books are slowest to react; never starve this window
 QUOTE_CONTRACT = "nfl-sharp-quotes-v2"
+LADDER_MARKETS = dict(strategy.LADDER_MARKETS)
+LADDER_MODEL_PATH = ROOT / "src/nfl_pipeline/modeling/models/player_props/alt_line_model.json"
+
+
+def _ladder_model() -> dict | None:
+    try:
+        model = json.loads(LADDER_MODEL_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return None
+    return model if model.get("contract") == "nfl-alt-line-model-v1" else None
+
+
+LADDER_MODEL = _ladder_model()
 MAX_SOURCE_AGE_SECONDS = 300
 MAX_SOURCE_SKEW_SECONDS = 120
 EXPERIMENT_NAME = strategy.EXPERIMENT_NAME
@@ -103,7 +116,9 @@ def _int_env(name: str, default: int) -> int:
 
 
 def markets() -> list[str]:
-    return [m.strip() for m in (os.getenv("NFL_SHARP_WATCH_MARKETS") or DEFAULT_MARKETS).split(",") if m.strip()]
+    """Environment-selected markets plus the research ladders (fixed in code, part of the registration)."""
+    chosen = [m.strip() for m in (os.getenv("NFL_SHARP_WATCH_MARKETS") or DEFAULT_MARKETS).split(",") if m.strip()]
+    return chosen + [m for m in LADDER_MARKETS if m not in chosen]
 
 
 def experiment_config():
@@ -117,6 +132,7 @@ def experiment_config():
                 stake=strategy.STAKE, max_bets_per_day=strategy.MAX_BETS_PER_DAY,
                 max_stake_per_week=strategy.MAX_STAKE_PER_WEEK, max_bets_per_game=strategy.MAX_BETS_PER_GAME,
                 loss_pause=strategy.LOSS_PAUSE, gates=strategy.GATES, shadow_filter=strategy.SHADOW_FILTER,
+                ladder_markets=LADDER_MARKETS, ladder_model_rows=(LADDER_MODEL or {}).get("model_rows"),
                 selection="best_ev_first_eligible_per_player_game_stat_across_books")
 
 
@@ -208,7 +224,8 @@ def plan_polls(games: list[dict], state: dict, now: datetime, remaining: int, co
 def _pairs(book: dict) -> dict[tuple, dict]:
     """(stat, player_norm or side-group, line) -> {over/home: price, under/away: price, link...} for one book."""
     out: dict[tuple, dict] = {}
-    for market in book.get("markets", []):
+    # Main markets first, so an alternate rung never overwrites a main line at the same number.
+    for market in sorted(book.get("markets", []), key=lambda m: m.get("key") in LADDER_MARKETS):
         provenance = dict(book_updated_at=book.get("last_update"),
                           market_updated_at=market.get("last_update"), market_key=market.get("key"))
         key = market.get("key")
@@ -227,7 +244,8 @@ def _pairs(book: dict) -> dict[tuple, dict]:
                     rec = out.setdefault((stat, "game", float(line)), dict(provenance))
                     rec[side] = o.get("price"); rec[f"{side}_link"] = o.get("link")
             continue
-        stat = STAT_BY_MARKET.get(key) or EXTRA_STAT_BY_MARKET.get(key)
+        ladder = key in LADDER_MARKETS
+        stat = LADDER_MARKETS.get(key) or STAT_BY_MARKET.get(key) or EXTRA_STAT_BY_MARKET.get(key)
         if not stat:
             continue
         for o in market.get("outcomes", []):
@@ -238,7 +256,10 @@ def _pairs(book: dict) -> dict[tuple, dict]:
                 side, point = YES_NO_SIDES[side], 0.5
             if side not in ("over", "under") or not player or point is None:
                 continue
-            rec = out.setdefault((stat, normalize_name(player), float(point)), dict(provenance, player=player))
+            pair_key = (stat, normalize_name(player), float(point))
+            if ladder and pair_key in out and not out[pair_key].get("ladder"):
+                continue
+            rec = out.setdefault(pair_key, dict(provenance, player=player, ladder=ladder))
             rec[side] = o.get("price"); rec[f"{side}_link"] = o.get("link")
     return out
 
@@ -259,6 +280,9 @@ def quote_error(quote: dict, observed_at: datetime) -> str | None:
         return "source_timestamp_future_or_invalid"
     if (observed_at - updated).total_seconds() > MAX_SOURCE_AGE_SECONDS:
         return "source_quote_stale"
+    if quote.get("ladder") and quote.get("under") is None:
+        # Alternate ladders are over-only at every book; the over must still be a valid price.
+        return "invalid_ladder_price" if sharp_math.implied(quote.get("over")) is None else None
     if any(sharp_math.implied(quote.get(side)) is None for side in ("over", "under")):
         return "invalid_two_sided_prices"
     return None
@@ -279,6 +303,9 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, .
             if stat == "spread":
                 continue  # spreads need both teams' sides; handled as exact-line two-way below
             if quote_error(offer, now):
+                continue
+            if offer.get("ladder") and offer.get("under") is None:
+                edges.extend(_ladder_edges(payload, books, sharp_books, bet_book, stat, who, line, offer, now, min_ev))
                 continue
             best = None
             for book in sharp_books:  # preferred book first, then closest line
@@ -317,6 +344,30 @@ def find_edges(payload: dict, *, min_ev: float = MIN_EV, bet_books: tuple[str, .
                                           reference_method="exact" if line == sharp["line"] else "model_inferred",
                                           devig_method=sharp_math.DEVIG_METHOD)))
     return sorted(edges, key=lambda e: -e["ev"])
+
+
+def _ladder_edges(payload, books, sharp_books, bet_book, stat, who, line, offer, now, min_ev) -> list[dict]:
+    """A one-sided alternate rung priced from Pinnacle's main line through the fitted ladder model."""
+    if LADDER_MODEL is None:
+        return []
+    mains = [(s_line, q) for (s_stat, s_who, s_line), q in (books.get("pinnacle") or {}).items()
+             if "pinnacle" in sharp_books and s_stat == stat and s_who == who and not q.get("ladder")
+             and not quote_error(q, now)
+             and abs((source_time(offer) - source_time(q)).total_seconds()) <= MAX_SOURCE_SKEW_SECONDS]
+    if not mains:
+        return []
+    s_line, q = min(mains, key=lambda m: abs(m[0] - line))
+    fair = sharp_math.ladder_over_probability(LADDER_MODEL, stat, s_line, sharp_math.no_vig_over(q["over"], q["under"]), line)
+    value = sharp_math.ev(fair, offer.get("over")) if fair is not None else None
+    if value is None or value < min_ev:
+        return []
+    return [dict(event_id=payload.get("id"), book=bet_book, stat=stat, player=offer.get("player"), player_norm=who,
+                 side="over", line=line, price=int(offer["over"]), link=offer.get("over_link"),
+                 sharp_book="pinnacle", sharp_line=s_line, fair_probability=fair, ev=value,
+                 minimum_price=sharp_math.minimum_price(fair, MIN_PRICE_EV), line_gap=line - s_line, ladder=True,
+                 quote_provenance=dict(contract=QUOTE_CONTRACT, observed_at_utc=now.isoformat(),
+                     execution_quote=dict(offer), reference_quote=dict(q), reference_method="ladder_model",
+                     devig_method=sharp_math.DEVIG_METHOD))]
 
 
 def _digest(value):
@@ -684,7 +735,9 @@ PINNED_MODULES = ("nfl_pipeline.sharp_watch", "nfl_pipeline.sharp_strategy", "nf
 
 
 def pinned_files(root: Path = ROOT) -> dict[str, Path]:
-    return {module: root / "src" / Path(*module.split(".")).with_suffix(".py") for module in PINNED_MODULES}
+    files = {module: root / "src" / Path(*module.split(".")).with_suffix(".py") for module in PINNED_MODULES}
+    files["alt_line_model"] = root / "src/nfl_pipeline/modeling/models/player_props/alt_line_model.json"
+    return files
 
 
 def normalized_config() -> dict:
@@ -836,7 +889,9 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                         VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""",
                         (observation_id, observed_at, psycopg2.extras.Json(observation)))
                     key = (game["game_id"], edge["stat"], edge["player_norm"] or "")
-                    stake = stake_for(cur, tier, now, budget, edge["stat"], key) if tier == "alert" else 0.0
+                    # Ladder rungs are research: graded like everything else, never staked or pinged.
+                    stake = (stake_for(cur, tier, now, budget, edge["stat"], key)
+                             if tier == "alert" and not edge.get("ladder") else 0.0)
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,
                             stat, player_name, player_name_norm, side, fd_line, fd_price, fd_link, sharp_book, sharp_line,
@@ -877,6 +932,14 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                 conn.commit()
             except Exception as exc:  # an unposted alert is still logged and graded
                 result.setdefault("post_errors", []).append(type(exc).__name__)
+        # Research parlay of the day from unstaked legs (sharp_parlays, unpinned). Never a bet, and never
+        # allowed to stop the scan.
+        try:
+            from nfl_pipeline import sharp_parlays
+            result["parlay"] = sharp_parlays.suggest(conn, now, post)
+        except Exception as exc:
+            conn.rollback()
+            result["parlay"] = dict(status="error", error=type(exc).__name__)
         result["staked"] = round(budget["staked"], 2)
     from nfl_pipeline.parse_oddsapi import ParseConfig, parse_props
     for day in sorted({g["day"] for g in due}):

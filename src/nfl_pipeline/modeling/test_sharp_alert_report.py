@@ -239,3 +239,16 @@ def test_zero_without_participation_does_not_become_a_winning_under():
     row = alert(side='under', actual=0., participation_verified=False)
     result = graded([row]).iloc[0]
     assert result.result is None and pd.isna(result.units)
+
+
+def test_ladder_rungs_are_graded_apart_from_the_cash_decisions():
+    rung = alert(fd_line=60.5, fd_price=400, ladder=True, actual=70.)
+    rung['initial_provenance'] = dict(rung['initial_provenance'], ladder=True)
+    rung['initial_provenance'] = dict(rung['initial_provenance'], observation_id=r._digest(
+        {k: v for k, v in rung['initial_provenance'].items() if k != 'observation_id'}))
+    main = alert()
+    frame = graded([rung, main])
+    summary = r.summarize(frame, experiment=EXPERIMENT)
+    assert summary['alerts'] == 1 and summary['ladder']['alerts'] == 1
+    graded_rung = frame[frame.ladder.fillna(False).astype(bool)].iloc[0]
+    assert graded_rung.sharp_close_method == 'ladder' and graded_rung.ev_at_sharp_close is not None

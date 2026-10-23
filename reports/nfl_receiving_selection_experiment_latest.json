@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-19T11:19:06.661744+00:00",
+  "built_at": "2026-10-23T04:30:27.507700+00:00",
   "ranking": {
     "status": "descriptive_only",
     "current": {
@@ -1300,17 +1300,17 @@
         "season": 2026,
         "week": 6,
         "all_offers": {
-          "rows": 238,
-          "brier": 0.25000164323514734,
-          "log_loss": 0.6931502943816643,
-          "calibration_error": 0.03831225998301413,
-          "probability_bias": 0.021015749372108657,
+          "rows": 244,
+          "brier": 0.25000160282772566,
+          "log_loss": 0.6931502178122778,
+          "calibration_error": 0.04966523719654658,
+          "probability_bias": 0.03279405061705681,
           "selected_rows": 251,
-          "pending": 13,
-          "voids": 0,
+          "pending": 2,
+          "voids": 5,
           "pushes": 0,
           "independent_weeks": 1,
-          "player_games": 119,
+          "player_games": 122,
           "mean_disagreement": 0.0,
           "ids": [
             18694,
@@ -2475,6 +2475,138 @@
       },
       {
         "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "93ed5e68ecd622b1dcb00e58bd35bd2486c39885e651fc6ae59af70480a0af64",
+        "season": 2026,
+        "week": 7,
+        "all_offers": {
+          "rows": 0,
+          "selected_rows": 26,
+          "pending": 26,
+          "voids": 0,
+          "pushes": 0,
+          "independent_weeks": 0,
+          "player_games": 0,
+          "mean_disagreement": null,
+          "ids": [
+            23117,
+            23118,
+            23119,
+            23120,
+            23121,
+            23122,
+            23123,
+            23125,
+            23126,
+            23127,
+            23129,
+            23130,
+            23177,
+            23178,
+            23179,
+            23180,
+            23181,
+            23182,
+            23183,
+            23185,
+            23186,
+            23187,
+            23189,
+            23190,
+            23191,
+            23192
+          ]
+        },
+        "current": {
+          "rows": 0,
+          "pending": 0
+        },
+        "uncertainty_aware": {
+          "rows": 0,
+          "pending": 0
+        }
+      },
+      {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "97473e84f5541ccb580322c19d616653e1b71d0bec9ab4a5a152668b99b30a7a",
+        "season": 2026,
+        "week": 7,
+        "all_offers": {
+          "rows": 0,
+          "selected_rows": 15,
+          "pending": 15,
+          "voids": 0,
+          "pushes": 0,
+          "independent_weeks": 0,
+          "player_games": 0,
+          "mean_disagreement": null,
+          "ids": [
+            23298,
+            23299,
+            23300,
+            23301,
+            23302,
+            23303,
+            23304,
+            23305,
+            23306,
+            23307,
+            23308,
+            23309,
+            23310,
+            23311,
+            23312
+          ]
+        },
+        "current": {
+          "rows": 0,
+          "pending": 0
+        },
+        "uncertainty_aware": {
+          "rows": 0,
+          "pending": 0
+        }
+      },
+      {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "ab77cb47b2deb5138704d8c150a9a477ed5929b5f4c14a0ece7c030e88c2b7ca",
+        "season": 2026,
+        "week": 7,
+        "all_offers": {
+          "rows": 0,
+          "selected_rows": 13,
+          "pending": 13,
+          "voids": 0,
+          "pushes": 0,
+          "independent_weeks": 0,
+          "player_games": 0,
+          "mean_disagreement": null,
+          "ids": [
+            23239,
+            23240,
+            23241,
+            23242,
+            23243,
+            23244,
+            23245,
+            23246,
+            23247,
+            23248,
+            23249,
+            23250,
+            23251
+          ]
+        },
+        "current": {
+          "rows": 0,
+          "pending": 0
+        },
+        "uncertainty_aware": {
+          "rows": 0,
+          "pending": 0
+        }
+      },
+      {
+        "model_version": "nfl-20260918T143342Z",
         "scoring_version": "af37343232f12aec46617d918e34a087a80c03acef39e32677957806d492f359",
         "season": 2026,
         "week": 6,
@@ -2536,17 +2668,17 @@
         "season": 2026,
         "week": 6,
         "all_offers": {
-          "rows": 459,
-          "brier": 0.2504329410979676,
-          "log_loss": 0.694018078180962,
-          "calibration_error": 0.019596855224219445,
-          "probability_bias": 0.010741785900129325,
-          "selected_rows": 488,
-          "pending": 29,
-          "voids": 0,
+          "rows": 487,
+          "brier": 0.2502262449823735,
+          "log_loss": 0.6936039452097015,
+          "calibration_error": 0.01079053795677405,
+          "probability_bias": 0.002808503636467463,
+          "selected_rows": 497,
+          "pending": 2,
+          "voids": 8,
           "pushes": 0,
           "independent_weeks": 1,
-          "player_games": 128,
+          "player_games": 142,
           "mean_disagreement": 0.0,
           "ids": [
             20293,
@@ -3036,7 +3168,16 @@
             22894,
             22895,
             22896,
-            22897
+            22897,
+            22938,
+            22939,
+            22940,
+            22941,
+            22942,
+            22943,
+            22945,
+            22947,
+            22951
           ]
         },
         "current": {
@@ -3961,6 +4102,48 @@
         }
       },
       "('nfl-20260918T143342Z', '893b9e1c71ee6d5664bbe01be2e9db25b7906b99dbf1cdacf084ac55b9e3cfe7')": {
+        "current": {
+          "rows": 0,
+          "pending": 0
+        },
+        "conservative": {
+          "rows": 0,
+          "pending": 0
+        },
+        "exact_micro": {
+          "rows": 0,
+          "pending": 0
+        }
+      },
+      "('nfl-20260918T143342Z', '93ed5e68ecd622b1dcb00e58bd35bd2486c39885e651fc6ae59af70480a0af64')": {
+        "current": {
+          "rows": 0,
+          "pending": 0
+        },
+        "conservative": {
+          "rows": 0,
+          "pending": 0
+        },
+        "exact_micro": {
+          "rows": 0,
+          "pending": 0
+        }
+      },
+      "('nfl-20260918T143342Z', '97473e84f5541ccb580322c19d616653e1b71d0bec9ab4a5a152668b99b30a7a')": {
+        "current": {
+          "rows": 0,
+          "pending": 0
+        },
+        "conservative": {
+          "rows": 0,
+          "pending": 0
+        },
+        "exact_micro": {
+          "rows": 0,
+          "pending": 0
+        }
+      },
+      "('nfl-20260918T143342Z', 'ab77cb47b2deb5138704d8c150a9a477ed5929b5f4c14a0ece7c030e88c2b7ca')": {
         "current": {
           "rows": 0,
           "pending": 0
@@ -7729,60 +7912,60 @@
         ],
         "stages": {
           "raw": {
-            "rows": 238,
-            "brier": 0.24985986077805297,
-            "log_loss": 0.6928668998546013,
-            "calibration_error": 0.026924202516827603,
-            "probability_bias": 0.01856264894017306
+            "rows": 244,
+            "brier": 0.249802289425558,
+            "log_loss": 0.6927517561995984,
+            "calibration_error": 0.03849604436832229,
+            "probability_bias": 0.030340102764864183
           },
           "context": {
-            "rows": 238,
-            "brier": 0.24992927779049698,
-            "log_loss": 0.6930057112291346,
-            "calibration_error": 0.032122928695782746,
-            "probability_bias": 0.019782212161348737
+            "rows": 244,
+            "brier": 0.24990121810333046,
+            "log_loss": 0.6929495923486653,
+            "calibration_error": 0.043598267432687035,
+            "probability_bias": 0.031561011140903025
           },
           "heuristic": {
-            "rows": 238,
-            "brier": 0.24992927779049698,
-            "log_loss": 0.6930057112291346,
-            "calibration_error": 0.032122928695782746,
-            "probability_bias": 0.019782212161348737
+            "rows": 244,
+            "brier": 0.24990121810333046,
+            "log_loss": 0.6929495923486653,
+            "calibration_error": 0.043598267432687035,
+            "probability_bias": 0.031561011140903025
           },
           "probability": {
-            "rows": 238,
-            "brier": 0.25000164323514734,
-            "log_loss": 0.6931502943816643,
-            "calibration_error": 0.03831225998301413,
-            "probability_bias": 0.021015749372108657
+            "rows": 244,
+            "brier": 0.25000160282772566,
+            "log_loss": 0.6931502178122778,
+            "calibration_error": 0.04966523719654658,
+            "probability_bias": 0.03279405061705681
           },
           "calibrated": {
-            "rows": 238,
-            "brier": 0.25000164323514734,
-            "log_loss": 0.6931502943816643,
-            "calibration_error": 0.03831225998301413,
-            "probability_bias": 0.021015749372108657
+            "rows": 244,
+            "brier": 0.25000160282772566,
+            "log_loss": 0.6931502178122778,
+            "calibration_error": 0.04966523719654658,
+            "probability_bias": 0.03279405061705681
           },
           "market": {
-            "rows": 238,
-            "brier": 0.25000164323514734,
-            "log_loss": 0.6931502943816643,
-            "calibration_error": 0.03831225998301413,
-            "probability_bias": 0.021015749372108657
+            "rows": 244,
+            "brier": 0.25000160282772566,
+            "log_loss": 0.6931502178122778,
+            "calibration_error": 0.04966523719654658,
+            "probability_bias": 0.03279405061705681
           }
         },
         "all_offers": {
-          "rows": 238,
-          "brier": 0.25000164323514734,
-          "log_loss": 0.6931502943816643,
-          "calibration_error": 0.03831225998301413,
-          "probability_bias": 0.021015749372108657,
+          "rows": 244,
+          "brier": 0.25000160282772566,
+          "log_loss": 0.6931502178122778,
+          "calibration_error": 0.04966523719654658,
+          "probability_bias": 0.03279405061705681,
           "selected_rows": 251,
-          "pending": 13,
-          "voids": 0,
+          "pending": 2,
+          "voids": 5,
           "pushes": 0,
           "independent_weeks": 1,
-          "player_games": 119,
+          "player_games": 122,
           "mean_disagreement": 0.0,
           "ids": [
             18694,
@@ -8038,57 +8221,57 @@
             19942
           ],
           "market": {
-            "rows": 238,
-            "brier": 0.25000164323514734,
-            "log_loss": 0.6931502943816643,
-            "calibration_error": 0.03831225998301413,
-            "probability_bias": 0.021015749372108657
+            "rows": 244,
+            "brier": 0.25000160282772566,
+            "log_loss": 0.6931502178122778,
+            "calibration_error": 0.04966523719654658,
+            "probability_bias": 0.03279405061705681
           },
           "stages": {
             "raw": {
-              "rows": 238,
-              "brier": 0.24985986077805297,
-              "log_loss": 0.6928668998546013,
-              "calibration_error": 0.026924202516827603,
-              "probability_bias": 0.01856264894017306
+              "rows": 244,
+              "brier": 0.249802289425558,
+              "log_loss": 0.6927517561995984,
+              "calibration_error": 0.03849604436832229,
+              "probability_bias": 0.030340102764864183
             },
             "context": {
-              "rows": 238,
-              "brier": 0.24992927779049698,
-              "log_loss": 0.6930057112291346,
-              "calibration_error": 0.032122928695782746,
-              "probability_bias": 0.019782212161348737
+              "rows": 244,
+              "brier": 0.24990121810333046,
+              "log_loss": 0.6929495923486653,
+              "calibration_error": 0.043598267432687035,
+              "probability_bias": 0.031561011140903025
             },
             "heuristic": {
-              "rows": 238,
-              "brier": 0.24992927779049698,
-              "log_loss": 0.6930057112291346,
-              "calibration_error": 0.032122928695782746,
-              "probability_bias": 0.019782212161348737
+              "rows": 244,
+              "brier": 0.24990121810333046,
+              "log_loss": 0.6929495923486653,
+              "calibration_error": 0.043598267432687035,
+              "probability_bias": 0.031561011140903025
             },
             "probability": {
-              "rows": 238,
-              "brier": 0.25000164323514734,
-              "log_loss": 0.6931502943816643,
-              "calibration_error": 0.03831225998301413,
-              "probability_bias": 0.021015749372108657
+              "rows": 244,
+              "brier": 0.25000160282772566,
+              "log_loss": 0.6931502178122778,
+              "calibration_error": 0.04966523719654658,
+              "probability_bias": 0.03279405061705681
             },
             "calibrated": {
-              "rows": 238,
-              "brier": 0.25000164323514734,
-              "log_loss": 0.6931502943816643,
-              "calibration_error": 0.03831225998301413,
-              "probability_bias": 0.021015749372108657
+              "rows": 244,
+              "brier": 0.25000160282772566,
+              "log_loss": 0.6931502178122778,
+              "calibration_error": 0.04966523719654658,
+              "probability_bias": 0.03279405061705681
             }
           },
           "interval_metrics": {
-            "rows": 119,
-            "mae": 18.432773109243698,
-            "rmse": 24.466363464488765,
-            "bias": -3.466386554621849,
-            "interval_rows": 119,
-            "coverage_80": 0.7983193277310925,
-            "interval_width": 75.57138511668308
+            "rows": 122,
+            "mae": 18.360655737704917,
+            "rmse": 24.287975166837562,
+            "bias": -3.0,
+            "interval_rows": 122,
+            "coverage_80": 0.7786885245901639,
+            "interval_width": 75.36615534524002
           },
           "interval_source": "locked_projection_intervals_not_final_cdf"
         },
@@ -11069,6 +11252,423 @@
       },
       {
         "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "93ed5e68ecd622b1dcb00e58bd35bd2486c39885e651fc6ae59af70480a0af64",
+        "season": 2026,
+        "week": 7,
+        "calibration": {
+          "enabled": false,
+          "reason": "needs_three_earlier_label_available_weeks"
+        },
+        "training_ids": [],
+        "test_ids": [
+          23117,
+          23118,
+          23119,
+          23120,
+          23121,
+          23122,
+          23123,
+          23125,
+          23126,
+          23127,
+          23129,
+          23130,
+          23177,
+          23178,
+          23179,
+          23180,
+          23181,
+          23182,
+          23183,
+          23185,
+          23186,
+          23187,
+          23189,
+          23190,
+          23191,
+          23192
+        ],
+        "stages": {
+          "raw": {
+            "rows": 0
+          },
+          "context": {
+            "rows": 0
+          },
+          "heuristic": {
+            "rows": 0
+          },
+          "probability": {
+            "rows": 0
+          },
+          "calibrated": {
+            "rows": 0
+          },
+          "market": {
+            "rows": 0
+          }
+        },
+        "all_offers": {
+          "rows": 0,
+          "selected_rows": 26,
+          "pending": 26,
+          "voids": 0,
+          "pushes": 0,
+          "independent_weeks": 0,
+          "player_games": 0,
+          "mean_disagreement": null,
+          "ids": [
+            23117,
+            23118,
+            23119,
+            23120,
+            23121,
+            23122,
+            23123,
+            23125,
+            23126,
+            23127,
+            23129,
+            23130,
+            23177,
+            23178,
+            23179,
+            23180,
+            23181,
+            23182,
+            23183,
+            23185,
+            23186,
+            23187,
+            23189,
+            23190,
+            23191,
+            23192
+          ],
+          "market": {
+            "rows": 0
+          },
+          "stages": {
+            "raw": {
+              "rows": 0
+            },
+            "context": {
+              "rows": 0
+            },
+            "heuristic": {
+              "rows": 0
+            },
+            "probability": {
+              "rows": 0
+            },
+            "calibrated": {
+              "rows": 0
+            }
+          },
+          "interval_metrics": null,
+          "interval_source": "locked_projection_intervals_not_final_cdf"
+        },
+        "current_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "conservative_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "calibrated_fixed_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "calibrated_reselected": {
+          "rows": 0,
+          "pending": 0
+        },
+        "exact_micro": {
+          "rows": 0,
+          "pending": 0
+        },
+        "fixed_research": {
+          "rows": 0,
+          "pending": 0
+        },
+        "coherence": {
+          "production": {
+            "line_reversals": 0,
+            "same_line_disagreement": 0
+          },
+          "calibrated": {
+            "line_reversals": 0,
+            "same_line_disagreement": 0
+          }
+        },
+        "calibration_curve_rows": 0,
+        "calibration_coverage_verified": false
+      },
+      {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "97473e84f5541ccb580322c19d616653e1b71d0bec9ab4a5a152668b99b30a7a",
+        "season": 2026,
+        "week": 7,
+        "calibration": {
+          "enabled": false,
+          "reason": "needs_three_earlier_label_available_weeks"
+        },
+        "training_ids": [],
+        "test_ids": [
+          23298,
+          23299,
+          23300,
+          23301,
+          23302,
+          23303,
+          23304,
+          23305,
+          23306,
+          23307,
+          23308,
+          23309,
+          23310,
+          23311,
+          23312
+        ],
+        "stages": {
+          "raw": {
+            "rows": 0
+          },
+          "context": {
+            "rows": 0
+          },
+          "heuristic": {
+            "rows": 0
+          },
+          "probability": {
+            "rows": 0
+          },
+          "calibrated": {
+            "rows": 0
+          },
+          "market": {
+            "rows": 0
+          }
+        },
+        "all_offers": {
+          "rows": 0,
+          "selected_rows": 15,
+          "pending": 15,
+          "voids": 0,
+          "pushes": 0,
+          "independent_weeks": 0,
+          "player_games": 0,
+          "mean_disagreement": null,
+          "ids": [
+            23298,
+            23299,
+            23300,
+            23301,
+            23302,
+            23303,
+            23304,
+            23305,
+            23306,
+            23307,
+            23308,
+            23309,
+            23310,
+            23311,
+            23312
+          ],
+          "market": {
+            "rows": 0
+          },
+          "stages": {
+            "raw": {
+              "rows": 0
+            },
+            "context": {
+              "rows": 0
+            },
+            "heuristic": {
+              "rows": 0
+            },
+            "probability": {
+              "rows": 0
+            },
+            "calibrated": {
+              "rows": 0
+            }
+          },
+          "interval_metrics": null,
+          "interval_source": "locked_projection_intervals_not_final_cdf"
+        },
+        "current_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "conservative_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "calibrated_fixed_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "calibrated_reselected": {
+          "rows": 0,
+          "pending": 0
+        },
+        "exact_micro": {
+          "rows": 0,
+          "pending": 0
+        },
+        "fixed_research": {
+          "rows": 0,
+          "pending": 0
+        },
+        "coherence": {
+          "production": {
+            "line_reversals": 0,
+            "same_line_disagreement": 0
+          },
+          "calibrated": {
+            "line_reversals": 0,
+            "same_line_disagreement": 0
+          }
+        },
+        "calibration_curve_rows": 0,
+        "calibration_coverage_verified": false
+      },
+      {
+        "model_version": "nfl-20260918T143342Z",
+        "scoring_version": "ab77cb47b2deb5138704d8c150a9a477ed5929b5f4c14a0ece7c030e88c2b7ca",
+        "season": 2026,
+        "week": 7,
+        "calibration": {
+          "enabled": false,
+          "reason": "needs_three_earlier_label_available_weeks"
+        },
+        "training_ids": [],
+        "test_ids": [
+          23239,
+          23240,
+          23241,
+          23242,
+          23243,
+          23244,
+          23245,
+          23246,
+          23247,
+          23248,
+          23249,
+          23250,
+          23251
+        ],
+        "stages": {
+          "raw": {
+            "rows": 0
+          },
+          "context": {
+            "rows": 0
+          },
+          "heuristic": {
+            "rows": 0
+          },
+          "probability": {
+            "rows": 0
+          },
+          "calibrated": {
+            "rows": 0
+          },
+          "market": {
+            "rows": 0
+          }
+        },
+        "all_offers": {
+          "rows": 0,
+          "selected_rows": 13,
+          "pending": 13,
+          "voids": 0,
+          "pushes": 0,
+          "independent_weeks": 0,
+          "player_games": 0,
+          "mean_disagreement": null,
+          "ids": [
+            23239,
+            23240,
+            23241,
+            23242,
+            23243,
+            23244,
+            23245,
+            23246,
+            23247,
+            23248,
+            23249,
+            23250,
+            23251
+          ],
+          "market": {
+            "rows": 0
+          },
+          "stages": {
+            "raw": {
+              "rows": 0
+            },
+            "context": {
+              "rows": 0
+            },
+            "heuristic": {
+              "rows": 0
+            },
+            "probability": {
+              "rows": 0
+            },
+            "calibrated": {
+              "rows": 0
+            }
+          },
+          "interval_metrics": null,
+          "interval_source": "locked_projection_intervals_not_final_cdf"
+        },
+        "current_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "conservative_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "calibrated_fixed_selections": {
+          "rows": 0,
+          "pending": 0
+        },
+        "calibrated_reselected": {
+          "rows": 0,
+          "pending": 0
+        },
+        "exact_micro": {
+          "rows": 0,
+          "pending": 0
+        },
+        "fixed_research": {
+          "rows": 0,
+          "pending": 0
+        },
+        "coherence": {
+          "production": {
+            "line_reversals": 0,
+            "same_line_disagreement": 0
+          },
+          "calibrated": {
+            "line_reversals": 0,
+            "same_line_disagreement": 0
+          }
+        },
+        "calibration_curve_rows": 0,
+        "calibration_coverage_verified": false
+      },
+      {
+        "model_version": "nfl-20260918T143342Z",
         "scoring_version": "af37343232f12aec46617d918e34a087a80c03acef39e32677957806d492f359",
         "season": 2026,
         "week": 6,
@@ -11782,65 +12382,74 @@
           22894,
           22895,
           22896,
-          22897
+          22897,
+          22938,
+          22939,
+          22940,
+          22941,
+          22942,
+          22943,
+          22945,
+          22947,
+          22951
         ],
         "stages": {
           "raw": {
-            "rows": 459,
-            "brier": 0.24995177254275885,
-            "log_loss": 0.6930507249006939,
-            "calibration_error": 0.008488805970149227,
-            "probability_bias": 0.008488805970149223
+            "rows": 487,
+            "brier": 0.2499571374436067,
+            "log_loss": 0.6930614547909183,
+            "calibration_error": 0.007371592740522708,
+            "probability_bias": 0.00039941139373551654
           },
           "context": {
-            "rows": 459,
-            "brier": 0.2501760625489966,
-            "log_loss": 0.6934999116297119,
-            "calibration_error": 0.009617791515000812,
-            "probability_bias": 0.009617791515000817
+            "rows": 487,
+            "brier": 0.25007757444753465,
+            "log_loss": 0.6933028348066195,
+            "calibration_error": 0.00815657928397809,
+            "probability_bias": 0.001606580202686183
           },
           "heuristic": {
-            "rows": 459,
-            "brier": 0.2501760625489966,
-            "log_loss": 0.6934999116297119,
-            "calibration_error": 0.009617791515000812,
-            "probability_bias": 0.009617791515000817
+            "rows": 487,
+            "brier": 0.25007757444753465,
+            "log_loss": 0.6933028348066195,
+            "calibration_error": 0.00815657928397809,
+            "probability_bias": 0.001606580202686183
           },
           "probability": {
-            "rows": 459,
-            "brier": 0.2504329410979676,
-            "log_loss": 0.694018078180962,
-            "calibration_error": 0.019596855224219445,
-            "probability_bias": 0.010741785900129325
+            "rows": 487,
+            "brier": 0.2502262449823735,
+            "log_loss": 0.6936039452097015,
+            "calibration_error": 0.01079053795677405,
+            "probability_bias": 0.002808503636467463
           },
           "calibrated": {
-            "rows": 459,
-            "brier": 0.2504329410979676,
-            "log_loss": 0.694018078180962,
-            "calibration_error": 0.019596855224219445,
-            "probability_bias": 0.010741785900129325
+            "rows": 487,
+            "brier": 0.2502262449823735,
+            "log_loss": 0.6936039452097015,
+            "calibration_error": 0.01079053795677405,
+            "probability_bias": 0.002808503636467463
           },
           "market": {
-            "rows": 459,
-            "brier": 0.2504329410979676,
-            "log_loss": 0.694018078180962,
-            "calibration_error": 0.019596855224219445,
-            "probability_bias": 0.010741785900129325
+            "rows": 487,
+            "brier": 0.2502262449823735,
+            "log_loss": 0.6936039452097015,
+            "calibration_error": 0.01079053795677405,
+            "probability_bias": 0.002808503636467463
           }
         },
         "all_offers": {
-          "rows": 459,
-          "brier": 0.2504329410979676,
-          "log_loss": 0.694018078180962,
-          "calibration_error": 0.019596855224219445,
-          "probability_bias": 0.010741785900129325,
-          "selected_rows": 488,
-          "pending": 29,
-          "voids": 0,
+          "rows": 487,
+          "brier": 0.2502262449823735,
+          "log_loss": 0.6936039452097015,
+          "calibration_error": 0.01079053795677405,
+          "probability_bias": 0.002808503636467463,
+          "selected_rows": 497,
+          "pending": 2,
+          "voids": 8,
           "pushes": 0,
           "independent_weeks": 1,
-          "player_games": 128,
-          "mean_disagreement": 2.4187865460243064e-19,
+          "player_games": 142,
+          "mean_disagreement": 2.2797187363966254e-19,
           "ids": [
             20293,
             20294,
@@ -12329,60 +12938,69 @@
             22894,
             22895,
             22896,
-            22897
+            22897,
+            22938,
+            22939,
+            22940,
+            22941,
+            22942,
+            22943,
+            22945,
+            22947,
+            22951
           ],
           "market": {
-            "rows": 459,
-            "brier": 0.2504329410979676,
-            "log_loss": 0.694018078180962,
-            "calibration_error": 0.019596855224219445,
-            "probability_bias": 0.010741785900129325
+            "rows": 487,
+            "brier": 0.2502262449823735,
+            "log_loss": 0.6936039452097015,
+            "calibration_error": 0.01079053795677405,
+            "probability_bias": 0.002808503636467463
           },
           "stages": {
             "raw": {
-              "rows": 459,
-              "brier": 0.24995177254275885,
-              "log_loss": 0.6930507249006939,
-              "calibration_error": 0.008488805970149227,
-              "probability_bias": 0.008488805970149223
+              "rows": 487,
+              "brier": 0.2499571374436067,
+              "log_loss": 0.6930614547909183,
+              "calibration_error": 0.007371592740522708,
+              "probability_bias": 0.00039941139373551654
             },
             "context": {
-              "rows": 459,
-              "brier": 0.2501760625489966,
-              "log_loss": 0.6934999116297119,
-              "calibration_error": 0.009617791515000812,
-              "probability_bias": 0.009617791515000817
+              "rows": 487,
+              "brier": 0.25007757444753465,
+              "log_loss": 0.6933028348066195,
+              "calibration_error": 0.00815657928397809,
+              "probability_bias": 0.001606580202686183
             },
             "heuristic": {
-              "rows": 459,
-              "brier": 0.2501760625489966,
-              "log_loss": 0.6934999116297119,
-              "calibration_error": 0.009617791515000812,
-              "probability_bias": 0.009617791515000817
+              "rows": 487,
+              "brier": 0.25007757444753465,
+              "log_loss": 0.6933028348066195,
+              "calibration_error": 0.00815657928397809,
+              "probability_bias": 0.001606580202686183
             },
             "probability": {
-              "rows": 459,
-              "brier": 0.2504329410979676,
-              "log_loss": 0.694018078180962,
-              "calibration_error": 0.019596855224219445,
-              "probability_bias": 0.010741785900129325
+              "rows": 487,
+              "brier": 0.2502262449823735,
+              "log_loss": 0.6936039452097015,
+              "calibration_error": 0.01079053795677405,
+              "probability_bias": 0.002808503636467463
             },
             "calibrated": {
-              "rows": 459,
-              "brier": 0.2504329410979676,
-              "log_loss": 0.694018078180962,
-              "calibration_error": 0.019596855224219445,
-              "probability_bias": 0.010741785900129325
+              "rows": 487,
+              "brier": 0.2502262449823735,
+              "log_loss": 0.6936039452097015,
+              "calibration_error": 0.01079053795677405,
+              "probability_bias": 0.002808503636467463
             }
           },
           "interval_metrics": {
-            "rows": 128,
-            "mae": 19.921875,
-            "rmse": 27.320436489924536,
-            "bias": -7.0078125,
-            "interval_rows": 128,
-            "coverage_80": 0.78125,
-            "interval_width": 74.23463184135295
+            "rows": 142,
+            "mae": 19.422535211267604,
+            "rmse": 26.560520845902737,
+            "bias": -6.676056338028169,
+            "interval_rows": 142,
+            "coverage_80": 0.7676056338028169,
+            "interval_width": 74.0411172930186
           },
           "interval_source": "locked_projection_intervals_not_final_cdf"
         },

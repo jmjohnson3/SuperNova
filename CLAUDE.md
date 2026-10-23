@@ -230,9 +230,11 @@ per state, see `docs/nfl_fanduel_links.md`), `NFL_SHARP_WATCH_MARKETS`, `NFL_SHA
 
 ### Cash strategy: sharp price gaps (since 2026-10-21)
 The only NFL strategy that carries money is `sharp_watch` (rules in `sharp_strategy.py`,
-registration `nfl-sharp-gap-cash-v6`): FanDuel, ESPN Bet or DraftKings at +3% or better against
-Pinnacle's no-vig price, seen 15-45 minutes before kickoff, in receiving yards, rushing yards and
-receptions. The model forecasts do not beat FanDuel's line and stay research; they are only a
+registration `nfl-sharp-gap-cash-v7`): FanDuel, ESPN Bet or DraftKings at +3% or better against
+Pinnacle's no-vig price, seen 15-45 minutes before kickoff, in receiving yards, rushing yards, receptions and game totals.
+Alternate player-prop ladders are scanned, priced by `modeling/alt_line_model` and graded as research,
+never staked. `modeling/sharp_replay` (`all_edges`/`lever_table`) measures what each rule change would
+add; the daily/weekly caps, not a lack of gaps, limit how many bets are staked. The model forecasts do not beat FanDuel's line and stay research; they are only a
 recorded shadow filter beside each decision.
 - `NFL-Sharp-Watch` runs every 10 minutes and polls each game on every run through its final hour
   (stake window plus the closing snapshot). Links and alert text live in `sharp_links.py`, which is not

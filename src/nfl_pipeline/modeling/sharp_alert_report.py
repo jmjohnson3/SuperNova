@@ -31,7 +31,7 @@ from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
 from nfl_pipeline.sharp_watch import (STAKE_WINDOW_MINUTES, SHARP_BOOKS, BET_BOOKS,
                                      QUOTE_CONTRACT, quote_error, source_time, EXPERIMENT_NAME)
-from nfl_pipeline.sharp_watch import _digest, MAX_SOURCE_SKEW_SECONDS
+from nfl_pipeline.sharp_watch import _digest, MAX_SOURCE_SKEW_SECONDS, LADDER_MODEL
 from nfl_pipeline.context_contract import safe_time
 from scipy.stats import t
 
@@ -117,6 +117,7 @@ def append_decision_evidence(frame, observations):
                    event_id=observation.get('event_id'), model_agrees=observation.get('model_agrees'),
                    model_filter=observation.get('model_filter'),
                    model_filter_reasons=observation.get('model_filter_reasons'),
+                   ladder=bool(observation.get('ladder')),
                    placed_at=None, taken_price=None, stake=0.)
         additions.append(row)
     return pd.DataFrame(originals+additions)
@@ -269,6 +270,16 @@ def grade(df: pd.DataFrame) -> pd.DataFrame:
         # moved to the bet's line with the same normal model that priced nearby lines at decision time
         # (counts and other exact-only stats are never moved), so a moved line is graded, not lost.
         moved = None
+        if row.get('ladder') and row.get('provenance_valid') and pd.notna(row.get('sharp_close_line')):
+            # A ladder rung has no sharp quote at its own number: value it at Pinnacle's closing main line
+            # through the same ladder model that priced it.
+            p_over = sharp_math.ladder_over_probability(LADDER_MODEL, row['stat'], float(row['sharp_close_line']),
+                sharp_math.no_vig_over(row.get('sharp_close_over'), row.get('sharp_close_under')), float(row['fd_line']))
+            fair = None
+            moved = sharp_math.ev(p_over, row['bet_price']) if p_over is not None else None
+            shifted_ev.append(moved)
+            method.append('ladder' if moved is not None else None)
+            continue
         if fair is None and row.get('provenance_valid') and pd.notna(row.get('sharp_close_line')):
             p_over = sharp_math.shift_probability(row['stat'], float(row['sharp_close_line']),
                 sharp_math.no_vig_over(row.get('sharp_close_over'), row.get('sharp_close_under')), float(row['fd_line']))
@@ -441,7 +452,8 @@ def summarize(df: pd.DataFrame, experiment=None) -> dict:
         experiment = load_experiment(EXPERIMENT_NAME)
     tier = _tier(df)
     books = df["book"].fillna("fanduel") if "book" in df else pd.Series("fanduel", index=df.index)
-    eligible = books.isin(BET_BOOKS) & df.provenance_valid.fillna(False)
+    ladder = df.get('ladder', pd.Series(False, index=df.index)).fillna(False).astype(bool)
+    eligible = books.isin(BET_BOOKS) & df.provenance_valid.fillna(False) & ~ladder
     eligible &= df.get('evidence_kind', pd.Series('', index=df.index)).eq('decision_observation')
     eligible &= df.stat.isin(strategy.STAKED_STATS)
     eligible &= df.experiment_sha256.eq((experiment or {}).get('sha256', '__unregistered__'))
@@ -476,6 +488,10 @@ def summarize(df: pd.DataFrame, experiment=None) -> dict:
         out["model"] = {("agrees" if bool(k) else "disagrees"): _stats(g)
                         for k, g in priced.groupby(priced.model_agrees)}
     out["shadow_filter"] = shadow_filter_summary(primary)
+    ladder_rows = (books.isin(BET_BOOKS) & df.provenance_valid.fillna(False) & ladder
+                   & df.get('evidence_kind', pd.Series('', index=df.index)).eq('decision_observation')
+                   & df.experiment_sha256.eq((experiment or {}).get('sha256', '__unregistered__')))
+    out["ladder"] = _stats(cash_decisions(df[ladder_rows & tier.eq('alert')]))
     out["readiness"] = readiness(primary, out, placed)
     out["verdict"] = {"trial": "trial: $1 stakes within limits", "paused": "paused: no new stakes",
                       "scale_review_ready": "scale review ready; raising stakes is a manual decision"}[out["readiness"]["status"]]
@@ -572,6 +588,13 @@ def markdown(summary: dict, df: pd.DataFrame) -> str:
         lines.append("")
         lines.append("Judged: " + ("yes; improves closing EV: " + str(shadow.get('improves_closing_ev')) if shadow.get("judged")
                      else f"not yet (needs {strategy.SHADOW_FILTER['min_decisions_to_judge']} passed decisions with a close)."))
+    ladder = summary.get("ladder") or {}
+    if ladder.get("alerts"):
+        lines += ["", "## Alternate ladders (research, never staked)", "",
+                  f"{ladder['alerts']} rungs priced from Pinnacle's main line by the fitted ladder model: EV when seen "
+                  f"{signed(ladder.get('mean_alert_ev'))}, at the sharp close {signed(ladder.get('mean_ev_at_sharp_close'))} "
+                  f"({pct(ladder.get('positive_at_sharp_close'))} still +EV), flat ROI {signed(ladder.get('roi'))} on "
+                  f"{ladder.get('settled', 0)} settled. The close is valued with the same model, so ROI is the real test."]
     inferred = summary.get('inferred_close_diagnostics') or {}
     lines += ["", "Legacy closes (diagnostic only):"]
     for name, data in inferred.items():

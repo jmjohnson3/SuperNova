@@ -1,0 +1,34 @@
+{
+  "status": "no_settled_locks",
+  "exclusions": {},
+  "validation_scope": {
+    "mode": "date_partition",
+    "date": "2026-10-22",
+    "records": 361
+  },
+  "diagnostic_reports": [
+    "nfl_selected_pick_diagnostic_latest",
+    "nfl_workload_uncertainty_diagnostic_latest",
+    "nfl_probability_consistency_latest"
+  ],
+  "micro_reconciliation": {
+    "built_at": "2026-10-23T04:29:05.261083+00:00",
+    "ledger_rows": 0,
+    "accounted_rows": 0,
+    "categories": {},
+    "reasons": {},
+    "historical_record": {},
+    "evaluable_but_unscored": [],
+    "rows": [],
+    "legacy_rows_added_to_training": false,
+    "locks_changed": false,
+    "note": "Historical ledger results are retained, not independently reconstructed. Simulated is not a confirmed cash wager."
+  },
+  "uncertainty_only_real_offer_cohorts": {},
+  "uncertainty_micro_id_coverage": {
+    "micro_prediction_ids": 0,
+    "exact_pregame_uncertainty_ids": 0,
+    "missing_ids": [],
+    "later_revisions_used": false
+  }
+}

@@ -1,13 +1,13 @@
 # NFL Receiving Trial Checkpoint
 
-Date: 2026-10-22; status: awaiting_settlement
+Date: 2026-10-22; status: evaluated
 Scope: this date only; cumulative deployment review requires an offline history report.
 Pinned variant: stable_ensemble_calibrated (benchmark-20260921T230305171980Z)
 
-Eligible original locks: 39; paired challenger captures: 27.
-Current eligible locks: 13; quotes still fresh now: 13.
+Eligible original locks: 54; paired challenger captures: 42.
+Current eligible locks: 15; quotes still fresh now: 0.
 Fixed research selections: 0; missing current captures: [].
-Settlement: {'pending_game': 39}
+Settlement: {'result_or_participation_unresolved': 54}
 
 | Period / scope | Rows | Player-games | Weeks | Production Brier / calibration | Challenger Brier / calibration | Market Brier | Production / challenger 80% coverage |
 |---|---:|---:|---:|---|---|---|---|
@@ -18,8 +18,8 @@ Settlement: {'pending_game': 39}
 
 | Scope | Started locks | Valid | Unknown | Coverage | Meets 90% |
 |---|---:|---:|---:|---|---|
-| current_eligible | 0 | 0 | 0 | pending kickoff | None |
-| all_eligible | 0 | 0 | 0 | pending kickoff | None |
+| current_eligible | 15 | 15 | 0 | 100.0% | True |
+| all_eligible | 54 | 34 | 20 | 63.0% | False |
 | fixed_research | 0 | 0 | 0 | pending kickoff | None |
 
 Exact locked/close lines, timestamps and unknown reasons are retained in the companion JSON.
@@ -27,6 +27,7 @@ Exact locked/close lines, timestamps and unknown reasons are retained in the com
 ## Forecast Deployment
 Status: collecting_evidence; next action: keep_frozen_collect_evidence
 - real_offers:missing_matches
+- missing_prospective_capture_history
 - date_partition_not_cumulative_review
 
 Forecast deployment and betting permission are separate. Production was not changed.

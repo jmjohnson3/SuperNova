@@ -203,8 +203,8 @@ def test_only_backtested_markets_carry_money():
     assert w.stake_for(None, "alert", NOW, budget(), "receiving_yards") > 0
     assert w.stake_for(None, "alert", NOW, budget(), "receptions") > 0
     assert w.stake_for(None, "alert", NOW, budget(), "rushing_yards") > 0
-    assert w.stake_for(None, "alert", NOW, budget(), "total") == 0.0  # scanned and graded, not staked
-    assert w.stake_for(None, "alert", NOW, budget(), "passing_yards") == 0.0
+    assert w.stake_for(None, "alert", NOW, budget(), "total") > 0  # game totals carry stakes since v7
+    assert w.stake_for(None, "alert", NOW, budget(), "passing_yards") == 0.0  # scanned and graded, not staked
 
 
 def test_disabled_strategy_is_always_research_only(monkeypatch):
@@ -358,7 +358,7 @@ def test_a_refusal_with_games_close_is_announced_once_a_day(monkeypatch, tmp_pat
 def test_registration_pins_only_the_strategy_modules():
     files = w.pinned_files()
     assert all(path.is_file() for path in files.values())
-    assert set(files) == set(w.PINNED_MODULES)
+    assert set(files) == set(w.PINNED_MODULES) | {"alt_line_model"}  # the ladder pricing model is an input
     assert not any(name in module for module in files for name in
                    ("predict_player_props", "features", "receiving_paper_trial", "cash_", "betting_preferences"))
     config = w.normalized_config()
@@ -398,3 +398,39 @@ def test_a_fanduel_fallback_with_another_states_ids_is_labelled_manual(monkeypat
     assert kind == "page" and "find it manually" in w.format_alert(edge, game, stake=1.0)
     monkeypatch.setattr(fanduel_links, "betslip_for_row", lambda row: "https://account.sportsbook.fanduel.com/x")
     assert w.book_link(edge, game)[1] == "betslip"
+
+
+def ladder_book(key, player, rungs):
+    outcomes = [dict(name="Over", description=player, point=line, price=price) for line, price in rungs]
+    return {"key": key, "last_update": NOW.isoformat(),
+            "markets": [{"key": "player_reception_yds_alternate", "last_update": NOW.isoformat(), "outcomes": outcomes}]}
+
+
+def test_an_over_only_ladder_rung_is_priced_from_pinnacles_main_line_as_research():
+    payload = {"bookmakers": [ladder_book("draftkings", "X", [(60.5, 400), (80.5, 900)]),
+                              book("pinnacle", pair("X", 45.5, -110, -110))]}
+    edges = w.find_edges(payload, bet_books=("draftkings",), now=NOW)
+    rung = next(e for e in edges if e["line"] == 60.5)
+    fair = w.sharp_math.ladder_over_probability(w.LADDER_MODEL, "receiving_yards", 45.5, 0.5, 60.5)
+    assert rung["ladder"] and rung["side"] == "over" and rung["fair_probability"] == pytest.approx(fair)
+    assert rung["quote_provenance"]["reference_method"] == "ladder_model"
+    assert rung["ev"] == pytest.approx(w.sharp_math.ev(fair, 400))
+    # No Pinnacle main line for the player: the rung cannot be valued and is not an edge.
+    assert w.find_edges({"bookmakers": [ladder_book("draftkings", "X", [(60.5, 400)])]}, bet_books=("draftkings",), now=NOW) == []
+
+
+def test_a_ladder_rung_never_overwrites_the_main_line_at_the_same_number():
+    both = {"key": "fanduel", "last_update": NOW.isoformat(), "markets": [
+        {"key": "player_reception_yds_alternate", "last_update": NOW.isoformat(),
+         "outcomes": [dict(name="Over", description="X", point=45.5, price=150)]},
+        {"key": "player_reception_yds", "last_update": NOW.isoformat(), "outcomes": pair("X", 45.5, -110, -110)}]}
+    quote = w._pairs(both)[("receiving_yards", "x", 45.5)]
+    assert quote["over"] == -110 and quote["under"] == -110 and not quote["ladder"]
+
+
+def test_ladders_and_totals_are_registered_and_only_totals_carry_stakes():
+    assert "total" in w.strategy.STAKED_STATS
+    assert set(w.LADDER_MARKETS) <= set(w.markets())
+    assert "alt_line_model" in w.pinned_files()
+    config = w.normalized_config()
+    assert config["ladder_markets"] == w.LADDER_MARKETS and config["ladder_model_rows"] > 1000
