@@ -101,7 +101,9 @@ def test_close_grades_against_pinnacles_last_quote_at_the_same_line():
     assert report.close_ev(row, closes) == pytest.approx(scan.sharp_math.ev(fair, 105))
     assert report.close_ev(dict(row, side="away", line=6.5, price=-110), closes) == pytest.approx(
         scan.sharp_math.ev(1 - fair, -110))
-    assert report.close_ev(dict(row, line=-7.5), closes) is None  # line moved: unknown, not zero
+    moved = scan.shifted_probability("spread", -6.5, fair, -7.5, 12.5)
+    assert report.close_ev(dict(row, line=-7.5), closes) == pytest.approx(scan.sharp_math.ev(moved, 105))
+    assert report.close_ev(dict(row, line=-9.5), closes) is None  # moved 3 points: unknown, not zero
 
 
 def test_digest_lists_research_decisions_for_the_day():
@@ -111,3 +113,32 @@ def test_digest_lists_research_decisions_for_the_day():
     text = report.digest_text(df, "nba", date(2026, 10, 23))
     assert "research only" in text and "Chicago Bulls +6.5 spread at draftkings +105" in text
     assert report.digest_text(df, "ncaaf", date(2026, 10, 23)) is None
+
+
+def test_a_half_point_off_spread_is_priced_by_shifting_and_labelled():
+    ev_ = event([bookmaker("fanduel", lines(spread_home=-6.0, home_spread=100, away_spread=-120)),
+                 bookmaker("pinnacle", lines(spread_home=-6.5, home_spread=-110, away_spread=-110))])
+    gaps = [g for g in scan.find_gaps(ev_, NOW, sport="nba") if g["market"] == "spread"]
+    # Getting -6 instead of -6.5 at the same price is the edge.
+    assert gaps and gaps[0]["side"] == "home" and gaps[0]["line"] == -6.0 and gaps[0]["method"] == "shifted"
+    assert scan.find_gaps(ev_, NOW, sport=None) == [g for g in scan.find_gaps(ev_, NOW, sport=None)]  # no shift without a sport
+    assert not [g for g in scan.find_gaps(ev_, NOW) if g["market"] == "spread"]
+
+
+def test_college_spreads_shift_at_most_a_point():
+    far = event([bookmaker("fanduel", lines(spread_home=-5.0, home_spread=100, away_spread=-120)),
+                 bookmaker("pinnacle", lines(spread_home=-6.5, home_spread=-110, away_spread=-110))])
+    assert not [g for g in scan.find_gaps(far, NOW, sport="ncaaf") if g["market"] == "spread"]
+    assert [g for g in scan.find_gaps(far, NOW, sport="nba") if g["market"] == "spread"]
+
+
+def test_shift_is_monotone_and_exact_at_zero_gap():
+    assert scan.shifted_probability("total", 225.5, 0.5, 225.5, 18.0) == pytest.approx(0.5)
+    assert scan.shifted_probability("total", 225.5, 0.5, 226.5, 18.0) < 0.5
+    assert scan.shifted_probability("spread", -6.5, 0.5, -6.0, 12.5) > 0.5  # home -6 covers more often
+
+
+def test_lines_are_polled_about_every_twenty_minutes():
+    events = {"ncaaf": [dict(id="c", commence_time=(NOW + timedelta(minutes=30)).isoformat())], "nba": []}
+    assert scan.plan(events, {"lines_last_poll": {"ncaaf": (NOW - timedelta(minutes=10)).isoformat()}}, NOW) == []
+    assert scan.plan(events, {"lines_last_poll": {"ncaaf": (NOW - timedelta(minutes=20)).isoformat()}}, NOW)

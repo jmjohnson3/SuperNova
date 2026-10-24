@@ -61,7 +61,14 @@ PROP_STAT = {"player_points": "points", "player_rebounds": "rebounds", "player_a
 MIN_EV = 0.03
 LOG_MIN_EV = 0.01
 DECISION_WINDOW = (15, 45)        # minutes before the start, as for NFL
-LINES_HORIZON = 60                 # poll game lines when any game starts within this many minutes
+LINES_HORIZON = 60                 # poll game lines when any game starts within this many minutes...
+LINES_SPACING = 14.5               # ...at most every other task run (~20 min): one bulk call covers every game
+# Typical spread of the final margin / total around the market, and the largest gap a fair price is moved
+# across (normal approximation, as the NFL scanner does for yardage). Books often hang -6.5 where Pinnacle
+# has -7; without this 60-80% of spreads and totals had nothing to compare against. College spreads get
+# the tighter limit because of the 3 and 7 key numbers.
+LINE_SHIFT = {"nba": {"spread": (12.5, 1.5), "total": (18.0, 1.5)},
+              "ncaaf": {"spread": (16.0, 1.0), "total": (16.5, 1.5)}}
 PROPS_HORIZON = 45                 # NBA props: polls inside the final 45 minutes...
 PROPS_SPACING = 9.5                # ...at most one per task run (T-40, T-30, T-20, T-10)
 MAX_SOURCE_AGE = 300
@@ -83,6 +90,7 @@ CREATE TABLE IF NOT EXISTS bets.sharp_multi_decisions (
   sharp_price_over INTEGER, sharp_price_under INTEGER, fair_probability NUMERIC NOT NULL, ev NUMERIC NOT NULL,
   minutes_to_start NUMERIC NOT NULL, tier TEXT NOT NULL, research_only BOOLEAN NOT NULL DEFAULT TRUE,
   UNIQUE (sport, event_id, market, player_norm, side, line, book, price));
+ALTER TABLE bets.sharp_multi_decisions ADD COLUMN IF NOT EXISTS method TEXT NOT NULL DEFAULT 'exact';
 """
 
 
@@ -139,8 +147,37 @@ def pairs(book: dict, observed: datetime) -> dict[tuple, dict]:
 SIDE_LABEL = {"h2h": ("home", "away"), "spread": ("home", "away"), "total": ("over", "under")}
 
 
-def find_gaps(event: dict, observed: datetime, min_ev: float = LOG_MIN_EV) -> list[dict]:
-    """Every bettable side at least min_ev above Pinnacle's no-vig price at the exact same line."""
+def shifted_probability(market: str, sharp_line: float, p_a: float, target_line: float, sigma: float) -> float:
+    """P(side a) at target_line from P(side a) at sharp_line. Side a is the home team covering (margin above
+    minus its line) or the over (total above the line)."""
+    from scipy.stats import norm
+    threshold = (lambda line: -line) if market == "spread" else (lambda line: line)
+    mean = threshold(sharp_line) + sigma * norm.ppf(p_a)
+    return float(1.0 - norm.cdf(threshold(target_line), loc=mean, scale=sigma))
+
+
+def reference(sharp: dict, key: tuple, sport: str | None) -> tuple[dict, float, str] | None:
+    """(Pinnacle quote, fair P(side a) at key's line, 'exact' | 'shifted'), or None."""
+    ref = sharp.get(key)
+    if ref is not None:
+        fair = sharp_math.no_vig_over(ref["a"], ref["b"])
+        return (ref, fair, "exact") if fair is not None else None
+    market, who, line = key
+    sigma, max_gap = (LINE_SHIFT.get(sport or "") or {}).get(market, (None, 0.0))
+    if sigma is None:
+        return None
+    near = [(abs(k[2] - line), k, q) for k, q in sharp.items()
+            if k[0] == market and k[1] == who and 0 < abs(k[2] - line) <= max_gap + 1e-9]
+    if not near:
+        return None
+    _, k, ref = min(near, key=lambda n: n[0])
+    fair = sharp_math.no_vig_over(ref["a"], ref["b"])
+    return None if fair is None else (ref, shifted_probability(market, k[2], fair, line, sigma), "shifted")
+
+
+def find_gaps(event: dict, observed: datetime, min_ev: float = LOG_MIN_EV, sport: str | None = None) -> list[dict]:
+    """Every bettable side at least min_ev above Pinnacle's no-vig price: at the exact same line, or for
+    spreads and totals a nearby Pinnacle line moved to the book's (LINE_SHIFT)."""
     books = {}
     for book in event.get("bookmakers", []):
         book = dict(book, _home=event.get("home_team"), _away=event.get("away_team"))
@@ -149,11 +186,11 @@ def find_gaps(event: dict, observed: datetime, min_ev: float = LOG_MIN_EV) -> li
     gaps = []
     for bet_book in BET_BOOKS:
         for k, offer in (books.get(bet_book) or {}).items():
-            ref = sharp.get(k)
-            if ref is None or abs((offer["updated"] - ref["updated"]).total_seconds()) > MAX_SOURCE_SKEW:
+            found = reference(sharp, k, sport)
+            if found is None:
                 continue
-            fair_a = sharp_math.no_vig_over(ref["a"], ref["b"])
-            if fair_a is None:
+            ref, fair_a, method = found
+            if abs((offer["updated"] - ref["updated"]).total_seconds()) > MAX_SOURCE_SKEW:
                 continue
             market, who, line = k
             labels = SIDE_LABEL.get(market, ("over", "under"))
@@ -167,7 +204,7 @@ def find_gaps(event: dict, observed: datetime, min_ev: float = LOG_MIN_EV) -> li
                                  line=(line if side == "a" or market != "spread" else -line),
                                  book=bet_book, price=int(offer[side]), link=offer.get(side + "_link"),
                                  sharp_price_over=int(ref["a"]), sharp_price_under=int(ref["b"]),
-                                 fair_probability=float(fair), ev=float(value)))
+                                 fair_probability=float(fair), ev=float(value), method=method))
     return sorted(gaps, key=lambda g: -g["ev"])
 
 
@@ -223,7 +260,9 @@ def plan(events: dict[str, list[dict]], state: dict, now: datetime) -> list[tupl
     for sport, evs in events.items():
         cfg = SPORTS[sport]
         upcoming = [(e, (safe_time(e["commence_time"]) - now).total_seconds() / 60) for e in evs]
-        if cfg["lines"] and any(0 < m <= LINES_HORIZON for _, m in upcoming):
+        last_lines = (state.get("lines_last_poll") or {}).get(sport)
+        spaced = not last_lines or (now - datetime.fromisoformat(last_lines)).total_seconds() >= LINES_SPACING * 60
+        if cfg["lines"] and spaced and any(0 < m <= LINES_HORIZON for _, m in upcoming):
             due.append((min(m for _, m in upcoming if m > 0), ("lines", sport, len(LINE_MARKETS))))
         for event, minutes in upcoming:
             if not cfg["props"] or not 0 < minutes <= PROPS_HORIZON:
@@ -239,7 +278,7 @@ def store(conn, sport: str, event: dict, observed: datetime) -> list[dict]:
     """Persist the event's quotes and every gap; returns decisions and logged gaps."""
     kickoff = safe_time(event["commence_time"])
     minutes = (kickoff - observed).total_seconds() / 60
-    gaps = find_gaps(event, observed)
+    gaps = find_gaps(event, observed, sport=sport)
     with conn.cursor() as cur:
         body = dict(sport=sport, event_id=event["id"], observed_at_utc=observed.isoformat(), event=event)
         cur.execute("""INSERT INTO bets.sharp_multi_quotes (observation_id, sport, event_id, observed_at_utc, commence_time_utc, payload)
@@ -248,12 +287,12 @@ def store(conn, sport: str, event: dict, observed: datetime) -> list[dict]:
         for gap in gaps:
             cur.execute("""INSERT INTO bets.sharp_multi_decisions (decided_at, sport, event_id, commence_time_utc,
                                home_team, away_team, market, player, player_norm, side, line, book, price, link,
-                               sharp_price_over, sharp_price_under, fair_probability, ev, minutes_to_start, tier)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
+                               sharp_price_over, sharp_price_under, fair_probability, ev, minutes_to_start, tier, method)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
                         (observed, sport, event["id"], kickoff, event.get("home_team"), event.get("away_team"),
                          gap["market"], gap["player"], gap["player_norm"], gap["side"], gap["line"], gap["book"],
                          gap["price"], gap["link"], gap["sharp_price_over"], gap["sharp_price_under"],
-                         gap["fair_probability"], gap["ev"], minutes, tier(gap["ev"], minutes)))
+                         gap["fair_probability"], gap["ev"], minutes, tier(gap["ev"], minutes), gap["method"]))
     return gaps
 
 
@@ -315,6 +354,8 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
             conn.commit()
             if item[0] == "props":
                 state.setdefault("props_last_poll", {})[item[2]["id"]] = now.isoformat()
+            else:
+                state.setdefault("lines_last_poll", {})[sport] = now.isoformat()
             result["polled"].append(dict(kind=item[0], sport=sport, credits=used, gaps=gaps,
                                          event=item[2]["id"] if item[0] == "props" else None))
     state.setdefault("spent", {})[today] = spent

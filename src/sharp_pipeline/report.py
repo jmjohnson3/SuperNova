@@ -32,7 +32,7 @@ from nfl_pipeline.integrity import atomic_json
 from sharp_pipeline import scan
 
 ROOT = Path(__file__).resolve().parents[2]
-MAX_CLOSE_AGE_MINUTES = 20
+MAX_CLOSE_AGE_MINUTES = 22  # game lines are polled about every 20 minutes
 REVIEW = dict(min_decisions=50, min_days=7, min_mean_close_ev=0.015, min_close_coverage=0.90)
 SPORT_LABEL = {"nba": "NBA", "ncaaf": "NCAAF"}
 
@@ -70,12 +70,10 @@ def close_ev(row: dict, closes: dict) -> float | None:
     line = float(row["line"])
     first_side = row["side"] in ("over", "home")
     key_line = line if (first_side or row["market"] != "spread") else -line
-    quote = quotes.get((row["market"], row["player_norm"] or "game", key_line))
-    if quote is None:
+    found = scan.reference(quotes, (row["market"], row["player_norm"] or "game", key_line), row["sport"])
+    if found is None:
         return None
-    fair_a = sharp_math.no_vig_over(quote["a"], quote["b"])
-    if fair_a is None:
-        return None
+    fair_a = found[1]
     return sharp_math.ev(fair_a if first_side else 1 - fair_a, int(row["price"]))
 
 
