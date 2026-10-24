@@ -35,3 +35,12 @@ probability, below the 4.5% vig, so betting openers on it does not pay.
   `sharp_pipeline` against Pinnacle, the correct test.
 - Re-run `python -m ncaaf_pipeline.efficiency` after each season; adopt nothing unless picks clear 52.4%
   against the close for two straight out-of-sample seasons.
+
+## Daily projections (research context)
+`python -m ncaaf_pipeline.projections` (task `\SuperNovaBets\NCAAF-Projections`, daily 7:30 AM MT,
+`scripts/ncaaf_projections.bat`) refreshes 2026 games and lines from CFBD (2 calls), refits the points
+ratings on completed games, and posts each not-yet-started FBS game on today's Eastern date to #ncaa:
+projected score (team totals), model spread and total, and the current book line (DraftKings first).
+Games where a team has fewer than 6 games in the last two seasons are skipped. Every projection is
+stored in `ncaaf.projections` (one row per game per run day) for later grading. The model's totals have
+run about 1 point above the closing total since 2022, so read its totals with that in mind.

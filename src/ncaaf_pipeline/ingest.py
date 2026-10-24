@@ -115,15 +115,17 @@ UPSERTS = {
 }
 
 
-def ingest(seasons: list[int], session=requests) -> dict:
+def ingest(seasons: list[int], session=requests, endpoints: tuple[str, ...] = tuple(UPSERTS),
+           season_types: tuple[str, ...] = ("regular", "postseason")) -> dict:
     summary = {}
     with psycopg2.connect(PG_DSN) as conn:
         with conn.cursor() as cur:
             cur.execute(SCHEMA_SQL)
         conn.commit()
         for season in seasons:
-            for season_type in ("regular", "postseason"):
-                for endpoint, (sql, parse) in UPSERTS.items():
+            for season_type in season_types:
+                for endpoint in endpoints:
+                    sql, parse = UPSERTS[endpoint]
                     payload, remaining = fetch(endpoint, season, season_type, session)
                     rows = parse(payload)
                     with conn.cursor() as cur:

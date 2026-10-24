@@ -300,6 +300,12 @@ Pinnacle's last quote before the start.
   days, +1.5% at the close and 90% close coverage. Staking it is a separate decision.
 - Shares no tables or registration with NFL; it only imports the NFL price math.
 
+## NCAAF game models (`src/ncaaf_pipeline/`, research)
+CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings
+(`ratings`) and efficiency ratings (`efficiency`). Neither beats the closing line out of sample
+(`docs/ncaaf_game_models.md`), so they are context only: `projections` posts the day's slate to #ncaa
+(task `\SuperNovaBets\NCAAF-Projections`, 7:30 AM MT) and stores it in `ncaaf.projections`.
+
 ## Key Gotchas
 
 - **MSF team abbrs**: NBA uses `BRO` (not BKN) and `OKL` (not OKC). MLB uses `SFG→SF`, `SDP→SD`, `KCR→KC`, `TBR→TB`, `WSN→WAS`, `CHW→CWS`. See `TEAM_ABBR_NORMALIZE` in each crawler.
