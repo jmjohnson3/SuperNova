@@ -5,7 +5,9 @@ Every run (the Sharp-Multi-Watch task, every 10 minutes):
 - Game lines: one bulk Odds API call per sport (3 credits covers every game) whenever a game starts
   within the next hour. Spreads, moneylines and totals; every side of every line.
 - NBA player props: one call per game (4 credits: points, rebounds, assists, threes) at roughly
-  T-40, T-30, T-20 and T-10, the last being the close every decision is graded against.
+  T-40, T-30, T-20 and T-10, the last being the close every decision is graded against. A game's
+  closing poll is always taken (down to the credit floor), and credits for the closes of games already
+  opened are held back from the daily allowance before a new game is polled.
 
 Pricing is exact-line only: a book's price is valued at Pinnacle's no-vig probability for the same
 market, player and line (power de-vig, as for NFL). Quotes must be fresh (source update within five
@@ -77,6 +79,7 @@ PROPS_SPACING = 9.5                # ...at most one per task run (T-40, T-30, T-
 MAX_SOURCE_AGE = 300
 MAX_SOURCE_SKEW = 120
 CREDIT_FLOOR = 150
+CLOSE_MINUTES = 20                 # a props poll this close to the start, for a game already polled, is its close
 NFL_SUNDAY_RESERVE = 700           # credits held back per NFL Sunday still to come before the reset
 NFL_PRIMETIME_RESERVE = 60         # per Thursday/Monday game still to come
 
@@ -252,6 +255,27 @@ def daily_allowance(remaining: int, spent_today: int, today: date, reset_day: in
     return max(0.0, spare / days)
 
 
+def closing_poll(event: dict, state: dict, now: datetime) -> bool:
+    """The close every decision on this game is graded against: always taken if the credit floor allows."""
+    minutes = (safe_time(event["commence_time"]) - now).total_seconds() / 60
+    return event["id"] in (state.get("props_last_poll") or {}) and 0 < minutes <= CLOSE_MINUTES
+
+
+def close_reserve(events: dict[str, list[dict]], state: dict, now: datetime, skip: str | None = None) -> int:
+    """Credits held back for the closing polls of games already polled but not yet closed, so opening
+    new games cannot spend them (Oct 23: four closes were skipped once the daily allowance ran out)."""
+    reserve = 0
+    for sport, evs in events.items():
+        for event in evs:
+            last = (state.get("props_last_poll") or {}).get(event["id"])
+            start = safe_time(event["commence_time"])
+            if event["id"] == skip or not last or start <= now:
+                continue
+            if datetime.fromisoformat(last) < start - timedelta(minutes=CLOSE_MINUTES):
+                reserve += len(SPORTS[sport]["props"])
+    return reserve
+
+
 # --- run -------------------------------------------------------------------------------------------
 def _digest(value) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()
@@ -333,8 +357,11 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
         conn.commit()
         for item in due:
             cost = item[-1]
-            if spent + cost > allowance or (remaining or 0) - cost < CREDIT_FLOOR:
-                result["skipped"].append(dict(kind=item[0], sport=item[1], reason="credit_allowance"))
+            closing = item[0] == "props" and closing_poll(item[2], state, now)
+            held = 0 if closing else close_reserve(events, state, now, item[2]["id"] if item[0] == "props" else None)
+            if (remaining or 0) - cost < CREDIT_FLOOR or (not closing and spent + cost + held > allowance):
+                result["skipped"].append(dict(kind=item[0], sport=item[1], reason="credit_allowance",
+                                              close_reserve=held))
                 continue
             sport = item[1]
             params = {"apiKey": key, "bookmakers": ",".join(BOOKMAKERS), "oddsFormat": "american",
@@ -366,7 +393,7 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
                 state.setdefault("props_last_poll", {})[item[2]["id"]] = now.isoformat()
             else:
                 state.setdefault("lines_last_poll", {})[sport] = now.isoformat()
-            result["polled"].append(dict(kind=item[0], sport=sport, credits=used, gaps=gaps,
+            result["polled"].append(dict(kind=item[0], sport=sport, credits=used, gaps=gaps, closing=closing,
                                          event=item[2]["id"] if item[0] == "props" else None))
     state.setdefault("spent", {})[today] = spent
     state.update(credits_remaining=remaining, updated_at=now.isoformat())

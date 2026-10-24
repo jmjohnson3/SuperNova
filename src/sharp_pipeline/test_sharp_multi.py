@@ -95,7 +95,7 @@ def test_plan_polls_lines_once_per_sport_then_props_spaced():
 
 def test_close_grades_against_pinnacles_last_quote_at_the_same_line():
     close_event = event([bookmaker("pinnacle", lines(home_spread=-115, away_spread=-105), at=START - timedelta(minutes=5))])
-    closes = {("nba", "e1"): (START - timedelta(minutes=5), close_event)}
+    closes = {("nba", "e1", "lines"): (START - timedelta(minutes=5), close_event)}
     row = dict(sport="nba", event_id="e1", market="spread", side="home", line=-6.5, price=105, player_norm="")
     fair = scan.sharp_math.no_vig_over(-115, -105)
     assert report.close_ev(row, closes) == pytest.approx(scan.sharp_math.ev(fair, 105))
@@ -160,3 +160,31 @@ def test_a_scanned_day_without_decisions_still_posts():
     text = report.digest_text(empty, "ncaaf", date(2026, 10, 23), scanned=4)
     assert "4 games scanned" in text and "no gap reached +3%" in text
     assert report.digest_text(empty, "ncaaf", date(2026, 10, 23), scanned=0) is None  # nothing ran: nothing to say
+
+
+def test_props_are_graded_only_against_a_props_snapshot():
+    props_close = event([bookmaker("pinnacle", [market("player_points", [
+        dict(name="Over", description="Lauri Markkanen", price=-120, point=22.5),
+        dict(name="Under", description="Lauri Markkanen", price=100, point=22.5)])], at=START - timedelta(minutes=12))])
+    lines_close = event([bookmaker("pinnacle", lines(), at=START - timedelta(minutes=4))])
+    assert report.payload_kind(props_close) == "props" and report.payload_kind(lines_close) == "lines"
+    closes = {("nba", "e1", "props"): (START - timedelta(minutes=12), props_close),
+              ("nba", "e1", "lines"): (START - timedelta(minutes=4), lines_close)}
+    row = dict(sport="nba", event_id="e1", market="points", side="over", line=22.5, price=110,
+               player_norm=scan.normalize_name("Lauri Markkanen"))
+    fair = scan.sharp_math.no_vig_over(-120, 100)
+    assert report.close_ev(row, closes) == pytest.approx(scan.sharp_math.ev(fair, 110))
+    ml = dict(sport="nba", event_id="e1", market="h2h", side="home", line=0, price=-240, player_norm="")
+    assert report.close_ev(ml, closes) is not None
+
+
+def test_closing_polls_are_reserved_and_never_held_to_the_allowance():
+    soon = dict(id="a", commence_time=(NOW + timedelta(minutes=12)).isoformat())
+    later = dict(id="b", commence_time=(NOW + timedelta(minutes=40)).isoformat())
+    events = {"nba": [soon, later], "ncaaf": []}
+    state = {"props_last_poll": {"a": (NOW - timedelta(minutes=10)).isoformat()}}
+    assert scan.closing_poll(soon, state, NOW)
+    assert not scan.closing_poll(later, state, NOW)          # never polled: an opening poll
+    assert scan.close_reserve(events, state, NOW) == 4       # game a still needs its close
+    closed = {"props_last_poll": {"a": (NOW + timedelta(minutes=-1)).isoformat()}}
+    assert scan.close_reserve(events, dict(closed), NOW + timedelta(minutes=1)) == 0

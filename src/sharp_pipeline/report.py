@@ -37,6 +37,18 @@ REVIEW = dict(min_decisions=50, min_days=7, min_mean_close_ev=0.015, min_close_c
 SPORT_LABEL = {"nba": "NBA", "ncaaf": "NCAAF"}
 
 
+def payload_kind(event: dict) -> str:
+    """Props and game lines arrive in separate polls; a decision is graded only by its own kind."""
+    for book in event.get("bookmakers") or []:
+        for market in book.get("markets") or []:
+            return "props" if str(market.get("key", "")).startswith("player_") else "lines"
+    return "lines"
+
+
+def row_kind(row: dict) -> str:
+    return "props" if row["market"] in scan.PROP_STAT.values() else "lines"
+
+
 def load(conn) -> tuple[pd.DataFrame, dict]:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("SELECT to_regclass('bets.sharp_multi_decisions') AS t")
@@ -52,14 +64,14 @@ def load(conn) -> tuple[pd.DataFrame, dict]:
                          AND observed_at_utc >= commence_time_utc - interval '%s minutes'""" % MAX_CLOSE_AGE_MINUTES)
         closes: dict[tuple, tuple] = {}
         for r in cur.fetchall():
-            key = (r["sport"], r["event_id"])
+            key = (r["sport"], r["event_id"], payload_kind(r["payload"]))
             if key not in closes or r["observed_at_utc"] > closes[key][0]:
                 closes[key] = (r["observed_at_utc"], r["payload"])
     return decisions, closes
 
 
 def close_ev(row: dict, closes: dict) -> float | None:
-    found = closes.get((row["sport"], row["event_id"]))
+    found = closes.get((row["sport"], row["event_id"], row_kind(row)))
     if not found:
         return None
     observed, event = found
