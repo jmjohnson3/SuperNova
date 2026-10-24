@@ -113,6 +113,10 @@ def starting_skill_players(rows):
     return selected
 
 
+SHARP_POINTER = ('- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts '
+                 '**SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.')
+
+
 def starter_projection_line(player):
     stats = []
     for stat, label in STARTER_STAT_ORDER:
@@ -225,12 +229,19 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
     for gid, game in sorted(upcoming.items(), key=lambda item: (utc(item[1]['start_ts_utc']), item[0])):
         title = f"{game['away_team_abbr']} @ {game['home_team_abbr']} | NFL {day}"
         kickoff = int(utc(game['start_ts_utc']).timestamp())
-        intro = f'Kickoff: <t:{kickoff}:f> (<t:{kickoff}:R>)\nFanDuel only. Quotes are from locked forecasts; verify the price at FanDuel.'
+        intro = (f'Kickoff: <t:{kickoff}:f> (<t:{kickoff}:R>)\nModel forecasts at FanDuel only (research). '
+                 'Bets to place come from the SHARP EDGE alerts in this channel.')
         sections = []
-        if cash_readiness is not None:
+        cash = by_game[gid].get('$1 CASH TRIAL ELIGIBLE', [])
+        bankroll_games = [r for r in games_by_id[gid] if r.get('tier') == 'bankroll' and r.get('ledger_locked')]
+        bankroll_props = by_game[gid].get('BANKROLL PROPS', [])
+        # The model trial is research (docs/nfl_cash_readiness.md): its readiness status and empty bankroll /
+        # actionable sections only matter on a card that carries one of its betting rows. Otherwise the card
+        # points at the sharp-gap alerts, which are where bets come from.
+        model_rows = bool(cash or bankroll_games or bankroll_props or by_game[gid].get('$1 MICRO TEST'))
+        if cash_readiness is not None and model_rows:
             heading = 'OPERATIONAL ISSUE' if cash_readiness['status']=='operational_issue' else 'CASH TRIAL STATUS'
             sections.append((heading, ['- '+str(cash_readiness.get('reason') or cash_readiness['status'])]))
-        cash = by_game[gid].get('$1 CASH TRIAL ELIGIBLE', [])
         if cash:
             lines = ['- $1 flat only. Confirm the current price; these are recommendations, not placed wagers.']
             for r in cash:
@@ -241,14 +252,11 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
         withheld = [r for r in (quote_exclusions or []) if r['game_id'] == gid]
         if withheld:
             sections.append(('QUOTE HEALTH', [f'- {len(withheld)} saved quotes withheld: stale or unverified timing/book. Refresh required; no current betting instruction for those rows.']))
-        game_picks = games_by_id[gid]
-        bankroll_games = [r for r in game_picks if r.get('tier') == 'bankroll' and r.get('ledger_locked')]
-        bankroll_props = by_game[gid].get('BANKROLL PROPS', [])
         if bankroll_games:
             sections.append(('BANKROLL GAMES', [game_line(r) for r in bankroll_games]))
         if bankroll_props:
             sections.append(('BANKROLL PROPS', [fanduel_links.format_prop_row(r, action='Bankroll') for r in bankroll_props]))
-        if not bankroll_games and not bankroll_props:
+        if model_rows and not bankroll_games and not bankroll_props:
             sections.append(('BANKROLL', ['- No qualifying bankroll bets for this matchup.']))
         actionable_prop_count = len(cash) + len(bankroll_props)
         for heading, action in (('$1 MICRO TEST', 'BET $1'), ('PREVIOUSLY LOCKED MICRO - NOT ADDITIONAL PLAYS', 'Already recorded')):
@@ -258,7 +266,9 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
                     actionable_prop_count += len(rows)
                 lead = ['- $1 flat only; verify Min and Drift=OK. Maximum 3 across all games; there is no quota.'] if action == 'BET $1' else ['- Historical locked quotes, not refreshed betting instructions.']
                 sections.append((heading, lead + [fanduel_links.format_prop_row(r, action=action) for r in rows]))
-        if not actionable_prop_count:
+        if not model_rows:
+            sections.append(('BETS', [SHARP_POINTER]))
+        elif not actionable_prop_count:
             sections.append(('ACTIONABLE PROPS', ['- No current prop meets the FanDuel residual, price, freshness, model, and context requirements.']))
         prop_count = sum(r.get('offer_id') is not None for r in current_props if str(r['game_id']) == gid)
         if not prop_count:
@@ -268,7 +278,7 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
             team_order.get(p['team_abbr'], 2), STARTER_ROLE_ORDER[p['role']], p['player_name']))
         starter_lines = [starter_projection_line(player) for player in starters]
         sections.append(('STARTING SKILL PLAYER PROJECTIONS',
-                         ['- Forecasts only; bankroll and micro sections remain the betting shortlist.']
+                         ['- Forecasts only, not bets.']
                          + (starter_lines or ['- No verified starter depth projections are available.'])))
         # Matchup-level manifest is repeated across pages. Historical locked rows
         # without a current forecast ID are not advertised as refreshed decisions.

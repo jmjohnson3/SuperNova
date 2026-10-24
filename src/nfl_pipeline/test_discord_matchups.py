@@ -86,7 +86,7 @@ def test_nonactionable_research_rows_are_not_presented_as_bets():
     text = json.dumps(bundle)
     assert 'Research only:' not in text
     assert 'Research15' not in text
-    assert 'ACTIONABLE PROPS' in text
+    assert '**BETS**' in text and 'SHARP EDGE' in text  # no model bets: the card points at the sharp alerts
 
 
 def test_starting_skill_section_is_complete_and_independent_of_paper_caps():
@@ -144,8 +144,9 @@ def test_unreasonably_long_link_is_not_silently_truncated():
 def test_empty_matchup_and_zero_prop_offers_are_explained():
     bundle = build_bundle(DAY, schedule(), [], [], ['frozen'], now=NOW)
     assert 'No fresh verified FanDuel prop offers' in body(bundle, 'early')
-    assert 'No qualifying bankroll bets' in body(bundle, 'early')
-    assert 'No current prop meets' in body(bundle, 'early')
+    assert 'SHARP EDGE' in body(bundle, 'early')
+    assert 'No qualifying bankroll bets' not in body(bundle, 'early')  # retired model-trial noise
+    assert 'No current prop meets' not in body(bundle, 'early')
     empty = build_bundle(DAY, [], [], [], ['frozen'], now=NOW)
     assert empty['cards'] == [] and empty['notice']
 
@@ -171,9 +172,19 @@ def test_readiness_issue_still_publishes_projection_and_status_cards(monkeypatch
     publications = []
     asyncio.run(daily._post_matchups(json.dumps(bundle), publications))
     assert len(sent) == len(publications) == 2
-    assert all('**OPERATIONAL ISSUE**' in p['embeds'][0]['description'] for p in sent)
-    assert all('cash_readiness_stale_or_mismatched' in p['embeds'][0]['description'] for p in sent)
+    # The model trial's readiness status is noise on cards without its rows; they point at the sharp alerts.
+    assert all('**OPERATIONAL ISSUE**' not in p['embeds'][0]['description'] for p in sent)
+    assert all('SHARP EDGE' in p['embeds'][0]['description'] for p in sent)
     assert all(not p['forecast_manifest'] for p in publications)
+
+
+def test_readiness_issue_still_shows_on_a_card_carrying_a_model_bet_row():
+    bundle = build_bundle(DAY, schedule(), [], [prop('late', tier='micro_projection')], ['frozen'], now=NOW,
+        cash_readiness={'status': 'operational_issue', 'reason': 'cash_readiness_stale_or_mismatched'})
+    late = body(bundle, 'late')
+    assert '$1 MICRO TEST' in late
+    assert '**OPERATIONAL ISSUE**' in late and 'cash_readiness_stale_or_mismatched' in late
+    assert '**BETS**' not in late
 
 
 @pytest.mark.parametrize('unsafe_card', ['cash_ids', 'cash_manifest', 'cash_id_on_paper', 'unmanifested_micro'])
