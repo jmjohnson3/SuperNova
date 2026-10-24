@@ -271,8 +271,10 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
   live/table parity-safe features only. Its targets feed the receptions projection through
   `models/player_props/targets_model.json`; its carries run as the prospective rushing challenger
   (`modeling/rushing_volume_challenger`, captured in daily/pregame runs, graded by the close task).
-- The live snapshot and the training table disagree on team-relative features (shares, ranks, team
-  sums); production is trained on one and scored on the other. Check parity before training on a feature.
+- The live snapshot and the training table disagree on team-relative, injury-downgrade and depth-movement
+  features (`modeling/feature_parity`, `docs/nfl_feature_parity.md`). The production yardage models use
+  none of them; the opportunity/workload models behind the workload adjustment do. Check parity before
+  training on a feature.
 
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`

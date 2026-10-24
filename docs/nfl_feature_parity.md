@@ -1,0 +1,58 @@
+# NFL live-vs-training feature parity (October 23, 2026)
+
+Measured with `modeling/feature_parity.py`, which rebuilds past live snapshots using the production
+loaders at each slate's cutoff and joins them to `features.nfl_player_game_training_features` on the
+same player-games (`reports/nfl_feature_parity_latest.md`). Weeks 5-6, 627 player-games: 214 features
+match, 116 differ and 33 are missing live.
+
+## Where it matters
+
+- **Yardage models: not affected.** The production release's yardage models (receiving 59 features,
+  rushing 36, passing 21) use no mismatched feature; the largest difference among their inputs is 0.9%.
+  An earlier note said the production model was trained on one definition and scored on the other.
+  That is wrong for these models.
+- **Opportunity / workload models: affected.** These are the 26 models in
+  `models/player_props/nfl_player_opportunity_models.joblib`: targets, carries, QB attempts, snap
+  share, limited-usage risk, spike and TD-role probabilities. Each has 10-70 mismatched inputs. They
+  drive the workload adjustment that `predict_player_props` applies to every projection
+  (`apply_workload_adjustment`), plus the workload and spike probabilities.
+
+## Causes, by size
+
+1. **Team role groups.** The affected features are the teammate totals
+   (`team_player_*_avg5_sum`), shares (`*_share_avg_5`) and ranks (`*_role_rank`).
+   - Training counts the players who actually played, plus teammates listed Out or Doubtful.
+   - Live (`_add_snapshot_role_features`) counts every active-roster QB/RB/WR/TE. That averages
+     17.7 per team, including 4.6 who never touch the ball and 2.4 cold-start members given a
+     position-average prior.
+
+   | Teammate total | Live | Training | Live, from players who played | ...who did not play | ...cold-start priors |
+   |---|---:|---:|---:|---:|---:|
+   | Carries | 35.5 | 28.4 | 24.8 | 6.2 | 4.6 |
+   | Targets | 40.4 | 35.5 | 30.9 | 4.9 | 4.6 |
+
+   Shares therefore run 15-25% lower live, and ranks 20-45% worse.
+2. **Injury downgrade.** `injury_downgrade_score` is present on the same 21% of rows on both sides,
+   but averages 0.16 live against 0.06 in training. The two paths read different injury report rows
+   for the same week. Teammate injury counts differ the same way (2.25 vs 1.46).
+3. **Depth movement.** `depth_rank_delta`, `depth_rank_worse` and `depth_rank_better` differ by
+   36-52%. Live takes the previous rank from the roster context (`previous_depth_pos_rank`), while
+   training shifts the player's previous game row.
+4. **Missing live.** 33 features never reach the live snapshot: weather, the opponent position
+   splits, and the full-role and robust averages. No production model uses them; the volume model
+   now excludes them.
+
+## Plan
+
+1. **One pregame definition of the role group, used by both sides.** The group is the active roster
+   as of the cutoff, excluding players ruled out, with no invented priors: a cold-start member
+   counts zero. It lives in a new unpinned module called by `features.py` and
+   `_add_snapshot_role_features`. Done when the harness shows the role features match.
+2. **One injury-row rule and one previous-depth rule** for both sides, verified the same way.
+3. **Retrain the opportunity models** on the corrected table as a challenger. Judge them on volume
+   error first (`modeling/volume_model` style), then on the projection error they produce
+   (`modeling/projection_error`). Promotion is manual.
+
+Changing `features.py` or `predict_player_props.py` drifts `fanduel-receiving-oe-paper-v5`, so that
+trial gets a successor registration with the change. The sharp-gap cash strategy pins neither file
+and is unaffected.

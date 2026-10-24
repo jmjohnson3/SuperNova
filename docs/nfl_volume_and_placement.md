@@ -104,9 +104,8 @@ the same 2026 player-games:
 | Carry role rank | 7.1 | 5.4 |
 
 Player-level averages, depth and game lines match exactly. Of the 363 candidate features, 103 shared
-ones differ by more than 5% of rows and 33 are not in the live snapshot at all. **The production
-model is trained on the table and scored on the snapshot, so it has this skew too.** It is a likely
-contributor to the model trailing the line, and the next accuracy problem to fix.
+ones differ by more than 5% of rows and 33 are not in the live snapshot at all. *(Corrected October 23: the production yardage models use none of the skewed features; the opportunity and
+workload models behind the workload adjustment do. See `docs/nfl_feature_parity.md`.)*
 
 The volume model now trains only on the 191 features whose archived live values match the table
 (relative mean difference of 2% or less). Run `volume-20261022T151821Z`, still accepted on volume:

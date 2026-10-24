@@ -1,0 +1,3667 @@
+{
+  "season": 2026,
+  "weeks": [
+    5,
+    6
+  ],
+  "live_rows": 1027,
+  "joined_rows": 627,
+  "features": [
+    {
+      "feature": "is_indoor",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "wind_mph",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "temp_f",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "is_high_wind",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "is_cold",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "is_grass",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_receiving_yards_wr_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_receiving_yards_te_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_receiving_yards_rb_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_yards_per_target_wr_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_yards_per_target_te_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_yards_per_target_rb_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_air_yards_per_target_wr_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_air_yards_per_target_te_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_air_yards_per_target_rb_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_yards_per_carry_rb_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "is_home",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.507177033492823,
+      "table_mean": 0.507177033492823
+    },
+    {
+      "feature": "n_games_prev_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 2.9186602870813396,
+      "table_mean": 2.9186602870813396
+    },
+    {
+      "feature": "n_games_prev_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 4.716108452950558,
+      "table_mean": 4.716108452950558
+    },
+    {
+      "feature": "n_games_prev_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 8.858054226475279,
+      "table_mean": 8.858054226475279
+    },
+    {
+      "feature": "rest_days",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.988835725677831,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 22.532258064516128,
+      "table_mean": 22.532258064516128
+    },
+    {
+      "feature": "team_game_number",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.988835725677831,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 125.74032258064516,
+      "table_mean": 125.74032258064516
+    },
+    {
+      "feature": "opp_game_number",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.988835725677831,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 125.90645161290323,
+      "table_mean": 125.90645161290323
+    },
+    {
+      "feature": "roster_status",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "roster_is_active",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.988835725677831,
+      "table_coverage": 0.9984051036682615,
+      "relative_difference": 0.0,
+      "live_mean": 1.0,
+      "table_mean": 1.0
+    },
+    {
+      "feature": "depth_chart_position",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "depth_pos_abb",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "depth_pos_rank",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9984051036682615,
+      "table_coverage": 0.9984051036682615,
+      "relative_difference": 0.004012841089476694,
+      "live_mean": 1.9984025559105432,
+      "table_mean": 1.9904153354632588
+    },
+    {
+      "feature": "depth_pos_slot",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.9872408293460925,
+      "table_coverage": 0.9984051036682615,
+      "relative_difference": 0.030621367899205495,
+      "live_mean": 7.3715670436187395,
+      "table_mean": 7.22778675282714
+    },
+    {
+      "feature": "injury_report_status",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "injury_practice_status",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "same_week_teammate_skill_injury_count",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.5923497263700511,
+      "live_mean": 2.2503987240829346,
+      "table_mean": 1.4593301435406698
+    },
+    {
+      "feature": "same_week_teammate_skill_injury_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.9633173843700159,
+      "table_coverage": 0.9776714513556619,
+      "relative_difference": 0.5274286849942591,
+      "live_mean": 1.6568708609271523,
+      "table_mean": 1.2449503311258276
+    },
+    {
+      "feature": "same_week_teammate_receiver_injury_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.9202551834130781,
+      "table_coverage": 0.9362041467304625,
+      "relative_difference": 0.6369401885695882,
+      "live_mean": 1.2474003466204506,
+      "table_mean": 0.8881282495667245
+    },
+    {
+      "feature": "same_week_teammate_receiver_out_count",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.6584269653644187,
+      "live_mean": 0.8006379585326954,
+      "table_mean": 0.7097288676236044
+    },
+    {
+      "feature": "same_week_injury_context_known",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 1.0,
+      "table_mean": 1.0
+    },
+    {
+      "feature": "game_total_line",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.010237763225021833,
+      "live_mean": 45.155502392344495,
+      "table_mean": 45.177830940988834
+    },
+    {
+      "feature": "team_spread_line",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.04747060918070392,
+      "live_mean": -0.029106858054226477,
+      "table_mean": -0.02711323763955343
+    },
+    {
+      "feature": "team_implied_points",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.01286891174286388,
+      "live_mean": 22.59230462519936,
+      "table_mean": 22.602472089314194
+    },
+    {
+      "feature": "opponent_implied_points",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.012831381691089898,
+      "live_mean": 22.563197767145134,
+      "table_mean": 22.57535885167464
+    },
+    {
+      "feature": "passing_yards_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 21.902150537634405,
+      "table_mean": 21.902150537634405
+    },
+    {
+      "feature": "passing_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 21.192150537634404,
+      "table_mean": 21.192150537634404
+    },
+    {
+      "feature": "passing_yards_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 21.3547311827957,
+      "table_mean": 21.3547311827957
+    },
+    {
+      "feature": "rushing_yards_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 9.656182795698925,
+      "table_mean": 9.656182795698925
+    },
+    {
+      "feature": "rushing_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 9.595591397849462,
+      "table_mean": 9.595591397849462
+    },
+    {
+      "feature": "rushing_yards_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 10.115922299027138,
+      "table_mean": 10.115922299027138
+    },
+    {
+      "feature": "passing_tds_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.14005376344086023,
+      "table_mean": 0.14005376344086023
+    },
+    {
+      "feature": "passing_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.13736559139784946,
+      "table_mean": 0.13736559139784946
+    },
+    {
+      "feature": "passing_tds_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.14129032258064517,
+      "table_mean": 0.14129032258064517
+    },
+    {
+      "feature": "rushing_tds_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.08548387096774193,
+      "table_mean": 0.08548387096774193
+    },
+    {
+      "feature": "rushing_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.08024193548387097,
+      "table_mean": 0.08024193548387097
+    },
+    {
+      "feature": "rushing_tds_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.07969086021505375,
+      "table_mean": 0.07969086021505375
+    },
+    {
+      "feature": "receiving_yards_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 21.96155913978495,
+      "table_mean": 21.96155913978495
+    },
+    {
+      "feature": "receiving_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 21.31206989247312,
+      "table_mean": 21.31206989247312
+    },
+    {
+      "feature": "receiving_yards_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 21.514159626216077,
+      "table_mean": 21.514159626216077
+    },
+    {
+      "feature": "receptions_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.007258064516129,
+      "table_mean": 2.007258064516129
+    },
+    {
+      "feature": "receptions_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 1.9423387096774194,
+      "table_mean": 1.9423387096774194
+    },
+    {
+      "feature": "receptions_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 1.9199091141833078,
+      "table_mean": 1.9199091141833078
+    },
+    {
+      "feature": "receiving_tds_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.14731182795698924,
+      "table_mean": 0.14731182795698924
+    },
+    {
+      "feature": "receiving_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.14088709677419353,
+      "table_mean": 0.14088709677419353
+    },
+    {
+      "feature": "receiving_tds_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.14406490015360984,
+      "table_mean": 0.14406490015360984
+    },
+    {
+      "feature": "carries_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.310752688172043,
+      "table_mean": 2.310752688172043
+    },
+    {
+      "feature": "carries_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.317043010752688,
+      "table_mean": 2.317043010752688
+    },
+    {
+      "feature": "carries_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.3905728366615464,
+      "table_mean": 2.3905728366615464
+    },
+    {
+      "feature": "targets_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.9935483870967743,
+      "table_mean": 2.9935483870967743
+    },
+    {
+      "feature": "targets_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.8857526881720434,
+      "table_mean": 2.8857526881720434
+    },
+    {
+      "feature": "targets_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 2.882681771633384,
+      "table_mean": 2.882681771633384
+    },
+    {
+      "feature": "pass_attempts_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 3.122043010752688,
+      "table_mean": 3.122043010752688
+    },
+    {
+      "feature": "pass_attempts_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 3.029005376344086,
+      "table_mean": 3.029005376344086
+    },
+    {
+      "feature": "pass_attempts_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 3.049435483870968,
+      "table_mean": 3.049435483870968
+    },
+    {
+      "feature": "routes_run_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "routes_run_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "routes_run_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "pass_route_opportunities_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.15789473684210525,
+      "table_coverage": 0.14832535885167464,
+      "relative_difference": 0.0,
+      "live_mean": 13.634408602150534,
+      "table_mean": 13.634408602150534
+    },
+    {
+      "feature": "pass_route_opportunities_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.5773524720893142,
+      "table_coverage": 0.5677830940988836,
+      "relative_difference": 0.0,
+      "live_mean": 17.899812734082396,
+      "table_mean": 17.899812734082396
+    },
+    {
+      "feature": "pass_route_opportunities_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.7767145135566188,
+      "table_coverage": 0.7671451355661882,
+      "relative_difference": 0.0,
+      "live_mean": 19.56341368841369,
+      "table_mean": 19.56341368841369
+    },
+    {
+      "feature": "pass_route_opportunity_share_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.15789473684210525,
+      "table_coverage": 0.14832535885167464,
+      "relative_difference": 4.14137264341614e-17,
+      "live_mean": 0.35672058970056625,
+      "table_mean": 0.35672058970056625
+    },
+    {
+      "feature": "pass_route_opportunity_share_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.5773524720893142,
+      "table_coverage": 0.5677830940988836,
+      "relative_difference": 3.671967622064549e-17,
+      "live_mean": 0.4676460964624419,
+      "table_mean": 0.4676460964624419
+    },
+    {
+      "feature": "pass_route_opportunity_share_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.7767145135566188,
+      "table_coverage": 0.7671451355661882,
+      "relative_difference": 7.454877579994785e-17,
+      "live_mean": 0.51067434913436,
+      "table_mean": 0.51067434913436
+    },
+    {
+      "feature": "route_participation_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "route_participation_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "route_participation_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "snap_share_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.687960842135415e-17,
+      "live_mean": 0.5261424731182797,
+      "table_mean": 0.5261424731182797
+    },
+    {
+      "feature": "snap_share_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 4.7815236454286015e-17,
+      "live_mean": 0.5200873655913978,
+      "table_mean": 0.5200873655913978
+    },
+    {
+      "feature": "snap_share_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.523063092248451e-17,
+      "live_mean": 0.5219926779313876,
+      "table_mean": 0.5219926779313876
+    },
+    {
+      "feature": "target_share_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 1.1171122304415866e-16,
+      "live_mean": 0.09361015328867996,
+      "table_mean": 0.09361015328867996
+    },
+    {
+      "feature": "target_share_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.3092272452567157e-17,
+      "live_mean": 0.0931728774456088,
+      "table_mean": 0.09317287744560881
+    },
+    {
+      "feature": "target_share_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 6.282031518043712e-17,
+      "live_mean": 0.09471174489624237,
+      "table_mean": 0.09471174489624239
+    },
+    {
+      "feature": "air_yards_share_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 1.1456925516899808e-16,
+      "live_mean": 0.09104165875660711,
+      "table_mean": 0.09104165875660711
+    },
+    {
+      "feature": "air_yards_share_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 6.637241753319818e-17,
+      "live_mean": 0.08928509687746265,
+      "table_mean": 0.08928509687746265
+    },
+    {
+      "feature": "air_yards_share_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.687663924058639e-17,
+      "live_mean": 0.0914129925954062,
+      "table_mean": 0.0914129925954062
+    },
+    {
+      "feature": "wopr_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 1.0453334759769707e-16,
+      "live_mean": 0.20414439106264493,
+      "table_mean": 0.20414439106264493
+    },
+    {
+      "feature": "wopr_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.490816881788842e-17,
+      "live_mean": 0.2025530265972381,
+      "table_mean": 0.2025530265972381
+    },
+    {
+      "feature": "wopr_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 6.974004916681129e-17,
+      "live_mean": 0.20673616581504722,
+      "table_mean": 0.20673616581504722
+    },
+    {
+      "feature": "receiving_air_yards_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 24.161290322580644,
+      "table_mean": 24.161290322580644
+    },
+    {
+      "feature": "receiving_air_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 23.206532258064517,
+      "table_mean": 23.206532258064517
+    },
+    {
+      "feature": "receiving_air_yards_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 23.62209485407066,
+      "table_mean": 23.62209485407066
+    },
+    {
+      "feature": "receiving_yards_after_catch_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 10.130913978494624,
+      "table_mean": 10.130913978494624
+    },
+    {
+      "feature": "receiving_yards_after_catch_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 9.987258064516128,
+      "table_mean": 9.987258064516128
+    },
+    {
+      "feature": "receiving_yards_after_catch_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 10.03475358422939,
+      "table_mean": 10.03475358422939
+    },
+    {
+      "feature": "targets_per_route_run_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "targets_per_route_run_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "targets_per_route_run_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "yards_per_route_run_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "yards_per_route_run_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "yards_per_route_run_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "first_read_targets_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "first_read_targets_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "first_read_targets_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "first_read_target_share_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "first_read_target_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "first_read_target_share_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "end_zone_targets_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.8213716108452951,
+      "table_coverage": 0.8118022328548644,
+      "relative_difference": 0.0,
+      "live_mean": 0.25147347740667975,
+      "table_mean": 0.25147347740667975
+    },
+    {
+      "feature": "end_zone_targets_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.8213716108452951,
+      "table_coverage": 0.8118022328548644,
+      "relative_difference": 0.0,
+      "live_mean": 0.2336935166994106,
+      "table_mean": 0.2336935166994106
+    },
+    {
+      "feature": "end_zone_targets_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.8213716108452951,
+      "table_coverage": 0.8118022328548644,
+      "relative_difference": 0.0,
+      "live_mean": 0.2336935166994106,
+      "table_mean": 0.2336935166994106
+    },
+    {
+      "feature": "end_zone_target_share_avg_3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "end_zone_target_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "end_zone_target_share_avg_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "offense_snaps_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 34.77150537634408,
+      "table_mean": 34.77150537634408
+    },
+    {
+      "feature": "offense_snaps_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 33.92510752688172,
+      "table_mean": 33.92510752688172
+    },
+    {
+      "feature": "offense_snaps_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 33.977732974910396,
+      "table_mean": 33.977732974910396
+    },
+    {
+      "feature": "offense_snap_share_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.687960842135415e-17,
+      "live_mean": 0.5261424731182797,
+      "table_mean": 0.5261424731182797
+    },
+    {
+      "feature": "offense_snap_share_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 4.7815236454286015e-17,
+      "live_mean": 0.5200873655913978,
+      "table_mean": 0.5200873655913978
+    },
+    {
+      "feature": "offense_snap_share_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 5.523063092248451e-17,
+      "live_mean": 0.5219926779313876,
+      "table_mean": 0.5219926779313876
+    },
+    {
+      "feature": "red_zone_carries_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.4373655913978495,
+      "table_mean": 0.4373655913978495
+    },
+    {
+      "feature": "red_zone_carries_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.41274193548387095,
+      "table_mean": 0.41274193548387095
+    },
+    {
+      "feature": "red_zone_carries_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.42260304659498205,
+      "table_mean": 0.42260304659498205
+    },
+    {
+      "feature": "red_zone_targets_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.42096774193548386,
+      "table_mean": 0.42096774193548386
+    },
+    {
+      "feature": "red_zone_targets_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.39395161290322583,
+      "table_mean": 0.39395161290322583
+    },
+    {
+      "feature": "red_zone_targets_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.4003116999487967,
+      "table_mean": 0.4003116999487967
+    },
+    {
+      "feature": "red_zone_receptions_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.25268817204301075,
+      "table_mean": 0.25268817204301075
+    },
+    {
+      "feature": "red_zone_receptions_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.23776881720430107,
+      "table_mean": 0.23776881720430107
+    },
+    {
+      "feature": "red_zone_receptions_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.23675947260624675,
+      "table_mean": 0.23675947260624675
+    },
+    {
+      "feature": "red_zone_pass_attempts_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.49301075268817207,
+      "table_mean": 0.49301075268817207
+    },
+    {
+      "feature": "red_zone_pass_attempts_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.45612903225806456,
+      "table_mean": 0.45612903225806456
+    },
+    {
+      "feature": "red_zone_pass_attempts_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.46118279569892473,
+      "table_mean": 0.46118279569892473
+    },
+    {
+      "feature": "red_zone_pass_tds_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.1077956989247312,
+      "table_mean": 0.1077956989247312
+    },
+    {
+      "feature": "red_zone_pass_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.10704301075268816,
+      "table_mean": 0.10704301075268816
+    },
+    {
+      "feature": "red_zone_pass_tds_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.10666666666666666,
+      "table_mean": 0.10666666666666666
+    },
+    {
+      "feature": "red_zone_rush_tds_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.07741935483870967,
+      "table_mean": 0.07741935483870967
+    },
+    {
+      "feature": "red_zone_rush_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.07185483870967742,
+      "table_mean": 0.07185483870967742
+    },
+    {
+      "feature": "red_zone_rush_tds_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.06952956989247312,
+      "table_mean": 0.06952956989247312
+    },
+    {
+      "feature": "red_zone_rec_tds_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.12419354838709677,
+      "table_mean": 0.12419354838709677
+    },
+    {
+      "feature": "red_zone_rec_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.11634408602150538,
+      "table_mean": 0.11634408602150538
+    },
+    {
+      "feature": "red_zone_rec_tds_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.10860599078341014,
+      "table_mean": 0.10860599078341014
+    },
+    {
+      "feature": "red_zone_touches_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.8583333333333333,
+      "table_mean": 0.8583333333333333
+    },
+    {
+      "feature": "red_zone_touches_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.8066935483870967,
+      "table_mean": 0.8066935483870967
+    },
+    {
+      "feature": "red_zone_touches_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.8229147465437788,
+      "table_mean": 0.8229147465437788
+    },
+    {
+      "feature": "goal_line_carries_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.14731182795698924,
+      "table_mean": 0.14731182795698924
+    },
+    {
+      "feature": "goal_line_carries_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.13669354838709677,
+      "table_mean": 0.13669354838709677
+    },
+    {
+      "feature": "goal_line_carries_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.12556451612903224,
+      "table_mean": 0.12556451612903224
+    },
+    {
+      "feature": "goal_line_targets_avg_3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.1086021505376344,
+      "table_mean": 0.1086021505376344
+    },
+    {
+      "feature": "goal_line_targets_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.09314516129032258,
+      "table_mean": 0.09314516129032258
+    },
+    {
+      "feature": "goal_line_targets_avg_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 0.0,
+      "live_mean": 0.09229070660522275,
+      "table_mean": 0.09229070660522275
+    },
+    {
+      "feature": "unexpected_partial_rate_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "pass_attempts_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "passing_yards_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "carries_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "rushing_yards_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "targets_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "receptions_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "receiving_yards_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "receiving_air_yards_full_role_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "pass_attempts_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "passing_yards_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "carries_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "rushing_yards_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "targets_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "receptions_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "receiving_yards_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "receiving_air_yards_robust_avg_5",
+      "rows": 627,
+      "status": "missing_live",
+      "live_coverage": null,
+      "table_coverage": null,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "opp_allowed_passing_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 232.33205741626796,
+      "table_mean": 232.33205741626796
+    },
+    {
+      "feature": "opp_allowed_rushing_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 112.32472089314196,
+      "table_mean": 112.32472089314196
+    },
+    {
+      "feature": "opp_allowed_passing_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 1.5607655502392346,
+      "table_mean": 1.5607655502392346
+    },
+    {
+      "feature": "opp_allowed_rushing_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.9460925039872409,
+      "table_mean": 0.9460925039872409
+    },
+    {
+      "feature": "opp_allowed_receiving_yards_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 232.0012759170654,
+      "table_mean": 232.0012759170654
+    },
+    {
+      "feature": "opp_allowed_receptions_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 21.00446570972887,
+      "table_mean": 21.00446570972887
+    },
+    {
+      "feature": "opp_allowed_receiving_tds_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 1.5572567783094098,
+      "table_mean": 1.5572567783094098
+    },
+    {
+      "feature": "team_player_pass_attempts_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.6089782997470641,
+      "live_mean": 61.321728426380176,
+      "table_mean": 38.2548644338118
+    },
+    {
+      "feature": "team_player_carries_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.2920600474023955,
+      "live_mean": 35.588869352103195,
+      "table_mean": 28.674056353003717
+    },
+    {
+      "feature": "team_player_targets_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.15620340923904508,
+      "live_mean": 40.30528014774841,
+      "table_mean": 35.465098351940455
+    },
+    {
+      "feature": "team_player_receptions_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.15504522671318988,
+      "live_mean": 26.75274237634715,
+      "table_mean": 23.666347687400318
+    },
+    {
+      "feature": "team_player_passing_yards_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.5402713179370118,
+      "live_mean": 402.46232047112807,
+      "table_mean": 263.45901116427433
+    },
+    {
+      "feature": "team_player_rushing_yards_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.2673459226292971,
+      "live_mean": 143.4588800412821,
+      "table_mean": 118.16959064327487
+    },
+    {
+      "feature": "team_player_receiving_yards_avg5_sum",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.1471979798601335,
+      "live_mean": 289.9879234788123,
+      "table_mean": 259.8501594896332
+    },
+    {
+      "feature": "pass_attempts_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.38090294299164834,
+      "live_mean": 0.051774516209288,
+      "table_mean": 0.08209309800965625
+    },
+    {
+      "feature": "carries_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.2390381026895667,
+      "live_mean": 0.06518236421705335,
+      "table_mean": 0.08125702757058312
+    },
+    {
+      "feature": "targets_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.14749759813304295,
+      "live_mean": 0.07178821960366168,
+      "table_mean": 0.08075074054106388
+    },
+    {
+      "feature": "receptions_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.14629024998794635,
+      "live_mean": 0.07262673942431355,
+      "table_mean": 0.08133809048632702
+    },
+    {
+      "feature": "passing_yards_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.3644302526613409,
+      "live_mean": 0.05381511984741408,
+      "table_mean": 0.082795141015139
+    },
+    {
+      "feature": "rushing_yards_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.22412490105652896,
+      "live_mean": 0.06663879969453276,
+      "table_mean": 0.08117594952071189
+    },
+    {
+      "feature": "receiving_yards_share_avg_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.1432349627657896,
+      "live_mean": 0.07358172579251766,
+      "table_mean": 0.08122490309474945
+    },
+    {
+      "feature": "pass_attempts_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 1.1172761660147967,
+      "live_mean": 5.349282296650718,
+      "table_mean": 2.529505582137161
+    },
+    {
+      "feature": "carries_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.43202927096231847,
+      "live_mean": 7.9298245614035086,
+      "table_mean": 5.666666666666667
+    },
+    {
+      "feature": "targets_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.1964369432435148,
+      "live_mean": 7.891547049441786,
+      "table_mean": 6.803827751196172
+    },
+    {
+      "feature": "receptions_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.20014347199294835,
+      "live_mean": 7.752791068580542,
+      "table_mean": 6.669856459330144
+    },
+    {
+      "feature": "passing_yards_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 1.148051947584527,
+      "live_mean": 5.2727272727272725,
+      "table_mean": 2.456140350877193
+    },
+    {
+      "feature": "rushing_yards_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.4470519213023462,
+      "live_mean": 7.666666666666667,
+      "table_mean": 5.437001594896332
+    },
+    {
+      "feature": "receiving_yards_role_rank",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.2085860942298685,
+      "live_mean": 7.996810207336523,
+      "table_mean": 6.835725677830941
+    },
+    {
+      "feature": "is_week_18",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.0,
+      "table_mean": 0.0
+    },
+    {
+      "feature": "is_late_season",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.0,
+      "table_mean": 0.0
+    },
+    {
+      "feature": "is_postseason",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.0,
+      "table_mean": 0.0
+    },
+    {
+      "feature": "starter_confidence",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.003983717524818579,
+      "live_mean": 0.7030159200630121,
+      "table_mean": 0.7051036416799574
+    },
+    {
+      "feature": "rest_risk_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.07775435865738106,
+      "live_mean": 0.1316231346669018,
+      "table_mean": 0.12303828548644338
+    },
+    {
+      "feature": "injury_downgrade_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.21371610845295055,
+      "table_coverage": 0.21371610845295055,
+      "relative_difference": 1.8157894416689757,
+      "live_mean": 0.15970149253731342,
+      "table_mean": 0.05671641791044776
+    },
+    {
+      "feature": "roster_context_known",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.012779552702854986,
+      "live_mean": 0.988835725677831,
+      "table_mean": 0.9984051036682615
+    },
+    {
+      "feature": "player_injury_context_known",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.21371610845295055,
+      "table_mean": 0.21371610845295055
+    },
+    {
+      "feature": "player_injury_context_unknown",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.7862838915470495,
+      "table_mean": 0.7862838915470495
+    },
+    {
+      "feature": "depth_context_known",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.9984051036682615,
+      "table_mean": 0.9984051036682615
+    },
+    {
+      "feature": "depth_context_unknown",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.001594896331738437,
+      "table_mean": 0.001594896331738437
+    },
+    {
+      "feature": "teammate_injury_context_unknown",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.0,
+      "table_mean": 0.0
+    },
+    {
+      "feature": "same_week_context_unknown_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.35414673046251993,
+      "table_mean": 0.35414673046251993
+    },
+    {
+      "feature": "injury_risk_legacy_imputation",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.24253075303924812,
+      "live_mean": 0.1127591706539075,
+      "table_mean": 0.09074960127591707
+    },
+    {
+      "feature": "depth_rank_delta",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.9824561403508771,
+      "table_coverage": 0.9425837320574163,
+      "relative_difference": 0.430555552027392,
+      "live_mean": -0.05254237288135593,
+      "table_mean": -0.03728813559322034
+    },
+    {
+      "feature": "depth_rank_worse",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.3636363532727276,
+      "live_mean": 0.03827751196172249,
+      "table_mean": 0.03508771929824561
+    },
+    {
+      "feature": "depth_rank_better",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.523809515989796,
+      "live_mean": 0.07974481658692185,
+      "table_mean": 0.06698564593301436
+    },
+    {
+      "feature": "depth_rank_change_abs",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.9824561403508771,
+      "table_coverage": 0.9425837320574163,
+      "relative_difference": 0.430555552027392,
+      "live_mean": 0.13389830508474576,
+      "table_mean": 0.12203389830508475
+    },
+    {
+      "feature": "has_true_route_history",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.0,
+      "table_mean": 0.0
+    },
+    {
+      "feature": "estimated_routes_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 3.2172271306326325e-17,
+      "live_mean": 20.415787885802633,
+      "table_mean": 20.415787885802633
+    },
+    {
+      "feature": "route_participation_proxy_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.00909328554940886,
+      "live_mean": 0.5199816022570372,
+      "table_mean": 0.5152958697617692
+    },
+    {
+      "feature": "targets_per_route_proxy_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 3.131830566884448e-17,
+      "live_mean": 0.19654544637236074,
+      "table_mean": 0.19654544637236074
+    },
+    {
+      "feature": "yards_per_route_proxy_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 2.86043914144118e-17,
+      "live_mean": 1.418710048990785,
+      "table_mean": 1.418710048990785
+    },
+    {
+      "feature": "route_target_intensity_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.00800204785269855,
+      "live_mean": 0.08365512898320764,
+      "table_mean": 0.08299103077559448
+    },
+    {
+      "feature": "route_weighted_target_expectation_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.009120664515032214,
+      "live_mean": 2.879561492185854,
+      "table_mean": 2.853535353535354
+    },
+    {
+      "feature": "route_weighted_yard_expectation_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.008775666214534267,
+      "live_mean": 21.261730354789048,
+      "table_mean": 21.07676767676768
+    },
+    {
+      "feature": "red_zone_targets_per_route_proxy_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 2.78939515807896e-17,
+      "live_mean": 0.025477817546938078,
+      "table_mean": 0.025477817546938078
+    },
+    {
+      "feature": "first_read_proxy_avg_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.0,
+      "table_mean": 0.0
+    },
+    {
+      "feature": "snap_share_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 0.988835725677831,
+      "relative_difference": 6.941408635772134e-16,
+      "live_mean": 0.004149795186891963,
+      "table_mean": 0.004149795186891963
+    },
+    {
+      "feature": "snap_share_volatility_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 5.698376859891886e-10,
+      "live_mean": 0.13102840928663956,
+      "table_mean": 0.13102840936130425
+    },
+    {
+      "feature": "targets_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.10962887015518596,
+      "table_mean": 0.10962887015518596
+    },
+    {
+      "feature": "carries_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": -0.07892901445533022,
+      "table_mean": -0.07892901445533022
+    },
+    {
+      "feature": "receptions_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.08637376268955216,
+      "table_mean": 0.08637376268955216
+    },
+    {
+      "feature": "receiving_yards_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.44240462266778047,
+      "table_mean": 0.44240462266778047
+    },
+    {
+      "feature": "rushing_yards_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": -0.45460684539631907,
+      "table_mean": -0.45460684539631907
+    },
+    {
+      "feature": "target_share_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 6.266986183488844e-16,
+      "live_mean": -0.001089293136664603,
+      "table_mean": -0.0010892931366646035
+    },
+    {
+      "feature": "air_yards_share_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 5.194348908108242e-16,
+      "live_mean": -0.00036718816595763593,
+      "table_mean": -0.0003671881659576362
+    },
+    {
+      "feature": "wopr_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 6.426792623264788e-16,
+      "live_mean": -0.002562839468085227,
+      "table_mean": -0.002562839468085227
+    },
+    {
+      "feature": "route_share_trend_3_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 8.757106392338293e-17,
+      "live_mean": -0.3388506333197361,
+      "table_mean": -0.3388506333197361
+    },
+    {
+      "feature": "recent_snap_drop_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 6.817215898153322e-16,
+      "live_mean": 0.16269344446976025,
+      "table_mean": 0.16269344446976025
+    },
+    {
+      "feature": "recent_snap_rise_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 7.234355670349852e-16,
+      "live_mean": 0.18461124401913875,
+      "table_mean": 0.18461124401913875
+    },
+    {
+      "feature": "recent_target_spike_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.13588812097584027,
+      "table_mean": 0.13588812097584027
+    },
+    {
+      "feature": "recent_carry_spike_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.04810840231892864,
+      "table_mean": 0.04810840231892864
+    },
+    {
+      "feature": "recent_route_spike_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 2.7574968430708914e-16,
+      "live_mean": 0.027772422353227747,
+      "table_mean": 0.02777242235322774
+    },
+    {
+      "feature": "usage_volatility_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 9.506188031892518e-11,
+      "live_mean": 0.1570880241491712,
+      "table_mean": 0.15708802416410414
+    },
+    {
+      "feature": "limited_workload_risk_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.07630465673019426,
+      "live_mean": 0.1568367075048596,
+      "table_mean": 0.1474163274195717
+    },
+    {
+      "feature": "full_workload_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.01585043773316244,
+      "live_mean": 0.5493965278834637,
+      "table_mean": 0.5569712641298316
+    },
+    {
+      "feature": "high_usage_fragility_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.21855066475845408,
+      "live_mean": 0.020073426568054914,
+      "table_mean": 0.022909917898759992
+    },
+    {
+      "feature": "same_week_context_confidence_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.013393681861448662,
+      "live_mean": 0.8530303030303029,
+      "table_mean": 0.8633173843700159
+    },
+    {
+      "feature": "teammate_skill_injury_pressure_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.4589797429449891,
+      "live_mean": 0.5945773524720893,
+      "table_mean": 0.4708452950558214
+    },
+    {
+      "feature": "teammate_receiver_injury_pressure_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.5379555232514216,
+      "live_mean": 0.5258921451355661,
+      "table_mean": 0.42808014354066987
+    },
+    {
+      "feature": "receiver_teammate_vacancy_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.5289038677019757,
+      "live_mean": 0.1398781634064005,
+      "table_mean": 0.11975124357490531
+    },
+    {
+      "feature": "receiver_target_eruption_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.06051137976892848,
+      "live_mean": 0.1700815885549474,
+      "table_mean": 0.17715013895552725
+    },
+    {
+      "feature": "air_yards_spike_path_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.037403747358759606,
+      "live_mean": 0.14247218937966152,
+      "table_mean": 0.14654428213051934
+    },
+    {
+      "feature": "receiver_air_yards_eruption_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.030539636450130553,
+      "live_mean": 0.22325964159108608,
+      "table_mean": 0.2296940439860756
+    },
+    {
+      "feature": "receiver_explosive_spike_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.10310925896514805,
+      "live_mean": 0.14083740158895347,
+      "table_mean": 0.14577302668802425
+    },
+    {
+      "feature": "receiver_target_eruption_anchor_targets",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.012058574135775851,
+      "live_mean": 3.390443608205429,
+      "table_mean": 3.377345740241054
+    },
+    {
+      "feature": "receiver_air_yards_spike_anchor_yards",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.011604109199823957,
+      "live_mean": 24.16906650227439,
+      "table_mean": 24.046837766228652
+    },
+    {
+      "feature": "receiver_contextual_spike_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.13501632091319066,
+      "live_mean": 0.09202059493964762,
+      "table_mean": 0.09604597891065908
+    },
+    {
+      "feature": "backup_role_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.01412075140325584,
+      "live_mean": 0.33615265604898514,
+      "table_mean": 0.3341340598972178
+    },
+    {
+      "feature": "starter_role_stability_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.027208714712592827,
+      "live_mean": 0.5356993003850221,
+      "table_mean": 0.5500154222136782
+    },
+    {
+      "feature": "projected_starter_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.009578850165221931,
+      "live_mean": 0.6252573058396259,
+      "table_mean": 0.6307073632403927
+    },
+    {
+      "feature": "depth_movement_risk_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.1852337405199708,
+      "live_mean": 0.07225230848586112,
+      "table_mean": 0.06773343554593556
+    },
+    {
+      "feature": "weird_usage_risk_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.05801978115206116,
+      "live_mean": 0.1540363351745916,
+      "table_mean": 0.14792948238391876
+    },
+    {
+      "feature": "role_continuity_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.022163353960860114,
+      "live_mean": 0.5372682392184502,
+      "table_mean": 0.543084735733452
+    },
+    {
+      "feature": "normal_usage_path_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.016202876286421114,
+      "live_mean": 0.6044650542390979,
+      "table_mean": 0.6111308298883487
+    },
+    {
+      "feature": "high_pass_attempt_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.002331023531913985,
+      "live_mean": 0.06463551064005298,
+      "table_mean": 0.06448519413273851
+    },
+    {
+      "feature": "high_carry_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0006245401037722888,
+      "live_mean": 0.13137505842605263,
+      "table_mean": 0.1312930606437091
+    },
+    {
+      "feature": "high_target_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0049882793396222435,
+      "live_mean": 0.23788766846958928,
+      "table_mean": 0.23670690828445973
+    },
+    {
+      "feature": "spike_snap_share_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0016691075293834882,
+      "live_mean": 0.2881468211361108,
+      "table_mean": 0.28766667452204425
+    },
+    {
+      "feature": "game_script_pass_boost",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.012576141250839166,
+      "live_mean": 0.9985588972431078,
+      "table_mean": 0.9987012987012988
+    },
+    {
+      "feature": "game_script_rush_boost",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.01254351831636892,
+      "live_mean": 1.0014411027568924,
+      "table_mean": 1.0012987012987014
+    },
+    {
+      "feature": "spike_target_opportunity_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.003389915568770878,
+      "live_mean": 0.34949627359118335,
+      "table_mean": 0.3483155134060538
+    },
+    {
+      "feature": "spike_carry_opportunity_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.00032255162348254177,
+      "live_mean": 0.2542979931498293,
+      "table_mean": 0.2542159953674858
+    },
+    {
+      "feature": "spike_pass_attempt_opportunity_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0015636872359722762,
+      "live_mean": 0.16857427046915194,
+      "table_mean": 0.16831108457296887
+    },
+    {
+      "feature": "target_spike_path_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.030524392899657398,
+      "live_mean": 0.2614888351582261,
+      "table_mean": 0.2638485380002834
+    },
+    {
+      "feature": "carry_spike_path_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.022654790677415288,
+      "live_mean": 0.19370782139734918,
+      "table_mean": 0.19436740316469991
+    },
+    {
+      "feature": "pass_spike_path_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.023934596437792305,
+      "live_mean": 0.1300374040606583,
+      "table_mean": 0.13021126219603818
+    },
+    {
+      "feature": "receiver_route_quality_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.021183331886591307,
+      "live_mean": 0.1978853236811467,
+      "table_mean": 0.1982925877408401
+    },
+    {
+      "feature": "receiver_yards_rate_signal",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.009268206337464266,
+      "live_mean": 19.485260097625304,
+      "table_mean": 19.30632509303562
+    },
+    {
+      "feature": "receiver_route_env_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.03772644449884161,
+      "live_mean": 0.12908457033901588,
+      "table_mean": 0.13178039243498493
+    },
+    {
+      "feature": "receiver_spike_yards_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.04304955606435773,
+      "live_mean": 0.10098995404658155,
+      "table_mean": 0.10368148228417852
+    },
+    {
+      "feature": "rb_rush_role_env_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.11720618125930585,
+      "live_mean": 1.3016027024276549,
+      "table_mean": 1.4529256953666088
+    },
+    {
+      "feature": "rb_carry_trend_env_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.025935962853195826,
+      "live_mean": 1.9867911709127932,
+      "table_mean": 2.0083346973902287
+    },
+    {
+      "feature": "rb_spike_rush_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.12264193317312426,
+      "live_mean": 1.1119124650389471,
+      "table_mean": 1.2501507639633758
+    },
+    {
+      "feature": "td_goal_line_env_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.025743166945870064,
+      "live_mean": 0.3715282941322435,
+      "table_mean": 0.37572805625631917
+    },
+    {
+      "feature": "receiving_td_role_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.028383572090423678,
+      "live_mean": 0.3511824926777606,
+      "table_mean": 0.3558964116615864
+    },
+    {
+      "feature": "receiving_td_route_redzone_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.032520817699032284,
+      "live_mean": 0.27471717715660027,
+      "table_mean": 0.2804732384059424
+    },
+    {
+      "feature": "receiving_td_any_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.024988745226587512,
+      "live_mean": 0.26785259128814115,
+      "table_mean": 0.27116370676025886
+    },
+    {
+      "feature": "receiver_usage_spike_signal",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.020497147370430728,
+      "live_mean": 0.2535773162364815,
+      "table_mean": 0.25528209607548813
+    },
+    {
+      "feature": "rb_usage_spike_signal",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.013075812705254736,
+      "live_mean": 0.2526872054181911,
+      "table_mean": 0.25288957678072155
+    },
+    {
+      "feature": "qb_volume_spike_signal",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.014819642034901184,
+      "live_mean": 0.2873874534609798,
+      "table_mean": 0.28747677589497317
+    },
+    {
+      "feature": "role_change_upside_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.10618081101247878,
+      "live_mean": 0.12012409970633656,
+      "table_mean": 0.11565838997746894
+    },
+    {
+      "feature": "workload_floor_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.028854362375352886,
+      "live_mean": 0.45265553116871715,
+      "table_mean": 0.46435834974250356
+    },
+    {
+      "feature": "receiver_spike_volume_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.07795117371919709,
+      "live_mean": 0.13458330735250787,
+      "table_mean": 0.14156777298106826
+    },
+    {
+      "feature": "receiver_spike_volume_anchor_yards",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.018293373901864158,
+      "live_mean": 21.885748629939446,
+      "table_mean": 21.91981231238912
+    },
+    {
+      "feature": "receiver_target_command_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.07798453158501295,
+      "live_mean": 0.1155776124977245,
+      "table_mean": 0.12355045112856329
+    },
+    {
+      "feature": "receiver_route_spike_readiness_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.033020345059758,
+      "live_mean": 0.13973224307679571,
+      "table_mean": 0.1434972361896849
+    },
+    {
+      "feature": "receiver_target_route_spike_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.06859241515317836,
+      "live_mean": 0.12040081223127821,
+      "table_mean": 0.1266781787606737
+    },
+    {
+      "feature": "receiver_target_route_spike_anchor_targets",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.015325827022118804,
+      "live_mean": 3.2869985529713244,
+      "table_mean": 3.285036024523785
+    },
+    {
+      "feature": "receiver_target_route_spike_anchor_yards",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.017110937842020838,
+      "live_mean": 25.34042492751806,
+      "table_mean": 25.38084493400253
+    },
+    {
+      "feature": "workload_downside_v2_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.12027170423905681,
+      "live_mean": 0.19791072567157666,
+      "table_mean": 0.1822648568271436
+    },
+    {
+      "feature": "workload_upside_v2_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.038073083768904996,
+      "live_mean": 0.3687574921360097,
+      "table_mean": 0.3675033005345475
+    },
+    {
+      "feature": "receiver_projected_targets_v2",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.025054953966728338,
+      "live_mean": 2.9893658373427114,
+      "table_mean": 3.014772253469618
+    },
+    {
+      "feature": "receiver_high_value_target_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.11376649739808761,
+      "live_mean": 0.08369201547382606,
+      "table_mean": 0.08714893615784118
+    },
+    {
+      "feature": "receiver_target_spike_v2_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.07782066350137201,
+      "live_mean": 0.1826810257350712,
+      "table_mean": 0.18815791768541074
+    },
+    {
+      "feature": "receiver_air_yards_spike_v2_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.03190896352719401,
+      "live_mean": 0.24718561370584005,
+      "table_mean": 0.2546869249496715
+    },
+    {
+      "feature": "receiver_ypt_efficiency_spike_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.052449769359947385,
+      "live_mean": 0.13416769423926295,
+      "table_mean": 0.13966695178279717
+    },
+    {
+      "feature": "receiver_spike_yards_anchor_v2",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.025401626241654967,
+      "live_mean": 24.246635166282697,
+      "table_mean": 24.468961798515153
+    },
+    {
+      "feature": "rb_projected_carries_v2",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0233099080918016,
+      "live_mean": 2.1324977903632956,
+      "table_mean": 2.1469266085295136
+    },
+    {
+      "feature": "rb_carry_spike_v2_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.02551410877914703,
+      "live_mean": 0.07844826033983128,
+      "table_mean": 0.07866340858557287
+    },
+    {
+      "feature": "rb_rush_yards_anchor_v2",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.012218482424645287,
+      "live_mean": 10.576663470340062,
+      "table_mean": 10.611775325850981
+    },
+    {
+      "feature": "receiving_td_rare_event_score_v2",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.037253169536870454,
+      "live_mean": 0.15938545847418556,
+      "table_mean": 0.16308421648552673
+    },
+    {
+      "feature": "same_week_usage_confidence_v3_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.01678279325189971,
+      "live_mean": 0.7790537776698515,
+      "table_mean": 0.790640212010347
+    },
+    {
+      "feature": "receiver_live_spike_v3_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.09836601120174224,
+      "live_mean": 0.12536398419273093,
+      "table_mean": 0.13029239099171577
+    },
+    {
+      "feature": "receiver_projected_targets_v3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.02442357938234935,
+      "live_mean": 2.807073300962905,
+      "table_mean": 2.826655112978156
+    },
+    {
+      "feature": "receiver_spike_yards_anchor_v3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.024113457274392104,
+      "live_mean": 23.23867313333512,
+      "table_mean": 23.39278367923338
+    },
+    {
+      "feature": "rb_live_carry_v3_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.027092170740868456,
+      "live_mean": 0.0754733744879926,
+      "table_mean": 0.07569113662302993
+    },
+    {
+      "feature": "rb_projected_carries_v3",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.02048999050879187,
+      "live_mean": 2.435734113296945,
+      "table_mean": 2.4433837947673305
+    },
+    {
+      "feature": "rb_rush_yards_anchor_v3",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.013128831788263635,
+      "live_mean": 11.52961775100509,
+      "table_mean": 11.542287702541705
+    },
+    {
+      "feature": "yardage_projection_volatility_v3_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.08492837695295265,
+      "live_mean": 0.2745470101513005,
+      "table_mean": 0.2581516280788964
+    },
+    {
+      "feature": "receiving_usage_history_quality_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.011348326232989427,
+      "live_mean": 0.6225518341307815,
+      "table_mean": 0.6155661881977672
+    },
+    {
+      "feature": "rb_usage_history_quality_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.0,
+      "live_mean": 0.20347687400318976,
+      "table_mean": 0.20347687400318976
+    },
+    {
+      "feature": "td_usage_history_quality_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.01704545451075487,
+      "live_mean": 0.4996012759170654,
+      "table_mean": 0.49122807017543857
+    },
+    {
+      "feature": "live_usage_context_quality_v4_score",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.014866270176350668,
+      "live_mean": 0.7881359642423735,
+      "table_mean": 0.7989206940956926
+    },
+    {
+      "feature": "receiver_spike_under_correction_v4_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.08782316839742083,
+      "live_mean": 0.16758458242935972,
+      "table_mean": 0.17520480397116656
+    },
+    {
+      "feature": "receiver_spike_yards_anchor_v4",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.019687046469971863,
+      "live_mean": 25.711906032372028,
+      "table_mean": 25.80022158749968
+    },
+    {
+      "feature": "rb_carry_under_correction_v4_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.026899398072116186,
+      "live_mean": 0.08575902138423445,
+      "table_mean": 0.08517580024891383
+    },
+    {
+      "feature": "rb_rush_yards_anchor_v4",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.014054241309858108,
+      "live_mean": 11.438631759073925,
+      "table_mean": 11.453010239098624
+    },
+    {
+      "feature": "yardage_projection_volatility_v4_score",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 1.0,
+      "table_coverage": 1.0,
+      "relative_difference": 0.08492837695295265,
+      "live_mean": 0.2745470101513005,
+      "table_mean": 0.2581516280788964
+    },
+    {
+      "feature": "pass_attempts_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 5.234835562829503e-16,
+      "live_mean": 0.9862412011330727,
+      "table_mean": 0.9862412011330728
+    },
+    {
+      "feature": "pass_attempts_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.088138169413959e-15,
+      "live_mean": 1.004128749756936,
+      "table_mean": 1.0041287497569353
+    },
+    {
+      "feature": "carries_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 5.954473151342015e-16,
+      "live_mean": 1.116874627677097,
+      "table_mean": 1.116874627677097
+    },
+    {
+      "feature": "carries_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 6.938131080737803e-16,
+      "live_mean": 1.303788650426072,
+      "table_mean": 1.303788650426072
+    },
+    {
+      "feature": "targets_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 4.1471889743267473e-16,
+      "live_mean": 1.5985370389836733,
+      "table_mean": 1.5985370389836733
+    },
+    {
+      "feature": "targets_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 7.03571313398165e-16,
+      "live_mean": 1.6660797508960774,
+      "table_mean": 1.6660797508960774
+    },
+    {
+      "feature": "receptions_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 3.2349712459501104e-16,
+      "live_mean": 1.2479529059144678,
+      "table_mean": 1.247952905914468
+    },
+    {
+      "feature": "receptions_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 6.135449390107272e-16,
+      "live_mean": 1.2886529756323848,
+      "table_mean": 1.2886529756323848
+    },
+    {
+      "feature": "rushing_yards_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 4.702188705201698e-16,
+      "live_mean": 6.351646425494768,
+      "table_mean": 6.351646425494767
+    },
+    {
+      "feature": "rushing_yards_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 7.011169483746077e-11,
+      "live_mean": 7.565972627506357,
+      "table_mean": 7.565972628036815
+    },
+    {
+      "feature": "receiving_yards_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 5.773611881446603e-16,
+      "live_mean": 16.33650630260886,
+      "table_mean": 16.33650630260886
+    },
+    {
+      "feature": "receiving_yards_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 5.8328034330227945e-16,
+      "live_mean": 17.366997065178406,
+      "table_mean": 17.366997065178406
+    },
+    {
+      "feature": "rushing_tds_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.3877486182505223e-16,
+      "live_mean": 0.11691551217322374,
+      "table_mean": 0.11691551217322374
+    },
+    {
+      "feature": "rushing_tds_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.5138605776281734e-16,
+      "live_mean": 0.14390469380777254,
+      "table_mean": 0.14390469380777252
+    },
+    {
+      "feature": "receiving_tds_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.5425916545104694e-16,
+      "live_mean": 0.22572274601956455,
+      "table_mean": 0.2257227460195645
+    },
+    {
+      "feature": "receiving_tds_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.261472239310317e-16,
+      "live_mean": 0.26229612054828877,
+      "table_mean": 0.26229612054828877
+    },
+    {
+      "feature": "routes_run_std_5",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "routes_run_std_10",
+      "rows": 627,
+      "status": "differs",
+      "live_coverage": 0.0,
+      "table_coverage": 0.0,
+      "relative_difference": null,
+      "live_mean": null,
+      "table_mean": null
+    },
+    {
+      "feature": "pass_route_opportunities_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.24561403508771928,
+      "table_coverage": 0.24561403508771928,
+      "relative_difference": 1.310479805049419e-09,
+      "live_mean": 5.475111451785569,
+      "table_mean": 5.475111458960541
+    },
+    {
+      "feature": "pass_route_opportunities_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.7543859649122807,
+      "table_coverage": 0.7543859649122807,
+      "relative_difference": 2.5766009288059868e-15,
+      "live_mean": 7.296742563116178,
+      "table_mean": 7.296742563116176
+    },
+    {
+      "feature": "pass_route_opportunity_share_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.24561403508771928,
+      "table_coverage": 0.24561403508771928,
+      "relative_difference": 1.507779081612335e-14,
+      "live_mean": 0.12316881937086425,
+      "table_mean": 0.12316881937086481
+    },
+    {
+      "feature": "pass_route_opportunity_share_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.7543859649122807,
+      "table_coverage": 0.7543859649122807,
+      "relative_difference": 3.9636002873577466e-15,
+      "live_mean": 0.14334638633332483,
+      "table_mean": 0.14334638633332483
+    },
+    {
+      "feature": "snap_share_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 5.698376861140392e-10,
+      "live_mean": 0.13490117015225453,
+      "table_mean": 0.13490117022912604
+    },
+    {
+      "feature": "snap_share_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 2.8453253106935867e-10,
+      "live_mean": 0.14905251824690197,
+      "table_mean": 0.14905251828931207
+    },
+    {
+      "feature": "offense_snap_share_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 5.698376861140392e-10,
+      "live_mean": 0.13490117015225453,
+      "table_mean": 0.13490117022912604
+    },
+    {
+      "feature": "offense_snap_share_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 2.8453253106935867e-10,
+      "live_mean": 0.14905251824690197,
+      "table_mean": 0.14905251828931207
+    },
+    {
+      "feature": "red_zone_carries_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 2.8412093275017935e-16,
+      "live_mean": 0.39524866932717473,
+      "table_mean": 0.3952486693271748
+    },
+    {
+      "feature": "red_zone_carries_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 3.067917943624394e-16,
+      "live_mean": 0.45339187661519736,
+      "table_mean": 0.4533918766151973
+    },
+    {
+      "feature": "red_zone_targets_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.7708385394727935e-16,
+      "live_mean": 0.4828217366937302,
+      "table_mean": 0.4828217366937302
+    },
+    {
+      "feature": "red_zone_targets_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 2.1240101383388e-16,
+      "live_mean": 0.5347174998757807,
+      "table_mean": 0.5347174998757805
+    },
+    {
+      "feature": "goal_line_carries_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.2045267244427842e-16,
+      "live_mean": 0.17934730089736745,
+      "table_mean": 0.17934730089736742
+    },
+    {
+      "feature": "goal_line_carries_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.7885406278025745e-16,
+      "live_mean": 0.19825024412680214,
+      "table_mean": 0.19825024412680214
+    },
+    {
+      "feature": "goal_line_targets_std_5",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 1.7496981313572624e-16,
+      "live_mean": 0.15941208322888656,
+      "table_mean": 0.1594120832288865
+    },
+    {
+      "feature": "goal_line_targets_std_10",
+      "rows": 627,
+      "status": "match",
+      "live_coverage": 0.9712918660287081,
+      "table_coverage": 0.9712918660287081,
+      "relative_difference": 9.536425700196742e-17,
+      "live_mean": 0.19689946232461403,
+      "table_mean": 0.19689946232461403
+    }
+  ],
+  "membership": {
+    "carries": {
+      "played": 24.7683908045977,
+      "did_not_play": 6.169540229885058,
+      "cold_start": 4.604716462182304,
+      "live_total": 35.54264749666506,
+      "table_total": 28.439655172413794,
+      "team_games": 58
+    },
+    "targets": {
+      "played": 30.847701149425284,
+      "did_not_play": 4.888505747126437,
+      "cold_start": 4.632808605012124,
+      "live_total": 40.36901550156386,
+      "table_total": 35.45632183908046,
+      "team_games": 58
+    },
+    "live_members_per_team": 17.70689655172414,
+    "members_who_did_not_play": 4.568965517241379,
+    "cold_start_members": 2.4482758620689653
+  },
+  "summary": {
+    "match": 214,
+    "differs": 116,
+    "missing_live": 33
+  }
+}
