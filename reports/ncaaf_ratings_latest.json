@@ -1,0 +1,193 @@
+{
+  "games": 8583,
+  "seasons": [
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "margin_mae": {
+    "model": 13.285513670430777,
+    "close": 12.30254890337878,
+    "games": 8435
+  },
+  "total_mae": {
+    "model": 13.192699159224738,
+    "close": 12.792444651907175,
+    "games": 7498
+  },
+  "spread_vs_close": [
+    {
+      "edge": 1,
+      "picks": 6989,
+      "hit_rate": 0.49191586779224494,
+      "per_season": 698.9
+    },
+    {
+      "edge": 2,
+      "picks": 5710,
+      "hit_rate": 0.48756567425569175,
+      "per_season": 571.0
+    },
+    {
+      "edge": 3,
+      "picks": 4551,
+      "hit_rate": 0.4847286310700945,
+      "per_season": 455.1
+    },
+    {
+      "edge": 4,
+      "picks": 3570,
+      "hit_rate": 0.4815126050420168,
+      "per_season": 357.0
+    },
+    {
+      "edge": 5,
+      "picks": 2769,
+      "hit_rate": 0.47778981581798485,
+      "per_season": 276.9
+    },
+    {
+      "edge": 7,
+      "picks": 1617,
+      "hit_rate": 0.48237476808905383,
+      "per_season": 161.7
+    }
+  ],
+  "total_vs_close": [
+    {
+      "edge": 1,
+      "picks": 6097,
+      "hit_rate": 0.5068066262096113,
+      "per_season": 677.4444444444445
+    },
+    {
+      "edge": 2,
+      "picks": 4777,
+      "hit_rate": 0.510362151978229,
+      "per_season": 530.7777777777778
+    },
+    {
+      "edge": 3,
+      "picks": 3632,
+      "hit_rate": 0.5079845814977973,
+      "per_season": 403.55555555555554
+    },
+    {
+      "edge": 4,
+      "picks": 2642,
+      "hit_rate": 0.5185465556396669,
+      "per_season": 293.55555555555554
+    },
+    {
+      "edge": 5,
+      "picks": 1879,
+      "hit_rate": 0.5114422565194252,
+      "per_season": 208.77777777777777
+    },
+    {
+      "edge": 7,
+      "picks": 810,
+      "hit_rate": 0.5345679012345679,
+      "per_season": 90.0
+    }
+  ],
+  "spread_vs_open": [
+    {
+      "edge": 1,
+      "picks": 3499,
+      "hit_rate": 0.49214061160331524,
+      "per_season": 699.8
+    },
+    {
+      "edge": 2,
+      "picks": 2807,
+      "hit_rate": 0.4880655504096901,
+      "per_season": 561.4
+    },
+    {
+      "edge": 3,
+      "picks": 2157,
+      "hit_rate": 0.49420491423273066,
+      "per_season": 431.4
+    },
+    {
+      "edge": 4,
+      "picks": 1674,
+      "hit_rate": 0.492831541218638,
+      "per_season": 334.8
+    },
+    {
+      "edge": 5,
+      "picks": 1264,
+      "hit_rate": 0.4897151898734177,
+      "per_season": 252.8
+    },
+    {
+      "edge": 7,
+      "picks": 702,
+      "hit_rate": 0.47863247863247865,
+      "per_season": 140.4
+    }
+  ],
+  "total_vs_open": [
+    {
+      "edge": 1,
+      "picks": 3337,
+      "hit_rate": 0.5172310458495655,
+      "per_season": 667.4
+    },
+    {
+      "edge": 2,
+      "picks": 2515,
+      "hit_rate": 0.5268389662027833,
+      "per_season": 503.0
+    },
+    {
+      "edge": 3,
+      "picks": 1764,
+      "hit_rate": 0.5204081632653061,
+      "per_season": 352.8
+    },
+    {
+      "edge": 4,
+      "picks": 1182,
+      "hit_rate": 0.5253807106598984,
+      "per_season": 236.4
+    },
+    {
+      "edge": 5,
+      "picks": 750,
+      "hit_rate": 0.528,
+      "per_season": 150.0
+    },
+    {
+      "edge": 7,
+      "picks": 263,
+      "hit_rate": 0.532319391634981,
+      "per_season": 52.6
+    }
+  ],
+  "spread_blend": {
+    "rows": 8435,
+    "market_weight": 1.0120621318953078,
+    "model_weight": -0.015311761781634344,
+    "model_weight_se": 0.028666703885560734
+  },
+  "total_blend": {
+    "rows": 7498,
+    "market_weight": 0.8887292870785253,
+    "model_weight": 0.11473900881987845,
+    "model_weight_se": 0.04209024867308794
+  },
+  "spread_line_move_agreement": {
+    "games": 4325,
+    "correlation": 0.07741761502062446
+  }
+}
