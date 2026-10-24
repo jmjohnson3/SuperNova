@@ -69,7 +69,7 @@ def close_ev(row: dict, closes: dict) -> float | None:
     quotes = scan.pairs(dict(sharp, _home=event.get("home_team"), _away=event.get("away_team")), safe_time(observed))
     line = float(row["line"])
     first_side = row["side"] in ("over", "home")
-    key_line = line if (first_side or row["market"] != "spread") else -line
+    key_line = line if (first_side or row["market"] not in scan.TEAM_MARKETS) else -line
     found = scan.reference(quotes, (row["market"], row["player_norm"] or "game", key_line), row["sport"])
     if found is None:
         return None
@@ -143,19 +143,29 @@ def markdown(summary: dict) -> str:
 
 def describe(row: dict) -> str:
     who = row["player"] or f"{row['away_team']} @ {row['home_team']}"
-    market = {"h2h": "moneyline", "spread": "spread", "total": "total"}.get(row["market"], row["market"])
-    if row["market"] in ("h2h", "spread"):  # team sides
+    market = {"h2h": "moneyline", "spread": "spread", "total": "total", "spread_h1": "1st-half spread",
+              "total_h1": "1st-half total", "team_total": "team total"}.get(row["market"], row["market"])
+    if row["market"] in ("h2h",) + scan.TEAM_MARKETS:  # team sides
         side = row["home_team"] if row["side"] == "home" else row["away_team"]
-        line = f" {float(row['line']):+g}" if row["market"] == "spread" else ""
+        line = f" {float(row['line']):+g}" if row["market"] in scan.TEAM_MARKETS else ""
     else:  # over/under on a total or a player stat
         side, line = row["side"], f" {float(row['line']):g}"
     return f"{who}: {side}{line} {market} at {row['book']} {int(row['price']):+d}"
 
 
-def digest_text(df: pd.DataFrame, sport: str, day: date) -> str | None:
-    part = df[df.sport.eq(sport) & df.day.eq(day) & df.tier.eq("decision")] if not df.empty else df
+def digest_text(df: pd.DataFrame, sport: str, day: date, scanned: int = 0) -> str | None:
+    """The day's research summary. A scanned day with no decisions still posts, so silence never looks like
+    a broken scanner (Friday's NCAAF games had none and the digest said nothing)."""
+    day_rows = df[df.sport.eq(sport) & df.day.eq(day)] if not df.empty else df
+    part = day_rows[day_rows.tier.eq("decision")] if not day_rows.empty else day_rows
     if part.empty:
-        return None
+        if not scanned:
+            return None
+        best = float(day_rows.ev.max()) if not day_rows.empty else None
+        return (f"**{SPORT_LABEL[sport]} sharp-gap research - {day:%a %b %d}** (research only, nothing staked)\n"
+                f"{scanned} games scanned against Pinnacle; no gap reached +3% inside the 15-45 minute window. "
+                f"{len(day_rows)} smaller gaps logged" + (f" (best {best:+.1%})." if best is not None else ".")
+                + " These markets were priced close to Pinnacle all day.")
     s = stats(part)
     top = part.sort_values("ev", ascending=False).head(6).to_dict("records")
     lines = [f"**{SPORT_LABEL[sport]} sharp-gap research - {day:%a %b %d}** (research only, nothing staked)",
@@ -196,6 +206,14 @@ def run(*, digest: bool = False, now: datetime | None = None, poster=post) -> di
     atomic_json(ROOT / "reports" / "sharp_multi_latest.json", dict(built_at=now.isoformat(), summary=summary))
     (ROOT / "reports" / "sharp_multi_latest.md").write_text(markdown(summary), encoding="utf-8")
     posted = []
+    scanned = {}
+    if digest:
+        with psycopg2.connect(PG_DSN) as conn, conn.cursor() as cur:
+            cur.execute("SELECT to_regclass('bets.sharp_multi_quotes')")
+            if cur.fetchone()[0] is not None:
+                cur.execute("""SELECT sport, (commence_time_utc AT TIME ZONE 'America/New_York')::date, COUNT(DISTINCT event_id)
+                               FROM bets.sharp_multi_quotes GROUP BY 1, 2""")
+                scanned = {(sport, day): int(n) for sport, day, n in cur.fetchall()}
     # Post after 9 AM Eastern so the previous day's late West Coast and college games are all in.
     if digest and now.astimezone(scan._ET).hour >= 9:
         state = scan._load_state()
@@ -203,7 +221,7 @@ def run(*, digest: bool = False, now: datetime | None = None, poster=post) -> di
         for sport in scan.SPORTS:
             if (state.get("digest_posted") or {}).get(sport) == str(yesterday):
                 continue
-            text = digest_text(df, sport, yesterday)
+            text = digest_text(df, sport, yesterday, scanned.get((sport, yesterday), 0))
             if text:
                 poster(text, sport)
                 posted.append(sport)

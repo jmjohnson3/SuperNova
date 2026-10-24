@@ -55,6 +55,8 @@ SPORTS = {
     "ncaaf": dict(key="americanfootball_ncaaf", lines=True, props=()),  # college props cannot be bet in Colorado
 }
 LINE_MARKETS = ("h2h", "spreads", "totals")
+SPREAD_MARKETS = {"spreads": "spread", "alternate_spreads": "spread", "spreads_h1": "spread_h1"}
+TOTAL_MARKETS = {"totals": "total", "alternate_totals": "total", "totals_h1": "total_h1"}
 PROP_STAT = {"player_points": "points", "player_rebounds": "rebounds", "player_assists": "assists",
              "player_threes": "threes"}
 
@@ -65,10 +67,11 @@ LINES_HORIZON = 60                 # poll game lines when any game starts within
 LINES_SPACING = 14.5               # ...at most every other task run (~20 min): one bulk call covers every game
 # Typical spread of the final margin / total around the market, and the largest gap a fair price is moved
 # across (normal approximation, as the NFL scanner does for yardage). Books often hang -6.5 where Pinnacle
-# has -7; without this 60-80% of spreads and totals had nothing to compare against. College spreads get
-# the tighter limit because of the 3 and 7 key numbers.
+# has -7; without this 60-80% of spreads and totals had nothing to compare against. Football spreads are
+# never shifted: margins cluster on 3 and 7, a smooth curve undervalues crossing them, and the only +3%
+# college "edges" a shift produced (Oct 24 sample: -3.5 from -2.5, +6.5 from +7.5) were exactly that.
 LINE_SHIFT = {"nba": {"spread": (12.5, 1.5), "total": (18.0, 1.5)},
-              "ncaaf": {"spread": (16.0, 1.0), "total": (16.5, 1.5)}}
+              "ncaaf": {"total": (16.5, 1.5)}}
 PROPS_HORIZON = 45                 # NBA props: polls inside the final 45 minutes...
 PROPS_SPACING = 9.5                # ...at most one per task run (T-40, T-30, T-20, T-10)
 MAX_SOURCE_AGE = 300
@@ -120,16 +123,21 @@ def pairs(book: dict, observed: datetime) -> dict[tuple, dict]:
             if key == "h2h":
                 side = "a" if name == home else "b" if name == away else None
                 k = ("h2h", "game", 0.0)
-            elif key == "spreads":
+            elif key in SPREAD_MARKETS:
                 if point is None:
                     continue
                 side = "a" if name == home else "b" if name == away else None
-                k = ("spread", "game", float(point) if side == "a" else -float(point))
-            elif key == "totals":
+                k = (SPREAD_MARKETS[key], "game", float(point) if side == "a" else -float(point))
+            elif key in TOTAL_MARKETS:
                 if point is None:
                     continue
                 side = "a" if name.lower() == "over" else "b" if name.lower() == "under" else None
-                k = ("total", "game", float(point))
+                k = (TOTAL_MARKETS[key], "game", float(point))
+            elif key == "team_totals":
+                if point is None or not o.get("description"):
+                    continue
+                side = "a" if name.lower() == "over" else "b" if name.lower() == "under" else None
+                k = ("team_total", normalize_name(o["description"]), float(point))
             elif key in PROP_STAT:
                 if point is None or not o.get("description"):
                     continue
@@ -144,7 +152,9 @@ def pairs(book: dict, observed: datetime) -> dict[tuple, dict]:
     return {k: v for k, v in out.items() if sharp_math.implied(v.get("a")) and sharp_math.implied(v.get("b"))}
 
 
-SIDE_LABEL = {"h2h": ("home", "away"), "spread": ("home", "away"), "total": ("over", "under")}
+SIDE_LABEL = {"h2h": ("home", "away"), "spread": ("home", "away"), "spread_h1": ("home", "away"),
+              "total": ("over", "under"), "total_h1": ("over", "under"), "team_total": ("over", "under")}
+TEAM_MARKETS = ("spread", "spread_h1")  # keyed on the home line; the away side's line is its negative
 
 
 def shifted_probability(market: str, sharp_line: float, p_a: float, target_line: float, sigma: float) -> float:
@@ -201,7 +211,7 @@ def find_gaps(event: dict, observed: datetime, min_ev: float = LOG_MIN_EV, sport
                 gaps.append(dict(market=market, player=offer.get("player") if who != "game" else None,
                                  player_norm="" if who == "game" else who,
                                  side=labels[0] if side == "a" else labels[1],
-                                 line=(line if side == "a" or market != "spread" else -line),
+                                 line=(line if side == "a" or market not in TEAM_MARKETS else -line),
                                  book=bet_book, price=int(offer[side]), link=offer.get(side + "_link"),
                                  sharp_price_over=int(ref["a"]), sharp_price_under=int(ref["b"]),
                                  fair_probability=float(fair), ev=float(value), method=method))

@@ -125,11 +125,22 @@ def test_a_half_point_off_spread_is_priced_by_shifting_and_labelled():
     assert not [g for g in scan.find_gaps(ev_, NOW) if g["market"] == "spread"]
 
 
-def test_college_spreads_shift_at_most_a_point():
-    far = event([bookmaker("fanduel", lines(spread_home=-5.0, home_spread=100, away_spread=-120)),
-                 bookmaker("pinnacle", lines(spread_home=-6.5, home_spread=-110, away_spread=-110))])
-    assert not [g for g in scan.find_gaps(far, NOW, sport="ncaaf") if g["market"] == "spread"]
-    assert [g for g in scan.find_gaps(far, NOW, sport="nba") if g["market"] == "spread"]
+def test_college_spreads_are_never_shifted_across_key_numbers():
+    near = event([bookmaker("fanduel", lines(spread_home=-3.5, home_spread=145, away_spread=-175)),
+                  bookmaker("pinnacle", lines(spread_home=-2.5, home_spread=-110, away_spread=-110))])
+    assert not [g for g in scan.find_gaps(near, NOW, sport="ncaaf") if g["market"] == "spread"]
+    assert [g for g in scan.find_gaps(near, NOW, sport="nba") if g["market"] == "spread"]  # basketball still shifts
+
+
+def test_alternate_first_half_and_team_total_markets_are_read():
+    alt = market("alternate_spreads", [dict(name="Milwaukee Bucks", price=150, point=-9.5),
+                                       dict(name="Chicago Bulls", price=-180, point=9.5)])
+    h1 = market("totals_h1", [dict(name="Over", price=-110, point=112.5), dict(name="Under", price=-110, point=112.5)])
+    team = market("team_totals", [dict(name="Over", description="Milwaukee Bucks", price=-115, point=118.5),
+                                  dict(name="Under", description="Milwaukee Bucks", price=-105, point=118.5)])
+    quotes = scan.pairs(dict(bookmaker("fanduel", [alt, h1, team]), _home="Milwaukee Bucks", _away="Chicago Bulls"), NOW)
+    assert ("spread", "game", -9.5) in quotes and ("total_h1", "game", 112.5) in quotes
+    assert ("team_total", "milwaukee bucks", 118.5) in quotes
 
 
 def test_shift_is_monotone_and_exact_at_zero_gap():
@@ -142,3 +153,10 @@ def test_lines_are_polled_about_every_twenty_minutes():
     events = {"ncaaf": [dict(id="c", commence_time=(NOW + timedelta(minutes=30)).isoformat())], "nba": []}
     assert scan.plan(events, {"lines_last_poll": {"ncaaf": (NOW - timedelta(minutes=10)).isoformat()}}, NOW) == []
     assert scan.plan(events, {"lines_last_poll": {"ncaaf": (NOW - timedelta(minutes=20)).isoformat()}}, NOW)
+
+
+def test_a_scanned_day_without_decisions_still_posts():
+    empty = pd.DataFrame(columns=["sport", "day", "tier", "ev"])
+    text = report.digest_text(empty, "ncaaf", date(2026, 10, 23), scanned=4)
+    assert "4 games scanned" in text and "no gap reached +3%" in text
+    assert report.digest_text(empty, "ncaaf", date(2026, 10, 23), scanned=0) is None  # nothing ran: nothing to say
