@@ -63,7 +63,7 @@ def _ewm_prior(g: pd.core.groupby.SeriesGroupBy, halflife: float) -> pd.Series:
 def team_context(df: pd.DataFrame) -> pd.DataFrame:
     """Per team-game totals, then each team's prior pace and the rates its opponents have put up against it."""
     tg = df.groupby(["game_id", "game_date", "team", "opponent"], as_index=False)[
-        ["minutes", "pts", "reb", "ast", "fg3m", "fga", "fta", "tov", "oreb"]].sum()
+        ["minutes", "pts", "reb", "ast", "fg3m", "fga", "fta", "tov", "oreb"]].sum(min_count=1)  # NaN for a scheduled (unplayed) game
     tg["poss"] = tg.fga + 0.44 * tg.fta + tg.tov - tg.oreb
     mins = tg.minutes.clip(lower=200)
     for s in STATS:

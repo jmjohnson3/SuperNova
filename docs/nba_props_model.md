@@ -33,8 +33,15 @@ stat) and its picks flipped sign between 2024-25 and 2025-26. Most of what the b
 DraftKings' extreme prices, not the model. Verdict: no reliable edge against even DraftKings' pre-game
 line, which is softer than Pinnacle's close.
 
-## Next uses
-- Grade the sharp scanner's NBA decisions with actual results from `nbaprops.player_games` (W/L next to EV
-  at the close).
-- Shadow filter for sharp-gap decisions (does the model agree with the gap?), judged on 100+ decisions.
+## Live uses (since 2026-10-24)
+- `python -m nba_props.live` (task `\SuperNovaBets\NBA-Props-Live`, 6:45 AM, 11:00 AM, 3:30 PM MT) refreshes
+  the game logs and appends the day's projections to `nbaprops.projections` with their run time.
+- `sharp_pipeline.outcomes` grades the sharp scanner's decisions with results (NBA from the game logs,
+  NCAAF from `ncaaf.games`; a prop with no game log for a played game is void; first halves ungraded) and
+  records the shadow filter: the model's probability for the decision's side from the latest projection
+  made before it, and whether it is above Pinnacle's no-vig. Both appear in `reports/sharp_multi_latest.md`
+  and the digest; EV at the close stays the primary test. Projections are not reconstructed for days
+  before the first run, so the shadow split starts with Oct 24 decisions.
+- Judge the filter on 100+ NBA prop decisions: it earns a role only if "agrees" beats "disagrees" on EV
+  at the close.
 - Re-run the test each season; adopt nothing unless it beats the market's log loss in two straight seasons.

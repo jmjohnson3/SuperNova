@@ -29,7 +29,7 @@ from nfl_pipeline import sharp_math
 from nfl_pipeline.context_contract import safe_time
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
-from sharp_pipeline import scan
+from sharp_pipeline import outcomes, scan
 
 ROOT = Path(__file__).resolve().parents[2]
 MAX_CLOSE_AGE_MINUTES = 22  # game lines are polled about every 20 minutes
@@ -123,12 +123,23 @@ def summarize(df: pd.DataFrame) -> dict:
         out[sport] = dict(overall=overall, status="ready_for_stake_review" if ready else "research",
                           by_market={m: stats(g) for m, g in decided.groupby("market")} if not decided.empty else {},
                           by_book={b: stats(g) for b, g in decided.groupby("book")} if not decided.empty else {},
-                          logged=stats(part[part.tier.eq("logged")]) if not part.empty else dict(decisions=0))
+                          logged=stats(part[part.tier.eq("logged")]) if not part.empty else dict(decisions=0),
+                          record=outcomes.record(decided) if not decided.empty else dict(settled=0),
+                          shadow=outcomes.shadow_split(decided[decided.market.isin(list(outcomes.MARKET_STAT))])
+                          if sport == "nba" and not decided.empty else {})
     return out
 
 
 def _pct(v, signed=True):
     return "-" if v is None else (f"{v:+.2%}" if signed else f"{v:.0%}")
+
+
+def record_text(rec: dict) -> str:
+    text = f"{rec.get('wins', 0)}-{rec.get('losses', 0)}-{rec.get('pushes', 0)}"
+    if rec.get("settled"):
+        text += f", ROI {_pct(rec.get('roi'))} at $1 flat ({rec.get('units', 0):+.2f}u)"
+    extra = [f"{rec[k]} {k}" for k in ("voids", "pending") if rec.get(k)]
+    return text + (f" ({', '.join(extra)})" if extra else "")
 
 
 def markdown(summary: dict) -> str:
@@ -143,6 +154,16 @@ def markdown(summary: dict) -> str:
                   f"Decisions {o['decisions']} over {o.get('days', 0)} day(s); EV when seen {_pct(o.get('ev_when_seen'))}; "
                   f"at the close {_pct(o.get('ev_at_close'))} ({_pct(o.get('still_positive'), False)} still +EV); "
                   f"close coverage {_pct(o.get('close_coverage'), False)}.", ""]
+        rec = s.get("record") or {}
+        if rec.get("settled") or rec.get("voids") or rec.get("pending"):
+            lines += [f"Results (secondary to EV at the close): {record_text(rec)}.", ""]
+        if s.get("shadow"):
+            lines += ["Model shadow filter (NBA props; recorded beside each decision, never changes one):", "",
+                      "| Model vs Pinnacle | Decisions | EV at close | Record | ROI |", "|---|---:|---:|---:|---:|"]
+            for label, sh in s["shadow"].items():
+                lines.append(f"| {label} | {sh['decisions']} | {_pct(sh.get('ev_at_close'))} | "
+                             f"{sh.get('wins', 0)}-{sh.get('losses', 0)}-{sh.get('pushes', 0)} | {_pct(sh.get('roi'))} |")
+            lines.append("")
         for title, key in (("Market", "by_market"), ("Book", "by_book")):
             if s[key]:
                 lines += [f"| {title} | Decisions | EV when seen | EV at close | Still +EV | Coverage |", "|---|---:|---:|---:|---:|---:|"]
@@ -184,9 +205,12 @@ def digest_text(df: pd.DataFrame, sport: str, day: date, scanned: int = 0) -> st
              f"{s['decisions']} decisions at +3% or better vs Pinnacle, seen 15-45 min before the start. "
              f"EV when seen {_pct(s['ev_when_seen'])}; at the close {_pct(s.get('ev_at_close'))} "
              f"({_pct(s.get('still_positive'), False)} still +EV, {_pct(s.get('close_coverage'), False)} graded)."]
+    if "result" in part:
+        lines.append(f"Results: {record_text(outcomes.record(part))}.")
     for r in top:
         close = "-" if r["ev_at_close"] is None or pd.isna(r["ev_at_close"]) else f"{r['ev_at_close']:+.1%}"
-        lines.append(f"- {describe(r)}: {r['ev']:+.1%} seen, {close} at close")
+        result = f", {r['result']}" if r.get("result") else ""
+        lines.append(f"- {describe(r)}: {r['ev']:+.1%} seen, {close} at close{result}")
     return "\n".join(lines)
 
 
@@ -214,6 +238,10 @@ def run(*, digest: bool = False, now: datetime | None = None, poster=post) -> di
         conn.set_session(readonly=True)
         raw, closes = load(conn)
     df = decisions_frame(raw, closes)
+    if not df.empty:
+        with psycopg2.connect(PG_DSN) as conn:
+            conn.set_session(readonly=True)
+            df = outcomes.attach(conn, df)
     summary = summarize(df)
     atomic_json(ROOT / "reports" / "sharp_multi_latest.json", dict(built_at=now.isoformat(), summary=summary))
     (ROOT / "reports" / "sharp_multi_latest.md").write_text(markdown(summary), encoding="utf-8")

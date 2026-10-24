@@ -299,6 +299,15 @@ Pinnacle's last quote before the start.
   `reports/sharp_multi_latest.md`. A sport is ready for a stake review at 50+ graded decisions over 7+
   days, +1.5% at the close and 90% close coverage. Staking it is a separate decision.
 - Shares no tables or registration with NFL; it only imports the NFL price math.
+- `sharp_pipeline.outcomes` adds results (NBA from `nbaprops.player_games`, NCAAF from `ncaaf.games`) and the
+  NBA prop shadow filter (latest `nbaprops.projections` before the decision) to the report and digest.
+
+## NBA data (`src/nba_props/`)
+MySportsFeeds lapsed (403 for every league/season), so `nba_pipeline` has had no data since April 2026.
+`nba_props` uses free stats.nba.com via `nba_api`: `ingest` (game logs), `model` (walk-forward test against
+pre-game DraftKings lines: no edge, `docs/nba_props_model.md`), `live` (task `\SuperNovaBets\NBA-Props-Live`).
+About a third of `odds.nba_player_prop_lines` DraftKings history was snapshotted after tip (live lines);
+filter snapshot < commence before using it as evidence.
 
 ## NCAAF game models (`src/ncaaf_pipeline/`, research)
 CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings

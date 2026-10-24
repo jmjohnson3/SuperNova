@@ -188,3 +188,31 @@ def test_closing_polls_are_reserved_and_never_held_to_the_allowance():
     assert scan.close_reserve(events, state, NOW) == 4       # game a still needs its close
     closed = {"props_last_poll": {"a": (NOW + timedelta(minutes=-1)).isoformat()}}
     assert scan.close_reserve(events, dict(closed), NOW + timedelta(minutes=1)) == 0
+
+
+def test_results_grade_every_market_from_the_bet_side():
+    from sharp_pipeline import outcomes
+    base = dict(home_team="Milwaukee Bucks", away_team="Chicago Bulls", player=None)
+    g = lambda **kw: outcomes.grade(dict(base, **kw), None, 110, 104)
+    assert outcomes.grade(dict(base, market="points", side="over", line=22.5), 16, None, None) == "loss"
+    assert outcomes.grade(dict(base, market="assists", side="under", line=5.5), 5, None, None) == "win"
+    assert outcomes.grade(dict(base, market="points", side="over", line=20.0), 20, None, None) == "push"
+    assert g(market="h2h", side="home", line=0) == "win" and g(market="h2h", side="away", line=0) == "loss"
+    assert g(market="spread", side="home", line=-6.5) == "loss"       # won by 6
+    assert g(market="spread", side="away", line=6.5) == "win"
+    assert g(market="total", side="over", line=213.5) == "win"
+    assert outcomes.grade(dict(base, market="team_total", side="under", line=105.5, player="Chicago Bulls"),
+                          None, 110, 104) == "win"
+    assert g(market="spread_h1", side="home", line=-3.5) is None      # no half scores
+    assert outcomes.grade(dict(base, market="points", side="over", line=9.5), None, None, None) is None
+    assert outcomes.profit("win", 125) == pytest.approx(1.25) and outcomes.profit("win", -125) == pytest.approx(0.8)
+
+
+def test_college_names_match_the_longest_cfbd_school():
+    from sharp_pipeline import outcomes
+    schools = ["Miami", "Miami (OH)", "Ohio State", "Ohio"]
+    assert outcomes.match_school("Miami (OH) RedHawks", schools) == "Miami (OH)"
+    assert outcomes.match_school("Miami Hurricanes", schools) == "Miami"
+    assert outcomes.match_school("Ohio Bobcats", schools) == "Ohio"
+    assert outcomes.match_school("Ohio State Buckeyes", schools) == "Ohio State"
+    assert outcomes.match_school("Navy Midshipmen", schools) is None
