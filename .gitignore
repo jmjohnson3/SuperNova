@@ -35,3 +35,4 @@ reports/nfl_sharp_gap_backtest_*_sides.csv
 reports/ncaaf_ratings_predictions.csv
 reports/ncaaf_efficiency_stage1.csv.gz
 reports/ncaaf_projections_state.json
+reports/nba_props_model_predictions.csv.gz

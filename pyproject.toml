@@ -11,6 +11,7 @@ dependencies = [
     "httpx",
     "joblib",
     "lightgbm",
+    "nba_api",
     "numpy",
     "pandas",
     "pillow",
