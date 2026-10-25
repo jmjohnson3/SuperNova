@@ -40,3 +40,4 @@ src/nba_props/models/
 reports/nba_props_live_state.json
 reports/nba_games_model_predictions.csv.gz
 reports/nba_props_post_state.json
+reports/nba_props_model_predictions_v1.csv.gz

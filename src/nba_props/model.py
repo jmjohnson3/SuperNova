@@ -339,19 +339,23 @@ def markdown(ev: dict, model_mae: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--test-from", default="2023-11-01")
+    ap.add_argument("--no-availability", action="store_true", help="the v1 feature set (no lineups/absences)")
     args = ap.parse_args()
     with psycopg2.connect(PG_DSN) as conn:
         games, lines = load_games(conn), load_lines(conn)
-    f = features(games)
+        lineups = None if args.no_availability else final_lineups(conn)
+    f = features(games, lineups)
     preds = walk_forward(f, args.test_from)
-    preds.to_csv(ROOT / "reports" / "nba_props_model_predictions.csv.gz", index=False)
+    suffix = "_v1" if args.no_availability else ""
+    preds.to_csv(ROOT / "reports" / f"nba_props_model_predictions{suffix}.csv.gz", index=False)
     model_mae = {s: float((preds[f"pred_{s}"] - preds[s]).abs().mean()) for s in STATS}
     m = market_rows(preds, lines)
     ev = evaluate(m)
     ev["model_mae_all_games"] = model_mae
-    atomic_json(ROOT / "reports" / "nba_props_model_latest.json", clean(ev))
+    ev["feature_set"] = "v1" if args.no_availability else "v2-availability"
+    atomic_json(ROOT / "reports" / f"nba_props_model{suffix}_latest.json", clean(ev))
     text = markdown(ev, model_mae)
-    (ROOT / "reports" / "nba_props_model_latest.md").write_bytes(text.encode())
+    (ROOT / "reports" / f"nba_props_model{suffix}_latest.md").write_bytes(text.encode())
     print(text)
 
 

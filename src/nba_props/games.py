@@ -176,6 +176,7 @@ def blend(d: pd.DataFrame, pred: str, market: pd.Series, actual: pd.Series) -> d
 def evaluate(pred: pd.DataFrame, lines: pd.DataFrame) -> dict:
     d = pred.merge(lines[["game_date", "home_team", "away_team", "spread", "total"]], on=["game_date", "home_team", "away_team"])
     d[["spread", "total"]] = d[["spread", "total"]].astype(float)
+    d = d.dropna(subset=["spread", "total", "pred_margin", "pred_total"])
     margin, total = d.home_points - d.away_points, d.home_points + d.away_points
     return dict(games=int(len(d)), seasons=sorted(d.season.unique().tolist()),
                 margin_mae=dict(model=float((d.pred_margin - margin).abs().mean()), line=float((-d.spread - margin).abs().mean()),
