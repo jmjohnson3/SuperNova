@@ -305,7 +305,8 @@ Pinnacle's last quote before the start.
 ## NBA data (`src/nba_props/`)
 MySportsFeeds lapsed (403 for every league/season), so `nba_pipeline` has had no data since April 2026.
 `nba_props` uses free stats.nba.com via `nba_api`: `ingest` (game logs), `model` (walk-forward test against
-pre-game DraftKings lines: no edge, `docs/nba_props_model.md`), `live` (task `\SuperNovaBets\NBA-Props-Live`).
+pre-game DraftKings lines: no edge, `docs/nba_props_model.md`), `availability` (nba.com lineups, ESPN injuries),
+`games` (spreads/totals), `live` (tasks `\SuperNovaBets\NBA-Props-Live` and `NBA-News-Watch`), `post` (#nba slate).
 About a third of `odds.nba_player_prop_lines` DraftKings history was snapshotted after tip (live lines);
 filter snapshot < commence before using it as evidence.
 

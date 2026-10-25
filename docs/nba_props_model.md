@@ -33,9 +33,45 @@ stat) and its picks flipped sign between 2024-25 and 2025-26. Most of what the b
 DraftKings' extreme prices, not the model. Verdict: no reliable edge against even DraftKings' pre-game
 line, which is softer than Pinnacle's close.
 
+## Availability (v2, 2026-10-24)
+`nba_props.availability` captures nba.com daily lineups (starters, Active/Inactive; history from 2023-24,
+backfilled: 3,977 games) and ESPN's injury report (current only). `model.add_availability` gives each
+player-game its starter flag and recent starting rate, and each team and opponent its missing rotation:
+rotation players (>= 12 recent minutes, on the team in the last 15 days) listed Inactive, with their recent
+minutes, usage, points, rebounds, assists and threes. Live runs use lineup Inactive plus ESPN "Out", the same
+meaning as training (Inactive). Same walk-forward test, same rows (v1 report: reports/nba_props_model_v1_latest.md):
+
+| | v1 (no availability) | v2 (availability) | DraftKings |
+|---|---:|---:|---:|
+| Points MAE, rows with a line | 5.20 | 5.14 | 5.07 |
+| Rebounds MAE | 2.07 | 2.06 | 2.06 |
+| Points log loss (raw model) | 0.714 | 0.707 | 0.692 |
+| Rebounds log loss (raw model) | 0.721 | 0.704 | 0.689 |
+| Model weight in result ~ line + model (pts / reb / ast) | 0.14 / 0.27 / 0.32 | 0.27 / 0.37 / 0.39 | |
+| Blend anchored on DK no-vig, out of sample (2024-26), log loss | 0.68909 | 0.68845 | 0.68898 |
+| Blend picks, +3% vs DK: ROI 2024-25 / 2025-26 | -3.7% / +1.4% | -2.3% / 0.0% | |
+
+Availability is real information the line does not fully hold (the anchored blend now beats DraftKings'
+own log loss; v1 did not), but the gain is small and the picks still do not clear the vig against the
+pre-game line. Next: the morning snapshot (from Nov 3) tests whether it predicts where morning lines go.
+
+## Spreads and totals (`python -m nba_props.games`; reports/nba_games_model_latest.md)
+Decayed ridge team ratings (margin and total fitted separately) plus each side's missing rotation, rest
+and back-to-backs; walk-forward monthly, 2023-24 to 2025-26, against DraftKings' pre-game line.
+Margin MAE 10.96 vs DraftKings 10.67; total 14.99 vs 14.42. The spread model carries information
+(weight +0.30, se 0.08), and when it disagreed by 5+ points it covered 53.5% (488 picks; 7+: 57.9% on
+152), 52% or better in every season; totals do not (47-49%, weight -0.05). Too few picks to bet on: live
+game projections are recorded (nbaprops.game_projections) so the spread signal can be judged forward
+against closing lines.
+
 ## Live uses (since 2026-10-24)
 - `python -m nba_props.live` (task `\SuperNovaBets\NBA-Props-Live`, 6:45 AM, 11:00 AM, 3:30 PM MT) refreshes
-  the game logs and appends the day's projections to `nbaprops.projections` with their run time.
+  game logs, lineups and injuries, refits and saves the day's models, and appends projections (props to
+  `nbaprops.projections`, games to `nbaprops.game_projections`) with their run time. `--news` (task
+  `NBA-News-Watch`, every 10 minutes 8 AM-11 PM MT) captures lineups/injuries and re-projects with the day's
+  saved fits when a starter, inactive or injury status changes for a team still to play.
+- `python -m nba_props.post` posts the slate to #nba once, ~3 hours before the first tip: projected score,
+  model spread/total beside DraftKings and Pinnacle (one 3-credit call), who is out, top players' p/r/a/3s.
 - `sharp_pipeline.outcomes` grades the sharp scanner's decisions with results (NBA from the game logs,
   NCAAF from `ncaaf.games`; a prop with no game log for a played game is void; first halves ungraded) and
   records the shadow filter: the model's probability for the decision's side from the latest projection
