@@ -79,6 +79,12 @@ PROPS_SPACING = 9.5                # ...at most one per task run (T-40, T-30, T-
 MAX_SOURCE_AGE = 300
 MAX_SOURCE_SKEW = 120
 CREDIT_FLOOR = 150
+# Morning snapshot (research for "bet earlier against softer lines"): one NBA props poll per game between
+# 10 AM and noon Eastern, from the first day after the credit reset. Lowest priority; it never takes credits
+# a closing poll needs.
+MORNING_PROPS_FROM = date(2026, 11, 3)
+MORNING_HOURS_ET = (10, 12)
+MORNING_MIN_LEAD_MINUTES = 120
 CLOSE_MINUTES = 20                 # a props poll this close to the start, for a game already polled, is its close
 NFL_SUNDAY_RESERVE = 700           # credits held back per NFL Sunday still to come before the reset
 NFL_PRIMETIME_RESERVE = 60         # per Thursday/Monday game still to come
@@ -305,7 +311,15 @@ def plan(events: dict[str, list[dict]], state: dict, now: datetime) -> list[tupl
             if last and (now - datetime.fromisoformat(last)).total_seconds() < PROPS_SPACING * 60:
                 continue
             due.append((minutes, ("props", sport, event, len(cfg["props"]))))
-    return [item for _, item in sorted(due, key=lambda d: (d[1][0] != "lines", d[0]))]
+        local = now.astimezone(_ET)
+        if cfg["props"] and local.date() >= MORNING_PROPS_FROM and MORNING_HOURS_ET[0] <= local.hour < MORNING_HOURS_ET[1]:
+            for event, minutes in upcoming:
+                start_day = safe_time(event["commence_time"]).astimezone(_ET).date()
+                if (start_day == local.date() and minutes > MORNING_MIN_LEAD_MINUTES
+                        and event["id"] not in (state.get("morning_poll") or {})):
+                    due.append((10_000 + minutes, ("props_morning", sport, event, len(cfg["props"]))))
+    order = {"lines": 0, "props": 1, "props_morning": 2}
+    return [item for _, item in sorted(due, key=lambda d: (order[d[1][0]], d[0]))]
 
 
 def store(conn, sport: str, event: dict, observed: datetime) -> list[dict]:
@@ -341,14 +355,14 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
         response = session.get(f"{BASE}/{cfg['key']}/events", params={"apiKey": key}, timeout=30)
         response.raise_for_status()
         remaining = int(response.headers.get("x-requests-remaining") or remaining or 0)
-        events[sport] = [e for e in response.json() if 0 < (safe_time(e["commence_time"]) - now).total_seconds() <= 3 * 3600]
+        events[sport] = [e for e in response.json() if 0 < (safe_time(e["commence_time"]) - now).total_seconds() <= 16 * 3600]
     due = plan(events, state, now)
     today = str(now.astimezone(_ET).date())
     spent = state.get("spent", {}).get(today, 0)
     allowance = daily_allowance(remaining or 0, spent, now.astimezone(_ET).date(),
                                 int(os.getenv("NFL_ODDS_API_RESET_DAY") or 1))
     result = dict(status="ok", credits_remaining=remaining, allowance=round(allowance, 1), spent_today=spent,
-                  due=[(d[0], d[1], d[2]["id"] if d[0] == "props" else None) for d in due], polled=[], skipped=[])
+                  due=[(d[0], d[1], d[2]["id"] if d[0] != "lines" else None) for d in due], polled=[], skipped=[])
     if dry_run or not due:
         return dict(result, status="dry_run" if dry_run else "nothing_due")
     with psycopg2.connect(PG_DSN) as conn:
@@ -359,6 +373,9 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
             cost = item[-1]
             closing = item[0] == "props" and closing_poll(item[2], state, now)
             held = 0 if closing else close_reserve(events, state, now, item[2]["id"] if item[0] == "props" else None)
+            if item[0] == "props_morning":  # also leave room for every game's stake-window and closing polls today
+                held += sum(4 * len(SPORTS[sp]["props"]) for sp, evs in events.items() for e in evs
+                            if SPORTS[sp]["props"] and e["id"] not in (state.get("props_last_poll") or {}))
             if (remaining or 0) - cost < CREDIT_FLOOR or (not closing and spent + cost + held > allowance):
                 result["skipped"].append(dict(kind=item[0], sport=item[1], reason="credit_allowance",
                                               close_reserve=held))
@@ -369,7 +386,7 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
             if item[0] == "lines":
                 url = f"{BASE}/{SPORTS[sport]['key']}/odds"
                 params["markets"] = ",".join(LINE_MARKETS)
-            else:
+            else:  # props and the morning props snapshot
                 url = f"{BASE}/{SPORTS[sport]['key']}/events/{item[2]['id']}/odds"
                 params["markets"] = ",".join(SPORTS[sport]["props"])
             response = session.get(url, params=params, timeout=30)
@@ -391,10 +408,12 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
             conn.commit()
             if item[0] == "props":
                 state.setdefault("props_last_poll", {})[item[2]["id"]] = now.isoformat()
+            elif item[0] == "props_morning":
+                state.setdefault("morning_poll", {})[item[2]["id"]] = now.isoformat()
             else:
                 state.setdefault("lines_last_poll", {})[sport] = now.isoformat()
             result["polled"].append(dict(kind=item[0], sport=sport, credits=used, gaps=gaps, closing=closing,
-                                         event=item[2]["id"] if item[0] == "props" else None))
+                                         event=item[2]["id"] if item[0] != "lines" else None))
     state.setdefault("spent", {})[today] = spent
     state.update(credits_remaining=remaining, updated_at=now.isoformat())
     atomic_json(STATE, state)

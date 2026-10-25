@@ -216,3 +216,16 @@ def test_college_names_match_the_longest_cfbd_school():
     assert outcomes.match_school("Ohio Bobcats", schools) == "Ohio"
     assert outcomes.match_school("Ohio State Buckeyes", schools) == "Ohio State"
     assert outcomes.match_school("Navy Midshipmen", schools) is None
+
+
+def test_morning_props_snapshot_is_gated_once_per_game_and_last_in_line():
+    morning = datetime(2026, 11, 4, 15, 30, tzinfo=timezone.utc)          # 10:30 AM Eastern, after the reset
+    tonight = dict(id="n1", commence_time=(morning + timedelta(hours=9)).isoformat())
+    events = {"nba": [tonight], "ncaaf": []}
+    assert [d[0] for d in scan.plan(events, {}, morning)] == ["props_morning"]
+    assert scan.plan(events, {"morning_poll": {"n1": morning.isoformat()}}, morning) == []
+    before_reset = morning.replace(month=10, day=30)
+    assert scan.plan({"nba": [dict(tonight, commence_time=(before_reset + timedelta(hours=9)).isoformat())], "ncaaf": []},
+                     {}, before_reset) == []
+    afternoon = morning + timedelta(hours=4)                                # 2:30 PM: outside the window
+    assert scan.plan({"nba": [dict(tonight)], "ncaaf": []}, {}, afternoon) == []

@@ -84,7 +84,7 @@ def team_context(df: pd.DataFrame) -> pd.DataFrame:
     return out.rename(columns={"def_team": "opponent"}), own[["game_id", "team", "team_pace"]]
 
 
-def features(df: pd.DataFrame) -> pd.DataFrame:
+def features(df: pd.DataFrame, lineups: pd.DataFrame | None = None, declared_out: set | None = None) -> pd.DataFrame:
     df = df.sort_values(["player_id", "game_date", "game_id"]).reset_index(drop=True)
     g = df.groupby("player_id")
     f = df[["game_id", "player_id", "player_name", "team", "opponent", "game_date", "season", "season_type", "home",
@@ -112,7 +112,79 @@ def features(df: pd.DataFrame) -> pd.DataFrame:
     f = f.merge(opp, on=["game_id", "opponent"], how="left").merge(own, on=["game_id", "team"], how="left")
     for s in STATS:
         f[f"{s}_base_adj"] = f[f"{s}_base"] * f[f"opp_allow_{s}_pm"].fillna(1.0)
+    if lineups is not None:
+        f = add_availability(f, df, lineups, declared_out)
     return f
+
+
+# --- availability ----------------------------------------------------------------------------------
+ROTATION_MINUTES = 12.0   # a player averaging this many recent minutes is part of the rotation
+ROTATION_DAYS = 15        # ...if he appeared for the team within this many days
+OUT_STATS = ("minutes", "usage", "pts", "reb", "ast", "fg3m")
+
+
+def final_lineups(conn) -> pd.DataFrame:
+    """Last capture per game and player (the backfill's files are the final pre-game state)."""
+    return pd.read_sql("""SELECT DISTINCT ON (game_id, player_id) game_id, player_id, team, starter, roster_status
+                          FROM nbaprops.lineup_snapshots ORDER BY game_id, player_id, captured_at_utc DESC""", conn)
+
+
+def add_availability(f: pd.DataFrame, df: pd.DataFrame, lineups: pd.DataFrame,
+                     declared_out: set | None = None) -> pd.DataFrame:
+    """Starter status, and what each team (and its opponent) is missing from its rotation.
+
+    Out = a rotation player (recent minutes >= ROTATION_MINUTES, on the team within ROTATION_DAYS) who is
+    listed Inactive in the game's lineup file. Games without a lineup file (before 2023-24) fall back to
+    "did not appear in the box score". Live (unplayed) rows use only declared outs: lineup Inactive plus
+    `declared_out` {(game_id, player_id)} from the injury report, so training and live share one meaning.
+    """
+    d = df.sort_values(["player_id", "game_date", "game_id"]).reset_index(drop=True)
+    played = d.minutes > 0
+    post = d[["player_id", "team", "season", "game_date", "game_id"]].copy()
+    usage = d.fga + 0.44 * d.fta + d.tov
+    for name, values in (("minutes", d.minutes), ("usage", usage), ("pts", d.pts), ("reb", d.reb),
+                         ("ast", d.ast), ("fg3m", d.fg3m)):
+        post[f"post_{name}"] = values.where(played).groupby(d.player_id).transform(
+            lambda s: s.ewm(halflife=10, min_periods=1).mean())
+    post = post[played | d.minutes.isna()]
+    # every player seen for the team that season, against every team game that season
+    tg = d[["game_id", "game_date", "team", "season"]].drop_duplicates(["game_id", "team"])
+    roster = d.loc[played, ["team", "season", "player_id"]].drop_duplicates()
+    grid = tg.merge(roster, on=["team", "season"]).sort_values("game_date")
+    last = post[post.post_minutes.notna()].sort_values("game_date").rename(columns={"team": "last_team", "game_date": "last_date"})
+    grid = pd.merge_asof(grid, last.drop(columns=["season", "game_id"]), left_on="game_date", right_on="last_date",
+                         by="player_id", allow_exact_matches=False)
+    rotation = (grid.last_team.eq(grid.team) & (grid.game_date - grid.last_date).dt.days.le(ROTATION_DAYS)
+                & grid.post_minutes.ge(ROTATION_MINUTES))
+    grid = grid[rotation]
+    lu = lineups.set_index(["game_id", "player_id"])
+    status = grid.set_index(["game_id", "player_id"]).index.map(lu.roster_status.to_dict().get)
+    has_file = grid.game_id.isin(set(lineups.game_id))
+    appeared = set(zip(d.loc[played, "game_id"], d.loc[played, "player_id"]))
+    key = list(zip(grid.game_id, grid.player_id))
+    unplayed_game = grid.game_id.isin(set(d.loc[d.minutes.isna(), "game_id"]))
+    declared = pd.Series([k in (declared_out or set()) for k in key], index=grid.index)
+    out = pd.Series(np.where(has_file, pd.Series(status, index=grid.index).eq("Inactive"),
+                             ~pd.Series([k in appeared for k in key], index=grid.index)), index=grid.index)
+    out = np.where(unplayed_game, out.where(has_file, False) | declared, out)
+    gone = grid[out.astype(bool)]
+    agg = gone.groupby(["game_id", "team"]).agg(
+        out_count=("player_id", "size"), **{f"out_{s}": (f"post_{s}", "sum") for s in OUT_STATS}).reset_index()
+    f = f.merge(agg, on=["game_id", "team"], how="left")
+    opp = agg.rename(columns={"team": "opponent", **{c: f"opp_{c}" for c in agg.columns if c.startswith("out_")}})
+    f = f.merge(opp, on=["game_id", "opponent"], how="left")
+    for c in [c for c in f.columns if c.startswith("out_") or c.startswith("opp_out_")]:
+        f[c] = f[c].fillna(0.0)
+    # starters: this game's (known from the lineup file) and the player's recent starting rate
+    starters = lineups.set_index(["game_id", "player_id"]).starter.to_dict()
+    f["starter"] = [starters.get(k) for k in zip(f.game_id, f.player_id)]
+    f["starter"] = f.starter.map({True: 1.0, False: 0.0})
+    f = f.sort_values(["player_id", "game_date", "game_id"])
+    f["starter_rate"] = f.groupby("player_id").starter.transform(lambda s: s.shift(1).ewm(halflife=5, min_periods=1).mean())
+    # the player's own recent usage against what his team is missing
+    f["usage_ewm10"] = (f.fga_rate_ewm10 + 0.44 * f.fta_rate_ewm10 + f.tov_rate_ewm10) * f.min_ewm10
+    f["out_usage_share"] = f.out_usage / (f.out_usage + f.usage_ewm10 * 5).replace(0, np.nan)
+    return f.reset_index(drop=True)
 
 
 def feature_columns(f: pd.DataFrame) -> list[str]:
