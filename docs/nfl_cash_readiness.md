@@ -21,7 +21,7 @@ seen earlier decayed to +2.6% to +3.0%.
 - A gap must be +3% or better against Pinnacle's no-vig price when seen, 15-45 minutes before
   kickoff.
 - One decision per player-game-stat: the best book when first seen.
-- Limits: $1 flat, at most 5 bets a day and 2 per game, at most $20 per NFL week, and a sticky
+- Limits (v9, 26 October): $1 flat, at most 10 bets a day and 2 per game, at most $40 per NFL week, and a sticky
   pause at $30 cumulative confirmed loss.
 - Bets are placed by hand and confirmed with `python -m nfl_pipeline.sharp_bets --confirm ID`.
 
