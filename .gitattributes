@@ -88,6 +88,7 @@ src/nfl_pipeline/modeling/validate_distribution_policy.py text eol=lf
 src/nfl_pipeline/modeling/workload_depth_model.py text eol=lf
 src/nfl_pipeline/modeling/yardage_lock_validation.py text eol=lf
 src/nfl_pipeline/offer_selection.py text eol=lf
+src/nfl_pipeline/role_group.py text eol=lf
 src/nfl_pipeline/runtime_timing.py text eol=lf
 src/nfl_pipeline/schema.py text eol=lf
 src/nfl_pipeline/sharp_inactives.py text eol=lf
