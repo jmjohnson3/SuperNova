@@ -35,6 +35,19 @@ domains, labels the book "theScore Bet (ESPN Bet)", and labels a FanDuel fallbac
 manually" when the Colorado lookup fails, because the provider's IDs belong to another state.
 Registered before tonight's first poll; v5 recorded no decisions.
 
+## Registered October 26, 2026: `nfl-sharp-gap-cash-v8` and `fanduel-receiving-oe-paper-v6`
+
+**v8 (cash).** The five daily bets are shared across kickoff windows (one each, the rest by games,
+cumulative so unused bets roll forward); on 25 October first-come staking spent all five by the 1 PM ET
+window. Alternate ladders are no longer scanned: across 7,460 settled rungs the ladder model's log loss
+equalled the books' own prices (which carry the vig), its "+EV" rungs returned -8% and cross-book rung
+gaps lost as well. The shadow filter now reads ESPN's game-day statuses (`sharp_inactives`, pinned).
+Pricing, stake size and the gates are unchanged.
+
+**Paper v6.** `features.py` and `predict_player_props.py` adopted the shared pregame role group
+(`role_group`, docs/nfl_feature_parity.md), drifting v5. Rules and artifacts are unchanged; v5's
+captures stay their own cohort.
+
 ## Registered October 22, 2026: `fanduel-receiving-oe-paper-v5`
 
 v4 was blocked, and its shadow was withheld from every prediction run, after its pinned sources

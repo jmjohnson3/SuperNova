@@ -56,3 +56,29 @@ match, 116 differ and 33 are missing live.
 Changing `features.py` or `predict_player_props.py` drifts `fanduel-receiving-oe-paper-v5`, so that
 trial gets a successor registration with the change. The sharp-gap cash strategy pins neither file
 and is unaffected.
+
+## Step 1 done (October 26, 2026): one pregame role group
+
+`nfl_pipeline.role_group` is the shared rule, called by `features._add_usage_role_features` and
+`predict_player_props._add_snapshot_role_features`: a member's most recent game (any team) is no older
+than his team's 4th most recent game, he is not ruled out (Out/Doubtful, or off the active roster live),
+and cold-start players count zero. Non-members are scored against the group but not added to it.
+Training rebuilt (6 minutes), harness rerun on weeks 5-7 (856 player-games):
+
+| Feature | Relative difference before | After |
+|---|---:|---:|
+| team_player_carries_avg5_sum | 29% | 9% |
+| team_player_targets_avg5_sum | 16% | 7% |
+| team_player_pass_attempts_avg5_sum | 61% | 6% |
+| carries_share_avg_5 / carries_role_rank | 24% / 43% | 9% / 8% |
+| targets_share_avg_5 / targets_role_rank | 15% / 20% | 8% / 8% |
+| pass_attempts_share_avg_5 / role_rank | 38% / 112% | 4% / 5% |
+
+Not yet inside the 2% match bar. Live totals now run 5-7% below training; the likely remainder is
+teammates moved to IR midweek, who are not on the injury report, so training still counts them as
+expected absentees while live drops them (training has weekly rosters only from 2026). The receiving
+paper trial moved to `fanduel-receiving-oe-paper-v6` with this change.
+
+Still to do: step 2 (one injury-row rule: training reads the overwritten `raw.nfl_injuries` row, live the
+logged pregame observation; injury_downgrade_score still differs by 119%, depth_rank_delta by 47%) and
+step 3 (retrain the opportunity models on the corrected table as a challenger).
