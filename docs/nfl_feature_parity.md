@@ -79,6 +79,41 @@ teammates moved to IR midweek, who are not on the injury report, so training sti
 expected absentees while live drops them (training has weekly rosters only from 2026). The receiving
 paper trial moved to `fanduel-receiving-oe-paper-v6` with this change.
 
-Still to do: step 2 (one injury-row rule: training reads the overwritten `raw.nfl_injuries` row, live the
-logged pregame observation; injury_downgrade_score still differs by 119%, depth_rank_delta by 47%) and
-step 3 (retrain the opportunity models on the corrected table as a challenger).
+## Steps 2 and 3 done (October 26, 2026): one injury rule, one previous-depth rule
+
+- **Injuries.** `raw.nfl_injuries` keeps one row per player-week, overwritten by every import, so a row
+  re-imported after kickoff vanished under the as-of filter: training missed ~450 pregame Out/Questionable
+  statuses in weeks 5-7 that live saw, and kept older Questionable rows where the pregame report said Out.
+  Training now builds `pg_temp.nfl_injury_pregame`: wherever the context observation log covers a game
+  (2026 from 17 September) the latest logged report two hours before kickoff, else the archive row. The
+  ruled-out set for role groups reads the same table.
+- **Depth.** Training's previous depth rank is now live's: the player's latest chart for the team at least
+  six days older than the current one (week-keyed archive charts: the previous chart week), instead of
+  his previous game row.
+
+| Feature | After step 1 | After steps 2-3 |
+|---|---:|---:|
+| injury_downgrade_score | 119% | 9% |
+| same_week_teammate_skill_injury_count | 50% | 7% |
+| teammate_skill_injury_pressure_score | 40% | 6% |
+| depth_rank_delta | 47% | 9% |
+| depth_rank_better / worse | 55% / 34% | 15% / 11% |
+
+Matching features 226 -> 247 of 363 (83 differ, 33 never reach live and no production model uses them).
+The features build takes 8.6 minutes. Receiving paper trial: v7.
+
+## Opportunity-model challenger (October 26, 2026)
+
+Retrained into `models/opportunity_parity/opportunity-parity-20261026T225152Z/` (not production) and
+compared by `modeling/opportunity_challenger` on 2026 weeks 4-7, out of sample for both, scored with the
+live function (reports/nfl_opportunity_challenger_latest.md):
+
+- better on 15 of 25: targets -5.1%, receptions -4.7%, carries -3.4%, QB attempts -3.9%, target share
+  -7.4%, full-workload and limited-usage probabilities -14%;
+- worse on 9, mostly spike / high-usage probabilities: RB carry spike +68%, high carries +49%, high pass
+  attempts +47%, spike snap share +11%.
+
+Not promoted. The trainer picks each model's form (direct or residual, blend weight) on its last four
+weeks, the same weeks scored here, so the comparison flatters the challenger. Re-run on week 8 and later
+(unseen by both) before deciding; a mixed artifact (challenger volume models, production probabilities)
+is the likely candidate if the pattern holds.

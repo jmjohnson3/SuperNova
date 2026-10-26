@@ -1,0 +1,261 @@
+{
+  "challenger": "src\\nfl_pipeline\\modeling\\models\\opportunity_parity\\opportunity-parity-20261026T225152Z",
+  "weeks": [
+    "2026 wk 4",
+    "2026 wk 5",
+    "2026 wk 6",
+    "2026 wk 7"
+  ],
+  "models": [
+    {
+      "model": "qb_pass_attempts",
+      "rows": 124,
+      "mae_production": 9.305558777942043,
+      "mae_challenger": 8.940053763440861,
+      "mae_baseline": 8.940053763440861,
+      "change": -0.03927813721058604,
+      "production_accepted": true,
+      "challenger_accepted": false
+    },
+    {
+      "model": "qb_rush_carries",
+      "rows": 124,
+      "mae_production": 1.5742280755916183,
+      "mae_challenger": 1.5222534807981876,
+      "mae_baseline": 1.6913978494623658,
+      "change": -0.033015924184872536,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "rb_carries",
+      "rows": 291,
+      "mae_production": 3.548616420627797,
+      "mae_challenger": 3.427716045439669,
+      "mae_baseline": 3.6797823596792667,
+      "change": -0.03406972207121195,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "rb_targets",
+      "rows": 291,
+      "mae_production": 1.459564719358534,
+      "mae_challenger": 1.4010615217388533,
+      "mae_baseline": 1.459564719358534,
+      "change": -0.040082633434296966,
+      "production_accepted": false,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_targets",
+      "rows": 765,
+      "mae_production": 1.9337098400439185,
+      "mae_challenger": 1.8346723592270096,
+      "mae_baseline": 1.8897385620915035,
+      "change": -0.051216309068717214,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_receptions",
+      "rows": 765,
+      "mae_production": 1.4340093284437871,
+      "mae_challenger": 1.3663599131112814,
+      "mae_baseline": 1.3923311546840957,
+      "change": -0.04717501761715881,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "qb_passing_td_role",
+      "rows": 124,
+      "mae_production": 0.8055406523986802,
+      "mae_challenger": 0.7421872504838348,
+      "mae_baseline": 0.8280913978494625,
+      "change": -0.07864705738462263,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "skill_td_role",
+      "rows": 1056,
+      "mae_production": 0.2811306274852095,
+      "mae_challenger": 0.2867580818834232,
+      "mae_baseline": 0.3365688131313131,
+      "change": 0.020017222771324672,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_target_share",
+      "rows": 1044,
+      "mae_production": 0.052087054644993344,
+      "mae_challenger": 0.04824916963730871,
+      "mae_baseline": 0.04952051527899392,
+      "change": -0.07368212761966064,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_air_yards_share",
+      "rows": 1044,
+      "mae_production": 0.06446101898432992,
+      "mae_challenger": 0.06146545091188284,
+      "mae_baseline": 0.06559410141866436,
+      "change": -0.046471000918792194,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_air_yards",
+      "rows": 1044,
+      "mae_production": 17.57951429443269,
+      "mae_challenger": 17.253750137241475,
+      "mae_baseline": 18.18462643678161,
+      "change": -0.01853089634532068,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "snap_share",
+      "rows": 1180,
+      "mae_production": 0.12337566723586435,
+      "mae_challenger": 0.12530894712586554,
+      "mae_baseline": 0.12959463276836158,
+      "change": 0.015669863704203868,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "full_workload_probability",
+      "rows": 1180,
+      "mae_production": 0.30353225853382637,
+      "mae_challenger": 0.25900092606015496,
+      "mae_baseline": 0.33717506806642134,
+      "change": -0.14671037829314848,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "limited_usage_risk",
+      "rows": 1180,
+      "mae_production": 0.2620721410884894,
+      "mae_challenger": 0.22609004951349362,
+      "mae_baseline": 0.31109305743917537,
+      "change": -0.13729842258527714,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "high_pass_attempt_probability",
+      "rows": 124,
+      "mae_production": 0.2947742015400236,
+      "mae_challenger": 0.4345659976898558,
+      "mae_baseline": 0.5271333391022932,
+      "change": 0.47423348250797215,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "high_carry_probability",
+      "rows": 415,
+      "mae_production": 0.21006411676756487,
+      "mae_challenger": 0.3123984826645056,
+      "mae_baseline": 0.3980539426281412,
+      "change": 0.48715776626511276,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "high_target_probability",
+      "rows": 1056,
+      "mae_production": 0.31979999631875555,
+      "mae_challenger": 0.34318638798200596,
+      "mae_baseline": 0.37813209132307896,
+      "change": 0.07312817990135434,
+      "production_accepted": false,
+      "challenger_accepted": false
+    },
+    {
+      "model": "receiver_spike_volume_probability",
+      "rows": 1056,
+      "mae_production": 0.214274795335904,
+      "mae_challenger": 0.18862327485643385,
+      "mae_baseline": 0.214274795335904,
+      "change": -0.11971319556860616,
+      "production_accepted": false,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_target_route_spike_probability",
+      "rows": 1056,
+      "mae_production": 0.16216272784398708,
+      "mae_challenger": 0.14785517887928926,
+      "mae_baseline": 0.18787087901554678,
+      "change": -0.08822957750478133,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_target_spike_v2_probability",
+      "rows": 1056,
+      "mae_production": 0.1759578013239804,
+      "mae_challenger": 0.19399915269233095,
+      "mae_baseline": 0.24094271197053463,
+      "change": 0.10253226189802245,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_air_yards_spike_probability",
+      "rows": 1044,
+      "mae_production": 0.24255388047372398,
+      "mae_challenger": 0.24283842549072762,
+      "mae_baseline": 0.2937424080339806,
+      "change": 0.0011731208606018395,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "receiver_spike_under_correction_v4_probability",
+      "rows": 1056,
+      "mae_production": 0.20164246536788197,
+      "mae_challenger": 0.17513890003741875,
+      "mae_baseline": 0.22765912165345784,
+      "change": -0.1314384114581688,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "rb_carry_spike_v2_probability",
+      "rows": 291,
+      "mae_production": 0.1549635200211753,
+      "mae_challenger": 0.2598822396423519,
+      "mae_baseline": 0.349296116961345,
+      "change": 0.677054313214102,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "rb_carry_under_correction_v4_probability",
+      "rows": 291,
+      "mae_production": 0.19977263054080296,
+      "mae_challenger": 0.267530651020872,
+      "mae_baseline": 0.3691042778256155,
+      "change": 0.3391756933702168,
+      "production_accepted": true,
+      "challenger_accepted": true
+    },
+    {
+      "model": "spike_snap_share_probability",
+      "rows": 1180,
+      "mae_production": 0.18118032886350707,
+      "mae_challenger": 0.20130665956416302,
+      "mae_baseline": 0.25339412903654346,
+      "change": 0.1110845246109371,
+      "production_accepted": true,
+      "challenger_accepted": true
+    }
+  ]
+}
