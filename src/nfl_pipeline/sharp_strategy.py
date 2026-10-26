@@ -11,10 +11,16 @@ Changing anything here is a strategy change and needs a new registration (sharp_
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
+# v8 (26 October): the day's bets are spread across kickoff windows instead of first come; alternate
+# ladders are no longer scanned (no edge: on 7,460 settled rungs the ladder model was no better than the
+# books' own prices, its "+EV" rungs lost 8%, and cross-book rung gaps lost too); the shadow filter reads
+# ESPN's game-day statuses so inactives announced after the T-120 forecast are seen (sharp_inactives).
 # v7 (22 October): game totals carry stakes; alternate player-prop ladders are scanned and graded as
 # research (never staked). v6 moved links and alert text to the unpinned sharp_links.
-EXPERIMENT_NAME = "nfl-sharp-gap-cash-v7"
-PREDECESSOR = "nfl-sharp-gap-cash-v6"
+EXPERIMENT_NAME = "nfl-sharp-gap-cash-v8"
+PREDECESSOR = "nfl-sharp-gap-cash-v7"
 
 # Books with an account. Order breaks EV ties only; each poll takes the best price first.
 BET_BOOKS = ("fanduel", "espnbet", "draftkings")
@@ -28,6 +34,8 @@ STAKED_STATS = frozenset({"receiving_yards", "rushing_yards", "receptions", "tot
 LADDER_MARKETS = {"player_reception_yds_alternate": "receiving_yards",
                   "player_rush_yds_alternate": "rushing_yards",
                   "player_receptions_alternate": "receptions"}
+# v8: not polled. Kept so the parser and the report can still read v7's ladder evidence.
+LADDER_SCAN = False
 
 # A gap must be worth at least this much against the sharp no-vig price when seen.
 MIN_EV = 0.03
@@ -42,7 +50,52 @@ STAKE = 1.0
 MAX_BETS_PER_DAY = 5
 MAX_STAKE_PER_WEEK = 20.0
 MAX_BETS_PER_GAME = 2      # one game's script moves every prop in it; spread the exposure
+# The day's bets are shared across kickoff windows (kickoffs within WINDOW_MERGE_MINUTES of the window's
+# first are one window): every window gets one, the rest go to the windows with the most games, and a
+# window that stakes less hands the rest to later windows (the cap is cumulative). On 25 October the
+# first-come rule spent all five by the 1 PM ET window; the afternoon and night games had none.
+WINDOW_MERGE_MINUTES = 45
 LOSS_PAUSE = -30.0         # sticky: confirmed realized profit at or below this stops new stakes
+
+def kickoff_windows(kickoffs: list[datetime]) -> list[tuple[datetime, int]]:
+    """[(window start, games)] for the day's kickoffs, earliest first."""
+    windows: list[list] = []
+    for k in sorted(kickoffs):
+        if windows and k - windows[-1][0] <= timedelta(minutes=WINDOW_MERGE_MINUTES):
+            windows[-1][1] += 1
+        else:
+            windows.append([k, 1])
+    return [(w[0], w[1]) for w in windows]
+
+
+def window_allocation(kickoffs: list[datetime], cap: int = MAX_BETS_PER_DAY) -> list[tuple[datetime, int]]:
+    """[(window start, bets)]: one per window, the rest by games (more games first, then earlier)."""
+    windows = kickoff_windows(kickoffs)
+    if not windows or cap <= 0:
+        return [(w, 0) for w, _ in windows]
+    alloc = [0] * len(windows)
+    order = sorted(range(len(windows)), key=lambda i: (-windows[i][1], i))
+    for i in order[:cap]:
+        alloc[i] = 1
+    left = cap - sum(alloc)
+    while left > 0:
+        # next bet to the window with the most games per bet already given
+        i = max(range(len(windows)), key=lambda j: (windows[j][1] / (alloc[j] + 1), -j))
+        alloc[i] += 1
+        left -= 1
+    return [(windows[i][0], alloc[i]) for i in range(len(windows))]
+
+
+def cumulative_cap(kickoffs: list[datetime], kickoff: datetime, cap: int = MAX_BETS_PER_DAY) -> int:
+    """Bets the day may hold once this kickoff's window is open: its allocation plus every earlier one."""
+    if not kickoffs:
+        return cap
+    total = 0
+    for start, n in window_allocation(list(kickoffs) + ([] if kickoff in kickoffs else [kickoff]), cap):
+        if start <= kickoff:
+            total += n
+    return min(total, cap)
+
 
 # Readiness gates, evaluated by modeling/sharp_alert_report. Only these four apply to this
 # strategy; the frozen-model gates in cash_readiness guard model probabilities it does not use.

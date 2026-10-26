@@ -39,6 +39,7 @@ import psycopg2.extras
 import requests
 
 from nfl_pipeline import sharp_math
+from nfl_pipeline import sharp_inactives
 from nfl_pipeline import sharp_strategy as strategy
 # Links and alert text live outside the pinned modules: a book renaming its domain must not stop the scanner.
 from nfl_pipeline.sharp_links import BOOK_LABEL, book_link, format_alert  # noqa: F401  (re-exported)
@@ -118,7 +119,7 @@ def _int_env(name: str, default: int) -> int:
 def markets() -> list[str]:
     """Environment-selected markets plus the research ladders (fixed in code, part of the registration)."""
     chosen = [m.strip() for m in (os.getenv("NFL_SHARP_WATCH_MARKETS") or DEFAULT_MARKETS).split(",") if m.strip()]
-    return chosen + [m for m in LADDER_MARKETS if m not in chosen]
+    return chosen + ([m for m in LADDER_MARKETS if m not in chosen] if strategy.LADDER_SCAN else [])
 
 
 def experiment_config():
@@ -133,6 +134,8 @@ def experiment_config():
                 max_stake_per_week=strategy.MAX_STAKE_PER_WEEK, max_bets_per_game=strategy.MAX_BETS_PER_GAME,
                 loss_pause=strategy.LOSS_PAUSE, gates=strategy.GATES, shadow_filter=strategy.SHADOW_FILTER,
                 ladder_markets=LADDER_MARKETS, ladder_model_rows=(LADDER_MODEL or {}).get("model_rows"),
+                ladder_scan=bool(strategy.LADDER_SCAN), window_merge_minutes=strategy.WINDOW_MERGE_MINUTES,
+                daily_cap_rule="cumulative_window_allocation", inactives_source=sharp_inactives.URL,
                 selection="best_ev_first_eligible_per_player_game_stat_across_books")
 
 
@@ -460,11 +463,14 @@ def risk_budget(cur, now: datetime) -> dict[str, Any]:
     per_game: dict[str, int] = {}
     for game_id, _, _ in keys:
         per_game[game_id] = per_game.get(game_id, 0) + 1
+    cur.execute("SELECT start_ts_utc FROM raw.nfl_games WHERE game_date_et = %s AND start_ts_utc IS NOT NULL",
+                (et_now.date(),))
+    kickoffs = [r[0] for r in cur.fetchall()]
     profit = realized_profit()
     gate = readiness()
     loss_paused = profit <= strategy.LOSS_PAUSE
     readiness_paused = gate.get("status") == "paused"
-    return dict(today=int(today), week=float(week), staked=0.0, staked_count=0,
+    return dict(today=int(today), week=float(week), staked=0.0, staked_count=0, kickoffs=kickoffs,
                 staked_keys=keys, per_game=per_game, realized_profit=profit,
                 loss_paused=loss_paused, readiness_paused=readiness_paused,
                 readiness_reasons=list(gate.get("pause_reasons") or []),
@@ -472,7 +478,7 @@ def risk_budget(cur, now: datetime) -> dict[str, Any]:
 
 
 def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any], stat: str | None = None,
-              key: tuple | None = None) -> float:
+              key: tuple | None = None, kickoff: datetime | None = None) -> float:
     """Flat stake for a pinged alert, or 0.0 when a cap, a pause, or an unproven market binds.
 
     `key` is (game_id, stat, player_name_norm): one stake per player-game-stat across all books,
@@ -486,6 +492,10 @@ def stake_for(cur, tier: str, now: datetime, budget: dict[str, Any], stat: str |
         return 0.0  # scanned and graded, but not backtested yet
     if budget["today"] + budget.get("staked_count", 0) + 1 > strategy.MAX_BETS_PER_DAY:
         return 0.0
+    if kickoff is not None and budget.get("kickoffs"):
+        # v8: the day's bets are shared across kickoff windows (cumulative, so unused ones roll forward)
+        if budget["today"] + budget.get("staked_count", 0) + 1 > strategy.cumulative_cap(budget["kickoffs"], kickoff):
+            return 0.0
     if budget["week"] + budget["staked"] + stake > strategy.MAX_STAKE_PER_WEEK:
         return 0.0
     if key is not None:
@@ -629,18 +639,33 @@ def model_context(cur, edge: dict, game: dict) -> dict:
     Matched on the book's own spelling of the player, which is what the forecast stores alongside its
     own short display name. Game markets have no player forecast.
     """
-    empty = dict(projection=None, agrees=None, filter=None, filter_reasons=[])
+    empty = dict(projection=None, agrees=None, filter=None, filter_reasons=[], inactives={})
     if edge["player_norm"] is None:
         return empty
     cur.execute(FORECAST_SQL, (game["game_id"], edge["stat"], edge["player_norm"]))
     row = cur.fetchone()
     forecast = dict(zip(FORECAST_FIELDS, row)) if row else None
     verdict, reasons = shadow_filter(edge, forecast)
+    # v8: game-day statuses after the T-120 forecast (ESPN). Shadow only; any failure records nothing.
+    try:
+        news = sharp_inactives.context(cur, edge, game)
+    except Exception:
+        news = dict(espn_status=None, teammates_out=[], adjusted_projection=None)
+    if news.get("espn_status") in sharp_inactives.GONE:
+        reasons = reasons + [f"espn_{news['espn_status'].replace(' ', '_')}"]
     projection = _number((forecast or {}).get("projection"))
+    adjusted = _number(news.get("adjusted_projection"))
+    if projection is not None and adjusted is not None and news.get("teammates_out"):
+        side_before = projection > float(edge["line"])
+        if (adjusted > float(edge["line"])) != side_before:
+            reasons = reasons + ["teammate_out_flips_model_side"]
+    if reasons and verdict != "flag" and forecast is not None:
+        verdict = "flag"
     if projection is None:
-        return dict(empty, filter=verdict, filter_reasons=reasons)
+        return dict(empty, filter=verdict, filter_reasons=reasons, inactives=news)
     model_side = "over" if projection > float(edge["line"]) else "under"
-    return dict(projection=projection, agrees=model_side == edge["side"], filter=verdict, filter_reasons=reasons)
+    return dict(projection=projection, agrees=model_side == edge["side"], filter=verdict, filter_reasons=reasons,
+                inactives=news)
 
 
 def _fallback_link(cur, edge: dict, game: dict) -> str | None:
@@ -731,7 +756,7 @@ def _refuse(result: dict, now: datetime, post) -> dict:
 # raw payload storage, prop parsing) and link display are deliberately left out.
 PINNED_MODULES = ("nfl_pipeline.sharp_watch", "nfl_pipeline.sharp_strategy", "nfl_pipeline.sharp_math",
                   "nfl_pipeline.markets", "nfl_pipeline.context_contract",
-                  "nfl_pipeline.modeling.sharp_alert_report")
+                  "nfl_pipeline.modeling.sharp_alert_report", "nfl_pipeline.sharp_inactives")
 
 
 def pinned_files(root: Path = ROOT) -> dict[str, Path]:
@@ -761,7 +786,9 @@ def register(now: datetime | None = None) -> dict:
                   pinned_scope="pricing, selection, staking and grading modules only",
                   change_reason=("Cash strategy: FanDuel, ESPN Bet and DraftKings at +3% or better against "
                                  "Pinnacle no-vig, staked 15-45 minutes before kickoff, judged by EV at the "
-                                 "sharp close; pin only the modules that price, select, stake and grade"))
+                                 "sharp close; pin only the modules that price, select, stake and grade. v8: the daily cap is "
+                                 "shared across kickoff windows, ladders are not scanned, and the shadow filter reads "
+                                 "game-day statuses"))
     return registry.register_experiment(EXPERIMENT_NAME, config, pinned_files(), now=now)
 
 
@@ -882,7 +909,8 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                     projection, agrees = context["projection"], context["agrees"]
                     tier = alert_tier(edge["ev"], (game["start"] - observed_at).total_seconds() / 60, edge["stat"])
                     edge.update(model_projection=projection, model_agrees=agrees,
-                                model_filter=context["filter"], model_filter_reasons=context["filter_reasons"])
+                                model_filter=context["filter"], model_filter_reasons=context["filter_reasons"],
+                                game_day_status=context.get("inactives") or {})
                     observation = decision_observation(edge, game, tier, experiment["sha256"])
                     observation_id = observation["observation_id"]
                     cur.execute("""INSERT INTO bets.nfl_sharp_observations(observation_id,observed_at_utc,payload)
@@ -890,7 +918,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
                         (observation_id, observed_at, psycopg2.extras.Json(observation)))
                     key = (game["game_id"], edge["stat"], edge["player_norm"] or "")
                     # Ladder rungs are research: graded like everything else, never staked or pinged.
-                    stake = (stake_for(cur, tier, now, budget, edge["stat"], key)
+                    stake = (stake_for(cur, tier, now, budget, edge["stat"], key, game["start"])
                              if tier == "alert" and not edge.get("ladder") else 0.0)
                     # A logged gap that later reaches the alert threshold at the same price is upgraded and pinged.
                     cur.execute("""INSERT INTO bets.nfl_sharp_alerts (event_id, game_id, commence_time_utc, home_team, away_team,

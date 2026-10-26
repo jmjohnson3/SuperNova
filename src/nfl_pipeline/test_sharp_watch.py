@@ -269,11 +269,13 @@ def test_shadow_filter_flags_playing_time_and_role_disagreement():
     assert w.shadow_filter(over, dict(fine, over_probability=0.45)) == ("pass", [])  # 11 points is not strong
 
 
-def test_model_context_carries_the_filter_verdict():
+def test_model_context_carries_the_filter_verdict(monkeypatch):
+    monkeypatch.setattr(w.sharp_inactives, "statuses", lambda session=None: {})
     game = dict(game_id="g")
     edge = dict(player_norm="x", stat="receiving_yards", line=45.5, side="over", fair_probability=0.56)
     context = w.model_context(FakeCur(40.0, injury_report_status="Questionable"), edge, game)
-    assert context == dict(projection=40.0, agrees=False, filter="flag", filter_reasons=["over_with_questionable_tag"])
+    assert context == dict(projection=40.0, agrees=False, filter="flag", filter_reasons=["over_with_questionable_tag"],
+                           inactives=dict(espn_status=None, teammates_out=[], adjusted_projection=None))
     assert w.model_context(FakeCur(None), edge, game)["filter"] == "no_forecast"
 
 
@@ -428,9 +430,66 @@ def test_a_ladder_rung_never_overwrites_the_main_line_at_the_same_number():
     assert quote["over"] == -110 and quote["under"] == -110 and not quote["ladder"]
 
 
-def test_ladders_and_totals_are_registered_and_only_totals_carry_stakes():
+def test_ladders_are_not_polled_in_v8_and_totals_carry_stakes():
     assert "total" in w.strategy.STAKED_STATS
-    assert set(w.LADDER_MARKETS) <= set(w.markets())
+    assert not set(w.LADDER_MARKETS) & set(w.markets())   # v8: no edge found in ladders; not scanned
+    assert w.normalized_config()["ladder_scan"] is False
     assert "alt_line_model" in w.pinned_files()
     config = w.normalized_config()
     assert config["ladder_markets"] == w.LADDER_MARKETS and config["ladder_model_rows"] > 1000
+
+
+
+def test_daily_bets_are_shared_across_kickoff_windows():
+    u = lambda h, m: datetime(2026, 10, 25, h, m, tzinfo=timezone.utc)
+    night = u(0, 20) + timedelta(days=1)
+    kicks = [u(13, 30)] + [u(17, 0)] * 7 + [u(20, 5)] + [u(20, 25)] * 2 + [night]
+    assert [n for _, n in w.strategy.window_allocation(kicks)] == [1, 2, 1, 1]
+    assert [w.strategy.cumulative_cap(kicks, k) for k in (u(13, 30), u(17, 0), u(20, 25), night)] == [1, 3, 4, 5]
+    # one game: everything goes to its window; more windows than bets: the busiest windows get one each
+    assert w.strategy.window_allocation([night]) == [(night, 5)]
+    many = [u(13, 0) + timedelta(hours=i) for i in range(7)]
+    assert sum(n for _, n in w.strategy.window_allocation(many)) == 5
+
+
+def test_stake_for_respects_the_window_cap_and_rolls_unused_bets_forward():
+    u = lambda h, m: datetime(2026, 10, 25, h, m, tzinfo=timezone.utc)
+    kicks = [u(13, 30)] + [u(17, 0)] * 7 + [u(20, 25)] * 2 + [u(0, 20) + timedelta(days=1)]
+    budget = dict(today=0, week=0.0, staked=0.0, staked_count=0, staked_keys=set(), per_game={}, paused=False,
+                  kickoffs=kicks)
+    assert w.stake_for(None, "alert", NOW, budget, "receptions", ("a", "receptions", "p1"), u(13, 30)) == 1.0
+    w.commit_stake(budget, 1.0, ("a", "receptions", "p1"))
+    assert w.stake_for(None, "alert", NOW, budget, "receptions", ("a", "receptions", "p2"), u(13, 30)) == 0.0
+    # the 1 PM window opens with 3 for the day so far
+    for i in range(2):
+        key = (f"g{i}", "receptions", "p")
+        assert w.stake_for(None, "alert", NOW, budget, "receptions", key, u(17, 0)) == 1.0
+        w.commit_stake(budget, 1.0, key)
+    assert w.stake_for(None, "alert", NOW, budget, "receptions", ("g9", "receptions", "p"), u(17, 0)) == 0.0
+    # a quiet early window's unused bet would have rolled forward
+    fresh = dict(budget, today=0, staked=0.0, staked_count=0, staked_keys=set(), per_game={})
+    for i in range(3):
+        key = (f"h{i}", "receptions", "p")
+        assert w.stake_for(None, "alert", NOW, fresh, "receptions", key, u(17, 0)) == 1.0
+        w.commit_stake(fresh, 1.0, key)
+
+
+def test_teammate_out_after_the_forecast_moves_volume_and_can_flip_the_side():
+    rows = [("a", "A", "PHI", 80.0, ""), ("b", "B", "PHI", 40.0, ""), ("c", "C", "PHI", 20.0, ""),
+            ("d", "D", "DAL", 60.0, ""), ("e", "E", "PHI", 30.0, "out")]
+    status = {("PHI", "a"): "out", ("PHI", "e"): "out", ("PHI", "b"): "active"}
+    shift = w.sharp_inactives.teammate_shift(rows, "b", status)
+    assert shift["teammates_out"] == ["a"]                       # e was already out in the forecast
+    assert shift["adjusted_projection"] == pytest.approx(40.0 + 80.0 * 40.0 / 60.0, abs=0.01)
+    assert w.sharp_inactives.teammate_shift(rows, "zz", status)["adjusted_projection"] is None
+
+
+def test_espn_out_and_a_flipped_side_are_recorded_as_shadow_flags(monkeypatch):
+    monkeypatch.setattr(w.sharp_inactives, "context", lambda cur, edge, game: dict(
+        espn_status=None, teammates_out=["a"], adjusted_projection=52.0))
+    edge = dict(player_norm="b", stat="receiving_yards", line=45.5, side="under", fair_probability=0.52)
+    context = w.model_context(FakeCur(40.0), edge, dict(game_id="g"))
+    assert "teammate_out_flips_model_side" in context["filter_reasons"] and context["filter"] == "flag"
+    monkeypatch.setattr(w.sharp_inactives, "context", lambda cur, edge, game: dict(
+        espn_status="out", teammates_out=[], adjusted_projection=None))
+    assert "espn_out" in w.model_context(FakeCur(40.0), edge, dict(game_id="g"))["filter_reasons"]
