@@ -33,7 +33,9 @@ from nfl_pipeline.modeling.prospective_market import implied, locked_market
 # v6 (26 October 2026) succeeds v5, which drifted when features.py and predict_player_props adopted the
 # shared pregame role group (nfl_pipeline.role_group: live teammate totals no longer count cold-start priors,
 # ruled-out or long-absent players). Rules are unchanged; v5's captures stay their own cohort.
-NAME = "fanduel-receiving-oe-paper-v6"
+# v7 (26 October 2026): features.py reads pregame injury reports from the context observation log and the
+# previous depth rank the way live scoring does (parity steps 2-3), drifting v6. Rules unchanged.
+NAME = "fanduel-receiving-oe-paper-v7"
 CONTRACT = "nfl-receiving-independent-paper-v2"
 STORE = MODEL_ROOT / "receiving_paper_trial"
 ROOT = Path(__file__).resolve().parents[3]

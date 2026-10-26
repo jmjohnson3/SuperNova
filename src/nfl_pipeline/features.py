@@ -217,6 +217,7 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
             d.pos_abb AS depth_pos_abb,
             d.pos_rank::float AS depth_pos_rank,
             d.pos_slot AS depth_pos_slot,
+            dprev.pos_rank::float AS previous_depth_pos_rank,
             i.report_status AS injury_report_status,
             i.practice_status AS injury_practice_status,
             CASE WHEN team_inj.teammate_injury_report_rows > 0
@@ -269,7 +270,7 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
             LIMIT 1
         ) r ON TRUE
         LEFT JOIN LATERAL (
-            SELECT pos_abb, pos_rank, pos_slot
+            SELECT pos_abb, pos_rank, pos_slot, snapshot_ts_utc, week
             FROM raw.nfl_depth_charts d
             WHERE d.season = p.season
               AND d.player_id = p.player_id
@@ -284,8 +285,24 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
             LIMIT 1
         ) d ON TRUE
         LEFT JOIN LATERAL (
+            -- Previous depth rank, the live rule (predict_player_props depth_history): the player's latest
+            -- chart for this team at least six days older than the current one; week-keyed archive charts
+            -- (no snapshot time) use the previous chart week.
+            SELECT d2.pos_rank
+            FROM raw.nfl_depth_charts d2
+            WHERE d2.player_id = p.player_id
+              AND d2.team_abbr = UPPER(p.team_abbr)
+              AND (
+                  (d.snapshot_ts_utc IS NOT NULL AND d2.snapshot_ts_utc < d.snapshot_ts_utc - interval '6 days')
+                  OR (d.snapshot_ts_utc IS NULL AND d2.snapshot_ts_utc IS NULL AND d2.season = p.season AND d2.week < d.week)
+              )
+            ORDER BY d2.snapshot_ts_utc DESC NULLS LAST, COALESCE(d2.week, 0) DESC, d2.pos_rank NULLS LAST,
+                     CASE WHEN UPPER(d2.pos_abb) IN ('QB','RB','WR','TE') THEN 0 ELSE 1 END
+            LIMIT 1
+        ) dprev ON TRUE
+        LEFT JOIN LATERAL (
             SELECT report_status, practice_status
-            FROM raw.nfl_injuries i
+            FROM pg_temp.nfl_injury_pregame i
             WHERE i.season = p.season
               AND i.player_id = p.player_id
               AND i.team_abbr = UPPER(p.team_abbr)
@@ -334,7 +351,7 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
                             ELSE 0.00
                         END
                     )::float AS injury_score
-                FROM raw.nfl_injuries ti
+                FROM pg_temp.nfl_injury_pregame ti
                 WHERE ti.season = p.season
                   AND ti.team_abbr = UPPER(p.team_abbr)
                   AND {team_injury_asof}
@@ -354,7 +371,58 @@ def _load_logs(conn, min_season: int | None = None, archive_context: bool = Fals
     """
     for token, clause in (_ARCHIVE if archive_context else _STRICT).items():
         sql = sql.replace(token, clause)
+    _create_injury_pregame(conn)
     return pd.read_sql(sql, conn, params={"min_season": min_season})
+
+
+# Injury reports as known before kickoff, the live rule. raw.nfl_injuries holds one row per player-week,
+# overwritten by every import, so a row re-imported after kickoff vanished under the as-of filter and
+# training missed ~450 pregame Out/Questionable statuses in 2026 weeks 5-7 that live scoring saw
+# (docs/nfl_feature_parity.md). Wherever the context observation log covers a game (2026 from 17
+# September), the row is the latest logged report two hours before kickoff, when the pregame forecast
+# runs; earlier games keep the archive table. updated_at_utc carries the observation time so the
+# existing as-of filters still apply.
+INJURY_LEAD = "2 hours"
+
+
+def _create_injury_pregame(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute("DROP TABLE IF EXISTS pg_temp.nfl_injury_pregame")
+        cur.execute(f"""
+            CREATE TEMP TABLE nfl_injury_pregame AS
+            WITH log_start AS (
+                SELECT (payload->>'season')::int AS season, MIN(observed_at) AS start
+                FROM raw.nfl_context_observations WHERE kind = 'nfl_injuries' GROUP BY 1
+            ), sides AS (
+                SELECT g.season, g.week, t.team, g.start_ts_utc
+                FROM raw.nfl_games g
+                CROSS JOIN LATERAL (VALUES (UPPER(g.home_team_abbr)), (UPPER(g.away_team_abbr))) t(team)
+                WHERE g.start_ts_utc IS NOT NULL
+            ), covered AS (
+                SELECT s.* FROM sides s JOIN log_start l USING (season)
+                WHERE s.start_ts_utc - interval '{INJURY_LEAD}' > l.start
+            ), logged AS (
+                SELECT DISTINCT ON (c.season, c.week, c.team, COALESCE(i.player_id, i.player_name_norm))
+                    c.season, c.week, c.team AS team_abbr, i.player_id, i.player_name_norm, i.position,
+                    i.report_status, i.practice_status, o.observed_at AS updated_at_utc
+                FROM covered c
+                JOIN raw.nfl_context_observations o
+                  ON o.kind = 'nfl_injuries'
+                 AND (o.payload->>'season')::int = c.season AND (o.payload->>'week')::int = c.week
+                 AND UPPER(o.payload->>'team_abbr') = c.team
+                 AND o.observed_at < c.start_ts_utc - interval '{INJURY_LEAD}'
+                CROSS JOIN LATERAL jsonb_populate_record(NULL::raw.nfl_injuries, o.payload) i
+                ORDER BY c.season, c.week, c.team, COALESCE(i.player_id, i.player_name_norm), o.observed_at DESC
+            )
+            SELECT * FROM logged
+            UNION ALL
+            SELECT r.season, r.week, UPPER(r.team_abbr), r.player_id, r.player_name_norm, r.position,
+                   r.report_status, r.practice_status, r.updated_at_utc
+            FROM raw.nfl_injuries r
+            WHERE NOT EXISTS (SELECT 1 FROM covered c
+                              WHERE c.season = r.season AND c.week = r.week AND c.team = UPPER(r.team_abbr))""")
+        cur.execute("CREATE INDEX ON pg_temp.nfl_injury_pregame (season, week, team_abbr, player_id)")
+        cur.execute("ANALYZE pg_temp.nfl_injury_pregame")
 
 
 def _add_player_rolling(df: pd.DataFrame) -> pd.DataFrame:
@@ -617,7 +685,9 @@ def _add_usage_role_features(df: pd.DataFrame, ruled_out: set[tuple[int, int, st
 def _load_ruled_out(conn, min_season: int | None) -> set[tuple[int, int, str, str]]:
     """(season, week, team, player_id) listed Out/Doubtful on the pregame injury report."""
     with conn.cursor() as cur:
-        cur.execute("""SELECT DISTINCT season, week, UPPER(team_abbr), player_id FROM raw.nfl_injuries
+        cur.execute("SELECT to_regclass('pg_temp.nfl_injury_pregame')")
+        source = "pg_temp.nfl_injury_pregame" if cur.fetchone()[0] else "raw.nfl_injuries"
+        cur.execute(f"""SELECT DISTINCT season, week, UPPER(team_abbr), player_id FROM {source}
             WHERE report_status IN ('Out', 'Doubtful') AND player_id IS NOT NULL
               AND (%(min_season)s IS NULL OR season >= %(min_season)s)""", {"min_season": min_season})
         return {(int(s), int(w), str(t), str(p)) for s, w, t, p in cur.fetchall()}

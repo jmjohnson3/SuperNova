@@ -1,17 +1,17 @@
 # NFL Live-vs-Training Feature Parity
 
-Season 2026, weeks 5, 6, 7: live snapshots rebuilt with the production loaders at each slate's cutoff (1452 rows), joined to the training table on 856 player-games. A feature matches when its relative mean difference is at most 2%.
+Season 2026, weeks 5, 6, 7: live snapshots rebuilt with the production loaders at each slate's cutoff (1491 rows), joined to the training table on 902 player-games. A feature matches when its relative mean difference is at most 2%.
 
-Summary: match 226, differs 104, missing_live 33
+Summary: match 247, differs 83, missing_live 33
 
 ## Team role groups
 
-Live counts 17.7 players per team: 5.0 who did not go on to play and 2.4 cold-start roster members with a position prior.
+Live counts 17.8 players per team: 4.7 who did not go on to play and 2.4 cold-start roster members with a position prior.
 
 | Total | Live | Training | Live from players who played | ...who did not play | ...cold-start priors |
 |---|---:|---:|---:|---:|---:|
-| teammate carries (5-game avg sum) | 26.49 | 27.88 | 25.00 | 6.41 | 4.53 |
-| teammate targets (5-game avg sum) | 33.24 | 35.51 | 31.09 | 5.41 | 4.40 |
+| teammate carries (5-game avg sum) | 26.51 | 28.73 | 25.11 | 6.40 | 4.58 |
+| teammate targets (5-game avg sum) | 33.16 | 36.16 | 31.44 | 4.96 | 4.43 |
 
 ## Features that differ (worst first)
 
@@ -36,14 +36,14 @@ Live counts 17.7 players per team: 5.0 who did not go on to play and 2.4 cold-st
 | roster_status | differs | - | - | - | 0.00 | 0.00 |
 | depth_chart_position | differs | - | - | - | 0.00 | 0.00 |
 | depth_pos_abb | differs | - | - | - | 0.00 | 0.00 |
-| same_week_teammate_receiver_out_count | differs | 0.537 | 0.77 | 0.68 | 1.00 | 1.00 |
-| team_spread_line | differs | 0.045 | -0.02 | -0.02 | 1.00 | 1.00 |
-| depth_pos_slot | differs | 0.029 | 7.36 | 7.22 | 0.99 | 1.00 |
+| same_week_teammate_receiver_out_count | differs | 0.102 | 0.76 | 0.75 | 1.00 | 1.00 |
+| team_spread_line | differs | 0.044 | -0.08 | -0.07 | 1.00 | 1.00 |
+| depth_pos_slot | differs | 0.028 | 7.37 | 7.24 | 0.99 | 1.00 |
 | injury_report_status | differs | - | - | - | 0.00 | 0.00 |
 | injury_practice_status | differs | - | - | - | 0.00 | 0.00 |
-| same_week_teammate_receiver_injury_score | differs | 0.528 | 1.16 | 0.86 | 0.93 | 0.94 |
-| same_week_teammate_skill_injury_count | differs | 0.497 | 2.12 | 1.45 | 1.00 | 1.00 |
-| same_week_teammate_skill_injury_score | differs | 0.448 | 1.57 | 1.21 | 0.97 | 0.98 |
+| same_week_teammate_receiver_injury_score | differs | 0.104 | 1.13 | 1.11 | 0.93 | 0.93 |
+| same_week_teammate_skill_injury_score | differs | 0.073 | 1.57 | 1.56 | 0.97 | 0.97 |
+| same_week_teammate_skill_injury_count | differs | 0.067 | 2.11 | 2.08 | 1.00 | 1.00 |
 | routes_run_avg_3 | differs | - | - | - | 0.00 | 0.00 |
 | routes_run_avg_5 | differs | - | - | - | 0.00 | 0.00 |
 | routes_run_avg_10 | differs | - | - | - | 0.00 | 0.00 |
