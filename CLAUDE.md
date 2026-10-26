@@ -230,10 +230,11 @@ per state, see `docs/nfl_fanduel_links.md`), `NFL_SHARP_WATCH_MARKETS`, `NFL_SHA
 
 ### Cash strategy: sharp price gaps (since 2026-10-21)
 The only NFL strategy that carries money is `sharp_watch` (rules in `sharp_strategy.py`,
-registration `nfl-sharp-gap-cash-v7`): FanDuel, ESPN Bet or DraftKings at +3% or better against
+registration `nfl-sharp-gap-cash-v8`): FanDuel, ESPN Bet or DraftKings at +3% or better against
 Pinnacle's no-vig price, seen 15-45 minutes before kickoff, in receiving yards, rushing yards, receptions and game totals.
-Alternate player-prop ladders are scanned, priced by `modeling/alt_line_model` and graded as research,
-never staked. `modeling/sharp_replay` (`all_edges`/`lever_table`) measures what each rule change would
+Alternate player-prop ladders are no longer scanned (v8): on 7,460 settled rungs `modeling/alt_line_model` was
+no better than the books' own prices, its "+EV" rungs lost 8% and cross-book rung gaps lost too
+(`LADDER_SCAN = False`; v7's ladder evidence stays in the report). `modeling/sharp_replay` (`all_edges`/`lever_table`) measures what each rule change would
 add; the daily/weekly caps, not a lack of gaps, limit how many bets are staked. The model forecasts do not beat FanDuel's line and stay research; they are only a
 recorded shadow filter beside each decision.
 - `NFL-Sharp-Watch` runs every 10 minutes and polls each game on every run through its final hour
@@ -241,6 +242,10 @@ recorded shadow filter beside each decision.
   pinned, so a book changing its link domain (ESPN Bet is now theScore Bet) needs no new registration. Discord pings only staked bets; confirm placement with `sharp_bets --confirm`.
 - Limits: $1 flat, ≤5 bets/day, ≤2 per game, one per player-game-stat across books, ≤$20 per NFL
   week, sticky pause at $30 cumulative confirmed loss. No automated wager placement.
+- v8: the 5 daily bets are shared across kickoff windows (kickoffs within 45 minutes are one window; one
+  bet each, the rest by games; cumulative, so unused bets roll forward: `sharp_strategy.window_allocation`).
+  The shadow filter also reads ESPN's game-day statuses (`sharp_inactives`, pinned): the bet player's own
+  status and teammates newly out since the T-120 forecast, with their projected volume moved to the rest.
 - Gates (`modeling/sharp_alert_report`, run by the close task): close capture ≥90% of recent
   decisions, EV at the sharp close (pause if ≤0 after 50; scale review at ≥+1.5% over 150+ and 3+
   weeks), the loss pause, player/team concentration ≤20%/35%. Raising stakes is a manual decision.

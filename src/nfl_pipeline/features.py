@@ -589,27 +589,29 @@ def _add_usage_role_features(df: pd.DataFrame, ruled_out: set[tuple[int, int, st
     (shares ran ~16-18% higher than pregame-knowable values in 2023-2024/2026). Expected-but-absent
     teammates now count in the denominator and rank, matching what live scoring can know.
     """
+    from nfl_pipeline import role_group
+
     out = df.copy()
-    group_cols = ["game_id", "team_abbr"]
-    absent = _expected_absent_teammates(out, ROLE_SIGNAL_STATS, ruled_out or set())
-    keys = list(zip(out["game_id"], out["team_abbr"]))
-    for stat in ROLE_SIGNAL_STATS:
-        avg_col = f"{stat}_avg_5"
-        if avg_col not in out.columns:
-            out[avg_col] = np.nan
-        values = pd.to_numeric(out[avg_col], errors="coerce").fillna(0.0).clip(lower=0.0)
-        sum_col = f"team_player_{stat}_avg5_sum"
-        share_col = f"{stat}_share_avg_5"
-        rank_col = f"{stat}_role_rank"
-        absent_values = [absent.get(k, {}).get(stat, []) for k in keys]
-        team_sum = values.groupby([out[col] for col in group_cols]).transform("sum") + pd.Series(
-            [sum(v) for v in absent_values], index=out.index)
-        out[sum_col] = team_sum.replace(0.0, np.nan)
-        out[share_col] = (values / out[sum_col]).replace([np.inf, -np.inf], np.nan)
-        played_rank = values.groupby([out[col] for col in group_cols]).rank(method="min", ascending=False)
-        ahead_absent = pd.Series([sum(a > v for a in extra) for v, extra in zip(values, absent_values)], index=out.index)
-        out[rank_col] = (played_rank + ahead_absent).where(team_sum > 0)
-    return out
+    ruled_out = ruled_out or set()
+    absent = _expected_absent_teammates(out, ROLE_SIGNAL_STATS, ruled_out)
+    # The shared pregame rule (role_group): a player who plays counts only if he had played recently and
+    # was not ruled out; a debut or a long-absent returnee is scored against the group but not added to it,
+    # exactly as live scoring cannot know he will play.
+    if "game_date_et" in out:
+        dates = pd.to_datetime(out["game_date_et"], errors="coerce")
+    else:  # frames without dates (unit fixtures): order games by season and week
+        dates = pd.to_datetime(out["season"].astype(int).astype(str) + "-01-01") + pd.to_timedelta(
+            pd.to_numeric(out["week"], errors="coerce").fillna(0) * 7, unit="D")
+    order = out.assign(_date=dates).sort_values(["player_id", "_date", "game_id"])
+    last_played = order.groupby("player_id")["_date"].shift(1).reindex(out.index)
+    team_dates = {t: list(g.dropna()) for t, g in dates.groupby(out["team_abbr"])}
+    cutoffs = role_group.recency_cutoffs(team_dates)
+    cutoff = pd.Series([cutoffs.get((t, d)) for t, d in zip(out["team_abbr"], dates)], index=out.index)
+    listed_out = pd.Series([(int(s), int(w), str(t).upper(), str(p)) in ruled_out
+                            for s, w, t, p in zip(out["season"], out["week"], out["team_abbr"], out["player_id"])],
+                           index=out.index)
+    member = role_group.is_recent(last_played, cutoff) & ~listed_out
+    return role_group.role_features(out, ROLE_SIGNAL_STATS, member, absent)
 
 
 def _load_ruled_out(conn, min_season: int | None) -> set[tuple[int, int, str, str]]:

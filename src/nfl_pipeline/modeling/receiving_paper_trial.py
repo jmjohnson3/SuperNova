@@ -30,7 +30,10 @@ from nfl_pipeline.modeling.prospective_market import implied, locked_market
 # repair in this module, then features.py (batched context-risk columns, proven identical), and
 # predict_player_props (projection placement and the targets model). Rules are unchanged; v4's
 # captures stay on disk as their own cohort and are never pooled (captures()).
-NAME = "fanduel-receiving-oe-paper-v5"
+# v6 (26 October 2026) succeeds v5, which drifted when features.py and predict_player_props adopted the
+# shared pregame role group (nfl_pipeline.role_group: live teammate totals no longer count cold-start priors,
+# ruled-out or long-absent players). Rules are unchanged; v5's captures stay their own cohort.
+NAME = "fanduel-receiving-oe-paper-v6"
 CONTRACT = "nfl-receiving-independent-paper-v2"
 STORE = MODEL_ROOT / "receiving_paper_trial"
 ROOT = Path(__file__).resolve().parents[3]

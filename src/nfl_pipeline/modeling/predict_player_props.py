@@ -1782,28 +1782,32 @@ def _projection_only_role_allowed(row: dict[str, Any], stat: str, projection: fl
     return False, "projection_only_role_unknown"
 
 
-def _add_snapshot_role_features(df: pd.DataFrame) -> pd.DataFrame:
+def _add_snapshot_role_features(df: pd.DataFrame, history: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Team-relative roles under the shared pregame rule (nfl_pipeline.role_group): members played
+    recently, are not ruled out, and are not cold-start priors. Without `history` every row with a
+    previous game counts (no team cutoff)."""
+    from nfl_pipeline import role_group
+
     if df.empty:
         return df
     out = df.copy()
-    group_cols = ["game_id", "team_abbr"]
-    for stat in ROLE_SIGNAL_STATS:
-        avg_col = f"{stat}_avg_5"
-        if avg_col not in out.columns:
-            out[avg_col] = np.nan
-        values = pd.to_numeric(out[avg_col], errors="coerce").fillna(0.0).clip(lower=0.0)
-        sum_col = f"team_player_{stat}_avg5_sum"
-        share_col = f"{stat}_share_avg_5"
-        rank_col = f"{stat}_role_rank"
-        team_sum = values.groupby([out[col] for col in group_cols]).transform("sum")
-        out[sum_col] = team_sum.replace(0.0, np.nan)
-        out[share_col] = (values / out[sum_col]).replace([np.inf, -np.inf], np.nan)
-        out[rank_col] = (
-            values.groupby([out[col] for col in group_cols])
-            .rank(method="min", ascending=False)
-            .where(team_sum > 0)
-        )
-    return out
+    day = pd.to_datetime(out.get("game_date_et"), errors="coerce")
+    rest = pd.to_numeric(out.get("rest_days", pd.Series(np.nan, index=out.index)), errors="coerce")
+    last_played = day - pd.to_timedelta(rest, unit="D")
+    cutoff = pd.Series(pd.NaT, index=out.index)
+    if history is not None and not history.empty:
+        games = history.assign(_team=history["team_abbr"].map(normalize_team),
+                               _date=pd.to_datetime(history["game_date_et"], errors="coerce"))
+        team_dates = {t: sorted(set(g.dropna())) for t, g in games.groupby("_team")["_date"]}
+        def team_cutoff(team, today):
+            prior = [d for d in team_dates.get(normalize_team(team), []) if d < today]
+            return prior[-role_group.LOOKBACK_GAMES] if len(prior) >= role_group.LOOKBACK_GAMES else (prior[0] if prior else pd.NaT)
+        cutoff = pd.Series([team_cutoff(t, d) for t, d in zip(out["team_abbr"], day)], index=out.index)
+    cold = out.get("cold_start", pd.Series(False, index=out.index)).fillna(False).astype(bool)
+    inactive = out.get("roster_is_active", pd.Series(True, index=out.index)).eq(False)
+    ruled_out = role_group.is_ruled_out(out.get("injury_report_status", pd.Series(index=out.index, dtype=object)))
+    member = role_group.is_recent(last_played, cutoff) & ~cold & ~inactive & ~ruled_out
+    return role_group.role_features(out, ROLE_SIGNAL_STATS, member)
 
 
 def _snapshot_players(
@@ -1924,7 +1928,7 @@ def _snapshot_players(
                 row[f'{stat}_avg_{window}'] = float(value) if pd.notna(value) else None
         row.update(allowed.get(matchups[team]['opponent_abbr'],{}))
         rows.append(row)
-    result = _add_context_risk_features(_add_snapshot_role_features(pd.DataFrame(rows)))
+    result = _add_context_risk_features(_add_snapshot_role_features(pd.DataFrame(rows), history))
     true_routes = pd.to_numeric(
         result.get("has_true_route_history", pd.Series(np.nan, index=result.index)), errors="coerce"
     )
