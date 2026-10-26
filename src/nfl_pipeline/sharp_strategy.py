@@ -13,14 +13,16 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+# v9 (26 October): the user raised the daily cap to 10 and the weekly cap to $40 ($1 flat, 2 per game and the
+# $30 sticky loss pause unchanged). On 25 October 29 decisions qualified and 5 were staked.
 # v8 (26 October): the day's bets are spread across kickoff windows instead of first come; alternate
 # ladders are no longer scanned (no edge: on 7,460 settled rungs the ladder model was no better than the
 # books' own prices, its "+EV" rungs lost 8%, and cross-book rung gaps lost too); the shadow filter reads
 # ESPN's game-day statuses so inactives announced after the T-120 forecast are seen (sharp_inactives).
 # v7 (22 October): game totals carry stakes; alternate player-prop ladders are scanned and graded as
 # research (never staked). v6 moved links and alert text to the unpinned sharp_links.
-EXPERIMENT_NAME = "nfl-sharp-gap-cash-v8"
-PREDECESSOR = "nfl-sharp-gap-cash-v7"
+EXPERIMENT_NAME = "nfl-sharp-gap-cash-v9"
+PREDECESSOR = "nfl-sharp-gap-cash-v8"
 
 # Books with an account. Order breaks EV ties only; each poll takes the best price first.
 BET_BOOKS = ("fanduel", "espnbet", "draftkings")
@@ -47,8 +49,8 @@ STAKE_WINDOW_MINUTES = (15, 45)
 # Risk limits, the same as the documented NFL cash policy (docs/nfl_cash_readiness.md).
 BETS_ENABLED = True
 STAKE = 1.0
-MAX_BETS_PER_DAY = 5
-MAX_STAKE_PER_WEEK = 20.0
+MAX_BETS_PER_DAY = 10
+MAX_STAKE_PER_WEEK = 40.0
 MAX_BETS_PER_GAME = 2      # one game's script moves every prop in it; spread the exposure
 # The day's bets are shared across kickoff windows (kickoffs within WINDOW_MERGE_MINUTES of the window's
 # first are one window): every window gets one, the rest go to the windows with the most games, and a
@@ -68,8 +70,9 @@ def kickoff_windows(kickoffs: list[datetime]) -> list[tuple[datetime, int]]:
     return [(w[0], w[1]) for w in windows]
 
 
-def window_allocation(kickoffs: list[datetime], cap: int = MAX_BETS_PER_DAY) -> list[tuple[datetime, int]]:
+def window_allocation(kickoffs: list[datetime], cap: int | None = None) -> list[tuple[datetime, int]]:
     """[(window start, bets)]: one per window, the rest by games (more games first, then earlier)."""
+    cap = MAX_BETS_PER_DAY if cap is None else cap
     windows = kickoff_windows(kickoffs)
     if not windows or cap <= 0:
         return [(w, 0) for w, _ in windows]
@@ -86,8 +89,9 @@ def window_allocation(kickoffs: list[datetime], cap: int = MAX_BETS_PER_DAY) -> 
     return [(windows[i][0], alloc[i]) for i in range(len(windows))]
 
 
-def cumulative_cap(kickoffs: list[datetime], kickoff: datetime, cap: int = MAX_BETS_PER_DAY) -> int:
+def cumulative_cap(kickoffs: list[datetime], kickoff: datetime, cap: int | None = None) -> int:
     """Bets the day may hold once this kickoff's window is open: its allocation plus every earlier one."""
+    cap = MAX_BETS_PER_DAY if cap is None else cap
     if not kickoffs:
         return cap
     total = 0

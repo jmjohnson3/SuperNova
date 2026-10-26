@@ -173,14 +173,14 @@ def budget(**changes):
 
 
 def test_stake_respects_caps_and_the_pauses():
-    assert w.strategy.STAKE == 1.0 and w.strategy.MAX_BETS_PER_DAY == 5
-    assert w.strategy.MAX_STAKE_PER_WEEK == 20.0 and w.strategy.LOSS_PAUSE == -30.0
+    assert w.strategy.STAKE == 1.0 and w.strategy.MAX_BETS_PER_DAY == 10
+    assert w.strategy.MAX_STAKE_PER_WEEK == 40.0 and w.strategy.LOSS_PAUSE == -30.0
     assert w.stake_for(None, "alert", NOW, budget()) == 1.0
     for tier in ("logged", "early", "late"):  # only alerts inside the stake window carry money
         assert w.stake_for(None, tier, NOW, budget()) == 0.0
-    assert w.stake_for(None, "alert", NOW, budget(today=5)) == 0.0               # five bets today already
-    assert w.stake_for(None, "alert", NOW, budget(today=4, staked_count=1)) == 0.0  # ...counting this run
-    assert w.stake_for(None, "alert", NOW, budget(week=19.5)) == 0.0              # weekly cap
+    assert w.stake_for(None, "alert", NOW, budget(today=10)) == 0.0              # ten bets today already
+    assert w.stake_for(None, "alert", NOW, budget(today=9, staked_count=1)) == 0.0  # ...counting this run
+    assert w.stake_for(None, "alert", NOW, budget(week=39.5)) == 0.0              # weekly cap
     assert w.stake_for(None, "alert", NOW, budget(paused=True)) == 0.0            # loss or readiness pause
 
 
@@ -444,15 +444,17 @@ def test_daily_bets_are_shared_across_kickoff_windows():
     u = lambda h, m: datetime(2026, 10, 25, h, m, tzinfo=timezone.utc)
     night = u(0, 20) + timedelta(days=1)
     kicks = [u(13, 30)] + [u(17, 0)] * 7 + [u(20, 5)] + [u(20, 25)] * 2 + [night]
-    assert [n for _, n in w.strategy.window_allocation(kicks)] == [1, 2, 1, 1]
-    assert [w.strategy.cumulative_cap(kicks, k) for k in (u(13, 30), u(17, 0), u(20, 25), night)] == [1, 3, 4, 5]
+    assert [n for _, n in w.strategy.window_allocation(kicks, 5)] == [1, 2, 1, 1]
+    assert [w.strategy.cumulative_cap(kicks, k, 5) for k in (u(13, 30), u(17, 0), u(20, 25), night)] == [1, 3, 4, 5]
+    assert [n for _, n in w.strategy.window_allocation(kicks)] == [1, 6, 2, 1]   # v9: 10 a day
     # one game: everything goes to its window; more windows than bets: the busiest windows get one each
-    assert w.strategy.window_allocation([night]) == [(night, 5)]
+    assert w.strategy.window_allocation([night], 5) == [(night, 5)]
     many = [u(13, 0) + timedelta(hours=i) for i in range(7)]
-    assert sum(n for _, n in w.strategy.window_allocation(many)) == 5
+    assert sum(n for _, n in w.strategy.window_allocation(many, 5)) == 5
 
 
-def test_stake_for_respects_the_window_cap_and_rolls_unused_bets_forward():
+def test_stake_for_respects_the_window_cap_and_rolls_unused_bets_forward(monkeypatch):
+    monkeypatch.setattr(w.strategy, "MAX_BETS_PER_DAY", 5)   # the v8 cap; the rule scales with it
     u = lambda h, m: datetime(2026, 10, 25, h, m, tzinfo=timezone.utc)
     kicks = [u(13, 30)] + [u(17, 0)] * 7 + [u(20, 25)] * 2 + [u(0, 20) + timedelta(days=1)]
     budget = dict(today=0, week=0.0, staked=0.0, staked_count=0, staked_keys=set(), per_game={}, paused=False,
