@@ -147,16 +147,22 @@ def run(day: date, *, refresh: bool = True, post: bool = True, force: bool = Fal
     state = _state()
     if post and not force and state.get("posted") == str(day):
         return dict(day=str(day), status="already_posted")
+    refresh_error = None
     if refresh:
-        ingest.ingest([day.year], endpoints=("games", "lines"),
-                      season_types=("postseason",) if day.month == 1 else ("regular", "postseason") if day.month == 12 else ("regular",))
+        try:
+            ingest.ingest([day.year], endpoints=("games", "lines"),
+                          season_types=("postseason",) if day.month == 1 else ("regular", "postseason") if day.month == 12 else ("regular",))
+        except Exception as exc:  # CFBD has 502'd after its retries (25 Oct): project from stored data instead
+            refresh_error = f"{type(exc).__name__}: {str(exc)[:160]}"
+            print(f"CFBD refresh failed, using stored games and lines: {refresh_error}", flush=True)
     with psycopg2.connect(PG_DSN) as conn:
         history = ratings.load(conn)
         games = upcoming(conn, day)
         df = project(history, games)
         if not df.empty:
             save(conn, df, day)
-    result = dict(day=str(day), games=int(len(df)), projected=int(df.projected.sum()) if len(df) else 0)
+    result = dict(day=str(day), games=int(len(df)), projected=int(df.projected.sum()) if len(df) else 0,
+                  refresh_error=refresh_error)
     if df.empty or not result["projected"]:
         return dict(result, status="no_games")
     texts = messages(df, day)

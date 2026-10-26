@@ -331,6 +331,17 @@ if __name__ == '__main__':
         print(json.dumps(dict(status='registered_research_only', registration_sha256=registered['sha256'],
             frozen_provenance=registered['config'][cash_freeze.FIELD], betting_approved=False)))
     else:
-        result = report(args.date)
+        try:
+            result = report(args.date)
+        except ValueError as exc:
+            # The model trial behind this policy is research since 21 October (the cash strategy is
+            # sharp_watch). Development drifts its frozen sources; that blocks it, exactly as before,
+            # but is a status, not a failure of the daily run. No report is written, so publication
+            # stays fail-closed (cash_publication: cash_readiness_missing).
+            if 'Frozen experiment changed' not in str(exc):
+                raise
+            print(json.dumps(dict(status='blocked_registration_drifted', betting_approved=False,
+                                  detail=str(exc)), default=str))
+            raise SystemExit(0)
         print(json.dumps(dict(status=result['decision']['status'], pending=result['pending'],
             metrics=result['provisional']['metrics'], blockers=result['provisional']['blockers']), default=str))
