@@ -11,6 +11,10 @@ loss pause that sharp_watch checks before staking anything new.
   python -m nfl_pipeline.sharp_bets --confirm 41 --price -115 # the price you actually got
   python -m nfl_pipeline.sharp_bets --unconfirm 41       # placed it by mistake / did not get the price
   python -m nfl_pipeline.sharp_bets --summary            # staked, realized, open
+  python -m nfl_pipeline.sharp_bets --confirm 41 42 --late   # placed before kickoff, confirmed after it
+
+A late confirmation (the game has started) must name every staked alert of those games, so it can only
+record "I bet all of them", never pick winners; such rows are marked confirmed_late.
 """
 from __future__ import annotations
 
@@ -60,6 +64,31 @@ def confirm(conn, alert_ids: list[int], stake: float | None, placed: bool = True
     return rows
 
 
+def confirm_late(conn, alert_ids: list[int], price: int | None = None) -> dict:
+    """Record bets placed before kickoff but confirmed after it. All-or-nothing per game: every staked
+    alert of each named game must be listed, or nothing is written."""
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("ALTER TABLE bets.nfl_sharp_alerts ADD COLUMN IF NOT EXISTS confirmed_late BOOLEAN")
+        cur.execute("""SELECT alert_id, game_id FROM bets.nfl_sharp_alerts
+                       WHERE stake > 0 AND game_id IN (SELECT game_id FROM bets.nfl_sharp_alerts WHERE alert_id = ANY(%s))""",
+                    (alert_ids,))
+        staked = {r["alert_id"]: r["game_id"] for r in cur.fetchall()}
+        missing = sorted(set(staked) - set(alert_ids))
+        unknown = sorted(set(alert_ids) - set(staked))
+        if missing or unknown:
+            conn.rollback()
+            return dict(confirmed=[], refused="a late confirmation must list every staked alert of its games",
+                        missing_from_request=missing, not_staked_or_unknown=unknown)
+        cur.execute("""UPDATE bets.nfl_sharp_alerts
+            SET placed_at = now(), confirmed_late = TRUE, taken_price = COALESCE(%(price)s, taken_price, fd_price)
+            WHERE alert_id = ANY(%(ids)s) AND placed_at IS NULL
+            RETURNING alert_id, book, player_name, side, fd_line, fd_price, taken_price, stake, placed_at""",
+                    {"ids": alert_ids, "price": price})
+        rows = [dict(r) for r in cur.fetchall()]
+    conn.commit()
+    return dict(confirmed=rows)
+
+
 def summary(conn) -> dict:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""SELECT count(*) FILTER (WHERE placed_at IS NOT NULL) AS placed,
@@ -81,9 +110,13 @@ def main() -> None:
     ap.add_argument("--price", type=int, help="American price actually obtained (default: the alerted price)")
     ap.add_argument("--pending", action="store_true")
     ap.add_argument("--summary", action="store_true")
+    ap.add_argument("--late", action="store_true",
+                    help="with --confirm: the bets were placed before kickoff; list every staked alert of those games")
     args = ap.parse_args()
     with psycopg2.connect(PG_DSN) as conn:
-        if args.confirm:
+        if args.confirm and args.late:
+            print(json.dumps(confirm_late(conn, args.confirm, args.price), indent=2, default=str))
+        elif args.confirm:
             rows = confirm(conn, args.confirm, args.stake, placed=True, price=args.price)
             missed = sorted(set(args.confirm) - {r["alert_id"] for r in rows})
             print(json.dumps({"confirmed": rows, "not_updated_already_started_or_unknown": missed}, indent=2, default=str))
