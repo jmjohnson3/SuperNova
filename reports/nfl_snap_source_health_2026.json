@@ -3,9 +3,9 @@
   "season": 2026,
   "source": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv",
   "error": null,
-  "rows_read": 8671,
-  "rows_matched": 8581,
-  "observed_at": "2026-10-23T04:21:48.781386+00:00",
+  "rows_read": 9981,
+  "rows_matched": 9875,
+  "observed_at": "2026-10-27T20:06:08.015022+00:00",
   "games": [
     "2026_01_ARI_LAC",
     "2026_01_ATL_PIT",
@@ -99,6 +99,20 @@
     "2026_06_PIT_TB",
     "2026_06_SEA_DEN",
     "2026_06_TEN_IND",
-    "2026_06_WAS_SF"
+    "2026_06_WAS_SF",
+    "2026_07_CIN_BAL",
+    "2026_07_CLE_TEN",
+    "2026_07_DAL_PHI",
+    "2026_07_DEN_ARI",
+    "2026_07_GB_DET",
+    "2026_07_IND_MIN",
+    "2026_07_KC_SEA",
+    "2026_07_LA_LV",
+    "2026_07_MIA_NYJ",
+    "2026_07_NE_CHI",
+    "2026_07_NYG_HOU",
+    "2026_07_PIT_NO",
+    "2026_07_SF_ATL",
+    "2026_07_TB_CAR"
   ]
 }

@@ -1,0 +1,240 @@
+{
+  "date": "2026-10-26",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 6.666,
+      "timeout_seconds": 180,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 25.351,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 7370,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-10-26 07:31:32,209 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-10-26 07:31:43,640 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 110.269,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 3054\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 700888,\n      \"rows_selected\": 2336,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2139\n    }\n  ],\n  \"roster_rows_upserted\": 3053,\n  \"depth_rows_upserted\": 2333,\n  \"injury_rows_upserted\": 2139\n}\n",
+      "stderr_tail": "2026-10-26 07:31:57,619 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-10-26 07:32:14,005 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-10-26 07:33:37,685 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 20.532,
+      "timeout_seconds": 1200,
+      "stdout_tail": ": 7370,\n        \"air_yards_share\": 7370,\n        \"first_read_targets\": 0\n      },\n      \"routes_are_proxies\": false,\n      \"route_evidence\": \"missing\",\n      \"missing_routes_action\": \"keep_proxy_label; configure a measured-route source before claiming true routes\"\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 18561,\n      \"player_usage_rows\": 2079,\n      \"player_usage_rows_updated\": 495,\n      \"player_game_rows\": 1123,\n      \"rows_updated\": 65,\n      \"zero_filled_rows\": 590\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 240\n    }\n  ],\n  \"snap_rows_matched\": 9782,\n  \"snap_rows_updated\": 0,\n  \"advanced_usage_rows_matched\": 7370,\n  \"advanced_usage_rows_updated\": 0,\n  \"pbp_usage_player_game_rows\": 2079,\n  \"pbp_usage_rows_updated\": 495,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 240,\n  \"red_zone_player_game_rows\": 1123,\n  \"red_zone_rows_updated\": 655\n}\n",
+      "stderr_tail": "2026-10-26 07:33:48,561 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-10-26 07:33:50,035 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-10-26 07:34:01,988 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-10-26 07:34:02,249 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Live Injury Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 4.718,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"day\": \"2026-10-26\",\n  \"games\": [\n    {\n      \"game_id\": \"2026_07_DAL_PHI\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 8,\n      \"out\": [\n        \"Dee Winters\",\n        \"Drew Shelton\",\n        \"KaVontae Turpin\",\n        \"Michael Carter II\",\n        \"Nolan Smith Jr.\"\n      ]\n    }\n  ],\n  \"unmatched\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 14.45,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-10-26\",\n  \"built_at\": \"2026-10-26T13:34:11.182260+00:00\",\n  \"games\": 1,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 30,\n      \"fresh_rows\": 30,\n      \"latest_quote\": \"2026-10-26 06:34:16.843218-07:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 1,\n      \"fresh_rows\": 1,\n      \"latest_quote\": \"2026-10-26 06:34:16.692857-07:00\"\n    }\n  },\n  \"game_ids\": null,\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"sharp_lines\": {\n    \"provider\": \"oddsapi_eu\",\n    \"role\": \"lock\",\n    \"day\": \"2026-10-26\",\n    \"due_games\": [],\n    \"captured\": [],\n    \"skipped\": {},\n    \"credits_remaining\": null,\n    \"markets\": [\n      \"player_reception_yds\"\n    ],\n    \"status\": \"nothing_due\"\n  },\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 2.437,
+      "timeout_seconds": 120,
+      "stdout_tail": "# NFL Snapshot Health - 2026-10-26\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 1 | 2026-10-26 06:34:16.692857-07:00 |\n| nfl_player_props | lock | 1 | 2026-10-26 06:34:16.843218-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 1 | 2026-10-26 06:34:16.123077-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| lock | 2 | 1 | 2026-10-26 06:34:16.692857-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| lock | 58 | 15 | 2026-10-26 06:34:16.843218-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 58 | 0 | 0.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 12.935,
+      "timeout_seconds": 600,
+      "stdout_tail": "           \"kind\": \"forecast_repair\",\n            \"contract\": \"nfl-isolated-forecast-repair-v1\",\n            \"path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\src\\\\nfl_pipeline\\\\modeling\\\\models\\\\forecast_repair\\\\forecast-repair-total-20261008T170628068151Z\\\\model.joblib\",\n            \"sha256\": \"cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96\",\n            \"variant\": \"small_total\",\n            \"stat\": \"total\",\n            \"training_end\": \"2026-09-17\",\n            \"production_release\": \"nfl-20260918T143342Z\"\n          }\n        }\n      ],\n      \"distribution_challenger_score\": {\n        \"policy_id\": \"fff1250d9ad1c5370ad6b848b3ff7bfb1b37c0751166b53eead829c97cc800e2\",\n        \"summary\": {\n          \"mean\": 44.501265478150636,\n          \"p10\": 28.0,\n          \"median\": 44.0,\n          \"p90\": 61.0\n        },\n        \"over\": 0.5,\n        \"under\": 0.5,\n        \"push\": 0.0,\n        \"conditional_over\": 0.5\n      },\n      \"distribution_threshold\": 44.5,\n      \"distribution_policy_id\": null,\n      \"legacy_final_probability\": null,\n      \"game_outcome_distribution\": null,\n      \"game_outcome_policy_capture\": null,\n      \"game_outcome_challenger_score\": null,\n      \"push_probability\": 0,\n      \"ev\": -0.047986289631533785,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"dd2ff016daa858ae9ee634a3c35cf011659e0ba6f08fdb3f68a97f3d52e94d75\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 31.261,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"captured\",\n  \"teams\": 2,\n  \"roster_rows\": 106\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 66.059,
+      "timeout_seconds": 1200,
+      "stdout_tail": "ory\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"projection_semantics\": \"expected_count_or_any_td_head\",\n      \"forecast_outputs\": {\n        \"contract\": \"nfl-forecast-outputs-v1\",\n        \"scope\": {\n          \"game_id\": \"2026_07_DAL_PHI\",\n          \"player_id\": \"00-0040867\",\n          \"stat\": \"receiving_tds\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"prediction_context_cutoff_utc\": \"2026-10-26T13:35:29.076292+00:00\"\n        },\n        \"point_forecast\": {\n          \"value\": 0.12910881855386733,\n          \"semantics\": \"expected_count_or_any_td_head\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"source\": \"legacy_projection_unverified\",\n          \"independent_of_offer\": false\n        },\n        \"expected_yards\": null,\n        \"typical_yards\": null,\n        \"pricing\": {\n          \"projection_anchor\": 0.12910881855386733,\n          \"model_projection\": 0.12910881855386733,\n          \"market_adjusted\": false,\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"distribution_id\": \"fe38d1215db10eca149fbc673ee6bcdbd79367cfcd7990f6cb98908af570424d\",\n          \"distribution_kind\": \"empirical_oof_residual\",\n          \"scoring_version\": null,\n          \"line\": null,\n          \"side\": null,\n          \"price\": null,\n          \"probability\": null,\n          \"push_probability\": null,\n          \"ev\": null\n        },\n        \"betting_approval_inherited\": false\n      }\n    }\n  ]\n}\n",
+      "stderr_tail": "onents_receptions\n2026-10-26 07:36:08,495 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receptions', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-10-26 07:36:13,965 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: predict_receiving_tds\n2026-10-26 07:36:14,165 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'predict_receiving_tds', 'status': 'ok', 'result_parts': 3, 'seconds': 0.206}\n2026-10-26 07:36:14,388 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: active_stat_component_receiving_tds\n2026-10-26 07:36:14,388 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'active_stat_component_receiving_tds', 'status': 'ok', 'seconds': 0.0}\n2026-10-26 07:36:14,388 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: candidate_stat_components_receiving_tds\n2026-10-26 07:36:14,388 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receiving_tds', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-10-26 07:36:14,589 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: save_predictions\n2026-10-26 07:36:16,348 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'save_predictions', 'status': 'ok', 'seconds': 1.756}\n"
+    },
+    {
+      "step": "NFL Frozen Receiving Paper Trial",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 16.626,
+      "timeout_seconds": 360,
+      "stdout_tail": "{\n  \"status\": \"paper_only\",\n  \"captured\": 7,\n  \"selected\": 2,\n  \"exclusions\": {\n    \"role_stability_unknown_or_low\": 1,\n    \"limited_role_risk_unknown_or_high\": 1,\n    \"outside_trial\": 4\n  },\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Rushing Volume Challenger",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 8.626,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"captured\": 7,\n  \"exclusions\": {}\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL FanDuel Lock Contract",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 4.978,
+      "timeout_seconds": 120,
+      "stdout_tail": "{'contract': 'nfl-fanduel-lock-contract-v1', 'generated_at_utc': '2026-10-26T13:36:47.285273+00:00', 'date': '2026-10-26', 'required': False, 'game_scope': None, 'status': 'passed', 'summary': {'games': 1, 'passed': 1, 'waiting': 0, 'failed': 0}, 'games': [{'game_id': '2026_07_DAL_PHI', 'home_team_abbr': 'PHI', 'away_team_abbr': 'DAL', 'start_ts_utc': datetime.datetime(2026, 10, 26, 17, 15, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=61200))), 'status': 'passed', 'verification': {'game_id': '2026_07_DAL_PHI', 'current_fanduel_locks': 27, 'receiving_locks': 9, 'receiving_same_line_triplets': 9, 'explicit_injury_context_locks': 27, 'known_player_injury_context_locks': 7, 'immutable_lock_violations': 0, 'all_locks_missing_links': 0, 'actionable_missing_links': 0, 'lock_verification_passed': True, 'injury_context_note': 'known_player_status'}}]}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 3.008,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 2,\n  \"prop_locked\": 27,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 2.624,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 82.584,
+      "timeout_seconds": 900,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 62,\n  \"run_id\": \"benchmark-20260921T230305171980Z\",\n  \"eligible_original_locks\": 15,\n  \"missing_forecast_ids\": [],\n  \"missing_variants\": [],\n  \"capture_errors\": {},\n  \"receiving_research_trial\": {\n    \"status\": \"research_only\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"outside_trial\": 53,\n      \"original_drift_guard_not_passed\": 9\n    },\n    \"betting_approved\": false\n  },\n  \"receiving_residual_trial\": {\n    \"status\": \"paper_residual_trial\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"residual_not_supported\": 9,\n      \"missing_residual_signal\": 6\n    },\n    \"paper_only\": true\n  },\n  \"exclusions\": {\n    \"not_an_offered_line\": 7\n  },\n  \"production_changed\": false,\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Receiving Trial Checkpoint",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 19.164,
+      "timeout_seconds": 360,
+      "stdout_tail": "lv\": null}, {\"forecast_id\": 26917, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 64.5, \"side\": \"over\", \"locked_at\": \"2026-10-26T13:36:14.589592+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 26918, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 17.5, \"side\": \"over\", \"locked_at\": \"2026-10-26T13:36:14.589592+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 26921, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 9.5, \"side\": \"over\", \"locked_at\": \"2026-10-26T13:36:14.589592+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 26922, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 39.5, \"side\": \"over\", \"locked_at\": \"2026-10-26T13:36:14.589592+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 26923, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 38.5, \"side\": \"over\", \"locked_at\": \"2026-10-26T13:36:14.589592+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}], \"average_clv\": null}, \"fixed_research\": {\"started\": 0, \"valid\": 0, \"unknown\": 0, \"valid_coverage\": null, \"required_coverage\": 0.9, \"target_met\": null, \"unknown_reasons\": {}, \"observations\": [], \"average_clv\": null}}, \"forecast_next_action\": \"keep_frozen_collect_evidence\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Locked Micro Uncertainty",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 6.438,
+      "timeout_seconds": 120,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 0,\n  \"exclusions\": {\n    \"crossed_kickoff_during_scoring\": 0\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 13.827,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 13,\n    \"team_receiving_yards\": 11\n  },\n  \"excluded\": {\n    \"unknown_pregame_roster_member\": 2\n  },\n  \"point_component\": {\n    \"status\": \"point_prospective_only\",\n    \"captured\": 9,\n    \"exclusions\": {\n      \"missing_scoring_version\": 4\n    }\n  },\n  \"quantile_point_component\": {\n    \"status\": \"point_prospective_only\",\n    \"captured\": 9,\n    \"exclusions\": {\n      \"missing_scoring_version\": 4\n    }\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 6.408,
+      "timeout_seconds": 180,
+      "stdout_tail": "ds Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 1 | 2026-10-26 06:34:16.692857-07:00 |\n| nfl_player_props | lock | 1 | 2026-10-26 06:34:16.843218-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 1 | 2026-10-26 06:34:16.123077-07:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 2 | 1 |\n| player props | 58 | 15 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 58 | 0 | 0.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 58 | raw parser output |\n| true paired over/under offers | 58 | 100.0% |\n| lock markets | 58 | exact book/player/stat/line locked |\n| close markets | 0 | exact book/player/stat/line closed |\n| lock-close exact matches | 0 | 0.0% |\n| CLV labels | 0 | valid: 0 |\n| graded prop predictions | 0 | line-level result rows |\n| prop ledger rows | 27 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| none | 0 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 2 |\n| prop | paper | 27 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 0.491,
+      "timeout_seconds": 120,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Cash Readiness",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 10.17,
+      "timeout_seconds": 900,
+      "stdout_tail": "{\"status\": \"blocked_registration_drifted\", \"betting_approved\": false, \"detail\": \"Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.cash_readiness, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 25.491,
+      "timeout_seconds": 120,
+      "stdout_tail": "\": [{\"title\": \"DAL @ PHI | NFL 2026-10-26\", \"description\": \"Kickoff: <t:1793060100:f> (<t:1793060100:R>)\\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\\n\\n**BETS**\\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\\n\\n**STARTING SKILL PLAYER PROJECTIONS**\\n- Forecasts only, not bets.\\n- DAL QB1 D.Prescott: Pass Yds 272.7 | Pass TD 1.60 | Rush Yds 8.0 | FanDuel line available\\n- DAL RB1 J.Williams: Rush Yds 56.2 | Rec Yds 14.2 | Rec 2.6 | Rush TD 0.59 | FanDuel line available\\n- DAL WR1 C.Lamb: Rec Yds 93.0 | Rec 7.6 | Rec TD 0.46 | FanDuel line available\\n- DAL WR2 G.Pickens: Rec Yds 71.2 | Rec 5.2 | Rec TD 0.30 | FanDuel line available\\n- DAL TE1 J.Ferguson: Rec Yds 20.3 | Rec 2.7 | Rec TD 0.28 | FanDuel line available\\n- PHI QB1 T.McKee: Pass Yds 134.4 | Pass TD 0.40 | FanDuel line available\\n- PHI RB1 S.Barkley: Rush Yds 47.2 | Rec Yds 5.5 | Rec 1.1 | Rush TD 0.27 | FanDuel line available\\n- PHI TE1 D.Goedert: Rec Yds 41.5 | Rec 4.2 | Rec TD 0.41 | FanDuel line available\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"cash_readiness\": {\"status\": \"operational_issue\", \"reason\": \"cash_readiness_missing\"}, \"quote_exclusions\": [], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_DAL_PHI",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "DAL @ PHI | NFL 2026-10-26",
+            "description": "Kickoff: <t:1793060100:f> (<t:1793060100:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- DAL QB1 D.Prescott: Pass Yds 272.7 | Pass TD 1.60 | Rush Yds 8.0 | FanDuel line available\n- DAL RB1 J.Williams: Rush Yds 56.2 | Rec Yds 14.2 | Rec 2.6 | Rush TD 0.59 | FanDuel line available\n- DAL WR1 C.Lamb: Rec Yds 93.0 | Rec 7.6 | Rec TD 0.46 | FanDuel line available\n- DAL WR2 G.Pickens: Rec Yds 71.2 | Rec 5.2 | Rec TD 0.30 | FanDuel line available\n- DAL TE1 J.Ferguson: Rec Yds 20.3 | Rec 2.7 | Rec TD 0.28 | FanDuel line available\n- PHI QB1 T.McKee: Pass Yds 134.4 | Pass TD 0.40 | FanDuel line available\n- PHI RB1 S.Barkley: Rush Yds 47.2 | Rec Yds 5.5 | Rec 1.1 | Rush TD 0.27 | FanDuel line available\n- PHI TE1 D.Goedert: Rec Yds 41.5 | Rec 4.2 | Rec TD 0.41 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-26T13:40:01.141510+00:00"
+    }
+  ],
+  "run_id": null,
+  "pregame": false,
+  "game_ids": []
+}

@@ -1,11 +1,12 @@
 {
   "status": "separate_cohort_review_required",
-  "player_games": 372,
+  "player_games": 533,
   "exclusions": {
-    "pending_or_missing_verified_result": 35,
-    "duplicate_player_game_in_cohort": 13
+    "pending_or_missing_verified_result": 10,
+    "duplicate_player_game_in_cohort": 215,
+    "future_game_pending": 9
   },
-  "unique_player_games": 262,
+  "unique_player_games": 411,
   "deployment_approved": false,
   "betting_approved": false,
   "probability_enabled": false,
@@ -27,6 +28,33 @@
         "mae": 19.95337085847124,
         "rmse": 27.044628820357964,
         "bias": -4.538980864399234
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb",
+      "status": "not_yet_proven",
+      "player_games": 9,
+      "reference": {
+        "rows": 9,
+        "mae": 13.967980250029662,
+        "rmse": 18.114168632399135,
+        "bias": 0.7823323171205921
+      },
+      "candidate": {
+        "rows": 9,
+        "mae": 12.203351123530105,
+        "rmse": 17.372065452097328,
+        "bias": -1.1155666190556701
       },
       "clustered_absolute_error_gain": {
         "clusters": 1,
@@ -82,6 +110,87 @@
         "mae": 22.285460187477895,
         "rmse": 29.471878824530503,
         "bias": -6.04821548471176
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "93ed5e68ecd622b1dcb00e58bd35bd2486c39885e651fc6ae59af70480a0af64",
+      "status": "not_yet_proven",
+      "player_games": 14,
+      "reference": {
+        "rows": 14,
+        "mae": 27.977891405111446,
+        "rmse": 36.96820594528115,
+        "bias": -18.28300931595198
+      },
+      "candidate": {
+        "rows": 14,
+        "mae": 27.499436577694386,
+        "rmse": 37.05257443887412,
+        "bias": -19.10148684213896
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "97473e84f5541ccb580322c19d616653e1b71d0bec9ab4a5a152668b99b30a7a",
+      "status": "not_yet_proven",
+      "player_games": 125,
+      "reference": {
+        "rows": 125,
+        "mae": 21.04130187407177,
+        "rmse": 27.79009940143977,
+        "bias": -2.989395772300634
+      },
+      "candidate": {
+        "rows": 125,
+        "mae": 20.729017546726418,
+        "rmse": 27.637078834785143,
+        "bias": -4.429231002604012
+      },
+      "clustered_absolute_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "prospective_screen_passed": false,
+      "deployment_approved": false,
+      "betting_approved": false,
+      "probability_enabled": false
+    },
+    {
+      "production_release": "nfl-20260918T143342Z",
+      "scoring_version": "ab77cb47b2deb5138704d8c150a9a477ed5929b5f4c14a0ece7c030e88c2b7ca",
+      "status": "not_yet_proven",
+      "player_games": 13,
+      "reference": {
+        "rows": 13,
+        "mae": 28.926645801041424,
+        "rmse": 37.77469125115402,
+        "bias": -20.874597680308828
+      },
+      "candidate": {
+        "rows": 13,
+        "mae": 28.280959375270154,
+        "rmse": 37.86033553566918,
+        "bias": -21.872019220647946
       },
       "clustered_absolute_error_gain": {
         "clusters": 1,

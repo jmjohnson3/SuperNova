@@ -1,0 +1,67 @@
+{
+  "contract": "nfl-receiving-independent-paper-v2",
+  "registration_sha256": "d7264621bc65f45f66bd12be9f678e2a8d627c0bf1afb487212f41b8fa288e23",
+  "status": "paper_evidence_collection",
+  "all_offers": {
+    "rows": 5,
+    "accounting": {
+      "pending_game": 5
+    },
+    "settled_binary": 0,
+    "hypothetical_profit_units": 0,
+    "hypothetical_roi": null,
+    "weeks": 0,
+    "player_games": 0
+  },
+  "frozen_selected": {
+    "rows": 2,
+    "accounting": {
+      "pending_game": 2
+    },
+    "settled_binary": 0,
+    "hypothetical_profit_units": 0,
+    "hypothetical_roi": null,
+    "weeks": 0,
+    "player_games": 0
+  },
+  "selected_decision_ids": [
+    "02eba9aa72bc411fa0cc4329cbbf0cc0adb102e6552ec4feaa78933238713c3d",
+    "72e1cd46dc1150414a243e800df1e51cbc811ae13319c04389e61421b0a67998"
+  ],
+  "blockers": [
+    "paper_only_no_automatic_cash_authorization",
+    "independent_exact_close_coverage_below_floor",
+    "positive_selected_closing_fair_conditional_ev_unconfirmed",
+    "all_offer_player_game_sample_below_floor",
+    "selected_player_game_sample_below_floor",
+    "all_offers_independent_weeks_below_floor",
+    "all_offers_brier_gain_vs_production_unconfirmed",
+    "all_offers_brier_gain_vs_market_unconfirmed",
+    "frozen_selected_independent_weeks_below_floor",
+    "frozen_selected_brier_gain_vs_production_unconfirmed",
+    "frozen_selected_brier_gain_vs_market_unconfirmed"
+  ],
+  "exact_closes": {
+    "matured": 0,
+    "valid": 0,
+    "coverage": null,
+    "unknown_reasons": {},
+    "average_probability_delta": null,
+    "average_closing_fair_conditional_ev": null,
+    "observations": []
+  },
+  "valid_exact_close_coverage": null,
+  "research_only": true,
+  "production_changed": false,
+  "betting_approved": false,
+  "limitations": [
+    "Prospective captures only; neither reviewed history nor later forecasts replace decisions.",
+    "One player-game per cohort; NFL weeks are the uncertainty clusters.",
+    "Probabilities are conditional on no push. Actual pushes return zero profit and are excluded from binary scores.",
+    "Closing fair EV is conditional on no push; a closing push probability is not fabricated.",
+    "Paper returns use captured prices, not confirmed fills. Source production W/L is never used for an independent side.",
+    "An empty selection or unconfirmed interval never counts as an improvement."
+  ],
+  "built_at": "2026-10-27T16:46:37.064382+00:00",
+  "dependency_drift": null
+}

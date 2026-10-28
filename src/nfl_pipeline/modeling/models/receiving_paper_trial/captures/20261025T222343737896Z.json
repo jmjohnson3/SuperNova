@@ -1,0 +1,15 @@
+{
+  "contract": "nfl-receiving-independent-paper-v2",
+  "registration_sha256": "da0ed44087610edf11cfda4a664d056ff3a72ea89e3b529ce3f5a62145aaa9c1",
+  "captured_at": "2026-10-25T22:23:43.737896+00:00",
+  "rows": [],
+  "exclusions": {
+    "outside_trial": 58,
+    "not_a_new_post_registration_pregame_lock": 43,
+    "role_stability_unknown_or_low": 4,
+    "limited_role_risk_unknown_or_high": 1
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "sha256": "164d632671a8c80fef0cd71007fea0f3a6f064221da51baf25e0ae8b458357a5"
+}

@@ -1,0 +1,38 @@
+{
+  "contract": "nfl-fanduel-lock-contract-v1",
+  "generated_at_utc": "2026-10-25T22:23:54.103917+00:00",
+  "date": "2026-10-25",
+  "required": true,
+  "game_scope": [
+    "2026_07_KC_SEA"
+  ],
+  "status": "passed",
+  "summary": {
+    "games": 1,
+    "passed": 1,
+    "waiting": 0,
+    "failed": 0
+  },
+  "games": [
+    {
+      "game_id": "2026_07_KC_SEA",
+      "home_team_abbr": "SEA",
+      "away_team_abbr": "KC",
+      "start_ts_utc": "2026-10-25 17:20:00-07:00",
+      "status": "passed",
+      "verification": {
+        "game_id": "2026_07_KC_SEA",
+        "current_fanduel_locks": 31,
+        "receiving_locks": 12,
+        "receiving_same_line_triplets": 12,
+        "explicit_injury_context_locks": 31,
+        "known_player_injury_context_locks": 6,
+        "immutable_lock_violations": 0,
+        "all_locks_missing_links": 0,
+        "actionable_missing_links": 0,
+        "lock_verification_passed": true,
+        "injury_context_note": "known_player_status"
+      }
+    }
+  ]
+}

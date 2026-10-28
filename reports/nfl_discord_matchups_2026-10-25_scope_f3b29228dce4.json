@@ -1,0 +1,1609 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-10-25",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_07_PIT_NO",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "PIT @ NO | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792935000:f> (<t:1792935000:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- PIT QB1 A.Rodgers: Pass Yds 255.5 | Pass TD 2.20 | FanDuel line available\n- PIT RB1 J.Warren: Rush Yds 74.2 | Rec Yds 38.2 | Rec 3.3 | Rush TD 0.40 | FanDuel line available\n- PIT WR1 D.Metcalf: Rec Yds 53.9 | Rec 4.9 | Rec TD 0.34 | FanDuel line available\n- PIT WR2 G.Bernard: Rec Yds 41.2 | Rec 5.2 | Rec TD 0.26 | FanDuel line available\n- PIT TE1 D.Washington: Rec Yds 24.1 | Rec 2.8 | Rec TD 0.25 | FanDuel line available\n- NO QB1 T.Shough: Pass Yds 224.2 | Pass TD 1.80 | Rush Yds 12.8 | FanDuel line available\n- NO RB1 A.Kamara: Rush Yds 24.6 | Rec Yds 11.8 | Rec 2.8 | Rush TD 0.25 | FanDuel line available\n- NO WR1 C.Olave: Rec Yds 72.2 | Rec 6.4 | Rec TD 0.44 | FanDuel line available\n- NO WR2 D.Vele: Rec Yds 45.0 | Rec 4.6 | Rec TD 0.30 | FanDuel line available\n- NO TE1 J.Johnson: Rec Yds 35.0 | Rec 4.4 | Rec TD 0.30 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "game",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CIN_BAL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_IND_MIN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_LA_LV",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_NYG_HOU",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_GB_DET",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_DEN_ARI",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_SF_ATL",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_TB_CAR",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_CLE_TEN",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    },
+    {
+      "game_id": "2026_07_MIA_NYJ",
+      "kind": "prop",
+      "reason": "stale_quote_refresh_required"
+    }
+  ],
+  "notice": null,
+  "scope_game_ids": [
+    "2026_07_PIT_NO"
+  ]
+}

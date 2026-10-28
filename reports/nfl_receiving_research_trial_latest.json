@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-21T12:57:34.045133+00:00",
+  "built_at": "2026-10-27T15:57:46.180162+00:00",
   "registration": {
     "config": {
       "trial_id": "fanduel-common-receiving-v1",
@@ -233,87 +233,87 @@
   },
   "all_candidates": {
     "real_offers": {
-      "rows": 158,
-      "unique_player_games": 134,
+      "rows": 13,
+      "unique_player_games": 11,
       "source_scoring_versions": [
-        "c80a783b256dd2ba4d9dbe891d327ec3cc2fa757125d94ccf766d819a2045df0"
+        "2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb"
       ],
       "weeks": 1,
       "production": {
-        "rows": 158,
-        "brier": 0.2502397521455002,
-        "log_loss": 0.6936312147410303,
-        "calibration_error": 0.03456907753628293,
-        "probability_bias": 0.026110503853569982
+        "rows": 13,
+        "brier": 0.25,
+        "log_loss": 0.6931471805599453,
+        "calibration_error": 0.18181818181818182,
+        "probability_bias": 0.18181818181818182
       },
       "raw": {
-        "rows": 158,
-        "brier": 0.25057938688617754,
-        "log_loss": 0.6943188991945188,
-        "calibration_error": 0.026794438601594705,
-        "probability_bias": 0.019432447955126893
+        "rows": 13,
+        "brier": 0.2479014116130341,
+        "log_loss": 0.6889498077491476,
+        "calibration_error": 0.17579846440416158,
+        "probability_bias": 0.17579846440416158
       },
       "final": {
-        "rows": 158,
-        "brier": 0.2502397521455002,
-        "log_loss": 0.6936312147410303,
-        "calibration_error": 0.03456907753628293,
-        "probability_bias": 0.026110503853569982
+        "rows": 13,
+        "brier": 0.25,
+        "log_loss": 0.6931471805599453,
+        "calibration_error": 0.18181818181818182,
+        "probability_bias": 0.18181818181818182
       },
       "matched_market": {
-        "rows": 158,
-        "eligible_rows": 158,
+        "rows": 13,
+        "eligible_rows": 13,
         "pair_coverage": 1.0,
         "exclusions": {},
         "status": "matched",
-        "unique_player_games": 134,
+        "unique_player_games": 11,
         "weeks": 1,
         "production": {
-          "rows": 158,
-          "brier": 0.2502397521455002,
-          "log_loss": 0.6936312147410303,
-          "calibration_error": 0.03456907753628293,
-          "probability_bias": 0.026110503853569982
+          "rows": 13,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.18181818181818182,
+          "probability_bias": 0.18181818181818182
         },
         "challenger": {
-          "rows": 158,
-          "brier": 0.2502397521455002,
-          "log_loss": 0.6936312147410303,
-          "calibration_error": 0.03456907753628293,
-          "probability_bias": 0.026110503853569982
+          "rows": 13,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.18181818181818182,
+          "probability_bias": 0.18181818181818182
         },
         "market": {
-          "rows": 158,
-          "brier": 0.2502397521455002,
-          "log_loss": 0.6936312147410303,
-          "calibration_error": 0.03456907753628293,
-          "probability_bias": 0.026110503853569982
+          "rows": 13,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.18181818181818182,
+          "probability_bias": 0.18181818181818182
         },
         "weekly": [
           {
             "season": 2026,
-            "week": 6,
-            "rows": 158,
+            "week": 7,
+            "rows": 13,
             "production": {
-              "rows": 158,
-              "brier": 0.2502397521455002,
-              "log_loss": 0.6936312147410303,
-              "calibration_error": 0.03456907753628293,
-              "probability_bias": 0.026110503853569982
+              "rows": 13,
+              "brier": 0.25,
+              "log_loss": 0.6931471805599453,
+              "calibration_error": 0.18181818181818182,
+              "probability_bias": 0.18181818181818182
             },
             "challenger": {
-              "rows": 158,
-              "brier": 0.2502397521455002,
-              "log_loss": 0.6936312147410303,
-              "calibration_error": 0.03456907753628293,
-              "probability_bias": 0.026110503853569982
+              "rows": 13,
+              "brier": 0.25,
+              "log_loss": 0.6931471805599453,
+              "calibration_error": 0.18181818181818182,
+              "probability_bias": 0.18181818181818182
             },
             "market": {
-              "rows": 158,
-              "brier": 0.2502397521455002,
-              "log_loss": 0.6936312147410303,
-              "calibration_error": 0.03456907753628293,
-              "probability_bias": 0.026110503853569982
+              "rows": 13,
+              "brier": 0.25,
+              "log_loss": 0.6931471805599453,
+              "calibration_error": 0.18181818181818182,
+              "probability_bias": 0.18181818181818182
             }
           }
         ],
@@ -330,32 +330,32 @@
       },
       "scoring_stages": {
         "raw_over": {
-          "rows": 158,
-          "brier": 0.25057938688617754,
-          "log_loss": 0.6943188991945188,
-          "calibration_error": 0.026794438601594705,
-          "probability_bias": 0.019432447955126893
+          "rows": 13,
+          "brier": 0.2479014116130341,
+          "log_loss": 0.6889498077491476,
+          "calibration_error": 0.17579846440416158,
+          "probability_bias": 0.17579846440416158
         },
         "heuristic_over": {
-          "rows": 158,
-          "brier": 0.25037191175427537,
-          "log_loss": 0.6938940351812054,
-          "calibration_error": 0.02970115293005659,
-          "probability_bias": 0.022773339371324208
+          "rows": 13,
+          "brier": 0.24894096706593538,
+          "log_loss": 0.6910290895134946,
+          "calibration_error": 0.17879122055061478,
+          "probability_bias": 0.17879122055061478
         },
         "post_exact_side": {
-          "rows": 158,
-          "brier": 0.2503902395180861,
-          "log_loss": 0.6939288057864492,
-          "calibration_error": 0.044925712741585216,
-          "probability_bias": 0.02878845369301819
+          "rows": 13,
+          "brier": 0.2510776153033738,
+          "log_loss": 0.6953024370737744,
+          "calibration_error": 0.18484514308574884,
+          "probability_bias": 0.18484514308574884
         },
         "final_side": {
-          "rows": 158,
-          "brier": 0.2502397521455002,
-          "log_loss": 0.6936312147410303,
-          "calibration_error": 0.03456907753628293,
-          "probability_bias": 0.026110503853569982
+          "rows": 13,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.18181818181818182,
+          "probability_bias": 0.18181818181818182
         }
       },
       "final_brier_gain": {
@@ -364,40 +364,40 @@
         "upper_95": null
       },
       "expected": {
-        "rows": 134,
-        "mae": 20.567907111296893,
-        "rmse": 27.1781124584758,
-        "bias": -3.645616598897541
+        "rows": 11,
+        "mae": 12.818785119111153,
+        "rmse": 17.461926617258158,
+        "bias": -1.577222348008936
       },
       "typical": {
-        "rows": 134,
-        "mae": 20.643573000171838,
-        "rmse": 28.6079858085479,
-        "bias": -9.386685786173276
+        "rows": 11,
+        "mae": 13.486483217227741,
+        "rmse": 19.113155775625707,
+        "bias": -7.527089734885063
       },
       "production_point": {
-        "rows": 134,
-        "mae": 19.46268656716418,
-        "rmse": 26.791274476211495,
-        "bias": -6.2611940298507465
+        "rows": 11,
+        "mae": 13.045454545454545,
+        "rmse": 17.04206026810779,
+        "bias": -0.045454545454545456
       },
       "live_curve": {
-        "rows": 134,
-        "mae": 20.567907111296893,
-        "rmse": 27.1781124584758,
-        "bias": -3.645616598897541,
-        "interval_rows": 134,
-        "coverage_80": 0.7313432835820896,
-        "interval_width": 81.12033662461413
+        "rows": 11,
+        "mae": 12.818785119111153,
+        "rmse": 17.461926617258158,
+        "bias": -1.577222348008936,
+        "interval_rows": 11,
+        "coverage_80": 0.8181818181818182,
+        "interval_width": 82.98618612904608
       },
       "production_curve": {
-        "rows": 134,
-        "mae": 19.46268656716418,
-        "rmse": 26.791274476211495,
-        "bias": -6.2611940298507465,
-        "interval_rows": 134,
-        "coverage_80": 0.746268656716418,
-        "interval_width": 73.65959046388932
+        "rows": 11,
+        "mae": 13.045454545454545,
+        "rmse": 17.04206026810779,
+        "bias": -0.045454545454545456,
+        "interval_rows": 11,
+        "coverage_80": 0.8181818181818182,
+        "interval_width": 75.40543311934829
       },
       "hypothetical_side_flips": 0,
       "confirmation": "insufficient_prospective_evidence"

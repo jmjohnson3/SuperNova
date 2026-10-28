@@ -7,11 +7,11 @@ Pinned variant: stable_ensemble_calibrated (benchmark-20260921T230305171980Z)
 Eligible original locks: 54; paired challenger captures: 42.
 Current eligible locks: 15; quotes still fresh now: 0.
 Fixed research selections: 0; missing current captures: [].
-Settlement: {'result_or_participation_unresolved': 54}
+Settlement: {'settled_binary': 42, 'missing_validated_capture': 12}
 
 | Period / scope | Rows | Player-games | Weeks | Production Brier / calibration | Challenger Brier / calibration | Market Brier | Production / challenger 80% coverage |
 |---|---:|---:|---:|---|---|---|---|
-| day_metrics / all_eligible | 0 | - | - | pending | pending | pending | pending |
+| day_metrics / all_eligible | 15 | 15 | 1 | 0.2494 / 0.0994 | 0.2494 / 0.0994 | 0.2494 | 0.6667 / 0.6667 |
 | day_metrics / fixed_research | 0 | - | - | pending | pending | pending | pending |
 
 ## Exact Closes
@@ -26,7 +26,9 @@ Exact locked/close lines, timestamps and unknown reasons are retained in the com
 
 ## Forecast Deployment
 Status: collecting_evidence; next action: keep_frozen_collect_evidence
-- real_offers:missing_matches
+- real_offers:insufficient_independent_weeks
+- real_offers:brier_improvement_unconfirmed
+- real_offers:distribution_coverage_not_confirmed
 - missing_prospective_capture_history
 - date_partition_not_cumulative_review
 

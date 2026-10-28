@@ -1,44 +1,47 @@
 {
   "contract": "nfl-paper-operations-v1",
-  "day": "2026-10-19",
-  "built_at": "2026-10-19T18:55:50.198193+00:00",
+  "day": "2026-10-22",
+  "built_at": "2026-10-23T15:50:16.064102+00:00",
   "status": "needs_attention",
   "freezes": {
     "status": "blocked",
-    "reason": "Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.modeling.predict_player_props"
+    "reason": "Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial"
   },
   "games": [
     {
-      "game_id": "2026_06_WAS_SF",
-      "kickoff": "2026-10-20T00:15:00+00:00",
-      "minutes_to_start": 319.2,
-      "game_status": "scheduled",
+      "game_id": "2026_07_NE_CHI",
+      "kickoff": "2026-10-23T00:15:00+00:00",
+      "minutes_to_start": -935.3,
+      "game_status": "final",
       "stages": {
         "quotes": {
-          "status": "not_due",
+          "status": "not_applicable",
           "fresh_paired_rows": 0,
-          "observed_rows": 9
+          "observed_rows": 129
         },
         "forecasts": {
-          "status": "not_due",
-          "current_rows": 9,
-          "verified_generation_rows": 0,
-          "missing_provider_rows": 9
+          "status": "verified_generation",
+          "current_rows": 15,
+          "verified_generation_rows": 15,
+          "missing_provider_rows": 0
         },
         "capture": {
-          "status": "not_due",
-          "rows": 0,
-          "selected": 0
+          "status": "captured",
+          "rows": 12,
+          "selected": 2
         },
         "exact_close": {
-          "status": "not_due",
-          "required": 0,
-          "valid": 0,
+          "status": "complete",
+          "required": 2,
+          "valid": 2,
           "unknown_reasons": {}
         },
         "grading": {
-          "status": "not_due",
-          "accounting": {}
+          "status": "complete",
+          "accounting": {
+            "loss": 8,
+            "win": 4
+          }
         }
       },
       "blockers": []
@@ -48,8 +51,8 @@
     "active_freeze_verification_failed"
   ],
   "next_action": "restore_or_explicitly_register_correct_source_cohort",
-  "earliest_kickoff": "2026-10-20T00:15:00+00:00",
-  "next_collection_due_at": "2026-10-19T22:15:00+00:00",
+  "earliest_kickoff": "2026-10-25T13:30:00+00:00",
+  "next_collection_due_at": "2026-10-25T11:30:00+00:00",
   "collection_receipt": {
     "status": "unknown",
     "ended_at": null,
@@ -57,7 +60,7 @@
   },
   "legacy_missing": {
     "day": "2026-10-18",
-    "checkpoint_built_at": "2026-10-19T09:27:55.137168+00:00",
+    "checkpoint_built_at": "2026-10-21T12:54:13.574648+00:00",
     "previously_current_missing_count": 13,
     "previously_current_missing_ids": [
       22882,

@@ -1,5 +1,5 @@
 {
-  "status": "waiting_for_prospective_results",
+  "status": "collecting_evidence",
   "registration": {
     "contract": "nfl-rushing-volume-challenger-v1",
     "volume_run_id": "volume-20261022T151821Z",
@@ -18,12 +18,63 @@
     "deployment_approved": false,
     "betting_approved": false
   },
-  "player_games": 0,
+  "player_games": 78,
   "exclusions": {
-    "earlier_capture_of_same_player_game": 0
+    "earlier_capture_of_same_player_game": 521
   },
   "deployment_approved": false,
   "betting_approved": false,
-  "captured_player_games": 9,
-  "pending_or_did_not_play": 9
+  "captured_player_games": 109,
+  "pending_or_did_not_play": 31,
+  "weeks": [
+    "2026-7"
+  ],
+  "carries": {
+    "model_mae": 3.429011434870347,
+    "average_mae": 3.8089743589743583,
+    "player_games": 78
+  },
+  "reference": {
+    "mae": 23.295762719434897,
+    "bias": -6.847105555648457,
+    "above_share": 0.47435897435897434
+  },
+  "candidate": {
+    "mae": 23.092383657986858,
+    "bias": -7.455348478861889,
+    "above_share": 0.5
+  },
+  "clustered_mae_gain": {
+    "weeks": 1,
+    "mean": 0.20337906144804035,
+    "lower_95": null
+  },
+  "by_position": {
+    "QB": {
+      "player_games": 19,
+      "reference": {
+        "mae": 10.317417291972415,
+        "bias": -3.2002778611751066,
+        "above_share": 0.42105263157894735
+      },
+      "candidate": {
+        "mae": 10.186386634250503,
+        "bias": -3.6789533330129274,
+        "above_share": 0.5263157894736842
+      }
+    },
+    "RB": {
+      "player_games": 59,
+      "reference": {
+        "mae": 27.475229890990608,
+        "bias": -8.021507694546655,
+        "above_share": 0.4915254237288136
+      },
+      "candidate": {
+        "mae": 27.248552191054493,
+        "bias": -8.67147572922003,
+        "above_share": 0.4915254237288136
+      }
+    }
+  }
 }

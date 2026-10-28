@@ -1,22 +1,22 @@
 # NFL Accuracy Challengers
 
 Production remains frozen: nfl-20260918T143342Z
-Run: accuracy-20261013T094056615708Z
+Run: accuracy-20261027T092611729791Z
 
 ## Player Models
 
 | Stat | Challenger MAE | Reference recipe MAE | Baseline MAE | Raw / calibrated Brier | Historical gate |
 |---|---:|---:|---:|---:|---|
-| receiving_yards | 17.861 | 17.263 | 18.155 | 0.2350 / 0.2320 | False |
-| rushing_yards | 18.802 | 18.138 | 18.869 | 0.2402 / 0.2340 | False |
-| passing_yards | 67.452 | 67.365 | 70.895 | 0.2100 / 0.2043 | False |
+| receiving_yards | 17.845 | 17.223 | 18.116 | 0.2373 / 0.2321 | False |
+| rushing_yards | 18.715 | 18.120 | 18.847 | 0.2403 / 0.2331 | False |
+| passing_yards | 66.992 | 67.076 | 70.606 | 0.2090 / 0.2035 | False |
 
 ## Game Models
 
 | Target | Challenger MAE | Statistical baseline | Retrospective market |
 |---|---:|---:|---:|
-| home_margin | 10.181 | 10.293 | 9.698 |
-| total_points_actual | 10.597 | 10.743 | 10.160 |
+| home_margin | 10.131 | 10.236 | 9.643 |
+| total_points_actual | 10.620 | 10.770 | 10.171 |
 
 ## Interpretation
 
@@ -31,5 +31,5 @@ Run: accuracy-20261013T094056615708Z
 - Game market values are retrospective benchmarks only; they are never inputs to these challengers.
 - Statistical gates use NFL-week clustered intervals. All artifacts remain challengers regardless of pass status.
 
-Historical rows with captured as-of context: 977
+Historical rows with captured as-of context: 1445
 No challenger is wired into production probabilities, Discord ranking, or bankroll selection.

@@ -1,0 +1,11 @@
+{
+  "contract": "nfl-receiving-residual-challenger-v1",
+  "policy_id": "7734b9dcc30357df3b12c08bcdd7d300ac726458f595f9a9b383967cd949b641",
+  "captured_at": "2026-10-26T13:38:04.234795+00:00",
+  "selected": [],
+  "exclusions": {
+    "residual_not_supported": 9,
+    "missing_residual_signal": 6
+  },
+  "paper_only": true
+}

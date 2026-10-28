@@ -1,0 +1,12 @@
+{
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "scored_at": "2026-10-23T13:43:20.911697+00:00",
+  "captured_at": "2026-10-23T13:43:21.980635+00:00",
+  "selected": [],
+  "exclusions": {
+    "outside_trial": 632,
+    "original_drift_guard_not_passed": 102,
+    "missing_valid_fanduel_link": 2
+  }
+}

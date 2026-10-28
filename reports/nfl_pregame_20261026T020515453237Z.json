@@ -1,0 +1,27 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-10-26T02:05:15.420963+00:00",
+  "status": "failed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_07_KC_SEA",
+      "kickoff": "2026-10-26T00:20:00+00:00",
+      "target_at": "2026-10-25T22:20:00+00:00",
+      "minutes_to_start": -105.3,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_07_DAL_PHI",
+      "kickoff": "2026-10-27T00:15:00+00:00",
+      "target_at": "2026-10-26T22:15:00+00:00",
+      "minutes_to_start": 1329.7,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [],
+  "pipeline_invoked": false
+}

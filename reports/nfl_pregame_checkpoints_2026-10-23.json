@@ -1,0 +1,1406 @@
+{
+  "contract": "nfl-fanduel-pregame-checkpoints-v1",
+  "built_at": "2026-10-24T03:55:15.817900+00:00",
+  "date": "2026-10-23",
+  "offsets_minutes": [
+    120,
+    60,
+    20,
+    5
+  ],
+  "games": [],
+  "state": {
+    "contract": "nfl-fanduel-pregame-checkpoints-v1",
+    "games": {
+      "2026_06_SEA_DEN@2026-10-16T00:15:00+00:00": {
+        "game_id": "2026_06_SEA_DEN",
+        "kickoff": "2026-10-16T00:15:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 2,
+            "captured_at": "2026-10-15T22:21:23.233805+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 38,
+              "fresh_true_pair_rows": 38,
+              "fresh_true_pair_rows_with_links": 38,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-15T23:20:54.477303+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 38,
+              "fresh_true_pair_rows": 37,
+              "fresh_true_pair_rows_with_links": 37,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-16T00:00:56.809589+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 37,
+              "fresh_true_pair_rows": 36,
+              "fresh_true_pair_rows_with_links": 36,
+              "verification_passed": false
+            }
+          },
+          "5": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-16T00:11:01.818574+00:00",
+            "verification": {
+              "game_id": "2026_06_SEA_DEN",
+              "current_fanduel_locks": 39,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 39,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 37,
+              "fresh_true_pair_rows": 36,
+              "fresh_true_pair_rows_with_links": 36,
+              "verification_passed": false
+            }
+          }
+        }
+      },
+      "2026_06_HOU_JAX@2026-10-18T13:30:00+00:00": {
+        "game_id": "2026_06_HOU_JAX",
+        "kickoff": "2026-10-18T13:30:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T11:36:19.368699+00:00",
+            "verification": {
+              "game_id": "2026_06_HOU_JAX",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 10,
+              "receiving_same_line_triplets": 10,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 23,
+              "fresh_true_pair_rows": 21,
+              "fresh_true_pair_rows_with_links": 21,
+              "verification_passed": false
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T12:36:14.629042+00:00",
+            "verification": {
+              "game_id": "2026_06_HOU_JAX",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 33,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T13:16:03.407004+00:00",
+            "verification": {
+              "game_id": "2026_06_HOU_JAX",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 30,
+              "fresh_true_pair_rows": 29,
+              "fresh_true_pair_rows_with_links": 29,
+              "verification_passed": false
+            }
+          },
+          "5": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T13:26:18.109681+00:00",
+            "verification": {
+              "game_id": "2026_06_HOU_JAX",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 30,
+              "fresh_true_pair_rows": 29,
+              "fresh_true_pair_rows_with_links": 29,
+              "verification_passed": false
+            }
+          }
+        }
+      },
+      "2026_06_BAL_CLE@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_BAL_CLE",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T15:02:42.760549+00:00",
+            "verification": {
+              "game_id": "2026_06_BAL_CLE",
+              "current_fanduel_locks": 26,
+              "receiving_locks": 8,
+              "receiving_same_line_triplets": 8,
+              "explicit_injury_context_locks": 26,
+              "known_player_injury_context_locks": 11,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 26,
+              "fresh_true_pair_rows": 26,
+              "fresh_true_pair_rows_with_links": 26,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_BAL_CLE",
+              "current_fanduel_locks": 25,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 25,
+              "known_player_injury_context_locks": 10,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 24,
+              "fresh_true_pair_rows": 24,
+              "fresh_true_pair_rows_with_links": 23,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_BAL_CLE",
+              "current_fanduel_locks": 26,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 26,
+              "known_player_injury_context_locks": 10,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 25,
+              "fresh_true_pair_rows": 25,
+              "fresh_true_pair_rows_with_links": 25,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_BAL_CLE",
+              "current_fanduel_locks": 26,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 26,
+              "known_player_injury_context_locks": 10,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 24,
+              "fresh_true_pair_rows": 24,
+              "fresh_true_pair_rows_with_links": 24,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_CAR_PHI@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_CAR_PHI",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T15:02:42.760549+00:00",
+            "verification": {
+              "game_id": "2026_06_CAR_PHI",
+              "current_fanduel_locks": 27,
+              "receiving_locks": 10,
+              "receiving_same_line_triplets": 10,
+              "explicit_injury_context_locks": 27,
+              "known_player_injury_context_locks": 12,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 25,
+              "fresh_true_pair_rows": 25,
+              "fresh_true_pair_rows_with_links": 25,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_CAR_PHI",
+              "current_fanduel_locks": 24,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 24,
+              "known_player_injury_context_locks": 11,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 24,
+              "fresh_true_pair_rows": 24,
+              "fresh_true_pair_rows_with_links": 24,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_CAR_PHI",
+              "current_fanduel_locks": 25,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 25,
+              "known_player_injury_context_locks": 11,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 23,
+              "fresh_true_pair_rows": 23,
+              "fresh_true_pair_rows_with_links": 23,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_CAR_PHI",
+              "current_fanduel_locks": 25,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 25,
+              "known_player_injury_context_locks": 11,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 22,
+              "fresh_true_pair_rows": 22,
+              "fresh_true_pair_rows_with_links": 22,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_CHI_ATL@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_CHI_ATL",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T15:02:42.760549+00:00",
+            "verification": {
+              "game_id": "2026_06_CHI_ATL",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 10,
+              "receiving_same_line_triplets": 10,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 7,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 26,
+              "fresh_true_pair_rows": 26,
+              "fresh_true_pair_rows_with_links": 26,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_CHI_ATL",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 7,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 30,
+              "fresh_true_pair_rows": 30,
+              "fresh_true_pair_rows_with_links": 29,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_CHI_ATL",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 7,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 29,
+              "fresh_true_pair_rows": 29,
+              "fresh_true_pair_rows_with_links": 29,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_CHI_ATL",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 7,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 29,
+              "fresh_true_pair_rows": 29,
+              "fresh_true_pair_rows_with_links": 29,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_NO_NYG@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_NO_NYG",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T15:07:19.678960+00:00",
+            "verification": {
+              "game_id": "2026_06_NO_NYG",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 27,
+              "fresh_true_pair_rows": 26,
+              "fresh_true_pair_rows_with_links": 26,
+              "verification_passed": false
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_NO_NYG",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 27,
+              "fresh_true_pair_rows": 27,
+              "fresh_true_pair_rows_with_links": 27,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_NO_NYG",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 28,
+              "fresh_true_pair_rows": 28,
+              "fresh_true_pair_rows_with_links": 28,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_NO_NYG",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 27,
+              "fresh_true_pair_rows": 27,
+              "fresh_true_pair_rows_with_links": 27,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_NYJ_NE@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_NYJ_NE",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T15:02:42.760549+00:00",
+            "verification": {
+              "game_id": "2026_06_NYJ_NE",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 12,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_NYJ_NE",
+              "current_fanduel_locks": 35,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 35,
+              "known_player_injury_context_locks": 12,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 34,
+              "fresh_true_pair_rows": 34,
+              "fresh_true_pair_rows_with_links": 34,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_NYJ_NE",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 11,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 34,
+              "fresh_true_pair_rows": 34,
+              "fresh_true_pair_rows_with_links": 34,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_NYJ_NE",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 11,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 33,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": false
+            }
+          }
+        }
+      },
+      "2026_06_PIT_TB@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_PIT_TB",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T15:02:42.760549+00:00",
+            "verification": {
+              "game_id": "2026_06_PIT_TB",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 7,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 29,
+              "fresh_true_pair_rows": 29,
+              "fresh_true_pair_rows_with_links": 29,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_PIT_TB",
+              "current_fanduel_locks": 31,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 31,
+              "known_player_injury_context_locks": 7,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 31,
+              "fresh_true_pair_rows": 31,
+              "fresh_true_pair_rows_with_links": 31,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_PIT_TB",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 8,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_PIT_TB",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 8,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 31,
+              "fresh_true_pair_rows": 31,
+              "fresh_true_pair_rows_with_links": 31,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_TEN_IND@2026-10-18T17:00:00+00:00": {
+        "game_id": "2026_06_TEN_IND",
+        "kickoff": "2026-10-18T17:00:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T15:07:19.678960+00:00",
+            "verification": {
+              "game_id": "2026_06_TEN_IND",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 18,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 31,
+              "fresh_true_pair_rows_with_links": 31,
+              "verification_passed": false
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:08:57.748181+00:00",
+            "verification": {
+              "game_id": "2026_06_TEN_IND",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 10,
+              "receiving_same_line_triplets": 10,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 16,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 30,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:43:01.629133+00:00",
+            "verification": {
+              "game_id": "2026_06_TEN_IND",
+              "current_fanduel_locks": 33,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 33,
+              "known_player_injury_context_locks": 16,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T16:57:05.573859+00:00",
+            "verification": {
+              "game_id": "2026_06_TEN_IND",
+              "current_fanduel_locks": 33,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 33,
+              "known_player_injury_context_locks": 16,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_ARI_LA@2026-10-18T20:05:00+00:00": {
+        "game_id": "2026_06_ARI_LA",
+        "kickoff": "2026-10-18T20:05:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T18:08:33.849430+00:00",
+            "verification": {
+              "game_id": "2026_06_ARI_LA",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 11,
+              "receiving_same_line_triplets": 11,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 5,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 28,
+              "fresh_true_pair_rows": 28,
+              "fresh_true_pair_rows_with_links": 28,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T19:07:31.690326+00:00",
+            "verification": {
+              "game_id": "2026_06_ARI_LA",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 6,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T19:47:33.107622+00:00",
+            "verification": {
+              "game_id": "2026_06_ARI_LA",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 6,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T20:02:57.328807+00:00",
+            "verification": {
+              "game_id": "2026_06_ARI_LA",
+              "current_fanduel_locks": 32,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 32,
+              "known_player_injury_context_locks": 6,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_BUF_LV@2026-10-18T20:25:00+00:00": {
+        "game_id": "2026_06_BUF_LV",
+        "kickoff": "2026-10-18T20:25:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T18:28:16.580084+00:00",
+            "verification": {
+              "game_id": "2026_06_BUF_LV",
+              "current_fanduel_locks": 30,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 30,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 28,
+              "fresh_true_pair_rows": 28,
+              "fresh_true_pair_rows_with_links": 28,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T19:32:52.591727+00:00",
+            "verification": {
+              "game_id": "2026_06_BUF_LV",
+              "current_fanduel_locks": 31,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 31,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 24,
+              "fresh_true_pair_rows": 22,
+              "fresh_true_pair_rows_with_links": 22,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T20:13:37.913438+00:00",
+            "verification": {
+              "game_id": "2026_06_BUF_LV",
+              "current_fanduel_locks": 31,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 31,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 24,
+              "fresh_true_pair_rows": 22,
+              "fresh_true_pair_rows_with_links": 22,
+              "verification_passed": false
+            }
+          },
+          "5": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T20:22:46.197325+00:00",
+            "verification": {
+              "game_id": "2026_06_BUF_LV",
+              "current_fanduel_locks": 31,
+              "receiving_locks": 12,
+              "receiving_same_line_triplets": 12,
+              "explicit_injury_context_locks": 31,
+              "known_player_injury_context_locks": 13,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 24,
+              "fresh_true_pair_rows": 22,
+              "fresh_true_pair_rows_with_links": 22,
+              "verification_passed": false
+            }
+          }
+        }
+      },
+      "2026_06_LAC_KC@2026-10-18T20:25:00+00:00": {
+        "game_id": "2026_06_LAC_KC",
+        "kickoff": "2026-10-18T20:25:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T18:28:16.580084+00:00",
+            "verification": {
+              "game_id": "2026_06_LAC_KC",
+              "current_fanduel_locks": 26,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 26,
+              "known_player_injury_context_locks": 9,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 25,
+              "fresh_true_pair_rows": 25,
+              "fresh_true_pair_rows_with_links": 25,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T19:27:20.620717+00:00",
+            "verification": {
+              "game_id": "2026_06_LAC_KC",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 9,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 27,
+              "fresh_true_pair_rows": 27,
+              "fresh_true_pair_rows_with_links": 27,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T20:07:23.485351+00:00",
+            "verification": {
+              "game_id": "2026_06_LAC_KC",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 9,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 26,
+              "fresh_true_pair_rows": 26,
+              "fresh_true_pair_rows_with_links": 26,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T20:22:46.197325+00:00",
+            "verification": {
+              "game_id": "2026_06_LAC_KC",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 9,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 26,
+              "fresh_true_pair_rows": 26,
+              "fresh_true_pair_rows_with_links": 26,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_DAL_GB@2026-10-19T00:20:00+00:00": {
+        "game_id": "2026_06_DAL_GB",
+        "kickoff": "2026-10-19T00:20:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-18T22:24:21.714763+00:00",
+            "verification": {
+              "game_id": "2026_06_DAL_GB",
+              "current_fanduel_locks": 34,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 34,
+              "known_player_injury_context_locks": 2,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 32,
+              "fresh_true_pair_rows": 32,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-18T23:27:57.033283+00:00",
+            "verification": {
+              "game_id": "2026_06_DAL_GB",
+              "current_fanduel_locks": 35,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 35,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 33,
+              "fresh_true_pair_rows": 33,
+              "fresh_true_pair_rows_with_links": 32,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-19T00:02:53.049235+00:00",
+            "verification": {
+              "game_id": "2026_06_DAL_GB",
+              "current_fanduel_locks": 35,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 35,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 31,
+              "fresh_true_pair_rows": 31,
+              "fresh_true_pair_rows_with_links": 31,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-19T00:17:12.575752+00:00",
+            "verification": {
+              "game_id": "2026_06_DAL_GB",
+              "current_fanduel_locks": 35,
+              "receiving_locks": 13,
+              "receiving_same_line_triplets": 13,
+              "explicit_injury_context_locks": 35,
+              "known_player_injury_context_locks": 4,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 31,
+              "fresh_true_pair_rows": 31,
+              "fresh_true_pair_rows_with_links": 31,
+              "verification_passed": true
+            }
+          }
+        }
+      },
+      "2026_06_WAS_SF@2026-10-20T00:15:00+00:00": {
+        "game_id": "2026_06_WAS_SF",
+        "kickoff": "2026-10-20T00:15:00+00:00",
+        "checkpoints": {
+          "60": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-19T23:21:50.284254+00:00",
+            "verification": {
+              "game_id": "2026_06_WAS_SF",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 19,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 0,
+              "fresh_true_pair_rows": 0,
+              "fresh_true_pair_rows_with_links": 0,
+              "verification_passed": false
+            }
+          },
+          "20": {
+            "status": "captured_unverified",
+            "attempts": 2,
+            "captured_at": "2026-10-20T00:02:28.716367+00:00",
+            "verification": {
+              "game_id": "2026_06_WAS_SF",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 19,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 0,
+              "fresh_true_pair_rows": 0,
+              "fresh_true_pair_rows_with_links": 0,
+              "verification_passed": false
+            }
+          },
+          "5": {
+            "status": "captured_unverified",
+            "attempts": 1,
+            "captured_at": "2026-10-20T00:13:11.763767+00:00",
+            "verification": {
+              "game_id": "2026_06_WAS_SF",
+              "current_fanduel_locks": 28,
+              "receiving_locks": 9,
+              "receiving_same_line_triplets": 9,
+              "explicit_injury_context_locks": 28,
+              "known_player_injury_context_locks": 19,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 0,
+              "fresh_true_pair_rows": 0,
+              "fresh_true_pair_rows_with_links": 0,
+              "verification_passed": false
+            }
+          }
+        }
+      },
+      "2026_07_NE_CHI@2026-10-23T00:15:00+00:00": {
+        "game_id": "2026_07_NE_CHI",
+        "kickoff": "2026-10-23T00:15:00+00:00",
+        "checkpoints": {
+          "120": {
+            "status": "verified",
+            "attempts": 2,
+            "captured_at": "2026-10-22T22:20:39.353990+00:00",
+            "verification": {
+              "game_id": "2026_07_NE_CHI",
+              "current_fanduel_locks": 40,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 40,
+              "known_player_injury_context_locks": 8,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 40,
+              "fresh_true_pair_rows": 40,
+              "fresh_true_pair_rows_with_links": 40,
+              "verification_passed": true
+            }
+          },
+          "60": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-22T23:15:34.548641+00:00",
+            "verification": {
+              "game_id": "2026_07_NE_CHI",
+              "current_fanduel_locks": 40,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 40,
+              "known_player_injury_context_locks": 8,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 40,
+              "fresh_true_pair_rows": 40,
+              "fresh_true_pair_rows_with_links": 40,
+              "verification_passed": true
+            }
+          },
+          "20": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-22T23:55:40.493676+00:00",
+            "verification": {
+              "game_id": "2026_07_NE_CHI",
+              "current_fanduel_locks": 40,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 40,
+              "known_player_injury_context_locks": 8,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 40,
+              "fresh_true_pair_rows": 40,
+              "fresh_true_pair_rows_with_links": 39,
+              "verification_passed": true
+            }
+          },
+          "5": {
+            "status": "verified",
+            "attempts": 1,
+            "captured_at": "2026-10-23T00:10:35.871103+00:00",
+            "verification": {
+              "game_id": "2026_07_NE_CHI",
+              "current_fanduel_locks": 40,
+              "receiving_locks": 15,
+              "receiving_same_line_triplets": 15,
+              "explicit_injury_context_locks": 40,
+              "known_player_injury_context_locks": 8,
+              "immutable_lock_violations": 0,
+              "all_locks_missing_links": 0,
+              "actionable_missing_links": 0,
+              "lock_verification_passed": true,
+              "injury_context_note": "known_player_status",
+              "fresh_normalized_rows": 40,
+              "fresh_true_pair_rows": 40,
+              "fresh_true_pair_rows_with_links": 39,
+              "verification_passed": true
+            }
+          }
+        }
+      }
+    },
+    "updated_at": "2026-10-23T00:10:35.871103+00:00"
+  }
+}

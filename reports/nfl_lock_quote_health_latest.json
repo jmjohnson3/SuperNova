@@ -1,50 +1,38 @@
 {
   "status": "fresh_quotes_ready",
-  "day": "2026-10-22",
-  "built_at": "2026-10-22T22:16:08.329574+00:00",
+  "day": "2026-10-29",
+  "built_at": "2026-10-27T13:34:03.413914+00:00",
   "games": 1,
   "api_called": true,
   "provider_status": "ok",
   "provider": "fallback_chain",
   "quote_health": {
     "props": {
-      "observed_rows": 148,
-      "fresh_rows": 40,
-      "latest_quote": "2026-10-22T22:16:13.302450+00:00"
+      "observed_rows": 25,
+      "fresh_rows": 25,
+      "latest_quote": "2026-10-27 06:34:08.768185-07:00"
     },
     "games": {
-      "observed_rows": 4,
+      "observed_rows": 1,
       "fresh_rows": 1,
-      "latest_quote": "2026-10-22T22:16:13.302450+00:00"
+      "latest_quote": "2026-10-27 06:34:08.768185-07:00"
     }
   },
-  "game_ids": [
-    "2026_07_NE_CHI"
-  ],
+  "game_ids": null,
   "stale_kinds": [],
   "max_quote_age_minutes": 20,
   "sharp_lines": {
     "provider": "oddsapi_eu",
     "role": "lock",
-    "day": "2026-10-22",
-    "due_games": [
-      "2026_07_NE_CHI"
-    ],
-    "captured": [
-      {
-        "game_id": "2026_07_NE_CHI",
-        "books": [
-          "betonlineag",
-          "pinnacle"
-        ]
-      }
-    ],
+    "day": "2026-10-29",
+    "due_games": [],
+    "captured": [],
     "skipped": {},
-    "credits_remaining": 4979,
+    "credits_remaining": null,
     "markets": [
       "player_reception_yds"
     ],
-    "status": "ok"
+    "status": "nothing_due"
   },
   "ready_for_scoring": true,
   "note": "Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten."

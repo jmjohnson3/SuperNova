@@ -1,0 +1,460 @@
+{
+  "date": "2026-10-25",
+  "status": "failed",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 5.848,
+      "timeout_seconds": 180,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 22.826,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 6551,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-10-25 07:30:14,863 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-10-25 07:30:25,702 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 68.439,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 3054\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 698552,\n      \"rows_selected\": 2333,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2139\n    }\n  ],\n  \"roster_rows_upserted\": 3053,\n  \"depth_rows_upserted\": 2330,\n  \"injury_rows_upserted\": 2139\n}\n",
+      "stderr_tail": "2026-10-25 07:30:37,327 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-10-25 07:30:43,880 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-10-25 07:31:39,535 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 18.788,
+      "timeout_seconds": 1200,
+      "stdout_tail": "hare\": 6551,\n        \"air_yards_share\": 6551,\n        \"first_read_targets\": 0\n      },\n      \"routes_are_proxies\": false,\n      \"route_evidence\": \"missing\",\n      \"missing_routes_action\": \"keep_proxy_label; configure a measured-route source before claiming true routes\"\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 16551,\n      \"player_usage_rows\": 1846,\n      \"player_usage_rows_updated\": 263,\n      \"player_game_rows\": 986,\n      \"rows_updated\": 53,\n      \"zero_filled_rows\": 0\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 213\n    }\n  ],\n  \"snap_rows_matched\": 8673,\n  \"snap_rows_updated\": 0,\n  \"advanced_usage_rows_matched\": 6551,\n  \"advanced_usage_rows_updated\": 0,\n  \"pbp_usage_player_game_rows\": 1846,\n  \"pbp_usage_rows_updated\": 263,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 213,\n  \"red_zone_player_game_rows\": 986,\n  \"red_zone_rows_updated\": 53\n}\n",
+      "stderr_tail": "2026-10-25 07:31:46,252 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-10-25 07:31:47,482 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-10-25 07:31:58,281 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-10-25 07:31:58,553 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Live Injury Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 11.234,
+      "timeout_seconds": 300,
+      "stdout_tail": ": 10,\n      \"out\": [\n        \"Nate Landman\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_07_GB_DET\",\n      \"entries\": 10,\n      \"rows\": 13,\n      \"mapped\": 8,\n      \"out\": [\n        \"Kerby Joseph\",\n        \"Luke Musgrave\",\n        \"Zaire Franklin\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_07_SF_ATL\",\n      \"entries\": 10,\n      \"rows\": 12,\n      \"mapped\": 9,\n      \"out\": [\n        \"Billy Bowman Jr.\",\n        \"Garret Wallow\",\n        \"Luke Gifford\",\n        \"Marques Sigle\",\n        \"Nick Bosa\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_07_KC_SEA\",\n      \"entries\": 10,\n      \"rows\": 11,\n      \"mapped\": 8,\n      \"out\": [\n        \"Chazz Surratt\",\n        \"Drake Thomas\",\n        \"Jaylon Moore\",\n        \"Rashee Rice\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_07_IND_MIN\",\n      \"entries\": 10,\n      \"rows\": 11,\n      \"mapped\": 8,\n      \"out\": [\n        \"Anthony Gould\",\n        \"CJ Allen\",\n        \"Sauce Gardner\",\n        \"Tyler Warren\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_07_TB_CAR\",\n      \"entries\": 10,\n      \"rows\": 11,\n      \"mapped\": 8,\n      \"out\": [\n        \"Antoine Winfield Jr.\",\n        \"Emeka Egbuka\",\n        \"Jaelan Phillips\",\n        \"Luke Goedeke\"\n      ]\n    },\n    {\n      \"game_id\": \"2026_07_NYG_HOU\",\n      \"entries\": 10,\n      \"rows\": 11,\n      \"mapped\": 8,\n      \"out\": [\n        \"Blake Fisher\",\n        \"David Montgomery\",\n        \"Jalen Pitre\",\n        \"Jevon Holland\",\n        \"Reed Blankenship\",\n        \"Theo Johnson\"\n      ]\n    }\n  ],\n  \"unmatched\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 19.309,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-10-25\",\n  \"built_at\": \"2026-10-25T13:32:13.904228+00:00\",\n  \"games\": 11,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 1287,\n      \"fresh_rows\": 336,\n      \"latest_quote\": \"2026-10-25 06:32:22.117424-07:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 44,\n      \"fresh_rows\": 11,\n      \"latest_quote\": \"2026-10-25 06:32:22.101769-07:00\"\n    }\n  },\n  \"game_ids\": null,\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"sharp_lines\": {\n    \"provider\": \"oddsapi_eu\",\n    \"role\": \"lock\",\n    \"day\": \"2026-10-25\",\n    \"due_games\": [],\n    \"captured\": [],\n    \"skipped\": {},\n    \"credits_remaining\": null,\n    \"markets\": [\n      \"player_reception_yds\"\n    ],\n    \"status\": \"nothing_due\"\n  },\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 41.527,
+      "timeout_seconds": 120,
+      "stdout_tail": "# NFL Snapshot Health - 2026-10-25\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | close | 5 | 2026-10-25 06:25:18.840454-07:00 |\n| nfl_game_odds | live | 6 | 2026-10-25 06:20:12.098164-07:00 |\n| nfl_game_odds | lock | 4 | 2026-10-25 06:32:22.101769-07:00 |\n| nfl_player_props | close | 6 | 2026-10-25 06:25:18.914433-07:00 |\n| nfl_player_props | live | 6 | 2026-10-25 06:20:12.066976-07:00 |\n| nfl_player_props | lock | 5 | 2026-10-25 06:32:22.117424-07:00 |\n| nfl_sportsgameodds_events_raw | close | 5 | 2026-10-25 06:25:17.634381-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 4 | 2026-10-25 06:32:21.102325-07:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| close | 120 | 12 | 2026-10-25 06:25:18.840454-07:00 |\n| lock | 96 | 12 | 2026-10-25 06:32:22.101769-07:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| close | 36571 | 169 | 2026-10-25 06:25:18.914433-07:00 |\n| live | 977 | 16 | 2026-10-25 06:20:12.066976-07:00 |\n| lock | 2749 | 177 | 2026-10-25 06:32:22.117424-07:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 24 | 24 | 100.0% |\n| prop | 1105 | 851 | 77.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 13.048,
+      "timeout_seconds": 600,
+      "stdout_tail": "uel\",\n            \"over_price\": -118.0,\n            \"under_price\": -104.0,\n            \"quote_time\": \"2026-10-25 13:32:22.101769+00:00\",\n            \"offer_id\": \"None\"\n          },\n          \"challenger\": null,\n          \"deployed\": null,\n          \"captured_at\": \"2026-10-25T13:33:25.039527+00:00\",\n          \"source_artifact\": {\n            \"kind\": \"forecast_repair\",\n            \"contract\": \"nfl-isolated-forecast-repair-v1\",\n            \"path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\src\\\\nfl_pipeline\\\\modeling\\\\models\\\\forecast_repair\\\\forecast-repair-total-20261008T170628068151Z\\\\model.joblib\",\n            \"sha256\": \"cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96\",\n            \"variant\": \"small_total\",\n            \"stat\": \"total\",\n            \"training_end\": \"2026-09-17\",\n            \"production_release\": \"nfl-20260918T143342Z\"\n          }\n        }\n      ],\n      \"distribution_challenger_score\": null,\n      \"distribution_threshold\": 42.5,\n      \"distribution_policy_id\": null,\n      \"legacy_final_probability\": null,\n      \"game_outcome_distribution\": null,\n      \"game_outcome_policy_capture\": null,\n      \"game_outcome_challenger_score\": null,\n      \"push_probability\": 0,\n      \"ev\": -0.04860516857778541,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"aa031f22c83d9f8fd45ede23660a8e38dc6c31f71bcfa04b000113adf00fcf1c\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 24.282,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"captured\",\n  \"teams\": 22,\n  \"roster_rows\": 1099\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 427.818,
+      "timeout_seconds": 1200,
+      "stdout_tail": "tched_at_utc\": \"2026-10-25 06:32:22.117424-07:00\",\n      \"projection_semantics\": \"central_forecast_not_certified_mean\",\n      \"forecast_outputs\": {\n        \"contract\": \"nfl-forecast-outputs-v1\",\n        \"scope\": {\n          \"game_id\": \"2026_07_DEN_ARI\",\n          \"player_id\": \"00-0037157\",\n          \"stat\": \"rushing_yards\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"prediction_context_cutoff_utc\": \"2026-10-25T13:33:57.869538+00:00\"\n        },\n        \"point_forecast\": {\n          \"value\": 27.83636805456947,\n          \"semantics\": \"central_forecast_not_certified_mean\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"source\": \"locked_pre_offer_model\",\n          \"independent_of_offer\": true\n        },\n        \"expected_yards\": null,\n        \"typical_yards\": null,\n        \"pricing\": {\n          \"projection_anchor\": 38.5,\n          \"model_projection\": 27.83636805456947,\n          \"market_adjusted\": true,\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"distribution_id\": \"f8c89f3f956874387f8f35ffc4074dd7cb5798f290db2cc88884916366ffe6b9\",\n          \"distribution_kind\": \"empirical_oof_residual\",\n          \"scoring_version\": \"97473e84f5541ccb580322c19d616653e1b71d0bec9ab4a5a152668b99b30a7a\",\n          \"line\": 38.5,\n          \"side\": \"over\",\n          \"price\": -113,\n          \"probability\": 0.5,\n          \"push_probability\": 0.0,\n          \"ev\": -0.05752212389380529\n        },\n        \"betting_approval_inherited\": false\n      }\n    }\n  ]\n}\n",
+      "stderr_tail": "ponents_receptions\n2026-10-25 07:38:24,730 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receptions', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-10-25 07:40:25,844 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: predict_receiving_tds\n2026-10-25 07:40:26,091 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'predict_receiving_tds', 'status': 'ok', 'result_parts': 3, 'seconds': 0.239}\n2026-10-25 07:40:26,291 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: active_stat_component_receiving_tds\n2026-10-25 07:40:26,291 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'active_stat_component_receiving_tds', 'status': 'ok', 'seconds': 0.0}\n2026-10-25 07:40:26,291 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: candidate_stat_components_receiving_tds\n2026-10-25 07:40:26,291 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receiving_tds', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-10-25 07:40:26,657 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: save_predictions\n2026-10-25 07:40:56,058 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'save_predictions', 'status': 'ok', 'seconds': 29.4}\n"
+    },
+    {
+      "step": "NFL Frozen Receiving Paper Trial",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 11.448,
+      "timeout_seconds": 360,
+      "stdout_tail": "{\n  \"status\": \"paper_only\",\n  \"captured\": 3,\n  \"selected\": 0,\n  \"exclusions\": {\n    \"outside_trial\": 61,\n    \"role_stability_unknown_or_low\": 38,\n    \"missing_or_invalid_paired_price\": 1,\n    \"limited_role_risk_unknown_or_high\": 6\n  },\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Rushing Volume Challenger",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 6.5,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"captured\": 76,\n  \"exclusions\": {\n    \"no_carry_history\": 3\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL FanDuel Lock Contract",
+      "returncode": 1,
+      "critical": false,
+      "elapsed_seconds": 6.516,
+      "timeout_seconds": 120,
+      "stdout_tail": "ng_same_line_triplets': 10, 'explicit_injury_context_locks': 28, 'known_player_injury_context_locks': 8, 'immutable_lock_violations': 0, 'all_locks_missing_links': 0, 'actionable_missing_links': 0, 'lock_verification_passed': True, 'injury_context_note': 'known_player_status'}}, {'game_id': '2026_07_LA_LV', 'home_team_abbr': 'LV', 'away_team_abbr': 'LA', 'start_ts_utc': datetime.datetime(2026, 10, 25, 13, 25, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=61200))), 'status': 'passed', 'verification': {'game_id': '2026_07_LA_LV', 'current_fanduel_locks': 19, 'receiving_locks': 6, 'receiving_same_line_triplets': 6, 'explicit_injury_context_locks': 19, 'known_player_injury_context_locks': 2, 'immutable_lock_violations': 0, 'all_locks_missing_links': 0, 'actionable_missing_links': 0, 'lock_verification_passed': True, 'injury_context_note': 'known_player_status'}}, {'game_id': '2026_07_KC_SEA', 'home_team_abbr': 'SEA', 'away_team_abbr': 'KC', 'start_ts_utc': datetime.datetime(2026, 10, 25, 17, 20, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=61200))), 'status': 'passed', 'verification': {'game_id': '2026_07_KC_SEA', 'current_fanduel_locks': 32, 'receiving_locks': 12, 'receiving_same_line_triplets': 12, 'explicit_injury_context_locks': 32, 'known_player_injury_context_locks': 7, 'immutable_lock_violations': 0, 'all_locks_missing_links': 0, 'actionable_missing_links': 0, 'lock_verification_passed': True, 'injury_context_note': 'known_player_status'}}]}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 3.363,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 10,\n  \"prop_locked\": 89,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 2.595,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 92.104,
+      "timeout_seconds": 900,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 752,\n  \"run_id\": \"benchmark-20260921T230305171980Z\",\n  \"eligible_original_locks\": 497,\n  \"missing_forecast_ids\": [],\n  \"missing_variants\": [],\n  \"capture_errors\": {},\n  \"receiving_research_trial\": {\n    \"status\": \"research_only\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"outside_trial\": 641,\n      \"original_drift_guard_not_passed\": 110,\n      \"missing_true_paired_lock_evidence\": 1\n    },\n    \"betting_approved\": false\n  },\n  \"receiving_residual_trial\": {\n    \"status\": \"paper_residual_trial\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"residual_not_supported\": 110,\n      \"missing_true_paired_market\": 1,\n      \"missing_residual_signal\": 67\n    },\n    \"paper_only\": true\n  },\n  \"exclusions\": {\n    \"not_an_offered_line\": 335,\n    \"artifact_or_scoring_not_prospective_at_original_lock\": 14\n  },\n  \"production_changed\": false,\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Receiving Trial Checkpoint",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 15.676,
+      "timeout_seconds": 360,
+      "stdout_tail": "cast_id\": 25101, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 51.5, \"side\": \"over\", \"locked_at\": \"2026-10-25T13:40:26.657924+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 25103, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 8.5, \"side\": \"over\", \"locked_at\": \"2026-10-25T13:40:26.657924+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 25104, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 36.5, \"side\": \"over\", \"locked_at\": \"2026-10-25T13:40:26.657924+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 25107, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 52.5, \"side\": \"over\", \"locked_at\": \"2026-10-25T13:40:26.657924+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 25108, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 30.5, \"side\": \"over\", \"locked_at\": \"2026-10-25T13:40:26.657924+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}], \"average_clv\": -0.0013813119863753582}, \"fixed_research\": {\"started\": 0, \"valid\": 0, \"unknown\": 0, \"valid_coverage\": null, \"required_coverage\": 0.9, \"target_met\": null, \"unknown_reasons\": {}, \"observations\": [], \"average_clv\": null}}, \"forecast_next_action\": \"keep_frozen_collect_evidence\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Locked Micro Uncertainty",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 5.978,
+      "timeout_seconds": 120,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 0,\n  \"exclusions\": {\n    \"crossed_kickoff_during_scoring\": 0\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 84.716,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 176,\n    \"team_receiving_yards\": 156\n  },\n  \"excluded\": {\n    \"unknown_pregame_roster_member\": 20\n  },\n  \"point_component\": {\n    \"status\": \"point_prospective_only\",\n    \"captured\": 111,\n    \"exclusions\": {\n      \"missing_scoring_version\": 65\n    }\n  },\n  \"quantile_point_component\": {\n    \"status\": \"point_prospective_only\",\n    \"captured\": 111,\n    \"exclusions\": {\n      \"missing_scoring_version\": 65\n    }\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 48.365,
+      "timeout_seconds": 180,
+      "stdout_tail": ":17.634381-07:00 |\n| nfl_sportsgameodds_events_raw | lock | 4 | 2026-10-25 06:32:21.102325-07:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 216 | 12 |\n| player props | 40297 | 177 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 24 | 24 | 100.0% |\n| prop | 1105 | 851 | 77.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 40297 | raw parser output |\n| true paired over/under offers | 7558 | 18.8% |\n| lock markets | 1105 | exact book/player/stat/line locked |\n| close markets | 7468 | exact book/player/stat/line closed |\n| lock-close exact matches | 851 | 77.0% |\n| CLV labels | 659 | valid: 88 |\n| graded prop predictions | 0 | line-level result rows |\n| prop ledger rows | 425 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| close_outside_two_hour_window | 474 |\n| valid_close | 88 |\n| missing_close | 83 |\n| exact_line_unavailable_in_captured_feed | 9 |\n| same_line_missing_side_price | 5 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 42 |\n| prop | paper | 425 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 0.45,
+      "timeout_seconds": 120,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Cash Readiness",
+      "returncode": 1,
+      "critical": false,
+      "elapsed_seconds": 4.114,
+      "timeout_seconds": 900,
+      "stdout_tail": "",
+      "stderr_tail": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\cash_readiness.py\", line 334, in <module>\n    result = report(args.date)\n             ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\cash_readiness.py\", line 242, in report\n    cash_freeze.check_registration(registration)\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\cash_freeze.py\", line 87, in check_registration\n    frozen = experiments.check_experiment(reference['experiment_id'], root=root, store=store)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\josh\\Git\\SuperNovaBets\\src\\nfl_pipeline\\experiment_registry.py\", line 130, in check_experiment\n    raise ValueError(\"Frozen experiment changed; restore the pinned version or explicitly register a new experiment: \"\nValueError: Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial\n"
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 8.926,
+      "timeout_seconds": 120,
+      "stdout_tail": "come from the SHARP EDGE alerts in this channel.\\n\\n**BETS**\\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\\n\\n**STARTING SKILL PLAYER PROJECTIONS**\\n- Forecasts only, not bets.\\n- KC QB1 P.Mahomes: Pass Yds 265.9 | Pass TD 1.80 | Rush Yds 10.4 | FanDuel line available\\n- KC RB1 K.Walker: Rush Yds 124.0 | Rec Yds 17.1 | Rush TD 0.70 | Projection only - no current line\\n- KC WR1 X.Worthy: Rec Yds 37.1 | Rec 3.9 | Rec TD 0.28 | FanDuel line available\\n- KC WR2 J.Royals: Rec Yds 10.0 | Rec 1.4 | Rec TD 0.17 | FanDuel line available\\n- KC TE1 T.Kelce: Rec Yds 49.9 | Rec 3.7 | Rec TD 0.31 | FanDuel line available\\n- SEA QB1 S.Darnold: Pass Yds 221.5 | Pass TD 1.40 | FanDuel line available\\n- SEA RB1 E.Wilson: Rush Yds 53.8 | Rec Yds 8.4 | Rec 1.2 | Rush TD 0.41 | FanDuel line available\\n- SEA WR1 J.Smith-Njigba: Rec Yds 105.2 | Rec 7.9 | Rec TD 0.61 | FanDuel line available\\n- SEA WR2 C.Kupp: Rec Yds 27.4 | Rec 3.2 | Rec TD 0.22 | FanDuel line available\\n- SEA TE1 A.Barner: Rec Yds 24.3 | Rec 2.6 | Rec TD 0.18 | FanDuel line available\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"cash_readiness\": {\"status\": \"operational_issue\", \"reason\": \"cash_readiness_missing\"}, \"quote_exclusions\": [], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_CIN_BAL",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "CIN @ BAL | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- CIN QB1 J.Burrow: Pass Yds 270.1 | Pass TD 2.20 | Rush Yds 6.7 | FanDuel line available\n- CIN RB1 C.Brown: Rush Yds 50.3 | Rec Yds 21.7 | Rec 4.5 | Rush TD 0.32 | FanDuel line available\n- CIN WR1 J.Chase: Rec Yds 52.8 | Rec 6.2 | Rec TD 0.41 | FanDuel line available\n- CIN WR2 T.Higgins: Rec Yds 72.8 | Rec 5.4 | Rec TD 0.27 | FanDuel line available\n- CIN TE1 M.Gesicki: Rec Yds 27.9 | Rec 2.7 | Rec TD 0.32 | FanDuel line available\n- BAL QB1 T.Huntley: Pass TD 0.80 | Rush Yds 17.5 | FanDuel line available\n- BAL RB1 D.Henry: Rush Yds 80.7 | Rec Yds 7.7 | Rec 1.5 | Rush TD 0.62 | FanDuel line available\n- BAL WR1 Z.Flowers: Rec Yds 82.7 | Rec 7.2 | Rec TD 0.40 | FanDuel line available\n- BAL WR2 R.Bateman: Rec Yds 40.9 | Rec 2.5 | Rec TD 0.22 | FanDuel line available\n- BAL TE1 M.Andrews: Rec Yds 25.4 | Rec 3.6 | Rec TD 0.21 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:56.079773+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_CLE_TEN",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "CLE @ TEN | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- CLE QB1 D.Watson: Pass Yds 215.7 | Pass TD 1.20 | Rush Yds 22.4 | FanDuel line available\n- CLE RB1 Q.Judkins: Rush Yds 46.4 | Rec Yds 17.7 | Rec 3.3 | Rush TD 0.31 | FanDuel line available\n- CLE WR1 D.Boston: Rec Yds 53.0 | Rec 2.9 | Rec TD 0.39 | FanDuel line available\n- CLE WR2 J.Jeudy: Rec Yds 23.2 | Rec 2.5 | Rec TD 0.10 | FanDuel line available\n- CLE TE1 H.Fannin: Rec Yds 30.6 | Rec 3.5 | Rec TD 0.32 | FanDuel line available\n- TEN QB1 C.Ward: Pass Yds 195.5 | Pass TD 0.60 | Rush Yds 7.2 | FanDuel line available\n- TEN RB1 T.Pollard: Rush Yds 62.4 | Rec Yds 5.8 | Rec 1.4 | Rush TD 0.41 | FanDuel line available\n- TEN WR1 C.Tate: Rec Yds 56.6 | Rec 4.8 | Rec TD 0.31 | FanDuel line available\n- TEN WR2 W.Robinson: Rec Yds 34.3 | Rec 4.5 | Rec TD 0.31 | FanDuel line available\n- TEN TE1 G.Helm: Rec Yds 7.7 | Rec 1.3 | Rec TD 0.12 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:56.744638+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_IND_MIN",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "IND @ MIN | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- IND QB1 D.Jones: Pass Yds 219.9 | Pass TD 0.60 | Rush Yds 7.6 | FanDuel line available\n- IND RB1 J.Taylor: Rush Yds 75.7 | Rec Yds 24.1 | Rec 2.5 | Rush TD 0.68 | FanDuel line available\n- IND WR1 J.Downs: Rec Yds 45.2 | Rec 4.1 | Rec TD 0.22 | FanDuel line available\n- IND WR2 K.Allen: Rec Yds 40.4 | Rec 5.1 | Rec TD 0.24 | FanDuel line available\n- IND TE1 W.Mallory: Rec Yds 10.9 | Rec 1.0 | Rec TD 0.08 | FanDuel line available\n- MIN QB1 K.Murray: Pass Yds 189.4 | Pass TD 0.40 | Rush Yds 16.5 | FanDuel line available\n- MIN RB1 A.Jones: Rush Yds 75.9 | Rec Yds 13.4 | Rush TD 0.48 | Projection only - no current line\n- MIN WR1 J.Jefferson: Rec Yds 64.3 | Rec 4.8 | Rec TD 0.39 | FanDuel line available\n- MIN WR2 J.Addison: Rec Yds 33.2 | Rec 2.7 | Rec TD 0.26 | FanDuel line available\n- MIN TE1 T.Hockenson: Rec Yds 33.1 | Rec 4.2 | Rec TD 0.22 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:57.381387+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_MIA_NYJ",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "MIA @ NYJ | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- MIA QB1 M.Willis: Pass Yds 176.8 | Pass TD 0.40 | Rush Yds 25.7 | FanDuel line available\n- MIA RB1 O.Gordon: Rush Yds 47.1 | Rec 1.1 | Rush TD 0.42 | FanDuel line available\n- MIA WR1 M.Washington: Rec Yds 43.4 | Rec 4.2 | Rec TD 0.19 | FanDuel line available\n- MIA WR2 C.Douglas: Rec Yds 47.8 | Rec 3.5 | Rec TD 0.20 | Projection only - no current line\n- MIA TE1 G.Dulcich: Rec Yds 27.0 | Rec 3.4 | Rec TD 0.15 | FanDuel line available\n- NYJ QB1 G.Smith: Pass Yds 231.4 | Pass TD 1.40 | Rush Yds 5.7 | FanDuel line available\n- NYJ RB1 B.Hall: Rush Yds 60.7 | Rec Yds 20.5 | Rush TD 0.41 | Projection only - no current line\n- NYJ WR1 G.Wilson: Rec Yds 62.4 | Rec 5.4 | Rec TD 0.43 | FanDuel line available\n- NYJ WR2 A.Mitchell: Rec Yds 37.1 | Rec 2.8 | Rec TD 0.20 | FanDuel line available\n- NYJ TE1 M.Taylor: Rec Yds 24.3 | Rec 3.1 | Rec TD 0.15 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:57.986326+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_NYG_HOU",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "NYG @ HOU | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- NYG QB1 J.McCarthy: Pass Yds 192.5 | Pass TD 0.60 | Rush Yds 9.6 | Projection only - no current line\n- NYG RB1 C.Skattebo: Rush Yds 42.0 | Rec Yds 14.4 | Rush TD 0.21 | FanDuel line available\n- NYG WR1 M.Nabers: Rec Yds 72.6 | Rec 6.9 | Rec TD 0.39 | FanDuel line available\n- NYG WR2 M.Fields: Rec Yds 27.1 | Rec 2.1 | Rec TD 0.21 | Projection only - no current line\n- NYG TE1 I.Likely: Rec Yds 55.8 | Rec 5.8 | Rec TD 0.41 | FanDuel line available\n- HOU QB1 C.Stroud: Pass Yds 279.7 | Pass TD 1.40 | Rush Yds 8.7 | FanDuel line available\n- HOU RB1 W.Marks: Rush Yds 37.9 | Rec Yds 14.7 | Rec 2.0 | Rush TD 0.38 | FanDuel line available\n- HOU WR1 N.Collins: Rec Yds 62.6 | Rec 4.8 | Rec TD 0.46 | FanDuel line available\n- HOU WR2 M.Harrison: Rec Yds 22.9 | Rec 2.0 | Rec TD 0.22 | Projection only - no current line\n- HOU TE1 D.Schultz: Rec Yds 40.4 | Rec 3.8 | Rec TD 0.16 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:58.603491+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_SF_ATL",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "SF @ ATL | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- SF QB1 B.Purdy: Pass Yds 266.1 | Pass TD 2.20 | Rush Yds 17.6 | FanDuel line available\n- SF RB1 C.McCaffrey: Rush Yds 57.5 | Rec Yds 33.6 | Rec 4.9 | Rush TD 0.66 | FanDuel line available\n- SF WR1 C.Kirk: Rec Yds 33.4 | Rec 2.5 | Rec TD 0.26 | FanDuel line available\n- SF WR2 K.Hodge: Rec TD 0.04 | Projection only - no current line\n- SF TE1 G.Kittle: Rec Yds 57.2 | Rec 5.2 | Rec TD 0.47 | FanDuel line available\n- ATL QB1 M.Penix: Pass Yds 234.0 | Pass TD 1.20 | FanDuel line available\n- ATL RB1 Bi.Robinson: Rush Yds 105.1 | Rec Yds 12.7 | Rec 3.4 | Rush TD 0.58 | FanDuel line available\n- ATL WR1 D.London: Rec Yds 91.6 | Rec 5.5 | Rec TD 0.33 | FanDuel line available\n- ATL WR2 J.Dotson: Rec Yds 39.8 | Rec 2.2 | Rec TD 0.31 | FanDuel line available\n- ATL TE1 K.Pitts: Rec Yds 32.2 | Rec 4.2 | Rec TD 0.32 | Projection only - no current line",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:59.406004+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_TB_CAR",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "TB @ CAR | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792947600:f> (<t:1792947600:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- TB QB1 B.Mayfield: Pass Yds 222.0 | Pass TD 1.00 | Rush Yds 15.9 | FanDuel line available\n- TB RB1 B.Irving: Rush Yds 73.7 | Rec Yds 6.9 | Rec 2.0 | Rush TD 0.40 | FanDuel line available\n- TB WR1 C.Godwin: Rec Yds 34.1 | Rec 4.2 | Rec TD 0.19 | FanDuel line available\n- TB WR2 T.Hurst: Rec Yds 32.0 | Rec 2.2 | Rec TD 0.21 | FanDuel line available\n- TB TE1 C.Otton: Rec Yds 32.3 | Rec 3.6 | Rec TD 0.18 | FanDuel line available\n- CAR QB1 B.Young: Pass Yds 288.6 | Pass TD 2.20 | FanDuel line available\n- CAR RB1 C.Hubbard: Rush Yds 75.2 | Rec Yds 16.3 | Rec 2.1 | Rush TD 0.58 | FanDuel line available\n- CAR WR1 T.McMillan: Rec Yds 83.2 | Rec 6.0 | Rec TD 0.44 | FanDuel line available\n- CAR WR2 J.Coker: Rec Yds 79.1 | Rec 6.0 | Rec TD 0.45 | FanDuel line available\n- CAR TE1 T.Tremble: Rec Yds 23.3 | Rec 3.1 | Rec TD 0.25 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:45:59.961903+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_DEN_ARI",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "DEN @ ARI | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792958700:f> (<t:1792958700:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- DEN QB1 B.Nix: Pass Yds 203.5 | Pass TD 1.00 | Rush Yds 7.4 | FanDuel line available\n- DEN RB1 J.Dobbins: Rush Yds 49.7 | Rec Yds 5.7 | Rec 1.7 | Rush TD 0.40 | FanDuel line available\n- DEN WR1 J.Waddle: Rec Yds 42.9 | Rec 3.7 | Rec TD 0.29 | FanDuel line available\n- DEN WR2 C.Sutton: Rec Yds 23.3 | Rec 2.2 | Rec TD 0.20 | FanDuel line available\n- DEN TE1 E.Engram: Rec Yds 18.1 | Rec 2.2 | Rec TD 0.12 | FanDuel line available\n- ARI QB1 J.Brissett: Pass Yds 235.2 | Pass TD 1.60 | Rush Yds 7.5 | FanDuel line available\n- ARI RB1 T.Allgeier: Rush Yds 25.0 | Rec Yds 8.8 | Rec 1.8 | Rush TD 0.25 | FanDuel line available\n- ARI WR1 Mi.Wilson: Rec Yds 52.8 | Rec 4.8 | Rec TD 0.36 | FanDuel line available\n- ARI WR2 K.Bourne: Rec Yds 37.9 | Rec 3.6 | Rec TD 0.19 | FanDuel line available\n- ARI TE1 T.McBride: Rec Yds 53.8 | Rec 7.6 | Rec TD 0.48 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:46:00.651835+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_GB_DET",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "GB @ DET | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792959900:f> (<t:1792959900:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- GB QB1 J.Love: Pass Yds 269.7 | Pass TD 1.80 | FanDuel line available\n- GB RB1 J.Jacobs: Rush Yds 53.1 | Rec Yds 6.9 | Rec 1.7 | Rush TD 0.36 | FanDuel line available\n- GB WR1 C.Watson: Rec Yds 69.5 | Rec 4.6 | Rec TD 0.47 | FanDuel line available\n- GB WR2 M.Golden: Rec Yds 71.2 | Rec 4.5 | Rec TD 0.42 | FanDuel line available\n- GB TE1 T.Kraft: Rec Yds 36.1 | Rec 4.6 | Rec TD 0.28 | FanDuel line available\n- DET QB1 J.Goff: Pass Yds 285.7 | Pass TD 2.40 | FanDuel line available\n- DET RB1 J.Gibbs: Rush Yds 91.5 | Rec Yds 42.2 | Rec 5.5 | Rush TD 0.65 | FanDuel line available\n- DET WR1 A.St. Brown: Rec Yds 68.7 | Rec 7.2 | Rec TD 0.61 | FanDuel line available\n- DET WR2 J.Williams: Rec Yds 50.3 | Rec 4.4 | Rec TD 0.35 | FanDuel line available\n- DET TE1 S.LaPorta: Rec Yds 56.3 | Rec 5.5 | Rec TD 0.40 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:46:01.396935+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_LA_LV",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "LA @ LV | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792959900:f> (<t:1792959900:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- LA QB1 M.Stafford: Pass Yds 314.3 | Pass TD 2.20 | FanDuel line available\n- LA RB1 K.Williams: Rush Yds 67.2 | Rec Yds 35.5 | Rec 4.9 | Rush TD 0.52 | FanDuel line available\n- LA WR1 P.Nacua: Rec Yds 97.0 | Rec 8.3 | Rec TD 0.52 | Projection only - no current line\n- LA WR2 K.Mumpfield: Rec Yds 20.0 | Rec 1.2 | Rec TD 0.16 | Projection only - no current line\n- LA TE1 T.Higbee: Rec Yds 42.8 | Rec 4.0 | Rec TD 0.25 | Projection only - no current line\n- LV QB1 K.Cousins: Pass Yds 276.4 | Pass TD 2.20 | FanDuel line available\n- LV RB1 A.Jeanty: Rush Yds 47.6 | Rec Yds 34.5 | Rec 4.0 | Rush TD 0.32 | FanDuel line available\n- LV WR1 T.Tucker: Rec Yds 60.2 | Rec 4.2 | Rec TD 0.36 | FanDuel line available\n- LV WR2 J.Nailor: Rec Yds 21.0 | Rec 1.8 | Rec TD 0.15 | Projection only - no current line\n- LV TE1 B.Bowers: Rec Yds 74.3 | Rec 6.2 | Rec TD 0.52 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:46:02.136817+00:00"
+    },
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_07_KC_SEA",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "KC @ SEA | NFL 2026-10-25",
+            "description": "Kickoff: <t:1792974000:f> (<t:1792974000:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- KC QB1 P.Mahomes: Pass Yds 265.9 | Pass TD 1.80 | Rush Yds 10.4 | FanDuel line available\n- KC RB1 K.Walker: Rush Yds 124.0 | Rec Yds 17.1 | Rush TD 0.70 | Projection only - no current line\n- KC WR1 X.Worthy: Rec Yds 37.1 | Rec 3.9 | Rec TD 0.28 | FanDuel line available\n- KC WR2 J.Royals: Rec Yds 10.0 | Rec 1.4 | Rec TD 0.17 | FanDuel line available\n- KC TE1 T.Kelce: Rec Yds 49.9 | Rec 3.7 | Rec TD 0.31 | FanDuel line available\n- SEA QB1 S.Darnold: Pass Yds 221.5 | Pass TD 1.40 | FanDuel line available\n- SEA RB1 E.Wilson: Rush Yds 53.8 | Rec Yds 8.4 | Rec 1.2 | Rush TD 0.41 | FanDuel line available\n- SEA WR1 J.Smith-Njigba: Rec Yds 105.2 | Rec 7.9 | Rec TD 0.61 | FanDuel line available\n- SEA WR2 C.Kupp: Rec Yds 27.4 | Rec 3.2 | Rec TD 0.22 | FanDuel line available\n- SEA TE1 A.Barner: Rec Yds 24.3 | Rec 2.6 | Rec TD 0.18 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [],
+      "sent_at": "2026-10-25T13:46:02.754182+00:00"
+    }
+  ],
+  "run_id": null,
+  "pregame": false,
+  "game_ids": []
+}

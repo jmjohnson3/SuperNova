@@ -1,0 +1,35 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-10-29",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_08_CAR_GB",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "CAR @ GB | NFL 2026-10-29",
+            "description": "Kickoff: <t:1793319300:f> (<t:1793319300:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- CAR QB1 B.Young: Pass Yds 264.7 | Pass TD 1.80 | FanDuel line available\n- CAR RB1 C.Hubbard: Rush Yds 70.7 | Rec Yds 14.5 | Rec 2.4 | Rush TD 0.56 | FanDuel line available\n- CAR WR1 T.McMillan: Rec Yds 75.7 | Rec 6.0 | Rec TD 0.40 | FanDuel line available\n- CAR WR2 J.Coker: Rec Yds 58.5 | Rec 4.8 | Rec TD 0.31 | FanDuel line available\n- CAR TE1 T.Tremble: Rec Yds 19.6 | Rec 2.8 | Rec TD 0.23 | Projection only - no current line\n- GB QB1 J.Love: Pass Yds 275.8 | Pass TD 1.80 | FanDuel line available\n- GB RB1 J.Jacobs: Rush Yds 46.4 | Rec Yds 16.0 | Rec 2.2 | Rush TD 0.34 | FanDuel line available\n- GB WR1 C.Watson: Rec Yds 71.3 | Rec 4.5 | Rec TD 0.45 | FanDuel line available\n- GB WR2 M.Golden: Rec Yds 67.4 | Rec 4.8 | Rec TD 0.43 | FanDuel line available\n- GB TE1 T.Kraft: Rec Yds 41.4 | Rec 4.6 | Rec TD 0.34 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [],
+  "notice": null
+}

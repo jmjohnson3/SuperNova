@@ -1,32 +1,50 @@
 {
   "contract": "nfl-post-settlement-evidence-v1",
-  "built_at": "2026-10-23T04:36:06.131776+00:00",
+  "built_at": "2026-10-23T05:08:27.017168+00:00",
   "date": "2026-10-22",
   "fanduel_only": true,
   "stats": {
     "passing_tds": {
       "all_offers": {
         "rows": 8,
-        "settled_binary_rows": 0,
-        "player_games": 0,
+        "settled_binary_rows": 8,
+        "player_games": 2,
         "weeks": 1,
         "exact_line_results": {
-          "pending": 8
+          "loss": 3,
+          "win": 5
         },
         "projection": {
-          "rows": 0
+          "rows": 2,
+          "mae": 0.30000000000000004,
+          "rmse": 0.42426406871192857,
+          "bias": -0.30000000000000004,
+          "interval_rows": 2,
+          "coverage_80": 1.0,
+          "interval_width": 3.5
         },
         "baseline_projection": {
-          "rows": 0
+          "rows": 2,
+          "mae": 0.30000000000000004,
+          "rmse": 0.42426406871192857,
+          "bias": -0.30000000000000004
         },
         "model_probability": {
-          "rows": 0
+          "rows": 8,
+          "brier": 0.21059172405895213,
+          "log_loss": 0.6139719874919853,
+          "calibration_error": 0.45823462897832373,
+          "probability_bias": -0.1173198441426338
         },
         "fanduel_no_vig": {
-          "rows": 0
+          "rows": 8,
+          "brier": 0.21059172405895213,
+          "log_loss": 0.6139719874919853,
+          "calibration_error": 0.45823462897832373,
+          "probability_bias": -0.1173198441426338
         },
-        "interval_coverage_80": null,
-        "flat_roi": null,
+        "interval_coverage_80": 1.0,
+        "flat_roi": 0.08808654675781508,
         "clv": {
           "valid_close_rate": 1.0,
           "valid_rows": 8,
@@ -42,26 +60,43 @@
     "passing_yards": {
       "all_offers": {
         "rows": 7,
-        "settled_binary_rows": 0,
-        "player_games": 0,
+        "settled_binary_rows": 7,
+        "player_games": 2,
         "weeks": 1,
         "exact_line_results": {
-          "pending": 7
+          "win": 7
         },
         "projection": {
-          "rows": 0
+          "rows": 2,
+          "mae": 70.0,
+          "rmse": 70.08744538075275,
+          "bias": -70.0,
+          "interval_rows": 2,
+          "coverage_80": 1.0,
+          "interval_width": 213.82105342244114
         },
         "baseline_projection": {
-          "rows": 0
+          "rows": 2,
+          "mae": 53.0,
+          "rmse": 54.12947441089743,
+          "bias": -53.0
         },
         "model_probability": {
-          "rows": 0
+          "rows": 7,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599454,
+          "calibration_error": 0.5,
+          "probability_bias": -0.5
         },
         "fanduel_no_vig": {
-          "rows": 0
+          "rows": 7,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599454,
+          "calibration_error": 0.5,
+          "probability_bias": -0.5
         },
-        "interval_coverage_80": null,
-        "flat_roi": null,
+        "interval_coverage_80": 1.0,
+        "flat_roi": 0.880519883780247,
         "clv": {
           "valid_close_rate": 0.12500000000000003,
           "valid_rows": 1,
@@ -79,26 +114,44 @@
     "receiving_yards": {
       "all_offers": {
         "rows": 54,
-        "settled_binary_rows": 0,
-        "player_games": 0,
+        "settled_binary_rows": 54,
+        "player_games": 15,
         "weeks": 1,
         "exact_line_results": {
-          "pending": 54
+          "loss": 24,
+          "win": 30
         },
         "projection": {
-          "rows": 0
+          "rows": 15,
+          "mae": 27.033333333333335,
+          "rmse": 34.36252804048814,
+          "bias": -14.033333333333333,
+          "interval_rows": 15,
+          "coverage_80": 0.6666666666666666,
+          "interval_width": 73.69075079721046
         },
         "baseline_projection": {
-          "rows": 0
+          "rows": 15,
+          "mae": 27.373333333333335,
+          "rmse": 34.780569288037825,
+          "bias": -12.199999999999998
         },
         "model_probability": {
-          "rows": 0
+          "rows": 54,
+          "brier": 0.2511218786102726,
+          "log_loss": 0.6953924212672405,
+          "calibration_error": 0.021059307434437985,
+          "probability_bias": -0.02105930743443799
         },
         "fanduel_no_vig": {
-          "rows": 0
+          "rows": 54,
+          "brier": 0.2511218786102726,
+          "log_loss": 0.6953924212672405,
+          "calibration_error": 0.021059307434437985,
+          "probability_bias": -0.02105930743443799
         },
-        "interval_coverage_80": null,
-        "flat_roi": null,
+        "interval_coverage_80": 0.6666666666666666,
+        "flat_roi": 0.044694046514342785,
         "clv": {
           "valid_close_rate": 0.6222222222222222,
           "valid_rows": 34,
@@ -116,26 +169,44 @@
     "receptions": {
       "all_offers": {
         "rows": 57,
-        "settled_binary_rows": 0,
-        "player_games": 0,
+        "settled_binary_rows": 57,
+        "player_games": 15,
         "weeks": 1,
         "exact_line_results": {
-          "pending": 57
+          "loss": 29,
+          "win": 28
         },
         "projection": {
-          "rows": 0
+          "rows": 15,
+          "mae": 1.6377495984754944,
+          "rmse": 1.8832664927923004,
+          "bias": -0.4024688016131321,
+          "interval_rows": 15,
+          "coverage_80": 0.8,
+          "interval_width": 4.0
         },
         "baseline_projection": {
-          "rows": 0
+          "rows": 15,
+          "mae": 1.6459512337395086,
+          "rmse": 1.9078015475433867,
+          "bias": -0.22133943318037735
         },
         "model_probability": {
-          "rows": 0
+          "rows": 57,
+          "brier": 0.25401410067484603,
+          "log_loss": 0.7016379926908757,
+          "calibration_error": 0.11062610965065714,
+          "probability_bias": 0.004515290649358004
         },
         "fanduel_no_vig": {
-          "rows": 0
+          "rows": 57,
+          "brier": 0.25401410067484603,
+          "log_loss": 0.7016379926908757,
+          "calibration_error": 0.11062610965065714,
+          "probability_bias": 0.004515290649358004
         },
-        "interval_coverage_80": null,
-        "flat_roi": null,
+        "interval_coverage_80": 0.8,
+        "flat_roi": -0.029572512108224033,
         "clv": {
           "valid_close_rate": 0.9833333333333333,
           "valid_rows": 56,
@@ -153,26 +224,44 @@
     "rushing_yards": {
       "all_offers": {
         "rows": 22,
-        "settled_binary_rows": 0,
-        "player_games": 0,
+        "settled_binary_rows": 22,
+        "player_games": 7,
         "weeks": 1,
         "exact_line_results": {
-          "pending": 22
+          "win": 4,
+          "loss": 18
         },
         "projection": {
-          "rows": 0
+          "rows": 7,
+          "mae": 10.357142857142858,
+          "rmse": 13.080792898641231,
+          "bias": 5.357142857142857,
+          "interval_rows": 7,
+          "coverage_80": 1.0,
+          "interval_width": 56.062759386483485
         },
         "baseline_projection": {
-          "rows": 0
+          "rows": 7,
+          "mae": 15.485714285714284,
+          "rmse": 18.046606329168927,
+          "bias": 8.857142857142856
         },
         "model_probability": {
-          "rows": 0
+          "rows": 22,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.35714285714285715,
+          "probability_bias": 0.35714285714285715
         },
         "fanduel_no_vig": {
-          "rows": 0
+          "rows": 22,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.35714285714285715,
+          "probability_bias": 0.35714285714285715
         },
-        "interval_coverage_80": null,
-        "flat_roi": null,
+        "interval_coverage_80": 1.0,
+        "flat_roi": -0.6579864786664973,
         "clv": {
           "valid_close_rate": 0.7976190476190476,
           "valid_rows": 17,
@@ -196,57 +285,56 @@
           "policy_key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|raw_distribution",
           "source": "raw_distribution",
           "production": {
-            "rows": 756,
-            "brier": 0.24990531165625549,
-            "log_loss": 0.6929594815118947,
-            "calibration_error": 0.02489166990608414,
-            "probability_bias": -0.024891669906084133,
-            "player_games": 331,
-            "weeks": 2
+            "rows": 804,
+            "brier": 0.24995805299819263,
+            "log_loss": 0.6930649557787448,
+            "calibration_error": 0.024725527024365368,
+            "probability_bias": -0.024725527024365375,
+            "player_games": 346,
+            "weeks": 3
           },
           "challenger": {
-            "rows": 756,
-            "brier": 0.28262791969491924,
-            "log_loss": 0.7714589509145077,
-            "calibration_error": 0.13425017105798356,
-            "probability_bias": -0.023426588884322263,
-            "player_games": 331,
-            "weeks": 2,
+            "rows": 804,
+            "brier": 0.2820872185185314,
+            "log_loss": 0.7697697677361943,
+            "calibration_error": 0.13081482057703084,
+            "probability_bias": -0.025539121822309368,
+            "player_games": 346,
+            "weeks": 3,
             "distribution": {
-              "rows": 331,
-              "mae": 21.6166201466192,
-              "rmse": 27.85012537501876,
-              "bias": -1.8015385681685867,
-              "interval_rows": 331,
-              "coverage_80": 0.7220543806646526,
-              "interval_width": 55.31722054380665,
-              "expected_interval_coverage": 0.8068105601533669
+              "rows": 346,
+              "mae": 21.832060377573217,
+              "rmse": 28.147837439789264,
+              "bias": -2.2623805826690417,
+              "interval_rows": 346,
+              "coverage_80": 0.7196531791907514,
+              "interval_width": 55.309248554913296,
+              "expected_interval_coverage": 0.8068018556015891
             },
             "median": {
-              "rows": 331,
-              "mae": 21.525679758308158,
-              "rmse": 28.47986515124734,
-              "bias": -5.471299093655589
+              "rows": 346,
+              "mae": 21.754335260115607,
+              "rmse": 28.82601787202633,
+              "bias": -5.9393063583815024
             }
           },
           "fanduel_no_vig": {
-            "rows": 756,
-            "brier": 0.2500833085864495,
-            "log_loss": 0.6933158676735528,
-            "calibration_error": 0.02597236280428479,
-            "probability_bias": -0.025972362804284783,
-            "player_games": 331,
-            "weeks": 2
+            "rows": 804,
+            "brier": 0.2501283332984649,
+            "log_loss": 0.693405891673279,
+            "calibration_error": 0.02575936907437813,
+            "probability_bias": -0.02575936907437813,
+            "player_games": 346,
+            "weeks": 3
           },
           "brier_gain": {
-            "clusters": 2,
+            "clusters": 3,
             "lower_95": -0.046291445184628445,
             "upper_95": -0.01804436911346913,
-            "mean_gain": -0.032722608038663704
+            "mean_gain": -0.032129165520338815
           },
-          "production_coverage_80": 0.7099697885196374,
+          "production_coverage_80": 0.708092485549133,
           "blockers": [
-            "needs_three_independent_weeks",
             "final_brier_not_improved",
             "calibration_not_improved",
             "weekly_gain_uncertain",
@@ -262,57 +350,56 @@
           "policy_key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|receiving_quantile:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
           "source": "receiving_quantile:d1f896b4284f98b8151c4e6b71747fcfb5b446b0ed7f2b6abc7ec66d490c112d",
           "production": {
-            "rows": 756,
-            "brier": 0.24990531165625549,
-            "log_loss": 0.6929594815118947,
-            "calibration_error": 0.02489166990608414,
-            "probability_bias": -0.024891669906084133,
-            "player_games": 331,
-            "weeks": 2
+            "rows": 804,
+            "brier": 0.24995805299819263,
+            "log_loss": 0.6930649557787448,
+            "calibration_error": 0.024725527024365368,
+            "probability_bias": -0.024725527024365375,
+            "player_games": 346,
+            "weeks": 3
           },
           "challenger": {
-            "rows": 756,
-            "brier": 0.2547117887070573,
-            "log_loss": 0.7028084013298985,
-            "calibration_error": 0.06061217734396567,
-            "probability_bias": -0.02896636699113172,
-            "player_games": 331,
-            "weeks": 2,
+            "rows": 804,
+            "brier": 0.25438428795525936,
+            "log_loss": 0.7021369381242394,
+            "calibration_error": 0.0616311313877223,
+            "probability_bias": -0.02987892076265943,
+            "player_games": 346,
+            "weeks": 3,
             "distribution": {
-              "rows": 331,
-              "mae": 21.0128054919003,
-              "rmse": 26.895009304467887,
-              "bias": -1.3330099501287669,
-              "interval_rows": 331,
-              "coverage_80": 0.7824773413897281,
-              "interval_width": 60.42598187311178,
-              "expected_interval_coverage": 0.8132997930542434
+              "rows": 346,
+              "mae": 21.253875075913996,
+              "rmse": 27.20256446663041,
+              "bias": -1.7563643920229484,
+              "interval_rows": 346,
+              "coverage_80": 0.7803468208092486,
+              "interval_width": 60.323699421965316,
+              "expected_interval_coverage": 0.8136266237305789
             },
             "median": {
-              "rows": 331,
-              "mae": 20.59214501510574,
-              "rmse": 27.61638377065281,
-              "bias": -6.072507552870091
+              "rows": 346,
+              "mae": 20.85549132947977,
+              "rmse": 27.987610801594034,
+              "bias": -6.497109826589595
             }
           },
           "fanduel_no_vig": {
-            "rows": 756,
-            "brier": 0.2500833085864495,
-            "log_loss": 0.6933158676735528,
-            "calibration_error": 0.02597236280428479,
-            "probability_bias": -0.025972362804284783,
-            "player_games": 331,
-            "weeks": 2
+            "rows": 804,
+            "brier": 0.2501283332984649,
+            "log_loss": 0.693405891673279,
+            "calibration_error": 0.02575936907437813,
+            "probability_bias": -0.02575936907437813,
+            "player_games": 346,
+            "weeks": 3
           },
           "brier_gain": {
-            "clusters": 2,
+            "clusters": 3,
             "lower_95": -0.008014152962509008,
-            "upper_95": -0.0013365383287034028,
-            "mean_gain": -0.004806477050801785
+            "upper_95": 0.003964440578020937,
+            "mean_gain": -0.004426234957066695
           },
-          "production_coverage_80": 0.7099697885196374,
+          "production_coverage_80": 0.708092485549133,
           "blockers": [
-            "needs_three_independent_weeks",
             "final_brier_not_improved",
             "calibration_not_improved",
             "weekly_gain_uncertain"
@@ -327,60 +414,121 @@
           "policy_key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|role_workload:658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe:combined",
           "source": "role_workload:658bf1b0fd3ef4132788c5dcfd7c5e35cc4cbf9a14d6edaee839c85dbb64dafe:combined",
           "production": {
-            "rows": 756,
-            "brier": 0.24990531165625549,
-            "log_loss": 0.6929594815118947,
-            "calibration_error": 0.02489166990608414,
-            "probability_bias": -0.024891669906084133,
-            "player_games": 331,
-            "weeks": 2
+            "rows": 804,
+            "brier": 0.24995805299819263,
+            "log_loss": 0.6930649557787448,
+            "calibration_error": 0.024725527024365368,
+            "probability_bias": -0.024725527024365375,
+            "player_games": 346,
+            "weeks": 3
           },
           "challenger": {
-            "rows": 756,
-            "brier": 0.2563845130669971,
-            "log_loss": 0.7061812864338037,
-            "calibration_error": 0.04180979234323226,
-            "probability_bias": -0.025692038852505383,
-            "player_games": 331,
-            "weeks": 2,
+            "rows": 804,
+            "brier": 0.25609532693858594,
+            "log_loss": 0.7055876844355319,
+            "calibration_error": 0.041158596100575866,
+            "probability_bias": -0.02619091455900377,
+            "player_games": 346,
+            "weeks": 3,
             "distribution": {
-              "rows": 331,
-              "mae": 21.27585401698752,
-              "rmse": 27.066689374948037,
-              "bias": -0.36933893007665275,
-              "interval_rows": 331,
-              "coverage_80": 0.7915407854984894,
-              "interval_width": 63.32628398791541,
-              "expected_interval_coverage": 0.8168385588115611
+              "rows": 346,
+              "mae": 21.497586180687946,
+              "rmse": 27.36241295072208,
+              "bias": -0.7952079511212864,
+              "interval_rows": 346,
+              "coverage_80": 0.7890173410404624,
+              "interval_width": 63.20809248554913,
+              "expected_interval_coverage": 0.8169884011452533
             },
             "median": {
-              "rows": 331,
-              "mae": 20.700906344410875,
-              "rmse": 27.561959861735875,
-              "bias": -5.280966767371601
+              "rows": 346,
+              "mae": 20.953757225433527,
+              "rmse": 27.911814060749432,
+              "bias": -5.710982658959537
             }
           },
           "fanduel_no_vig": {
-            "rows": 756,
-            "brier": 0.2500833085864495,
-            "log_loss": 0.6933158676735528,
-            "calibration_error": 0.02597236280428479,
-            "probability_bias": -0.025972362804284783,
-            "player_games": 331,
-            "weeks": 2
+            "rows": 804,
+            "brier": 0.2501283332984649,
+            "log_loss": 0.693405891673279,
+            "calibration_error": 0.02575936907437813,
+            "probability_bias": -0.02575936907437813,
+            "player_games": 346,
+            "weeks": 3
           },
           "brier_gain": {
-            "clusters": 2,
+            "clusters": 3,
             "lower_95": -0.009443590398377815,
-            "upper_95": -0.0032724409964433295,
-            "mean_gain": -0.006479201410741611
+            "upper_95": 0.0014079255719594028,
+            "mean_gain": -0.006137273940393302
           },
-          "production_coverage_80": 0.7099697885196374,
+          "production_coverage_80": 0.708092485549133,
           "blockers": [
-            "needs_three_independent_weeks",
             "final_brier_not_improved",
             "calibration_not_improved",
             "weekly_gain_uncertain"
+          ],
+          "selection_blockers": [
+            "selected_pick_sample_missing"
+          ],
+          "forecast_deployed": false,
+          "cash_approved": false
+        },
+        {
+          "policy_key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|stat_component:components-20261015T203006649687Z-team_receiving_yards",
+          "source": "stat_component:components-20261015T203006649687Z-team_receiving_yards",
+          "production": {
+            "rows": 0
+          },
+          "challenger": {
+            "rows": 0
+          },
+          "fanduel_no_vig": {
+            "rows": 0
+          },
+          "brier_gain": {
+            "lower_95": null,
+            "clusters": 0
+          },
+          "production_coverage_80": null,
+          "blockers": [
+            "needs_three_independent_weeks",
+            "needs_60_settled_player_games",
+            "final_brier_not_improved",
+            "calibration_not_improved",
+            "weekly_gain_uncertain",
+            "coverage_not_proven"
+          ],
+          "selection_blockers": [
+            "selected_pick_sample_missing"
+          ],
+          "forecast_deployed": false,
+          "cash_approved": false
+        },
+        {
+          "policy_key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|receiving_yards|stat_component:receiving-oe-v2-20261012T234225243219Z",
+          "source": "stat_component:receiving-oe-v2-20261012T234225243219Z",
+          "production": {
+            "rows": 0
+          },
+          "challenger": {
+            "rows": 0
+          },
+          "fanduel_no_vig": {
+            "rows": 0
+          },
+          "brier_gain": {
+            "lower_95": null,
+            "clusters": 0
+          },
+          "production_coverage_80": null,
+          "blockers": [
+            "needs_three_independent_weeks",
+            "needs_60_settled_player_games",
+            "final_brier_not_improved",
+            "calibration_not_improved",
+            "weekly_gain_uncertain",
+            "coverage_not_proven"
           ],
           "selection_blockers": [
             "selected_pick_sample_missing"
