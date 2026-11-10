@@ -41,7 +41,7 @@ def test_a_sample_scan_is_stored_and_a_repeat_adds_nothing(settings, engine):
     assert first.note == "hypothetical sample data" and len(first.opportunities) == count(engine, db.OpportunityRow) == 22
     assert len(first.current) == 12 and {o.observed_at for o in first.current} == {NOW}
     again = scanner.run_scan(settings, engine, "sample", now=NOW)
-    assert again.new_quotes == 0 and count(engine, db.QuoteRow) == 114 and count(engine, db.OpportunityRow) == 22
+    assert again.new_quotes == 0 and count(engine, db.PriceRow) == 114 and count(engine, db.OpportunityRow) == 22
     assert count(engine, db.Scan) == 2
     frame = db.load_opportunities(engine)
     assert len(frame) == 12 and set(frame.data_source) == {"sample"} and frame.observed_at.max() == NOW
@@ -223,7 +223,7 @@ def test_dashboard_starts_empty_then_shows_a_labelled_sample_scan(env):
     app.button[[b.label for b in app.button].index("Scan sample data")].click().run()
     assert not app.exception and app.title[0].value.endswith("Sports Betting Sniper")
     assert "Hypothetical sample data" in app.warning[0].value
-    assert [t.label for t in app.tabs] == ["Opportunity Board", "Longshot Hunter", "Line Movement", "Paper Bets"]
+    assert [t.label for t in app.tabs] == ["Opportunity Board", "Longshot Hunter", "Line Movement", "Performance", "Paper Bets"]
     metrics = {m.label: m.value for m in app.metric}
     assert metrics["Available now"] == "6" and metrics["Last scan"].endswith("sample")
     board = app.dataframe[0].value

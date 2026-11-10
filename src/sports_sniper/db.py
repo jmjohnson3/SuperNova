@@ -1,16 +1,19 @@
 """Persistence (SQLAlchemy 2): price snapshots, detected opportunities and paper bets. SQLite or PostgreSQL."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine,
-                        func, select)
+                        false, func, inspect, select, text)
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.schema import CreateColumn
 
-STRATEGY = "market-consensus-v1"
+STRATEGY_AUTO = "auto-consensus-v1"     # every flagged bet that clears the bar, entered automatically
+STRATEGY_MANUAL = "manual"              # bets saved by hand from the dashboard or the command line
+STRATEGY = STRATEGY_MANUAL
 
 
 class Base(DeclarativeBase):
@@ -45,11 +48,11 @@ class EventSeen(Base):
     last_observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-class QuoteRow(Base):
-    """One observed price. A book's unchanged market keeps its timestamp, so it is stored once."""
-    __tablename__ = "sniper_quotes"
-    __table_args__ = (UniqueConstraint("event_id", "book", "market", "player_key", "line_key", "side", "last_update",
-                                       name="sniper_quote_identity"),)
+class PriceRow(Base):
+    """One price in one snapshot. Snapshots are kept whole, so the last look before a game is its closing price."""
+    __tablename__ = "sniper_prices"
+    __table_args__ = (UniqueConstraint("event_id", "book", "market", "player_key", "line_key", "side", "observed_at",
+                                       name="sniper_price_identity"),)
     id: Mapped[int] = mapped_column(primary_key=True)
     scan_id: Mapped[int] = mapped_column(ForeignKey("sniper_scans.id"), index=True)
     sport: Mapped[str] = mapped_column(String(10))
@@ -148,6 +151,10 @@ class PaperBet(Base):
     closing_price: Mapped[int | None] = mapped_column(Integer, nullable=True)
     closing_line_value: Mapped[float | None] = mapped_column(Float, nullable=True)
     settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closing_probability: Mapped[float | None] = mapped_column(Float, nullable=True)
+    closing_observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    settle_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    replayed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())   # entered long after the price was seen
 
 
 def make_engine(url: str) -> Engine:
@@ -157,7 +164,18 @@ def make_engine(url: str) -> Engine:
 
 
 def init_db(engine: Engine) -> None:
+    """Create the tables, and bring an older database up to date: columns added since are appended, and the
+    first version's price table (which kept only changed prices, so it could not show a close) is dropped."""
     Base.metadata.create_all(engine)
+    with engine.begin() as conn:
+        existing = inspect(conn)
+        if existing.has_table("sniper_quotes"):
+            conn.execute(text("DROP TABLE sniper_quotes"))
+        for table in Base.metadata.sorted_tables:
+            have = {c["name"] for c in existing.get_columns(table.name)}
+            for column in table.columns:
+                if column.name not in have:
+                    conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {CreateColumn(column).compile(dialect=conn.dialect)}"))
 
 
 def insert_new(session: Session, model, rows: list[dict], conflict: list[str]) -> int:
@@ -204,7 +222,7 @@ def opportunity_rows(found, scan_id: int, data_source: str) -> list[dict]:
 
 def place_paper_bet(session: Session, opportunity: OpportunityRow, *, stake: float, strategy: str = STRATEGY,
                     model_version: str | None = None, allow_duplicate: bool = False,
-                    now: datetime | None = None) -> tuple[PaperBet, bool]:
+                    now: datetime | None = None, replay_after_minutes: float = 60) -> tuple[PaperBet, bool]:
     """(bet, created). One simulated entry per strategy, game, player, market, line and side, at whichever book,
     unless `allow_duplicate` asks for a separate entry."""
     same = select(PaperBet).where(PaperBet.strategy == strategy, PaperBet.event_id == opportunity.event_id,
@@ -215,7 +233,9 @@ def place_paper_bet(session: Session, opportunity: OpportunityRow, *, stake: flo
         return existing, False
     if stake <= 0:
         raise ValueError("a paper stake must be positive")
-    bet = PaperBet(created_at=now or datetime.now(timezone.utc), strategy=strategy, model_version=model_version,
+    created = now or datetime.now(timezone.utc)
+    replayed = created - as_utc(opportunity.observed_at) > timedelta(minutes=replay_after_minutes)
+    bet = PaperBet(created_at=created, strategy=strategy, model_version=model_version, replayed=replayed,
                    entry_no=1 if existing is None else existing.entry_no + 1, opportunity_id=opportunity.id,
                    data_source=opportunity.data_source, sport=opportunity.sport, event_id=opportunity.event_id,
                    event_name=opportunity.event_name, commence_time=opportunity.commence_time, book=opportunity.book,
@@ -227,6 +247,21 @@ def place_paper_bet(session: Session, opportunity: OpportunityRow, *, stake: flo
     session.add(bet)
     session.flush()
     return bet, True
+
+
+def auto_paper_bets(session: Session, scan_id: int, *, min_conservative_ev: float, evidence: list[str], stake: float,
+                    now: datetime, replay_after_minutes: float = 60) -> int:
+    """Enter every bet this scan flagged that clears the bar, at the best-priced book, the first time it is
+    seen. Returns how many were new. Hypothetical sample data is never paper-traded automatically."""
+    rows = session.scalars(select(OpportunityRow).where(
+        OpportunityRow.scan_id == scan_id, OpportunityRow.status == "priced", OpportunityRow.data_source != "sample",
+        OpportunityRow.conservative_ev > min_conservative_ev, OpportunityRow.evidence.in_(evidence),
+        OpportunityRow.is_best_price).order_by(OpportunityRow.observed_at, OpportunityRow.conservative_ev.desc())).all()
+    made = 0
+    for row in rows:
+        made += place_paper_bet(session, row, stake=stake, strategy=STRATEGY_AUTO, now=now,
+                                replay_after_minutes=replay_after_minutes)[1]
+    return made
 
 
 def utc(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
@@ -262,10 +297,10 @@ def load_opportunities(engine: Engine, since: datetime | None = None, latest_onl
     return frame.reset_index(drop=True)
 
 
-def load_quotes(engine: Engine, since: datetime | None = None) -> pd.DataFrame:
-    query = select(QuoteRow)
+def load_prices(engine: Engine, since: datetime | None = None) -> pd.DataFrame:
+    query = select(PriceRow)
     if since is not None:
-        query = query.where(QuoteRow.observed_at >= since)
+        query = query.where(PriceRow.observed_at >= since)
     with engine.connect() as conn:
         frame = pd.read_sql(query, conn)
     return utc(frame, ["commence_time", "observed_at", "last_update"])
@@ -274,8 +309,8 @@ def load_quotes(engine: Engine, since: datetime | None = None) -> pd.DataFrame:
 def load_paper_bets(engine: Engine) -> pd.DataFrame:
     with engine.connect() as conn:
         frame = pd.read_sql(select(PaperBet).order_by(PaperBet.created_at.desc()), conn)
-    return utc(frame, ["created_at", "commence_time", "price_observed_at", "settled_at"])
+    return utc(frame, ["created_at", "commence_time", "price_observed_at", "settled_at", "closing_observed_at"])
 
 
 def counts(session: Session) -> dict:
-    return {m.__tablename__: session.scalar(select(func.count()).select_from(m)) for m in (Scan, EventSeen, QuoteRow, OpportunityRow, PaperBet)}
+    return {m.__tablename__: session.scalar(select(func.count()).select_from(m)) for m in (Scan, EventSeen, PriceRow, OpportunityRow, PaperBet)}

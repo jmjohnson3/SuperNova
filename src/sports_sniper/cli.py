@@ -4,6 +4,7 @@
   python -m sports_sniper.cli scan --source live   # The Odds API now (spends credits)
   python -m sports_sniper.cli top                  # the latest scan's ranked opportunities
   python -m sports_sniper.cli paper-bet 12         # save opportunity 12 as a paper bet
+  python -m sports_sniper.cli settle               # grade finished paper bets and add closing line value
   python -m sports_sniper.cli quota                # credits left (free call)
   python -m sports_sniper.cli dashboard            # open the Streamlit dashboard
 """
@@ -17,12 +18,13 @@ from pathlib import Path
 import typer
 from sqlalchemy.orm import Session
 
-from sports_sniper import db
+from sports_sniper import db, performance
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.opportunities import describe
 from sports_sniper.providers.odds_api import OddsApiClient, OddsApiError
 from sports_sniper.scanner import SOURCES, run_scan
+from sports_sniper.settlement import settle as settle_bets
 
 app = typer.Typer(add_completion=False, help=__doc__, no_args_is_help=True)
 
@@ -47,12 +49,14 @@ def init_db() -> None:
 @app.command()
 def scan(source: str = typer.Option("auto", help=" | ".join(SOURCES)),
          sport: list[str] = typer.Option(None, help="nfl, nba or mlb; repeat for several. Default: the configured sports."),
-         limit: int = typer.Option(10, help="How many opportunities to print.")) -> None:
+         limit: int = typer.Option(10, help="How many opportunities to print."),
+         lookback_hours: float = typer.Option(None, help="Saved snapshots: how far back to read (default 36).")) -> None:
     """Collect prices, store them, and rank the opportunities."""
     if source not in SOURCES:
         raise typer.BadParameter(f"source must be one of: {', '.join(SOURCES)}")
     settings = get_settings()
-    result = run_scan(settings, db.make_engine(settings.database_url), source, sports=sport or None)
+    result = run_scan(settings, db.make_engine(settings.database_url), source, sports=sport or None,
+                      lookback_hours=lookback_hours)
     label = {"sample": "HYPOTHETICAL SAMPLE DATA", "saved": "saved real snapshots", "live": "live prices"}[result.source]
     typer.echo(f"Scan {result.scan_id} ({label}): {result.events} games, {result.quotes} prices ({result.new_quotes} new), "
                f"{len(result.current)} flagged.")
@@ -60,6 +64,8 @@ def scan(source: str = typer.Option("auto", help=" | ".join(SOURCES)),
         typer.echo(f"Credits used {result.credits_used}; remaining {result.credits_remaining}.")
     if result.note:
         typer.echo(f"Note: {result.note}")
+    if result.paper_bets:
+        typer.echo(f"{result.paper_bets} new paper bets entered automatically (simulated).")
     dropped = {k: v for k, v in result.dropped.items() if v and k != "not_player_market"}
     if dropped:
         typer.echo("Left out: " + ", ".join(f"{v} {k.replace('_', ' ')}" for k, v in sorted(dropped.items())))
@@ -103,6 +109,28 @@ def paper_bet(opportunity_id: int, stake: float = typer.Option(None, help="Hypot
         bet, created = db.place_paper_bet(session, row, stake=stake or settings.paper_stake, allow_duplicate=allow_duplicate)
         typer.echo(("Saved" if created else "Already saved as") + f" paper bet {bet.id}: {bet.player} "
                    f"{describe(bet.side, bet.line)} at {book_label(bet.book)} {bet.price:+d}, stake {bet.stake:g} (simulated).")
+
+
+@app.command()
+def settle(refresh: bool = typer.Option(True, help="Read the latest saved snapshots first, so closing prices are stored.")) -> None:
+    """Grade paper bets whose games are final and measure each against the closing price."""
+    settings = get_settings()
+    engine = db.make_engine(settings.database_url)
+    if refresh:
+        run_scan(settings, engine, "saved")
+    counts = settle_bets(engine, settings)
+    done = {k: counts.get(k, 0) for k in ("won", "lost", "push", "void")}
+    typer.echo(f"Checked {counts.get('checked', 0)} open paper bets: " + ", ".join(f"{v} {k}" for k, v in done.items())
+               + f", {counts.get('open', 0)} still open. Closing values added: {counts.get('closing_values', 0)}.")
+    if counts.get("results_unavailable"):
+        typer.echo("The results database could not be read, so nothing was graded.")
+    bets = db.load_paper_bets(engine)
+    bets = bets[bets.data_source != "sample"]
+    for name, group in bets.groupby("strategy"):
+        s = performance.summarize(group)
+        typer.echo(f"{name}: {s['bets']} bets, {s['won']}-{s['lost']}-{s['push']} ({s['void']} void, {s['open']} open), "
+                   f"simulated profit {s['profit']:+.2f} on {s['staked']:.0f} staked ({_pct(s['roi'])}), "
+                   f"closing value {_pct(s['closing_value'])} on {s['closing_count']}.")
 
 
 @app.command()

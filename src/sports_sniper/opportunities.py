@@ -121,11 +121,15 @@ def detect(quotes: list[Quote], settings: Settings) -> list[Opportunity]:
                         text += f" Best price of {len(rivals) + 1} books."
                     if not ref.has_sharp:
                         text += " No sharp book prices this line, so the reference is retail books only."
+                    tier = evidence_tier(ev, conservative, ref.has_sharp, ref.n_books)
+                    if ev > settings.max_plausible_ev:
+                        tier = "speculative"
+                        text += (f" An edge above {settings.max_plausible_ev:.0%} usually means a stale price or news the "
+                                 "other books have already acted on, so this is treated as speculative.")
                     found.append(Opportunity(**base, status="priced", source=SOURCE_MARKET, probability=ref.probability,
                                              standard_error=ref.standard_error, fair_price=fair, ev=ev,
                                              conservative_ev=conservative, reference_books=ref.books, has_sharp=ref.has_sharp,
-                                             evidence=evidence_tier(ev, conservative, ref.has_sharp, ref.n_books),
-                                             explanation=text))
+                                             evidence=tier, explanation=text))
                 elif longshot and is_best and premium is not None and premium >= settings.outlier_min_premium:
                     two_sided = any(len(b) == 2 for name, b in books.items() if name != book)
                     why = ("No other book prices both sides close enough in time" if two_sided

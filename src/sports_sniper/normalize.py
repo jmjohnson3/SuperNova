@@ -49,21 +49,23 @@ def player_key(name: str) -> str:
 
 
 def parse_time(value) -> datetime | None:
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    if not isinstance(value, str) or not value:
+    """A timestamp as UTC. Every time in this package is UTC: SQLite keeps the clock reading and drops the
+    offset, so a time stored in any other zone would come back wrong."""
+    if isinstance(value, str) and value:
+        try:
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if not isinstance(value, datetime):
         return None
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc) if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
 def normalize_event(event: dict, sport: str, observed_at: datetime, *, max_age_seconds: float | None = None,
                     ) -> tuple[list[Quote], Counter]:
     """(quotes, counts of what was kept and why the rest was dropped). Never raises on a malformed payload."""
     counts: Counter = Counter()
+    observed_at = parse_time(observed_at)
     if isinstance(event, dict) and "bookmakers" not in event and isinstance(event.get("data"), dict):
         event = event["data"]          # historical payloads wrap the event
     commence = parse_time(event.get("commence_time")) if isinstance(event, dict) else None

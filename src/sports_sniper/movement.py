@@ -10,7 +10,7 @@ COLUMNS = ["sport", "event_name", "commence_time", "book", "market", "player", "
 
 
 def moves(quotes: pd.DataFrame, threshold: float = 0.0) -> pd.DataFrame:
-    """One row per book and bet (same line) seen at least twice with a changed price.
+    """One row per book and bet (same line) seen in at least two snapshots with a changed price.
 
     `break_even_change` is the change in the price's break-even probability: negative means the price got
     longer (better for the bettor), positive means it shortened. `best_now` is the best latest price for that
@@ -19,11 +19,11 @@ def moves(quotes: pd.DataFrame, threshold: float = 0.0) -> pd.DataFrame:
     if quotes.empty:
         return pd.DataFrame(columns=COLUMNS)
     key = ["sport", "event_id", "book", "market", "player_key", "line_key", "side"]
-    ordered = quotes.sort_values("last_update")
+    ordered = quotes.sort_values("observed_at")
     grouped = ordered.groupby(key, sort=False)
     out = grouped.agg(event_name=("event_name", "last"), commence_time=("commence_time", "last"), player=("player", "last"),
                       line=("line", "last"), first_price=("price", "first"), last_price=("price", "last"),
-                      first_seen=("last_update", "first"), last_seen=("last_update", "last"),
+                      first_seen=("observed_at", "first"), last_seen=("observed_at", "last"),
                       observations=("price", "size")).reset_index()
     out["break_even_change"] = [odds_math.implied_probability(b) - odds_math.implied_probability(a)
                                 for a, b in zip(out.first_price, out.last_price)]

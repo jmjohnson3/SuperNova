@@ -39,6 +39,7 @@ class ScanResult:
     new_quotes: int
     opportunities: list[Opportunity]            # from every snapshot scanned
     current: list[Opportunity]                  # from the newest look at each game only
+    paper_bets: int = 0                         # new automatic paper bets
     dropped: Counter = field(default_factory=Counter)
     credits_used: int | None = None
     credits_remaining: int | None = None
@@ -80,7 +81,8 @@ async def fetch_live(settings: Settings, sports: list[str], now: datetime, clien
     return snapshots, dict(credits_used=quota.spent, credits_remaining=quota.remaining, note="; ".join(notes) or None)
 
 
-def collect(source: str, settings: Settings, sports: list[str], now: datetime) -> tuple[str, list[Snapshot], dict]:
+def collect(source: str, settings: Settings, sports: list[str], now: datetime, lookback_hours: float | None = None,
+            ) -> tuple[str, list[Snapshot], dict]:
     """(the source actually used, snapshots, details)."""
     if source not in SOURCES:
         raise ValueError(f"unknown source: {source}")
@@ -89,7 +91,8 @@ def collect(source: str, settings: Settings, sports: list[str], now: datetime) -
         return "live", snapshots, meta
     if source in ("auto", "saved"):
         try:
-            snapshots = saved_quotes.load(settings.saved_quotes_dsn, sports, now - timedelta(hours=settings.lookahead_hours))
+            since = now - timedelta(hours=lookback_hours or settings.saved_lookback_hours)
+            snapshots = saved_quotes.load(settings.saved_quotes_dsn, sports, since)
         except Exception as error:               # the existing database is optional
             log.warning("saved quotes unavailable (%s)", type(error).__name__)
             snapshots = []
@@ -99,18 +102,20 @@ def collect(source: str, settings: Settings, sports: list[str], now: datetime) -
 
 
 def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports: list[str] | None = None,
-             now: datetime | None = None, snapshots: list[Snapshot] | None = None) -> ScanResult:
+             now: datetime | None = None, snapshots: list[Snapshot] | None = None,
+             lookback_hours: float | None = None) -> ScanResult:
     """Run one scan and store it. `snapshots` bypasses the source (tests, replays)."""
-    now = now or datetime.now(timezone.utc)
+    now = parse_time(now or datetime.now(timezone.utc))
     sports = [s for s in (sports or settings.sports) if s in SPORT_KEYS]
     meta: dict = {}
     if snapshots is None:
         try:
-            source, snapshots, meta = collect(source, settings, sports, now)
+            source, snapshots, meta = collect(source, settings, sports, now, lookback_hours)
         except OddsApiError as error:
             snapshots, meta = [], dict(note=f"odds API: {error}")
     quotes, dropped = [], Counter()
     newest: dict[str, tuple[str, datetime]] = {}
+    snapshots = [Snapshot(s.sport, parse_time(s.observed_at), s.event) for s in snapshots]
     for snap in snapshots:
         event_id = str((snap.event.get("data") or snap.event).get("id") or "")
         if event_id and (event_id not in newest or snap.observed_at > newest[event_id][1]):
@@ -127,13 +132,18 @@ def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports
         session.add(scan)
         session.flush()
         db.touch_events(session, newest)
-        scan.new_quotes = db.insert_new(session, db.QuoteRow, db.quote_rows(quotes, scan.id),
-                                        ["event_id", "book", "market", "player_key", "line_key", "side", "last_update"])
+        scan.new_quotes = db.insert_new(session, db.PriceRow, db.quote_rows(quotes, scan.id),
+                                        ["event_id", "book", "market", "player_key", "line_key", "side", "observed_at"])
         db.insert_new(session, db.OpportunityRow, db.opportunity_rows(found, scan.id, source),
                       ["event_id", "book", "market", "player_key", "line_key", "side", "observed_at"])
+        paper = 0
+        if settings.auto_paper:
+            paper = db.auto_paper_bets(session, scan.id, min_conservative_ev=settings.min_conservative_ev,
+                                       evidence=settings.auto_paper_evidence, stake=settings.paper_stake, now=now,
+                                       replay_after_minutes=settings.replay_after_minutes)
         result = ScanResult(scan_id=scan.id, source=source, sports=sports, events=scan.events, quotes=len(quotes),
                             new_quotes=scan.new_quotes, opportunities=found,
-                            current=current(found, {k: v[1] for k, v in newest.items()}), dropped=dropped,
+                            current=current(found, {k: v[1] for k, v in newest.items()}), dropped=dropped, paper_bets=paper,
                             credits_used=meta.get("credits_used"), credits_remaining=meta.get("credits_remaining"),
                             note=meta.get("note"))
     return result

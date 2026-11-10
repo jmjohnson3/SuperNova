@@ -93,6 +93,20 @@ def quotes(now=NOW, current_only=True, max_age=300):
     return out
 
 
+def test_every_time_is_utc_whatever_zone_it_arrives_in():
+    from datetime import timezone as tz
+    from sports_sniper.normalize import parse_time
+    pacific = tz(timedelta(hours=-8))
+    local = datetime(2026, 11, 10, 15, 0, tzinfo=pacific)
+    assert parse_time(local) == NOW and parse_time(local).utcoffset() == timedelta(0)
+    assert parse_time("2026-11-10T15:00:00-08:00").isoformat() == "2026-11-10T23:00:00+00:00"
+    assert parse_time("2026-11-10T23:00:00Z") == NOW and parse_time(datetime(2026, 11, 10, 23, 0)) == NOW
+    assert parse_time("yesterday") is None and parse_time(None) is None and parse_time(12) is None
+    nba = next(s for s in snapshots() if s.sport == "nba" and s.observed_at == NOW)
+    found, _ = normalize_event(nba.event, "nba", local, max_age_seconds=300)
+    assert found and {q.observed_at.utcoffset() for q in found} == {timedelta(0)} and found[0].observed_at == NOW
+
+
 def test_one_key_per_player_however_a_book_spells_him():
     assert player_key("Nikola Jokić") == player_key("NIKOLA JOKIC") == "nikola jokic"
     assert player_key("Michael Porter Jr.") == player_key("Michael Porter")
@@ -211,6 +225,16 @@ def test_different_lines_are_never_treated_as_the_same_bet():
     books = [q("draftkings", "over", 150, line=24.5), q("draftkings", "under", -180, line=24.5),
              q("pinnacle", "over", -120, line=25.5), q("pinnacle", "under", 100, line=25.5)]
     assert detect(books, SETTINGS) == []
+
+
+def test_an_edge_too_big_to_believe_is_speculative():
+    books = [q("draftkings", "over", 160), q("draftkings", "under", -200), q("pinnacle", "over", -120), q("pinnacle", "under", 100),
+             q("fanduel", "over", -118), q("fanduel", "under", -104)]
+    over = find(detect(books, SETTINGS), "Test Player", "over", "draftkings")
+    assert over.ev > 0.15 and over.conservative_ev > 0 and over.has_sharp and over.evidence == "speculative"
+    assert "stale price" in over.explanation
+    relaxed = Settings(_env_file=None, max_plausible_ev=0.60)
+    assert find(detect(books, relaxed), "Test Player", "over", "draftkings").evidence == "strong"
 
 
 def test_started_games_and_thin_references_are_left_out():

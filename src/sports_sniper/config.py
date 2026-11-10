@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     bookmakers: list[str] = ["draftkings", "fanduel", "betmgm", "espnbet", "fanatics", "pinnacle"]  # 10 or fewer cost one region
     sharp_books: list[str] = ["pinnacle"]    # used as references, never evaluated as places to bet
     markets: dict[str, list[str]] = {}       # per sport; empty uses markets.DEFAULT_MARKETS
-    lookahead_hours: float = 24.0
+    lookahead_hours: float = 24.0            # live scans: games starting within this many hours
+    saved_lookback_hours: float = 36.0       # saved snapshots: how far back to read
+    results_dsn: str | None = None           # final statistics for settlement; None uses the existing pipeline's
 
     # --- odds API budget ---
     credit_floor: int = 2000                 # never spend below this many remaining credits
@@ -43,6 +45,7 @@ class Settings(BaseSettings):
     confidence_z: float = 1.0                # the conservative estimate is this many standard errors below
     max_quote_age_seconds: int = 300
     max_book_skew_seconds: int = 180         # a reference must be this close in time to the price it judges
+    max_plausible_ev: float = 0.15           # a bigger edge is treated as a stale or mismatched price, not a gift
 
     # --- what to show ---
     min_conservative_ev: float = 0.0
@@ -50,6 +53,12 @@ class Settings(BaseSettings):
     max_snapshot_age_minutes: float = 20.0   # older prices are shown as history, not as available
     line_move_threshold: float = 0.02        # change in break-even probability worth flagging
     paper_stake: float = 1.0
+
+    # --- paper trading ---
+    auto_paper: bool = True                  # enter every flagged bet that clears the bar as a paper bet
+    auto_paper_evidence: list[str] = ["strong", "moderate"]
+    replay_after_minutes: float = 60.0       # a bet entered this long after its price was seen is a replay
+    closing_window_minutes: float = 22.0     # the close is the last look this close to the start
 
     def markets_for(self, sport: str) -> list[str]:
         from sports_sniper.markets import DEFAULT_MARKETS

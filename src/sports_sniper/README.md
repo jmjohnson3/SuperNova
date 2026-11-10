@@ -10,10 +10,12 @@ This is Phase 1: the working scanner, ranking, storage and dashboard. No predict
 
 ```bash
 python -m sports_sniper.cli scan          # real saved snapshots if there are any, else sample data
+python -m sports_sniper.cli settle        # grade finished paper bets, add closing line value
 python -m sports_sniper.cli dashboard     # opens http://localhost:8517
 ```
 
-Other commands: `scan --source sample | saved | live`, `scan --sport nba`, `top`, `paper-bet <id>`, `quota`,
+Other commands: `scan --source sample | saved | live`, `scan --sport nba`, `scan --lookback-hours 456` (replay
+older saved snapshots), `top`, `paper-bet <id>`, `quota`,
 `init-db`. Tests: `python -m pytest src/sports_sniper -q`. After `pip install -e .` the same commands are
 available as `sniper scan`, `sniper dashboard` and so on. Settings are in `.env.example`.
 
@@ -44,13 +46,36 @@ scheduled jobs.
 5. **Evidence.** *Strong*: positive conservative EV, a sharp reference and a second book. *Moderate*: positive
    conservative EV with a sharp book, or with three retail books. *Speculative*: positive only before the
    haircut, or resting on one or two retail books.
-6. **Insufficient data.** A one-sided market (anytime touchdown, most alternate lines) gets no probability and
+6. **Too good to be true.** An estimated edge above 15% is labelled speculative whatever its references: it
+   usually means a stale price or news the other books have already acted on.
+7. **Insufficient data.** A one-sided market (anytime touchdown, most alternate lines) gets no probability and
    no EV. If one book pays at least 10% more than the middle price elsewhere it is listed as a price outlier,
    marked Insufficient data, and nothing more is claimed.
 
 Every flagged row carries a sentence built from the numbers that produced it. Prices older than five minutes
 at scan time are dropped; in the dashboard a price is "available" only when it comes from the newest look at a
 game that has not started, seen in the last 20 minutes. Everything else is shown as expired history.
+
+## Paper trading and settlement
+
+- **Automatic entries.** Every flagged bet on real prices with a positive conservative EV and strong or moderate
+  evidence is entered as a paper bet (strategy `auto-consensus-v1`) at the best-priced book, the first time it
+  qualifies, one per game, player, market, line and side. Bets saved by hand are strategy `manual`. Sample data is
+  never entered automatically and never settled.
+- **Replays.** A bet entered more than an hour after its price was seen (a scan of older saved snapshots) is marked
+  replayed. The price was real, but the rule was applied afterwards, so forward bets are the clean test.
+- **Settlement** reads final statistics from the existing pipelines (`providers/results.py`, read-only): NBA from
+  `nbaprops.player_games`, NFL from `raw.nfl_player_gamelogs` with roster names. A game must be complete first:
+  NBA when both teams' minutes add up to a whole game, NFL when the schedule row is final with a score. Over and
+  under are graded won, lost or push at the line. A player with no line in a complete box score is void only when
+  his name is known on one of the two teams; an unrecognised name stays open. Touchdown markets and MLB are not
+  settled yet. The Note column says why a bet is still open.
+- **Closing line value** is the edge of the price taken against the fair probability at the last look before the
+  game: the other books' no-vig price for the identical bet, inside the last 22 minutes and later than the entry.
+  Positive means the market moved toward the bet. No later look means no closing value; none is assumed.
+- **Performance** shows record, simulated profit and ROI (standard error with whole games as the draws), closing
+  line value, calibration and Brier score against the prices' own break-even, by sport, market, book, side and
+  evidence, with forward and replayed bets separated.
 
 ## What works now (implemented and tested)
 
@@ -63,19 +88,24 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
 - Cross-book comparison, best available price, opportunity ranking and evidence labels.
 - Longshot Hunter: priced longshots with fair odds, plus one-sided price outliers marked Insufficient data.
 - Line movement between stored snapshots (first stored price against the latest; not a true opening price).
-- Storage (SQLAlchemy 2, SQLite or PostgreSQL): scans, prices, opportunities, paper bets. Unchanged prices are
-  stored once and repeat scans add nothing.
-- Paper bets at the observed price, one per strategy and bet unless a separate entry is asked for.
-- Streamlit dashboard: Opportunity Board, Longshot Hunter, Line Movement, Paper Bets, with filters.
+- Storage (SQLAlchemy 2, SQLite or PostgreSQL): scans, prices, opportunities, paper bets. Every snapshot is kept
+  whole (so the last one before a game is its close) and repeat scans add nothing.
+- Paper bets at the observed price: automatic for flagged bets, or saved by hand; never duplicated unless a
+  separate entry is asked for.
+- Settlement of NBA and NFL over/under props, closing line value, and the performance summary.
+- Streamlit dashboard: Opportunity Board, Longshot Hunter, Line Movement, Performance, Paper Bets, with filters.
 - NFL and NBA. MLB markets are listed and the code paths are shared, but MLB has not been run.
 
 ## What is not built yet
 
-- **Settlement.** Paper bets stay open; no results, profit, ROI or closing line value are computed yet.
+- **Settling touchdown markets and MLB.** The results source has no reliable touchdown total, and MLB has no
+  results adapter, so those bets stay open.
+- **Scheduled runs.** Scans and settlement run when you ask (command line or dashboard), not on a timer.
 - **Model-derived EV.** Every estimate is market consensus. Model adapters, calibration and model-versus-market
   comparison are Phase 2. So is the Breakout Radar, which needs usage and injury data sources.
 - **Backtesting and the bankroll simulator** (Phase 3), alerts, live in-game scanning, Parlay Lab (Phase 4).
-- **Alembic migrations.** Tables are created directly (`init-db`); there is no migration history yet.
+- **Alembic migrations.** Tables are created directly and new columns are appended on start; there is no
+  migration history yet.
 - Whether a flagged price is still there when you open the sportsbook is not measured by this application.
 
 ## What already exists in this repository, and what was reused
@@ -100,9 +130,11 @@ normalize.py       Odds API event -> clean quotes
 consensus.py       fair probability from the other books
 opportunities.py   detection, evidence labels, ranking
 movement.py        line movement from stored prices
-providers/         odds_api.py (live), saved_quotes.py (existing Postgres), sample.py (hypothetical)
+providers/         odds_api.py (live), saved_quotes.py and results.py (existing Postgres), sample.py (hypothetical)
 db.py              SQLAlchemy models and queries
 scanner.py         one scan, end to end
+settlement.py      grading rules, closing line value, settling paper bets
+performance.py     record, ROI, closing value and calibration with their uncertainty
 cli.py             Typer commands
 dashboard/app.py   Streamlit dashboard
 fixtures/          sample_odds.json
