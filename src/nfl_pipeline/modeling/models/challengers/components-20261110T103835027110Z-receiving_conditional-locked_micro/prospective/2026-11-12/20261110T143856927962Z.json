@@ -1,0 +1,15 @@
+{
+  "status": "prospective_only",
+  "scored_at": "2026-11-10T14:38:56.927962+00:00",
+  "training_end": "2026-11-09",
+  "source_manifest": {
+    "run_id": "components-20261110T103835027110Z",
+    "production_release": "nfl-20260918T143342Z",
+    "sha256": "499d9b700bc5181985b16809a2a5eb3f28df996942c7366ae10ec240c53ff5e1"
+  },
+  "rows": [],
+  "exclusions": {
+    "crossed_kickoff_during_scoring": 0
+  },
+  "production_changed": false
+}

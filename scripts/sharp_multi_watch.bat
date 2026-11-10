@@ -26,6 +26,8 @@ start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.arb_watch >> %
 start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.draftkings_checks >> %SIDELOG%_draftkings.log 2>&1"
 :: Discord replies to the alerts (y / n / m / b) become price checks; every-alert paper ledger; one summary a day.
 start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.discord_replies >> %SIDELOG%_replies.log 2>&1"
+:: Sports Betting Sniper: store the snapshots just saved, enter flagged bets as paper bets, settle finished ones (no credits).
+start "" /b cmd /c ".venv\Scripts\python.exe -B -m sports_sniper.cli watch >> %SIDELOG%_sniper.log 2>&1"
 :: Separate frozen FanDuel model comparison. Original price experiment remains unchanged.
 .venv\Scripts\python.exe -B -m model_research capture --sport nba --alerts >> %LOGFILE% 2>&1
 if errorlevel 1 set EXITCODE=1

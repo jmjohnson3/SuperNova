@@ -14,6 +14,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -117,11 +118,11 @@ def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports
     newest: dict[str, tuple[str, datetime]] = {}
     snapshots = [Snapshot(s.sport, parse_time(s.observed_at), s.event) for s in snapshots]
     for snap in snapshots:
-        event_id = str((snap.event.get("data") or snap.event).get("id") or "")
-        if event_id and (event_id not in newest or snap.observed_at > newest[event_id][1]):
-            newest[event_id] = (snap.sport, snap.observed_at)
         found, counts = normalize_event(snap.event, snap.sport, snap.observed_at, max_age_seconds=settings.max_quote_age_seconds)
         quotes += found
+        event_id = found[0].event_id if found else ""     # a look with no player prices (a game-lines poll) is not a newer look
+        if event_id and (event_id not in newest or snap.observed_at > newest[event_id][1]):
+            newest[event_id] = (snap.sport, snap.observed_at)
         dropped.update({k: v for k, v in counts.items() if k != "kept"})
     found = detect(quotes, settings)
     db.init_db(engine)
@@ -147,3 +148,25 @@ def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports
                             credits_used=meta.get("credits_used"), credits_remaining=meta.get("credits_remaining"),
                             note=meta.get("note"))
     return result
+
+
+def new_saved_snapshots(settings: Settings, engine: Engine, sports: list[str], now: datetime, lookback_hours: float,
+                        ) -> list[Snapshot]:
+    """Saved snapshots in the look-back window that are newer than this database's last look at their game."""
+    found = saved_quotes.load(settings.saved_quotes_dsn, sports, now - timedelta(hours=lookback_hours))
+    db.init_db(engine)
+    with Session(engine) as session:
+        seen = {e.event_id: db.as_utc(e.last_observed_at) for e in session.scalars(select(db.EventSeen))}
+    return [s for s in found
+            if str(s.event.get("id") or "") not in seen or parse_time(s.observed_at) > seen[str(s.event.get("id"))]]
+
+
+def run_watch(settings: Settings, engine: Engine, *, now: datetime | None = None, lookback_hours: float = 3.0,
+              ) -> ScanResult | None:
+    """One scheduled pass: store the saved snapshots not seen before and enter the bets they flag. It reads only
+    what the scheduled scanners saved, so it spends no API credits and never touches sample data. None when
+    there is nothing new."""
+    now = parse_time(now or datetime.now(timezone.utc))
+    sports = [s for s in settings.sports if s in SPORT_KEYS]
+    fresh = new_saved_snapshots(settings, engine, sports, now, lookback_hours)
+    return run_scan(settings, engine, "saved", sports=sports, now=now, snapshots=fresh) if fresh else None

@@ -269,6 +269,48 @@ def test_sample_bets_and_missing_results_stay_open(settings, engine):
     assert {b.status for b in real} == {"open"} and {b.settle_note for b in real} == {"results unavailable (ConnectionError)"}
 
 
+# --- the scheduled pass ----------------------------------------------------------------------------
+def test_watch_stores_only_snapshots_it_has_not_seen_and_never_uses_sample_data(settings, engine, monkeypatch):
+    snaps = real_snapshots()
+    calls = []
+
+    def saved(dsn, sports, since):
+        calls.append(since)
+        return [s for s in snaps if s.observed_at <= limit]
+    monkeypatch.setattr(saved_quotes, "load", saved)
+    monkeypatch.setattr(sample, "load", lambda now: pytest.fail("a scheduled pass must never read sample data"))
+    limit = NOW
+    first = scanner.run_watch(settings, engine, now=NOW + timedelta(minutes=1))
+    assert first.source == "saved" and first.events == 2 and first.paper_bets == 5
+    assert calls[-1] == NOW + timedelta(minutes=1) - timedelta(hours=3)
+    assert scanner.run_watch(settings, engine, now=NOW + timedelta(minutes=2)) is None        # nothing new: no scan row
+    with Session(engine) as session:
+        assert len(session.scalars(select(db.Scan)).all()) == 1
+    limit = NOW + timedelta(hours=1)
+    later = scanner.run_watch(settings, engine, now=NOW + timedelta(minutes=26))
+    assert later.events == 1 and later.quotes == 41 and later.paper_bets == 0                 # only the new closing look
+    assert db.load_prices(engine).observed_at.max() == NOW + timedelta(minutes=25)
+    monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: [])
+    assert scanner.run_watch(settings, engine, now=NOW + timedelta(hours=2)) is None
+
+
+def test_a_game_lines_poll_does_not_replace_the_last_look_at_the_props(settings, engine):
+    scanner.run_scan(settings, engine, "saved", now=NOW, snapshots=sample.load(NOW))
+    lines_only = Snapshot("nba", NOW + timedelta(minutes=5), dict(id=NBA, commence_time=(NOW + timedelta(minutes=35)).isoformat(),
+                          home_team="Sample City Comets", away_team="Example Town Owls", bookmakers=[dict(key="fanduel", markets=[
+                              dict(key="h2h", last_update=(NOW + timedelta(minutes=4)).isoformat(),
+                                   outcomes=[dict(name="Sample City Comets", price=-150), dict(name="Example Town Owls", price=130)])])]))
+    scanner.run_scan(settings, engine, "saved", now=NOW + timedelta(minutes=5), snapshots=[lines_only])
+    frame = db.load_opportunities(engine)
+    assert not frame[frame.observed_at == NOW].superseded.any()
+
+
+def test_sqlite_file_is_opened_for_reading_while_a_scan_writes(settings, engine):
+    with engine.connect() as conn:
+        assert conn.execute(text("PRAGMA journal_mode")).scalar() == "wal"
+    assert str(db.make_engine("sqlite:///:memory:").url) == "sqlite:///:memory:"
+
+
 # --- performance -----------------------------------------------------------------------------------
 def frame(rows):
     cols = ["event_id", "status", "stake", "decimal", "profit", "ev", "probability", "closing_line_value", "sport"]
@@ -339,6 +381,24 @@ def test_settle_command_reports_the_record(env):
     assert out.exit_code == 0, out.output
     assert "Checked 5 open paper bets: 1 won, 1 lost, 0 push, 1 void, 2 still open." in out.output
     assert f"{db.STRATEGY_AUTO}: 5 bets, 1-1-0 (1 void, 2 open), simulated profit +0.05 on 2 staked (+2.5%)" in out.output
+    engine.dispose()
+
+
+def test_watch_command_logs_one_line_per_step(env, monkeypatch):
+    engine = db.make_engine(get_settings().database_url)
+    out = CliRunner().invoke(cli.app, ["watch"])
+    assert out.exit_code == 0 and out.output.strip().endswith("no new snapshots") and len(out.output.strip().splitlines()) == 1
+    stamp = datetime.now(timezone.utc) - timedelta(hours=1)
+    monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: [restamp(s, stamp) for s in sample.load(NOW)[2:]])
+    out = CliRunner().invoke(cli.app, ["watch"])
+    assert out.exit_code == 0, out.output
+    assert "2 games, 57 prices, 12 flagged, 5 new paper bets" in out.output and "sample" not in out.output.lower()
+
+    def broken(dsn, sports, since):
+        raise ConnectionError("postgresql://user:secret@host/db is down")
+    monkeypatch.setattr(saved_quotes, "load", broken)
+    out = CliRunner().invoke(cli.app, ["watch"])
+    assert out.exit_code == 1 and "failed (ConnectionError)" in out.output and "secret" not in out.output
     engine.dispose()
 
 

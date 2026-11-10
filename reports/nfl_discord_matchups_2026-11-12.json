@@ -1,0 +1,292 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-11-12",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_10_WAS_NYG",
+      "page": 1,
+      "forecast_manifest": [
+        {
+          "kind": "projection",
+          "forecast_id": 33666,
+          "player_id": "00-0039910",
+          "stat": "passing_yards",
+          "value": 227.06736254699481,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33672,
+          "player_id": "00-0039910",
+          "stat": "rushing_yards",
+          "value": 29.115915522092806,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33677,
+          "player_id": "00-0039910",
+          "stat": "passing_tds",
+          "value": 1.0,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33671,
+          "player_id": "00-0037256",
+          "stat": "rushing_yards",
+          "value": 33.70774791931477,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33682,
+          "player_id": "00-0037256",
+          "stat": "rushing_tds",
+          "value": 0.28091798351219704,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33689,
+          "player_id": "00-0037256",
+          "stat": "receiving_yards",
+          "value": 15.250081709347107,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33704,
+          "player_id": "00-0037256",
+          "stat": "receptions",
+          "value": 2.5760142549960996,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33684,
+          "player_id": "00-0031588",
+          "stat": "receiving_yards",
+          "value": 36.91585352809615,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33699,
+          "player_id": "00-0031588",
+          "stat": "receptions",
+          "value": 4.345442275046956,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33713,
+          "player_id": "00-0031588",
+          "stat": "receiving_tds",
+          "value": 0.29449058077228446,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33688,
+          "player_id": "00-0036415",
+          "stat": "receiving_yards",
+          "value": 29.75174601001506,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33703,
+          "player_id": "00-0036415",
+          "stat": "receptions",
+          "value": 1.980729989322775,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33715,
+          "player_id": "00-0036415",
+          "stat": "receiving_tds",
+          "value": 0.16380428240788028,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33690,
+          "player_id": "00-0037809",
+          "stat": "receiving_yards",
+          "value": 40.07619375265051,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33705,
+          "player_id": "00-0037809",
+          "stat": "receptions",
+          "value": 4.222230363645041,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33716,
+          "player_id": "00-0037809",
+          "stat": "receiving_tds",
+          "value": 0.19553373023423642,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33667,
+          "player_id": "00-0039923",
+          "stat": "passing_yards",
+          "value": 191.32469230001848,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33673,
+          "player_id": "00-0039923",
+          "stat": "rushing_yards",
+          "value": 8.465352381815148,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33678,
+          "player_id": "00-0039923",
+          "stat": "passing_tds",
+          "value": 0.2,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33674,
+          "player_id": "00-0040715",
+          "stat": "rushing_yards",
+          "value": 54.16333573009527,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33683,
+          "player_id": "00-0040715",
+          "stat": "rushing_tds",
+          "value": 0.35207486617681444,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33695,
+          "player_id": "00-0040715",
+          "stat": "receiving_yards",
+          "value": 9.66113808642729,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33710,
+          "player_id": "00-0040715",
+          "stat": "receptions",
+          "value": 1.3486798460834666,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33692,
+          "player_id": "00-0039337",
+          "stat": "receiving_yards",
+          "value": 95.4732965920891,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33707,
+          "player_id": "00-0039337",
+          "stat": "receptions",
+          "value": 6.810853488517933,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33718,
+          "player_id": "00-0039337",
+          "stat": "receiving_tds",
+          "value": 0.42462227572431827,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33697,
+          "player_id": "00-0041042",
+          "stat": "receiving_yards",
+          "value": 39.28464416259547,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33712,
+          "player_id": "00-0041042",
+          "stat": "receptions",
+          "value": 2.832966907585998,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33722,
+          "player_id": "00-0041042",
+          "stat": "receiving_tds",
+          "value": 0.2546481242806067,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33691,
+          "player_id": "00-0037838",
+          "stat": "receiving_yards",
+          "value": 58.304761666069574,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33706,
+          "player_id": "00-0037838",
+          "stat": "receptions",
+          "value": 5.4434598096169955,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33717,
+          "player_id": "00-0037838",
+          "stat": "receiving_tds",
+          "value": 0.43902933509938646,
+          "model_version": "nfl-20260918T143342Z"
+        }
+      ],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "WAS @ NYG | NFL 2026-11-12",
+            "description": "Kickoff: <t:1794532500:f> (<t:1794532500:R>)\nPlayer and game forecasts support FanDuel paper comparisons. See NFL PAPER DECISIONS in this channel for current picks and scan status.\n\n**BETS**\n- See **NFL PAPER DECISIONS** for props, spreads and totals, scan times and any missing-data status. Qualifying **PAPER PRICE CHECK** alerts show the exact FanDuel side, line, price and the model selection or veto 15-45 minutes before kickoff. No wager is requested. The separate **SHARP EDGE** cash path remains subject to its authorization checks.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- WAS QB1 J.Daniels: Pass Yds 227.1 | Pass TD 1.00 | Rush Yds 29.1 | FanDuel line available\n- WAS RB1 R.White: Rush Yds 33.7 | Rec Yds 15.3 | Rec 2.6 | Rush TD 0.28 | FanDuel line available\n- WAS WR1 S.Diggs: Rec Yds 36.9 | Rec 4.3 | Rec TD 0.29 | FanDuel line available\n- WAS WR2 V.Jefferson: Rec Yds 29.8 | Rec 2.0 | Rec TD 0.16 | Projection only - no current line\n- WAS TE1 C.Okonkwo: Rec Yds 40.1 | Rec 4.2 | Rec TD 0.20 | FanDuel line available\n- NYG QB1 J.McCarthy: Pass Yds 191.3 | Pass TD 0.20 | Rush Yds 8.5 | FanDuel line available\n- NYG RB1 C.Skattebo: Rush Yds 54.2 | Rec Yds 9.7 | Rec 1.3 | Rush TD 0.35 | FanDuel line available\n- NYG WR1 M.Nabers: Rec Yds 95.5 | Rec 6.8 | Rec TD 0.42 | FanDuel line available\n- NYG WR2 M.Fields: Rec Yds 39.3 | Rec 2.8 | Rec TD 0.25 | Projection only - no current line\n- NYG TE1 I.Likely: Rec Yds 58.3 | Rec 5.4 | Rec TD 0.44 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [],
+  "notice": null
+}

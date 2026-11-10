@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine,
-                        false, func, inspect, select, text)
+                        event, false, func, inspect, select, text)
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.schema import CreateColumn
@@ -158,9 +158,19 @@ class PaperBet(Base):
 
 
 def make_engine(url: str) -> Engine:
-    if url.startswith("sqlite:///") and ":memory:" not in url:
-        Path(url.removeprefix("sqlite:///")).parent.mkdir(parents=True, exist_ok=True)
-    return create_engine(url)
+    """An engine for the Sniper's database. A SQLite file is opened in write-ahead mode with a long wait for
+    locks, so the dashboard can keep reading while a scheduled scan writes."""
+    if not url.startswith("sqlite:///") or ":memory:" in url:
+        return create_engine(url)
+    Path(url.removeprefix("sqlite:///")).parent.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(url, connect_args={"timeout": 60})
+
+    @event.listens_for(engine, "connect")
+    def write_ahead(connection, _record) -> None:
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.close()
+    return engine
 
 
 def init_db(engine: Engine) -> None:

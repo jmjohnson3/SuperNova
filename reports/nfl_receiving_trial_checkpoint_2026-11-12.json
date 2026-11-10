@@ -1,0 +1,363 @@
+{
+  "built_at": "2026-11-10T14:38:50.418363+00:00",
+  "day": "2026-11-12",
+  "status": "awaiting_settlement",
+  "run_id": "benchmark-20260921T230305171980Z",
+  "variant": "stable_ensemble_calibrated",
+  "production_release": "nfl-20260918T143342Z",
+  "registration_sha256": "e5174b7f87e22e396f4d4e0d65b7052f7e62861f48c52ccff9a76e5a4b5ca80a",
+  "capture": {
+    "day_eligible_locks": 10,
+    "current_eligible_locks": 10,
+    "eligible_forecast_ids": [
+      33684,
+      33685,
+      33686,
+      33687,
+      33689,
+      33690,
+      33691,
+      33692,
+      33693,
+      33695
+    ],
+    "captured_forecast_ids": [
+      33684,
+      33685,
+      33686,
+      33687,
+      33689,
+      33690,
+      33691,
+      33692,
+      33693,
+      33695
+    ],
+    "current_quotes_fresh_now": 10,
+    "paired_challenger_locks": 10,
+    "missing_current_forecast_ids": [],
+    "selected_research": 0,
+    "missing_historical_forecast_ids": [],
+    "capture_errors": {
+      "original_offer_or_timing_mismatch": 8
+    },
+    "eligibility_exclusions": {
+      "outside_market": 5
+    }
+  },
+  "settlement": {
+    "pending_game": 10
+  },
+  "validation_exclusions": {
+    "unknown_forecast": 36
+  },
+  "pending_variant_rows": 40,
+  "day_metrics": {
+    "all_eligible": {},
+    "fixed_research": {}
+  },
+  "cumulative_metrics": {},
+  "scoring_cohorts": {},
+  "close": {
+    "current_eligible": {
+      "started": 0,
+      "valid": 0,
+      "unknown": 0,
+      "valid_coverage": null,
+      "required_coverage": 0.9,
+      "target_met": null,
+      "unknown_reasons": {},
+      "observations": [
+        {
+          "forecast_id": 33684,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 40.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33685,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 6.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33686,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 8.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33687,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 15.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33689,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 12.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33690,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 37.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33691,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 48.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33692,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 66.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33693,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 5.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33695,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 7.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        }
+      ],
+      "average_clv": null
+    },
+    "all_eligible": {
+      "started": 0,
+      "valid": 0,
+      "unknown": 0,
+      "valid_coverage": null,
+      "required_coverage": 0.9,
+      "target_met": null,
+      "unknown_reasons": {},
+      "observations": [
+        {
+          "forecast_id": 33684,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 40.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33685,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 6.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33686,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 8.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33687,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 15.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33689,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 12.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33690,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 37.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33691,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 48.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33692,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 66.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33693,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 5.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        },
+        {
+          "forecast_id": 33695,
+          "book": "fanduel",
+          "stat": "receiving_yards",
+          "line": 7.5,
+          "side": "over",
+          "locked_at": "2026-11-10T14:36:16.502321+00:00",
+          "close_at": null,
+          "valid_exact_capture": false,
+          "status": "missing_close_label",
+          "clv": null
+        }
+      ],
+      "average_clv": null
+    },
+    "fixed_research": {
+      "started": 0,
+      "valid": 0,
+      "unknown": 0,
+      "valid_coverage": null,
+      "required_coverage": 0.9,
+      "target_met": null,
+      "unknown_reasons": {},
+      "observations": [],
+      "average_clv": null
+    }
+  },
+  "forecast_deployment_review": {
+    "status": "collecting_evidence",
+    "blockers": [
+      "real_offers:missing_matches",
+      "date_partition_not_cumulative_review"
+    ],
+    "deployment_approved": false,
+    "betting_approved": false,
+    "market_evidence_blockers": [
+      "real_offers:missing_true_pair_matches",
+      "exact_micro:missing_true_pair_matches"
+    ],
+    "automatic_promotion": false
+  },
+  "forecast_next_action": "keep_frozen_collect_evidence",
+  "deployment_requires_bankroll_approval": false,
+  "betting_approved": false,
+  "production_changed": false,
+  "limitations": [
+    "Research selections are fixed; this report never reselects after results.",
+    "Freshness at original lock/capture is separate from whether a price is executable now.",
+    "Forecast review does not require ROI or CLV gates. Cash approval remains separate.",
+    "A positive checkpoint prepares a controlled release review; it never overwrites model artifacts."
+  ],
+  "report_scope": "date_partition"
+}

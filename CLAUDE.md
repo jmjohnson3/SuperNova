@@ -335,7 +335,8 @@ python -m pytest src/sports_sniper -q
 - Flagged bets on real prices are entered as paper bets automatically (`auto-consensus-v1`); `python -m
   sports_sniper.cli settle` grades them from `nbaprops.player_games` / `raw.nfl_player_gamelogs` once the game is
   complete and adds closing line value from the last stored snapshot. Bets entered from older snapshots are marked
-  replayed. Nothing runs on a schedule: scan and settle by hand or from the dashboard.
+  replayed. `scripts/sharp_multi_watch.bat` runs `sports_sniper.cli watch` in the background every 10 minutes
+  (new saved snapshots, paper bets, settlement; no credits; log `logs/sharp_side_YYYYMMDD_sniper.log`).
 - `auto` reads the snapshots the scheduled scanners already saved (`providers/saved_quotes.py`, read-only, no
   credits) and falls back to hypothetical sample data. `live` spends Odds API credits from the shared plan and is
   always explicit; it stops at `SNIPER_MAX_CREDITS_PER_SCAN` and `SNIPER_CREDIT_FLOOR` (2,000).

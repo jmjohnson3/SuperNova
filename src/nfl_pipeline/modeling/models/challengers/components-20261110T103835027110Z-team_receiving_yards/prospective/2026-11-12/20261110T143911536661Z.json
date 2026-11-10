@@ -1,0 +1,323 @@
+{
+  "status": "component_prospective_only",
+  "rows": [
+    {
+      "forecast_id": 33684,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0031588",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 40.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 45.43794184031275,
+      "distribution_mean": 45.43794184031275,
+      "projection_median": 40.00930787462983,
+      "p10": 6.637706519138781,
+      "p90": 90.00196373597271,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33685,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0033699",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 6.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 14.759058960010922,
+      "distribution_mean": 14.759058960010922,
+      "projection_median": 10.28762261173743,
+      "p10": -4.402949131042121,
+      "p90": 40.96109413310717,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33686,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0035250",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 8.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 11.369511991497493,
+      "distribution_mean": 11.369511991497493,
+      "projection_median": 5.8672857026031044,
+      "p10": -3.794935500895727,
+      "p90": 34.381653437978926,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33687,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0036309",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 15.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 24.274932567130577,
+      "distribution_mean": 24.274932567130577,
+      "projection_median": 18.08865147516763,
+      "p10": -0.3828556199748059,
+      "p90": 60.75353265781085,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33688,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0036415",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 29.75174601001506,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 29.420144705378256,
+      "distribution_mean": 29.420144705378256,
+      "projection_median": 22.560762801015667,
+      "p10": 2.9199510430376883,
+      "p90": 69.08041069172363,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33689,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0037256",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 12.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 15.173115371438591,
+      "distribution_mean": 15.173115371438591,
+      "projection_median": 11.133108398270403,
+      "p10": -0.7964358803887563,
+      "p90": 38.5097529470614,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33690,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0037809",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 37.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 39.505835881927865,
+      "distribution_mean": 39.505835881927865,
+      "projection_median": 35.13664184956067,
+      "p10": 8.524938432229643,
+      "p90": 76.84108835209425,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33691,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0037838",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 48.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 51.6765408194512,
+      "distribution_mean": 51.6765408194512,
+      "projection_median": 44.41450381921749,
+      "p10": 7.7373877579814945,
+      "p90": 106.62141751416559,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33692,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0039337",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 66.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 68.58929944999579,
+      "distribution_mean": 68.58929944999579,
+      "projection_median": 60.91287241188894,
+      "p10": 13.06185031732415,
+      "p90": 134.84616438567627,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33693,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0039847",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 5.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 19.446405174889133,
+      "distribution_mean": 19.446405174889133,
+      "projection_median": 13.688495654851119,
+      "p10": -8.329979043461588,
+      "p90": 57.41201096130419,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33694,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0039912",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 6.048911633628599,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 9.25811181982601,
+      "distribution_mean": 9.25811181982601,
+      "projection_median": 4.770850539522868,
+      "p10": -12.601089588807547,
+      "p90": 39.79060577053831,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33695,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0040715",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 7.5,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 12.075466995812981,
+      "distribution_mean": 12.075466995812981,
+      "projection_median": 7.050203564116152,
+      "p10": -4.140249295438915,
+      "p90": 36.54518702684432,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33696,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0041040",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 34.48071101653511,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 37.14956929379628,
+      "distribution_mean": 37.14956929379628,
+      "projection_median": 32.456317386311895,
+      "p10": 1.9362007805341577,
+      "p90": 79.67954215367158,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 33697,
+      "game_id": "2026_10_WAS_NYG",
+      "player_id": "00-0041042",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 39.28464416259547,
+      "challenger_run": "components-20261110T103835027110Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-10T14:34:28.541470+00:00",
+      "projection_mean": 36.16986888485428,
+      "distribution_mean": 36.16986888485428,
+      "projection_median": 31.541831233529408,
+      "p10": 1.8845403653884096,
+      "p90": 77.78885387859401,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    }
+  ],
+  "scored_at": "2026-11-10T14:39:11.536661+00:00",
+  "training_end": "2026-11-09",
+  "source_manifest": {
+    "run_id": "components-20261110T103835027110Z",
+    "production_release": "nfl-20260918T143342Z",
+    "sha256": "499d9b700bc5181985b16809a2a5eb3f28df996942c7366ae10ec240c53ff5e1"
+  },
+  "exclusions": {
+    "unknown_pregame_roster_member": 1
+  }
+}

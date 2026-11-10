@@ -77,6 +77,15 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
   line value, calibration and Brier score against the prices' own break-even, by sport, market, book, side and
   evidence, with forward and replayed bets separated.
 
+## Scheduled runs
+
+`scripts/sharp_multi_watch.bat` (task `\SuperNovaBets\Sharp-Multi-Watch`, every 10 minutes) runs
+`python -m sports_sniper.cli watch` in the background after the scanner has saved its snapshots. One pass stores
+the saved snapshots this database has not seen (NBA from that task, NFL from the NFL watch task, up to ten minutes
+later), enters the bets they flag as paper bets and settles finished ones. It spends no API credits, never reads
+sample data, and logs one or two lines to `logs/sharp_side_YYYYMMDD_sniper.log`. The SQLite file is opened in
+write-ahead mode so the dashboard can read while a pass writes; it grows by roughly 10 MB a day of NBA slates.
+
 ## What works now (implemented and tested)
 
 - Price math: American and decimal odds, break-even, no-vig (power and multiplicative), EV and ROI, fair odds,
@@ -100,7 +109,6 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
 
 - **Settling touchdown markets and MLB.** The results source has no reliable touchdown total, and MLB has no
   results adapter, so those bets stay open.
-- **Scheduled runs.** Scans and settlement run when you ask (command line or dashboard), not on a timer.
 - **Model-derived EV.** Every estimate is market consensus. Model adapters, calibration and model-versus-market
   comparison are Phase 2. So is the Breakout Radar, which needs usage and injury data sources.
 - **Backtesting and the bankroll simulator** (Phase 3), alerts, live in-game scanning, Parlay Lab (Phase 4).

@@ -5,6 +5,7 @@
   python -m sports_sniper.cli top                  # the latest scan's ranked opportunities
   python -m sports_sniper.cli paper-bet 12         # save opportunity 12 as a paper bet
   python -m sports_sniper.cli settle               # grade finished paper bets and add closing line value
+  python -m sports_sniper.cli watch                # one scheduled pass: new saved snapshots, paper bets, settlement
   python -m sports_sniper.cli quota                # credits left (free call)
   python -m sports_sniper.cli dashboard            # open the Streamlit dashboard
 """
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import subprocess
+from datetime import datetime
 import sys
 from pathlib import Path
 
@@ -23,7 +25,7 @@ from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.opportunities import describe
 from sports_sniper.providers.odds_api import OddsApiClient, OddsApiError
-from sports_sniper.scanner import SOURCES, run_scan
+from sports_sniper.scanner import SOURCES, run_scan, run_watch
 from sports_sniper.settlement import settle as settle_bets
 
 app = typer.Typer(add_completion=False, help=__doc__, no_args_is_help=True)
@@ -131,6 +133,29 @@ def settle(refresh: bool = typer.Option(True, help="Read the latest saved snapsh
         typer.echo(f"{name}: {s['bets']} bets, {s['won']}-{s['lost']}-{s['push']} ({s['void']} void, {s['open']} open), "
                    f"simulated profit {s['profit']:+.2f} on {s['staked']:.0f} staked ({_pct(s['roi'])}), "
                    f"closing value {_pct(s['closing_value'])} on {s['closing_count']}.")
+
+
+@app.command()
+def watch(lookback_hours: float = typer.Option(3.0, help="How far back to look for saved snapshots not stored yet.")) -> None:
+    """One scheduled pass: store new saved snapshots, enter the bets they flag, settle finished ones. No credits."""
+    settings = get_settings()
+    engine = db.make_engine(settings.database_url)
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        result = run_watch(settings, engine, lookback_hours=lookback_hours)
+        counts = settle_bets(engine, settings)
+    except Exception as error:                      # one line in the log; the next pass starts clean
+        typer.echo(f"{stamp} failed ({type(error).__name__})")
+        raise typer.Exit(1)
+    if result is None:
+        typer.echo(f"{stamp} no new snapshots")
+    else:
+        typer.echo(f"{stamp} scan {result.scan_id}: {result.events} games, {result.quotes} prices, {len(result.current)} flagged, "
+                   f"{result.paper_bets} new paper bets")
+    graded = {k: counts[k] for k in ("won", "lost", "push", "void") if counts.get(k)}
+    if graded or counts.get("closing_values") or counts.get("results_unavailable"):
+        typer.echo(f"{stamp} settled {graded or 'nothing'}; closing values added {counts.get('closing_values', 0)}"
+                   + ("; results database unavailable" if counts.get("results_unavailable") else ""))
 
 
 @app.command()
