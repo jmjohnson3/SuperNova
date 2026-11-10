@@ -1,0 +1,2 @@
+[console_scripts]
+sniper = sports_sniper.cli:app

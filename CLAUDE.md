@@ -320,6 +320,24 @@ Pinnacle's last quote before the start.
 - `sharp_pipeline.outcomes` adds results (NBA from `nbaprops.player_games`, NCAAF from `ncaaf.games`) and the
   NBA prop shadow filter (latest `nbaprops.projections` before the decision) to the report and digest.
 
+## Sports Betting Sniper (`src/sports_sniper/`, research and paper trading)
+
+Phase 1 of a standalone opportunity scanner with a Streamlit dashboard; details and what is not built yet are in
+`src/sports_sniper/README.md`, settings in `.env.example`.
+```bash
+python -m sports_sniper.cli scan [--source auto|sample|saved|live] [--sport nba]
+python -m sports_sniper.cli dashboard        # http://localhost:8517
+python -m pytest src/sports_sniper -q
+```
+- Every estimate is market consensus: other books' no-vig price for the identical bet (same line), Pinnacle
+  weighted 3x, the judged book excluded, ranked by conservative EV. One-sided markets get no probability
+  ("Insufficient data"). No prediction model feeds it yet (Phase 2), and paper bets are not settled yet.
+- `auto` reads the snapshots the scheduled scanners already saved (`providers/saved_quotes.py`, read-only, no
+  credits) and falls back to hypothetical sample data. `live` spends Odds API credits from the shared plan and is
+  always explicit; it stops at `SNIPER_MAX_CREDITS_PER_SCAN` and `SNIPER_CREDIT_FLOOR` (2,000).
+- Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
+  It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
+
 ## NBA data (`src/nba_props/`)
 MySportsFeeds lapsed (403 for every league/season), so `nba_pipeline` has had no data since April 2026.
 `nba_props` uses free stats.nba.com via `nba_api`: `ingest` (game logs), `model` (walk-forward test against

@@ -1,0 +1,589 @@
+{
+ "note": "HYPOTHETICAL SAMPLE DATA. Teams, players and prices are invented for offline use and tests. Shaped like a response from The Odds API v4 event-odds endpoint, with relative times filled in when loaded.",
+ "earlier": {
+  "minutes_ago": 30,
+  "changes": [
+   {
+    "event": "sample-nba-001",
+    "book": "draftkings",
+    "market": "player_points",
+    "player": "Sample Player A",
+    "name": "Over",
+    "price": -110
+   },
+   {
+    "event": "sample-nfl-001",
+    "book": "fanduel",
+    "market": "player_pass_tds",
+    "player": "Sample Player G",
+    "name": "Over",
+    "price": 150
+   }
+  ]
+ },
+ "events": [
+  {
+   "id": "sample-nba-001",
+   "sport_key": "basketball_nba",
+   "sport_title": "NBA (sample)",
+   "commence_in_minutes": 35,
+   "home_team": "Sample City Comets",
+   "away_team": "Example Town Owls",
+   "bookmakers": [
+    {
+     "key": "pinnacle",
+     "title": "Pinnacle",
+     "markets": [
+      {
+       "key": "player_points",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": -120,
+         "point": 24.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player A",
+         "price": 100,
+         "point": 24.5
+        }
+       ]
+      },
+      {
+       "key": "player_rebounds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player B",
+         "price": 110,
+         "point": 8.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player B",
+         "price": -130,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "player_threes",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player C",
+         "price": -105,
+         "point": 2.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player C",
+         "price": -115,
+         "point": 2.5
+        },
+        {
+         "name": "Over",
+         "description": "Sample Player H",
+         "price": 260,
+         "point": 4.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player H",
+         "price": -330,
+         "point": 4.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "markets": [
+      {
+       "key": "player_points",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": -115,
+         "point": 24.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player A",
+         "price": -105,
+         "point": 24.5
+        }
+       ]
+      },
+      {
+       "key": "player_rebounds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player B",
+         "price": 100,
+         "point": 8.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player B",
+         "price": -120,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "player_threes",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player C",
+         "price": -108,
+         "point": 2.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player C",
+         "price": -112,
+         "point": 2.5
+        },
+        {
+         "name": "Over",
+         "description": "Sample Player H",
+         "price": 250,
+         "point": 4.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player H",
+         "price": -320,
+         "point": 4.5
+        }
+       ]
+      },
+      {
+       "key": "player_assists",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player D",
+         "price": 100,
+         "point": 6.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player D",
+         "price": -120,
+         "point": 6.5
+        }
+       ]
+      },
+      {
+       "key": "player_points_alternate",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": 420,
+         "point": 34.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "markets": [
+      {
+       "key": "player_points",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": 105,
+         "point": 24.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player A",
+         "price": -125,
+         "point": 24.5
+        }
+       ]
+      },
+      {
+       "key": "player_rebounds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player B",
+         "price": 112,
+         "point": 8.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player B",
+         "price": -140,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "player_threes",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player C",
+         "price": -110,
+         "point": 2.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player C",
+         "price": -110,
+         "point": 2.5
+        },
+        {
+         "name": "Over",
+         "description": "Sample Player H",
+         "price": 340,
+         "point": 4.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player H",
+         "price": -450,
+         "point": 4.5
+        }
+       ]
+      },
+      {
+       "key": "player_assists",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player D",
+         "price": 125,
+         "point": 6.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player D",
+         "price": -150,
+         "point": 6.5
+        }
+       ]
+      },
+      {
+       "key": "player_points_alternate",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": 550,
+         "point": 34.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "markets": [
+      {
+       "key": "player_points",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": -118,
+         "point": 24.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player A",
+         "price": -104,
+         "point": 24.5
+        }
+       ]
+      },
+      {
+       "key": "player_threes",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player C",
+         "price": -110,
+         "point": 2.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player C",
+         "price": -110,
+         "point": 2.5
+        }
+       ]
+      },
+      {
+       "key": "player_assists",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player D",
+         "price": -105,
+         "point": 6.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player D",
+         "price": -115,
+         "point": 6.5
+        }
+       ]
+      },
+      {
+       "key": "player_points_alternate",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player A",
+         "price": 400,
+         "point": 34.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "espnbet",
+     "title": "theScore Bet",
+     "markets": [
+      {
+       "key": "player_rebounds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player B",
+         "price": 135,
+         "point": 8.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player B",
+         "price": -160,
+         "point": 8.5
+        }
+       ]
+      },
+      {
+       "key": "player_threes",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player C",
+         "price": -112,
+         "point": 2.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player C",
+         "price": -108,
+         "point": 2.5
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sample-nfl-001",
+   "sport_key": "americanfootball_nfl",
+   "sport_title": "NFL (sample)",
+   "commence_in_minutes": 95,
+   "home_team": "Sample Harbor Kings",
+   "away_team": "Example Valley Rams",
+   "bookmakers": [
+    {
+     "key": "pinnacle",
+     "title": "Pinnacle",
+     "markets": [
+      {
+       "key": "player_reception_yds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player F",
+         "price": -112,
+         "point": 58.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player F",
+         "price": -108,
+         "point": 58.5
+        }
+       ]
+      },
+      {
+       "key": "player_pass_tds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player G",
+         "price": 140,
+         "point": 1.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player G",
+         "price": -170,
+         "point": 1.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "fanduel",
+     "title": "FanDuel",
+     "markets": [
+      {
+       "key": "player_anytime_td",
+       "outcomes": [
+        {
+         "name": "Yes",
+         "description": "Sample Player E",
+         "price": 180
+        }
+       ]
+      },
+      {
+       "key": "player_reception_yds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player F",
+         "price": -110,
+         "point": 58.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player F",
+         "price": -110,
+         "point": 58.5
+        }
+       ]
+      },
+      {
+       "key": "player_pass_tds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player G",
+         "price": 165,
+         "point": 1.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player G",
+         "price": -200,
+         "point": 1.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "draftkings",
+     "title": "DraftKings",
+     "markets": [
+      {
+       "key": "player_anytime_td",
+       "outcomes": [
+        {
+         "name": "Yes",
+         "description": "Sample Player E",
+         "price": 240
+        }
+       ]
+      },
+      {
+       "key": "player_reception_yds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player F",
+         "price": -125,
+         "point": 58.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player F",
+         "price": 110,
+         "point": 58.5
+        }
+       ]
+      },
+      {
+       "key": "player_pass_tds",
+       "outcomes": [
+        {
+         "name": "Over",
+         "description": "Sample Player G",
+         "price": 135,
+         "point": 1.5
+        },
+        {
+         "name": "Under",
+         "description": "Sample Player G",
+         "price": -165,
+         "point": 1.5
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "betmgm",
+     "title": "BetMGM",
+     "markets": [
+      {
+       "key": "player_anytime_td",
+       "outcomes": [
+        {
+         "name": "Yes",
+         "description": "Sample Player E",
+         "price": 175
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "key": "espnbet",
+     "title": "theScore Bet",
+     "markets": [
+      {
+       "key": "player_anytime_td",
+       "outcomes": [
+        {
+         "name": "Yes",
+         "description": "Sample Player E",
+         "price": 170
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,1 +1,9 @@
+edge_research
+mlb_pipeline
+model_research_experiments
 nba_pipeline
+nba_props
+ncaaf_pipeline
+nfl_pipeline
+sharp_pipeline
+sports_sniper
