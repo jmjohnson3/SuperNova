@@ -18,6 +18,11 @@ echo Sharp Multi Watch started at %DATE% %TIME% >> %LOGFILE% 2>&1
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\run_with_nfl_mutex.ps1 -LockName SuperNovaBets_Sharp_Multi -WaitSeconds 60 -CommandText ".venv\Scripts\python.exe -m sharp_pipeline.scan" >> %LOGFILE% 2>&1
 set EXITCODE=%ERRORLEVEL%
+:: Side jobs on the snapshots just saved. Background and separate logs, so they never delay the timed checks below.
+:: FanDuel/DraftKings arbitrage alerts (no credits); DraftKings re-quote a minute after each alert (1 credit each).
+set SIDELOG=logs\sharp_side_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%
+start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.arb_watch >> %SIDELOG%_arb.log 2>&1"
+start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.draftkings_checks >> %SIDELOG%_draftkings.log 2>&1"
 .venv\Scripts\python.exe -m sharp_pipeline.report --digest >> %LOGFILE% 2>&1
 
 echo Exit code: %EXITCODE% >> %LOGFILE% 2>&1

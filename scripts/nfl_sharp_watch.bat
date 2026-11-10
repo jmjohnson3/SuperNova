@@ -24,6 +24,8 @@ echo NFL Sharp Watch started at %DATE% %TIME% >> %LOGFILE% 2>&1
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\run_with_nfl_mutex.ps1 -LockName SuperNovaBets_NFL_SharpWatch -WaitSeconds 60 -CommandText ".venv\Scripts\python.exe -m nfl_pipeline.sharp_watch" >> %LOGFILE% 2>&1
 set EXITCODE=%ERRORLEVEL%
+:: FanDuel/DraftKings arbitrage alerts from the payloads just saved (no credits). Background, separate log.
+start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.arb_watch >> logs\sharp_side_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%_arb_nfl.log 2>&1"
 
 echo Exit code: %EXITCODE% >> %LOGFILE% 2>&1
 echo Finished at %TIME% >> %LOGFILE% 2>&1

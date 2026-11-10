@@ -1,0 +1,15 @@
+{
+  "built_at": "2026-11-10T02:23:03.133116+00:00",
+  "source": "odds_api_requote",
+  "book": "draftkings",
+  "attempts": 0,
+  "answered": 0,
+  "outcomes": {},
+  "held_same_or_better": 0,
+  "held_share": null,
+  "median_seconds_after_alert": null,
+  "mean_ev_at_alert": null,
+  "mean_ev_obtainable": null,
+  "credits": 0,
+  "note": "Provider re-quote of DraftKings about a minute after the alert. Not the logged-in screen: limits, bet acceptance and profit remain unverified. Nothing is staked."
+}

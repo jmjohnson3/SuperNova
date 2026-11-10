@@ -304,6 +304,13 @@ Pinnacle's last quote before the start.
   `reports/sharp_multi_latest.md`. A sport is ready for a stake review at 50+ graded decisions over 7+
   days, +1.5% at the close and 90% close coverage. Staking it is a separate decision.
 - Shares no tables or registration with NFL; it only imports the NFL price math.
+- `sharp_pipeline.arb_watch` (background step of both watch tasks, no credits) posts a FanDuel/DraftKings
+  arbitrage once: opposite sides at the same line whose prices return more than the total staked. Table
+  `bets.cross_book_arbs`. Information only.
+- `sharp_pipeline.draftkings_checks` re-quotes DraftKings through The Odds API about a minute after each
+  delivered NBA paper alert (1 credit each, 40 a day, `DK_CHECK_DAILY_CREDITS`); DraftKings' own site
+  refuses scripted requests (403), so there is no direct reader like FanDuel's. Table
+  `bets.draftkings_price_checks`, report `reports/draftkings_price_checks_latest.md`.
 - `sharp_pipeline.outcomes` adds results (NBA from `nbaprops.player_games`, NCAAF from `ncaaf.games`) and the
   NBA prop shadow filter (latest `nbaprops.projections` before the decision) to the report and digest.
 
