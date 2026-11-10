@@ -311,6 +311,12 @@ Pinnacle's last quote before the start.
   delivered NBA paper alert (1 credit each, 40 a day, `DK_CHECK_DAILY_CREDITS`); DraftKings' own site
   refuses scripted requests (403), so there is no direct reader like FanDuel's. Table
   `bets.draftkings_price_checks`, report `reports/draftkings_price_checks_latest.md`.
+- `sharp_pipeline.discord_replies` (background step of the watch task, no credits) reads the user's Discord
+  replies to NBA paper alerts with a bot token (`DISCORD_BOT_TOKEN`; a webhook cannot read) and writes
+  `reports/nba_reply_checks_latest.md`: the every-alert $1 paper ledger, plus price checks by reply
+  (`y`, `y -125`, `b 5`, `m 8.5 -120`, `n`, `s`; table `bets.nba_alert_replies`). The rules are the pinned
+  `sharp_pipeline.reply_trial` (registration `nba-reply-check-v1`, alongside the frozen
+  `nba-prop-price-check-v1`, whose alerts it reads). One Discord summary a day; research only.
 - `sharp_pipeline.outcomes` adds results (NBA from `nbaprops.player_games`, NCAAF from `ncaaf.games`) and the
   NBA prop shadow filter (latest `nbaprops.projections` before the decision) to the report and digest.
 

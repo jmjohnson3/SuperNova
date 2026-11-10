@@ -11,6 +11,7 @@ src/sharp_pipeline/outcomes.py text eol=lf
 src/sharp_pipeline/nba_experiment.py text eol=lf
 src/sharp_pipeline/paper_alerts.py text eol=lf
 src/sharp_pipeline/price_checks.py text eol=lf
+src/sharp_pipeline/reply_trial.py text eol=lf
 
 # --- BEGIN registered line endings (generated) ---
 # Active frozen registrations hash raw bytes. With core.autocrlf a checkout can rewrite a file's

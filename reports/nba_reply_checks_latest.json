@@ -1,0 +1,283 @@
+{
+  "built_at": "2026-11-10T04:58:28.083480+00:00",
+  "experiment_id": "nba-reply-check-v1",
+  "registered_at": "2026-11-10T04:55:34.044020+00:00",
+  "experiment_sha256": "5df719e6f9add71f302ad9edfeefc3ef0018e1a96aae7847376ec68a34485ed8",
+  "research_only": true,
+  "betting_authorized": false,
+  "review_requirements": {
+    "min_decisions": 50,
+    "min_span_days": 21,
+    "min_active_days": 7,
+    "min_weeks": 3,
+    "min_games": 20,
+    "min_close_coverage": 0.9,
+    "min_mean_close_ev": 0.015,
+    "min_check_coverage": 0.9,
+    "min_available_fraction": 0.8,
+    "min_priced_checks": 50,
+    "min_checked_close_coverage": 0.9,
+    "min_cluster_lower": 0.0
+  },
+  "assumed": {
+    "since": "2026-10-28",
+    "total": {
+      "alerts": 202,
+      "settled": 182,
+      "wins": 92,
+      "losses": 90,
+      "pushes": 0,
+      "pending": 20,
+      "units": 0.17098229227115747,
+      "roi": 0.000939463144347019,
+      "ev_when_alerted": 0.04833469916177698,
+      "ev_at_close": 0.03044574718440806,
+      "roi_by_game": {
+        "clusters": 51,
+        "observations": 182,
+        "mean": 0.000939463144347019,
+        "lower_95": -0.16400702221800315,
+        "upper_95": 0.18081548711536294
+      }
+    },
+    "by_book": {
+      "fanduel": {
+        "alerts": 69,
+        "settled": 65,
+        "wins": 34,
+        "losses": 31,
+        "pushes": 0,
+        "pending": 4,
+        "units": 3.887823866239986,
+        "roi": 0.05981267486523056,
+        "ev_when_alerted": 0.04758364557018339,
+        "ev_at_close": 0.016650376419645153,
+        "roi_by_game": {
+          "clusters": 36,
+          "observations": 65,
+          "mean": 0.05981267486523056,
+          "lower_95": -0.17392238931204687,
+          "upper_95": 0.30989582068373117
+        }
+      },
+      "draftkings": {
+        "alerts": 106,
+        "settled": 94,
+        "wins": 45,
+        "losses": 49,
+        "pushes": 0,
+        "pending": 12,
+        "units": -6.390281077993044,
+        "roi": -0.06798171359567068,
+        "ev_when_alerted": 0.050211677115398264,
+        "ev_at_close": 0.04137458259173858,
+        "roi_by_game": {
+          "clusters": 46,
+          "observations": 94,
+          "mean": -0.06798171359567068,
+          "lower_95": -0.27526005428325956,
+          "upper_95": 0.15126514701526605
+        }
+      },
+      "espnbet": {
+        "alerts": 27,
+        "settled": 23,
+        "wins": 13,
+        "losses": 10,
+        "pushes": 0,
+        "pending": 4,
+        "units": 2.673439504024212,
+        "roi": 0.11623650017496573,
+        "ev_when_alerted": 0.042885181929780754,
+        "ev_at_close": 0.022794785317430465,
+        "roi_by_game": {
+          "clusters": 18,
+          "observations": 23,
+          "mean": 0.11623650017496573,
+          "lower_95": -0.24625859351541812,
+          "upper_95": 0.4969813307631897
+        }
+      }
+    },
+    "by_day": [
+      {
+        "day": "2026-10-29",
+        "alerts": 11,
+        "settled": 11,
+        "wins": 5,
+        "losses": 6,
+        "pushes": 0,
+        "pending": 0,
+        "units": -0.05805194805194813,
+        "roi": -0.005277449822904376,
+        "ev_when_alerted": 0.059606789383406224,
+        "ev_at_close": 0.04835330967704357
+      },
+      {
+        "day": "2026-10-30",
+        "alerts": 25,
+        "settled": 23,
+        "wins": 13,
+        "losses": 10,
+        "pushes": 0,
+        "pending": 2,
+        "units": 2.4293694988827683,
+        "roi": 0.10562476082098993,
+        "ev_when_alerted": 0.04498862846784537,
+        "ev_at_close": 0.03101991033748277
+      },
+      {
+        "day": "2026-10-31",
+        "alerts": 27,
+        "settled": 27,
+        "wins": 9,
+        "losses": 18,
+        "pushes": 0,
+        "pending": 0,
+        "units": -9.527157173559168,
+        "roi": -0.352857673094784,
+        "ev_when_alerted": 0.044353633337703875,
+        "ev_at_close": 0.02967485044103674
+      },
+      {
+        "day": "2026-11-01",
+        "alerts": 13,
+        "settled": 13,
+        "wins": 5,
+        "losses": 8,
+        "pushes": 0,
+        "pending": 0,
+        "units": -3.322887392661983,
+        "roi": -0.25560672251246025,
+        "ev_when_alerted": 0.061309170890121896,
+        "ev_at_close": 0.03173594594951669
+      },
+      {
+        "day": "2026-11-04",
+        "alerts": 33,
+        "settled": 33,
+        "wins": 22,
+        "losses": 11,
+        "pushes": 0,
+        "pending": 0,
+        "units": 10.87747887594254,
+        "roi": 0.3296205719982588,
+        "ev_when_alerted": 0.04462851861328531,
+        "ev_at_close": 0.04232359104987393
+      },
+      {
+        "day": "2026-11-05",
+        "alerts": 11,
+        "settled": 11,
+        "wins": 6,
+        "losses": 5,
+        "pushes": 0,
+        "pending": 0,
+        "units": 1.3901316701316697,
+        "roi": 0.12637560637560633,
+        "ev_when_alerted": 0.04475043416625582,
+        "ev_at_close": 0.023842817423243932
+      },
+      {
+        "day": "2026-11-06",
+        "alerts": 26,
+        "settled": 26,
+        "wins": 14,
+        "losses": 12,
+        "pushes": 0,
+        "pending": 0,
+        "units": 1.3543129804021063,
+        "roi": 0.052088960784696395,
+        "ev_when_alerted": 0.05503686691100017,
+        "ev_at_close": 0.029230829173417777
+      },
+      {
+        "day": "2026-11-07",
+        "alerts": 20,
+        "settled": 20,
+        "wins": 10,
+        "losses": 10,
+        "pushes": 0,
+        "pending": 0,
+        "units": -0.47745762845139117,
+        "roi": -0.023872881422569558,
+        "ev_when_alerted": 0.04280787011366174,
+        "ev_at_close": 0.03163159632564144
+      },
+      {
+        "day": "2026-11-08",
+        "alerts": 12,
+        "settled": 12,
+        "wins": 3,
+        "losses": 9,
+        "pushes": 0,
+        "pending": 0,
+        "units": -6.3487821874079025,
+        "roi": -0.5290651822839919,
+        "ev_when_alerted": 0.03931604273458043,
+        "ev_at_close": 0.021110727600824535
+      },
+      {
+        "day": "2026-11-09",
+        "alerts": 18,
+        "settled": 0,
+        "wins": 0,
+        "losses": 0,
+        "pushes": 0,
+        "pending": 18,
+        "units": 0.0,
+        "roi": null,
+        "ev_when_alerted": 0.053158033076571354,
+        "ev_at_close": 0.021610047516763334
+      }
+    ]
+  },
+  "draftkings_requoted": {
+    "answered": 0,
+    "bets": 0,
+    "units": 0,
+    "roi": null
+  },
+  "reply_checks": {
+    "fanduel": {
+      "alerts": 0,
+      "status": "collecting",
+      "reasons": [
+        "no alerts since registration"
+      ],
+      "betting_authorized": false
+    },
+    "draftkings": {
+      "alerts": 0,
+      "status": "collecting",
+      "reasons": [
+        "no alerts since registration"
+      ],
+      "betting_authorized": false
+    },
+    "espnbet": {
+      "alerts": 0,
+      "status": "collecting",
+      "reasons": [
+        "no alerts since registration"
+      ],
+      "betting_authorized": false
+    }
+  },
+  "reported_bets": {
+    "bets": 0,
+    "settled": 0,
+    "staked": 0.0,
+    "wins": 0,
+    "losses": 0,
+    "profit": 0.0,
+    "roi": null,
+    "open_stake": 0.0
+  },
+  "replies": {
+    "total": 0,
+    "not_understood": 0,
+    "edited": 0
+  },
+  "source_status": "frozen"
+}
