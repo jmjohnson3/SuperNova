@@ -8,6 +8,8 @@ data/nba_wager_reconciliation/
 data/shared_wager_reconciliation/
 data/sports_finance/
 data/fanduel_live_checks/
+data/automatic_price_checks/
+data/nfl_slate_monitor/
 data/nba_props/research/
 config/mlb_external_pick_sources.json
 
