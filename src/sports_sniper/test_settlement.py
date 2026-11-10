@@ -243,6 +243,19 @@ def test_snapshots_in_another_time_zone_are_stored_as_utc_and_still_find_the_clo
     assert db.as_utc(bets(engine)[("Sample Player A", "over")].price_observed_at) == NOW
 
 
+def test_a_settled_bet_is_not_searched_for_a_close_forever(settings, engine, monkeypatch):
+    scanner.run_scan(settings, engine, "saved", now=NOW, snapshots=sample.load(NOW))       # no later look: no close exists
+    settlement.settle(engine, settings, now=NOW + timedelta(hours=4), load_results=fake_results)
+    looked = []
+    monkeypatch.setattr(settlement, "closing_value", lambda bet, prices, config: looked.append(bet.player))
+    settlement.settle(engine, settings, now=NOW + timedelta(hours=5), load_results=fake_results)
+    assert sorted(looked) == sorted(b.player for b in bets(engine).values())               # still inside the retry window
+    looked.clear()
+    settlement.settle(engine, settings, now=NOW + timedelta(days=3), load_results=fake_results)
+    assert sorted(looked) == ["Sample Player F", "Sample Player G"]                         # only the bets still open
+    assert "sniper_price_bet" in {i["name"] for i in inspect(engine).get_indexes("sniper_prices")}
+
+
 def test_no_closing_value_without_a_later_look_inside_the_window(settings, engine):
     scanner.run_scan(settings, engine, "saved", now=NOW, snapshots=sample.load(NOW))     # last look is 35 minutes before tip
     counts = settlement.settle(engine, settings, now=NOW + timedelta(hours=4), load_results=fake_results)
@@ -346,9 +359,11 @@ def test_an_older_database_is_brought_up_to_date(settings, engine):
         for column in ("closing_probability", "closing_observed_at", "settle_note", "replayed"):
             conn.execute(text(f"ALTER TABLE sniper_paper_bets DROP COLUMN {column}"))
         conn.execute(text("CREATE TABLE sniper_quotes (id INTEGER PRIMARY KEY, price INTEGER)"))
+        conn.execute(text("DROP INDEX sniper_price_bet"))
     db.init_db(engine)
     look = inspect(engine)
     assert not look.has_table("sniper_quotes") and look.has_table("sniper_prices")
+    assert "sniper_price_bet" in {i["name"] for i in look.get_indexes("sniper_prices")}
     assert {"closing_probability", "closing_observed_at", "settle_note", "replayed"} <= {c["name"] for c in look.get_columns("sniper_paper_bets")}
     assert scan(settings, engine).paper_bets == 5 and not any(b.replayed for b in bets(engine).values())
 
@@ -387,7 +402,9 @@ def test_settle_command_reports_the_record(env):
 def test_watch_command_logs_one_line_per_step(env, monkeypatch):
     engine = db.make_engine(get_settings().database_url)
     out = CliRunner().invoke(cli.app, ["watch"])
-    assert out.exit_code == 0 and out.output.strip().endswith("no new snapshots") and len(out.output.strip().splitlines()) == 1
+    lines = out.output.strip().splitlines()
+    assert out.exit_code == 0 and len(lines) == 3 and lines[0].endswith("pass started") and lines[1].endswith("0 new snapshots")
+    assert lines[2].endswith("settled nothing; closing values added 0; done")
     stamp = datetime.now(timezone.utc) - timedelta(hours=1)
     monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: [restamp(s, stamp) for s in sample.load(NOW)[2:]])
     out = CliRunner().invoke(cli.app, ["watch"])

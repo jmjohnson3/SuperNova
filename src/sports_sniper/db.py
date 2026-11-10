@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine,
-                        event, false, func, inspect, select, text)
+from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint,
+                        create_engine, event, false, func, inspect, select, text)
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.schema import CreateColumn
@@ -52,7 +52,8 @@ class PriceRow(Base):
     """One price in one snapshot. Snapshots are kept whole, so the last look before a game is its closing price."""
     __tablename__ = "sniper_prices"
     __table_args__ = (UniqueConstraint("event_id", "book", "market", "player_key", "line_key", "side", "observed_at",
-                                       name="sniper_price_identity"),)
+                                       name="sniper_price_identity"),
+                      Index("sniper_price_bet", "event_id", "market", "player_key"))
     id: Mapped[int] = mapped_column(primary_key=True)
     scan_id: Mapped[int] = mapped_column(ForeignKey("sniper_scans.id"), index=True)
     sport: Mapped[str] = mapped_column(String(10))
@@ -186,6 +187,8 @@ def init_db(engine: Engine) -> None:
             for column in table.columns:
                 if column.name not in have:
                     conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {CreateColumn(column).compile(dialect=conn.dialect)}"))
+            for index in table.indexes:
+                index.create(conn, checkfirst=True)
 
 
 def insert_new(session: Session, model, rows: list[dict], conflict: list[str]) -> int:

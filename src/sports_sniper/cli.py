@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import subprocess
+import time
 from datetime import datetime
 import sys
 from pathlib import Path
@@ -141,21 +142,23 @@ def watch(lookback_hours: float = typer.Option(3.0, help="How far back to look f
     settings = get_settings()
     engine = db.make_engine(settings.database_url)
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    began = time.monotonic()
+
+    def say(message: str) -> None:                  # each step is written as it happens, with seconds since the start
+        typer.echo(f"{stamp} +{time.monotonic() - began:.0f}s {message}")
+    say("pass started")
     try:
-        result = run_watch(settings, engine, lookback_hours=lookback_hours)
+        result = run_watch(settings, engine, lookback_hours=lookback_hours, progress=say)
+        if result is not None:
+            say(f"scan {result.scan_id}: {result.events} games, {result.quotes} prices, {len(result.current)} flagged, "
+                f"{result.paper_bets} new paper bets")
         counts = settle_bets(engine, settings)
     except Exception as error:                      # one line in the log; the next pass starts clean
-        typer.echo(f"{stamp} failed ({type(error).__name__})")
+        say(f"failed ({type(error).__name__})")
         raise typer.Exit(1)
-    if result is None:
-        typer.echo(f"{stamp} no new snapshots")
-    else:
-        typer.echo(f"{stamp} scan {result.scan_id}: {result.events} games, {result.quotes} prices, {len(result.current)} flagged, "
-                   f"{result.paper_bets} new paper bets")
     graded = {k: counts[k] for k in ("won", "lost", "push", "void") if counts.get(k)}
-    if graded or counts.get("closing_values") or counts.get("results_unavailable"):
-        typer.echo(f"{stamp} settled {graded or 'nothing'}; closing values added {counts.get('closing_values', 0)}"
-                   + ("; results database unavailable" if counts.get("results_unavailable") else ""))
+    say(f"settled {graded or 'nothing'}; closing values added {counts.get('closing_values', 0)}"
+        + ("; results database unavailable" if counts.get("results_unavailable") else "") + "; done")
 
 
 @app.command()

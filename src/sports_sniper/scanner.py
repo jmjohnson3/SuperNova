@@ -162,11 +162,12 @@ def new_saved_snapshots(settings: Settings, engine: Engine, sports: list[str], n
 
 
 def run_watch(settings: Settings, engine: Engine, *, now: datetime | None = None, lookback_hours: float = 3.0,
-              ) -> ScanResult | None:
+              progress=lambda message: None) -> ScanResult | None:
     """One scheduled pass: store the saved snapshots not seen before and enter the bets they flag. It reads only
     what the scheduled scanners saved, so it spends no API credits and never touches sample data. None when
     there is nothing new."""
     now = parse_time(now or datetime.now(timezone.utc))
     sports = [s for s in settings.sports if s in SPORT_KEYS]
     fresh = new_saved_snapshots(settings, engine, sports, now, lookback_hours)
+    progress(f"{len(fresh)} new snapshots")
     return run_scan(settings, engine, "saved", sports=sports, now=now, snapshots=fresh) if fresh else None

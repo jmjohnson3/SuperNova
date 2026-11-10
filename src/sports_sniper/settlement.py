@@ -31,6 +31,7 @@ STATS = {
             "player_receptions": ("receptions",), "player_pass_tds": ("passing_tds",), "player_pass_yds": ("passing_yards",)},
 }
 OPEN = "open"
+CLOSE_RETRY_HOURS = 24      # how long after the start a settled bet is still checked for a closing price
 
 
 def stat_names(sport: str, market: str) -> tuple[str, ...] | None:
@@ -114,8 +115,10 @@ def settle(engine: Engine, settings: Settings, *, now: datetime | None = None, l
     with Session(engine) as session, session.begin():
         started = [b for b in session.scalars(select(db.PaperBet).where(db.PaperBet.data_source != "sample"))
                    if db.as_utc(b.commence_time) <= now]
+        recent = now - timedelta(hours=CLOSE_RETRY_HOURS)
         for bet in started:
-            if bet.closing_observed_at is None:
+            # No price is stored after a game starts, so a settled bet's close is looked for once, not every pass.
+            if bet.closing_observed_at is None and (bet.status == OPEN or db.as_utc(bet.commence_time) >= recent):
                 prices = session.scalars(select(db.PriceRow).where(db.PriceRow.event_id == bet.event_id,
                                                                    db.PriceRow.market == bet.market,
                                                                    db.PriceRow.player_key == bet.player_key)).all()
