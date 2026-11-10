@@ -327,6 +327,10 @@ pre-game DraftKings lines: no edge, `docs/nba_props_model.md`), `availability` (
 `games` (spreads/totals), `live` (tasks `\SuperNovaBets\NBA-Props-Live` and `NBA-News-Watch`), `post` (#nba slate).
 About a third of `odds.nba_player_prop_lines` DraftKings history was snapshotted after tip (live lines);
 filter snapshot < commence before using it as evidence.
+- `nba_props.selector` (2026-11-10, not scheduled): a classifier that starts from the book's own no-vig price and
+  adds the projection. Month by month over two seasons (44,699 DraftKings offers) it only breaks even, and its 269
+  picks on saved live quotes sat 4.5% below Pinnacle's close (`reports/nba_selector_backtest_latest.md`,
+  `reports/nba_selector_latest.md`). Blind unders lose 3.9%, blind overs 8.5%. Do not schedule it or post its picks.
 
 ## NCAAF game models (`src/ncaaf_pipeline/`, research)
 CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings

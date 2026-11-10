@@ -1,0 +1,51 @@
+{
+ "version": "nba-ml-selector-v1",
+ "trained_at": "2026-11-10T15:56:21.898766+00:00",
+ "rows": 58009,
+ "first": "2023-11-01",
+ "last": "2026-04-25",
+ "features": [
+  "logit_mkt",
+  "line",
+  "hold",
+  "over_dec",
+  "under_dec",
+  "is_pts",
+  "is_reb",
+  "is_ast",
+  "p_model",
+  "p_gap",
+  "pred",
+  "pred_minus_line",
+  "pred_ratio"
+ ],
+ "params": {
+  "n_estimators": 300,
+  "learning_rate": 0.02,
+  "num_leaves": 8,
+  "min_child_samples": 200,
+  "subsample": 0.7,
+  "subsample_freq": 1,
+  "colsample_bytree": 0.6,
+  "reg_lambda": 20.0,
+  "verbose": -1,
+  "random_state": 11
+ },
+ "min_ev": 0.06,
+ "window": [
+  15,
+  45
+ ],
+ "books": [
+  "fanduel",
+  "draftkings",
+  "espnbet"
+ ],
+ "markets": [
+  "points",
+  "rebounds",
+  "assists"
+ ],
+ "model_sha256": "9b84f3d40cc198928d2feab3bc8583098ac10fa0e21c7debc6d78fb10f905a05",
+ "research_only": true
+}
