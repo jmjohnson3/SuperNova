@@ -1,0 +1,26 @@
+{
+  "built_at": "2026-11-04 16:39:39.675176+00:00",
+  "historical_limit": "Results retrieved now cannot prove their historical availability or revision state. Historical tests are reconstructed development evidence; prospective forecasts enforce observed_at <= cutoff.",
+  "missing_participation": "never inferred from missing player rows",
+  "historical_lineups": "not used as contemporaneous context; only timestamped prospective context is consumed",
+  "frozen_inputs_changed": false,
+  "betting_authorized": false,
+  "labels": {
+    "snapshots": 6820,
+    "games": 6661,
+    "min": "2021-10-19",
+    "max": "2026-11-02"
+  },
+  "lineups": {
+    "rows": 213485,
+    "end_of_day_backfill_rows": 138388,
+    "min": "2023-10-24 20:59:00-07:00",
+    "max": "2026-11-04 08:32:58.077982-08:00"
+  },
+  "rules": {
+    "result_lag_days": 2,
+    "no_current_game_labels_in_features": true,
+    "three_point_attempts": "fg3a in independent verified research snapshots",
+    "unavailable_historical_context": "unknown, never reconstructed from current-game participation"
+  }
+}

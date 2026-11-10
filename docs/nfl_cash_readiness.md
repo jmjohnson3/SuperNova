@@ -1,5 +1,21 @@
 # NFL Forecast and Cash Trial Contract
 
+## October 28, 2026: readiness safety repair (v10)
+
+`nfl-sharp-gap-cash-v10` succeeds v9 with the same pricing and stake limits. Its scanner requires
+a readiness report built within 24 hours whose experiment ID and checksum match the active
+registration. Missing, corrupt, future-dated or mismatched reports pause new stakes while
+quote collection continues. Rebuild with `python -m nfl_pipeline.modeling.sharp_evidence_report`.
+
+An established loss stop persists in `reports/nfl_sharp_risk_state.loss-stop.json`, independently
+of the latest report and strategy version. Preserve this file during report cleanup; a fresh report
+does not clear it. `reports/nfl_sharp_risk_state.json` records the last validated profit and check time.
+Unknown profit stays unknown. Prior registrations and their evidence are retained separately.
+
+Late confirmations now honor actual stake as well as price, for example
+`python -m nfl_pipeline.sharp_bets --confirm 41 42 --late --stake 10 --price -115`.
+The supplied stake and price apply to each listed wager; the existing all-or-nothing game rule remains.
+
 ## October 21, 2026: the cash strategy is the sharp price gap
 
 From October 21 the only NFL strategy that carries money is the sharp price-gap scanner

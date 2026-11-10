@@ -1,58 +1,70 @@
 {
   "contract": "nfl-paper-operations-v1",
-  "day": "2026-10-22",
-  "built_at": "2026-10-23T15:50:16.064102+00:00",
+  "day": "2026-10-29",
+  "built_at": "2026-10-30T17:08:35.115199+00:00",
   "status": "needs_attention",
   "freezes": {
-    "status": "blocked",
-    "reason": "Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial"
+    "status": "verified",
+    "scope": "receiving_paper_collection",
+    "production_release": "nfl-20260918T143342Z",
+    "experiments": {
+      "receiving": {
+        "experiment_id": "fanduel-receiving-oe-paper-v7",
+        "sha256": "d7264621bc65f45f66bd12be9f678e2a8d627c0bf1afb487212f41b8fa288e23"
+      }
+    },
+    "cash_authorized": false
   },
   "games": [
     {
-      "game_id": "2026_07_NE_CHI",
-      "kickoff": "2026-10-23T00:15:00+00:00",
-      "minutes_to_start": -935.3,
+      "game_id": "2026_08_CAR_GB",
+      "kickoff": "2026-10-30T00:15:00+00:00",
+      "minutes_to_start": -1013.6,
       "game_status": "final",
       "stages": {
         "quotes": {
           "status": "not_applicable",
           "fresh_paired_rows": 0,
-          "observed_rows": 129
+          "observed_rows": 145
         },
         "forecasts": {
           "status": "verified_generation",
-          "current_rows": 15,
-          "verified_generation_rows": 15,
+          "current_rows": 16,
+          "verified_generation_rows": 16,
           "missing_provider_rows": 0
         },
         "capture": {
           "status": "captured",
-          "rows": 12,
+          "rows": 9,
           "selected": 2
         },
         "exact_close": {
-          "status": "complete",
+          "status": "missing_exact_close",
           "required": 2,
-          "valid": 2,
-          "unknown_reasons": {}
+          "valid": 0,
+          "unknown_reasons": {
+            "missing_exact_pregame_close": 2
+          }
         },
         "grading": {
           "status": "complete",
           "accounting": {
-            "loss": 8,
+            "loss": 5,
             "win": 4
           }
         }
       },
-      "blockers": []
+      "blockers": [
+        "exact_close:missing_exact_close"
+      ]
     }
   ],
   "blockers": [
-    "active_freeze_verification_failed"
+    "2026_08_CAR_GB:exact_close:missing_exact_close"
   ],
-  "next_action": "restore_or_explicitly_register_correct_source_cohort",
-  "earliest_kickoff": "2026-10-25T13:30:00+00:00",
-  "next_collection_due_at": "2026-10-25T11:30:00+00:00",
+  "next_action": "resolve_reported_evidence_gaps",
+  "earliest_kickoff": "2026-11-01T18:00:00+00:00",
+  "next_collection_due_at": "2026-11-01T16:00:00+00:00",
   "collection_receipt": {
     "status": "unknown",
     "ended_at": null,
@@ -85,5 +97,18 @@
   "source_report_success_used": false,
   "production_changed": false,
   "betting_approved": false,
-  "note": "Only original immutable captures count. Future close/grade stages are not due; missing participation remains unknown."
+  "note": "Only original immutable captures count. Future close/grade stages are not due; missing participation remains unknown.",
+  "related_strategies": {
+    "sharp": {
+      "status": "verified",
+      "experiment_id": "nfl-sharp-gap-cash-v10",
+      "sha256": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd",
+      "authorizes_this_run": false
+    },
+    "legacy_cash": {
+      "status": "blocked",
+      "reason": "Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.cash_readiness, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial",
+      "authorizes_this_run": false
+    }
+  }
 }

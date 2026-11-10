@@ -1,0 +1,99 @@
+{
+  "route": {
+    "id": "1563251038696513740",
+    "channel_id": "1563249379597353090",
+    "guild_id": "1380268843821170688"
+  },
+  "games": {
+    "2026_09_JAX_BAL": {
+      "message_id": "1568022182615978009",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568022182615978009",
+      "status": "published",
+      "fingerprint": "d12b948f3e4abb08d461ea668f80443d0b83d1e845af230ceb6c03e3e02e62a0"
+    },
+    "2026_09_CIN_ATL": {
+      "message_id": "1568852726757072921",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852726757072921",
+      "status": "published",
+      "fingerprint": "6af3a5fc195aaceec3c6a135a644acd7abfd92250d3aedf6843d77b511caae17"
+    },
+    "2026_09_CLE_NO": {
+      "message_id": "1568852733161644063",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852733161644063",
+      "status": "published",
+      "fingerprint": "b507a606aa6f5ce03c117fbafe56506fd3cd5ea01c00de67a4d37aaeea9e4b59"
+    },
+    "2026_09_DAL_IND": {
+      "message_id": "1568852738954104893",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852738954104893",
+      "status": "published",
+      "fingerprint": "68d64f0e78b073fe181b3cbd75e9eff7b815f07c79b942e2db58399c9263f340"
+    },
+    "2026_09_DEN_CAR": {
+      "message_id": "1568852745090371786",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852745090371786",
+      "status": "published",
+      "fingerprint": "ca1d86f771c7ad2966be0f43b6dab74471f4e75371e5d4a1a7b45c6bb4a8c226"
+    },
+    "2026_09_DET_MIA": {
+      "message_id": "1568852751276965949",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852751276965949",
+      "status": "published",
+      "fingerprint": "0927686d69d2aff5dd6257c3063eb9cfc480d00a1f45d9d2aec0108a04ac4185"
+    },
+    "2026_09_LA_WAS": {
+      "message_id": "1568852756775702729",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852756775702729",
+      "status": "published",
+      "fingerprint": "df7f2c7be45b3e84b10695a9389cf702ba39d6d142ad14ff013eccb69c1bf00c"
+    },
+    "2026_09_NYG_PHI": {
+      "message_id": "1568852762618241162",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852762618241162",
+      "status": "published",
+      "fingerprint": "1f1310d46984c75da84f8f076bdfb9140113322a74443e2a92ff1bdc00c50aac"
+    },
+    "2026_09_NYJ_KC": {
+      "message_id": "1568852768578478122",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852768578478122",
+      "status": "published",
+      "fingerprint": "8af8454b69022075b8b495438b579116e731dab9227b8c69d7cad61fc9aa24ca"
+    },
+    "2026_09_HOU_LAC": {
+      "message_id": "1568852774190448673",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852774190448673",
+      "status": "published",
+      "fingerprint": "0e0d6710f779724e163c3d937345b4c30ecd2882dd8612741ac1487a7ed43021"
+    },
+    "2026_09_LV_SF": {
+      "message_id": "1568852779634786398",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852779634786398",
+      "status": "published",
+      "fingerprint": "08c63d4056eb66d6cb017ba729915d358ae12cde90c9986c08408a031b1aecd7"
+    },
+    "2026_09_ARI_SEA": {
+      "message_id": "1568852785703682140",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852785703682140",
+      "status": "published",
+      "fingerprint": "4a6dd1477b0db545447f1bebcbb3646b12b651f0f34148c1f49fa2b50c597ac5"
+    },
+    "2026_09_GB_NE": {
+      "message_id": "1568852791575842827",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852791575842827",
+      "status": "published",
+      "fingerprint": "675a89d0429409b2ea8a09c5e954adb17fe4f48a00de0dda253c498e0caf9693"
+    },
+    "2026_09_TB_CHI": {
+      "message_id": "1568852796843888649",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1568852796843888649",
+      "status": "published",
+      "fingerprint": "d5349e4f0387ed074800a1579899b6952d5e2abeb65e465fe7c6246f92beb6ff"
+    },
+    "2026_09_BUF_MIN": {
+      "message_id": "1569215190765928509",
+      "message_url": "https://discord.com/channels/1380268843821170688/1563249379597353090/1569215190765928509",
+      "status": "published",
+      "fingerprint": "94b2cc31aba19107c2401f6a176505573608f3da5c4fc4e67a5e741223baad32"
+    }
+  }
+}

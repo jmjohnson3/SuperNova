@@ -1,0 +1,18 @@
+{
+  "built_at": "2026-11-09 21:33:54.056410+00:00",
+  "runs": [
+    {
+      "year": 2026,
+      "kind": "Regular Season",
+      "verified_games": 145,
+      "excluded": {
+        "final_identity_unverified": 1
+      },
+      "receipt": {
+        "path": "data\\nba_props\\research\\raw\\20261109T213352322041Z_2026_Regular_Season.json.gz",
+        "sha256": "93499eebcc46b3e8285cf78a2f3287c3387172167b30fe53c892887cdd07f417",
+        "observed_at": "2026-11-09 21:33:52.322041+00:00"
+      }
+    }
+  ]
+}

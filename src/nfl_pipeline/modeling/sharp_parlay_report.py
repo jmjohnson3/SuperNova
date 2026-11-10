@@ -21,6 +21,7 @@ import psycopg2.extras
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
 from nfl_pipeline.modeling import sharp_alert_report as alerts
+from nfl_pipeline.modeling.sharp_evidence_report import load_indexed
 from nfl_pipeline.sharp_parlays import american_price, decimal_price
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -56,7 +57,7 @@ def build(conn) -> dict:
             return dict(parlays=[], summary=dict(parlays=0))
         cur.execute("SELECT * FROM bets.nfl_sharp_parlays ORDER BY et_day")
         parlays = [dict(r) for r in cur.fetchall()]
-    frame = alerts.grade(alerts.load(conn))
+    frame = alerts.grade(load_indexed(conn))
     ledger = frame[frame.get("evidence_kind", pd.Series("", index=frame.index)).eq("alert_ledger")] if not frame.empty else frame
     by_id = {str(r["alert_id"]): r for r in ledger.to_dict("records")} if not ledger.empty else {}
     rows = []

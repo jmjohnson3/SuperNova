@@ -1,0 +1,133 @@
+{
+  "verified_at": "2026-11-05T01:10:03.422204+00:00",
+  "tests": {
+    "passed": 78,
+    "database_tests": "isolated rollback schemas",
+    "last_fix_tests": 11
+  },
+  "registrations": {
+    "market-rotation-paper-v1": "91b29ca447abd7f2680aba9e544bd5326d223a8705f011d58c7071653ed4bce9",
+    "nba-workload-calibration-v1": "a1dfe7f3da748e7963ed018a6c3ca4debf9927d5dd96dae08a755028bebbc8f2",
+    "nba-count-probability-v1": "601b41ecd544e3f1f2c0f9a261ccca924a19d5b34d6fdb62b702fe4f8c5f1094",
+    "fanduel-direct-check-v1": "f887fa1be83eaab4ce3cdf03acbc9e4fe27501ce15a1d2114b02cd94051b0dca",
+    "nba-prop-price-check-v1": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f",
+    "fanduel-model-assisted-paper-v1": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94"
+  },
+  "schedules": {
+    "nba_props_live.bat": [
+      "edge_research project",
+      "edge_research_report",
+      "edge_research availability"
+    ],
+    "sharp_multi_watch.bat": [
+      "capture nba ncaaf"
+    ],
+    "nfl_sharp_watch.bat": [
+      "capture nfl"
+    ]
+  },
+  "first_projection": {
+    "status": "ok",
+    "forecasts": 52,
+    "preview_forecasts": null,
+    "excluded": {
+      "history_or_capacity": {
+        "incomplete_history": 1
+      },
+      "rosters": [
+        {
+          "game_id": "0022600182",
+          "team": "DEN",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600182",
+          "team": "TOR",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600183",
+          "team": "PHX",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600183",
+          "team": "POR",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600184",
+          "team": "SAS",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600184",
+          "team": "DAL",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600185",
+          "team": "SAC",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600185",
+          "team": "LAL",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600186",
+          "team": "LAC",
+          "reason": "incomplete_roster_wait_for_bench"
+        },
+        {
+          "game_id": "0022600186",
+          "team": "MIA",
+          "reason": "incomplete_roster_wait_for_bench"
+        }
+      ]
+    },
+    "input_cutoff": "2026-11-05T01:03:18.487941+00:00",
+    "completed_at": "2026-11-05T01:03:24.871922+00:00"
+  },
+  "captured_decisions": 373,
+  "availability": {
+    "attempts": 22,
+    "statuses": {
+      "unknown": 11,
+      "available": 11
+    },
+    "paired_exact_closes": 11,
+    "mean_feed_close_ev": 0.02132784846970972,
+    "manual_checks_added": 0
+  },
+  "notes": [
+    "All new variants paper only",
+    "Existing experiments still verify",
+    "No eligible post-registration offers on first capture",
+    "No new Odds API requests or alerts",
+    "MLB not activated; timestamp provenance needed"
+  ],
+  "betting_authorized": false,
+  "current_forecast_counts": {
+    "revisions": 1556,
+    "distinct_stat_forecasts": 368,
+    "player_games": 92,
+    "games": 6
+  },
+  "integrity_checks": {
+    "all_decisions_prospective": true,
+    "no_future_rotation_forecasts_used": true,
+    "reported_probabilities_and_selections_match_saved_decisions": true
+  },
+  "report_reader": {
+    "id": "market-rotation-report-v1",
+    "sha256": "ccccc785c862ba500f92cd824cb14733b05d25b74d7173f531382e3c797917df"
+  },
+  "scheduled_execution_observed": {
+    "rotation_projection": true,
+    "nba_ncaa_capture": true,
+    "nfl_capture": "hook installed; awaiting eligible NFL inputs"
+  },
+  "report_repair": "Separate registered reader parses stored timestamps for NCAA grading; original scorer and ledger unchanged"
+}

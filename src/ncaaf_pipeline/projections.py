@@ -150,7 +150,7 @@ def run(day: date, *, refresh: bool = True, post: bool = True, force: bool = Fal
     refresh_error = None
     if refresh:
         try:
-            ingest.ingest([day.year], endpoints=("games", "lines"),
+            ingest.ingest([day.year - 1 if day.month == 1 else day.year], endpoints=("games", "lines"),
                           season_types=("postseason",) if day.month == 1 else ("regular", "postseason") if day.month == 12 else ("regular",))
         except Exception as exc:  # CFBD has 502'd after its retries (25 Oct): project from stored data instead
             refresh_error = f"{type(exc).__name__}: {str(exc)[:160]}"

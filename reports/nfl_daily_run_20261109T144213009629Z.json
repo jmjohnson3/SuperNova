@@ -1,0 +1,473 @@
+{
+  "date": "2026-11-09",
+  "status": "ok",
+  "steps": [
+    {
+      "step": "NFL Schema",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 3.951,
+      "timeout_seconds": 180,
+      "stdout_tail": "NFL schema ready\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Results Refresh",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 30.361,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"schedules_upserted\": 7548,\n  \"player_rows_upserted\": 9384,\n  \"player_sources\": [\n    \"https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\"\n  ]\n}\n",
+      "stderr_tail": "2026-11-09 07:30:21,677 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv\n2026-11-09 07:30:35,096 | INFO | nfl_pipeline.import_nflverse | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n"
+    },
+    {
+      "step": "NFL Context Import",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 118.796,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"seasons\": [\n    2026\n  ],\n  \"sources\": [\n    {\n      \"kind\": \"roster\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 3069\n    },\n    {\n      \"kind\": \"depth\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 766149,\n      \"rows_selected\": 2358,\n      \"latest_only\": true\n    },\n    {\n      \"kind\": \"injury\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 2821\n    }\n  ],\n  \"roster_rows_upserted\": 3069,\n  \"depth_rows_upserted\": 2355,\n  \"injury_rows_upserted\": 2821\n}\n",
+      "stderr_tail": "2026-11-09 07:30:56,445 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv\n2026-11-09 07:31:22,771 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv\n2026-11-09 07:32:34,662 | INFO | nfl_pipeline.import_context | Reading https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv\n"
+    },
+    {
+      "step": "NFL Usage Context Import",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 43.317,
+      "timeout_seconds": 1200,
+      "stdout_tail": " 9384,\n        \"air_yards_share\": 9384,\n        \"first_read_targets\": 0\n      },\n      \"routes_are_proxies\": false,\n      \"route_evidence\": \"missing\",\n      \"missing_routes_action\": \"keep_proxy_label; configure a measured-route source before claiming true routes\"\n    },\n    {\n      \"kind\": \"participation_route_proxy\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\",\n      \"error\": \"HTTPError: HTTP Error 404: Not Found\",\n      \"rows_read\": 0,\n      \"player_game_rows\": 0,\n      \"rows_updated\": 0\n    },\n    {\n      \"kind\": \"pbp_current_usage_and_red_zone\",\n      \"season\": 2026,\n      \"source\": \"https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\",\n      \"error\": null,\n      \"rows_read\": 23647,\n      \"player_usage_rows\": 2634,\n      \"player_usage_rows_updated\": 605,\n      \"player_game_rows\": 1428,\n      \"rows_updated\": 87,\n      \"zero_filled_rows\": 645\n    },\n    {\n      \"kind\": \"route_usage_position_cleanup\",\n      \"season\": 2026,\n      \"rows_updated\": 311\n    }\n  ],\n  \"snap_rows_matched\": 12465,\n  \"snap_rows_updated\": 0,\n  \"advanced_usage_rows_matched\": 9384,\n  \"advanced_usage_rows_updated\": 0,\n  \"pbp_usage_player_game_rows\": 2634,\n  \"pbp_usage_rows_updated\": 605,\n  \"participation_player_game_rows\": 0,\n  \"participation_rows_updated\": 0,\n  \"route_usage_position_cleanup_rows\": 311,\n  \"red_zone_player_game_rows\": 1428,\n  \"red_zone_rows_updated\": 732\n}\n",
+      "stderr_tail": "2026-11-09 07:33:03,287 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv\n2026-11-09 07:33:05,397 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv\n2026-11-09 07:33:21,976 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp_participation/pbp_participation_2026.csv\n2026-11-09 07:33:22,240 | INFO | nfl_pipeline.import_usage_context | Reading https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv\n"
+    },
+    {
+      "step": "NFL Live Injury Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 5.974,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"day\": \"2026-11-09\",\n  \"games\": [\n    {\n      \"game_id\": \"2026_09_BUF_MIN\",\n      \"entries\": 10,\n      \"rows\": 10,\n      \"mapped\": 8,\n      \"out\": [\n        \"Demond Claiborne\",\n        \"Jauan Jennings\",\n        \"Joshua Palmer\",\n        \"Kyler Murray\",\n        \"Tyrell Shavers\"\n      ]\n    }\n  ],\n  \"unmatched\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Fresh Lock Quotes",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 15.104,
+      "timeout_seconds": 600,
+      "stdout_tail": "{\n  \"status\": \"fresh_quotes_ready\",\n  \"day\": \"2026-11-09\",\n  \"built_at\": \"2026-11-09T14:33:39.005782+00:00\",\n  \"games\": 1,\n  \"api_called\": true,\n  \"provider_status\": \"ok\",\n  \"provider\": \"fallback_chain\",\n  \"quote_health\": {\n    \"props\": {\n      \"observed_rows\": 34,\n      \"fresh_rows\": 34,\n      \"latest_quote\": \"2026-11-09 06:33:44.585968-08:00\"\n    },\n    \"games\": {\n      \"observed_rows\": 1,\n      \"fresh_rows\": 1,\n      \"latest_quote\": \"2026-11-09 06:33:44.570343-08:00\"\n    }\n  },\n  \"game_ids\": null,\n  \"stale_kinds\": [],\n  \"max_quote_age_minutes\": 20,\n  \"sharp_lines\": {\n    \"provider\": \"oddsapi_eu\",\n    \"role\": \"lock\",\n    \"day\": \"2026-11-09\",\n    \"due_games\": [],\n    \"captured\": [],\n    \"skipped\": {},\n    \"credits_remaining\": null,\n    \"markets\": [\n      \"player_reception_yds\"\n    ],\n    \"status\": \"nothing_due\"\n  },\n  \"ready_for_scoring\": true,\n  \"note\": \"Only fresh exact offers may be locked; missing props remain projection-only. No timestamp is rewritten.\"\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Snapshot Health",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 2.553,
+      "timeout_seconds": 120,
+      "stdout_tail": "# NFL Snapshot Health - 2026-11-09\n\n## Raw Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 1 | 2026-11-09 06:33:44.570343-08:00 |\n| nfl_player_props | lock | 1 | 2026-11-09 06:33:44.585968-08:00 |\n| nfl_sportsgameodds_events_raw | lock | 1 | 2026-11-09 06:33:43.975048-08:00 |\n\n## Parsed Game Lines\n\n| Role | Rows | Events | Latest Fetch |\n|---|---:|---:|---|\n| lock | 2 | 1 | 2026-11-09 06:33:44.570343-08:00 |\n\n## Parsed Player Props\n\n| Role | Rows | Players | Latest Fetch |\n|---|---:|---:|---|\n| lock | 68 | 16 | 2026-11-09 06:33:44.585968-08:00 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 68 | 0 | 0.0% |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Game Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 27.298,
+      "timeout_seconds": 600,
+      "stdout_tail": "            \"kind\": \"forecast_repair\",\n            \"contract\": \"nfl-isolated-forecast-repair-v1\",\n            \"path\": \"C:\\\\Users\\\\josh\\\\Git\\\\SuperNovaBets\\\\src\\\\nfl_pipeline\\\\modeling\\\\models\\\\forecast_repair\\\\forecast-repair-total-20261008T170628068151Z\\\\model.joblib\",\n            \"sha256\": \"cc8914500edbe8abe243f67561bbdc3ab446e7e7f2c6518da2577b65f313de96\",\n            \"variant\": \"small_total\",\n            \"stat\": \"total\",\n            \"training_end\": \"2026-09-17\",\n            \"production_release\": \"nfl-20260918T143342Z\"\n          }\n        }\n      ],\n      \"distribution_challenger_score\": {\n        \"policy_id\": \"95e3ffede301e832abb77ac4b9c63af252471d4da4a61c8bb69087a4ea738a35\",\n        \"summary\": {\n          \"mean\": 43.501691907866515,\n          \"p10\": 27.0,\n          \"median\": 43.0,\n          \"p90\": 60.0\n        },\n        \"over\": 0.5,\n        \"under\": 0.5,\n        \"push\": 0.0,\n        \"conditional_over\": 0.5\n      },\n      \"distribution_threshold\": 43.5,\n      \"distribution_policy_id\": null,\n      \"legacy_final_probability\": null,\n      \"game_outcome_distribution\": null,\n      \"game_outcome_policy_capture\": null,\n      \"game_outcome_challenger_score\": null,\n      \"push_probability\": 0,\n      \"ev\": -0.04347826086956519,\n      \"edge\": 0.0,\n      \"tier\": \"paper\",\n      \"model_version\": \"nfl-20260918T143342Z\",\n      \"reasons\": \"nfl_v1_game_projection_only_no_bankroll_gates\",\n      \"prediction_key\": \"25645526bfc974d16c6b50f84f46c63192175a19355ff7889f963ea574d115ea\"\n    }\n  ]\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Team Workload Snapshot",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 56.0,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"captured\",\n  \"teams\": 2,\n  \"roster_rows\": 103\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Player Predictions",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 153.226,
+      "timeout_seconds": 1200,
+      "stdout_tail": "istory\": null,\n        \"missing_is_not_zero\": true\n      },\n      \"execution_contract\": \"nfl-fanduel-fresh-lock-v1\",\n      \"projection_semantics\": \"expected_count_or_any_td_head\",\n      \"forecast_outputs\": {\n        \"contract\": \"nfl-forecast-outputs-v1\",\n        \"scope\": {\n          \"game_id\": \"2026_09_BUF_MIN\",\n          \"player_id\": \"00-0037261\",\n          \"stat\": \"receiving_tds\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"prediction_context_cutoff_utc\": \"2026-11-09T14:35:48.725364+00:00\"\n        },\n        \"point_forecast\": {\n          \"value\": 0.2305775239192945,\n          \"semantics\": \"expected_count_or_any_td_head\",\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"source\": \"legacy_projection_unverified\",\n          \"independent_of_offer\": false\n        },\n        \"expected_yards\": null,\n        \"typical_yards\": null,\n        \"pricing\": {\n          \"projection_anchor\": 0.2305775239192945,\n          \"model_projection\": 0.2305775239192945,\n          \"market_adjusted\": false,\n          \"model_version\": \"nfl-20260918T143342Z\",\n          \"distribution_id\": \"fe38d1215db10eca149fbc673ee6bcdbd79367cfcd7990f6cb98908af570424d\",\n          \"distribution_kind\": \"empirical_oof_residual\",\n          \"scoring_version\": null,\n          \"line\": null,\n          \"side\": null,\n          \"price\": null,\n          \"probability\": null,\n          \"push_probability\": null,\n          \"ev\": null\n        },\n        \"betting_approval_inherited\": false\n      }\n    }\n  ]\n}\n",
+      "stderr_tail": "onents_receptions\n2026-11-09 07:37:13,444 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receptions', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-11-09 07:37:43,335 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: predict_receiving_tds\n2026-11-09 07:37:43,538 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'predict_receiving_tds', 'status': 'ok', 'result_parts': 3, 'seconds': 0.214}\n2026-11-09 07:37:43,757 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: active_stat_component_receiving_tds\n2026-11-09 07:37:43,757 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'active_stat_component_receiving_tds', 'status': 'ok', 'seconds': 0.0}\n2026-11-09 07:37:43,757 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: candidate_stat_components_receiving_tds\n2026-11-09 07:37:43,757 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'candidate_stat_components_receiving_tds', 'status': 'ok', 'keys': 0, 'seconds': 0.0}\n2026-11-09 07:37:43,991 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage starting: save_predictions\n2026-11-09 07:37:46,133 | INFO | nfl_pipeline.modeling.predict_player_props | Prediction stage finished: {'stage': 'save_predictions', 'status': 'ok', 'seconds': 2.153}\n"
+    },
+    {
+      "step": "NFL Frozen Receiving Paper Trial",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 16.65,
+      "timeout_seconds": 360,
+      "stdout_tail": "{\n  \"status\": \"paper_only\",\n  \"captured\": 5,\n  \"selected\": 2,\n  \"exclusions\": {\n    \"outside_trial\": 5,\n    \"role_stability_unknown_or_low\": 5\n  },\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Rushing Volume Challenger",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 5.073,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"captured\": 7,\n  \"exclusions\": {\n    \"no_carry_history\": 1\n  }\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL FanDuel Lock Contract",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 4.929,
+      "timeout_seconds": 120,
+      "stdout_tail": "{'contract': 'nfl-fanduel-lock-contract-v1', 'generated_at_utc': '2026-11-09T14:38:17.742642+00:00', 'date': '2026-11-09', 'required': False, 'game_scope': None, 'status': 'passed', 'summary': {'games': 1, 'passed': 1, 'waiting': 0, 'failed': 0}, 'games': [{'game_id': '2026_09_BUF_MIN', 'home_team_abbr': 'MIN', 'away_team_abbr': 'BUF', 'start_ts_utc': datetime.datetime(2026, 11, 9, 17, 15, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=57600))), 'status': 'passed', 'verification': {'game_id': '2026_09_BUF_MIN', 'current_fanduel_locks': 28, 'receiving_locks': 10, 'receiving_same_line_triplets': 10, 'explicit_injury_context_locks': 28, 'known_player_injury_context_locks': 10, 'immutable_lock_violations': 0, 'all_locks_missing_links': 0, 'actionable_missing_links': 0, 'lock_verification_passed': True, 'injury_context_note': 'known_player_status'}}]}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Paper Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 3.092,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"paper\",\n  \"game_locked\": 2,\n  \"prop_locked\": 28,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Lock Micro Ledger",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 2.57,
+      "timeout_seconds": 300,
+      "stdout_tail": "{\n  \"status\": \"ok\",\n  \"tier\": \"micro_projection\",\n  \"game_locked\": 0,\n  \"prop_locked\": 0,\n  \"stale_ledger_rows_voided\": 0,\n  \"ledger_results_refreshed\": 0\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Benchmark Offer Shadows",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 88.843,
+      "timeout_seconds": 900,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 68,\n  \"run_id\": \"benchmark-20260921T230305171980Z\",\n  \"eligible_original_locks\": 16,\n  \"missing_forecast_ids\": [],\n  \"missing_variants\": [],\n  \"capture_errors\": {},\n  \"receiving_research_trial\": {\n    \"status\": \"research_only\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"outside_trial\": 58,\n      \"original_drift_guard_not_passed\": 10\n    },\n    \"betting_approved\": false\n  },\n  \"receiving_residual_trial\": {\n    \"status\": \"paper_residual_trial\",\n    \"selected\": 0,\n    \"exclusions\": {\n      \"residual_not_supported\": 10,\n      \"missing_residual_signal\": 6\n    },\n    \"paper_only\": true\n  },\n  \"exclusions\": {\n    \"not_an_offered_line\": 9\n  },\n  \"production_changed\": false,\n  \"betting_approved\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Receiving Trial Checkpoint",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 39.34,
+      "timeout_seconds": 360,
+      "stdout_tail": "lv\": null}, {\"forecast_id\": 33579, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 40.5, \"side\": \"over\", \"locked_at\": \"2026-11-09T14:37:43.991548+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 33580, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 36.5, \"side\": \"over\", \"locked_at\": \"2026-11-09T14:37:43.991548+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 33581, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 39.5, \"side\": \"over\", \"locked_at\": \"2026-11-09T14:37:43.991548+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 33582, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 25.5, \"side\": \"over\", \"locked_at\": \"2026-11-09T14:37:43.991548+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}, {\"forecast_id\": 33584, \"book\": \"fanduel\", \"stat\": \"receiving_yards\", \"line\": 3.5, \"side\": \"over\", \"locked_at\": \"2026-11-09T14:37:43.991548+00:00\", \"close_at\": null, \"valid_exact_capture\": false, \"status\": \"missing_close_label\", \"clv\": null}], \"average_clv\": null}, \"fixed_research\": {\"started\": 0, \"valid\": 0, \"unknown\": 0, \"valid_coverage\": null, \"required_coverage\": 0.9, \"target_met\": null, \"unknown_reasons\": {}, \"observations\": [], \"average_clv\": null}}, \"forecast_next_action\": \"keep_frozen_collect_evidence\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Locked Micro Uncertainty",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 6.474,
+      "timeout_seconds": 120,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": 0,\n  \"exclusions\": {\n    \"crossed_kickoff_during_scoring\": 0\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Accepted Accuracy Components",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 15.412,
+      "timeout_seconds": 180,
+      "stdout_tail": "{\n  \"status\": \"prospective_only\",\n  \"rows\": {\n    \"receiving_conditional\": 15,\n    \"team_receiving_yards\": 13\n  },\n  \"excluded\": {\n    \"unknown_pregame_roster_member\": 2\n  },\n  \"point_component\": {\n    \"status\": \"point_prospective_only\",\n    \"captured\": 10,\n    \"exclusions\": {\n      \"missing_scoring_version\": 5\n    }\n  },\n  \"quantile_point_component\": {\n    \"status\": \"point_prospective_only\",\n    \"captured\": 10,\n    \"exclusions\": {\n      \"missing_scoring_version\": 5\n    }\n  },\n  \"production_changed\": false\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Readiness Report",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 16.969,
+      "timeout_seconds": 180,
+      "stdout_tail": "ds Payloads\n\n| Endpoint | Role | Payloads | Latest Fetch |\n|---|---|---:|---|\n| nfl_game_odds | lock | 1 | 2026-11-09 06:33:44.570343-08:00 |\n| nfl_player_props | lock | 1 | 2026-11-09 06:33:44.585968-08:00 |\n| nfl_sportsgameodds_events_raw | lock | 1 | 2026-11-09 06:33:43.975048-08:00 |\n\n## Prop Payload Diagnostic\n\n| Role | Payloads | Bookmaker Entries | Empty-Book Payloads | Latest Fetch |\n|---|---:|---:|---:|---|\n| none | 0 | 0 | 0 | - |\n\n## Raw Prop Markets\n\n| Role | Book | Market | Payloads | Outcomes |\n|---|---|---|---:|---:|\n| none | - | no raw prop markets found | 0 | 0 |\n\n## Parsed Rows\n\n| Type | Rows | Distinct Entities |\n|---|---:|---:|\n| game odds | 2 | 1 |\n| player props | 68 | 16 |\n\n## Lock To Close Coverage\n\n| Type | Locked | Closed Same Market | Coverage |\n|---|---:|---:|---:|\n| game | 2 | 0 | 0.0% |\n| prop | 68 | 0 | 0.0% |\n\n## Prop Odds Proof\n\n| Proof Layer | Rows | Coverage / Detail |\n|---|---:|---|\n| parsed prop offers | 68 | raw parser output |\n| true paired over/under offers | 68 | 100.0% |\n| lock markets | 68 | exact book/player/stat/line locked |\n| close markets | 0 | exact book/player/stat/line closed |\n| lock-close exact matches | 0 | 0.0% |\n| CLV labels | 0 | valid: 0 |\n| graded prop predictions | 0 | line-level result rows |\n| prop ledger rows | 28 | locked paper/micro/bankroll rows |\n\n## Prop CLV Quality\n\n| Status | Rows |\n|---|---:|\n| none | 0 |\n\n## Ledger Tiers\n\n| Source | Tier | Rows |\n|---|---|---:|\n| game | paper | 2 |\n| prop | paper | 28 |\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Active Release Report",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 0.55,
+      "timeout_seconds": 120,
+      "stdout_tail": "# NFL Active Release Evaluation\n\nRelease: nfl-20260918T143342Z\n\nFixed candidates evaluated on expanding 2025 week folds and a later 2026 veto window.\nThe 2026 window was previously examined during research; it is not an untouched prospective test.\nYardage/game Brier uses predeclared proxy lines, not executable sportsbook offers. TD Brier is P(any TD).\n\n| Target | Live | OOF MAE / baseline | Later MAE / baseline | Later Brier / baseline | Later rows |\n|---|---|---:|---:|---:|---:|\n| passing_yards | accepted | 68.696 / 72.478 | 65.827 / 66.395 | 0.2413 / 0.2430 | 38 |\n| rushing_yards | accepted | 17.797 / 18.455 | 18.317 / 19.435 | 0.2431 / 0.2631 | 112 |\n| passing_tds | baseline | 0.911 / 0.945 | 0.952 / 0.953 | 0.1768 / 0.1624 | 38 |\n| rushing_tds | P(any TD) head | 0.384 / 0.376 | 0.414 / 0.368 | 0.1609 / 0.1618 | 74 |\n| receiving_yards | accepted | 16.630 / 17.537 | 17.181 / 17.974 | 0.2457 / 0.2513 | 275 |\n| receiving_tds | P(any TD) head | 0.306 / 0.295 | 0.325 / 0.323 | 0.1462 / 0.1622 | 201 |\n| home_margin | baseline | 10.105 / 9.670 | 10.391 / 10.882 | 0.2419 / 0.2465 | 17 |\n| total_points_actual | baseline | 10.956 / 10.423 | 14.377 / 12.029 | 0.3106 / 0.2384 | 17 |\n\nLegacy workload/spike artifacts are retained for research, but do not overwrite this release.\nForecast acceptance is not bankroll approval. Clean future locks, outcomes, and CLV are still required.\n\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Cash Readiness",
+      "returncode": 0,
+      "critical": false,
+      "elapsed_seconds": 19.477,
+      "timeout_seconds": 900,
+      "stdout_tail": "{\"status\": \"blocked_registration_drifted\", \"betting_approved\": false, \"detail\": \"Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.cash_readiness, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial\"}\n",
+      "stderr_tail": ""
+    },
+    {
+      "step": "NFL Matchup Cards",
+      "returncode": 0,
+      "critical": true,
+      "elapsed_seconds": 21.209,
+      "timeout_seconds": 120,
+      "stdout_tail": "missing-data status. Qualifying **PAPER PRICE CHECK** alerts show the exact FanDuel side, line, price and the model selection or veto 15-45 minutes before kickoff. No wager is requested. The separate **SHARP EDGE** cash path remains subject to its authorization checks.\\n\\n**STARTING SKILL PLAYER PROJECTIONS**\\n- Forecasts only, not bets.\\n- BUF QB1 J.Allen: Pass Yds 249.6 | Pass TD 1.20 | Rush Yds 26.3 | FanDuel line available\\n- BUF RB1 J.Cook: Rush Yds 94.7 | Rec Yds 16.3 | Rush TD 0.68 | Projection only - no current line\\n- BUF WR1 D.Moore: Rec Yds 44.9 | Rec 3.4 | Rec TD 0.29 | FanDuel line available\\n- BUF WR2 K.Shakir: Rec Yds 46.9 | Rec 4.9 | Rec TD 0.23 | FanDuel line available\\n- BUF TE1 D.Kincaid: Rec Yds 33.4 | Rec 3.8 | Rec TD 0.25 | FanDuel line available\\n- MIN QB1 C.Wentz: Pass Yds 194.0 | Pass TD 1.00 | Rush Yds 6.8 | FanDuel line available\\n- MIN RB1 J.Mason: Rush Yds 49.0 | Rush TD 0.32 | FanDuel line available\\n- MIN WR1 J.Jefferson: Rec Yds 49.6 | Rec 5.5 | Rec TD 0.38 | FanDuel line available\\n- MIN WR2 J.Addison: Rec Yds 44.8 | Rec 2.9 | Rec TD 0.28 | FanDuel line available\\n- MIN TE1 T.Hockenson: Rec Yds 39.4 | Rec 4.1 | Rec TD 0.28 | FanDuel line available\", \"footer\": {\"text\": \"Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions.\"}, \"color\": 2325079}], \"allowed_mentions\": {\"parse\": []}}}], \"cash_readiness\": {\"status\": \"operational_issue\", \"reason\": \"cash_readiness_missing\"}, \"quote_exclusions\": [], \"notice\": null}\n",
+      "stderr_tail": ""
+    }
+  ],
+  "publications": [
+    {
+      "section": "NFL Matchup",
+      "game_id": "2026_09_BUF_MIN",
+      "page": 1,
+      "payload": {
+        "embeds": [
+          {
+            "title": "BUF @ MIN | NFL 2026-11-09",
+            "description": "Kickoff: <t:1794273300:f> (<t:1794273300:R>)\nPlayer and game forecasts support FanDuel paper comparisons. See NFL PAPER DECISIONS in this channel for current picks and scan status.\n\n**BETS**\n- See **NFL PAPER DECISIONS** for props, spreads and totals, scan times and any missing-data status. Qualifying **PAPER PRICE CHECK** alerts show the exact FanDuel side, line, price and the model selection or veto 15-45 minutes before kickoff. No wager is requested. The separate **SHARP EDGE** cash path remains subject to its authorization checks.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- BUF QB1 J.Allen: Pass Yds 249.6 | Pass TD 1.20 | Rush Yds 26.3 | FanDuel line available\n- BUF RB1 J.Cook: Rush Yds 94.7 | Rec Yds 16.3 | Rush TD 0.68 | Projection only - no current line\n- BUF WR1 D.Moore: Rec Yds 44.9 | Rec 3.4 | Rec TD 0.29 | FanDuel line available\n- BUF WR2 K.Shakir: Rec Yds 46.9 | Rec 4.9 | Rec TD 0.23 | FanDuel line available\n- BUF TE1 D.Kincaid: Rec Yds 33.4 | Rec 3.8 | Rec TD 0.25 | FanDuel line available\n- MIN QB1 C.Wentz: Pass Yds 194.0 | Pass TD 1.00 | Rush Yds 6.8 | FanDuel line available\n- MIN RB1 J.Mason: Rush Yds 49.0 | Rush TD 0.32 | FanDuel line available\n- MIN WR1 J.Jefferson: Rec Yds 49.6 | Rec 5.5 | Rec TD 0.38 | FanDuel line available\n- MIN WR2 J.Addison: Rec Yds 44.8 | Rec 2.9 | Rec TD 0.28 | FanDuel line available\n- MIN TE1 T.Hockenson: Rec Yds 39.4 | Rec 4.1 | Rec TD 0.28 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "forecast_manifest": [
+        {
+          "kind": "projection",
+          "forecast_id": 33555,
+          "player_id": "00-0034857",
+          "stat": "passing_yards",
+          "value": 249.5865462627012,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33558,
+          "player_id": "00-0034857",
+          "stat": "rushing_yards",
+          "value": 26.25678563820216,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33565,
+          "player_id": "00-0034857",
+          "stat": "passing_tds",
+          "value": 1.2,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33559,
+          "player_id": "00-0037248",
+          "stat": "rushing_yards",
+          "value": 94.67877263886255,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33568,
+          "player_id": "00-0037248",
+          "stat": "rushing_tds",
+          "value": 0.67702200939131,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33578,
+          "player_id": "00-0037248",
+          "stat": "receiving_yards",
+          "value": 16.266286861984753,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33573,
+          "player_id": "00-0034827",
+          "stat": "receiving_yards",
+          "value": 44.89366899811178,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33587,
+          "player_id": "00-0034827",
+          "stat": "receptions",
+          "value": 3.398030124419878,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33599,
+          "player_id": "00-0034827",
+          "stat": "receiving_tds",
+          "value": 0.2940273163352151,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33579,
+          "player_id": "00-0037261",
+          "stat": "receiving_yards",
+          "value": 46.88827849935815,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33592,
+          "player_id": "00-0037261",
+          "stat": "receptions",
+          "value": 4.877335801535306,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33603,
+          "player_id": "00-0037261",
+          "stat": "receiving_tds",
+          "value": 0.2305775239192945,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33580,
+          "player_id": "00-0038933",
+          "stat": "receiving_yards",
+          "value": 33.36439007018227,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33593,
+          "player_id": "00-0038933",
+          "stat": "receptions",
+          "value": 3.8274550919106956,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33604,
+          "player_id": "00-0038933",
+          "stat": "receiving_tds",
+          "value": 0.24656482446634093,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33554,
+          "player_id": "00-0032950",
+          "stat": "passing_yards",
+          "value": 193.9827577763233,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33556,
+          "player_id": "00-0032950",
+          "stat": "rushing_yards",
+          "value": 6.839218948654941,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33564,
+          "player_id": "00-0032950",
+          "stat": "passing_tds",
+          "value": 1.0,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33560,
+          "player_id": "00-0037525",
+          "stat": "rushing_yards",
+          "value": 48.963996642919156,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33569,
+          "player_id": "00-0037525",
+          "stat": "rushing_tds",
+          "value": 0.31801455808838797,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33577,
+          "player_id": "00-0036322",
+          "stat": "receiving_yards",
+          "value": 49.61088250914337,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33591,
+          "player_id": "00-0036322",
+          "stat": "receptions",
+          "value": 5.484765467295881,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33602,
+          "player_id": "00-0036322",
+          "stat": "receiving_tds",
+          "value": 0.3848050512316426,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33581,
+          "player_id": "00-0038994",
+          "stat": "receiving_yards",
+          "value": 44.84074367845719,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33594,
+          "player_id": "00-0038994",
+          "stat": "receptions",
+          "value": 2.9043851490121404,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33605,
+          "player_id": "00-0038994",
+          "stat": "receiving_tds",
+          "value": 0.27717719715515426,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33574,
+          "player_id": "00-0035229",
+          "stat": "receiving_yards",
+          "value": 39.446190428016266,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33588,
+          "player_id": "00-0035229",
+          "stat": "receptions",
+          "value": 4.084237496185928,
+          "model_version": "nfl-20260918T143342Z"
+        },
+        {
+          "kind": "projection",
+          "forecast_id": 33600,
+          "player_id": "00-0035229",
+          "stat": "receiving_tds",
+          "value": 0.2843813499238908,
+          "model_version": "nfl-20260918T143342Z"
+        }
+      ],
+      "sent_at": "2026-11-09T14:42:13.009629+00:00"
+    }
+  ],
+  "run_id": null,
+  "pregame": false,
+  "game_ids": []
+}

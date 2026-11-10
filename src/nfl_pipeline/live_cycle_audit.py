@@ -2,6 +2,7 @@
 import argparse
 from datetime import date, datetime, timezone
 import json
+import math
 from collections import Counter
 
 import psycopg2
@@ -51,6 +52,34 @@ def publication_matches(publication,lookup,start):
     return verified > 0
 
 
+def projection_publication_matches(publication, lookup, start):
+    """Verify delivered point forecasts separately from exact-offer evidence."""
+    from nfl_pipeline.discord_matchups import independent_projection
+    when = safe_time(publication.get('sent_at'))
+    if not when or when >= start:
+        return False
+    entries = [m for m in publication.get('forecast_manifest', []) if m.get('kind') == 'projection']
+    if not entries:
+        return False
+    for entry in entries:
+        try:
+            row = lookup.get(int(entry['forecast_id']))
+            payload = (row or {}).get('forecast_payload') or {}
+            created = safe_time((row or {}).get('created_at_utc'))
+            value = float(entry['value'])
+            expected = independent_projection(payload)
+            if (not row or not created or not created <= when < start or validate_lock(row)
+                    or str(row['game_id']) != str(publication.get('game_id'))
+                    or entry.get('model_version') != payload.get('model_version')
+                    or entry.get('stat') != row.get('stat')
+                    or str(entry.get('player_id')) != str(row.get('player_id'))
+                    or expected is None or not math.isfinite(value) or abs(value-expected) > 1e-8):
+                return False
+        except (KeyError, TypeError, ValueError):
+            return False
+    return True
+
+
 def build(day,games,records,checkpoint,daily_runs,now):
     lookup={int(r['id']):r for r in records}
     capture=checkpoint.get('capture') or {}
@@ -65,9 +94,10 @@ def build(day,games,records,checkpoint,daily_runs,now):
         publications=[p for d in daily_runs
             for p in d.get('publications',[]) if str(p.get('game_id'))==str(g['game_id'])]
         matched=any(publication_matches(p,lookup,start) for p in publications)
+        projection_matched=any(projection_publication_matches(p,lookup,start) for p in publications)
         blockers=[]
         due=remaining<=20
-        if due and not matched:
+        if due and not (matched or projection_matched):
             blockers.append('game_aware_discord_manifest_missing_or_invalid')
         if due and ids-paired:
             blockers.append('eligible_receiving_challenger_capture_missing')
@@ -90,8 +120,10 @@ def build(day,games,records,checkpoint,daily_runs,now):
         game_rows.append(dict(game_id=g['game_id'],kickoff=start.isoformat(),phase=phase,
             eligible_forecasts=len(ids),challenger_captures=len(ids&paired),
             discord_exact_prop_manifest_verified=matched,valid_close_coverage=coverage,
+            discord_projection_manifest_verified=projection_matched,
             recorded_publication_pages=len(publications),
             verified_publication_pages=sum(publication_matches(p,lookup,start) for p in publications),
+            verified_projection_pages=sum(projection_publication_matches(p,lookup,start) for p in publications),
             close_unknown_reasons=dict(close_reasons) if remaining<=0 else {},
             unknown_closes=len(ids)-len(closed) if remaining<=0 else None,
             unresolved_forecast_ids=unresolved,blockers=blockers))
@@ -144,11 +176,13 @@ def report(day):
     for suffix in (str(day),'latest'):
         atomic_json(ROOT/'reports'/f'nfl_live_cycle_{suffix}.json',doc)
         lines=['# NFL Live Cycle', '',f"Date: {day}; status: {doc['status']}",doc['note'],'',
-            '| Game | Phase | Eligible / challenger | Discord verified | Valid closes | Blockers |',
+            '| Game | Phase | Eligible / challenger | Forecast delivery verified | Valid closes | Blockers |',
             '|---|---|---|---|---|---|']
         for g in doc['games']:
             coverage='pending' if g['valid_close_coverage'] is None else f"{g['valid_close_coverage']:.1%}"
-            lines.append(f"| {g['game_id']} | {g['phase']} | {g['eligible_forecasts']} / {g['challenger_captures']} | {g['discord_exact_prop_manifest_verified']} | {coverage} | {', '.join(g['blockers']) or 'none'} |")
+            delivery=g['discord_exact_prop_manifest_verified'] or g['discord_projection_manifest_verified']
+            lines.append(f"| {g['game_id']} | {g['phase']} | {g['eligible_forecasts']} / {g['challenger_captures']} | {delivery} | {coverage} | {', '.join(g['blockers']) or 'none'} |")
+        lines += ['', 'Projection manifests verify displayed forecasts only. They do not establish a priced offer or sportsbook execution.']
         (ROOT/'reports'/f'nfl_live_cycle_{suffix}.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
     return doc
 

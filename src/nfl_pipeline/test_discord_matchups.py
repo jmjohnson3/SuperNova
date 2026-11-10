@@ -178,6 +178,21 @@ def test_readiness_issue_still_publishes_projection_and_status_cards(monkeypatch
     assert all(not p['forecast_manifest'] for p in publications)
 
 
+def test_readiness_issue_allows_projection_manifest_rows(monkeypatch):
+    bundle = build_bundle(DAY, schedule(), [], [prop()], ['frozen'], now=NOW,
+        cash_readiness={'status': 'operational_issue', 'reason': 'cash_readiness_missing'})
+    bundle['cards'][0]['forecast_manifest'] = [
+        {'kind': 'projection', 'forecast_id': 123, 'stat': 'receiving_yards', 'value': 55.0}
+    ]
+    sent = []
+    async def send(payload): sent.append(payload)
+    monkeypatch.setattr(daily, '_post_payload', send)
+    publications = []
+    asyncio.run(daily._post_matchups(json.dumps(bundle), publications))
+    assert len(sent) == len(publications) == 2
+    assert publications[0]['forecast_manifest'][0]['kind'] == 'projection'
+
+
 def test_readiness_issue_still_shows_on_a_card_carrying_a_model_bet_row():
     bundle = build_bundle(DAY, schedule(), [], [prop('late', tier='micro_projection')], ['frozen'], now=NOW,
         cash_readiness={'status': 'operational_issue', 'reason': 'cash_readiness_stale_or_mismatched'})

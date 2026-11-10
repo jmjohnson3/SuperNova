@@ -1,0 +1,732 @@
+{
+  "started_at": "2026-10-29T21:09:23.701216+00:00",
+  "built_at": "2026-10-29T21:10:00.414358+00:00",
+  "scope": "registered legacy receiving locks, all dates; result integrity only",
+  "production_release": "nfl-20260918T143342Z",
+  "registration_at": "2026-09-22T16:31:06.874590+00:00",
+  "status": "needs_attention",
+  "unresolved_final_rows": 57,
+  "grading_mismatches": 0,
+  "days": [
+    {
+      "day": "2026-09-24",
+      "loaded_forecast_rows": 37,
+      "eligible_forecast_rows": 36,
+      "exclusions": {
+        "stale_original_quote": 1
+      },
+      "states": {
+        "settled_verified_participation": 36
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-09-27",
+      "loaded_forecast_rows": 529,
+      "eligible_forecast_rows": 529,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 524,
+        "void_nonparticipant": 5
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-09-28",
+      "loaded_forecast_rows": 21,
+      "eligible_forecast_rows": 21,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 21
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-01",
+      "loaded_forecast_rows": 45,
+      "eligible_forecast_rows": 45,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 45
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-04",
+      "loaded_forecast_rows": 904,
+      "eligible_forecast_rows": 904,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 856,
+        "missing_exact_player_game_result": 48
+      },
+      "unresolved_final_rows": 48,
+      "unique_unresolved_player_games": 13,
+      "unresolved": [
+        {
+          "forecast_id": 10180,
+          "game_id": "2026_04_IND_WAS",
+          "player_id": "00-0030279",
+          "player": "K.Allen",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10196,
+          "game_id": "2026_04_ARI_NYG",
+          "player_id": "00-0033307",
+          "player": "K.Bourne",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10219,
+          "game_id": "2026_04_JAX_CIN",
+          "player_id": "00-0035631",
+          "player": "D.Sample",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10220,
+          "game_id": "2026_04_IND_WAS",
+          "player_id": "00-0035659",
+          "player": "T.McLaurin",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10255,
+          "game_id": "2026_04_MIA_MIN",
+          "player_id": "00-0037252",
+          "player": "G.Dulcich",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10259,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0037291",
+          "player": "J.Nailor",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10304,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0039067",
+          "player": "R.Rice",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10317,
+          "game_id": "2026_04_DET_CAR",
+          "player_id": "00-0039491",
+          "player": "J.Coker",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 10984,
+          "game_id": "2026_04_IND_WAS",
+          "player_id": "00-0030279",
+          "player": "K.Allen",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11001,
+          "game_id": "2026_04_ARI_NYG",
+          "player_id": "00-0033307",
+          "player": "K.Bourne",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11023,
+          "game_id": "2026_04_IND_WAS",
+          "player_id": "00-0035535",
+          "player": "D.Slayton",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11025,
+          "game_id": "2026_04_JAX_CIN",
+          "player_id": "00-0035631",
+          "player": "D.Sample",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11058,
+          "game_id": "2026_04_MIA_MIN",
+          "player_id": "00-0037252",
+          "player": "G.Dulcich",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11061,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0037291",
+          "player": "J.Nailor",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11106,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0039067",
+          "player": "R.Rice",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11120,
+          "game_id": "2026_04_DET_CAR",
+          "player_id": "00-0039491",
+          "player": "J.Coker",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11129,
+          "game_id": "2026_04_DEN_SF",
+          "player_id": "00-0039868",
+          "player": "T.Franklin",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11576,
+          "game_id": "2026_04_IND_WAS",
+          "player_id": "00-0033217",
+          "player": "M.Alie-Cox",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11837,
+          "game_id": "2026_04_TEN_BAL",
+          "player_id": "00-0032398",
+          "player": "C.Moore",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11846,
+          "game_id": "2026_04_ARI_NYG",
+          "player_id": "00-0033307",
+          "player": "K.Bourne",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11869,
+          "game_id": "2026_04_JAX_CIN",
+          "player_id": "00-0035631",
+          "player": "D.Sample",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11899,
+          "game_id": "2026_04_MIA_MIN",
+          "player_id": "00-0037252",
+          "player": "G.Dulcich",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11902,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0037291",
+          "player": "J.Nailor",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11909,
+          "game_id": "2026_04_NYJ_CHI",
+          "player_id": "00-0037805",
+          "player": "J.Ruckert",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11946,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0039067",
+          "player": "R.Rice",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 11967,
+          "game_id": "2026_04_DEN_SF",
+          "player_id": "00-0039868",
+          "player": "T.Franklin",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 12500,
+          "game_id": "2026_04_TEN_BAL",
+          "player_id": "00-0032398",
+          "player": "C.Moore",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 12506,
+          "game_id": "2026_04_ARI_NYG",
+          "player_id": "00-0033307",
+          "player": "K.Bourne",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 12526,
+          "game_id": "2026_04_JAX_CIN",
+          "player_id": "00-0035631",
+          "player": "D.Sample",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 12551,
+          "game_id": "2026_04_NYJ_CHI",
+          "player_id": "00-0037805",
+          "player": "J.Ruckert",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 12975,
+          "game_id": "2026_04_ARI_NYG",
+          "player_id": "00-0033307",
+          "player": "K.Bourne",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 12993,
+          "game_id": "2026_04_JAX_CIN",
+          "player_id": "00-0035631",
+          "player": "D.Sample",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13017,
+          "game_id": "2026_04_NYJ_CHI",
+          "player_id": "00-0037805",
+          "player": "J.Ruckert",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13429,
+          "game_id": "2026_04_ARI_NYG",
+          "player_id": "00-0033307",
+          "player": "K.Bourne",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13447,
+          "game_id": "2026_04_JAX_CIN",
+          "player_id": "00-0035631",
+          "player": "D.Sample",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13471,
+          "game_id": "2026_04_NYJ_CHI",
+          "player_id": "00-0037805",
+          "player": "J.Ruckert",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13776,
+          "game_id": "2026_04_MIA_MIN",
+          "player_id": "00-0037252",
+          "player": "G.Dulcich",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13905,
+          "game_id": "2026_04_MIA_MIN",
+          "player_id": "00-0037252",
+          "player": "G.Dulcich",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13906,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0037291",
+          "player": "J.Nailor",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13918,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0039067",
+          "player": "R.Rice",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 13922,
+          "game_id": "2026_04_DEN_SF",
+          "player_id": "00-0039868",
+          "player": "T.Franklin",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14147,
+          "game_id": "2026_04_MIA_MIN",
+          "player_id": "00-0037252",
+          "player": "G.Dulcich",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14148,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0037291",
+          "player": "J.Nailor",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14160,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0039067",
+          "player": "R.Rice",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14164,
+          "game_id": "2026_04_DEN_SF",
+          "player_id": "00-0039868",
+          "player": "T.Franklin",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14362,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0037291",
+          "player": "J.Nailor",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14372,
+          "game_id": "2026_04_KC_LV",
+          "player_id": "00-0039067",
+          "player": "R.Rice",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14376,
+          "game_id": "2026_04_DEN_SF",
+          "player_id": "00-0039868",
+          "player": "T.Franklin",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        }
+      ],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-05",
+      "loaded_forecast_rows": 21,
+      "eligible_forecast_rows": 21,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 20,
+        "void_nonparticipant": 1
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-08",
+      "loaded_forecast_rows": 36,
+      "eligible_forecast_rows": 36,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 33,
+        "missing_exact_player_game_result": 3
+      },
+      "unresolved_final_rows": 3,
+      "unique_unresolved_player_games": 1,
+      "unresolved": [
+        {
+          "forecast_id": 14802,
+          "game_id": "2026_05_TB_DAL",
+          "player_id": "00-0041048",
+          "player": "T.Hurst",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14859,
+          "game_id": "2026_05_TB_DAL",
+          "player_id": "00-0041048",
+          "player": "T.Hurst",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        },
+        {
+          "forecast_id": 14918,
+          "game_id": "2026_05_TB_DAL",
+          "player_id": "00-0041048",
+          "player": "T.Hurst",
+          "state": "missing_exact_player_game_result",
+          "saved_grade": null
+        }
+      ],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-11",
+      "loaded_forecast_rows": 597,
+      "eligible_forecast_rows": 597,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 595,
+        "void_nonparticipant": 2
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-12",
+      "loaded_forecast_rows": 47,
+      "eligible_forecast_rows": 47,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 45,
+        "zero_offensive_snaps_requires_book_settlement_review": 2
+      },
+      "unresolved_final_rows": 2,
+      "unique_unresolved_player_games": 1,
+      "unresolved": [
+        {
+          "forecast_id": 18377,
+          "game_id": "2026_05_BUF_LA",
+          "player_id": "00-0035500",
+          "player": "G.Dortch",
+          "state": "zero_offensive_snaps_requires_book_settlement_review",
+          "saved_grade": "pending_participation_review"
+        },
+        {
+          "forecast_id": 18441,
+          "game_id": "2026_05_BUF_LA",
+          "player_id": "00-0035500",
+          "player": "G.Dortch",
+          "state": "zero_offensive_snaps_requires_book_settlement_review",
+          "saved_grade": "pending_participation_review"
+        }
+      ],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-15",
+      "loaded_forecast_rows": 85,
+      "eligible_forecast_rows": 85,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 85
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-18",
+      "loaded_forecast_rows": 694,
+      "eligible_forecast_rows": 694,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 677,
+        "void_nonparticipant": 13,
+        "zero_offensive_snaps_requires_book_settlement_review": 4
+      },
+      "unresolved_final_rows": 4,
+      "unique_unresolved_player_games": 1,
+      "unresolved": [
+        {
+          "forecast_id": 19138,
+          "game_id": "2026_06_DAL_GB",
+          "player_id": "00-0037801",
+          "player": "K.Turpin",
+          "state": "zero_offensive_snaps_requires_book_settlement_review",
+          "saved_grade": "pending_participation_review"
+        },
+        {
+          "forecast_id": 19842,
+          "game_id": "2026_06_DAL_GB",
+          "player_id": "00-0037801",
+          "player": "K.Turpin",
+          "state": "zero_offensive_snaps_requires_book_settlement_review",
+          "saved_grade": "pending_participation_review"
+        },
+        {
+          "forecast_id": 20712,
+          "game_id": "2026_06_DAL_GB",
+          "player_id": "00-0037801",
+          "player": "K.Turpin",
+          "state": "zero_offensive_snaps_requires_book_settlement_review",
+          "saved_grade": "pending_participation_review"
+        },
+        {
+          "forecast_id": 22887,
+          "game_id": "2026_06_DAL_GB",
+          "player_id": "00-0037801",
+          "player": "K.Turpin",
+          "state": "zero_offensive_snaps_requires_book_settlement_review",
+          "saved_grade": "pending_participation_review"
+        }
+      ],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-19",
+      "loaded_forecast_rows": 9,
+      "eligible_forecast_rows": 9,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 9
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-22",
+      "loaded_forecast_rows": 54,
+      "eligible_forecast_rows": 54,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 54
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-25",
+      "loaded_forecast_rows": 593,
+      "eligible_forecast_rows": 589,
+      "exclusions": {
+        "missing_or_invalid_paired_price": 4
+      },
+      "states": {
+        "settled_verified_participation": 582,
+        "void_nonparticipant": 7
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-26",
+      "loaded_forecast_rows": 20,
+      "eligible_forecast_rows": 20,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 20
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-29",
+      "loaded_forecast_rows": 33,
+      "eligible_forecast_rows": 33,
+      "exclusions": {},
+      "states": {
+        "pending_game": 33
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    }
+  ],
+  "historical_missing_captures": {
+    "status": "needs_review",
+    "forecast_ids": [
+      22882,
+      22883,
+      22885,
+      22886,
+      22887,
+      22888,
+      22890,
+      22892,
+      22893,
+      22894,
+      22895,
+      22896,
+      22897
+    ],
+    "count": 13,
+    "original_capture_files_examined": 12,
+    "unexpected_capture_ids": [
+      22882,
+      22883,
+      22885,
+      22886,
+      22887,
+      22888,
+      22890,
+      22892,
+      22893,
+      22894,
+      22895,
+      22896,
+      22897
+    ],
+    "result_repair_does_not_create_forecast_captures": true
+  },
+  "betting_authorized": false,
+  "forecasts_changed": false,
+  "note": "Forecast revisions are not independent decisions. A clear result audit does not establish an edge, replace exact closes/live price checks, or admit missing original captures."
+}

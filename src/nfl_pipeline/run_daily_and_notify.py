@@ -129,7 +129,7 @@ async def _post_matchups(stdout: str, publications: list) -> None:
             staked_headings = ('$1 CASH TRIAL ELIGIBLE', '$1 MICRO TEST',
                                'BANKROLL GAMES', 'BANKROLL PROPS')
             has_staked_rows = any(
-                row.get('tier') not in {'paper', 'projection', 'projection_only'}
+                (row.get('tier') or row.get('kind')) not in {'paper', 'projection', 'projection_only'}
                 or row.get('cash_ledger_id') is not None
                 for row in card.get('forecast_manifest', [])
             )

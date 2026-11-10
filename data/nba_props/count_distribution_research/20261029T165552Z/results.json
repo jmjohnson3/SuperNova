@@ -1,0 +1,493 @@
+{
+  "built_at": "2026-10-29T16:55:58.399424+00:00",
+  "specification": {
+    "name": "nba-integer-count-distribution-v1",
+    "change": "negative binomial at variance=max(mu,a*mu+b*mu^2); Poisson at variance=mu",
+    "forecasts": "existing saved monthly walk-forward means and dispersion; no refit or tuning",
+    "quotes": "last actual pregame database observation within 30 hours; inferred snapshots excluded",
+    "book": "draftkings",
+    "markets": [
+      "pts",
+      "reb",
+      "ast"
+    ],
+    "lines": "nonnegative half-integers only",
+    "evaluation_start": "2025-10-01",
+    "evaluation_end_exclusive": "2026-07-01",
+    "selection": "best side by own executable-price EV, minimum 3%; one per player-game-stat",
+    "primary": "paired Brier improvement over frozen raw model, game/day clustered 95% intervals",
+    "review": "positive Brier gain lower bounds for game and day; not betting approval",
+    "caveat": "historical development analysis, not independent prospective or FanDuel execution evidence",
+    "source_sha256": "33ca87d8b873fb944e4d070cb6a43062e59e6676af1cf38e08f3c1057c663bee",
+    "predictions_sha256": "c48c89b97429492394ed706f59fa78a8e75a8cd6420006e08d321fa7ec752468"
+  },
+  "matched_rows": 6917,
+  "artifact_directory": "C:\\Users\\josh\\Git\\SuperNovaBets\\data\\nba_props\\count_distribution_research\\20261029T165552Z",
+  "evaluation": {
+    "earlier_development": {
+      "all": {
+        "rows": 0,
+        "decision": "insufficient_data"
+      }
+    },
+    "2025-26_later_period": {
+      "all": {
+        "rows": 6917,
+        "games": 245,
+        "dates": 46,
+        "metrics": {
+          "market": {
+            "brier": 0.24858325364155992,
+            "log_loss": 0.690299552366999,
+            "predicted_over": 0.4971721888762851,
+            "actual_over": 0.480266011276565,
+            "selection": {
+              "selections": 0,
+              "paper_roi": null,
+              "paper_profit": 0.0,
+              "roi_by_game": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              },
+              "roi_by_day": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              }
+            }
+          },
+          "frozen": {
+            "brier": 0.2572632900066119,
+            "log_loss": 0.70928583468784,
+            "predicted_over": 0.536687612197127,
+            "actual_over": 0.480266011276565,
+            "selection": {
+              "selections": 4547,
+              "paper_roi": -0.04377303862849751,
+              "paper_profit": -199.0360066437782,
+              "roi_by_game": {
+                "clusters": 244,
+                "observations": 4547,
+                "mean": -0.04377303862849751,
+                "lower_95": -0.07353868478574417,
+                "upper_95": -0.014460327784847916
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 4547,
+                "mean": -0.04377303862849751,
+                "lower_95": -0.06733640898613624,
+                "upper_95": -0.01991301415085834
+              }
+            }
+          },
+          "count": {
+            "brier": 0.2502449910116311,
+            "log_loss": 0.6939399297536776,
+            "predicted_over": 0.4673266232938206,
+            "actual_over": 0.480266011276565,
+            "selection": {
+              "selections": 3602,
+              "paper_roi": 0.0062532833537811295,
+              "paper_profit": 22.52432664031963,
+              "roi_by_game": {
+                "clusters": 243,
+                "observations": 3602,
+                "mean": 0.0062532833537811295,
+                "lower_95": -0.02193841930782883,
+                "upper_95": 0.036816403976594886
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 3602,
+                "mean": 0.0062532833537811295,
+                "lower_95": -0.021444216976430265,
+                "upper_95": 0.033437111229385
+              }
+            }
+          }
+        },
+        "intervals": {
+          "brier_gain_by_game": {
+            "clusters": 245,
+            "observations": 6917,
+            "mean": 0.007018298994980825,
+            "lower_95": 0.004359711053181369,
+            "upper_95": 0.00978587504097593
+          },
+          "brier_gain_by_day": {
+            "clusters": 46,
+            "observations": 6917,
+            "mean": 0.007018298994980825,
+            "lower_95": 0.004840062123086368,
+            "upper_95": 0.009160240579507022
+          },
+          "market_gain_by_game": {
+            "clusters": 245,
+            "observations": 6917,
+            "mean": -0.0016617373700711818,
+            "lower_95": -0.0035713942587117103,
+            "upper_95": 0.0002540778522597359
+          },
+          "market_gain_by_day": {
+            "clusters": 46,
+            "observations": 6917,
+            "mean": -0.0016617373700711818,
+            "lower_95": -0.0035084975345584333,
+            "upper_95": 0.00015395779017292663
+          }
+        },
+        "decision": "consider_prospective_comparison_only",
+        "betting_authorized": false
+      },
+      "ast": {
+        "rows": 1821,
+        "games": 243,
+        "dates": 46,
+        "metrics": {
+          "market": {
+            "brier": 0.2469920595198815,
+            "log_loss": 0.6871012019175772,
+            "predicted_over": 0.4985506877290246,
+            "actual_over": 0.4733662822624931,
+            "selection": {
+              "selections": 0,
+              "paper_roi": null,
+              "paper_profit": 0.0,
+              "roi_by_game": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              },
+              "roi_by_day": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              }
+            }
+          },
+          "frozen": {
+            "brier": 0.26551853289650473,
+            "log_loss": 0.728484789430189,
+            "predicted_over": 0.5859137425191377,
+            "actual_over": 0.4733662822624931,
+            "selection": {
+              "selections": 1367,
+              "paper_roi": -0.10494068915453206,
+              "paper_profit": -143.45392207424533,
+              "roi_by_game": {
+                "clusters": 241,
+                "observations": 1367,
+                "mean": -0.10494068915453206,
+                "lower_95": -0.15825678181422673,
+                "upper_95": -0.05316849982233715
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 1367,
+                "mean": -0.10494068915453206,
+                "lower_95": -0.15425774997533181,
+                "upper_95": -0.05728594246405866
+              }
+            }
+          },
+          "count": {
+            "brier": 0.25075127098708566,
+            "log_loss": 0.6952951495530743,
+            "predicted_over": 0.4802695277077626,
+            "actual_over": 0.4733662822624931,
+            "selection": {
+              "selections": 910,
+              "paper_roi": -0.034831857049458126,
+              "paper_profit": -31.696989915006892,
+              "roi_by_game": {
+                "clusters": 236,
+                "observations": 910,
+                "mean": -0.034831857049458126,
+                "lower_95": -0.09508223305263051,
+                "upper_95": 0.02281306274206424
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 910,
+                "mean": -0.034831857049458126,
+                "lower_95": -0.09815809701204187,
+                "upper_95": 0.031408657576597776
+              }
+            }
+          }
+        },
+        "intervals": {
+          "brier_gain_by_game": {
+            "clusters": 243,
+            "observations": 1821,
+            "mean": 0.014767261909419039,
+            "lower_95": 0.008510635957093688,
+            "upper_95": 0.02080443216991878
+          },
+          "brier_gain_by_day": {
+            "clusters": 46,
+            "observations": 1821,
+            "mean": 0.014767261909419039,
+            "lower_95": 0.008372227851301466,
+            "upper_95": 0.020857821242866854
+          },
+          "market_gain_by_game": {
+            "clusters": 243,
+            "observations": 1821,
+            "mean": -0.003759211467204141,
+            "lower_95": -0.007440583042754805,
+            "upper_95": -0.00015266007814426343
+          },
+          "market_gain_by_day": {
+            "clusters": 46,
+            "observations": 1821,
+            "mean": -0.003759211467204141,
+            "lower_95": -0.00795738913488692,
+            "upper_95": 0.0004132295325833997
+          }
+        },
+        "decision": "consider_prospective_comparison_only",
+        "betting_authorized": false
+      },
+      "pts": {
+        "rows": 2643,
+        "games": 243,
+        "dates": 46,
+        "metrics": {
+          "market": {
+            "brier": 0.24935894099141545,
+            "log_loss": 0.691862581397466,
+            "predicted_over": 0.4988462994009664,
+            "actual_over": 0.48127128263337116,
+            "selection": {
+              "selections": 0,
+              "paper_roi": null,
+              "paper_profit": 0.0,
+              "roi_by_game": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              },
+              "roi_by_day": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              }
+            }
+          },
+          "frozen": {
+            "brier": 0.25523330443742814,
+            "log_loss": 0.704623470116119,
+            "predicted_over": 0.5114725726385524,
+            "actual_over": 0.48127128263337116,
+            "selection": {
+              "selections": 1702,
+              "paper_roi": -0.011544252610275085,
+              "paper_profit": -19.648317942688195,
+              "roi_by_game": {
+                "clusters": 240,
+                "observations": 1702,
+                "mean": -0.011544252610275085,
+                "lower_95": -0.0558126593697793,
+                "upper_95": 0.03070569472800855
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 1702,
+                "mean": -0.011544252610275085,
+                "lower_95": -0.04490474568528957,
+                "upper_95": 0.024648319151620753
+              }
+            }
+          },
+          "count": {
+            "brier": 0.25163388929496094,
+            "log_loss": 0.6969273686106956,
+            "predicted_over": 0.4549338811404621,
+            "actual_over": 0.48127128263337116,
+            "selection": {
+              "selections": 1542,
+              "paper_roi": 0.019224153316760313,
+              "paper_profit": 29.643644414444402,
+              "roi_by_game": {
+                "clusters": 236,
+                "observations": 1542,
+                "mean": 0.019224153316760313,
+                "lower_95": -0.0263744137637178,
+                "upper_95": 0.06679330744354572
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 1542,
+                "mean": 0.019224153316760313,
+                "lower_95": -0.021198895833162784,
+                "upper_95": 0.06157861744867009
+              }
+            }
+          }
+        },
+        "intervals": {
+          "brier_gain_by_game": {
+            "clusters": 243,
+            "observations": 2643,
+            "mean": 0.003599415142467209,
+            "lower_95": 0.0004752164894857612,
+            "upper_95": 0.0067802498420325786
+          },
+          "brier_gain_by_day": {
+            "clusters": 46,
+            "observations": 2643,
+            "mean": 0.003599415142467209,
+            "lower_95": 0.0008791434039397549,
+            "upper_95": 0.006222549936630539
+          },
+          "market_gain_by_game": {
+            "clusters": 243,
+            "observations": 2643,
+            "mean": -0.0022749483035454693,
+            "lower_95": -0.005439327045829256,
+            "upper_95": 0.001016278157087701
+          },
+          "market_gain_by_day": {
+            "clusters": 46,
+            "observations": 2643,
+            "mean": -0.0022749483035454693,
+            "lower_95": -0.005138261211362314,
+            "upper_95": 0.0005065631446235872
+          }
+        },
+        "decision": "consider_prospective_comparison_only",
+        "betting_authorized": false
+      },
+      "reb": {
+        "rows": 2453,
+        "games": 241,
+        "dates": 46,
+        "metrics": {
+          "market": {
+            "brier": 0.24892871749394807,
+            "log_loss": 0.6909897726853331,
+            "predicted_over": 0.49434507084629264,
+            "actual_over": 0.484304932735426,
+            "selection": {
+              "selections": 0,
+              "paper_roi": null,
+              "paper_profit": 0.0,
+              "roi_by_game": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              },
+              "roi_by_day": {
+                "clusters": 0,
+                "observations": 0,
+                "mean": null,
+                "lower_95": null,
+                "upper_95": null
+              }
+            }
+          },
+          "frozen": {
+            "brier": 0.25332217894132775,
+            "log_loss": 0.7000568632150483,
+            "predicted_over": 0.5273123844094917,
+            "actual_over": 0.484304932735426,
+            "selection": {
+              "selections": 1478,
+              "paper_roi": -0.02431242667580833,
+              "paper_profit": -35.933766626844715,
+              "roi_by_game": {
+                "clusters": 238,
+                "observations": 1478,
+                "mean": -0.02431242667580833,
+                "lower_95": -0.07155693251090232,
+                "upper_95": 0.023938392606031374
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 1478,
+                "mean": -0.02431242667580833,
+                "lower_95": -0.06606601862850883,
+                "upper_95": 0.0181995713451939
+              }
+            }
+          },
+          "count": {
+            "brier": 0.24837267384972994,
+            "log_loss": 0.6897150393526176,
+            "predicted_over": 0.4710710132544966,
+            "actual_over": 0.484304932735426,
+            "selection": {
+              "selections": 1150,
+              "paper_roi": 0.02137188881815836,
+              "paper_profit": 24.577672140882115,
+              "roi_by_game": {
+                "clusters": 237,
+                "observations": 1150,
+                "mean": 0.02137188881815836,
+                "lower_95": -0.029668355902551836,
+                "upper_95": 0.07507115098589338
+              },
+              "roi_by_day": {
+                "clusters": 46,
+                "observations": 1150,
+                "mean": 0.02137188881815836,
+                "lower_95": -0.032277466560575785,
+                "upper_95": 0.06794296767424438
+              }
+            }
+          }
+        },
+        "intervals": {
+          "brier_gain_by_game": {
+            "clusters": 241,
+            "observations": 2453,
+            "mean": 0.0049495050915978256,
+            "lower_95": 0.0015387536758682116,
+            "upper_95": 0.00846476423267116
+          },
+          "brier_gain_by_day": {
+            "clusters": 46,
+            "observations": 2453,
+            "mean": 0.0049495050915978256,
+            "lower_95": 0.001518970918035669,
+            "upper_95": 0.008188719823017646
+          },
+          "market_gain_by_game": {
+            "clusters": 241,
+            "observations": 2453,
+            "mean": 0.0005560436442181223,
+            "lower_95": -0.0022489956916476638,
+            "upper_95": 0.0032271463469631914
+          },
+          "market_gain_by_day": {
+            "clusters": 46,
+            "observations": 2453,
+            "mean": 0.0005560436442181223,
+            "lower_95": -0.0021989074649964345,
+            "upper_95": 0.002930399749777878
+          }
+        },
+        "decision": "consider_prospective_comparison_only",
+        "betting_authorized": false
+      }
+    }
+  },
+  "betting_authorized": false
+}

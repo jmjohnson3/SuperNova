@@ -1,0 +1,73 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "fanduel-automatic-paper-v2",
+  "registered_at": "2026-11-06T16:03:30.919085+00:00",
+  "config": {
+    "betting_authorized": false,
+    "book": "fanduel",
+    "first_attempt_only": true,
+    "manual_checks_added": 0,
+    "market_policy": "main market only; alternate prices never substituted",
+    "max_delay_seconds": 300,
+    "max_record_delay_seconds": 300,
+    "max_requests": 16,
+    "max_response_age_seconds": 15,
+    "no_historical_backfill": true,
+    "parents": {
+      "model_comparison": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+      "nba_price": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+    },
+    "runtime_seconds": 90,
+    "sports": [
+      "nba",
+      "nfl"
+    ],
+    "state": "co",
+    "tip_tolerance_seconds": 900
+  },
+  "files": {
+    "automatic_price_checks": {
+      "path": "src/automatic_price_checks.py",
+      "sha256": "e42b265bfb7cb34e1852397481236d9bb58d2970fa74824c331b14559b42ed03"
+    },
+    "nba_props.fanduel_live": {
+      "path": "src/nba_props/fanduel_live.py",
+      "sha256": "5a6c675a41ca484215083f382e8b28cb04402e2a515bf59aad2eb89e63eb1862"
+    },
+    "nfl_pipeline.context_contract": {
+      "path": "src/nfl_pipeline/context_contract.py",
+      "sha256": "f79a5b28062cf643f62a50a187347f45214208a141332b7cace63ff3b96e6ea0"
+    },
+    "nfl_pipeline.experiment_registry": {
+      "path": "src/nfl_pipeline/experiment_registry.py",
+      "sha256": "0889726a758330b7e63324130397ab2bdd2a4739123b57ac8c269dc7175c43ac"
+    },
+    "nfl_pipeline.fanduel_state": {
+      "path": "src/nfl_pipeline/fanduel_state.py",
+      "sha256": "e92bc2faedf6f9b471c6bade959121d7c7fb90a92c701add55c0f42850c343d2"
+    },
+    "nfl_pipeline.integrity": {
+      "path": "src/nfl_pipeline/integrity.py",
+      "sha256": "b10396b487c77db5e2854963842b03ec426b667a78c81cb5c3583fa671cca8de"
+    },
+    "nfl_pipeline.markets": {
+      "path": "src/nfl_pipeline/markets.py",
+      "sha256": "091b44fa26d3eaba07791fcbe06509723b4c3d443486772d2472f409d8850661"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "5c077fc714752dd63643f43c3684c3d85e3483d2172e6d4d481b2a3cba0eaeb8"
+}

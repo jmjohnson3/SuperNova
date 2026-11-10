@@ -1,0 +1,43 @@
+{
+  "day": "2026-11-02",
+  "built_at": "2026-11-05T01:22:44.406391+00:00",
+  "effective_date": "2026-09-24",
+  "status": "needs_attention",
+  "games": [
+    {
+      "game_id": "2026_08_CHI_SEA",
+      "kickoff": "2026-11-03T01:15:00+00:00",
+      "phase": "settled",
+      "eligible_forecasts": 11,
+      "challenger_captures": 11,
+      "discord_exact_prop_manifest_verified": false,
+      "valid_close_coverage": 0.0,
+      "recorded_publication_pages": 1,
+      "verified_publication_pages": 0,
+      "close_unknown_reasons": {
+        "missing_close": 11
+      },
+      "unknown_closes": 11,
+      "unresolved_forecast_ids": [],
+      "blockers": [
+        "game_aware_discord_manifest_missing_or_invalid",
+        "valid_exact_close_coverage_below_90_percent"
+      ]
+    }
+  ],
+  "blockers": [
+    "2026_08_CHI_SEA:game_aware_discord_manifest_missing_or_invalid",
+    "2026_08_CHI_SEA:valid_exact_close_coverage_below_90_percent"
+  ],
+  "production_changed": false,
+  "betting_approved": false,
+  "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
+  "close_reconciliation": {
+    "source": "immutable_exact_snapshots",
+    "checkpoint_built_at": "2026-11-05T01:19:52.808825+00:00",
+    "observed": 11,
+    "changed_since_checkpoint": 0,
+    "historical_locks_changed": false,
+    "match_methods": {}
+  }
+}

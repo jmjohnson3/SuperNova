@@ -1,0 +1,146 @@
+{
+  "built_at": "2026-11-09T21:35:16.618861+00:00",
+  "status": "assessment_only",
+  "proposal": {
+    "sport": "basketball_nba",
+    "markets": [
+      "player_points"
+    ],
+    "books": [
+      "fanduel",
+      "pinnacle",
+      "draftkings",
+      "betmgm"
+    ],
+    "max_games_per_day": 2,
+    "max_games_per_cycle": 62,
+    "polls_before_tip_minutes": [
+      40,
+      20,
+      5
+    ],
+    "max_retries_per_poll": 1,
+    "monthly_credits": 500,
+    "reserved_credits": 100,
+    "game_selection": "earliest scheduled tips, then event ID; independent of odds, predictions and results"
+  },
+  "capacity": {
+    "cost_per_nonempty_request": 1,
+    "primary_requests": 186,
+    "primary_credits": 186,
+    "maximum_retry_credits": 186,
+    "reserved_credits": 100,
+    "maximum_cycle_credits": 472,
+    "headroom": 28,
+    "fits_arithmetic": true,
+    "activated": false,
+    "assumption": "One current event-odds endpoint, explicit books, no historical/scores/market-discovery calls. Every attempt is reserved at full cost before HTTP, including timeouts. No unbounded retries."
+  },
+  "schedule": {
+    "cached_upcoming_games": 9,
+    "selected_games": [
+      {
+        "event_id": "07361a8381206817e27bd2697fad7479",
+        "away_team": "Los Angeles Lakers",
+        "home_team": "Atlanta Hawks",
+        "tip_utc": "2026-11-10T00:00:00+00:00",
+        "provider_tip_utc": "2026-11-10T00:10:00Z",
+        "native_schedule_verified": true,
+        "poll_utc": [
+          "2026-11-09T23:20:00+00:00",
+          "2026-11-09T23:40:00+00:00",
+          "2026-11-09T23:55:00+00:00"
+        ],
+        "complete_window_still_ahead": true
+      },
+      {
+        "event_id": "1df5ff8fe9c6d2dbff1d0ae176063b37",
+        "away_team": "Cleveland Cavaliers",
+        "home_team": "Charlotte Hornets",
+        "tip_utc": "2026-11-10T00:00:00+00:00",
+        "provider_tip_utc": "2026-11-10T00:10:00Z",
+        "native_schedule_verified": true,
+        "poll_utc": [
+          "2026-11-09T23:20:00+00:00",
+          "2026-11-09T23:40:00+00:00",
+          "2026-11-09T23:55:00+00:00"
+        ],
+        "complete_window_still_ahead": true
+      }
+    ],
+    "skipped": {
+      "cfa503c66cd505776a910921875ef7dd": "native_schedule_missing_or_ambiguous"
+    },
+    "omitted_games": 7,
+    "activated": false
+  },
+  "schedule_observed_at": "2026-11-09T21:35:09.847890+00:00",
+  "current_usage": {
+    "configured_cycle_start": "2026-11-03",
+    "configured_next_reset": "2026-12-03",
+    "provider_reset_confirmed": false,
+    "counters": {
+      "shared_watcher": {
+        "recorded": 1295,
+        "daily": {
+          "2026-11-03": 18,
+          "2026-11-04": 370,
+          "2026-11-05": 77,
+          "2026-11-06": 289,
+          "2026-11-07": 309,
+          "2026-11-08": 200,
+          "2026-11-09": 32
+        }
+      },
+      "nfl_watcher": {
+        "recorded": 312,
+        "daily": {
+          "2026-11-05": 24,
+          "2026-11-08": 288
+        }
+      },
+      "nfl_spreads": {
+        "recorded": 31,
+        "daily": {
+          "2026-11-05": 6,
+          "2026-11-08": 25
+        }
+      }
+    },
+    "known_watcher_usage": 1638,
+    "all_account_usage_known": false,
+    "caveat": "Counters include only these watchers; missing counters, other crawlers and manual requests are not zero. NFL spread counter counts attempts at the one-credit maximum; this may exceed actual charged credits."
+  },
+  "switch_review": {
+    "checks": {
+      "within_500_credits": true,
+      "frozen_collection_completed": false,
+      "required_books_verified_on_free_plan": false,
+      "provider_credit_reset_verified": false,
+      "other_paid_consumers_controlled": false,
+      "new_prospective_protocol_registered": false
+    },
+    "blockers": [
+      "frozen_collection_completed",
+      "required_books_verified_on_free_plan",
+      "provider_credit_reset_verified",
+      "other_paid_consumers_controlled",
+      "new_prospective_protocol_registered"
+    ],
+    "ready_for_switch_review": false,
+    "subscription_changed": false,
+    "collectors_changed": false,
+    "betting_authorized": false
+  },
+  "tradeoffs": [
+    "Only NBA points would receive paid odds collection in this proposed design.",
+    "Points is a capacity example, not a finding that this market is more profitable.",
+    "NFL/NCAAF odds and other NBA prop markets would not fit unchanged alongside this schedule.",
+    "Fewer polls may miss brief edges and exact closes; neither coverage nor 50 qualifying observations is guaranteed.",
+    "The free plan says most bookmakers; required reference-book availability is unverified.",
+    "Original experiments keep their evidence. This new sampling schedule needs its own prospective registration."
+  ],
+  "pricing_source": "https://the-odds-api.com/",
+  "quota_source": "https://the-odds-api.com/liveapi/guides/v4/",
+  "betting_authorized": false
+}

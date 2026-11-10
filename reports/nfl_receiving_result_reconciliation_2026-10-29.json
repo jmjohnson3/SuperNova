@@ -1,0 +1,28 @@
+{
+  "built_at": "2026-10-31T23:51:12.376939+00:00",
+  "counts": {
+    "void_nonparticipant": 1
+  },
+  "unresolved_final_rows": 0,
+  "rows": [
+    {
+      "forecast_id": 27192,
+      "game_id": "2026_08_CAR_GB",
+      "player_id": "00-0033858",
+      "player": "J.Smith",
+      "team": "GB",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-10-31T23:50:59.032460+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    }
+  ],
+  "unique_unresolved_player_games": 0,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

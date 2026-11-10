@@ -1,0 +1,563 @@
+{
+  "built_at": "2026-11-10T02:43:30.307638+00:00",
+  "experiment_id": "fanduel-model-assisted-paper-v1",
+  "sha256": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+  "registered_at": "2026-10-29T07:05:44.303226+00:00",
+  "captured": 71,
+  "upcoming": [],
+  "groups": {
+    "nba_props": {
+      "price_control": {
+        "decisions": 65,
+        "games": 37,
+        "span_days": 12,
+        "exact_close_coverage": 1.0,
+        "timely_check_coverage": 0.0,
+        "checked_prices": 0,
+        "mean_alert_close_ev": 0.018328344294006507,
+        "mean_checked_price_ev": null,
+        "intervals": {
+          "alert_game": {
+            "clusters": 37,
+            "observations": 65,
+            "mean": 0.018328344294006507,
+            "lower_95": 0.0014572261491410034,
+            "upper_95": 0.030119566738225065
+          },
+          "alert_day": {
+            "clusters": 10,
+            "observations": 65,
+            "mean": 0.018328344294006507,
+            "lower_95": 0.005849377951038222,
+            "upper_95": 0.02926717206315039
+          },
+          "checked_game": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          },
+          "checked_day": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          }
+        },
+        "gates": {
+          "days": false,
+          "games": true,
+          "checked_closes": false,
+          "exact_closes": true,
+          "check_coverage": false,
+          "availability": false,
+          "checked_close_coverage": false,
+          "active_dates": true,
+          "weeks": false,
+          "alert_close_edge": true,
+          "alert_game": true,
+          "alert_day": true,
+          "checked_game": false,
+          "checked_day": false
+        },
+        "status": "collecting",
+        "betting_authorized": false,
+        "settled": 61,
+        "paper_units": -0.05711082171356907,
+        "pending_results": 4
+      },
+      "model_assisted": {
+        "decisions": 33,
+        "games": 22,
+        "span_days": 12,
+        "exact_close_coverage": 1.0,
+        "timely_check_coverage": 0.0,
+        "checked_prices": 0,
+        "mean_alert_close_ev": 0.013478897037582566,
+        "mean_checked_price_ev": null,
+        "intervals": {
+          "alert_game": {
+            "clusters": 22,
+            "observations": 33,
+            "mean": 0.013478897037582566,
+            "lower_95": -0.018001220774530764,
+            "upper_95": 0.03234319888236
+          },
+          "alert_day": {
+            "clusters": 9,
+            "observations": 33,
+            "mean": 0.013478897037582566,
+            "lower_95": -0.020299834290140817,
+            "upper_95": 0.033004323777998106
+          },
+          "checked_game": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          },
+          "checked_day": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          }
+        },
+        "gates": {
+          "days": false,
+          "games": true,
+          "checked_closes": false,
+          "exact_closes": true,
+          "check_coverage": false,
+          "availability": false,
+          "checked_close_coverage": false,
+          "active_dates": true,
+          "weeks": false,
+          "alert_close_edge": false,
+          "alert_game": false,
+          "alert_day": false,
+          "checked_game": false,
+          "checked_day": false
+        },
+        "status": "collecting",
+        "betting_authorized": false,
+        "settled": 30,
+        "paper_units": -0.22972072365517993,
+        "pending_results": 3
+      },
+      "veto_reasons": {
+        "model_positive_ev": 33,
+        "model_nonpositive_ev": 32
+      },
+      "diagnostics": {
+        "median_execution_quote_age_seconds": 34.194872,
+        "median_reference_quote_age_seconds": 46.495131,
+        "median_observation_to_delivery_seconds": 1.938177,
+        "median_delivery_to_check_seconds": null,
+        "median_check_to_record_seconds": null,
+        "median_reference_revision_ev": -0.0027564728164742314,
+        "median_price_slippage_ev": null,
+        "missing_checks": 65,
+        "late_checks": 0,
+        "disappeared": 0,
+        "changed_line": 0,
+        "note": "Timing and EV changes diagnose losses; no causal claim from a small sample."
+      },
+      "paired_improvement_by_game": {
+        "clusters": 22,
+        "observations": 33,
+        "mean": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0
+      },
+      "paired_improvement_by_day": {
+        "clusters": 9,
+        "observations": 33,
+        "mean": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0
+      },
+      "probability_calibration": {
+        "settled_common_offers": 61,
+        "brier_gain": -0.002344645959969938,
+        "gain_by_game": {
+          "clusters": 34,
+          "observations": 61,
+          "mean": -0.002344645959969938,
+          "lower_95": -0.03806008292615625,
+          "upper_95": 0.0384098504968444
+        },
+        "gain_by_day": {
+          "clusters": 9,
+          "observations": 61,
+          "mean": -0.002344645959969938,
+          "lower_95": -0.03668786336364545,
+          "upper_95": 0.04737019721979153
+        },
+        "bins": [
+          {
+            "lower": 0.2,
+            "upper": 0.30000000000000004,
+            "n": 1,
+            "model_mean": 0.2537262983314835,
+            "reference_mean": 0.5356937238338164,
+            "win_rate": 1.0
+          },
+          {
+            "lower": 0.30000000000000004,
+            "upper": 0.4,
+            "n": 10,
+            "model_mean": 0.3630540590556081,
+            "reference_mean": 0.5293795532696042,
+            "win_rate": 0.5
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "n": 18,
+            "model_mean": 0.4490756745022384,
+            "reference_mean": 0.5104815280766428,
+            "win_rate": 0.4444444444444444
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "n": 20,
+            "model_mean": 0.5441996184650355,
+            "reference_mean": 0.5484548721596373,
+            "win_rate": 0.5
+          },
+          {
+            "lower": 0.6000000000000001,
+            "upper": 0.7000000000000001,
+            "n": 7,
+            "model_mean": 0.631098188955362,
+            "reference_mean": 0.5106591985530315,
+            "win_rate": 0.42857142857142855
+          },
+          {
+            "lower": 0.7000000000000001,
+            "upper": 0.8,
+            "n": 4,
+            "model_mean": 0.7648554888806307,
+            "reference_mean": 0.5057574038938435,
+            "win_rate": 0.5
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "n": 1,
+            "model_mean": 0.8016173077391266,
+            "reference_mean": 0.43484019995299533,
+            "win_rate": 1.0
+          }
+        ]
+      },
+      "selected_calibration": {
+        "settled_common_offers": 30,
+        "brier_gain": 0.0028517652500628246,
+        "gain_by_game": {
+          "clusters": 20,
+          "observations": 30,
+          "mean": 0.0028517652500628246,
+          "lower_95": -0.044299277010262185,
+          "upper_95": 0.06068313752009327
+        },
+        "gain_by_day": {
+          "clusters": 8,
+          "observations": 30,
+          "mean": 0.0028517652500628246,
+          "lower_95": -0.0521454971000537,
+          "upper_95": 0.07092206388430859
+        },
+        "bins": [
+          {
+            "lower": 0.30000000000000004,
+            "upper": 0.4,
+            "n": 1,
+            "model_mean": 0.39451141307497106,
+            "reference_mean": 0.39627291717320134,
+            "win_rate": 1.0
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "n": 3,
+            "model_mean": 0.4694639603863123,
+            "reference_mean": 0.46410687530664885,
+            "win_rate": 0.0
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "n": 14,
+            "model_mean": 0.5479003372357016,
+            "reference_mean": 0.5334028423586661,
+            "win_rate": 0.5
+          },
+          {
+            "lower": 0.6000000000000001,
+            "upper": 0.7000000000000001,
+            "n": 7,
+            "model_mean": 0.631098188955362,
+            "reference_mean": 0.5106591985530315,
+            "win_rate": 0.42857142857142855
+          },
+          {
+            "lower": 0.7000000000000001,
+            "upper": 0.8,
+            "n": 4,
+            "model_mean": 0.7648554888806307,
+            "reference_mean": 0.5057574038938435,
+            "win_rate": 0.5
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "n": 1,
+            "model_mean": 0.8016173077391266,
+            "reference_mean": 0.43484019995299533,
+            "win_rate": 1.0
+          }
+        ]
+      },
+      "paired_execution_coverage": 0.0,
+      "model_adds_value_review": false
+    },
+    "nfl_props": {
+      "price_control": {
+        "decisions": 6,
+        "games": 4,
+        "span_days": 8,
+        "exact_close_coverage": 1.0,
+        "timely_check_coverage": 0.0,
+        "checked_prices": 0,
+        "mean_alert_close_ev": 0.023492828608242266,
+        "mean_checked_price_ev": null,
+        "intervals": {
+          "alert_game": {
+            "clusters": 4,
+            "observations": 6,
+            "mean": 0.023492828608242266,
+            "lower_95": 0.013689959157778422,
+            "upper_95": 0.033988293614795245
+          },
+          "alert_day": {
+            "clusters": 3,
+            "observations": 6,
+            "mean": 0.023492828608242266,
+            "lower_95": 0.01658253924922561,
+            "upper_95": 0.037629155637547484
+          },
+          "checked_game": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          },
+          "checked_day": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          }
+        },
+        "gates": {
+          "days": false,
+          "games": false,
+          "checked_closes": false,
+          "exact_closes": true,
+          "check_coverage": false,
+          "availability": false,
+          "checked_close_coverage": false,
+          "active_dates": true,
+          "weeks": false,
+          "alert_close_edge": true,
+          "alert_game": true,
+          "alert_day": true,
+          "checked_game": false,
+          "checked_day": false
+        },
+        "status": "collecting",
+        "betting_authorized": false,
+        "settled": 4,
+        "paper_units": 3.3749557522123896,
+        "pending_results": 2
+      },
+      "model_assisted": {
+        "decisions": 2,
+        "games": 2,
+        "span_days": 5,
+        "exact_close_coverage": 1.0,
+        "timely_check_coverage": 0.0,
+        "checked_prices": 0,
+        "mean_alert_close_ev": 0.008579014683424036,
+        "mean_checked_price_ev": null,
+        "intervals": {
+          "alert_game": {
+            "clusters": 2,
+            "observations": 2,
+            "mean": 0.008579014683424036,
+            "lower_95": 0.006926329225462213,
+            "upper_95": 0.010231700141385858
+          },
+          "alert_day": {
+            "clusters": 2,
+            "observations": 2,
+            "mean": 0.008579014683424036,
+            "lower_95": 0.006926329225462213,
+            "upper_95": 0.010231700141385858
+          },
+          "checked_game": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          },
+          "checked_day": {
+            "clusters": 0,
+            "observations": 0,
+            "mean": null,
+            "lower_95": null,
+            "upper_95": null
+          }
+        },
+        "gates": {
+          "days": false,
+          "games": false,
+          "checked_closes": false,
+          "exact_closes": true,
+          "check_coverage": false,
+          "availability": false,
+          "checked_close_coverage": false,
+          "active_dates": false,
+          "weeks": false,
+          "alert_close_edge": false,
+          "alert_game": true,
+          "alert_day": true,
+          "checked_game": false,
+          "checked_day": false
+        },
+        "status": "collecting",
+        "betting_authorized": false,
+        "settled": 2,
+        "paper_units": 3.49,
+        "pending_results": 0
+      },
+      "veto_reasons": {
+        "missing_forecast": 2,
+        "model_nonpositive_ev": 2,
+        "model_positive_ev": 2
+      },
+      "diagnostics": {
+        "median_execution_quote_age_seconds": 23.143507,
+        "median_reference_quote_age_seconds": 50.143507,
+        "median_observation_to_delivery_seconds": 17.4552645,
+        "median_delivery_to_check_seconds": null,
+        "median_check_to_record_seconds": null,
+        "median_reference_revision_ev": -0.01806336801644634,
+        "median_price_slippage_ev": null,
+        "missing_checks": 6,
+        "late_checks": 0,
+        "disappeared": 0,
+        "changed_line": 0,
+        "note": "Timing and EV changes diagnose losses; no causal claim from a small sample."
+      },
+      "paired_improvement_by_game": {
+        "clusters": 2,
+        "observations": 2,
+        "mean": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0
+      },
+      "paired_improvement_by_day": {
+        "clusters": 2,
+        "observations": 2,
+        "mean": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0
+      },
+      "probability_calibration": {
+        "settled_common_offers": 4,
+        "brier_gain": 0.03161114670521352,
+        "gain_by_game": {
+          "clusters": 2,
+          "observations": 4,
+          "mean": 0.03161114670521352,
+          "lower_95": 0.008829687052941751,
+          "upper_95": 0.05439260635748529
+        },
+        "gain_by_day": {
+          "clusters": 2,
+          "observations": 4,
+          "mean": 0.03161114670521352,
+          "lower_95": 0.008829687052941751,
+          "upper_95": 0.05439260635748529
+        },
+        "bins": [
+          {
+            "lower": 0.30000000000000004,
+            "upper": 0.4,
+            "n": 1,
+            "model_mean": 0.3726996729805345,
+            "reference_mean": 0.31960571056645404,
+            "win_rate": 1.0
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "n": 2,
+            "model_mean": 0.4606886329927246,
+            "reference_mean": 0.5309828911974753,
+            "win_rate": 0.5
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "n": 1,
+            "model_mean": 0.5024875621890548,
+            "reference_mean": 0.5575666026762655,
+            "win_rate": 1.0
+          }
+        ]
+      },
+      "selected_calibration": {
+        "settled_common_offers": 2,
+        "brier_gain": 0.024578058758646354,
+        "gain_by_game": {
+          "clusters": 2,
+          "observations": 2,
+          "mean": 0.024578058758646354,
+          "lower_95": -0.020274571297758892,
+          "upper_95": 0.0694306888150516
+        },
+        "gain_by_day": {
+          "clusters": 2,
+          "observations": 2,
+          "mean": 0.024578058758646354,
+          "lower_95": -0.020274571297758892,
+          "upper_95": 0.0694306888150516
+        },
+        "bins": [
+          {
+            "lower": 0.30000000000000004,
+            "upper": 0.4,
+            "n": 1,
+            "model_mean": 0.3726996729805345,
+            "reference_mean": 0.31960571056645404,
+            "win_rate": 1.0
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "n": 1,
+            "model_mean": 0.45226699783007496,
+            "reference_mean": 0.4710984303593718,
+            "win_rate": 1.0
+          }
+        ]
+      },
+      "paired_execution_coverage": 0.0,
+      "model_adds_value_review": false
+    }
+  },
+  "economics": {
+    "monthly_cost_usd": "30.00",
+    "comparison_stake_usd": "1.00",
+    "projected_net_usd": null,
+    "basis": "paper checks valued at reference close; not actual or guaranteed profit",
+    "status": "insufficient_span_or_unknown_execution",
+    "observed_days": 11.817893569583333,
+    "selected": 35,
+    "unknown_execution": 35
+  },
+  "betting_authorized": false,
+  "note": "Paired control is this experiment's identical offers, not a replacement for older frozen evidence. Pinnacle is a benchmark, not known truth."
+}

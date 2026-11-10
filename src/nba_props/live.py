@@ -209,10 +209,15 @@ def news(now: datetime | None = None) -> dict:
     teams = set(pending.home) | set(pending.away)
     digest = availability.news_digest(lineups, injuries, teams)
     state = _state()
-    if state.get("day") == str(day) and state.get("digest") == digest:
+    has_fits = _fit_path(day).exists()
+    if has_fits and state.get("day") == str(day) and state.get("digest") == digest:
         return dict(day=str(day), status="no_change")
     first = state.get("day") != str(day)
-    result = project(day, now, refit=False, trigger="news") if _fit_path(day).exists() else dict(status="no_fits_yet")
+    if not has_fits:
+        return dict(day=str(day), status="no_fits_yet")
+    result = project(day, now, refit=False, trigger="news")
+    if result.get("status") or not result.get("players"):
+        return result
     atomic_json(STATE, dict(day=str(day), digest=digest, updated_at=now.isoformat()))
     return dict(result, status="baseline" if first else "reprojected")
 

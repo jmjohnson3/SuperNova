@@ -1,0 +1,35 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-11-02",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_08_CHI_SEA",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "CHI @ SEA | NFL 2026-11-02",
+            "description": "Kickoff: <t:1793668500:f> (<t:1793668500:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- CHI QB1 C.Williams: Pass Yds 250.2 | Pass TD 1.40 | Rush Yds 21.2 | FanDuel line available\n- CHI RB1 D.Swift: Rush Yds 69.0 | Rec Yds 16.1 | Rec 3.2 | Rush TD 0.57 | FanDuel line available\n- CHI WR1 R.Odunze: Rec Yds 49.5 | Rec 3.4 | Rec TD 0.23 | FanDuel line available\n- CHI WR2 L.Burden: Rec Yds 66.9 | Rec 5.2 | Rec TD 0.30 | FanDuel line available\n- CHI TE1 C.Loveland: Rec Yds 45.7 | Rec 4.9 | Rec TD 0.34 | FanDuel line available\n- SEA QB1 S.Darnold: Pass Yds 258.6 | Pass TD 1.60 | Rush Yds 6.1 | FanDuel line available\n- SEA RB1 Z.Charbonnet: Rush Yds 45.3 | Rec Yds 9.2 | Rec 1.5 | Rush TD 0.57 | FanDuel line available\n- SEA WR1 J.Smith-Njigba: Rec Yds 100.0 | Rec 8.0 | Rec TD 0.57 | FanDuel line available\n- SEA WR2 C.Kupp: Rec Yds 28.2 | Rec 3.3 | Rec TD 0.23 | FanDuel line available\n- SEA TE1 A.Barner: Rec Yds 29.2 | Rec 3.2 | Rec TD 0.20 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [],
+  "notice": null
+}

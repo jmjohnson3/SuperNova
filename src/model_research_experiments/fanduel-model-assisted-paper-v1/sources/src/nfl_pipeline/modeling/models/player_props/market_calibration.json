@@ -1,0 +1,323 @@
+{
+  "contract": "nfl-market-calibration-v1",
+  "version": "market-calibration-20261001T030458Z",
+  "fitted_at": "2026-10-01T03:04:58.388236+00:00",
+  "target_coverage": 0.8,
+  "method": "Fit market-anchoring parameters for prop scoring from settled, replayable forecasts.",
+  "stats": {
+    "passing_tds": {
+      "projection_trust": 1.0,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "evidence": {
+        "weeks": [
+          2,
+          3
+        ],
+        "fit_coverage_p10_p90": null,
+        "fitted_probability_trust": 0.5,
+        "market_gate_passed": false,
+        "mae_model": 0.9645161290322583,
+        "mae_line": 1.0161290322580645,
+        "mae_anchored": 0.9645161290322583,
+        "in_sample": {
+          "n_offers": 244,
+          "player_games": 62,
+          "log_loss": 0.6764845231127864,
+          "log_loss_market": 0.6764845231127864,
+          "brier": 0.24139949033448602,
+          "brier_market": 0.24139949033448602
+        },
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "projection_trust": 1.0,
+            "range_scale": 1.0,
+            "probability_trust": 0.0,
+            "calibrated": {
+              "n_offers": 116,
+              "player_games": 30,
+              "log_loss": 0.6674528731584556,
+              "log_loss_market": 0.6674528731584556,
+              "brier": 0.23682610543431196,
+              "brier_market": 0.23682610543431196
+            },
+            "uncalibrated": {
+              "n_offers": 116,
+              "player_games": 30,
+              "log_loss": 0.6570227284778416,
+              "log_loss_market": 0.6674528731584556,
+              "brier": 0.23111997954622734,
+              "brier_market": 0.23682610543431196
+            }
+          },
+          {
+            "test_week": 3,
+            "projection_trust": 1.0,
+            "range_scale": 1.0,
+            "probability_trust": 0.75,
+            "calibrated": {
+              "n_offers": 128,
+              "player_games": 32,
+              "log_loss": 0.690596654782659,
+              "log_loss_market": 0.6849516949449715,
+              "brier": 0.2478514753096919,
+              "brier_market": 0.24568703867839922
+            },
+            "uncalibrated": {
+              "n_offers": 128,
+              "player_games": 32,
+              "log_loss": 0.695143448185367,
+              "log_loss_market": 0.6849516949449715,
+              "brier": 0.2496504261687253,
+              "brier_market": 0.24568703867839922
+            }
+          }
+        ]
+      }
+    },
+    "passing_yards": {
+      "projection_trust": 0.0,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "evidence": {
+        "weeks": [
+          2,
+          3
+        ],
+        "fit_coverage_p10_p90": 0.8709677419354839,
+        "fitted_probability_trust": 0.0,
+        "market_gate_passed": false,
+        "mae_model": 61.64113624054024,
+        "mae_line": 54.91935483870968,
+        "mae_anchored": 54.91935483870968,
+        "in_sample": {
+          "n_offers": 244,
+          "player_games": 62,
+          "log_loss": 0.6931284939309414,
+          "log_loss_market": 0.6931284939309414,
+          "brier": 0.2499906573355733,
+          "brier_market": 0.2499906573355733
+        },
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "projection_trust": 0.0,
+            "range_scale": 1.0,
+            "probability_trust": 0.0,
+            "calibrated": {
+              "n_offers": 116,
+              "player_games": 30,
+              "log_loss": 0.6931319110989548,
+              "log_loss_market": 0.6931319110989548,
+              "brier": 0.2499923665440332,
+              "brier_market": 0.2499923665440332
+            },
+            "uncalibrated": {
+              "n_offers": 116,
+              "player_games": 30,
+              "log_loss": 0.6988234617201529,
+              "log_loss_market": 0.6931319110989548,
+              "brier": 0.2528412358093367,
+              "brier_market": 0.2499923665440332
+            }
+          },
+          {
+            "test_week": 3,
+            "projection_trust": 0.0,
+            "range_scale": 1.0,
+            "probability_trust": 0.0,
+            "calibrated": {
+              "n_offers": 128,
+              "player_games": 32,
+              "log_loss": 0.6931252903359288,
+              "log_loss_market": 0.6931252903359288,
+              "brier": 0.24998905495264218,
+              "brier_market": 0.24998905495264218
+            },
+            "uncalibrated": {
+              "n_offers": 128,
+              "player_games": 32,
+              "log_loss": 0.7059291542289122,
+              "log_loss_market": 0.6931252903359288,
+              "brier": 0.2563713428140419,
+              "brier_market": 0.24998905495264218
+            }
+          }
+        ]
+      }
+    },
+    "receiving_yards": {
+      "projection_trust": 0.0,
+      "range_scale": 1.25,
+      "probability_trust": 0.0,
+      "evidence": {
+        "weeks": [
+          2,
+          3
+        ],
+        "fit_coverage_p10_p90": 0.8083067092651757,
+        "fitted_probability_trust": 0.0,
+        "market_gate_passed": false,
+        "mae_model": 21.491697970618116,
+        "mae_line": 20.20926517571885,
+        "mae_anchored": 20.20926517571885,
+        "in_sample": {
+          "n_offers": 1122,
+          "player_games": 313,
+          "log_loss": 0.6932522520651222,
+          "log_loss_market": 0.6932522520651222,
+          "brier": 0.2500539634304798,
+          "brier_market": 0.25005396343047986
+        },
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "projection_trust": 0.0,
+            "range_scale": 1.15,
+            "probability_trust": 0.0,
+            "calibrated": {
+              "n_offers": 528,
+              "player_games": 144,
+              "log_loss": 0.6937516375115661,
+              "log_loss_market": 0.693751637511566,
+              "brier": 0.25030215089469765,
+              "brier_market": 0.2503021508946977
+            },
+            "uncalibrated": {
+              "n_offers": 528,
+              "player_games": 144,
+              "log_loss": 0.7095004683195776,
+              "log_loss_market": 0.693751637511566,
+              "brier": 0.25788649759294435,
+              "brier_market": 0.2503021508946977
+            }
+          },
+          {
+            "test_week": 3,
+            "projection_trust": 0.0,
+            "range_scale": 1.35,
+            "probability_trust": 0.0,
+            "calibrated": {
+              "n_offers": 594,
+              "player_games": 169,
+              "log_loss": 0.6928267402054306,
+              "log_loss_market": 0.6928267402054306,
+              "brier": 0.24984249008818774,
+              "brier_market": 0.24984249008818774
+            },
+            "uncalibrated": {
+              "n_offers": 594,
+              "player_games": 169,
+              "log_loss": 0.695239418956231,
+              "log_loss_market": 0.6928267402054306,
+              "brier": 0.2511251499426585,
+              "brier_market": 0.24984249008818774
+            }
+          }
+        ]
+      }
+    },
+    "rushing_yards": {
+      "projection_trust": 0.0,
+      "range_scale": 1.0,
+      "probability_trust": 1.0,
+      "evidence": {
+        "weeks": [
+          2,
+          3
+        ],
+        "fit_coverage_p10_p90": 0.8108108108108109,
+        "fitted_probability_trust": 1.0,
+        "market_gate_passed": true,
+        "mae_model": 20.13710579575745,
+        "mae_line": 16.945945945945947,
+        "mae_anchored": 16.945945945945947,
+        "in_sample": {
+          "n_offers": 553,
+          "player_games": 148,
+          "log_loss": 0.6830300642730256,
+          "log_loss_market": 0.6931485736470193,
+          "brier": 0.24494775746275818,
+          "brier_market": 0.25000144785808326
+        },
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "projection_trust": 0.0,
+            "range_scale": 1.0,
+            "probability_trust": 1.0,
+            "calibrated": {
+              "n_offers": 262,
+              "player_games": 72,
+              "log_loss": 0.6780182471460425,
+              "log_loss_market": 0.6944249956980477,
+              "brier": 0.24244378307911324,
+              "brier_market": 0.2506388232621865
+            },
+            "uncalibrated": {
+              "n_offers": 262,
+              "player_games": 72,
+              "log_loss": 0.7329621537490818,
+              "log_loss_market": 0.6944249956980477,
+              "brier": 0.26928373665587035,
+              "brier_market": 0.2506388232621865
+            }
+          },
+          {
+            "test_week": 3,
+            "projection_trust": 0.0,
+            "range_scale": 1.0,
+            "probability_trust": 1.0,
+            "calibrated": {
+              "n_offers": 291,
+              "player_games": 76,
+              "log_loss": 0.6877781015512202,
+              "log_loss_market": 0.69193933170394,
+              "brier": 0.24731994372094815,
+              "brier_market": 0.2493976185278802
+            },
+            "uncalibrated": {
+              "n_offers": 291,
+              "player_games": 76,
+              "log_loss": 0.7270199229140918,
+              "log_loss_market": 0.69193933170394,
+              "brier": 0.26663077556177445,
+              "brier_market": 0.2493976185278802
+            }
+          }
+        ]
+      }
+    },
+    "receptions": {
+      "projection_trust": 0.35,
+      "range_scale": 1.0,
+      "probability_trust": 0.0,
+      "evidence": {
+        "source": "FanDuel receptions lines recovered from raw SportsGameOdds payloads",
+        "fitted_probability_trust": 0.35,
+        "market_gate_passed": false,
+        "n_lines": 349,
+        "player_games": 328,
+        "leave_one_week_out": [
+          {
+            "test_week": 2,
+            "projection_trust": 0.3,
+            "probability_trust": 0.7,
+            "log_loss": 0.6886520145012107,
+            "log_loss_market": 0.6822918089337139,
+            "log_loss_uncalibrated": 0.8044866486217589
+          },
+          {
+            "test_week": 3,
+            "projection_trust": 0.5,
+            "probability_trust": 0.05,
+            "log_loss": 0.690430661465963,
+            "log_loss_market": 0.6916530096863263,
+            "log_loss_uncalibrated": 0.7394538057448332
+          }
+        ]
+      }
+    }
+  }
+}

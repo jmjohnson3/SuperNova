@@ -1,0 +1,20 @@
+{
+  "last_attempt": "2026-11-10T01:10:20.568276+00:00",
+  "daily_calls": {
+    "2026-11-05": 6,
+    "2026-11-08": 25,
+    "2026-11-09": 6
+  },
+  "latest": {
+    "status": "captured",
+    "observed_at": "2026-11-10T01:10:23.828366+00:00",
+    "quotes": 8,
+    "valid_quotes": 8,
+    "games": [
+      "2026_09_BUF_MIN"
+    ],
+    "receipt_sha256": "991cac0b37e53c3d8fa9d179c9fb42c74fcd420666d5716b04568f99ecd3286a",
+    "credits_remaining": "17698",
+    "wager_placed": false
+  }
+}

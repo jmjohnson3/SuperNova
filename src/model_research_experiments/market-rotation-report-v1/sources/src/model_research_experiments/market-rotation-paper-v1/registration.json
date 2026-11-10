@@ -1,0 +1,195 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "market-rotation-paper-v1",
+  "registered_at": "2026-11-04T23:29:17.649306+00:00",
+  "config": {
+    "feed_observer": "f887fa1be83eaab4ce3cdf03acbc9e4fe27501ce15a1d2114b02cd94051b0dca",
+    "market": {
+      "automatic_betting_authorization": false,
+      "consensus": "equal operator weight in log-odds; excludes FanDuel; exact half-lines only",
+      "decision_window_minutes": [
+        15,
+        45
+      ],
+      "execution_book": "fanduel",
+      "max_source_age_seconds": 300,
+      "max_source_skew_seconds": 120,
+      "minimum_calibration_days": 7,
+      "minimum_calibration_games": 50,
+      "minimum_ev": 0.03,
+      "minimum_fit_days": 21,
+      "minimum_fit_games": 100,
+      "minimum_reference_operators": 2,
+      "model_weight_grid": [
+        0.0,
+        0.05,
+        0.1,
+        0.2,
+        0.3,
+        0.5
+      ],
+      "primary_line": "closest FanDuel no-vig probability to one half, then absolute line, then line",
+      "references": [
+        "pinnacle",
+        "draftkings",
+        "betmgm",
+        "fanatics",
+        "espnbet"
+      ],
+      "selection": "one first paired offer per sport/event/player/market; evaluate both offered sides"
+    },
+    "minimum_live_roster_players": 8,
+    "protocol": {
+      "automatic_promotion": false,
+      "betting_authorized": false,
+      "book": "fanduel",
+      "calibrate_before": "2026-11-01",
+      "capture_delay_seconds": 300,
+      "diagnostics": [
+        "production",
+        "rotation_mean",
+        "rotation_mixture"
+      ],
+      "execution": "manual, public feed, and actual wagers remain separate",
+      "fit_before": "2026-10-28",
+      "fitting": "separate sport and market; earlier data only; never refit registered weights",
+      "forecast_age_seconds": 1800,
+      "historical_evaluation_before": "2026-11-04",
+      "missing_model": "save first eligible consensus decision with unavailable model; never backfill",
+      "missing_references": "save observation; decision can qualify at a later observation",
+      "primary": "blend_production vs consensus alone",
+      "prospective": "after immutable registration only",
+      "review": {
+        "availability": 0.8,
+        "exact_close_coverage": 0.9,
+        "manual_check_coverage": 0.9,
+        "min_checked_closes": 50,
+        "min_days": 21,
+        "min_games": 20,
+        "positive_game_and_day_95_bounds": true
+      },
+      "secondary": "blend_rotation vs consensus alone",
+      "sports": [
+        "nba",
+        "nfl",
+        "ncaaf"
+      ],
+      "unit": "one paired primary line per event/player/market; correlations clustered by event and date"
+    },
+    "rotation": {
+      "automatic_betting_authorization": false,
+      "calibration_period": [
+        "2025-02-01",
+        "2025-07-01"
+      ],
+      "dispersion_period": [
+        "2024-10-01",
+        "2025-02-01"
+      ],
+      "evaluation_period": [
+        "2025-10-01",
+        "2026-07-01"
+      ],
+      "free_throw_prior": [
+        50,
+        0.78
+      ],
+      "future_test": "after registration only",
+      "historical_status": "reconstructed roster, no contemporaneous injury evidence",
+      "history_days": 28,
+      "maximum_overtimes": 2,
+      "name": "nba-joint-rotation-v1",
+      "regulation_minutes": 240,
+      "rotations": 16,
+      "shooting_games": 40,
+      "two_point_prior": [
+        100,
+        0.53
+      ],
+      "unverified_availability": "conditional forecast only; selection blocked",
+      "workload_noise_sd": 6.0
+    },
+    "workload_parent": "a1dfe7f3da748e7963ed018a6c3ca4debf9927d5dd96dae08a755028bebbc8f2"
+  },
+  "files": {
+    "__init__": {
+      "path": "src/edge_research/__init__.py",
+      "sha256": "507d871a1bdfff8391291708d8ed9dae0ab3fcfce100f728426a2e8e8a7a9d08"
+    },
+    "__main__": {
+      "path": "src/edge_research/__main__.py",
+      "sha256": "8b38b51dd40d88a83ef04c6559d036c76b02a5a6cdd1c7482348826e4778ded3"
+    },
+    "feeds": {
+      "path": "src/edge_research/feeds.py",
+      "sha256": "b937d91056d0a21bdf2bf16f198afc9a3a8077eec39e46bbd889fdca6ab47d31"
+    },
+    "market": {
+      "path": "src/edge_research/market.py",
+      "sha256": "23b58c5456b0e2124716f5b7f8f10512e3e83b1236fefb4e5ad609678090b06a"
+    },
+    "ncaa_projection": {
+      "path": "src/ncaaf_pipeline/projections.py",
+      "sha256": "37aa0140bc0dec9bd7f1e3fb5d3b6d9a7061ddf63e3d2ab30b337f888fe7ec91"
+    },
+    "ncaa_ratings": {
+      "path": "src/ncaaf_pipeline/ratings.py",
+      "sha256": "45fde15bf68e02fb5de135761979fb69282759aab127fea72eb788edf752269b"
+    },
+    "parent_registration": {
+      "path": "src/model_research_experiments/nba-workload-calibration-v1/registration.json",
+      "sha256": "1d54f3981bfb1b268aa7e28037f3c11cb0ef86ca3f27bd5e3e59e23feceb3053"
+    },
+    "parent_weights": {
+      "path": "src/nba_props/models/research_v1.joblib",
+      "sha256": "e168adc5698fc05ca2a75f4af29366073f8b8183f381dd9432ab4e3d438f6d11"
+    },
+    "reporting": {
+      "path": "src/edge_research/reporting.py",
+      "sha256": "72c7eb095faa2129581011a1d0727244d1cfac1f8c8cf9622d7bb82895bd4ee4"
+    },
+    "rotation": {
+      "path": "src/edge_research/rotation.py",
+      "sha256": "99e66cbac541011498b766dba606041d27b476bf8ff75f2bfdaa3879285eaac1"
+    },
+    "rotation_artifact": {
+      "path": "src/nba_props/models/rotation_v1.joblib",
+      "sha256": "f2be5a8ded46569f093e2eb229e45f18598407982915230ce3b5b149338587ba"
+    },
+    "rotation_manifest": {
+      "path": "reports/nba_rotation_training_manifest.json",
+      "sha256": "c6c29e1356a3994eb6b4a921425b555839f1ac1b69ccf20e43a9412800019f42"
+    },
+    "rotation_study": {
+      "path": "src/edge_research/rotation_study.py",
+      "sha256": "59a36e041ab3e881e108c15307f34950bc2f5b9987d2c376b3151ac53bff06bb"
+    },
+    "study": {
+      "path": "src/edge_research/study.py",
+      "sha256": "f9bd3e5c34c0d9b534aae49536af8a6f3137e70f1f6b56f67a8c21e0a91c7b3d"
+    },
+    "trial": {
+      "path": "src/edge_research/trial.py",
+      "sha256": "7e788ea13f947d7f99eaa6e101a17e61278bef9dc294ed88c752e058199a3d32"
+    },
+    "weights": {
+      "path": "reports/market_rotation_weights.json",
+      "sha256": "cb65b18ddbd1a61ea491e62b61f65f5d0b50dcfbf3fb697edb3dd4ea534916b8"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "91b29ca447abd7f2680aba9e544bd5326d223a8705f011d58c7071653ed4bce9"
+}

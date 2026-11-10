@@ -1,12 +1,11 @@
 {
   "status": "separate_cohort_review_required",
-  "player_games": 533,
+  "player_games": 705,
   "exclusions": {
-    "pending_or_missing_verified_result": 10,
-    "duplicate_player_game_in_cohort": 215,
-    "future_game_pending": 9
+    "pending_or_missing_verified_result": 11,
+    "duplicate_player_game_in_cohort": 464
   },
-  "unique_player_games": 411,
+  "unique_player_games": 583,
   "deployment_approved": false,
   "betting_approved": false,
   "probability_enabled": false,
@@ -16,18 +15,18 @@
       "production_release": "nfl-20260918T143342Z",
       "scoring_version": "1aca1b617d26af98dbe85949a8d3aac233caf09f15cb0b7054f8f4f232d1a767",
       "status": "not_yet_proven",
-      "player_games": 94,
+      "player_games": 95,
       "reference": {
-        "rows": 94,
-        "mae": 20.17933401836279,
-        "rmse": 27.195151139550763,
-        "bias": -3.0008146009592687
+        "rows": 95,
+        "mae": 20.030404744015804,
+        "rmse": 27.058716015173893,
+        "bias": -2.905742310892334
       },
       "candidate": {
-        "rows": 94,
-        "mae": 19.95337085847124,
-        "rmse": 27.044628820357964,
-        "bias": -4.538980864399234
+        "rows": 95,
+        "mae": 19.816205489980632,
+        "rmse": 26.91128629368765,
+        "bias": -4.418332004228043
       },
       "clustered_absolute_error_gain": {
         "clusters": 1,
@@ -42,26 +41,27 @@
     {
       "production_release": "nfl-20260918T143342Z",
       "scoring_version": "2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb",
-      "status": "not_yet_proven",
-      "player_games": 9,
+      "status": "ready_for_point_deployment_review",
+      "player_games": 178,
       "reference": {
-        "rows": 9,
-        "mae": 13.967980250029662,
-        "rmse": 18.114168632399135,
-        "bias": 0.7823323171205921
+        "rows": 178,
+        "mae": 20.333690987552533,
+        "rmse": 28.89275080619096,
+        "bias": -2.1825233951650596
       },
       "candidate": {
-        "rows": 9,
-        "mae": 12.203351123530105,
-        "rmse": 17.372065452097328,
-        "bias": -1.1155666190556701
+        "rows": 178,
+        "mae": 19.950408672886166,
+        "rmse": 28.696736013608028,
+        "bias": -3.7403396724139064
       },
       "clustered_absolute_error_gain": {
-        "clusters": 1,
-        "lower_95": null,
-        "upper_95": null
+        "clusters": 3,
+        "lower_95": 0.2965621432195878,
+        "upper_95": 1.7646291264995544,
+        "mean_gain": 0.38328231466637
       },
-      "prospective_screen_passed": false,
+      "prospective_screen_passed": true,
       "deployment_approved": false,
       "betting_approved": false,
       "probability_enabled": false
@@ -70,24 +70,24 @@
       "production_release": "nfl-20260918T143342Z",
       "scoring_version": "58fb8dac7a026bf4aa9978e87680b773fcf85f1fe82f681afaaf3047891a4eb6",
       "status": "not_yet_proven",
-      "player_games": 147,
+      "player_games": 148,
       "reference": {
-        "rows": 147,
-        "mae": 21.866620465102372,
-        "rmse": 28.570015143818242,
-        "bias": -3.9914088029091634
+        "rows": 148,
+        "mae": 21.77268505146661,
+        "rmse": 28.48085602323753,
+        "bias": -3.910627802571876
       },
       "candidate": {
-        "rows": 147,
-        "mae": 21.42038281332957,
-        "rmse": 28.313604651364724,
-        "bias": -5.345195720925304
+        "rows": 148,
+        "mae": 21.32446444598582,
+        "rmse": 28.224036563949095,
+        "bias": -5.260265584659223
       },
       "clustered_absolute_error_gain": {
         "clusters": 2,
         "lower_95": -0.867506511029801,
-        "upper_95": 0.573690443686489,
-        "mean_gain": 0.44623765177280367
+        "upper_95": 0.5749202537373657,
+        "mean_gain": 0.4482206054807902
       },
       "prospective_screen_passed": false,
       "deployment_approved": false,
@@ -98,18 +98,18 @@
       "production_release": "nfl-20260918T143342Z",
       "scoring_version": "893b9e1c71ee6d5664bbe01be2e9db25b7906b99dbf1cdacf084ac55b9e3cfe7",
       "status": "not_yet_proven",
-      "player_games": 117,
+      "player_games": 118,
       "reference": {
-        "rows": 117,
-        "mae": 22.74973166207714,
-        "rmse": 29.90117254086949,
-        "bias": -4.868323834222274
+        "rows": 118,
+        "mae": 22.795652507361556,
+        "rmse": 29.88691004134379,
+        "bias": -4.588351671172607
       },
       "candidate": {
-        "rows": 117,
-        "mae": 22.285460187477895,
-        "rmse": 29.471878824530503,
-        "bias": -6.04821548471176
+        "rows": 118,
+        "mae": 22.319119722106972,
+        "rmse": 29.44611094567335,
+        "bias": -5.774440054555646
       },
       "clustered_absolute_error_gain": {
         "clusters": 1,

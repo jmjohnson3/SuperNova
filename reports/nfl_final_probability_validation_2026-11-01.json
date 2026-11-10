@@ -1,0 +1,559 @@
+{
+  "built_at": "2026-11-02T18:55:58.125719+00:00",
+  "status": "evaluated",
+  "settled_unique_offers": 568,
+  "exact_replay_status": {
+    "matched": 568
+  },
+  "matched_stage_comparisons": {
+    "passing_tds": {
+      "raw": {
+        "rows": 41,
+        "brier": 0.2817037342314806,
+        "log_loss": 0.7688413229086452,
+        "calibration_error": 0.1742857245195808,
+        "probability_bias": 0.030458965174356385
+      },
+      "heuristic": {
+        "rows": 41,
+        "brier": 0.26603953667810903,
+        "log_loss": 0.7268844173623119,
+        "calibration_error": 0.20812297254262418,
+        "probability_bias": 0.01961246874260103
+      },
+      "post_exact": {
+        "rows": 41,
+        "brier": 0.24985421845804656,
+        "log_loss": 0.6939628894045068,
+        "calibration_error": 0.09650322646146364,
+        "probability_bias": 0.06941359421889365
+      },
+      "probability": {
+        "rows": 41,
+        "brier": 0.2637095477443819,
+        "log_loss": 0.7223903914321207,
+        "calibration_error": 0.06470888240421721,
+        "probability_bias": 0.0061336810790242014
+      },
+      "detailed_matched_subset": {
+        "raw": {
+          "rows": 41,
+          "brier": 0.2817037342314806,
+          "log_loss": 0.7688413229086452,
+          "calibration_error": 0.1742857245195808,
+          "probability_bias": 0.030458965174356385
+        },
+        "context_blend": {
+          "rows": 41,
+          "brier": 0.2665154392169606,
+          "log_loss": 0.7281345650325385,
+          "calibration_error": 0.20844270873061244,
+          "probability_bias": 0.019512587331456905
+        },
+        "heuristic": {
+          "rows": 41,
+          "brier": 0.26603953667810903,
+          "log_loss": 0.7268844173623119,
+          "calibration_error": 0.20812297254262418,
+          "probability_bias": 0.01961246874260103
+        },
+        "post_exact": {
+          "rows": 41,
+          "brier": 0.24985421845804656,
+          "log_loss": 0.6939628894045068,
+          "calibration_error": 0.09650322646146364,
+          "probability_bias": 0.06941359421889365
+        },
+        "probability": {
+          "rows": 41,
+          "brier": 0.2637095477443819,
+          "log_loss": 0.7223903914321207,
+          "calibration_error": 0.06470888240421721,
+          "probability_bias": 0.0061336810790242014
+        }
+      }
+    },
+    "passing_yards": {
+      "raw": {
+        "rows": 36,
+        "brier": 0.2500061879656444,
+        "log_loss": 0.6931595566444003,
+        "calibration_error": 0.0024875621890547497,
+        "probability_bias": -0.0024875621890547497
+      },
+      "heuristic": {
+        "rows": 36,
+        "brier": 0.2500040961600098,
+        "log_loss": 0.6931553729092012,
+        "calibration_error": 0.0010273512978662576,
+        "probability_bias": -0.0010273512978662576
+      },
+      "post_exact": {
+        "rows": 36,
+        "brier": 0.24999801512525785,
+        "log_loss": 0.693143210790146,
+        "calibration_error": 0.001027351297866239,
+        "probability_bias": 0.001027351297866239
+      },
+      "probability": {
+        "rows": 36,
+        "brier": 0.25,
+        "log_loss": 0.6931471805599453,
+        "calibration_error": 0.0,
+        "probability_bias": 0.0
+      },
+      "detailed_matched_subset": {
+        "raw": {
+          "rows": 36,
+          "brier": 0.2500061879656444,
+          "log_loss": 0.6931595566444003,
+          "calibration_error": 0.0024875621890547497,
+          "probability_bias": -0.0024875621890547497
+        },
+        "context_blend": {
+          "rows": 36,
+          "brier": 0.2500040961600098,
+          "log_loss": 0.6931553729092012,
+          "calibration_error": 0.0010273512978662576,
+          "probability_bias": -0.0010273512978662576
+        },
+        "heuristic": {
+          "rows": 36,
+          "brier": 0.2500040961600098,
+          "log_loss": 0.6931553729092012,
+          "calibration_error": 0.0010273512978662576,
+          "probability_bias": -0.0010273512978662576
+        },
+        "post_exact": {
+          "rows": 36,
+          "brier": 0.24999801512525785,
+          "log_loss": 0.693143210790146,
+          "calibration_error": 0.001027351297866239,
+          "probability_bias": 0.001027351297866239
+        },
+        "probability": {
+          "rows": 36,
+          "brier": 0.25,
+          "log_loss": 0.6931471805599453,
+          "calibration_error": 0.0,
+          "probability_bias": 0.0
+        }
+      }
+    },
+    "receiving_yards": {
+      "raw": {
+        "rows": 207,
+        "brier": 0.24974034162482944,
+        "log_loss": 0.6926278595759104,
+        "calibration_error": 0.05094755231476204,
+        "probability_bias": 0.044693833630828024
+      },
+      "heuristic": {
+        "rows": 207,
+        "brier": 0.2499721475314685,
+        "log_loss": 0.6930939278157932,
+        "calibration_error": 0.051512690790884406,
+        "probability_bias": 0.0463301508157092
+      },
+      "post_exact": {
+        "rows": 207,
+        "brier": 0.24985505216271742,
+        "log_loss": 0.6928547210681254,
+        "calibration_error": 0.05154074432361941,
+        "probability_bias": 0.047589762739311016
+      },
+      "probability": {
+        "rows": 207,
+        "brier": 0.25026701697950104,
+        "log_loss": 0.6937025370098022,
+        "calibration_error": 0.047992745354424056,
+        "probability_bias": 0.04799274535442405
+      },
+      "detailed_matched_subset": {
+        "raw": {
+          "rows": 207,
+          "brier": 0.24974034162482944,
+          "log_loss": 0.6926278595759104,
+          "calibration_error": 0.05094755231476204,
+          "probability_bias": 0.044693833630828024
+        },
+        "context_blend": {
+          "rows": 207,
+          "brier": 0.2499721475314685,
+          "log_loss": 0.6930939278157932,
+          "calibration_error": 0.051512690790884406,
+          "probability_bias": 0.0463301508157092
+        },
+        "heuristic": {
+          "rows": 207,
+          "brier": 0.2499721475314685,
+          "log_loss": 0.6930939278157932,
+          "calibration_error": 0.051512690790884406,
+          "probability_bias": 0.0463301508157092
+        },
+        "post_exact": {
+          "rows": 207,
+          "brier": 0.24985505216271742,
+          "log_loss": 0.6928547210681254,
+          "calibration_error": 0.05154074432361941,
+          "probability_bias": 0.047589762739311016
+        },
+        "probability": {
+          "rows": 207,
+          "brier": 0.25026701697950104,
+          "log_loss": 0.6937025370098022,
+          "calibration_error": 0.047992745354424056,
+          "probability_bias": 0.04799274535442405
+        }
+      }
+    },
+    "receptions": {
+      "raw": {
+        "rows": 183,
+        "brier": 0.24473505298138257,
+        "log_loss": 0.6824895242721765,
+        "calibration_error": 0.01586527855156806,
+        "probability_bias": -0.005950635590698141
+      },
+      "heuristic": {
+        "rows": 183,
+        "brier": 0.24473505298138257,
+        "log_loss": 0.6824895242721765,
+        "calibration_error": 0.01586527855156806,
+        "probability_bias": -0.005950635590698141
+      },
+      "post_exact": {
+        "rows": 183,
+        "brier": 0.2506438181794854,
+        "log_loss": 0.6945872235199819,
+        "calibration_error": 0.04048203195704374,
+        "probability_bias": 0.01945107570406358
+      },
+      "probability": {
+        "rows": 183,
+        "brier": 0.24350883353763025,
+        "log_loss": 0.6800541210453156,
+        "calibration_error": 0.0413432843159078,
+        "probability_bias": -0.004850379337531088
+      },
+      "detailed_matched_subset": {
+        "raw": {
+          "rows": 183,
+          "brier": 0.24473505298138257,
+          "log_loss": 0.6824895242721765,
+          "calibration_error": 0.01586527855156806,
+          "probability_bias": -0.005950635590698141
+        },
+        "context_blend": {
+          "rows": 183,
+          "brier": 0.24473505298138257,
+          "log_loss": 0.6824895242721765,
+          "calibration_error": 0.01586527855156806,
+          "probability_bias": -0.005950635590698141
+        },
+        "heuristic": {
+          "rows": 183,
+          "brier": 0.24473505298138257,
+          "log_loss": 0.6824895242721765,
+          "calibration_error": 0.01586527855156806,
+          "probability_bias": -0.005950635590698141
+        },
+        "post_exact": {
+          "rows": 183,
+          "brier": 0.2506438181794854,
+          "log_loss": 0.6945872235199819,
+          "calibration_error": 0.04048203195704374,
+          "probability_bias": 0.01945107570406358
+        },
+        "probability": {
+          "rows": 183,
+          "brier": 0.24350883353763025,
+          "log_loss": 0.6800541210453156,
+          "calibration_error": 0.0413432843159078,
+          "probability_bias": -0.004850379337531088
+        }
+      }
+    },
+    "rushing_yards": {
+      "raw": {
+        "rows": 101,
+        "brier": 0.24965705643033853,
+        "log_loss": 0.6924612878125993,
+        "calibration_error": 0.07650344767391114,
+        "probability_bias": 0.07650344767391114
+      },
+      "heuristic": {
+        "rows": 101,
+        "brier": 0.24970069244927054,
+        "log_loss": 0.6925485592254432,
+        "calibration_error": 0.08628865647460938,
+        "probability_bias": 0.07759098833090768
+      },
+      "post_exact": {
+        "rows": 101,
+        "brier": 0.25021157674528693,
+        "log_loss": 0.6935703335899861,
+        "calibration_error": 0.08037801019205726,
+        "probability_bias": 0.08021151864954132
+      },
+      "probability": {
+        "rows": 101,
+        "brier": 0.24976734670075,
+        "log_loss": 0.6926817602389175,
+        "calibration_error": 0.07892757965141686,
+        "probability_bias": 0.07892757965141686
+      },
+      "detailed_matched_subset": {
+        "raw": {
+          "rows": 101,
+          "brier": 0.24965705643033853,
+          "log_loss": 0.6924612878125993,
+          "calibration_error": 0.07650344767391114,
+          "probability_bias": 0.07650344767391114
+        },
+        "context_blend": {
+          "rows": 101,
+          "brier": 0.24970069244927054,
+          "log_loss": 0.6925485592254432,
+          "calibration_error": 0.08628865647460938,
+          "probability_bias": 0.07759098833090768
+        },
+        "heuristic": {
+          "rows": 101,
+          "brier": 0.24970069244927054,
+          "log_loss": 0.6925485592254432,
+          "calibration_error": 0.08628865647460938,
+          "probability_bias": 0.07759098833090768
+        },
+        "post_exact": {
+          "rows": 101,
+          "brier": 0.25021157674528693,
+          "log_loss": 0.6935703335899861,
+          "calibration_error": 0.08037801019205726,
+          "probability_bias": 0.08021151864954132
+        },
+        "probability": {
+          "rows": 101,
+          "brier": 0.24976734670075,
+          "log_loss": 0.6926817602389175,
+          "calibration_error": 0.07892757965141686,
+          "probability_bias": 0.07892757965141686
+        }
+      }
+    }
+  },
+  "all_locked": {
+    "rows": 568,
+    "brier": 0.24862476401926564,
+    "log_loss": 0.6904835282274284,
+    "calibration_error": 0.03444848790998489,
+    "probability_bias": 0.027969782486148884,
+    "wins": 262,
+    "losses": 306,
+    "mean_probability": 0.4988705402684781,
+    "unique_player_games": 169,
+    "weeks": 1
+  },
+  "actual_locked_micro": {
+    "rows": 0
+  },
+  "scoring_cohorts": {
+    "nfl-20260918T143342Z|2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb": {
+      "rows": 568,
+      "brier": 0.24862476401926564,
+      "log_loss": 0.6904835282274284,
+      "calibration_error": 0.03444848790998489,
+      "probability_bias": 0.027969782486148884,
+      "wins": 262,
+      "losses": 306,
+      "mean_probability": 0.4988705402684781,
+      "unique_player_games": 169,
+      "weeks": 1
+    }
+  },
+  "ledger_coverage": {
+    "total_micro_prediction_ids": 0,
+    "scored_micro_prediction_ids": 0,
+    "unscored_prediction_ids": []
+  },
+  "micro_by_date": {},
+  "micro_rows": [],
+  "top_five_fixed_approved_pool": {
+    "rows": 0
+  },
+  "calibration_experiment": {
+    "nfl-20260918T143342Z|2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb": {
+      "status": "insufficient_later_week_evidence",
+      "weeks": 1,
+      "unique_player_games": 169,
+      "enabled": false,
+      "reason": "Need at least two training weeks before a later-week test; no in-sample calibrator is enabled."
+    }
+  },
+  "exclusions": {},
+  "selected_pick_diagnostic": {
+    "populations": {
+      "all_eligible": {
+        "summary": {
+          "rows": 0
+        },
+        "breakdowns": {
+          "stat|side": {},
+          "line_bucket": {},
+          "workload_bucket": {},
+          "confidence_bucket": {},
+          "disagreement_bucket": {},
+          "model_version": {},
+          "position": {},
+          "model_version|scoring_version": {}
+        }
+      },
+      "exact_locked_micro": {
+        "summary": {
+          "rows": 0
+        },
+        "breakdowns": {
+          "stat|side": {},
+          "line_bucket": {},
+          "workload_bucket": {},
+          "confidence_bucket": {},
+          "disagreement_bucket": {},
+          "model_version": {},
+          "position": {},
+          "model_version|scoring_version": {}
+        }
+      },
+      "eligible_on_micro_release_dates": {
+        "summary": {
+          "rows": 0
+        },
+        "breakdowns": {
+          "stat|side": {},
+          "line_bucket": {},
+          "workload_bucket": {},
+          "confidence_bucket": {},
+          "disagreement_bucket": {},
+          "model_version": {},
+          "position": {},
+          "model_version|scoring_version": {}
+        }
+      }
+    },
+    "limitations": [
+      "Actual selections use validated exact ledger IDs, not a reranked historical top five.",
+      "Eligibility is the stored pre-cap screen; no current rules are applied retrospectively.",
+      "Release/date matching is not an exact publication-batch replay.",
+      "Repeated offers are weighted by player-game/stat; weeks and player-games, not offer counts, measure independence.",
+      "Small groups are descriptive, not evidence to deploy a calibrator or claims about causes.",
+      "Pushes are excluded from binary probability scores; new probabilities are conditional on no push."
+    ]
+  },
+  "limitations": [
+    "Actual micro uses exact ledger prediction IDs, never later revised forecasts.",
+    "Missing historical replay inputs remain missing; stored final probabilities can still be scored.",
+    "Counterfactual top five uses earliest offers from a fixed approved pool, not an exact historical batch/ledger replay.",
+    "Week-grouped validation keeps repeated books/lines from inflating training evidence.",
+    "A training label must be verifiably available before the earliest test lock; earlier game dates alone are insufficient.",
+    "A simulated ledger entry is not evidence that money was wagered.",
+    "Challenger probabilities are not automatically installed in live scoring."
+  ],
+  "production_changed": false,
+  "validation_scope": {
+    "mode": "date_partition",
+    "date": "2026-11-01",
+    "records": 2825
+  },
+  "diagnostic_reports": [
+    "nfl_selected_pick_diagnostic_latest",
+    "nfl_workload_uncertainty_diagnostic_latest",
+    "nfl_probability_consistency_latest"
+  ],
+  "micro_reconciliation": {
+    "built_at": "2026-11-02T18:56:00.623465+00:00",
+    "ledger_rows": 0,
+    "accounted_rows": 0,
+    "categories": {},
+    "reasons": {},
+    "historical_record": {},
+    "evaluable_but_unscored": [],
+    "rows": [],
+    "legacy_rows_added_to_training": false,
+    "locks_changed": false,
+    "note": "Historical ledger results are retained, not independently reconstructed. Simulated is not a confirmed cash wager."
+  },
+  "uncertainty_only_real_offer_cohorts": {
+    "components-20261027T093255774561Z-receiving_conditional|nfl-20260918T143342Z|receiving_yards": {
+      "projection": {
+        "rows": 164,
+        "mae": 20.743684086038762,
+        "rmse": 30.1261124988761,
+        "bias": -3.0649721701285526,
+        "interval_rows": 164,
+        "coverage_80": 0.725609756097561,
+        "interval_width": 78.37752613247504
+      },
+      "production": {
+        "rows": 164,
+        "mae": 20.743684086038762,
+        "rmse": 30.1261124988761,
+        "bias": -3.0649721701285526
+      },
+      "clustered_mae_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "median": {
+        "rows": 164,
+        "mae": 20.658076716740837,
+        "rmse": 30.347181102448435,
+        "bias": -4.5637168081579595
+      },
+      "distribution_mean": {
+        "rows": 164,
+        "mae": 21.47533573651449,
+        "rmse": 29.986745443452023,
+        "bias": 1.4872106199905502
+      },
+      "clustered_squared_error_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "weeks": 1,
+      "clustered_median_mae_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "challenger_probability": {
+        "rows": 100,
+        "brier": 0.24943182333124242,
+        "log_loss": 0.6920094151871095,
+        "calibration_error": 0.049414066010586136,
+        "probability_bias": 0.04941406601058614
+      },
+      "production_probability": {
+        "rows": 100,
+        "brier": 0.24943182333124242,
+        "log_loss": 0.6920094151871095,
+        "calibration_error": 0.049414066010586136,
+        "probability_bias": 0.04941406601058614
+      },
+      "clustered_brier_gain": {
+        "clusters": 1,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "probability_scoring_stages": {
+        "complete_live_path": 100
+      }
+    }
+  },
+  "uncertainty_micro_id_coverage": {
+    "micro_prediction_ids": 0,
+    "exact_pregame_uncertainty_ids": 0,
+    "missing_ids": [],
+    "later_revisions_used": false
+  }
+}

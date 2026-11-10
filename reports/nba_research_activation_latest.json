@@ -1,0 +1,41 @@
+{
+  "built_at": "2026-11-04T17:04:30.526596+00:00",
+  "registrations": [
+    {
+      "experiment": "nba-workload-calibration-v1",
+      "sha256": "a1dfe7f3da748e7963ed018a6c3ca4debf9927d5dd96dae08a755028bebbc8f2",
+      "status": "verified"
+    },
+    {
+      "experiment": "nba-prop-price-check-v1",
+      "sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f",
+      "status": "verified"
+    },
+    {
+      "experiment": "fanduel-model-assisted-paper-v1",
+      "sha256": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+      "status": "verified"
+    },
+    {
+      "experiment": "nba-count-probability-v1",
+      "sha256": "601b41ecd544e3f1f2c0f9a261ccca924a19d5b34d6fdb62b702fe4f8c5f1094",
+      "status": "verified"
+    },
+    {
+      "experiment": "fanduel-direct-check-v1",
+      "sha256": "f887fa1be83eaab4ce3cdf03acbc9e4fe27501ce15a1d2114b02cd94051b0dca",
+      "status": "verified"
+    }
+  ],
+  "forecasts": {
+    "forecasts": 1484,
+    "games": 14,
+    "players": 364,
+    "after_tip": 0,
+    "first_forecast": "2026-11-04T09:02:40.976545-08:00",
+    "last_forecast": "2026-11-04T09:02:40.976545-08:00"
+  },
+  "captured_offers": 0,
+  "tests": "58 passed (research units, isolated PostgreSQL, parent model and count comparison)",
+  "betting_authorized": false
+}

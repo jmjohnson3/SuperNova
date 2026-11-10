@@ -1,0 +1,38 @@
+{
+  "contract": "nfl-fanduel-lock-contract-v1",
+  "generated_at_utc": "2026-11-05T23:18:59.122197+00:00",
+  "date": "2026-11-05",
+  "required": true,
+  "game_scope": [
+    "2026_09_JAX_BAL"
+  ],
+  "status": "passed",
+  "summary": {
+    "games": 1,
+    "passed": 1,
+    "waiting": 0,
+    "failed": 0
+  },
+  "games": [
+    {
+      "game_id": "2026_09_JAX_BAL",
+      "home_team_abbr": "BAL",
+      "away_team_abbr": "JAX",
+      "start_ts_utc": "2026-11-05 17:15:00-08:00",
+      "status": "passed",
+      "verification": {
+        "game_id": "2026_09_JAX_BAL",
+        "current_fanduel_locks": 40,
+        "receiving_locks": 15,
+        "receiving_same_line_triplets": 15,
+        "explicit_injury_context_locks": 40,
+        "known_player_injury_context_locks": 14,
+        "immutable_lock_violations": 0,
+        "all_locks_missing_links": 0,
+        "actionable_missing_links": 0,
+        "lock_verification_passed": true,
+        "injury_context_note": "known_player_status"
+      }
+    }
+  ]
+}

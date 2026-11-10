@@ -750,6 +750,290 @@
       "kickoff": "2026-10-27T00:15:00+00:00",
       "returncode": 0,
       "finished_at": "2026-10-26T22:23:44.557581+00:00"
+    },
+    "2026_08_CAR_GB@2026-10-30T00:15:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_0cbf36bb21ee4005ac2a48a7d86041fd",
+      "attempted_at": "2026-10-29T22:15:07.202480+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_CAR_GB",
+      "kickoff": "2026-10-30T00:15:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-10-29T22:23:48.212140+00:00"
+    },
+    "2026_08_ARI_DAL@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_ARI_DAL",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_ATL_TB@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_ATL_TB",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_BAL_BUF@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_BAL_BUF",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_CLE_PIT@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_CLE_PIT",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_IND_JAX@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_IND_JAX",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_LV_NYJ@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_LV_NYJ",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_MIN_DET@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_MIN_DET",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_TEN_CIN@2026-11-01T18:00:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "attempted_at": "2026-11-01T16:00:07.395772+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_TEN_CIN",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-01T16:11:45.938523+00:00"
+    },
+    "2026_08_LAC_LA@2026-11-01T21:05:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_4a8a893366cc4c598d31f1d15ae0b399",
+      "attempted_at": "2026-11-01T19:05:07.363378+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_LAC_LA",
+      "kickoff": "2026-11-01T21:05:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-01T19:14:16.247175+00:00"
+    },
+    "2026_08_KC_DEN@2026-11-01T21:25:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_286d15384363493c82cfb26a164483b4",
+      "attempted_at": "2026-11-01T19:25:07.498765+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_KC_DEN",
+      "kickoff": "2026-11-01T21:25:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-01T19:34:08.199120+00:00"
+    },
+    "2026_08_NE_MIA@2026-11-01T21:25:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_286d15384363493c82cfb26a164483b4",
+      "attempted_at": "2026-11-01T19:25:07.498765+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_NE_MIA",
+      "kickoff": "2026-11-01T21:25:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-01T19:34:08.199120+00:00"
+    },
+    "2026_08_PHI_WAS@2026-11-02T01:20:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_a2bcc898605649dc86b58c26139ebc7c",
+      "attempted_at": "2026-11-01T23:20:07.559015+00:00",
+      "attempts": 1,
+      "game_id": "2026_08_PHI_WAS",
+      "kickoff": "2026-11-02T01:20:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-01T23:27:42.322043+00:00"
+    },
+    "2026_09_JAX_BAL@2026-11-06T01:15:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_2319acceafff430c8a3dd4ab7df6a9e9",
+      "attempted_at": "2026-11-05T23:15:06.899336+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_JAX_BAL",
+      "kickoff": "2026-11-06T01:15:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-05T23:20:58.950433+00:00"
+    },
+    "2026_09_CIN_ATL@2026-11-08T14:30:00+00:00": {
+      "status": "completed",
+      "run_id": "pregame_075ebd3e3bbf429591ef2fb09bd82d28",
+      "attempted_at": "2026-11-08T12:30:07.052289+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_CIN_ATL",
+      "kickoff": "2026-11-08T14:30:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-08T12:36:32.319812+00:00"
+    },
+    "2026_09_CLE_NO@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_CLE_NO",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_DAL_IND@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_DAL_IND",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_DEN_CAR@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_DEN_CAR",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_DET_MIA@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_DET_MIA",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_LA_WAS@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_LA_WAS",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_NYG_PHI@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_NYG_PHI",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_NYJ_KC@2026-11-08T18:00:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_42c7c491f3394b2788e2f8dba845806c",
+      "attempted_at": "2026-11-08T16:00:07.088378+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_NYJ_KC",
+      "kickoff": "2026-11-08T18:00:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T16:08:14.612436+00:00"
+    },
+    "2026_09_HOU_LAC@2026-11-08T21:05:00+00:00": {
+      "status": "failed",
+      "run_id": "pregame_34d83bafa16e4ba79ec62e12919d63fc",
+      "attempted_at": "2026-11-08T19:35:06.958721+00:00",
+      "attempts": 3,
+      "game_id": "2026_09_HOU_LAC",
+      "kickoff": "2026-11-08T21:05:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T19:37:51.036832+00:00"
+    },
+    "2026_09_LV_SF@2026-11-08T21:05:00+00:00": {
+      "status": "failed",
+      "run_id": "pregame_34d83bafa16e4ba79ec62e12919d63fc",
+      "attempted_at": "2026-11-08T19:35:06.958721+00:00",
+      "attempts": 3,
+      "game_id": "2026_09_LV_SF",
+      "kickoff": "2026-11-08T21:05:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T19:37:51.036832+00:00"
+    },
+    "2026_09_ARI_SEA@2026-11-08T21:25:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_fcb590c40ad547e78b035f3d66b8ec35",
+      "attempted_at": "2026-11-08T19:25:06.926346+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_ARI_SEA",
+      "kickoff": "2026-11-08T21:25:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T19:30:17.600155+00:00"
+    },
+    "2026_09_GB_NE@2026-11-08T21:25:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_fcb590c40ad547e78b035f3d66b8ec35",
+      "attempted_at": "2026-11-08T19:25:06.926346+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_GB_NE",
+      "kickoff": "2026-11-08T21:25:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-08T19:30:17.600155+00:00"
+    },
+    "2026_09_TB_CHI@2026-11-09T01:20:00+00:00": {
+      "status": "completed",
+      "run_id": "recovery_tb_chi_projection_manifest_20261108",
+      "attempted_at": "2026-11-08T23:20:09.368376+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_TB_CHI",
+      "kickoff": "2026-11-09T01:20:00+00:00",
+      "returncode": 0,
+      "finished_at": "2026-11-09T00:57:10.339427+00:00",
+      "reconciled_from_status": "review_required",
+      "reconciled_at": "2026-11-09T00:57:10.340426+00:00",
+      "reconciliation_reason": "projection-only manifest was misclassified as staked; preflight failed before delivery, fixed guard passed tests, and one recovery publication was verified",
+      "publication_sent_at": "2026-11-09T00:55:27.873000+00:00"
+    },
+    "2026_09_BUF_MIN@2026-11-10T01:15:00+00:00": {
+      "status": "review_required",
+      "run_id": "pregame_83fec910330249cc88632b9c14042cd7",
+      "attempted_at": "2026-11-09T23:16:48.895215+00:00",
+      "attempts": 1,
+      "game_id": "2026_09_BUF_MIN",
+      "kickoff": "2026-11-10T01:15:00+00:00",
+      "returncode": 1,
+      "finished_at": "2026-11-09T23:26:37.459777+00:00"
     }
   }
 }

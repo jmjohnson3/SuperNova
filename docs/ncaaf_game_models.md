@@ -3,6 +3,13 @@
 Status (2026-10-24): **research only. No model-driven NCAAF bets.** NCAAF game-line bets come only from
 the sharp-gap scanner (`sharp_pipeline`), which prices soft books against Pinnacle.
 
+## Operational repairs (2026-10-28)
+January schedule and result refreshes request the preceding football season. Grading normalizes
+school accents and apostrophes and maps UMass to Massachusetts, retaining ambiguous matches as
+pending. Shared-scanner close coverage and review gates use observed exact-line closes only;
+estimated conversions are separate diagnostics. Later qualifying observations are retained even
+when an earlier observation had the same executable price.
+
 ## Data
 `python -m ncaaf_pipeline.ingest --seasons 2014-2026` loads collegefootballdata.com (key `CFBD_API_KEY`,
 free tier 1,000 calls/month, 6 calls per season) into `ncaaf.games`, `ncaaf.lines` (every book, with
@@ -44,3 +51,24 @@ projected score (team totals), model spread and total, and the current book line
 Games where a team has fewer than 6 games in the last two seasons are skipped. Every projection is
 stored in `ncaaf.projections` (one row per game per run day) for later grading. The model's totals have
 run about 1 point above the closing total since 2022, so read its totals with that in mind.
+
+### FanDuel links
+The scheduled job now runs `python -m ncaaf_pipeline.discord_links`, a presentation wrapper around
+the frozen projection runner. Each matchup includes an **Open game on FanDuel** link when both
+schools and kickoff match a unique event in the configured state's public NCAA feed. Otherwise it
+links to FanDuel's college-football page and says to find the game manually. These are game-page
+links for spreads/totals, not evidence of account-level price availability.
+
+Cards also show **Model lean (research)** by comparing the saved predicted home margin with
+FanDuel's current main home spread (`pred_margin + home_spread`). This is a displayed comparison,
+not a new experiment selection, calibrated probability or cash recommendation. The lean includes
+the observed line/odds, forecast and quote times, and an add-to-slip link using the configured
+state's exact market and runner IDs. Both team identities, opposing spreads, active runners and
+pregame clocks must match; stale, missing, ambiguous or suspended offers have no selection link.
+FanDuel can move a handicap after publication, so verify the line and odds in the slip.
+
+The wrapper makes one bounded public FanDuel request, uses no Odds API credits, and sends only to
+`NCAAF_DISCORD_WEBHOOK_URL`. Forecasts, selection rules and frozen source files are unchanged.
+For an already posted slate, `python -m ncaaf_pipeline.discord_links --links-only` posts links for
+upcoming saved projections once per day; add `--no-post` to preview without sending.
+Use `--links-only --force` to update the saved link message when the number of message chunks is unchanged.

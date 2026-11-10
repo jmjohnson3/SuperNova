@@ -21,8 +21,10 @@ from datetime import datetime, timedelta
 # ESPN's game-day statuses so inactives announced after the T-120 forecast are seen (sharp_inactives).
 # v7 (22 October): game totals carry stakes; alternate player-prop ladders are scanned and graded as
 # research (never staked). v6 moved links and alert text to the unpinned sharp_links.
-EXPERIMENT_NAME = "nfl-sharp-gap-cash-v9"
-PREDECESSOR = "nfl-sharp-gap-cash-v8"
+# v10: reports must be fresh and match this registration; loss stops survive report failures.
+EXPERIMENT_NAME = "nfl-sharp-gap-cash-v10"
+PREDECESSOR = "nfl-sharp-gap-cash-v9"
+READINESS_MAX_AGE_HOURS = 24
 
 # Books with an account. Order breaks EV ties only; each poll takes the best price first.
 BET_BOOKS = ("fanduel", "espnbet", "draftkings")

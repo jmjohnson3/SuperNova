@@ -1,0 +1,137 @@
+{
+  "built_at": "2026-11-10T02:40:17.475010+00:00",
+  "collection": {
+    "configured_reset_date": "2026-12-03",
+    "remaining_at_snapshot": 17844,
+    "snapshot_at": "2026-11-09T21:35:09.847890+00:00",
+    "counts_by_day": {
+      "basketball_nba": {
+        "2026-11-09": 1,
+        "2026-11-10": 1
+      },
+      "americanfootball_nfl": {
+        "2026-11-12": 1,
+        "2026-11-15": 12,
+        "2026-11-16": 1
+      },
+      "americanfootball_ncaaf": {
+        "2026-11-10": 3,
+        "2026-11-11": 3,
+        "2026-11-12": 2,
+        "2026-11-13": 3,
+        "2026-11-14": 56
+      }
+    },
+    "balance_snapshot_age_seconds": 18307.62712,
+    "balance_is_recent": false,
+    "line_polls": {
+      "basketball_nba": 5,
+      "americanfootball_ncaaf": 59
+    },
+    "watcher_credit_estimates": {
+      "nba_prop_credit_ceiling": 40,
+      "nfl_sharp_credit_ceiling": 672,
+      "nfl_spread_credit_ceiling": 72,
+      "shared_bulk_line_credits": 192
+    },
+    "after_watchers_and_150_floor": 16718,
+    "caveat": "Projected watcher demand for listed schedules only, not a complete billing-cycle forecast. Includes the separate NFL spread collector; automatic FanDuel feed checks consume zero Odds API credits. Other crawlers, retries, schedule changes and manual API usage are not included. The reset date is local configuration, not provider-confirmed billing metadata."
+  },
+  "economics": {
+    "book": "fanduel",
+    "sport": "nba",
+    "cohort": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f",
+    "period_start": "2026-10-28",
+    "period_end": "2026-11-08",
+    "observed_offers": 65,
+    "calendar_days": 12,
+    "assumed_monthly_opportunities": "162.5000000000000000000000000",
+    "monthly_cost": "30.00",
+    "stake": "1",
+    "scenarios": [
+      {
+        "assumed_true_edge": "0.01",
+        "required_monthly_bets": 3000,
+        "maximum_monthly_cost_if_all_offers_available": "1.625000000000000000000000000",
+        "gross_if_all_observed_opportunities_available": "1.625000000000000000000000000",
+        "net_if_all_observed_opportunities_available": "-28.37500000000000000000000000"
+      },
+      {
+        "assumed_true_edge": "0.03",
+        "required_monthly_bets": 1000,
+        "maximum_monthly_cost_if_all_offers_available": "4.875000000000000000000000000",
+        "gross_if_all_observed_opportunities_available": "4.875000000000000000000000000",
+        "net_if_all_observed_opportunities_available": "-25.12500000000000000000000000"
+      },
+      {
+        "assumed_true_edge": "0.05",
+        "required_monthly_bets": 600,
+        "maximum_monthly_cost_if_all_offers_available": "8.125000000000000000000000000",
+        "gross_if_all_observed_opportunities_available": "8.125000000000000000000000000",
+        "net_if_all_observed_opportunities_available": "-21.87500000000000000000000000"
+      }
+    ],
+    "edge_needed_at_observed_rate": "0.1846153846153846153846153846",
+    "interpretation": "Conditional arithmetic for the specified frozen cohort, including zero-offer days. Availability, true edge, future volume and net profit are unknown. NFL contribution is not assumed."
+  },
+  "daily_offers": [
+    {
+      "day": "2026-10-28",
+      "distinct_offers": 4,
+      "games": 2
+    },
+    {
+      "day": "2026-10-29",
+      "distinct_offers": 6,
+      "games": 2
+    },
+    {
+      "day": "2026-10-30",
+      "distinct_offers": 11,
+      "games": 7
+    },
+    {
+      "day": "2026-10-31",
+      "distinct_offers": 14,
+      "games": 6
+    },
+    {
+      "day": "2026-11-01",
+      "distinct_offers": 4,
+      "games": 3
+    },
+    {
+      "day": "2026-11-04",
+      "distinct_offers": 7,
+      "games": 6
+    },
+    {
+      "day": "2026-11-05",
+      "distinct_offers": 3,
+      "games": 1
+    },
+    {
+      "day": "2026-11-06",
+      "distinct_offers": 7,
+      "games": 4
+    },
+    {
+      "day": "2026-11-07",
+      "distinct_offers": 7,
+      "games": 3
+    },
+    {
+      "day": "2026-11-08",
+      "distinct_offers": 2,
+      "games": 2
+    },
+    {
+      "day": "2026-11-09",
+      "distinct_offers": 4,
+      "games": 3
+    }
+  ],
+  "recorded_price_checks": 0,
+  "betting_authorized": false,
+  "provider_documentation": "https://the-odds-api.com/liveapi/guides/v4/"
+}

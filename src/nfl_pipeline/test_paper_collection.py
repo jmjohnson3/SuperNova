@@ -26,7 +26,8 @@ def harness(*, guard=lambda: FROZEN, games=lambda *args: GAMES, execute=None):
             value = dict(status="paper_only", captured=0, selected=0,
                 exclusions={"missing_quote_provider": 9}, betting_approved=False)
         return SimpleNamespace(returncode=0, stdout=json.dumps(value), stderr="secret provider URL")
-    result = runner.collect(DAY, guard=guard, games=games, execute=run, save=saved.append, now=lambda: NOW)
+    result = runner.collect(DAY, guard=guard, games=games, execute=run, save=saved.append, now=lambda: NOW,
+        related=lambda: {'legacy_cash': {'status':'blocked','authorizes_this_run':False}})
     return result, called, saved
 
 
@@ -67,7 +68,45 @@ def test_zero_capture_is_recorded_with_real_exclusions_and_scoped_env(monkeypatc
         assert env["NFL_MODEL_RELEASE_ID"] == "release" and env["DISCORD_FORMAT"] == "0"
         assert "DISCORD_WEBHOOK_URL" not in env
     assert not result["cash_authorized"] and not result["notifications_sent"]
+    assert result['related_strategies']['legacy_cash']['status'] == 'blocked'
     assert "private_hook" not in json.dumps(result) and "secret provider" not in json.dumps(result)
+
+
+def test_guard_requires_receiving_candidate_and_release_not_unrelated_cash(tmp_path, monkeypatch):
+    from nfl_pipeline import experiment_registry, cash_freeze
+    from nfl_pipeline.modeling import receiving_paper_trial
+    model = tmp_path/'src/nfl_pipeline/modeling/models'
+    model.mkdir(parents=True)
+    (model/'active_release.json').write_text(json.dumps({'release_id':'test-release'}))
+    monkeypatch.setattr(runner,'ROOT',tmp_path)
+    checked = []
+    def check(name):
+        checked.append(name)
+        assert name == receiving_paper_trial.NAME
+        return dict(experiment_id=name,sha256='receiving-hash',config={'production_release':'test-release'})
+    monkeypatch.setattr(experiment_registry,'check_experiment',check)
+    monkeypatch.setattr(receiving_paper_trial,'_check_candidate',lambda doc: checked.append('candidate'))
+    monkeypatch.setattr(cash_freeze,'check_registration',lambda *args: pytest.fail('Unrelated cash must not gate paper collection'))
+    verified = runner.guard_freezes()
+    assert checked == [receiving_paper_trial.NAME,'candidate']
+    assert set(verified['experiments']) == {'receiving'}
+    assert verified['scope'] == 'receiving_paper_collection' and verified['cash_authorized'] is False
+    (model/'active_release.json').write_text(json.dumps({'release_id':'changed-release'}))
+    with pytest.raises(ValueError,match='production release differs'):
+        runner.guard_freezes()
+
+
+def test_related_cash_drift_remains_visible_without_authorizing_collection(monkeypatch):
+    from nfl_pipeline import experiment_registry, cash_freeze, cash_trial_policy
+    monkeypatch.setattr(experiment_registry,'check_experiment',lambda name:dict(experiment_id=name,sha256='sharp-hash'))
+    monkeypatch.setattr(cash_trial_policy,'load_registration',lambda: {})
+    def drift(config):
+        raise ValueError('Cash dependencies changed')
+    monkeypatch.setattr(cash_freeze,'check_registration',drift)
+    statuses = runner.related_freeze_statuses()
+    assert statuses['sharp']['status'] == 'verified'
+    assert statuses['legacy_cash']['status'] == 'blocked'
+    assert all(not state['authorizes_this_run'] for state in statuses.values())
 
 
 def test_freeze_identity_cannot_change_between_steps():

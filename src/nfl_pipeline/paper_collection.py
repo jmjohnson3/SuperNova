@@ -54,28 +54,46 @@ def plan(day, game_ids=()):
         quote_refresh=dict(max_invocations=1, provider_configuration="existing_configured_provider_order",
             note="Existing provider market coverage, retries and quotas apply; this runner does not increase them."),
         execution="--run enters scripts/run_with_nfl_mutex.ps1; busy mutex exits without pipeline steps",
-        guards="Active receiving, sharp, and cash freezes are verified before each step and at completion",
+        guards="Receiving experiment, candidate and production release are verified before each step and at completion; unrelated cash/sharp status is diagnostic only",
         paper_only=True, cash_authorized=False, wagers_placed=False,
         ledger_reservations=False, notifications_sent=False, retraining=False)
 
 
 def guard_freezes():
-    # Resolve active identifiers at call time so explicit successor registrations
-    # work without changing this orchestration module or accepting old evidence.
-    from nfl_pipeline import experiment_registry, cash_freeze, cash_trial_policy, sharp_watch
+    # This runner neither selects sharp bets nor calls cash authorization. Its
+    # dependency contract is the receiving experiment and its production release.
+    from nfl_pipeline import experiment_registry
     from nfl_pipeline.modeling import receiving_paper_trial
     paper = experiment_registry.check_experiment(receiving_paper_trial.NAME)
     receiving_paper_trial._check_candidate(paper)
-    sharp = experiment_registry.check_experiment(sharp_watch.EXPERIMENT_NAME)
-    cash = cash_freeze.check_registration(cash_trial_policy.load_registration())
     release = json.loads((ROOT / "src/nfl_pipeline/modeling/models/active_release.json").read_text(encoding="utf-8"))["release_id"]
     if not isinstance(release, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", release):
         raise ValueError("Invalid active release identity")
     if paper["config"]["production_release"] != release:
         raise ValueError("Paper experiment production release differs")
-    return dict(production_release=release, experiments={name: dict(
-        experiment_id=doc["experiment_id"], sha256=doc["sha256"])
-        for name, doc in (("receiving", paper), ("sharp", sharp), ("cash", cash))})
+    return dict(scope="receiving_paper_collection", production_release=release,
+        experiments={"receiving": dict(experiment_id=paper["experiment_id"], sha256=paper["sha256"])},
+        cash_authorized=False)
+
+
+def related_freeze_statuses():
+    """Expose unrelated strategy drift without granting authority or blocking paper collection."""
+    def sharp():
+        from nfl_pipeline import experiment_registry, sharp_watch
+        return experiment_registry.check_experiment(sharp_watch.EXPERIMENT_NAME)
+    def cash():
+        from nfl_pipeline import cash_freeze, cash_trial_policy
+        return cash_freeze.check_registration(cash_trial_policy.load_registration())
+    checks = {"sharp": sharp, "legacy_cash": cash}
+    statuses = {}
+    for name, check in checks.items():
+        try:
+            doc = check()
+            statuses[name] = dict(status="verified", experiment_id=doc["experiment_id"], sha256=doc["sha256"])
+        except Exception as exc:
+            statuses[name] = dict(status="blocked", reason=str(exc) if isinstance(exc, ValueError) else type(exc).__name__)
+        statuses[name]["authorizes_this_run"] = False
+    return statuses
 
 
 def upcoming_games(day, requested=()):
@@ -191,7 +209,8 @@ def save_receipt(doc, folder=REPORTS):
 
 
 def collect(day, requested=(), *, guard=guard_freezes, games=upcoming_games,
-            execute=execute_step, save=save_receipt, now=lambda: datetime.now(timezone.utc)):
+            execute=execute_step, save=save_receipt, now=lambda: datetime.now(timezone.utc),
+            related=related_freeze_statuses):
     """Run inside the operational mutex; injectable functions keep tests offline."""
     doc = dict(plan(day, requested), run_id=uuid.uuid4().hex, status="running",
         started_at=now().isoformat(), ended_at=None, steps=[], capture_result=None,
@@ -199,6 +218,7 @@ def collect(day, requested=(), *, guard=guard_freezes, games=upcoming_games,
     try:
         frozen = guard()
         doc["freeze_verification"] = frozen
+        doc["related_strategies"] = related()
         selected = games(day, requested)
         doc["game_ids"] = [row["game_id"] for row in selected]
         doc["games"] = selected

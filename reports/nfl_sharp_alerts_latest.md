@@ -1,50 +1,68 @@
+# NFL price-gap paper evidence
+
+**Paper only. No cash authorization.** Actual sportsbook checks remain separate from API observations.
+
+Observed reference closes below match the exact selected line. Estimated line conversions do not count as observed closes.
+
+| Book | Decisions | Observed exact reference closes | Estimated conversions |
+|---|---:|---:|---:|
+| draftkings | 27 | 10 | 16 |
+| espnbet | 14 | 4 | 10 |
+| fanduel | 12 | 6 | 6 |
+
+The legacy mixed-book diagnostic below includes estimated conversions in its sharp-close coverage and EV. Those figures are not exact-close coverage or evidence of obtainable profit.
+
+---
+
 # NFL Sharp-Gap Strategy
 
-Verdict: **trial: $1 stakes within limits** - $1 flat within the daily, weekly and per-game limits
+Verdict: **paper only: no new stakes** - paper checks continue; no new cash recommendations
 
-Registration `nfl-sharp-gap-cash-v7`: fanduel, espnbet, draftkings at +3% or better against Pinnacle no-vig, seen 45-15 minutes before kickoff, receiving_yards, receptions, rushing_yards, total. One decision per player-game-stat (the best book when first seen), whatever its stake.
+Paused because: Paper-only collection: actual-price evidence and explicit cash review are still required
 
-Decisions graded: 29 over 1 week(s).
+Registration `nfl-sharp-gap-cash-v10`: fanduel, espnbet, draftkings at +3% or better against Pinnacle no-vig, seen 45-15 minutes before kickoff, receiving_yards, receptions, rushing_yards, total. One decision per player-game-stat (the best book when first seen), whatever its stake.
+
+Decisions graded: 53 over 2 week(s).
 
 ## Gates
 
 | Gate | Now | Rule |
 |---|---:|---|
-| Close capture (last 29) | 100.0% | pause below 90% once 10 decisions exist |
-| Mean EV at the sharp close | +3.26% (29 graded) | pause at or below +0% after 50; scale review at +1.5% over 150+ and 3+ weeks |
+| Close capture (last 30) | 96.7% | pause below 90% once 10 decisions exist |
+| Mean EV at the sharp close | +3.56% (52 graded) | pause at or below +0% after 50; scale review at +1.5% over 150+ and 3+ weeks |
 | Loss pause | $+0.00 lowest | sticky at $-30 confirmed |
-| Largest player / team share | 6.9% / 14.8% | <= 20% / 35% to scale |
+| Largest player / team share | 3.8% / 9.8% | <= 20% / 35% to scale |
 
 ## Evidence
 
 | Measure (most reliable first) | Decisions | Earlier gaps | Later gaps | +1% to +3% gaps |
 |---|---:|---:|---:|---:|
-| Count | 29 | 23 | 22 | 85 |
-| Sharp close coverage | 100.0% | 100.0% | 100.0% | 100.0% |
-| Mean EV at the sharp close | +3.26% | +3.43% | +4.77% | +1.53% |
-| Share still +EV at the sharp close | 86.2% | 91.3% | 100.0% | 92.9% |
-| Beat the book's own exact close | 32.1% | 40.0% | 0.0% | 25.0% |
-| EV claimed when seen | +4.29% | +4.37% | +4.78% | +1.87% |
-| Simulated flat ROI (descriptive) | +14.58% | +7.68% | +26.34% | -5.92% |
-| Settled | 27 | 22 | 20 | 78 |
+| Count | 53 | 41 | 40 | 163 |
+| Sharp close coverage | 98.1% | 97.6% | 100.0% | 98.8% |
+| Mean EV at the sharp close | +3.56% | +3.44% | +4.67% | +1.38% |
+| Share still +EV at the sharp close | 92.3% | 87.5% | 100.0% | 90.1% |
+| Beat the book's own exact close | 28.6% | 40.6% | 5.0% | 21.2% |
+| EV claimed when seen | +4.71% | +4.50% | +4.75% | +1.84% |
+| Simulated flat ROI (descriptive) | +12.11% | +7.07% | +25.51% | +1.36% |
+| Settled | 51 | 39 | 38 | 155 |
 
-Sharp close method: exact 13 at +3.65%; shifted 16 at +2.94%. 'shifted' moves Pinnacle's nearest closing line to the bet's line (yardage only).
+Sharp close method: exact 20 at +3.24%; shifted 32 at +3.75%. 'shifted' moves Pinnacle's nearest closing line to the bet's line (yardage only).
 
 ### By book
 
 | | Decisions | EV at sharp close | Still +EV | ROI |
 |---|---:|---:|---:|---:|
-| draftkings | 18 | +3.58% | 94.4% | +5.37% |
-| espnbet | 9 | +2.32% | 66.7% | +17.14% |
-| fanduel | 2 | +4.61% | 100.0% | +88.50% |
+| draftkings | 27 | +4.05% | 96.2% | +4.44% |
+| espnbet | 14 | +4.48% | 100.0% | +0.52% |
+| fanduel | 12 | +1.42% | 75.0% | +41.62% |
 
 ### By market
 
 | | Decisions | EV at sharp close | Still +EV | ROI |
 |---|---:|---:|---:|---:|
-| receiving_yards | 11 | +1.86% | 72.7% | +15.17% |
-| receptions | 10 | +3.45% | 90.0% | +35.42% |
-| rushing_yards | 8 | +4.96% | 100.0% | -16.03% |
+| receiving_yards | 22 | +3.86% | 90.9% | +6.12% |
+| receptions | 14 | +3.23% | 100.0% | +11.59% |
+| rushing_yards | 17 | +3.42% | 87.5% | +20.78% |
 
 ## Shadow model filter
 
@@ -52,21 +70,17 @@ Flags a gap when the model sees an injury tag, a limited-usage role, or strongly
 
 | Verdict | Decisions | EV at sharp close | Still +EV | ROI |
 |---|---:|---:|---:|---:|
-| flag | 1 | -9.10% | 0.0% | - |
-| no_forecast | 5 | +5.55% | 100.0% | +99.25% |
-| pass | 23 | +3.30% | 87.0% | -0.14% |
+| flag | 3 | +1.31% | 66.7% | -37.17% |
+| no_forecast | 9 | +4.81% | 100.0% | -13.97% |
+| pass | 41 | +3.47% | 92.7% | +21.92% |
 
 Judged: not yet (needs 60 passed decisions with a close).
 
-## Alternate ladders (research, never staked)
-
-243 rungs priced from Pinnacle's main line by the fitted ladder model: EV when seen +31.19%, at the sharp close +31.40% (99.6% still +EV), flat ROI -8.04% on 213 settled. The close is valued with the same model, so ROI is the real test.
-
 Legacy closes (diagnostic only):
-- inferred_clv: 21 rows; mean +0.60%.
-- inferred_ev_at_sharp_close: 29 rows; mean +1.25%.
+- inferred_clv: 79 rows; mean +0.19%.
+- inferred_ev_at_sharp_close: 89 rows; mean +2.55%.
 
-Legacy alerts: 2292; captured decisions: 4716; excluded from primary: 6931; repeated eligible observations removed: 48.
+Legacy alerts: 2368; captured decisions: 4853; excluded from primary: 7089; repeated eligible observations removed: 79.
 Missing exact closes remain unknown. Weekly confidence bounds use equal week weights. Slippage is positive when the taken price is worse. Nothing here places a bet.
 Quote observations do not establish that a bet was available or placed. Receipt-confirmed wagers, execution attempts, availability and actual-price slippage belong to the private wager_reconciliation report.
 
@@ -82,7 +96,15 @@ Raw observations by week (not independent decisions):
 | 2026-5 | logged | 148 | - | - |
 | 2026-6 | early | 7 | - | - |
 | 2026-6 | logged | 4 | - | - |
-| 2026-7 | alert | 6995 | 24.0% | +19.59% |
-| 2026-7 | early | 3328 | 37.8% | +19.95% |
-| 2026-7 | late | 2185 | 0.0% | +19.60% |
-| 2026-7 | logged | 2726 | 16.0% | +1.77% |
+| 2026-7 | alert | 7002 | 22.7% | +19.57% |
+| 2026-7 | early | 3330 | 36.2% | +19.94% |
+| 2026-7 | late | 2190 | 0.0% | +19.57% |
+| 2026-7 | logged | 2750 | 15.4% | +1.75% |
+| 2026-8 | alert | 99 | 28.4% | +2.39% |
+| 2026-8 | early | 38 | 32.1% | +1.49% |
+| 2026-8 | late | 47 | 2.2% | +2.40% |
+| 2026-8 | logged | 470 | 10.5% | +0.77% |
+| 2026-9 | alert | 107 | 19.1% | +1.70% |
+| 2026-9 | early | 45 | 37.1% | +2.57% |
+| 2026-9 | late | 36 | 5.6% | +2.58% |
+| 2026-9 | logged | 496 | 14.0% | +0.40% |

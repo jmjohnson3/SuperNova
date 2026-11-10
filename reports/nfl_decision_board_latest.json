@@ -1,0 +1,30 @@
+{
+  "built_at": "2026-11-10T02:44:03.048213+00:00",
+  "date": "2026-11-09",
+  "games": [
+    {
+      "game_id": "2026_09_BUF_MIN",
+      "home_team_abbr": "MIN",
+      "away_team_abbr": "BUF",
+      "start_ts_utc": "2026-11-09T17:15:00-08:00",
+      "quote_times": {
+        "receiving_yards": "2026-11-09T17:10:12.268976-08:00",
+        "receptions": "2026-11-09T17:10:12.268976-08:00",
+        "rushing_yards": "2026-11-09T17:10:12.268976-08:00",
+        "spread": "2026-11-09T17:10:23.828366-08:00",
+        "total": "2026-11-09T17:10:12.268976-08:00"
+      },
+      "last_quote": "2026-11-09T17:10:23.828366-08:00",
+      "forecast": {
+        "predicted_home_margin": -3.0,
+        "predicted_total_points": 45.5,
+        "created_at_utc": "2026-11-09T15:19:28.836116-08:00"
+      },
+      "decisions": [],
+      "content": "**NFL PAPER DECISIONS \u2014 BUF @ MIN**\nKickoff <t:1794273300:f> | status as of <t:1794278643:t>\nScanning from <t:1794269700:t>; paper selection <t:1794270600:t>\u2013<t:1794272400:t>.\n**No cash recommendation.** Paper picks/checks do not request a wager.\n\nGame started \u2014 all pregame offers closed.\nProps: latest saved quote observation <t:1794273012:t>.\nSpreads: latest saved quote observation <t:1794273023:t>.\nTotals: latest saved quote observation <t:1794273012:t>.\n\nGame forecast: MIN margin -3.0; total 45.5 (saved <t:1794266368:t>).\nForecasts select or veto the model-assisted paper strategy on the same qualifying FanDuel offers.\n\n**FanDuel paper picks and checks**\nPregame offers expired; results go to #record-ledger.\n\nOnly an original PAPER PRICE CHECK starts a check window. Send its M ID, actual time and displayed line/odds (or disappeared/suspended) in Codex."
+    }
+  ],
+  "blocked": null,
+  "betting_authorized": false,
+  "experiment_id": "fanduel-model-assisted-paper-v1"
+}

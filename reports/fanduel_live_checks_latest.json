@@ -1,0 +1,3653 @@
+{
+  "built_at": "2026-11-10T02:36:09.243541+00:00",
+  "observer_id": "fanduel-direct-check-v1",
+  "sha256": "f887fa1be83eaab4ce3cdf03acbc9e4fe27501ce15a1d2114b02cd94051b0dca",
+  "registered_at": "2026-10-30T23:36:47.972345+00:00",
+  "state": "co",
+  "source": "automated_fanduel_public_feed",
+  "attempts": 50,
+  "statuses": {
+    "unknown": 27,
+    "available": 23
+  },
+  "timely_attempts": 32,
+  "timely_usable_observations": 23,
+  "checks": [
+    {
+      "alert_id": 57,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-10-30 16:49:13.609822-07:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": -140,
+          "market": "rebounds",
+          "player": "Ayo Dosunmu",
+          "sent_at": "2026-10-30 16:48:19.484207-07:00",
+          "alert_id": 57,
+          "event_id": "cac1461f5983a88fac612685395aa897",
+          "away_team": "Los Angeles Clippers",
+          "home_team": "Minnesota Timberwolves",
+          "decided_at": "2026-10-30 16:48:18.316826-07:00",
+          "native_tip": "2026-10-30 17:00:00-07:00",
+          "player_norm": "ayo dosunmu",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-30 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "afe6d5a321b43da1393bf0147929aba7a761589069ae393eecc5e4595345bade",
+            "http_status": 200,
+            "received_at": "2026-10-30 23:49:13.299021+00:00",
+            "server_date": "2026-10-30 23:49:12+00:00",
+            "requested_at": "2026-10-30 23:49:12.321557+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261030T234913299021Z_53238bd7cc7b4014ad7720238cb2aad8.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36250110"
+            },
+            "body_sha256": "e891f703c6833d12c3b1b1a0699922464d4431c6d7c45988795ef82620970b44",
+            "http_status": 200,
+            "received_at": "2026-10-30 23:49:13.587725+00:00",
+            "server_date": "2026-10-30 23:48:32+00:00",
+            "requested_at": "2026-10-30 23:49:13.476579+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261030T234913587725Z_946f2a22767240458bb77e386c7786ea.json",
+            "cache_age_seconds": "41"
+          }
+        ],
+        "attempted_at": "2026-10-30 23:49:12.321557+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 58,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-30 18:36:03.725336-07:00",
+      "recorded_at": "2026-10-30 18:36:03.756554-07:00",
+      "payload": {
+        "line": 3.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "under",
+          "price": 104,
+          "market": "assists",
+          "player": "Brandin Podziemski",
+          "sent_at": "2026-10-30 18:35:36.514966-07:00",
+          "alert_id": 58,
+          "event_id": "761c15cdefb5a94e34f234e11d6e57ad",
+          "away_team": "Los Angeles Lakers",
+          "home_team": "Golden State Warriors",
+          "decided_at": "2026-10-30 18:35:35.762042-07:00",
+          "native_tip": "2026-10-30 19:00:00-07:00",
+          "player_norm": "brandin podziemski",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-30 19:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 104,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36250114",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "1f33b979cc8e2d3a8041b2580d5fc45987810e0ded5b22f2afa36f8f062f1c9d",
+            "http_status": 200,
+            "received_at": "2026-10-31 01:36:03.520427+00:00",
+            "server_date": "2026-10-31 01:36:03+00:00",
+            "requested_at": "2026-10-31 01:36:02.645074+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T013603520427Z_3e5167c7296247d7b6a04a0136b4cb09.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-assists",
+              "eventId": "36250114"
+            },
+            "body_sha256": "3117275ccb04a725cdb0fb662b0fbf929f942f8581e8b8493f00b408e261e09d",
+            "http_status": 200,
+            "received_at": "2026-10-31 01:36:03.725336+00:00",
+            "server_date": "2026-10-31 01:36:03+00:00",
+            "requested_at": "2026-10-31 01:36:03.694086+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T013603725336Z_f82f5b0665c64bff8f11da129f429f5d.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.194973644",
+        "observed_at": "2026-10-31 01:36:03.725336+00:00",
+        "attempted_at": "2026-10-31 01:36:02.645074+00:00",
+        "manual_check": false,
+        "selection_id": "52263968",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 62,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-10-31 11:36:19.978572-07:00",
+      "recorded_at": "2026-10-31 11:36:20.021518-07:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 14.5,
+          "side": "over",
+          "price": 100,
+          "market": "points",
+          "player": "Scoot Henderson",
+          "sent_at": "2026-10-31 11:35:38.586558-07:00",
+          "alert_id": 62,
+          "event_id": "d47417c3b1a2cd427cce74c9d00f1046",
+          "away_team": "Portland Trail Blazers",
+          "home_team": "Utah Jazz",
+          "decided_at": "2026-10-31 11:35:34.311492-07:00",
+          "native_tip": "2026-10-31 12:00:00-07:00",
+          "player_norm": "scoot henderson",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 12:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36253910",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "f79ec3fa17c69ed61e77fed4d19de1052caaf18d5442b5283aa6968223cf0df8",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:36:19.497023+00:00",
+            "server_date": "2026-10-31 18:36:19+00:00",
+            "requested_at": "2026-10-31 18:36:18.408868+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T183619497023Z_f87d5fe8b3414eb1a92289fca2ec737e.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36253910"
+            },
+            "body_sha256": "8ec442aa61fab82d8c36c551262348b9fdff4749645d4f564a62b56bd86ae4e3",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:36:19.978572+00:00",
+            "server_date": "2026-10-31 18:36:19+00:00",
+            "requested_at": "2026-10-31 18:36:19.667984+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T183619978572Z_4080e98bcc804cd6923d92f88332dc0c.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "observed_at": "2026-10-31 18:36:19.978572+00:00",
+        "attempted_at": "2026-10-31 18:36:18.408868+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 63,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-10-31 11:36:20.595940-07:00",
+      "recorded_at": "2026-10-31 11:36:20.611563-07:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 5.5,
+          "side": "over",
+          "price": -106,
+          "market": "rebounds",
+          "player": "Ace Bailey",
+          "sent_at": "2026-10-31 11:35:39.270865-07:00",
+          "alert_id": 63,
+          "event_id": "d47417c3b1a2cd427cce74c9d00f1046",
+          "away_team": "Portland Trail Blazers",
+          "home_team": "Utah Jazz",
+          "decided_at": "2026-10-31 11:35:34.311492-07:00",
+          "native_tip": "2026-10-31 12:00:00-07:00",
+          "player_norm": "ace bailey",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 12:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36253910",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "f79ec3fa17c69ed61e77fed4d19de1052caaf18d5442b5283aa6968223cf0df8",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:36:20.135158+00:00",
+            "server_date": "2026-10-31 18:36:19+00:00",
+            "requested_at": "2026-10-31 18:36:20.088236+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T183620135158Z_3ecd18032f404ae3b88dff187c2a391c.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36253910"
+            },
+            "body_sha256": "129233ec8263154a7d7e2c89fa1db9a088812569f342ab2cddddfc12854bdd1a",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:36:20.595940+00:00",
+            "server_date": "2026-10-31 18:36:20+00:00",
+            "requested_at": "2026-10-31 18:36:20.320185+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T183620595940Z_ae1d2295f2b54eb19996029b8877158b.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "observed_at": "2026-10-31 18:36:20.595940+00:00",
+        "attempted_at": "2026-10-31 18:36:20.088236+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 64,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 11:36:20.978849-07:00",
+      "recorded_at": "2026-10-31 11:36:20.994439-07:00",
+      "payload": {
+        "line": 1.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 1.5,
+          "side": "over",
+          "price": -138,
+          "market": "threes",
+          "player": "Scoot Henderson",
+          "sent_at": "2026-10-31 11:35:39.943893-07:00",
+          "alert_id": 64,
+          "event_id": "d47417c3b1a2cd427cce74c9d00f1046",
+          "away_team": "Portland Trail Blazers",
+          "home_team": "Utah Jazz",
+          "decided_at": "2026-10-31 11:35:34.311492-07:00",
+          "native_tip": "2026-10-31 12:00:00-07:00",
+          "player_norm": "scoot henderson",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 12:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -138,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253910",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "f79ec3fa17c69ed61e77fed4d19de1052caaf18d5442b5283aa6968223cf0df8",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:36:20.642812+00:00",
+            "server_date": "2026-10-31 18:36:19+00:00",
+            "requested_at": "2026-10-31 18:36:20.611563+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T183620642812Z_73000b14fdc64eb687b39f766bbb2299.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36253910"
+            },
+            "body_sha256": "511feaf5d89e9731baea02602031ba27970de4096324d5d835d50c999f13873d",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:36:20.978849+00:00",
+            "server_date": "2026-10-31 18:36:20+00:00",
+            "requested_at": "2026-10-31 18:36:20.797475+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T183620978849Z_c763fa276b344b138fb833c6903cf910.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195130768",
+        "observed_at": "2026-10-31 18:36:20.978849+00:00",
+        "attempted_at": "2026-10-31 18:36:20.611563+00:00",
+        "manual_check": false,
+        "selection_id": "62064858",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 67,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 11:50:00.660782-07:00",
+      "recorded_at": "2026-10-31 11:50:00.691935-07:00",
+      "payload": {
+        "line": 4.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": -108,
+          "market": "rebounds",
+          "player": "Toumani Camara",
+          "sent_at": "2026-10-31 11:49:26.201433-07:00",
+          "alert_id": 67,
+          "event_id": "d47417c3b1a2cd427cce74c9d00f1046",
+          "away_team": "Portland Trail Blazers",
+          "home_team": "Utah Jazz",
+          "decided_at": "2026-10-31 11:49:24.439322-07:00",
+          "native_tip": "2026-10-31 12:00:00-07:00",
+          "player_norm": "toumani camara",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 12:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -108,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253910",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "48e38f39cc068604828d4abf1e02ae1f17ac5265c87e49198df64e83c717f762",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:50:00.125595+00:00",
+            "server_date": "2026-10-31 18:49:59+00:00",
+            "requested_at": "2026-10-31 18:49:59.032617+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T185000125595Z_0c9bb23ef8b442afa4af8050f3a8b631.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36253910"
+            },
+            "body_sha256": "8d4832e9a30ec648a902e1823d6e2f2ac618606f45e9c88e4db0cc70e7ed163b",
+            "http_status": 200,
+            "received_at": "2026-10-31 18:50:00.660782+00:00",
+            "server_date": "2026-10-31 18:50:00+00:00",
+            "requested_at": "2026-10-31 18:50:00.370558+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T185000660782Z_2c8e2427a60d43bb97b2777843ed6327.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195130704",
+        "observed_at": "2026-10-31 18:50:00.660782+00:00",
+        "attempted_at": "2026-10-31 18:49:59.032617+00:00",
+        "manual_check": false,
+        "selection_id": "43450266",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 69,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 15:25:27.098059-07:00",
+      "recorded_at": "2026-10-31 15:25:27.144840-07:00",
+      "payload": {
+        "line": 16.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 16.5,
+          "side": "over",
+          "price": -102,
+          "market": "points",
+          "player": "Jeremiah Fears",
+          "sent_at": "2026-10-31 15:25:10.501693-07:00",
+          "alert_id": 69,
+          "event_id": "77270837bc694d198c10f42937690d75",
+          "away_team": "Atlanta Hawks",
+          "home_team": "New Orleans Pelicans",
+          "decided_at": "2026-10-31 15:25:08.979635-07:00",
+          "native_tip": "2026-10-31 16:00:00-07:00",
+          "player_norm": "jeremiah fears",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 16:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -102,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253908",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "0d001d02b14a8521e67861c04bc39fbf8998a076883d1e7925e86f08ea8182e1",
+            "http_status": 200,
+            "received_at": "2026-10-31 22:25:26.671787+00:00",
+            "server_date": "2026-10-31 22:25:26+00:00",
+            "requested_at": "2026-10-31 22:25:25.668307+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T222526671787Z_e85949a1dc6c414ea565ddc41a23fb72.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36253908"
+            },
+            "body_sha256": "56f3ab78b2c10ae84de13b1d170c40146f3721fba2d0e96f06f106f5925ec53c",
+            "http_status": 200,
+            "received_at": "2026-10-31 22:25:27.098059+00:00",
+            "server_date": "2026-10-31 22:25:26+00:00",
+            "requested_at": "2026-10-31 22:25:26.871809+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T222527098059Z_1b1620ad7a644f57ae746ce17084448a.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195150891",
+        "observed_at": "2026-10-31 22:25:27.098059+00:00",
+        "attempted_at": "2026-10-31 22:25:25.668307+00:00",
+        "manual_check": false,
+        "selection_id": "77055416",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 74,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 16:25:40.043859-07:00",
+      "recorded_at": "2026-10-31 16:25:40.090734-07:00",
+      "payload": {
+        "line": 13.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 13.5,
+          "side": "under",
+          "price": -111,
+          "market": "points",
+          "player": "Jarrett Allen",
+          "sent_at": "2026-10-31 16:25:12.410490-07:00",
+          "alert_id": 74,
+          "event_id": "6d7e1e0af6d568f4435d35a1763a3622",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-10-31 16:25:10.636600-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "jarrett allen",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -111,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253912",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "6149f63887c0e657904d50ee608138016bb2b2dd6bc5d60da83a14a2d4c6f499",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:39.822870+00:00",
+            "server_date": "2026-10-31 23:25:39+00:00",
+            "requested_at": "2026-10-31 23:25:39.116605+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232539822870Z_e95d83788dd54866842544f4b8068988.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36253912"
+            },
+            "body_sha256": "16366ce760839515db00cd13d8582df1b918bd9480e8b3b1163b10d6d9cee9a3",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.043859+00:00",
+            "server_date": "2026-10-31 23:25:35+00:00",
+            "requested_at": "2026-10-31 23:25:40.028199+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540043859Z_7ad31fb28c3d4c8fa263c01d422e9c0e.json",
+            "cache_age_seconds": "5"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195147186",
+        "observed_at": "2026-10-31 23:25:40.043859+00:00",
+        "attempted_at": "2026-10-31 23:25:39.116605+00:00",
+        "manual_check": false,
+        "selection_id": "21174118",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 75,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 16:25:40.354759-07:00",
+      "recorded_at": "2026-10-31 16:25:40.409285-07:00",
+      "payload": {
+        "line": 21.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 21.5,
+          "side": "under",
+          "price": -115,
+          "market": "points",
+          "player": "Tyler Herro",
+          "sent_at": "2026-10-31 16:25:12.976736-07:00",
+          "alert_id": 75,
+          "event_id": "6d7e1e0af6d568f4435d35a1763a3622",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-10-31 16:25:10.636600-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "tyler herro",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -115,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253912",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "6149f63887c0e657904d50ee608138016bb2b2dd6bc5d60da83a14a2d4c6f499",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.179443+00:00",
+            "server_date": "2026-10-31 23:25:39+00:00",
+            "requested_at": "2026-10-31 23:25:40.132568+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540179443Z_9dc370d519bb41b196dcc04283918764.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36253912"
+            },
+            "body_sha256": "16366ce760839515db00cd13d8582df1b918bd9480e8b3b1163b10d6d9cee9a3",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.354759+00:00",
+            "server_date": "2026-10-31 23:25:35+00:00",
+            "requested_at": "2026-10-31 23:25:40.339100+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540354759Z_0f07e25330234e208571be3b69300c93.json",
+            "cache_age_seconds": "5"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195143611",
+        "observed_at": "2026-10-31 23:25:40.354759+00:00",
+        "attempted_at": "2026-10-31 23:25:40.132568+00:00",
+        "manual_check": false,
+        "selection_id": "26611575",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 76,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 16:25:40.625638-07:00",
+      "recorded_at": "2026-10-31 16:25:40.641263-07:00",
+      "payload": {
+        "line": 4.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": 120,
+          "market": "rebounds",
+          "player": "Myles Turner",
+          "sent_at": "2026-10-31 16:25:13.558321-07:00",
+          "alert_id": 76,
+          "event_id": "6d7e1e0af6d568f4435d35a1763a3622",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-10-31 16:25:10.636600-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "myles turner",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 120,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253912",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "6149f63887c0e657904d50ee608138016bb2b2dd6bc5d60da83a14a2d4c6f499",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.440543+00:00",
+            "server_date": "2026-10-31 23:25:39+00:00",
+            "requested_at": "2026-10-31 23:25:40.409285+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540440543Z_8029563c83674fcda991089f9aa35bb4.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36253912"
+            },
+            "body_sha256": "5e7ce307671236cf703ac53033de55022f2cdc74e8e2592d2940a7a05bf2745e",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.625638+00:00",
+            "server_date": "2026-10-31 23:25:37+00:00",
+            "requested_at": "2026-10-31 23:25:40.610004+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540625638Z_1ce5962894984c39a77a5cbc00be99d7.json",
+            "cache_age_seconds": "3"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195144684",
+        "observed_at": "2026-10-31 23:25:40.625638+00:00",
+        "attempted_at": "2026-10-31 23:25:40.409285+00:00",
+        "manual_check": false,
+        "selection_id": "12234259",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 77,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 16:25:40.854651-07:00",
+      "recorded_at": "2026-10-31 16:25:40.858185-07:00",
+      "payload": {
+        "line": 2.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 2.5,
+          "side": "under",
+          "price": 116,
+          "market": "threes",
+          "player": "Donovan Mitchell",
+          "sent_at": "2026-10-31 16:25:14.196467-07:00",
+          "alert_id": 77,
+          "event_id": "6d7e1e0af6d568f4435d35a1763a3622",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-10-31 16:25:10.636600-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "donovan mitchell",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 116,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253912",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "6149f63887c0e657904d50ee608138016bb2b2dd6bc5d60da83a14a2d4c6f499",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.672514+00:00",
+            "server_date": "2026-10-31 23:25:39+00:00",
+            "requested_at": "2026-10-31 23:25:40.641263+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540672514Z_c73ba93c1eaa443d8820d1a6b6ac03d3.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36253912"
+            },
+            "body_sha256": "ce4854ed810d28fbe533ee5ad8dc4a5f3fd5b8112d65576df3616485fdc94d63",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.854651+00:00",
+            "server_date": "2026-10-31 23:25:37+00:00",
+            "requested_at": "2026-10-31 23:25:40.839017+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540854651Z_38a7745ea6d04e5a81bbddeda9374e87.json",
+            "cache_age_seconds": "3"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195146202",
+        "observed_at": "2026-10-31 23:25:40.854651+00:00",
+        "attempted_at": "2026-10-31 23:25:40.641263+00:00",
+        "manual_check": false,
+        "selection_id": "15907304",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 79,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 16:25:41.091103-07:00",
+      "recorded_at": "2026-10-31 16:25:41.101845-07:00",
+      "payload": {
+        "line": 5.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 5.5,
+          "side": "under",
+          "price": 116,
+          "market": "assists",
+          "player": "Cameron Boozer",
+          "sent_at": "2026-10-31 16:25:16.388102-07:00",
+          "alert_id": 79,
+          "event_id": "863ae1092be42c6b563b2c4f099a3eb3",
+          "away_team": "Sacramento Kings",
+          "home_team": "Memphis Grizzlies",
+          "decided_at": "2026-10-31 16:25:14.813505-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "cameron boozer",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -108,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253909",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "6149f63887c0e657904d50ee608138016bb2b2dd6bc5d60da83a14a2d4c6f499",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:40.884071+00:00",
+            "server_date": "2026-10-31 23:25:39+00:00",
+            "requested_at": "2026-10-31 23:25:40.858185+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232540884071Z_1db5183215cc48f6a9cc8cf13b45bde6.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-assists",
+              "eventId": "36253909"
+            },
+            "body_sha256": "53fe61a71adc0160eec7e62d43d708aab317294c53d96a1ebb938d91be1ccc9a",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:41.091103+00:00",
+            "server_date": "2026-10-31 23:25:29+00:00",
+            "requested_at": "2026-10-31 23:25:41.059880+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232541091103Z_6eff9effee5346b583da469c4cba4375.json",
+            "cache_age_seconds": "12"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195177662",
+        "observed_at": "2026-10-31 23:25:41.091103+00:00",
+        "attempted_at": "2026-10-31 23:25:40.858185+00:00",
+        "manual_check": false,
+        "selection_id": "90748928",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 81,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-10-31 16:25:41.340960-07:00",
+      "recorded_at": "2026-10-31 16:25:41.362857-07:00",
+      "payload": {
+        "line": 13.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 13.5,
+          "side": "under",
+          "price": 102,
+          "market": "points",
+          "player": "Jonathan Kuminga",
+          "sent_at": "2026-10-31 16:25:18.451116-07:00",
+          "alert_id": 81,
+          "event_id": "06a03fb0ce0f81a970c6000fb71fdc6d",
+          "away_team": "Minnesota Timberwolves",
+          "home_team": "San Antonio Spurs",
+          "decided_at": "2026-10-31 16:25:17.000748-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "jonathan kuminga",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 100,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36253911",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "6149f63887c0e657904d50ee608138016bb2b2dd6bc5d60da83a14a2d4c6f499",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:41.117513+00:00",
+            "server_date": "2026-10-31 23:25:39+00:00",
+            "requested_at": "2026-10-31 23:25:41.101845+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232541117513Z_f31da2c06b774fe09acca62eb24f4e22.json",
+            "cache_age_seconds": "2"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36253911"
+            },
+            "body_sha256": "13d1ee227cf10364294ac3146140753b5ded160b0f7256422b303e579db12f94",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:25:41.340960+00:00",
+            "server_date": "2026-10-31 23:25:32+00:00",
+            "requested_at": "2026-10-31 23:25:41.324991+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T232541340960Z_4af1bcd5894a496fa2959b10b5880fb7.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195154217",
+        "observed_at": "2026-10-31 23:25:41.340960+00:00",
+        "attempted_at": "2026-10-31 23:25:41.101845+00:00",
+        "manual_check": false,
+        "selection_id": "40221489",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 89,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-10-31 16:47:02.842910-07:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 5.5,
+          "side": "over",
+          "price": 120,
+          "market": "rebounds",
+          "player": "Kyle Kuzma",
+          "sent_at": "2026-10-31 16:46:00.066721-07:00",
+          "alert_id": 89,
+          "event_id": "6d7e1e0af6d568f4435d35a1763a3622",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-10-31 16:45:57.922683-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "kyle kuzma",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "fb2338c9490a536cba859df0c108b2d28b8b028074bd42df25c1257d4c51d118",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:47:02.601445+00:00",
+            "server_date": "2026-10-31 23:47:02+00:00",
+            "requested_at": "2026-10-31 23:47:01.691215+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T234702601445Z_ebc8a0199be645ce9a44f6743f69ed10.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36253912"
+            },
+            "body_sha256": "c6253541b40c7630932b92ad163771ef8eb1d17d5e744008b200d7f26ac85a20",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:47:02.827289+00:00",
+            "server_date": "2026-10-31 23:46:45+00:00",
+            "requested_at": "2026-10-31 23:47:02.811638+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T234702827289Z_715bd2405b7149f6a8713ec12d8efb5c.json",
+            "cache_age_seconds": "17"
+          }
+        ],
+        "attempted_at": "2026-10-31 23:47:01.691215+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 93,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-10-31 16:47:03.171918-07:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 8.5,
+          "side": "over",
+          "price": -125,
+          "market": "points",
+          "player": "Zach Edey",
+          "sent_at": "2026-10-31 16:46:04.574631-07:00",
+          "alert_id": 93,
+          "event_id": "863ae1092be42c6b563b2c4f099a3eb3",
+          "away_team": "Sacramento Kings",
+          "home_team": "Memphis Grizzlies",
+          "decided_at": "2026-10-31 16:46:02.030770-07:00",
+          "native_tip": "2026-10-31 17:00:00-07:00",
+          "player_norm": "zach edey",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:10:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "fb2338c9490a536cba859df0c108b2d28b8b028074bd42df25c1257d4c51d118",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:47:02.933880+00:00",
+            "server_date": "2026-10-31 23:47:02+00:00",
+            "requested_at": "2026-10-31 23:47:02.918259+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T234702933880Z_7641838734f14b509f92acdfe838f629.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36253909"
+            },
+            "body_sha256": "57efea1c1b18bd8413849b4258a7be6db9e5f8ee9f284ebc4fcf8c8785bf1e7e",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:47:03.129919+00:00",
+            "server_date": "2026-10-31 23:46:36+00:00",
+            "requested_at": "2026-10-31 23:47:03.111757+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T234703129919Z_0efb4ebcfe1c462bbd3c78a8034ed818.json",
+            "cache_age_seconds": "27"
+          }
+        ],
+        "attempted_at": "2026-10-31 23:47:02.918259+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 97,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-10-31 16:57:35.646778-07:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 1.5,
+          "side": "under",
+          "price": -184,
+          "market": "threes",
+          "player": "Tari Eason",
+          "sent_at": "2026-10-31 16:57:16.591216-07:00",
+          "alert_id": 97,
+          "event_id": "c30d3bdf126e98ced5b9389db8617926",
+          "away_team": "Oklahoma City Thunder",
+          "home_team": "Houston Rockets",
+          "decided_at": "2026-10-31 16:57:14.298485-07:00",
+          "native_tip": "2026-10-31 17:30:00-07:00",
+          "player_norm": "tari eason",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-10-31 17:40:00-07:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "d536141b652bc9610cba3ea9dc5d2d9d987a41b2d8fa82cee5898dce7e5ced12",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:57:35.386081+00:00",
+            "server_date": "2026-10-31 23:57:35+00:00",
+            "requested_at": "2026-10-31 23:57:34.627572+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T235735386081Z_235b52a46dc143d0b8623a824468e5a4.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36253913"
+            },
+            "body_sha256": "68042048b3e29a9ca1ee9ae1aefcabf1a5de350e6eba65bb404fb80db1333f9b",
+            "http_status": 200,
+            "received_at": "2026-10-31 23:57:35.600000+00:00",
+            "server_date": "2026-10-31 23:57:12+00:00",
+            "requested_at": "2026-10-31 23:57:35.584281+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261031T235735600000Z_45a3827d7f7944ad95bace15fef05659.json",
+            "cache_age_seconds": "23"
+          }
+        ],
+        "attempted_at": "2026-10-31 23:57:34.627572+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 105,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-01 13:45:25.453162-08:00",
+      "recorded_at": "2026-11-01 13:45:25.468721-08:00",
+      "payload": {
+        "line": 3.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "under",
+          "price": -128,
+          "market": "rebounds",
+          "player": "Aaron Nesmith",
+          "sent_at": "2026-11-01 13:45:09.772481-08:00",
+          "alert_id": 105,
+          "event_id": "fc3e945a5be88d3f933456bc512c956d",
+          "away_team": "Brooklyn Nets",
+          "home_team": "Indiana Pacers",
+          "decided_at": "2026-11-01 13:45:08.865169-08:00",
+          "native_tip": "2026-11-01 14:00:00-08:00",
+          "player_norm": "aaron nesmith",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-01 14:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -128,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36257606",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "04d2a97c944efac65c4df951ccb50b1867fef35ed614c5de7f11e9080df234d9",
+            "http_status": 200,
+            "received_at": "2026-11-01 21:45:25.261433+00:00",
+            "server_date": "2026-11-01 21:45:24+00:00",
+            "requested_at": "2026-11-01 21:45:24.307208+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261101T214525261433Z_c94b6815e7d64f67aff1d13f698054c6.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36257606"
+            },
+            "body_sha256": "b7cf475a09f774f08938cc2cc42711c7c40b89f46e7c5c5f7f36863024980fd5",
+            "http_status": 200,
+            "received_at": "2026-11-01 21:45:25.453162+00:00",
+            "server_date": "2026-11-01 21:45:23+00:00",
+            "requested_at": "2026-11-01 21:45:25.437471+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261101T214525453162Z_ba5d44ad08ea40d1baceb20e1c64e0fc.json",
+            "cache_age_seconds": "1"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195305094",
+        "observed_at": "2026-11-01 21:45:25.453162+00:00",
+        "attempted_at": "2026-11-01 21:45:24.307208+00:00",
+        "manual_check": false,
+        "selection_id": "39494854",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 110,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-01 17:15:31.299557-08:00",
+      "recorded_at": "2026-11-01 17:15:31.330795-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 8.5,
+          "side": "over",
+          "price": -113,
+          "market": "points",
+          "player": "Georges Niang",
+          "sent_at": "2026-11-01 17:15:13.614777-08:00",
+          "alert_id": 110,
+          "event_id": "094b083ace229ca31ff360a80e35a1a8",
+          "away_team": "Los Angeles Clippers",
+          "home_team": "Golden State Warriors",
+          "decided_at": "2026-11-01 17:15:09.092506-08:00",
+          "native_tip": "2026-11-01 17:30:00-08:00",
+          "player_norm": "georges niang",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-01 17:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36257605",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "78f1cc123b0c886278070e7e227349dd0984057fa98473ec53642833010f15a2",
+            "http_status": 200,
+            "received_at": "2026-11-02 01:15:31.067998+00:00",
+            "server_date": "2026-11-02 01:15:30+00:00",
+            "requested_at": "2026-11-02 01:15:30.064973+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261102T011531067998Z_a6dc93fa9a794cba8f41c352e49418b0.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36257605"
+            },
+            "body_sha256": "fa956511354aca16074ac7305388087ee51f73cff14f1c3cc7f4e5a2d5f9f713",
+            "http_status": 200,
+            "received_at": "2026-11-02 01:15:31.299557+00:00",
+            "server_date": "2026-11-02 01:15:28+00:00",
+            "requested_at": "2026-11-02 01:15:31.268264+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261102T011531299557Z_33e16b510fbc4cedb63e86828e010695.json",
+            "cache_age_seconds": "3"
+          }
+        ],
+        "observed_at": "2026-11-02 01:15:31.299557+00:00",
+        "attempted_at": "2026-11-02 01:15:30.064973+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 111,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-01 17:15:31.608274-08:00",
+      "recorded_at": "2026-11-01 17:15:31.639557-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "over",
+          "price": 124,
+          "market": "rebounds",
+          "player": "Georges Niang",
+          "sent_at": "2026-11-01 17:15:14.247906-08:00",
+          "alert_id": 111,
+          "event_id": "094b083ace229ca31ff360a80e35a1a8",
+          "away_team": "Los Angeles Clippers",
+          "home_team": "Golden State Warriors",
+          "decided_at": "2026-11-01 17:15:09.092506-08:00",
+          "native_tip": "2026-11-01 17:30:00-08:00",
+          "player_norm": "georges niang",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-01 17:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36257605",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "78f1cc123b0c886278070e7e227349dd0984057fa98473ec53642833010f15a2",
+            "http_status": 200,
+            "received_at": "2026-11-02 01:15:31.424068+00:00",
+            "server_date": "2026-11-02 01:15:30+00:00",
+            "requested_at": "2026-11-02 01:15:31.377697+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261102T011531424068Z_db442ffff4664a629db917f4ac1d0149.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36257605"
+            },
+            "body_sha256": "74919d5b01c9ea1df43be18b193eaf3872b927ca9b8231140bf9c83ba232e7a5",
+            "http_status": 200,
+            "received_at": "2026-11-02 01:15:31.608274+00:00",
+            "server_date": "2026-11-02 01:15:28+00:00",
+            "requested_at": "2026-11-02 01:15:31.589448+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261102T011531608274Z_bd9d85adb97e408bb9a6d060eb29cc3f.json",
+            "cache_age_seconds": "3"
+          }
+        ],
+        "observed_at": "2026-11-02 01:15:31.608274+00:00",
+        "attempted_at": "2026-11-02 01:15:31.377697+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 114,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-01 17:47:10.975035-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "under",
+          "price": 102,
+          "market": "rebounds",
+          "player": "Ja'Kobe Walter",
+          "sent_at": "2026-11-01 17:45:50.067710-08:00",
+          "alert_id": 114,
+          "event_id": "31fc89cbf3846e545e8e41a543a71d24",
+          "away_team": "Toronto Raptors",
+          "home_team": "Los Angeles Lakers",
+          "decided_at": "2026-11-01 17:45:47.740115-08:00",
+          "native_tip": "2026-11-01 18:00:00-08:00",
+          "player_norm": "jakobe walter",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-01 18:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "e0c2009efdd56df7210c1aafdd23140e8c4ef801687624178feff71a703a70b6",
+            "http_status": 200,
+            "received_at": "2026-11-02 01:47:10.700371+00:00",
+            "server_date": "2026-11-02 01:47:10+00:00",
+            "requested_at": "2026-11-02 01:47:05.552498+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261102T014710700371Z_eb850de13f0145d7a95db048b120428a.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36257607"
+            },
+            "body_sha256": "b25eaf89a5d5c5b29cc5ca3f5cad5aa4e0e23d68be62418b8d3cf5351ce2ad49",
+            "http_status": 200,
+            "received_at": "2026-11-02 01:47:10.947701+00:00",
+            "server_date": "2026-11-02 01:46:41+00:00",
+            "requested_at": "2026-11-02 01:47:10.907150+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261102T014710947701Z_d0b3ba5dcf6e45efa384c5c415eebc4a.json",
+            "cache_age_seconds": "29"
+          }
+        ],
+        "attempted_at": "2026-11-02 01:47:05.552498+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 118,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-04 15:15:35.300777-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 11.5,
+          "side": "over",
+          "price": 102,
+          "market": "points",
+          "player": "John Collins",
+          "sent_at": "2026-11-04 15:15:15.996064-08:00",
+          "alert_id": 118,
+          "event_id": "91df86557819598ca270ba35410cfcfa",
+          "away_team": "Philadelphia 76ers",
+          "home_team": "Detroit Pistons",
+          "decided_at": "2026-11-04 15:15:12.495131-08:00",
+          "native_tip": "2026-11-04 16:00:00-08:00",
+          "player_norm": "john collins",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 16:00:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "4ac0720d0958a68f333626ce591ebe5c74170764facae53afd369c84f1c4c143",
+            "http_status": 200,
+            "received_at": "2026-11-04 23:15:35.000689+00:00",
+            "server_date": "2026-11-04 23:15:34+00:00",
+            "requested_at": "2026-11-04 23:15:34.100493+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261104T231535000689Z_45f7ed144d24408bababb8485c77fe31.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36266779"
+            },
+            "body_sha256": "71e5db339d60f31f6affc18eab7a057d26eca51bbc29082d27d0f15c4760c52b",
+            "http_status": 200,
+            "received_at": "2026-11-04 23:15:35.256471+00:00",
+            "server_date": "2026-11-04 23:14:54+00:00",
+            "requested_at": "2026-11-04 23:15:35.200736+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261104T231535256471Z_611e4fdd47c640cca92281522eb841d4.json",
+            "cache_age_seconds": "41"
+          }
+        ],
+        "attempted_at": "2026-11-04 23:15:34.100493+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 119,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-04 15:15:35.640743-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 0.5,
+          "side": "under",
+          "price": 162,
+          "market": "threes",
+          "player": "Joel Embiid",
+          "sent_at": "2026-11-04 15:15:16.776305-08:00",
+          "alert_id": 119,
+          "event_id": "91df86557819598ca270ba35410cfcfa",
+          "away_team": "Philadelphia 76ers",
+          "home_team": "Detroit Pistons",
+          "decided_at": "2026-11-04 15:15:12.495131-08:00",
+          "native_tip": "2026-11-04 16:00:00-08:00",
+          "player_norm": "joel embiid",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 16:00:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "4ac0720d0958a68f333626ce591ebe5c74170764facae53afd369c84f1c4c143",
+            "http_status": 200,
+            "received_at": "2026-11-04 23:15:35.399248+00:00",
+            "server_date": "2026-11-04 23:15:34+00:00",
+            "requested_at": "2026-11-04 23:15:35.340815+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261104T231535399248Z_1feecdc70e334e01a5477e0f8ecbc11e.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36266779"
+            },
+            "body_sha256": "b0ba310157665a4c163be41fc808e1bc33db00635231794552abbe5906c2c734",
+            "http_status": 200,
+            "received_at": "2026-11-04 23:15:35.638485+00:00",
+            "server_date": "2026-11-04 23:14:55+00:00",
+            "requested_at": "2026-11-04 23:15:35.618159+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261104T231535638485Z_013a3b7d55194bd99e68b46a7c545a8c.json",
+            "cache_age_seconds": "40"
+          }
+        ],
+        "attempted_at": "2026-11-04 23:15:35.340815+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 127,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-04 15:45:30.996801-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "over",
+          "price": 120,
+          "market": "rebounds",
+          "player": "Bilal Coulibaly",
+          "sent_at": "2026-11-04 15:45:10.872046-08:00",
+          "alert_id": 127,
+          "event_id": "05200821a78e4f6db8131cff1652550f",
+          "away_team": "Atlanta Hawks",
+          "home_team": "Washington Wizards",
+          "decided_at": "2026-11-04 15:45:10.071860-08:00",
+          "native_tip": "2026-11-04 16:00:00-08:00",
+          "player_norm": "bilal coulibaly",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 16:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "640114dc05030fd1e54ce72a38524dcaed8aec8f22a5943bdf320b4b95dcc6d1",
+            "http_status": 200,
+            "received_at": "2026-11-04 23:45:30.736869+00:00",
+            "server_date": "2026-11-04 23:45:30+00:00",
+            "requested_at": "2026-11-04 23:45:29.700928+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261104T234530736869Z_6023522c54cf43cbae18ea2c41d7b9ae.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36266784"
+            },
+            "body_sha256": "75bc6547efb545678e772ce586a5cf6f5208bdd3227c4b2e7daaef97bc0efb00",
+            "http_status": 200,
+            "received_at": "2026-11-04 23:45:30.977247+00:00",
+            "server_date": "2026-11-04 23:45:11+00:00",
+            "requested_at": "2026-11-04 23:45:30.959028+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261104T234530977247Z_b77c82a2733e4be69864082f3d12ac24.json",
+            "cache_age_seconds": "20"
+          }
+        ],
+        "attempted_at": "2026-11-04 23:45:29.700928+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 140,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-04 16:09:08.761190-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": -140,
+          "market": "rebounds",
+          "player": "Tyler Herro",
+          "sent_at": "2026-11-04 16:07:32.471525-08:00",
+          "alert_id": 140,
+          "event_id": "1cb12166c3eda270d40cc65b9b34459a",
+          "away_team": "Milwaukee Bucks",
+          "home_team": "Boston Celtics",
+          "decided_at": "2026-11-04 16:07:31.798938-08:00",
+          "native_tip": "2026-11-04 16:30:00-08:00",
+          "player_norm": "tyler herro",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 16:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "8749ad8f951a6c05c4a179e180fb792669251e7aec4968557c7477966b671c7b",
+            "http_status": 200,
+            "received_at": "2026-11-05 00:09:08.341261+00:00",
+            "server_date": "2026-11-05 00:09:07+00:00",
+            "requested_at": "2026-11-05 00:09:07.000768+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T000908341261Z_9a70f89d9a614f82af6796957d27e57f.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36266778"
+            },
+            "body_sha256": "41bd99789c2658c72d7da737e03cb6c5c8d916a27d4f23b9c5d3fa4036bb074e",
+            "http_status": 200,
+            "received_at": "2026-11-05 00:09:08.684249+00:00",
+            "server_date": "2026-11-05 00:08:18+00:00",
+            "requested_at": "2026-11-05 00:09:08.616817+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T000908684249Z_670bcac4c058470c80fcad106c02a8b9.json",
+            "cache_age_seconds": "50"
+          }
+        ],
+        "attempted_at": "2026-11-05 00:09:07.000768+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 142,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-04 16:09:09.201335-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "under",
+          "price": 108,
+          "market": "assists",
+          "player": "Karl-Anthony Towns",
+          "sent_at": "2026-11-04 16:07:34.238284-08:00",
+          "alert_id": 142,
+          "event_id": "87d2b814c3f0d3691e9cebbf2de76295",
+          "away_team": "Chicago Bulls",
+          "home_team": "New York Knicks",
+          "decided_at": "2026-11-04 16:07:33.498069-08:00",
+          "native_tip": "2026-11-04 16:30:00-08:00",
+          "player_norm": "karlanthony towns",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 16:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "8749ad8f951a6c05c4a179e180fb792669251e7aec4968557c7477966b671c7b",
+            "http_status": 200,
+            "received_at": "2026-11-05 00:09:08.879514+00:00",
+            "server_date": "2026-11-05 00:09:07+00:00",
+            "requested_at": "2026-11-05 00:09:08.838612+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T000908879514Z_b83bf59c188b4dcdb3bd829dde4d4b39.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-assists",
+              "eventId": "36266776"
+            },
+            "body_sha256": "13c32dccbb8544cff47c7658be8a04806703966f0a8bb89c343835936fcc9fc9",
+            "http_status": 200,
+            "received_at": "2026-11-05 00:09:09.092359+00:00",
+            "server_date": "2026-11-05 00:08:16+00:00",
+            "requested_at": "2026-11-05 00:09:09.061192+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T000909092359Z_4e2bc0063db444d397fb3f58acf9bb3f.json",
+            "cache_age_seconds": "52"
+          }
+        ],
+        "attempted_at": "2026-11-05 00:09:08.838612+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 143,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-04 16:15:30.058548-08:00",
+      "recorded_at": "2026-11-04 16:15:30.072585-08:00",
+      "payload": {
+        "line": 1.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 1.5,
+          "side": "over",
+          "price": 124,
+          "market": "threes",
+          "player": "Kenrich Williams",
+          "sent_at": "2026-11-04 16:15:13.566177-08:00",
+          "alert_id": 143,
+          "event_id": "38fdb396939e8aabebd93cb509618927",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Oklahoma City Thunder",
+          "decided_at": "2026-11-04 16:15:12.925926-08:00",
+          "native_tip": "2026-11-04 17:00:00-08:00",
+          "player_norm": "kenrich williams",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 17:00:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 124,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36266773",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "9caf31a14e314f13a9b0e7d01b042d5143b1b9b0a7e76289304c5ca58a1b7415",
+            "http_status": 200,
+            "received_at": "2026-11-05 00:15:29.619760+00:00",
+            "server_date": "2026-11-05 00:15:29+00:00",
+            "requested_at": "2026-11-05 00:15:28.749168+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T001529619760Z_55d85a75bd874593994e901a9e65f2d8.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36266773"
+            },
+            "body_sha256": "352a3bc0c20cfe6599f3cbdde7bd7a6dc909e8dc61aa9f84c9395110a29d579e",
+            "http_status": 200,
+            "received_at": "2026-11-05 00:15:30.058548+00:00",
+            "server_date": "2026-11-05 00:15:29+00:00",
+            "requested_at": "2026-11-05 00:15:29.789450+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T001530058548Z_53a996199b81496b85c4df95eeead400.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.195819755",
+        "observed_at": "2026-11-05 00:15:30.058548+00:00",
+        "attempted_at": "2026-11-05 00:15:28.749168+00:00",
+        "manual_check": false,
+        "selection_id": "26962656",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 168,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-04 17:29:02.927040-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 16.5,
+          "side": "under",
+          "price": -125,
+          "market": "points",
+          "player": "Dillon Brooks",
+          "sent_at": "2026-11-04 17:27:03.870793-08:00",
+          "alert_id": 168,
+          "event_id": "d3d91c40111aca301d41c9cdb9d64608",
+          "away_team": "Portland Trail Blazers",
+          "home_team": "Phoenix Suns",
+          "decided_at": "2026-11-04 17:27:00.175339-08:00",
+          "native_tip": "2026-11-04 18:00:00-08:00",
+          "player_norm": "dillon brooks",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-04 18:00:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "7f8e6875885c84e011faa327dc0a9f408ebb23e813b08faa5f92d79566367f01",
+            "http_status": 200,
+            "received_at": "2026-11-05 01:29:02.442623+00:00",
+            "server_date": "2026-11-05 01:29:02+00:00",
+            "requested_at": "2026-11-05 01:29:01.317368+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T012902442623Z_1bb60942164b4131a837760308a21cd8.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36266775"
+            },
+            "body_sha256": "8ec617794a571b6b62717410aac65cdce25fcb4709667c4b079760e51e5e2073",
+            "http_status": 200,
+            "received_at": "2026-11-05 01:29:02.880053+00:00",
+            "server_date": "2026-11-05 01:28:09+00:00",
+            "requested_at": "2026-11-05 01:29:02.833145+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261105T012902880053Z_18bb3b14a0a540699a724510b186cd03.json",
+            "cache_age_seconds": "53"
+          }
+        ],
+        "attempted_at": "2026-11-05 01:29:01.317368+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 174,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-05 17:36:13.525937-08:00",
+      "recorded_at": "2026-11-05 17:36:13.584941-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 16.5,
+          "side": "over",
+          "price": -108,
+          "market": "points",
+          "player": "Jalen Green",
+          "sent_at": "2026-11-05 17:35:41.901863-08:00",
+          "alert_id": 174,
+          "event_id": "2a76b31e02d1416de069a995589515fc",
+          "away_team": "Orlando Magic",
+          "home_team": "Phoenix Suns",
+          "decided_at": "2026-11-05 17:35:39.963686-08:00",
+          "native_tip": "2026-11-05 18:00:00-08:00",
+          "player_norm": "jalen green",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-05 18:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36268668",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "e840d31e70362c2462b50be4263b36ee3a8d054c3a2c158f8a666c78e6669e9c",
+            "http_status": 200,
+            "received_at": "2026-11-06 01:36:13.291881+00:00",
+            "server_date": "2026-11-06 01:36:12+00:00",
+            "requested_at": "2026-11-06 01:36:12.025758+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261106T013613291881Z_c22dc0b7079d4312bce6b863cd165a19.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36268668"
+            },
+            "body_sha256": "e0ee4d3935d565a64165c406c7d7f6c9b03fe07923518ac3f402cf5d366401de",
+            "http_status": 200,
+            "received_at": "2026-11-06 01:36:13.525937+00:00",
+            "server_date": "2026-11-06 01:36:10+00:00",
+            "requested_at": "2026-11-06 01:36:13.494721+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261106T013613525937Z_ca84976014f44ba8b368acfff9b18fe4.json",
+            "cache_age_seconds": "3"
+          }
+        ],
+        "observed_at": "2026-11-06 01:36:13.525937+00:00",
+        "attempted_at": "2026-11-06 01:36:12.025758+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 180,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-05 17:48:50.312279-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": 102,
+          "market": "rebounds",
+          "player": "Anthony Black",
+          "sent_at": "2026-11-05 17:47:48.090266-08:00",
+          "alert_id": 180,
+          "event_id": "2a76b31e02d1416de069a995589515fc",
+          "away_team": "Orlando Magic",
+          "home_team": "Phoenix Suns",
+          "decided_at": "2026-11-05 17:47:45.349668-08:00",
+          "native_tip": "2026-11-05 18:00:00-08:00",
+          "player_norm": "anthony black",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-05 18:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "ebca9c02ea719f8849dacc332293b4d91de52a4cda488b3f3a5172a84b451fc7",
+            "http_status": 200,
+            "received_at": "2026-11-06 01:48:49.996519+00:00",
+            "server_date": "2026-11-06 01:48:49+00:00",
+            "requested_at": "2026-11-06 01:48:47.862576+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261106T014849996519Z_ddba944539b046139638fe4c043cf67e.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36268668"
+            },
+            "body_sha256": "dbdb73f41e0f64c623fe961aad21de7eddb5f6248517aaa5084fb31a0d1845f2",
+            "http_status": 200,
+            "received_at": "2026-11-06 01:48:50.245697+00:00",
+            "server_date": "2026-11-06 01:48:14+00:00",
+            "requested_at": "2026-11-06 01:48:50.214446+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261106T014850245697Z_34d35471c4ed4052aa356fbcfc2109f0.json",
+            "cache_age_seconds": "35"
+          }
+        ],
+        "attempted_at": "2026-11-06 01:48:47.862576+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 181,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-05 17:48:50.590774-08:00",
+      "recorded_at": "2026-11-05 17:48:50.666018-08:00",
+      "payload": {
+        "line": 3.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "under",
+          "price": 114,
+          "market": "rebounds",
+          "player": "Jalen Green",
+          "sent_at": "2026-11-05 17:47:48.746883-08:00",
+          "alert_id": 181,
+          "event_id": "2a76b31e02d1416de069a995589515fc",
+          "away_team": "Orlando Magic",
+          "home_team": "Phoenix Suns",
+          "decided_at": "2026-11-05 17:47:45.349668-08:00",
+          "native_tip": "2026-11-05 18:00:00-08:00",
+          "player_norm": "jalen green",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-05 18:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 114,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36268668",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "ebca9c02ea719f8849dacc332293b4d91de52a4cda488b3f3a5172a84b451fc7",
+            "http_status": 200,
+            "received_at": "2026-11-06 01:48:50.399495+00:00",
+            "server_date": "2026-11-06 01:48:49+00:00",
+            "requested_at": "2026-11-06 01:48:50.328011+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261106T014850399495Z_182a6530934a4267acfe3fd6641999c8.json",
+            "cache_age_seconds": "1"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36268668"
+            },
+            "body_sha256": "dbdb73f41e0f64c623fe961aad21de7eddb5f6248517aaa5084fb31a0d1845f2",
+            "http_status": 200,
+            "received_at": "2026-11-06 01:48:50.590774+00:00",
+            "server_date": "2026-11-06 01:48:50+00:00",
+            "requested_at": "2026-11-06 01:48:50.583658+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261106T014850590774Z_b98c5a6d47ea45fcb881d7d539c2de52.json",
+            "cache_age_seconds": null
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196145564",
+        "observed_at": "2026-11-06 01:48:50.590774+00:00",
+        "attempted_at": "2026-11-06 01:48:50.328011+00:00",
+        "manual_check": false,
+        "selection_id": "41386185",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 189,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-06 16:05:33.523162-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 3.5,
+          "side": "under",
+          "price": 124,
+          "market": "rebounds",
+          "player": "Peyton Watson",
+          "sent_at": "2026-11-06 16:05:11.888225-08:00",
+          "alert_id": 189,
+          "event_id": "85869b2fdc16ef10d3e2582bf05ead95",
+          "away_team": "Philadelphia 76ers",
+          "home_team": "Cleveland Cavaliers",
+          "decided_at": "2026-11-06 16:05:11.162723-08:00",
+          "native_tip": "2026-11-06 16:30:00-08:00",
+          "player_norm": "peyton watson",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 16:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "88999122c630d82d2cd20ebe260717dae2b50d0540ab3148e59a8f592b4b2b2b",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:05:33.272198+00:00",
+            "server_date": "2026-11-07 00:05:23+00:00",
+            "requested_at": "2026-11-07 00:05:32.804326+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T000533272198Z_fb88d5ddf1ed46b0a6cee4815f452685.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36279171"
+            },
+            "body_sha256": "cf80c9e066e6fed491b333abfe00d0b5f5d4fb67fd08bbaa58e400c4397b253d",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:05:33.491912+00:00",
+            "server_date": "2026-11-07 00:05:15+00:00",
+            "requested_at": "2026-11-07 00:05:33.476256+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T000533491912Z_f635e5fd570b4a0facaa73b35c27c74e.json",
+            "cache_age_seconds": "18"
+          }
+        ],
+        "attempted_at": "2026-11-07 00:05:32.804326+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 192,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-06 16:25:34.352875-08:00",
+      "recorded_at": "2026-11-06 16:25:34.384031-08:00",
+      "payload": {
+        "line": 9.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 9.5,
+          "side": "under",
+          "price": -142,
+          "market": "rebounds",
+          "player": "Cameron Boozer",
+          "sent_at": "2026-11-06 16:25:10.961885-08:00",
+          "alert_id": 192,
+          "event_id": "86684f64a8ec8385537a36c3b3768935",
+          "away_team": "Oklahoma City Thunder",
+          "home_team": "Memphis Grizzlies",
+          "decided_at": "2026-11-06 16:25:10.211685-08:00",
+          "native_tip": "2026-11-06 17:00:00-08:00",
+          "player_norm": "cameron boozer",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -142,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36279172",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "54b497eb8b58127d50dda96e5cfd0c9fed9814485f6d7fe728796a67e82a4467",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:25:34.149118+00:00",
+            "server_date": "2026-11-07 00:25:24+00:00",
+            "requested_at": "2026-11-07 00:25:33.674937+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T002534149118Z_906a390231d14ce28a9304583347cba6.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36279172"
+            },
+            "body_sha256": "6396ad8b927cb543609d03f1c7f709c8bb3e8db2d2372dc542b939e0bad398c7",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:25:34.352875+00:00",
+            "server_date": "2026-11-07 00:25:25+00:00",
+            "requested_at": "2026-11-07 00:25:34.337155+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T002534352875Z_612d273ebb2f4667bd4ca546a65f824f.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196332025",
+        "observed_at": "2026-11-07 00:25:34.352875+00:00",
+        "attempted_at": "2026-11-07 00:25:33.674937+00:00",
+        "manual_check": false,
+        "selection_id": "90748928",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 198,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-06 16:35:38.384404-08:00",
+      "recorded_at": "2026-11-06 16:35:38.431212-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 14.5,
+          "side": "over",
+          "price": 104,
+          "market": "points",
+          "player": "Collin Murray-Boyles",
+          "sent_at": "2026-11-06 16:35:14.588494-08:00",
+          "alert_id": 198,
+          "event_id": "1c60a090180de530cfe273a5d6a381e6",
+          "away_team": "Toronto Raptors",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-11-06 16:35:13.946832-08:00",
+          "native_tip": "2026-11-06 17:00:00-08:00",
+          "player_norm": "collin murrayboyles",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36279176",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "a35faa7f25ceb7d51f05979f0969057055cf72aa595217d7c579643f91576200",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:35:38.165659+00:00",
+            "server_date": "2026-11-07 00:35:28+00:00",
+            "requested_at": "2026-11-07 00:35:37.697679+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T003538165659Z_5120c8501bbb4d4e9d204f2012ce196b.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36279176"
+            },
+            "body_sha256": "f2926cb43cb35ce2790002274d26c0a0474627f720331c41e15cf26b4238eb97",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:35:38.384404+00:00",
+            "server_date": "2026-11-07 00:35:29+00:00",
+            "requested_at": "2026-11-07 00:35:38.368712+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T003538384404Z_c16f95ddd1614f99b9bd0f9ce7694259.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "observed_at": "2026-11-07 00:35:38.384404+00:00",
+        "attempted_at": "2026-11-07 00:35:37.697679+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 199,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-06 16:35:38.650137-08:00",
+      "recorded_at": "2026-11-06 16:35:38.696944-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 6.5,
+          "side": "over",
+          "price": 108,
+          "market": "rebounds",
+          "player": "R.J. Barrett",
+          "sent_at": "2026-11-06 16:35:15.451305-08:00",
+          "alert_id": 199,
+          "event_id": "1c60a090180de530cfe273a5d6a381e6",
+          "away_team": "Toronto Raptors",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-11-06 16:35:13.946832-08:00",
+          "native_tip": "2026-11-06 17:00:00-08:00",
+          "player_norm": "rj barrett",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36279176",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "a35faa7f25ceb7d51f05979f0969057055cf72aa595217d7c579643f91576200",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:35:38.478088+00:00",
+            "server_date": "2026-11-07 00:35:28+00:00",
+            "requested_at": "2026-11-07 00:35:38.446905+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T003538478088Z_be3a0d0b68794bfcadc5b9299e38a57a.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36279176"
+            },
+            "body_sha256": "1c667af7ece86b8fe29b7c30169fccd0a9ccf2e79721ac7a4a1b61f7b0b39d0e",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:35:38.650137+00:00",
+            "server_date": "2026-11-07 00:35:29+00:00",
+            "requested_at": "2026-11-07 00:35:38.634411+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T003538650137Z_e4bd738cdb1e49eaae8630470e832dbb.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "observed_at": "2026-11-07 00:35:38.650137+00:00",
+        "attempted_at": "2026-11-07 00:35:38.446905+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 206,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-06 16:45:39.120184-08:00",
+      "recorded_at": "2026-11-06 16:45:39.135842-08:00",
+      "payload": {
+        "line": 2.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 2.5,
+          "side": "over",
+          "price": 138,
+          "market": "threes",
+          "player": "Jared McCain",
+          "sent_at": "2026-11-06 16:45:15.474922-08:00",
+          "alert_id": 206,
+          "event_id": "86684f64a8ec8385537a36c3b3768935",
+          "away_team": "Oklahoma City Thunder",
+          "home_team": "Memphis Grizzlies",
+          "decided_at": "2026-11-06 16:45:14.042335-08:00",
+          "native_tip": "2026-11-06 17:00:00-08:00",
+          "player_norm": "jared mccain",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": 138,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36279172",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "a2bd5dbec485b154ddd519b614cd76c0ce1fd58ea8ac0e3ee730d0bebbe53a7d",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:45:38.909654+00:00",
+            "server_date": "2026-11-07 00:45:29+00:00",
+            "requested_at": "2026-11-07 00:45:38.401162+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T004538909654Z_5140848d679f43b0947b7a6793eabb09.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36279172"
+            },
+            "body_sha256": "1073b6b9f967fdbce46aee2e05618e6ca3ec2c5e9c6b344e819f07e9c05f011f",
+            "http_status": 200,
+            "received_at": "2026-11-07 00:45:39.120184+00:00",
+            "server_date": "2026-11-07 00:45:30+00:00",
+            "requested_at": "2026-11-07 00:45:39.112003+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T004539120184Z_28984a311eb44bb49e5e75107f4da5b8.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196330607",
+        "observed_at": "2026-11-07 00:45:39.120184+00:00",
+        "attempted_at": "2026-11-07 00:45:38.401162+00:00",
+        "manual_check": false,
+        "selection_id": "63496225",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 211,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-06 18:25:33.848328-08:00",
+      "recorded_at": "2026-11-06 18:25:33.863954-08:00",
+      "payload": {
+        "line": 4.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": -146,
+          "market": "rebounds",
+          "player": "Devin Vassell",
+          "sent_at": "2026-11-06 18:25:11.535873-08:00",
+          "alert_id": 211,
+          "event_id": "d24eb5492983d6e28be3b96df396fa12",
+          "away_team": "San Antonio Spurs",
+          "home_team": "Sacramento Kings",
+          "decided_at": "2026-11-06 18:25:09.333212-08:00",
+          "native_tip": "2026-11-06 19:00:00-08:00",
+          "player_norm": "devin vassell",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 19:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -148,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36279170",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "e61288c57b961c3e7ae3fae2aa290eb58b5f09198516c37056297650139c0a17",
+            "http_status": 200,
+            "received_at": "2026-11-07 02:25:33.629973+00:00",
+            "server_date": "2026-11-07 02:25:24+00:00",
+            "requested_at": "2026-11-07 02:25:33.129149+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T022533629973Z_39c652e81c374725ab4bdd350c7657f8.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36279170"
+            },
+            "body_sha256": "f118df9d3ff951dffc336f1a68f7e77bcd6156aad35436dd86ed122bf1d7a3a0",
+            "http_status": 200,
+            "received_at": "2026-11-07 02:25:33.848328+00:00",
+            "server_date": "2026-11-07 02:25:23+00:00",
+            "requested_at": "2026-11-07 02:25:33.817108+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T022533848328Z_db109fd3e7f4476cafc32cefedb95427.json",
+            "cache_age_seconds": "10"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196348823",
+        "observed_at": "2026-11-07 02:25:33.848328+00:00",
+        "attempted_at": "2026-11-07 02:25:33.129149+00:00",
+        "manual_check": false,
+        "selection_id": "38295528",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 214,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-06 18:35:33.927278-08:00",
+      "recorded_at": "2026-11-06 18:35:33.958559-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 28.5,
+          "side": "over",
+          "price": 104,
+          "market": "points",
+          "player": "Victor Wembanyama",
+          "sent_at": "2026-11-06 18:35:12.427095-08:00",
+          "alert_id": 214,
+          "event_id": "d24eb5492983d6e28be3b96df396fa12",
+          "away_team": "San Antonio Spurs",
+          "home_team": "Sacramento Kings",
+          "decided_at": "2026-11-06 18:35:11.208492-08:00",
+          "native_tip": "2026-11-06 19:00:00-08:00",
+          "player_norm": "victor wembanyama",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-06 19:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36279170",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "0d3d34f7d5aa5da3b51324e0e228c3530cc3f3fab9929ef2298846d849dbef8a",
+            "http_status": 200,
+            "received_at": "2026-11-07 02:35:33.693244+00:00",
+            "server_date": "2026-11-07 02:35:24+00:00",
+            "requested_at": "2026-11-07 02:35:33.223806+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T023533693244Z_90db9dd5126646a5952ec03001a37221.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36279170"
+            },
+            "body_sha256": "d5d4596d929eb1eb18fddda85478a72a8ca28813d68fc097e834f932879ba81e",
+            "http_status": 200,
+            "received_at": "2026-11-07 02:35:33.927278+00:00",
+            "server_date": "2026-11-07 02:35:24+00:00",
+            "requested_at": "2026-11-07 02:35:33.896057+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T023533927278Z_b4f33fb9d9734629aede06dc74a60446.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "observed_at": "2026-11-07 02:35:33.927278+00:00",
+        "attempted_at": "2026-11-07 02:35:33.223806+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 221,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-07 13:25:31.463677-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 7.5,
+          "side": "over",
+          "price": 120,
+          "market": "assists",
+          "player": "Andrew Nembhard",
+          "sent_at": "2026-11-07 13:25:09.432092-08:00",
+          "alert_id": 221,
+          "event_id": "e76682ca6c25a37b0a53cec226b91aab",
+          "away_team": "Denver Nuggets",
+          "home_team": "Indiana Pacers",
+          "decided_at": "2026-11-07 13:25:08.494759-08:00",
+          "native_tip": "2026-11-07 14:00:00-08:00",
+          "player_norm": "andrew nembhard",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 14:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "aa1c2470986c1d0c40dfa39685d45b69141efe20eefc99d063b1e28c4ed8b1e4",
+            "http_status": 200,
+            "received_at": "2026-11-07 21:25:31.244490+00:00",
+            "server_date": "2026-11-07 21:25:21+00:00",
+            "requested_at": "2026-11-07 21:25:30.760163+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T212531244490Z_ce3d1ae24e964acabfde736c63559976.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-assists",
+              "eventId": "36282776"
+            },
+            "body_sha256": "d463af9ce5ac9e05d66291a067a5c773a2e80c18b8afb13f561199f93433bd66",
+            "http_status": 200,
+            "received_at": "2026-11-07 21:25:31.450569+00:00",
+            "server_date": "2026-11-07 21:25:14+00:00",
+            "requested_at": "2026-11-07 21:25:31.439674+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T212531450569Z_bbe89404059e4d53b827ac2ac20ced2a.json",
+            "cache_age_seconds": "17"
+          }
+        ],
+        "attempted_at": "2026-11-07 21:25:30.760163+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 223,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-07 13:45:31.683965-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 9.5,
+          "side": "under",
+          "price": -111,
+          "market": "assists",
+          "player": "Nikola Jokic",
+          "sent_at": "2026-11-07 13:45:10.356112-08:00",
+          "alert_id": 223,
+          "event_id": "e76682ca6c25a37b0a53cec226b91aab",
+          "away_team": "Denver Nuggets",
+          "home_team": "Indiana Pacers",
+          "decided_at": "2026-11-07 13:45:08.841039-08:00",
+          "native_tip": "2026-11-07 14:00:00-08:00",
+          "player_norm": "nikola jokic",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 14:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "8a02a62765eaaa1be25ff013852150896c5f2ada502964aaf447471c29654c5d",
+            "http_status": 200,
+            "received_at": "2026-11-07 21:45:31.465026+00:00",
+            "server_date": "2026-11-07 21:45:22+00:00",
+            "requested_at": "2026-11-07 21:45:31.019684+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T214531465026Z_825ba87de1e9447fb5f279341d84ab7e.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-assists",
+              "eventId": "36282776"
+            },
+            "body_sha256": "adb346857a583c5971cf33cd89c54d18851017f735dddc4d74d4ed7f457010a7",
+            "http_status": 200,
+            "received_at": "2026-11-07 21:45:31.671693+00:00",
+            "server_date": "2026-11-07 21:45:09+00:00",
+            "requested_at": "2026-11-07 21:45:31.660444+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261107T214531671693Z_770adea9e0ae4adfa978c93fda5d4b71.json",
+            "cache_age_seconds": "22"
+          }
+        ],
+        "attempted_at": "2026-11-07 21:45:31.019684+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 227,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-07 16:25:36.308341-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": -146,
+          "market": "rebounds",
+          "player": "Shai Gilgeous-Alexander",
+          "sent_at": "2026-11-07 16:25:13.121077-08:00",
+          "alert_id": 227,
+          "event_id": "6faeaee3bdf2a167eb67f93c44d3ef37",
+          "away_team": "Washington Wizards",
+          "home_team": "Oklahoma City Thunder",
+          "decided_at": "2026-11-07 16:25:11.021068-08:00",
+          "native_tip": "2026-11-07 17:00:00-08:00",
+          "player_norm": "shai gilgeousalexander",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "5f99a0247a70f3306e0abcc1ea8220a0258ad6650835e0338b1aa9ca8e137ca3",
+            "http_status": 200,
+            "received_at": "2026-11-08 00:25:36.089482+00:00",
+            "server_date": "2026-11-08 00:25:26+00:00",
+            "requested_at": "2026-11-08 00:25:35.620656+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T002536089482Z_1aa4e52798a5467897167b2e42abad18.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36282777"
+            },
+            "body_sha256": "54a5acc84df70959b600315fb507490b0c783e82f57f35e4a2a5e95dcdc40832",
+            "http_status": 200,
+            "received_at": "2026-11-08 00:25:36.292781+00:00",
+            "server_date": "2026-11-08 00:25:16+00:00",
+            "requested_at": "2026-11-08 00:25:36.277073+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T002536292781Z_a420604dbf1d4d11bd59763db7475c9f.json",
+            "cache_age_seconds": "20"
+          }
+        ],
+        "attempted_at": "2026-11-08 00:25:35.620656+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 228,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-07 16:25:36.558421-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 2.5,
+          "side": "over",
+          "price": 164,
+          "market": "threes",
+          "player": "Trae Young",
+          "sent_at": "2026-11-07 16:25:13.745729-08:00",
+          "alert_id": 228,
+          "event_id": "6faeaee3bdf2a167eb67f93c44d3ef37",
+          "away_team": "Washington Wizards",
+          "home_team": "Oklahoma City Thunder",
+          "decided_at": "2026-11-07 16:25:11.021068-08:00",
+          "native_tip": "2026-11-07 17:00:00-08:00",
+          "player_norm": "trae young",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "5f99a0247a70f3306e0abcc1ea8220a0258ad6650835e0338b1aa9ca8e137ca3",
+            "http_status": 200,
+            "received_at": "2026-11-08 00:25:36.370905+00:00",
+            "server_date": "2026-11-08 00:25:26+00:00",
+            "requested_at": "2026-11-08 00:25:36.324030+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T002536370905Z_2a5467ead102420f8a6b5c556d0cad94.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36282777"
+            },
+            "body_sha256": "41fff0f48a0ab3f85ba859ba74b4287c3971c960b155fc541416e6cfd5ab40a3",
+            "http_status": 200,
+            "received_at": "2026-11-08 00:25:36.558421+00:00",
+            "server_date": "2026-11-08 00:25:16+00:00",
+            "requested_at": "2026-11-08 00:25:36.527071+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T002536558421Z_e08c7cba2f0d4372bf8f47fc695feea6.json",
+            "cache_age_seconds": "20"
+          }
+        ],
+        "attempted_at": "2026-11-08 00:25:36.324030+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 237,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-07 16:45:34.122888-08:00",
+      "recorded_at": "2026-11-07 16:45:34.175172-08:00",
+      "payload": {
+        "line": 18.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 18.5,
+          "side": "under",
+          "price": -122,
+          "market": "points",
+          "player": "AJ Dybantsa",
+          "sent_at": "2026-11-07 16:45:12.607659-08:00",
+          "alert_id": 237,
+          "event_id": "6faeaee3bdf2a167eb67f93c44d3ef37",
+          "away_team": "Washington Wizards",
+          "home_team": "Oklahoma City Thunder",
+          "decided_at": "2026-11-07 16:45:09.642970-08:00",
+          "native_tip": "2026-11-07 17:00:00-08:00",
+          "player_norm": "aj dybantsa",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -122,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36282777",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "efe2454f2b13c144347632a37cc325a5d6b2292bdf4490cc3391f185d1c7252e",
+            "http_status": 200,
+            "received_at": "2026-11-08 00:45:33.904961+00:00",
+            "server_date": "2026-11-08 00:45:24+00:00",
+            "requested_at": "2026-11-08 00:45:33.435498+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T004533904961Z_e3fdf5d51a094b5797b20d3084380131.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36282777"
+            },
+            "body_sha256": "fc20002ce388174d48e721ef2f56687bc92d2b469c45fc2c3f5b322dbe0956c1",
+            "http_status": 200,
+            "received_at": "2026-11-08 00:45:34.122888+00:00",
+            "server_date": "2026-11-08 00:45:25+00:00",
+            "requested_at": "2026-11-08 00:45:34.107191+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T004534122888Z_9ccedfaccfd24f0fa92bc229d80b9f0c.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196539920",
+        "observed_at": "2026-11-08 00:45:34.122888+00:00",
+        "attempted_at": "2026-11-08 00:45:33.435498+00:00",
+        "manual_check": false,
+        "selection_id": "90729347",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 250,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-07 18:35:33.529487-08:00",
+      "recorded_at": "2026-11-07 18:35:33.560641-08:00",
+      "payload": {
+        "line": 2.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 2.5,
+          "side": "under",
+          "price": -113,
+          "market": "rebounds",
+          "player": "Scoot Henderson",
+          "sent_at": "2026-11-07 18:35:10.295004-08:00",
+          "alert_id": 250,
+          "event_id": "08d47dd5e50e83839e395e49870d6a0d",
+          "away_team": "San Antonio Spurs",
+          "home_team": "Portland Trail Blazers",
+          "decided_at": "2026-11-07 18:35:09.655882-08:00",
+          "native_tip": "2026-11-07 19:00:00-08:00",
+          "player_norm": "scoot henderson",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 19:00:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -113,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36282779",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "95b9d18488f6c384157fa5f0787778d90af6134cb31611f3d8e4278108469aab",
+            "http_status": 200,
+            "received_at": "2026-11-08 02:35:33.310624+00:00",
+            "server_date": "2026-11-08 02:35:23+00:00",
+            "requested_at": "2026-11-08 02:35:32.846397+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T023533310624Z_732dacdcf0a54f97ab000619dffda27e.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36282779"
+            },
+            "body_sha256": "1a9965cf5ba0ace92dbad13d5ee8758a5530ab86477190c791d436f6e394aa27",
+            "http_status": 200,
+            "received_at": "2026-11-08 02:35:33.529487+00:00",
+            "server_date": "2026-11-08 02:35:24+00:00",
+            "requested_at": "2026-11-08 02:35:33.513794+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T023533529487Z_a81ab5aa38e14c38a37b0d941f0474d6.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196524955",
+        "observed_at": "2026-11-08 02:35:33.529487+00:00",
+        "attempted_at": "2026-11-08 02:35:32.846397+00:00",
+        "manual_check": false,
+        "selection_id": "62064857",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 251,
+      "status": "unknown",
+      "reason": "conflicting_exact_quotes",
+      "observed_at": "2026-11-07 18:35:33.795142-08:00",
+      "recorded_at": "2026-11-07 18:35:33.826828-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 11.5,
+          "side": "over",
+          "price": 106,
+          "market": "rebounds",
+          "player": "Victor Wembanyama",
+          "sent_at": "2026-11-07 18:35:10.892186-08:00",
+          "alert_id": 251,
+          "event_id": "08d47dd5e50e83839e395e49870d6a0d",
+          "away_team": "San Antonio Spurs",
+          "home_team": "Portland Trail Blazers",
+          "decided_at": "2026-11-07 18:35:09.655882-08:00",
+          "native_tip": "2026-11-07 19:00:00-08:00",
+          "player_norm": "victor wembanyama",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-07 19:00:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "conflicting_exact_quotes",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": true,
+        "event_id": "36282779",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "95b9d18488f6c384157fa5f0787778d90af6134cb31611f3d8e4278108469aab",
+            "http_status": 200,
+            "received_at": "2026-11-08 02:35:33.623232+00:00",
+            "server_date": "2026-11-08 02:35:23+00:00",
+            "requested_at": "2026-11-08 02:35:33.591990+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T023533623232Z_114ce6c6e817496eafb32bcdd54d269e.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36282779"
+            },
+            "body_sha256": "1a9965cf5ba0ace92dbad13d5ee8758a5530ab86477190c791d436f6e394aa27",
+            "http_status": 200,
+            "received_at": "2026-11-08 02:35:33.795142+00:00",
+            "server_date": "2026-11-08 02:35:24+00:00",
+            "requested_at": "2026-11-08 02:35:33.779420+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T023533795142Z_7bb6772a72a5421eb3efd6fc4a4f07ba.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "observed_at": "2026-11-08 02:35:33.795142+00:00",
+        "attempted_at": "2026-11-08 02:35:33.591990+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 255,
+      "status": "unknown",
+      "reason": "server_response_stale",
+      "observed_at": null,
+      "recorded_at": "2026-11-08 12:15:32.454538-08:00",
+      "payload": {
+        "line": null,
+        "alert": {
+          "book": "fanduel",
+          "line": 17.5,
+          "side": "under",
+          "price": -122,
+          "market": "points",
+          "player": "LeBron James",
+          "sent_at": "2026-11-08 12:15:10.168009-08:00",
+          "alert_id": 255,
+          "event_id": "a5d2d9c68b7446860de658aa4bc33c5b",
+          "away_team": "Philadelphia 76ers",
+          "home_team": "Chicago Bulls",
+          "decided_at": "2026-11-08 12:15:08.588572-08:00",
+          "native_tip": "2026-11-08 12:30:00-08:00",
+          "player_norm": "lebron james",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-08 12:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": null,
+        "state": "co",
+        "reason": "server_response_stale",
+        "source": "automated_fanduel_public_feed",
+        "status": "unknown",
+        "timely": false,
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "bca4223e1c9620d03aeef8ac1f70983895ee7f788a3c90f654ffaa583be37808",
+            "http_status": 200,
+            "received_at": "2026-11-08 20:15:32.197236+00:00",
+            "server_date": "2026-11-08 20:15:22+00:00",
+            "requested_at": "2026-11-08 20:15:31.699148+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T201532197236Z_ceeaa81c550544a29430c670a05308cc.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36286506"
+            },
+            "body_sha256": "6aec4ea6fa62a1f169985d50e13dd7ba3c7fcaad880a924b2f10ad6c76d68386",
+            "http_status": 200,
+            "received_at": "2026-11-08 20:15:32.401169+00:00",
+            "server_date": "2026-11-08 20:15:09+00:00",
+            "requested_at": "2026-11-08 20:15:32.385475+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261108T201532401169Z_7ad4eab8853d4c258f8097071c7c0ae2.json",
+            "cache_age_seconds": "23"
+          }
+        ],
+        "attempted_at": "2026-11-08 20:15:31.699148+00:00",
+        "manual_check": false,
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 256,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-08 16:25:32.530397-08:00",
+      "recorded_at": "2026-11-08 16:25:32.577271-08:00",
+      "payload": {
+        "line": 26.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 26.5,
+          "side": "under",
+          "price": -108,
+          "market": "points",
+          "player": "Jayson Tatum",
+          "sent_at": "2026-11-08 16:25:10.049285-08:00",
+          "alert_id": 256,
+          "event_id": "98eae523edadc7d4d42ab37222eb2c88",
+          "away_team": "Boston Celtics",
+          "home_team": "Milwaukee Bucks",
+          "decided_at": "2026-11-08 16:25:09.264240-08:00",
+          "native_tip": "2026-11-08 17:00:00-08:00",
+          "player_norm": "jayson tatum",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-08 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -108,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36286504",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "4c8fdc56688309ceb417ea0fc6fc4273037d55236f5d699fa9d2dfcca4c6882f",
+            "http_status": 200,
+            "received_at": "2026-11-09 00:25:32.326612+00:00",
+            "server_date": "2026-11-09 00:25:22+00:00",
+            "requested_at": "2026-11-09 00:25:31.842723+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T002532326612Z_8a796bb6b8f44345a3a52bb274e6039b.json",
+            "cache_age_seconds": "10"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36286504"
+            },
+            "body_sha256": "961eb621595735a5ba3fced78e29abe1ee231c71eb9c399aa1b2aacf01cb589b",
+            "http_status": 200,
+            "received_at": "2026-11-09 00:25:32.530397+00:00",
+            "server_date": "2026-11-09 00:25:23+00:00",
+            "requested_at": "2026-11-09 00:25:32.514771+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T002532530397Z_5c75b2e5ed8d4381aaf8eace297dc057.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196658870",
+        "observed_at": "2026-11-09 00:25:32.530397+00:00",
+        "attempted_at": "2026-11-09 00:25:31.842723+00:00",
+        "manual_check": false,
+        "selection_id": "15552474",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 271,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-09 15:27:23.835030-08:00",
+      "recorded_at": "2026-11-09 15:27:23.928638-08:00",
+      "payload": {
+        "line": 4.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 4.5,
+          "side": "under",
+          "price": -140,
+          "market": "rebounds",
+          "player": "Royce O'Neale",
+          "sent_at": "2026-11-09 15:26:45.537389-08:00",
+          "alert_id": 271,
+          "event_id": "1df5ff8fe9c6d2dbff1d0ae176063b37",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Charlotte Hornets",
+          "decided_at": "2026-11-09 15:26:41.802617-08:00",
+          "native_tip": "2026-11-09 16:00:00-08:00",
+          "player_norm": "royce oneale",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-09 16:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -140,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36290200",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "2ffafcfc82113b7400a28677e5ce2c049cd64e949e224bcb3d6aa6964d72cc5c",
+            "http_status": 200,
+            "received_at": "2026-11-09 23:27:23.548036+00:00",
+            "server_date": "2026-11-09 23:27:11+00:00",
+            "requested_at": "2026-11-09 23:27:23.068786+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T232723548036Z_2f6d0dd4325e499baf2dece59fe37907.json",
+            "cache_age_seconds": "12"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-rebounds",
+              "eventId": "36290200"
+            },
+            "body_sha256": "6b610531b420f77de1069600fc6da3deac0954af6e54a9c7bf2f241b30eba6f3",
+            "http_status": 200,
+            "received_at": "2026-11-09 23:27:23.835030+00:00",
+            "server_date": "2026-11-09 23:27:11+00:00",
+            "requested_at": "2026-11-09 23:27:23.819406+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T232723835030Z_fd890c5449ea4b1999bc109b8df0788d.json",
+            "cache_age_seconds": "11"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196828924",
+        "observed_at": "2026-11-09 23:27:23.835030+00:00",
+        "attempted_at": "2026-11-09 23:27:23.068786+00:00",
+        "manual_check": false,
+        "selection_id": "12537924",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 276,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-09 15:45:34.215035-08:00",
+      "recorded_at": "2026-11-09 15:45:34.246288-08:00",
+      "payload": {
+        "line": 12.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 12.5,
+          "side": "under",
+          "price": -130,
+          "market": "points",
+          "player": "Jarrett Allen",
+          "sent_at": "2026-11-09 15:45:11.058319-08:00",
+          "alert_id": 276,
+          "event_id": "1df5ff8fe9c6d2dbff1d0ae176063b37",
+          "away_team": "Cleveland Cavaliers",
+          "home_team": "Charlotte Hornets",
+          "decided_at": "2026-11-09 15:45:09.058394-08:00",
+          "native_tip": "2026-11-09 16:00:00-08:00",
+          "player_norm": "jarrett allen",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-09 16:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -128,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36290200",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "183765d886fd33ad7f73046279fd3d65dd7f8c1df080fc83199630ad8cc33f11",
+            "http_status": 200,
+            "received_at": "2026-11-09 23:45:33.996277+00:00",
+            "server_date": "2026-11-09 23:45:24+00:00",
+            "requested_at": "2026-11-09 23:45:33.527773+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T234533996277Z_69ccb4d4a4ea44fc9390416b613d0615.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-points",
+              "eventId": "36290200"
+            },
+            "body_sha256": "31060c2446c003e90d0bfbcc87cb64b0e2ddd488084f64cbc4638d08dbb2b16b",
+            "http_status": 200,
+            "received_at": "2026-11-09 23:45:34.215035+00:00",
+            "server_date": "2026-11-09 23:45:24+00:00",
+            "requested_at": "2026-11-09 23:45:34.195905+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T234534215035Z_b3ad537645cd49008b198a6a6304df80.json",
+            "cache_age_seconds": "10"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196827750",
+        "observed_at": "2026-11-09 23:45:34.215035+00:00",
+        "attempted_at": "2026-11-09 23:45:33.527773+00:00",
+        "manual_check": false,
+        "selection_id": "21174118",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 278,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-09 15:55:36.031004-08:00",
+      "recorded_at": "2026-11-09 15:55:36.046658-08:00",
+      "payload": {
+        "line": 5.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 5.5,
+          "side": "under",
+          "price": -166,
+          "market": "assists",
+          "player": "R.J. Barrett",
+          "sent_at": "2026-11-09 15:55:12.252095-08:00",
+          "alert_id": 278,
+          "event_id": "56efae2815b3a18850f07a3781d652a2",
+          "away_team": "Memphis Grizzlies",
+          "home_team": "Toronto Raptors",
+          "decided_at": "2026-11-09 15:55:10.868048-08:00",
+          "native_tip": "2026-11-09 16:30:00-08:00",
+          "player_norm": "rj barrett",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-09 16:40:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -166,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36290205",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "21233b08516c5d9f8e18119db6818fdd4876e3930c68c55fba92bde20e23a73a",
+            "http_status": 200,
+            "received_at": "2026-11-09 23:55:35.827355+00:00",
+            "server_date": "2026-11-09 23:55:26+00:00",
+            "requested_at": "2026-11-09 23:55:35.342962+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T235535827355Z_f684748d5b434ec4ae253a4c1f53f827.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-assists",
+              "eventId": "36290205"
+            },
+            "body_sha256": "c4678a2555b81406b2cb26a57e2119b89d2bc225e423fc42f6b9f14a05c719c2",
+            "http_status": 200,
+            "received_at": "2026-11-09 23:55:36.031004+00:00",
+            "server_date": "2026-11-09 23:55:27+00:00",
+            "requested_at": "2026-11-09 23:55:36.014192+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261109T235536031004Z_c2e7f8f26ce041baa106b662082b2b2e.json",
+            "cache_age_seconds": "9"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196826255",
+        "observed_at": "2026-11-09 23:55:36.031004+00:00",
+        "attempted_at": "2026-11-09 23:55:35.342962+00:00",
+        "manual_check": false,
+        "selection_id": "24729450",
+        "wager_placed": false
+      }
+    },
+    {
+      "alert_id": 280,
+      "status": "available",
+      "reason": "exact_quote",
+      "observed_at": "2026-11-09 16:25:32.110982-08:00",
+      "recorded_at": "2026-11-09 16:25:32.110982-08:00",
+      "payload": {
+        "line": 1.5,
+        "alert": {
+          "book": "fanduel",
+          "line": 1.5,
+          "side": "over",
+          "price": -125,
+          "market": "threes",
+          "player": "Andrew Nembhard",
+          "sent_at": "2026-11-09 16:25:09.898619-08:00",
+          "alert_id": 280,
+          "event_id": "9866fa22adc8509d487522ef4cf0fc24",
+          "away_team": "Indiana Pacers",
+          "home_team": "Dallas Mavericks",
+          "decided_at": "2026-11-09 16:25:09.194872-08:00",
+          "native_tip": "2026-11-09 17:00:00-08:00",
+          "player_norm": "andrew nembhard",
+          "experiment_id": "nba-prop-price-check-v1",
+          "commence_time_utc": "2026-11-09 17:10:00-08:00",
+          "experiment_sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+        },
+        "price": -125,
+        "state": "co",
+        "reason": "exact_quote",
+        "source": "automated_fanduel_public_feed",
+        "status": "available",
+        "timely": true,
+        "event_id": "36290199",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nba"
+            },
+            "body_sha256": "32de32a6fc1a2fce80018fc589ca6cacb20977150e89e39a349a3c9ab9c04135",
+            "http_status": 200,
+            "received_at": "2026-11-10 00:25:31.884031+00:00",
+            "server_date": "2026-11-10 00:25:22+00:00",
+            "requested_at": "2026-11-10 00:25:31.401257+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261110T002531884031Z_ed1b88e0b0aa4d36b6db14dadade69c5.json",
+            "cache_age_seconds": "9"
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "player-threes",
+              "eventId": "36290199"
+            },
+            "body_sha256": "95eb34cf1dbce34b0e7e5a76259ba262d29798b6ed0122cd30ce7e91b9e99590",
+            "http_status": 200,
+            "received_at": "2026-11-10 00:25:32.110982+00:00",
+            "server_date": "2026-11-10 00:25:22+00:00",
+            "requested_at": "2026-11-10 00:25:32.087299+00:00",
+            "snapshot_file": "data\\fanduel_live_checks\\20261110T002532110982Z_7298e74011d14f9ca125eeba7d2b895b.json",
+            "cache_age_seconds": "10"
+          }
+        ],
+        "alternate": false,
+        "market_id": "708.196826773",
+        "observed_at": "2026-11-10 00:25:32.110982+00:00",
+        "attempted_at": "2026-11-10 00:25:31.401257+00:00",
+        "manual_check": false,
+        "selection_id": "43058624",
+        "wager_placed": false
+      }
+    }
+  ],
+  "manual_checks_added": 0,
+  "betting_authorized": false,
+  "note": "Direct FanDuel public-feed observations. Not logged-in UI checks, confirmed fills or manual-check gate evidence."
+}

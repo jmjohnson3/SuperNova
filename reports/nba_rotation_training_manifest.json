@@ -1,0 +1,175 @@
+{
+  "started_at": "2026-11-04T18:17:19.989666+00:00",
+  "specification": {
+    "name": "nba-joint-rotation-v1",
+    "rotations": 16,
+    "regulation_minutes": 240,
+    "maximum_overtimes": 2,
+    "history_days": 28,
+    "shooting_games": 40,
+    "two_point_prior": [
+      100,
+      0.53
+    ],
+    "free_throw_prior": [
+      50,
+      0.78
+    ],
+    "workload_noise_sd": 6.0,
+    "unverified_availability": "conditional forecast only; selection blocked",
+    "dispersion_period": [
+      "2024-10-01",
+      "2025-02-01"
+    ],
+    "calibration_period": [
+      "2025-02-01",
+      "2025-07-01"
+    ],
+    "evaluation_period": [
+      "2025-10-01",
+      "2026-07-01"
+    ],
+    "historical_status": "reconstructed roster, no contemporaneous injury evidence",
+    "future_test": "after registration only",
+    "automatic_betting_authorization": false
+  },
+  "corpus_sha256": "1062125f41ebd67792d6909f1b9343ea81ebeff59c16f058d87a810e521fbf1e",
+  "parent_artifact_sha256": "e168adc5698fc05ca2a75f4af29366073f8b8183f381dd9432ab4e3d438f6d11",
+  "historical_only": true,
+  "current_game_participation_used_as_feature": false,
+  "betting_authorized": false,
+  "completed_at": "2026-11-04T18:22:09.580256+00:00",
+  "excluded_teams": {
+    "2024-10-01": {
+      "incomplete_history": 609
+    },
+    "2025-02-01": {
+      "incomplete_history": 364
+    },
+    "2025-07-01": {
+      "incomplete_history": 787
+    }
+  },
+  "forecast_rows": 52825,
+  "artifact_sha256": "f2be5a8ded46569f093e2eb229e45f18598407982915230ce3b5b149338587ba",
+  "dispersion": {
+    "pts": {
+      "a": 3.377891285755555,
+      "b": 0.0001,
+      "rows": 8230,
+      "source": "out-of-sample mixture likelihood"
+    },
+    "reb": {
+      "a": 1.3103426722770197,
+      "b": 0.017994319651877828,
+      "rows": 8230,
+      "source": "out-of-sample mixture likelihood"
+    },
+    "ast": {
+      "a": 1.1717789957504534,
+      "b": 0.03436025496946237,
+      "rows": 8230,
+      "source": "out-of-sample mixture likelihood"
+    },
+    "fg3m": {
+      "a": 1.1861460052240123,
+      "b": 0.0001,
+      "rows": 8230,
+      "source": "out-of-sample mixture likelihood"
+    }
+  },
+  "calibration": {
+    "pts": {
+      "slope": 0.9024485226921416,
+      "intercept": 0.7416779879137247,
+      "rows": 8727,
+      "status": "separate_chronological_mixture_calibration",
+      "threshold_pairs": 210015,
+      "synthetic_thresholds_are_not_offers": true
+    },
+    "reb": {
+      "slope": 0.8991113936228472,
+      "intercept": 0.6886295145357972,
+      "rows": 8727,
+      "status": "separate_chronological_mixture_calibration",
+      "threshold_pairs": 82231,
+      "synthetic_thresholds_are_not_offers": true
+    },
+    "ast": {
+      "slope": 0.9061916351139475,
+      "intercept": 0.4991262491063767,
+      "rows": 8727,
+      "status": "separate_chronological_mixture_calibration",
+      "threshold_pairs": 56865,
+      "synthetic_thresholds_are_not_offers": true
+    },
+    "fg3m": {
+      "slope": 0.976901022871455,
+      "intercept": 0.47701456187348434,
+      "rows": 8727,
+      "status": "separate_chronological_mixture_calibration",
+      "threshold_pairs": 36801,
+      "synthetic_thresholds_are_not_offers": true
+    }
+  },
+  "mean_dispersion": {
+    "pts": {
+      "a": 4.535613016353096,
+      "b": 0.0,
+      "rows": 8230,
+      "source": "chronologically out-of-sample residuals"
+    },
+    "reb": {
+      "a": 2.217483222435463,
+      "b": 0.0,
+      "rows": 8230,
+      "source": "chronologically out-of-sample residuals"
+    },
+    "ast": {
+      "a": 1.6337651710430336,
+      "b": 0.06772528673118056,
+      "rows": 8230,
+      "source": "chronologically out-of-sample residuals"
+    },
+    "fg3m": {
+      "a": 1.6020594323981632,
+      "b": 0.0,
+      "rows": 8230,
+      "source": "chronologically out-of-sample residuals"
+    }
+  },
+  "mean_calibration": {
+    "pts": {
+      "slope": 0.9741657539065839,
+      "intercept": 0.7922560916470806,
+      "rows": 8727,
+      "status": "fit_on_separate_chronological_distributions",
+      "threshold_pairs": 228832,
+      "synthetic_thresholds_are_not_offers": true
+    },
+    "reb": {
+      "slope": 1.070603213953092,
+      "intercept": 0.8099705779976707,
+      "rows": 8727,
+      "status": "fit_on_separate_chronological_distributions",
+      "threshold_pairs": 97440,
+      "synthetic_thresholds_are_not_offers": true
+    },
+    "ast": {
+      "slope": 1.0459353723966966,
+      "intercept": 0.6243802933015328,
+      "rows": 8727,
+      "status": "fit_on_separate_chronological_distributions",
+      "threshold_pairs": 65812,
+      "synthetic_thresholds_are_not_offers": true
+    },
+    "fg3m": {
+      "slope": 1.1039090131766573,
+      "intercept": 0.6335228649848382,
+      "rows": 8727,
+      "status": "fit_on_separate_chronological_distributions",
+      "threshold_pairs": 43099,
+      "synthetic_thresholds_are_not_offers": true
+    }
+  }
+}

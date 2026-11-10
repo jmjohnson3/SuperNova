@@ -1,0 +1,82 @@
+{
+  "built_at": "2026-10-30T23:12:32.844650+00:00",
+  "freeze_verification": {
+    "nba_price_only": {
+      "status": "verified",
+      "name": "nba-prop-price-check-v1",
+      "sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f",
+      "registered_at": "2026-10-29T00:48:15.833740+00:00"
+    },
+    "model_assisted": {
+      "status": "verified",
+      "name": "fanduel-model-assisted-paper-v1",
+      "sha256": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+      "registered_at": "2026-10-29T07:05:44.303226+00:00"
+    },
+    "nba_count": {
+      "status": "verified",
+      "name": "nba-count-probability-v1",
+      "sha256": "601b41ecd544e3f1f2c0f9a261ccca924a19d5b34d6fdb62b702fe4f8c5f1094",
+      "registered_at": "2026-10-29T17:01:12.656386+00:00"
+    },
+    "nfl_receiving": {
+      "scope": "receiving_paper_collection",
+      "production_release": "nfl-20260918T143342Z",
+      "experiments": {
+        "receiving": {
+          "experiment_id": "fanduel-receiving-oe-paper-v7",
+          "sha256": "d7264621bc65f45f66bd12be9f678e2a8d627c0bf1afb487212f41b8fa288e23"
+        }
+      },
+      "cash_authorized": false
+    },
+    "other_nfl": {
+      "sharp": {
+        "status": "verified",
+        "experiment_id": "nfl-sharp-gap-cash-v10",
+        "sha256": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd",
+        "authorizes_this_run": false
+      },
+      "legacy_cash": {
+        "status": "blocked",
+        "reason": "Frozen experiment changed; restore the pinned version or explicitly register a new experiment: nfl_pipeline.betting_preferences, nfl_pipeline.cash_readiness, nfl_pipeline.features, nfl_pipeline.modeling.predict_player_props, nfl_pipeline.modeling.receiving_paper_trial",
+        "authorizes_this_run": false
+      }
+    }
+  },
+  "nba_review": {
+    "min_decisions": 50,
+    "min_span_days": 21,
+    "min_active_days": 7,
+    "min_weeks": 3,
+    "min_games": 20,
+    "min_close_coverage": 0.9,
+    "min_mean_close_ev": 0.015,
+    "min_check_coverage": 0.9,
+    "min_available_fraction": 0.8,
+    "min_priced_checks": 50,
+    "min_checked_close_coverage": 0.9,
+    "min_cluster_lower": 0.0
+  },
+  "model_review": {
+    "min_days": 21,
+    "min_games": 20,
+    "min_checked_closes": 50,
+    "min_exact_coverage": 0.9,
+    "min_check_coverage": 0.9,
+    "min_available": 0.8,
+    "min_alert_close_ev": 0.015
+  },
+  "recorded_nba_price_checks": 0,
+  "test_summary": "92 distinct tests passed (91 initial passes; corrected shared-check fixture and its 2 tests passed on rerun).",
+  "live_browser_access": "no_connected_browser",
+  "live_checks": "requires_user_observation",
+  "guided_entry": "python -m nba_props.fanduel_check record --alert <ID>",
+  "nfl_diagnostic": "reports/nfl_receiving_close_audit_2026-10-29.json",
+  "registrations_changed": false,
+  "selection_rules_changed": false,
+  "review_rules_changed": false,
+  "api_requests_added": 0,
+  "betting_authorization_changed": false,
+  "note": "Readiness verification only; no future monitoring or sportsbook observation is inferred."
+}

@@ -1,0 +1,16 @@
+{
+  "channel_id": "1520157669153964152",
+  "guild_id": "1380268843821170688",
+  "webhook_id": "1522039216228532226",
+  "message_id": "1568013687346700288",
+  "attempted_at": "2026-11-10T02:34:05.734347+00:00",
+  "status": "published",
+  "message_url": "https://discord.com/channels/1380268843821170688/1520157669153964152/1568013687346700288",
+  "fingerprint": "9d58ebcbcc830b0e392d790aec2d53e80d712bcb3422dbbe9046152acaf8fd6c",
+  "report_built_at": "2026-11-10T02:33:45.697293+00:00",
+  "verified_at": "2026-11-10T02:34:08.033926+00:00",
+  "attachments": [
+    "prediction-summary.txt",
+    "predictions-ledger.zip"
+  ]
+}

@@ -1,0 +1,709 @@
+{
+  "built_at": "2026-11-10T02:34:22.837566+00:00",
+  "day": "2026-11-09",
+  "games": [
+    {
+      "game_id": "2026_09_BUF_MIN",
+      "away": "BUF",
+      "home": "MIN",
+      "kickoff": "2026-11-10T01:15:00+00:00",
+      "phase": "closed",
+      "refresh_at": "2026-11-09T23:15:00+00:00",
+      "scan_at": "2026-11-10T00:15:00+00:00",
+      "selection_opens": "2026-11-10T00:30:00+00:00",
+      "selection_closes": "2026-11-10T01:00:00+00:00",
+      "pregame_run": {
+        "status": "review_required",
+        "run_id": "pregame_83fec910330249cc88632b9c14042cd7",
+        "attempted_at": "2026-11-09T23:16:48.895215+00:00",
+        "attempts": 1,
+        "game_id": "2026_09_BUF_MIN",
+        "kickoff": "2026-11-10T01:15:00+00:00",
+        "returncode": 1,
+        "finished_at": "2026-11-09T23:26:37.459777+00:00"
+      },
+      "current_prop_forecasts": 57,
+      "current_game_forecasts": 2,
+      "latest_prop_forecast": "2026-11-09T15:21:36.678143-08:00",
+      "latest_game_forecast": "2026-11-09T15:19:28.836116-08:00",
+      "news": {
+        "status": "unknown_or_stale",
+        "observed_at": "2026-11-10T01:11:20.342481+00:00",
+        "listed_players": 50,
+        "status_counts": {
+          "questionable": 4,
+          "out": 10,
+          "active": 34,
+          "injured reserve": 2
+        },
+        "adverse_changes_after_forecast": [],
+        "complete_official_inactives_verified": false,
+        "note": "Absence from the injury feed does not verify active participation. News is diagnostic; frozen selections are unchanged."
+      },
+      "fresh_quote_counts": {},
+      "latest_quote_observations": {},
+      "checkpoints": [
+        {
+          "offset_minutes": 120,
+          "target_at": "2026-11-09T23:15:00+00:00",
+          "status": "missed",
+          "attempts": 0,
+          "captured_at": null,
+          "verification": null
+        },
+        {
+          "offset_minutes": 60,
+          "target_at": "2026-11-10T00:15:00+00:00",
+          "status": "verified",
+          "attempts": 1,
+          "captured_at": "2026-11-10T00:15:36.037427+00:00",
+          "verification": {
+            "game_id": "2026_09_BUF_MIN",
+            "current_fanduel_locks": 30,
+            "receiving_locks": 11,
+            "receiving_same_line_triplets": 11,
+            "explicit_injury_context_locks": 30,
+            "known_player_injury_context_locks": 10,
+            "immutable_lock_violations": 0,
+            "all_locks_missing_links": 0,
+            "actionable_missing_links": 0,
+            "lock_verification_passed": true,
+            "injury_context_note": "known_player_status",
+            "fresh_normalized_rows": 28,
+            "fresh_true_pair_rows": 28,
+            "fresh_true_pair_rows_with_links": 28,
+            "verification_passed": true
+          }
+        },
+        {
+          "offset_minutes": 20,
+          "target_at": "2026-11-10T00:55:00+00:00",
+          "status": "verified",
+          "attempts": 1,
+          "captured_at": "2026-11-10T00:55:39.705665+00:00",
+          "verification": {
+            "game_id": "2026_09_BUF_MIN",
+            "current_fanduel_locks": 30,
+            "receiving_locks": 11,
+            "receiving_same_line_triplets": 11,
+            "explicit_injury_context_locks": 30,
+            "known_player_injury_context_locks": 10,
+            "immutable_lock_violations": 0,
+            "all_locks_missing_links": 0,
+            "actionable_missing_links": 0,
+            "lock_verification_passed": true,
+            "injury_context_note": "known_player_status",
+            "fresh_normalized_rows": 28,
+            "fresh_true_pair_rows": 28,
+            "fresh_true_pair_rows_with_links": 28,
+            "verification_passed": true
+          }
+        },
+        {
+          "offset_minutes": 5,
+          "target_at": "2026-11-10T01:10:00+00:00",
+          "status": "missed",
+          "attempts": 1,
+          "captured_at": "2026-11-10T01:10:34.690981+00:00",
+          "verification": {
+            "game_id": "2026_09_BUF_MIN",
+            "current_fanduel_locks": 30,
+            "receiving_locks": 11,
+            "receiving_same_line_triplets": 11,
+            "explicit_injury_context_locks": 30,
+            "known_player_injury_context_locks": 10,
+            "immutable_lock_violations": 0,
+            "all_locks_missing_links": 0,
+            "actionable_missing_links": 0,
+            "lock_verification_passed": true,
+            "injury_context_note": "known_player_status",
+            "fresh_normalized_rows": 28,
+            "fresh_true_pair_rows": 27,
+            "fresh_true_pair_rows_with_links": 26,
+            "verification_passed": false
+          }
+        }
+      ],
+      "warnings": [
+        "checkpoint_T120_unverified",
+        "checkpoint_T5_unverified"
+      ]
+    }
+  ],
+  "frozen_model_sha256": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+  "frozen_observer_sha256": "5c077fc714752dd63643f43c3684c3d85e3483d2172e6d4d481b2a3cba0eaeb8",
+  "price_checks": {
+    "attempts": 1,
+    "statuses": {
+      "not_listed": 1
+    },
+    "pending": 0,
+    "expired": 0,
+    "account_availability_verified": false
+  },
+  "paired": {
+    "price_only": 6,
+    "model_selected": 2,
+    "requirements": {
+      "min_days": 21,
+      "min_games": 20,
+      "min_checked_closes": 100,
+      "min_exact_coverage": 0.9,
+      "min_check_coverage": 0.9,
+      "min_available": 0.8,
+      "min_alert_close_ev": 0.015
+    }
+  },
+  "economics": {
+    "monthly_cost_budget": 30,
+    "reported_bankroll": 50,
+    "comparison_stake": 1,
+    "illustrative_roi": 0.03,
+    "example_100_bets_gross": 3,
+    "example_100_bets_net_after_monthly_cost": -27,
+    "monthly_bets_to_cover_cost_at_assumed_roi": 1000,
+    "actual_net_profit": null,
+    "note": "Conditional arithmetic, not an established edge; actual profit requires wager and cost receipts."
+  },
+  "latest_live_cycle": {
+    "day": "2026-11-09",
+    "built_at": "2026-11-10T01:57:28.034709+00:00",
+    "effective_date": "2026-09-24",
+    "status": "needs_attention",
+    "games": [
+      {
+        "game_id": "2026_09_BUF_MIN",
+        "kickoff": "2026-11-10T01:15:00+00:00",
+        "phase": "awaiting_settlement",
+        "eligible_forecasts": 21,
+        "challenger_captures": 21,
+        "discord_exact_prop_manifest_verified": false,
+        "valid_close_coverage": 0.6190476190476191,
+        "discord_projection_manifest_verified": true,
+        "recorded_publication_pages": 1,
+        "verified_publication_pages": 0,
+        "verified_projection_pages": 1,
+        "close_unknown_reasons": {
+          "exact_line_unavailable_in_captured_feed": 8
+        },
+        "unknown_closes": 8,
+        "unresolved_forecast_ids": [],
+        "blockers": [
+          "valid_exact_close_coverage_below_90_percent"
+        ]
+      }
+    ],
+    "blockers": [
+      "2026_09_BUF_MIN:valid_exact_close_coverage_below_90_percent"
+    ],
+    "production_changed": false,
+    "betting_approved": false,
+    "note": "Future close windows are pending, never counted as failed capture. Completion is operational, not cash approval.",
+    "close_reconciliation": {
+      "source": "immutable_exact_snapshots",
+      "checkpoint_built_at": "2026-11-10T01:54:42.079883+00:00",
+      "observed": 21,
+      "changed_since_checkpoint": 0,
+      "historical_locks_changed": false,
+      "match_methods": {
+        "same_provider_event": 13
+      }
+    }
+  },
+  "latest_price_gap_review": {
+    "built_at": "2026-11-10T02:07:06.079979+00:00",
+    "pass_bar": {
+      "min_close_coverage": 0.9,
+      "close_coverage_min_decisions": 10,
+      "kill_min_decisions": 50,
+      "kill_max_mean_close_ev": 0.0,
+      "scale_min_decisions": 150,
+      "scale_min_mean_close_ev": 0.015,
+      "scale_min_weeks": 3,
+      "max_player_share": 0.2,
+      "max_team_share": 0.35,
+      "alpha": 0.05
+    },
+    "summary": {
+      "alerts": 53,
+      "weeks": 2,
+      "with_fd_close": 42,
+      "beat_fd_close": 0.2857142857142857,
+      "exact_close_coverage": 0.7924528301886793,
+      "sharp_close_coverage": 0.9811320754716981,
+      "shifted_sharp_closes": 32,
+      "mean_clv_lower": null,
+      "sharp_close_ev_lower": null,
+      "player_games": 51,
+      "mean_fd_clv": 0.00408041632244636,
+      "with_sharp_close": 52,
+      "mean_ev_at_sharp_close": 0.03555431663866289,
+      "positive_at_sharp_close": 0.9230769230769231,
+      "settled": 51,
+      "roi": 0.12112854752335732,
+      "mean_alert_ev": 0.04707577582313249,
+      "experiment_id": "nfl-sharp-gap-cash-v10",
+      "experiment_sha256": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd",
+      "raw_alerts": 2368,
+      "captured_decisions": 4853,
+      "excluded_alerts": 7089,
+      "repeated_alerts_removed": 79,
+      "logged": {
+        "alerts": 163,
+        "weeks": 2,
+        "with_fd_close": 146,
+        "beat_fd_close": 0.21232876712328766,
+        "exact_close_coverage": 0.8957055214723927,
+        "sharp_close_coverage": 0.9877300613496932,
+        "shifted_sharp_closes": 69,
+        "mean_clv_lower": null,
+        "sharp_close_ev_lower": null,
+        "player_games": 137,
+        "mean_fd_clv": 0.0024255818350584378,
+        "with_sharp_close": 161,
+        "mean_ev_at_sharp_close": 0.013800019009918802,
+        "positive_at_sharp_close": 0.9006211180124224,
+        "settled": 155,
+        "roi": 0.01363400574362303,
+        "mean_alert_ev": 0.018386677060287335
+      },
+      "early": {
+        "alerts": 41,
+        "weeks": 2,
+        "with_fd_close": 32,
+        "beat_fd_close": 0.40625,
+        "exact_close_coverage": 0.7804878048780488,
+        "sharp_close_coverage": 0.975609756097561,
+        "shifted_sharp_closes": 21,
+        "mean_clv_lower": null,
+        "sharp_close_ev_lower": null,
+        "player_games": 39,
+        "mean_fd_clv": 0.007109813067648652,
+        "with_sharp_close": 40,
+        "mean_ev_at_sharp_close": 0.034420938824690536,
+        "positive_at_sharp_close": 0.875,
+        "settled": 39,
+        "roi": 0.07074507524905324,
+        "mean_alert_ev": 0.04496472726005009
+      },
+      "late": {
+        "alerts": 40,
+        "weeks": 2,
+        "with_fd_close": 40,
+        "beat_fd_close": 0.05,
+        "exact_close_coverage": 1.0,
+        "sharp_close_coverage": 1.0,
+        "shifted_sharp_closes": 21,
+        "mean_clv_lower": null,
+        "sharp_close_ev_lower": null,
+        "player_games": 38,
+        "mean_fd_clv": 0.0010567366253380894,
+        "with_sharp_close": 40,
+        "mean_ev_at_sharp_close": 0.046663576527061976,
+        "positive_at_sharp_close": 1.0,
+        "settled": 38,
+        "roi": 0.255067558190397,
+        "mean_alert_ev": 0.047487812061406884,
+        "staked": 0.0,
+        "mean_slippage": null,
+        "realized_profit": 0.0
+      },
+      "by_close_method": {
+        "exact": {
+          "alerts": 20,
+          "weeks": 2,
+          "with_fd_close": 19,
+          "beat_fd_close": 0.3157894736842105,
+          "exact_close_coverage": 0.95,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 0,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 20,
+          "mean_fd_clv": 0.004797679236887594,
+          "with_sharp_close": 20,
+          "mean_ev_at_sharp_close": 0.03241850810389281,
+          "positive_at_sharp_close": 0.95,
+          "settled": 19,
+          "roi": 0.17018151022275374,
+          "mean_alert_ev": 0.04280331995049065,
+          "staked": 0.0,
+          "mean_slippage": null,
+          "realized_profit": 0.0
+        },
+        "shifted": {
+          "alerts": 32,
+          "weeks": 2,
+          "with_fd_close": 23,
+          "beat_fd_close": 0.2608695652173913,
+          "exact_close_coverage": 0.71875,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 32,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 32,
+          "mean_fd_clv": 0.003487894784429689,
+          "with_sharp_close": 32,
+          "mean_ev_at_sharp_close": 0.03751419697289418,
+          "positive_at_sharp_close": 0.90625,
+          "settled": 31,
+          "roi": 0.1272292654664162,
+          "mean_alert_ev": 0.04847313574562543,
+          "staked": 0.0,
+          "mean_slippage": null,
+          "realized_profit": 0.0
+        }
+      },
+      "placed": {
+        "alerts": 0,
+        "weeks": 0
+      },
+      "by_book": {
+        "draftkings": {
+          "alerts": 27,
+          "weeks": 2,
+          "with_fd_close": 20,
+          "beat_fd_close": 0.3,
+          "exact_close_coverage": 0.7407407407407407,
+          "sharp_close_coverage": 0.9629629629629629,
+          "shifted_sharp_closes": 16,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 26,
+          "mean_fd_clv": 0.005186939705588764,
+          "with_sharp_close": 26,
+          "mean_ev_at_sharp_close": 0.04045436046051121,
+          "positive_at_sharp_close": 0.9615384615384616,
+          "settled": 25,
+          "roi": 0.044376021570106075,
+          "mean_alert_ev": 0.04636671477410378
+        },
+        "espnbet": {
+          "alerts": 14,
+          "weeks": 2,
+          "with_fd_close": 11,
+          "beat_fd_close": 0.45454545454545453,
+          "exact_close_coverage": 0.7857142857142857,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 10,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 14,
+          "mean_fd_clv": 0.005948236000486667,
+          "with_sharp_close": 14,
+          "mean_ev_at_sharp_close": 0.04475163049207258,
+          "positive_at_sharp_close": 1.0,
+          "settled": 14,
+          "roi": 0.005241187384044539,
+          "mean_alert_ev": 0.04769094226707282
+        },
+        "fanduel": {
+          "alerts": 12,
+          "weeks": 2,
+          "with_fd_close": 11,
+          "beat_fd_close": 0.09090909090909091,
+          "exact_close_coverage": 0.9166666666666666,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 6,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 11,
+          "mean_fd_clv": 0.00020073594778350054,
+          "with_sharp_close": 12,
+          "mean_ev_at_sharp_close": 0.014207355529013579,
+          "positive_at_sharp_close": 0.75,
+          "settled": 12,
+          "roi": 0.416231563421829,
+          "mean_alert_ev": 0.04795346899885006
+        }
+      },
+      "by_stat": {
+        "receiving_yards": {
+          "alerts": 22,
+          "weeks": 2,
+          "with_fd_close": 14,
+          "beat_fd_close": 0.35714285714285715,
+          "exact_close_coverage": 0.6363636363636364,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 19,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 22,
+          "mean_fd_clv": 0.004132407208091112,
+          "with_sharp_close": 22,
+          "mean_ev_at_sharp_close": 0.03862339157704486,
+          "positive_at_sharp_close": 0.9090909090909091,
+          "settled": 22,
+          "roi": 0.06119752199763651,
+          "mean_alert_ev": 0.04740818840198893,
+          "staked": 0.0,
+          "mean_slippage": null,
+          "realized_profit": 0.0
+        },
+        "receptions": {
+          "alerts": 14,
+          "weeks": 2,
+          "with_fd_close": 13,
+          "beat_fd_close": 0.3076923076923077,
+          "exact_close_coverage": 0.9285714285714286,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 0,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 14,
+          "mean_fd_clv": 0.0034633151186656296,
+          "with_sharp_close": 14,
+          "mean_ev_at_sharp_close": 0.03232485616379287,
+          "positive_at_sharp_close": 1.0,
+          "settled": 13,
+          "roi": 0.11587263133472321,
+          "mean_alert_ev": 0.044353042022860896,
+          "staked": 0.0,
+          "mean_slippage": null,
+          "realized_profit": 0.0
+        },
+        "rushing_yards": {
+          "alerts": 17,
+          "weeks": 2,
+          "with_fd_close": 15,
+          "beat_fd_close": 0.2,
+          "exact_close_coverage": 0.8823529411764706,
+          "sharp_close_coverage": 0.9411764705882353,
+          "shifted_sharp_closes": 13,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 17,
+          "mean_fd_clv": 0.004566712539121224,
+          "with_sharp_close": 16,
+          "mean_ev_at_sharp_close": 0.03416011651389894,
+          "positive_at_sharp_close": 0.875,
+          "settled": 16,
+          "roi": 0.20780413952448865,
+          "mean_alert_ev": 0.048887846203659574,
+          "staked": 0.0,
+          "mean_slippage": null,
+          "realized_profit": 0.0
+        }
+      },
+      "inferred_close_diagnostics": {
+        "inferred_clv": {
+          "rows": 79,
+          "mean": 0.0018970649209039897
+        },
+        "inferred_ev_at_sharp_close": {
+          "rows": 89,
+          "mean": 0.02550341714935081
+        }
+      },
+      "model": {
+        "disagrees": {
+          "alerts": 19,
+          "weeks": 2,
+          "with_fd_close": 18,
+          "beat_fd_close": 0.2777777777777778,
+          "exact_close_coverage": 0.9473684210526315,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 10,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 19,
+          "mean_fd_clv": 0.003782611875897682,
+          "with_sharp_close": 19,
+          "mean_ev_at_sharp_close": 0.03446572221986333,
+          "positive_at_sharp_close": 0.8947368421052632,
+          "settled": 17,
+          "roi": 0.262892397863767,
+          "mean_alert_ev": 0.04449037532337276
+        },
+        "agrees": {
+          "alerts": 25,
+          "weeks": 2,
+          "with_fd_close": 17,
+          "beat_fd_close": 0.23529411764705882,
+          "exact_close_coverage": 0.68,
+          "sharp_close_coverage": 1.0,
+          "shifted_sharp_closes": 17,
+          "mean_clv_lower": null,
+          "sharp_close_ev_lower": null,
+          "player_games": 23,
+          "mean_fd_clv": 0.002854882421874359,
+          "with_sharp_close": 25,
+          "mean_ev_at_sharp_close": 0.032369313406200584,
+          "positive_at_sharp_close": 0.92,
+          "settled": 25,
+          "roi": 0.11861342097751013,
+          "mean_alert_ev": 0.0473723145479787
+        }
+      },
+      "shadow_filter": {
+        "groups": {
+          "flag": {
+            "alerts": 3,
+            "weeks": 1,
+            "with_fd_close": 1,
+            "beat_fd_close": 0.0,
+            "exact_close_coverage": 0.3333333333333333,
+            "sharp_close_coverage": 1.0,
+            "shifted_sharp_closes": 1,
+            "mean_clv_lower": null,
+            "sharp_close_ev_lower": null,
+            "player_games": 2,
+            "mean_fd_clv": -0.021229107138437786,
+            "with_sharp_close": 3,
+            "mean_ev_at_sharp_close": 0.013144780054454483,
+            "positive_at_sharp_close": 0.6666666666666666,
+            "settled": 3,
+            "roi": -0.3716814159292035,
+            "mean_alert_ev": 0.07112621066567408,
+            "staked": 0.0,
+            "mean_slippage": null,
+            "realized_profit": 0.0
+          },
+          "no_forecast": {
+            "alerts": 9,
+            "weeks": 2,
+            "with_fd_close": 7,
+            "beat_fd_close": 0.42857142857142855,
+            "exact_close_coverage": 0.7777777777777778,
+            "sharp_close_coverage": 0.8888888888888888,
+            "shifted_sharp_closes": 5,
+            "mean_clv_lower": null,
+            "sharp_close_ev_lower": null,
+            "player_games": 9,
+            "mean_fd_clv": 0.007822495800674964,
+            "with_sharp_close": 8,
+            "mean_ev_at_sharp_close": 0.048092863484756526,
+            "positive_at_sharp_close": 1.0,
+            "settled": 9,
+            "roi": -0.13966115160339657,
+            "mean_alert_ev": 0.05171012486471915,
+            "staked": 0.0,
+            "mean_slippage": null,
+            "realized_profit": 0.0
+          },
+          "pass": {
+            "alerts": 41,
+            "weeks": 2,
+            "with_fd_close": 34,
+            "beat_fd_close": 0.2647058823529412,
+            "exact_close_coverage": 0.8292682926829268,
+            "sharp_close_coverage": 1.0,
+            "shifted_sharp_closes": 26,
+            "mean_clv_lower": null,
+            "sharp_close_ev_lower": null,
+            "player_games": 40,
+            "mean_fd_clv": 0.004054385943425299,
+            "with_sharp_close": 41,
+            "mean_ev_at_sharp_close": 0.034747493101684256,
+            "positive_at_sharp_close": 0.926829268292683,
+            "settled": 39,
+            "roi": 0.21921924451049749,
+            "mean_alert_ev": 0.04429869177674457,
+            "staked": 0.0,
+            "mean_slippage": null,
+            "realized_profit": 0.0
+          }
+        },
+        "judged": false,
+        "improves_closing_ev": null,
+        "mean_ev_all": 0.03555431663866289,
+        "mean_ev_if_filtered": 0.034747493101684256
+      },
+      "ladder": {
+        "alerts": 0,
+        "weeks": 0
+      },
+      "readiness": {
+        "status": "paused",
+        "pause_reasons": [
+          "Paper-only collection: actual-price evidence and explicit cash review are still required"
+        ],
+        "gates": {
+          "close_capture": {
+            "recent_coverage": 0.9666666666666667,
+            "recent_decisions": 30,
+            "all_coverage": 0.9811320754716981,
+            "minimum": 0.9,
+            "judged": true
+          },
+          "closing_ev": {
+            "mean": 0.03555431663866289,
+            "decisions_with_close": 52,
+            "weekly_lower": null,
+            "kill_after": 50,
+            "scale_minimum": 0.015
+          },
+          "loss_pause": {
+            "lowest_cumulative_profit": 0.0,
+            "pause_at": -30.0
+          },
+          "concentration": {
+            "max_player_share": 0.03773584905660377,
+            "max_team_share": 0.09803921568627451,
+            "player_limit": 0.2,
+            "team_limit": 0.35
+          }
+        },
+        "decisions": 53,
+        "concentration_ok": true,
+        "meaning": "paper checks continue; no new cash recommendations"
+      },
+      "verdict": "paper only: no new stakes",
+      "execution_accounting": "Paper stakes excluded; placed is legacy confirmation only; receipt net profit is separate.",
+      "frozen_readiness_diagnostic": {
+        "status": "trial",
+        "pause_reasons": [],
+        "gates": {
+          "close_capture": {
+            "recent_coverage": 0.9666666666666667,
+            "recent_decisions": 30,
+            "all_coverage": 0.9811320754716981,
+            "minimum": 0.9,
+            "judged": true
+          },
+          "closing_ev": {
+            "mean": 0.03555431663866289,
+            "decisions_with_close": 52,
+            "weekly_lower": null,
+            "kill_after": 50,
+            "scale_minimum": 0.015
+          },
+          "loss_pause": {
+            "lowest_cumulative_profit": 0.0,
+            "pause_at": -30.0
+          },
+          "concentration": {
+            "max_player_share": 0.03773584905660377,
+            "max_team_share": 0.09803921568627451,
+            "player_limit": 0.2,
+            "team_limit": 0.35
+          }
+        },
+        "decisions": 53,
+        "concentration_ok": true,
+        "meaning": "$1 flat within the daily, weekly and per-game limits"
+      },
+      "betting_authorized": false,
+      "exact_reference_by_book": {
+        "draftkings": {
+          "decisions": 27,
+          "observed_exact": 10,
+          "estimated": 16
+        },
+        "espnbet": {
+          "decisions": 14,
+          "observed_exact": 4,
+          "estimated": 10
+        },
+        "fanduel": {
+          "decisions": 12,
+          "observed_exact": 6,
+          "estimated": 6
+        }
+      }
+    },
+    "reporting_contract": "nfl-sharp-paper-money-separation-v1"
+  },
+  "betting_authorized": false,
+  "selection_rules_changed": false
+}

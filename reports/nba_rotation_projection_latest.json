@@ -1,0 +1,11 @@
+{
+  "status": "ok",
+  "forecasts": 100,
+  "preview_forecasts": null,
+  "excluded": {
+    "history_or_capacity": {},
+    "rosters": []
+  },
+  "input_cutoff": "2026-11-10T02:34:19.494048+00:00",
+  "completed_at": "2026-11-10T02:34:27.480625+00:00"
+}

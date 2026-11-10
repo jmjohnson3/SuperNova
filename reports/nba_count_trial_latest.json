@@ -1,0 +1,247 @@
+{
+  "experiment_id": "nba-count-probability-v1",
+  "sha256": "601b41ecd544e3f1f2c0f9a261ccca924a19d5b34d6fdb62b702fe4f8c5f1094",
+  "registered_at": "2026-10-29T17:01:12.656386+00:00",
+  "built_at": "2026-11-10T02:36:00.621838+00:00",
+  "captured": 53,
+  "upcoming": 0,
+  "captured_completed": 53,
+  "selected": {
+    "decisions": 28,
+    "games": 21,
+    "span_days": 12,
+    "exact_close_coverage": 1.0,
+    "timely_check_coverage": 0.0,
+    "checked_prices": 0,
+    "mean_alert_close_ev": 0.017647180102288832,
+    "mean_checked_price_ev": null,
+    "intervals": {
+      "alert_game": {
+        "clusters": 21,
+        "observations": 28,
+        "mean": 0.017647180102288832,
+        "lower_95": -0.01752980512515474,
+        "upper_95": 0.038637215658186966
+      },
+      "alert_day": {
+        "clusters": 9,
+        "observations": 28,
+        "mean": 0.017647180102288832,
+        "lower_95": -0.02066445280522428,
+        "upper_95": 0.041153124338433836
+      },
+      "checked_game": {
+        "clusters": 0,
+        "observations": 0,
+        "mean": null,
+        "lower_95": null,
+        "upper_95": null
+      },
+      "checked_day": {
+        "clusters": 0,
+        "observations": 0,
+        "mean": null,
+        "lower_95": null,
+        "upper_95": null
+      }
+    },
+    "gates": {
+      "days": false,
+      "games": true,
+      "checked_closes": false,
+      "exact_closes": true,
+      "check_coverage": false,
+      "availability": false,
+      "checked_close_coverage": false,
+      "active_dates": true,
+      "weeks": false,
+      "alert_close_edge": true,
+      "alert_game": false,
+      "alert_day": false,
+      "checked_game": false,
+      "checked_day": false
+    },
+    "status": "collecting",
+    "betting_authorized": false,
+    "settled": 25,
+    "paper_units": -7.637868871803329,
+    "pending_results": 3
+  },
+  "probability_vs_frozen": {
+    "settled_common_offers": 50,
+    "brier_gain": -0.0015467354355929702,
+    "gain_by_game": {
+      "clusters": 30,
+      "observations": 50,
+      "mean": -0.0015467354355929702,
+      "lower_95": -0.02159903795079342,
+      "upper_95": 0.01968824692815795
+    },
+    "gain_by_day": {
+      "clusters": 9,
+      "observations": 50,
+      "mean": -0.0015467354355929702,
+      "lower_95": -0.0220839856550464,
+      "upper_95": 0.014143484263342287
+    },
+    "bins": [
+      {
+        "lower": 0.30000000000000004,
+        "upper": 0.4,
+        "n": 3,
+        "model_mean": 0.3702985469548208,
+        "reference_mean": 0.3103710658126488,
+        "win_rate": 0.6666666666666666
+      },
+      {
+        "lower": 0.4,
+        "upper": 0.5,
+        "n": 19,
+        "model_mean": 0.4435431853783095,
+        "reference_mean": 0.4624922606061513,
+        "win_rate": 0.47368421052631576
+      },
+      {
+        "lower": 0.5,
+        "upper": 0.6,
+        "n": 21,
+        "model_mean": 0.5487492380732233,
+        "reference_mean": 0.5177911224611792,
+        "win_rate": 0.47619047619047616
+      },
+      {
+        "lower": 0.6000000000000001,
+        "upper": 0.7000000000000001,
+        "n": 7,
+        "model_mean": 0.6303004325426868,
+        "reference_mean": 0.5758447544169348,
+        "win_rate": 0.42857142857142855
+      }
+    ]
+  },
+  "probability_vs_market": {
+    "settled_common_offers": 50,
+    "brier_gain": -0.0108313624319465,
+    "gain_by_game": {
+      "clusters": 30,
+      "observations": 50,
+      "mean": -0.0108313624319465,
+      "lower_95": -0.034280284891892776,
+      "upper_95": 0.009531920721513517
+    },
+    "gain_by_day": {
+      "clusters": 9,
+      "observations": 50,
+      "mean": -0.0108313624319465,
+      "lower_95": -0.028770149430708068,
+      "upper_95": 0.009651210349821415
+    },
+    "bins": [
+      {
+        "lower": 0.30000000000000004,
+        "upper": 0.4,
+        "n": 3,
+        "model_mean": 0.3702985469548208,
+        "reference_mean": 0.5010834607512961,
+        "win_rate": 0.6666666666666666
+      },
+      {
+        "lower": 0.4,
+        "upper": 0.5,
+        "n": 19,
+        "model_mean": 0.4435431853783095,
+        "reference_mean": 0.515428278351955,
+        "win_rate": 0.47368421052631576
+      },
+      {
+        "lower": 0.5,
+        "upper": 0.6,
+        "n": 21,
+        "model_mean": 0.5487492380732233,
+        "reference_mean": 0.5496754172374488,
+        "win_rate": 0.47619047619047616
+      },
+      {
+        "lower": 0.6000000000000001,
+        "upper": 0.7000000000000001,
+        "n": 7,
+        "model_mean": 0.6303004325426868,
+        "reference_mean": 0.572554174380392,
+        "win_rate": 0.42857142857142855
+      }
+    ]
+  },
+  "selected_probability_vs_market": {
+    "settled_common_offers": 25,
+    "brier_gain": -0.0038305711168250623,
+    "gain_by_game": {
+      "clusters": 19,
+      "observations": 25,
+      "mean": -0.0038305711168250623,
+      "lower_95": -0.024110738447931,
+      "upper_95": 0.013609281423396995
+    },
+    "gain_by_day": {
+      "clusters": 8,
+      "observations": 25,
+      "mean": -0.0038305711168250623,
+      "lower_95": -0.026272657230635415,
+      "upper_95": 0.009331157232153272
+    },
+    "bins": [
+      {
+        "lower": 0.4,
+        "upper": 0.5,
+        "n": 3,
+        "model_mean": 0.47944339893991433,
+        "reference_mean": 0.4615256538570045,
+        "win_rate": 0.0
+      },
+      {
+        "lower": 0.5,
+        "upper": 0.6,
+        "n": 15,
+        "model_mean": 0.5547403925655823,
+        "reference_mean": 0.5339956420160836,
+        "win_rate": 0.4
+      },
+      {
+        "lower": 0.6000000000000001,
+        "upper": 0.7000000000000001,
+        "n": 7,
+        "model_mean": 0.6303004325426868,
+        "reference_mean": 0.572554174380392,
+        "win_rate": 0.42857142857142855
+      }
+    ]
+  },
+  "paired_execution_coverage": 0.0,
+  "incremental_opportunity": {
+    "game": {
+      "clusters": 0,
+      "observations": 0,
+      "mean": null,
+      "lower_95": null,
+      "upper_95": null
+    },
+    "day": {
+      "clusters": 0,
+      "observations": 0,
+      "mean": null,
+      "lower_95": null,
+      "upper_95": null
+    }
+  },
+  "economics": {
+    "monthly_cost_usd": "30.00",
+    "comparison_stake_usd": "1.00",
+    "projected_net_usd": null,
+    "basis": "paper checks valued at reference close; not actual or guaranteed profit",
+    "status": "insufficient_span_or_unknown_execution",
+    "observed_days": 11.399166266805556,
+    "selected": 28,
+    "unknown_execution": 28
+  },
+  "status": "collecting",
+  "betting_authorized": false
+}

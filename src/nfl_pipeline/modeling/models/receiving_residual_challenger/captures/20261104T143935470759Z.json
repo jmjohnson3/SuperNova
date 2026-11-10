@@ -1,0 +1,27 @@
+{
+  "contract": "nfl-receiving-residual-challenger-v1",
+  "policy_id": "8e709e19e78151e49832d613bc054a03a3ac837088cb7164d71adebf03109a61",
+  "captured_at": "2026-11-04T14:39:35.470759+00:00",
+  "selected": [
+    {
+      "forecast_id": 30210,
+      "policy_id": "8e709e19e78151e49832d613bc054a03a3ac837088cb7164d71adebf03109a61",
+      "game_id": "2026_09_JAX_BAL",
+      "player_id": "00-0039064",
+      "day": "2026-11-05",
+      "side": "over",
+      "line": 47.5,
+      "price": -114,
+      "probability": 0.5360269485727952,
+      "market_probability": 0.5,
+      "conservative_ev": 0.006226026268229656,
+      "captured_at": "2026-11-04T14:39:35.470759+00:00",
+      "paper_only": true
+    }
+  ],
+  "exclusions": {
+    "no_positive_conservative_ev": 13,
+    "missing_residual_signal": 5
+  },
+  "paper_only": true
+}

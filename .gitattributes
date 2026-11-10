@@ -3,11 +3,19 @@ src/mlb_pipeline/modeling/models/player_props/walks_xgb.json filter=lfs diff=lfs
 src/nfl_pipeline/modeling/predict_player_props.py text eol=lf
 src/nfl_pipeline/modeling/scoring_capture.py text eol=lf
 src/nfl_pipeline/modeling/models/scoring_code_versions/** -text
+src/nfl_pipeline/modeling/models/frozen_experiments/nfl-sharp-gap-cash-v10/** -text
+src/sharp_pipeline/frozen_experiments/** -text
+src/sharp_pipeline/scan.py text eol=lf
+src/sharp_pipeline/report.py text eol=lf
+src/sharp_pipeline/outcomes.py text eol=lf
+src/sharp_pipeline/nba_experiment.py text eol=lf
+src/sharp_pipeline/paper_alerts.py text eol=lf
+src/sharp_pipeline/price_checks.py text eol=lf
 
 # --- BEGIN registered line endings (generated) ---
 # Active frozen registrations hash raw bytes. With core.autocrlf a checkout can rewrite a file's
 # line endings and block the registration, so each pinned file keeps exactly the endings it was
-# registered with. Registrations: nfl-sharp-gap-cash-v9, fanduel-receiving-oe-paper-v7.
+# registered with. Registrations: nfl-sharp-gap-cash-v10, fanduel-receiving-oe-paper-v7.
 src/nfl_pipeline/__init__.py text eol=lf
 src/nfl_pipeline/betting_preferences.py text eol=lf
 src/nfl_pipeline/cash_execution.py text eol=lf
@@ -94,6 +102,7 @@ src/nfl_pipeline/schema.py text eol=lf
 src/nfl_pipeline/sharp_inactives.py text eol=lf
 src/nfl_pipeline/sharp_math.py text eol=lf
 src/nfl_pipeline/sharp_strategy.py text eol=lf
+src/nfl_pipeline/sharp_risk.py text eol=lf
 src/nfl_pipeline/sharp_watch.py text eol=lf
 src/supernovabets_config.py text eol=lf
 # --- END registered line endings ---

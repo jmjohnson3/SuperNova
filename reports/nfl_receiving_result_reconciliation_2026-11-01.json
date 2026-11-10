@@ -1,0 +1,67 @@
+{
+  "built_at": "2026-11-02T18:41:31.426925+00:00",
+  "counts": {
+    "void_nonparticipant": 4
+  },
+  "unresolved_final_rows": 0,
+  "rows": [
+    {
+      "forecast_id": 27461,
+      "game_id": "2026_08_NE_MIA",
+      "player_id": "00-0035676",
+      "player": "A.Brown",
+      "team": "NE",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-11-02T18:41:17.724877+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 27510,
+      "game_id": "2026_08_LV_NYJ",
+      "player_id": "00-0038120",
+      "player": "B.Hall",
+      "team": "NYJ",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-11-02T18:41:17.724877+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 27563,
+      "game_id": "2026_08_ATL_TB",
+      "player_id": "00-0040129",
+      "player": "E.Egbuka",
+      "team": "TB",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-11-02T18:41:17.724877+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    },
+    {
+      "forecast_id": 27599,
+      "game_id": "2026_08_TEN_CIN",
+      "player_id": "00-0041438",
+      "player": "C.Tate",
+      "team": "TEN",
+      "state": "void_nonparticipant",
+      "snap_source_status": "game_published",
+      "snap_source_observed_at": "2026-11-02T18:41:17.724877+00:00",
+      "action": "refresh_official_results_and_participation_then_regrade",
+      "actual": null,
+      "inferred_zero": false
+    }
+  ],
+  "unique_unresolved_player_games": 0,
+  "limitations": [
+    "Absent source rows do not prove nonparticipation.",
+    "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",
+    "Refresh changes only verified result inputs; original locks and scoring versions are immutable."
+  ]
+}

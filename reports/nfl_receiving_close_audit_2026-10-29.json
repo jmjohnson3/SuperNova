@@ -1,0 +1,274 @@
+{
+  "day": "2026-10-29",
+  "built_at": "2026-10-30 23:10:32.311789+00:00",
+  "registration_sha256": "d7264621bc65f45f66bd12be9f678e2a8d627c0bf1afb487212f41b8fa288e23",
+  "selected": 2,
+  "matured": 2,
+  "valid": 0,
+  "reasons": {
+    "exact_line_not_observed": 1,
+    "selected_side_price_missing": 1
+  },
+  "rows": [
+    {
+      "decision_id": "02eba9aa72bc411fa0cc4329cbbf0cc0adb102e6552ec4feaa78933238713c3d",
+      "forecast_id": 27015,
+      "player": "C.Hubbard",
+      "side": "under",
+      "line": 13.5,
+      "captured_at": "2026-10-27T13:37:24.075277+00:00",
+      "kickoff": "2026-10-30 00:15:00+00:00",
+      "valid": false,
+      "reason": "exact_line_not_observed",
+      "frozen_verdict": "missing_exact_pregame_close",
+      "snapshot_times": [
+        "2026-10-29T23:55:16.262817+00:00",
+        "2026-10-30T00:00:14.988320+00:00",
+        "2026-10-30T00:10:15.356417+00:00"
+      ],
+      "observed_lines": [
+        4.5,
+        9.5,
+        14.5,
+        16.5,
+        19.5,
+        24.5,
+        29.5,
+        39.5,
+        49.5,
+        59.5
+      ],
+      "paired_lines": [
+        16.5
+      ],
+      "exact_quote_rows": [],
+      "raw_exact_quotes": [
+        {
+          "raw_response_id": 4344,
+          "payload_sha256": "e4f917e593267662d25c7f724b0085b918ddc95c4f06a4fee59a8d09c57c9d77",
+          "fetched_at": "2026-10-29 23:55:16.099864+00:00",
+          "side": "over",
+          "line": 13.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T18:55:09.057Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4344,
+          "payload_sha256": "e4f917e593267662d25c7f724b0085b918ddc95c4f06a4fee59a8d09c57c9d77",
+          "fetched_at": "2026-10-29 23:55:16.099864+00:00",
+          "side": "under",
+          "line": 13.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T18:55:09.057Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4350,
+          "payload_sha256": "224eb37072fcd0462ab488ce2effc2077fd6b0e057761c465ba72a479bf72a67",
+          "fetched_at": "2026-10-30 00:00:14.824295+00:00",
+          "side": "over",
+          "line": 13.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T18:55:09.057Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4350,
+          "payload_sha256": "224eb37072fcd0462ab488ce2effc2077fd6b0e057761c465ba72a479bf72a67",
+          "fetched_at": "2026-10-30 00:00:14.824295+00:00",
+          "side": "under",
+          "line": 13.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T18:55:09.057Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4355,
+          "payload_sha256": "b490ceb96169f7ec8b603a1c8a37e513ebb3c578f0796ee83197b1702e06e2a2",
+          "fetched_at": "2026-10-30 00:10:15.231393+00:00",
+          "side": "over",
+          "line": 13.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T18:55:09.057Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4355,
+          "payload_sha256": "b490ceb96169f7ec8b603a1c8a37e513ebb3c578f0796ee83197b1702e06e2a2",
+          "fetched_at": "2026-10-30 00:10:15.231393+00:00",
+          "side": "under",
+          "line": 13.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T18:55:09.057Z",
+          "event_started": false,
+          "event_ended": false
+        }
+      ],
+      "provider_marks_selected_side_unavailable": true,
+      "live_sportsbook_availability": "unknown"
+    },
+    {
+      "decision_id": "72e1cd46dc1150414a243e800df1e51cbc811ae13319c04389e61421b0a67998",
+      "forecast_id": 27019,
+      "player": "C.Watson",
+      "side": "under",
+      "line": 69.5,
+      "captured_at": "2026-10-27T13:37:24.075277+00:00",
+      "kickoff": "2026-10-30 00:15:00+00:00",
+      "valid": false,
+      "reason": "selected_side_price_missing",
+      "frozen_verdict": "missing_exact_pregame_close",
+      "snapshot_times": [
+        "2026-10-29T23:55:16.262817+00:00",
+        "2026-10-30T00:00:14.988320+00:00",
+        "2026-10-30T00:10:15.356417+00:00"
+      ],
+      "observed_lines": [
+        24.5,
+        29.5,
+        39.5,
+        49.5,
+        59.5,
+        69.5,
+        70.5,
+        79.5,
+        89.5,
+        99.5,
+        109.5,
+        124.5,
+        149.5
+      ],
+      "paired_lines": [
+        70.5
+      ],
+      "exact_quote_rows": [
+        {
+          "id": 57702910,
+          "line": 69.5,
+          "over_price": -114,
+          "under_price": null,
+          "fetched_at_utc": "2026-10-29 16:55:16.262817-07:00"
+        },
+        {
+          "id": 57713707,
+          "line": 69.5,
+          "over_price": -114,
+          "under_price": null,
+          "fetched_at_utc": "2026-10-29 17:00:14.988320-07:00"
+        },
+        {
+          "id": 57726406,
+          "line": 69.5,
+          "over_price": -114,
+          "under_price": null,
+          "fetched_at_utc": "2026-10-29 17:10:15.356417-07:00"
+        }
+      ],
+      "raw_exact_quotes": [
+        {
+          "raw_response_id": 4344,
+          "payload_sha256": "e4f917e593267662d25c7f724b0085b918ddc95c4f06a4fee59a8d09c57c9d77",
+          "fetched_at": "2026-10-29 23:55:16.099864+00:00",
+          "side": "over",
+          "line": 69.5,
+          "alternate": true,
+          "available": true,
+          "price": -114.0,
+          "source_updated_at": "2026-10-29T23:51:15.118Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4344,
+          "payload_sha256": "e4f917e593267662d25c7f724b0085b918ddc95c4f06a4fee59a8d09c57c9d77",
+          "fetched_at": "2026-10-29 23:55:16.099864+00:00",
+          "side": "under",
+          "line": 69.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T20:20:07.468Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4350,
+          "payload_sha256": "224eb37072fcd0462ab488ce2effc2077fd6b0e057761c465ba72a479bf72a67",
+          "fetched_at": "2026-10-30 00:00:14.824295+00:00",
+          "side": "over",
+          "line": 69.5,
+          "alternate": true,
+          "available": true,
+          "price": -114.0,
+          "source_updated_at": "2026-10-29T23:56:44.698Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4350,
+          "payload_sha256": "224eb37072fcd0462ab488ce2effc2077fd6b0e057761c465ba72a479bf72a67",
+          "fetched_at": "2026-10-30 00:00:14.824295+00:00",
+          "side": "under",
+          "line": 69.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T20:20:07.468Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4355,
+          "payload_sha256": "b490ceb96169f7ec8b603a1c8a37e513ebb3c578f0796ee83197b1702e06e2a2",
+          "fetched_at": "2026-10-30 00:10:15.231393+00:00",
+          "side": "over",
+          "line": 69.5,
+          "alternate": true,
+          "available": true,
+          "price": -114.0,
+          "source_updated_at": "2026-10-30T00:02:32.354Z",
+          "event_started": false,
+          "event_ended": false
+        },
+        {
+          "raw_response_id": 4355,
+          "payload_sha256": "b490ceb96169f7ec8b603a1c8a37e513ebb3c578f0796ee83197b1702e06e2a2",
+          "fetched_at": "2026-10-30 00:10:15.231393+00:00",
+          "side": "under",
+          "line": 69.5,
+          "alternate": true,
+          "available": false,
+          "price": -114.0,
+          "source_updated_at": "2026-10-27T20:20:07.468Z",
+          "event_started": false,
+          "event_ended": false
+        }
+      ],
+      "provider_marks_selected_side_unavailable": true,
+      "live_sportsbook_availability": "unknown"
+    }
+  ],
+  "frozen_rules_changed": false,
+  "evidence_repaired": false,
+  "api_requests": 0,
+  "betting_authorized": false,
+  "note": "Diagnostic only. Inactive quotes, one-sided markets and other lines do not repair exact-close evidence. Provider availability flags are not a live sportsbook check."
+}

@@ -1,7 +1,21 @@
 # NBA player-prop model (nba_api)
 
-Status (2026-10-24): **research only; no model-driven NBA prop bets.** NBA bets, when staked, come from the
-sharp-gap scanner (`sharp_pipeline`), which prices DraftKings/FanDuel/theScore against Pinnacle.
+Status (2026-10-28): **research only; no NBA wagering authorized.** The frozen
+[paper price-check experiment](nba_price_checks.md) compares each sportsbook with Pinnacle
+and measures whether its offers are available during manual checks. Projections stay a shadow comparison.
+
+## Operational repairs (2026-10-28)
+Player-log ingestion collapses identical keys and merges complementary missing fields only when
+all supplied values agree. Conflicting records are saved in `nbaprops.ingest_conflicts`; the whole
+game is excluded from model inputs and grading until a later unambiguous source refresh resolves
+the affected keys. Existing raw player rows remain available for investigation.
+
+News refreshes report `no_fits_yet` until daily fits exist and retry unchanged news after fits
+become available. Missing player results remain pending; this feed alone cannot verify a void.
+Shared-scanner observations retain their snapshot identity, so an early observation cannot block
+a later qualifying decision. Repeated observations still count as one decision per player-game-market.
+Market timestamps govern freshness. Only observed exact-line closes count toward close coverage
+and stake review; estimated line conversions are reported separately.
 
 ## Why a new pipeline
 The MySportsFeeds subscription lapsed: every request (any league, any season) returns 403 "Access
@@ -73,11 +87,11 @@ against closing lines.
 - `python -m nba_props.post` posts the slate to #nba once, ~3 hours before the first tip: projected score,
   model spread/total beside DraftKings and Pinnacle (one 3-credit call), who is out, top players' p/r/a/3s.
 - `sharp_pipeline.outcomes` grades the sharp scanner's decisions with results (NBA from the game logs,
-  NCAAF from `ncaaf.games`; a prop with no game log for a played game is void; first halves ungraded) and
+  NCAAF from `ncaaf.games`; missing player results remain pending; first halves ungraded) and
   records the shadow filter: the model's probability for the decision's side from the latest projection
   made before it, and whether it is above Pinnacle's no-vig. Both appear in `reports/sharp_multi_latest.md`
   and the digest; EV at the close stays the primary test. Projections are not reconstructed for days
   before the first run, so the shadow split starts with Oct 24 decisions.
-- Judge the filter on 100+ NBA prop decisions: it earns a role only if "agrees" beats "disagrees" on EV
-  at the close.
+- The "agrees" subset does not select or reject paper checks. Any proposed model filter needs its own
+  fixed prospective challenger; subgroup performance cannot change the registered experiment.
 - Re-run the test each season; adopt nothing unless it beats the market's log loss in two straight seasons.

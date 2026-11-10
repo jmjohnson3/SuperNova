@@ -4,6 +4,11 @@ logs/
 data/external_picks/
 data/ai_picks/
 data/nfl_wager_reconciliation/
+data/nba_wager_reconciliation/
+data/shared_wager_reconciliation/
+data/sports_finance/
+data/fanduel_live_checks/
+data/nba_props/research/
 config/mlb_external_pick_sources.json
 
 # Large model artifacts — exceed GitHub's 100 MB file size limit

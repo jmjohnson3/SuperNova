@@ -1,11 +1,11 @@
 # FanDuel Receiving Residual Challenger
 
 Status: collecting_residual_evidence
-Independent captured rows: 3034; player-games: 828
+Independent captured rows: 3643; player-games: 1011
 
 | Policy cohort | Weeks | Player-games | Point trust | Conservative trust | Supported |
 |---|---:|---:|---:|---:|---|
-| benchmark-20260921T230305171980Z|nfl-20260918T143342Z|stable_ensemble_calibrated | 5 | 828 | 0.35 | 0.00 | False |
+| benchmark-20260921T230305171980Z|nfl-20260918T143342Z|stable_ensemble_calibrated | 7 | 1011 | 0.25 | 0.00 | False |
 
 Paper-only. Production and bankroll approval are unchanged.
 

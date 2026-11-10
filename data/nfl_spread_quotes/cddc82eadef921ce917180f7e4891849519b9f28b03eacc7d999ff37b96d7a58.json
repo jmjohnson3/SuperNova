@@ -1,0 +1,1610 @@
+{
+  "collection_experiment_id": "nfl-spread-quotes-v1",
+  "experiment_sha256": "35362fa35c4cc50220a6eec40a83098d7ed5f168a67c00ed62b5fc2003fba3d8",
+  "requested_at": "2026-11-09T00:50:43.816032+00:00",
+  "received_at": "2026-11-09T00:50:47.257440+00:00",
+  "payload": [
+    {
+      "id": "2922c573ec3df8466c4a34975e446898",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-08T21:25:34Z",
+      "home_team": "New England Patriots",
+      "away_team": "Green Bay Packers",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:41:55Z",
+          "link": "https://sportsbook.draftkings.com/event/34118221",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:41:55Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Green Bay Packers",
+                  "price": -10000,
+                  "point": -17.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC87151178N1750_3"
+                },
+                {
+                  "name": "New England Patriots",
+                  "price": 1620,
+                  "point": 17.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC87151178P1750_1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:39:20Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/green-bay-packers-%40-new-england-patriots-36244877",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:39:20Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Green Bay Packers",
+                  "price": -20000,
+                  "point": -17.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.619967701&selectionId=50192"
+                },
+                {
+                  "name": "New England Patriots",
+                  "price": 1700,
+                  "point": 17.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.619967701&selectionId=50204"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:39:05Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/green-bay-packers-@-new-england-patriots-6%3A44018",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:39:04Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Green Bay Packers",
+                  "price": -1600,
+                  "point": -17.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44018-4465116-7292442&type=Single"
+                },
+                {
+                  "name": "New England Patriots",
+                  "price": 825,
+                  "point": 17.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44018-4465116-7292443&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9760d8f19f84bfee300a74ceb656c95d",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-09T01:20:00Z",
+      "home_team": "Chicago Bears",
+      "away_team": "Tampa Bay Buccaneers",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118027",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Chicago Bears",
+                  "price": -118,
+                  "point": -6.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695460N600_1"
+                },
+                {
+                  "name": "Tampa Bay Buccaneers",
+                  "price": -102,
+                  "point": 6.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695460P600_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/tampa-bay-buccaneers-%40-chicago-bears-36244879",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Chicago Bears",
+                  "price": 100,
+                  "point": -6.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.619967721&selectionId=28346121"
+                },
+                {
+                  "name": "Tampa Bay Buccaneers",
+                  "price": -120,
+                  "point": 6.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.619967721&selectionId=36418651"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/tampa-bay-buccaneers-@-chicago-bears-6%3A44024",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Chicago Bears",
+                  "price": -110,
+                  "point": -6.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44024-4355791-7075677&type=Single"
+                },
+                {
+                  "name": "Tampa Bay Buccaneers",
+                  "price": -108,
+                  "point": 6.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44024-4355791-7075676&type=Single"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "pinnacle",
+          "title": "Pinnacle",
+          "last_update": "2026-11-09T00:50:43Z",
+          "link": "https://www.pinnacle.com/en/football/nfl/tampa-bay-buccaneers-vs-chicago-bears/1639127322/",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:43Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Chicago Bears",
+                  "price": -110,
+                  "point": -6.0,
+                  "link": null
+                },
+                {
+                  "name": "Tampa Bay Buccaneers",
+                  "price": 100,
+                  "point": 6.0,
+                  "link": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "17ad7eff2f7875e20a8109abe40470e3",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-10T01:15:00Z",
+      "home_team": "Minnesota Vikings",
+      "away_team": "Buffalo Bills",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118167",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -118,
+                  "point": -3.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695600N300_3"
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": -102,
+                  "point": 3.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695600P300_1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/buffalo-bills-%40-minnesota-vikings-36244880",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -115,
+                  "point": -3.0,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.619967752&selectionId=36418655"
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": -105,
+                  "point": 3.0,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.619967752&selectionId=10697805"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/buffalo-bills-@-minnesota-vikings-6%3A44038",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -115,
+                  "point": -3.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44038-4346091-7051755&type=Single"
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": -105,
+                  "point": 3.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44038-4346091-7051756&type=Single"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "pinnacle",
+          "title": "Pinnacle",
+          "last_update": "2026-11-09T00:50:43Z",
+          "link": "https://www.pinnacle.com/en/football/nfl/buffalo-bills-vs-minnesota-vikings/1639235117/",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:43Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -114,
+                  "point": -3.0,
+                  "link": null
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": 101,
+                  "point": 3.0,
+                  "link": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "74d39e19225caf211ad2c8eb4110179f",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-13T01:15:00Z",
+      "home_team": "New York Giants",
+      "away_team": "Washington Commanders",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118102",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "New York Giants",
+                  "price": -110,
+                  "point": -1.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695535N150_1"
+                },
+                {
+                  "name": "Washington Commanders",
+                  "price": -110,
+                  "point": 1.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695535P150_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/washington-commanders-%40-new-york-giants-36275757",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "New York Giants",
+                  "price": -110,
+                  "point": -1.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280851&selectionId=50185"
+                },
+                {
+                  "name": "Washington Commanders",
+                  "price": -110,
+                  "point": 1.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280851&selectionId=42568622"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/washington-commanders-@-new-york-giants-6%3A44040",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "New York Giants",
+                  "price": -108,
+                  "point": -2.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44040-4467728-7298072&type=Single"
+                },
+                {
+                  "name": "Washington Commanders",
+                  "price": -110,
+                  "point": 2.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44040-4467728-7298071&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b8c10fdf1e0ac4e13deee7f7c0af0b0b",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T14:30:00Z",
+      "home_team": "Detroit Lions",
+      "away_team": "New England Patriots",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118220",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Detroit Lions",
+                  "price": -110,
+                  "point": -1.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695653N150_1"
+                },
+                {
+                  "name": "New England Patriots",
+                  "price": -110,
+                  "point": 1.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695653P150_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/new-england-patriots-%40-detroit-lions-35605986",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Detroit Lions",
+                  "price": -115,
+                  "point": -1.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.578347331&selectionId=50193"
+                },
+                {
+                  "name": "New England Patriots",
+                  "price": -105,
+                  "point": 1.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.578347331&selectionId=50204"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/new-england-patriots-@-detroit-lions-6%3A44011",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Detroit Lions",
+                  "price": -110,
+                  "point": -2.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44011-4467828-7298261&type=Single"
+                },
+                {
+                  "name": "New England Patriots",
+                  "price": -108,
+                  "point": 2.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44011-4467828-7298260&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3c71d515b726f1096aabb435badb83fd",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "Atlanta Falcons",
+      "away_team": "Kansas City Chiefs",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118132",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Atlanta Falcons",
+                  "price": 100,
+                  "point": 3.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695565P300_1"
+                },
+                {
+                  "name": "Kansas City Chiefs",
+                  "price": -120,
+                  "point": -3.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695565N300_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/kansas-city-chiefs-%40-atlanta-falcons-36275759",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Atlanta Falcons",
+                  "price": -120,
+                  "point": 3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280861&selectionId=50199"
+                },
+                {
+                  "name": "Kansas City Chiefs",
+                  "price": 100,
+                  "point": -3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280861&selectionId=50214"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/kansas-city-chiefs-@-atlanta-falcons-6%3A44016",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Atlanta Falcons",
+                  "price": -112,
+                  "point": 3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44016-4467745-7298098&type=Single"
+                },
+                {
+                  "name": "Kansas City Chiefs",
+                  "price": -105,
+                  "point": -3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44016-4467745-7298097&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1057d50949844ddf483da9c8c20354be",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "New York Jets",
+      "away_team": "Buffalo Bills",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118183",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -110,
+                  "point": -8.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695616N850_3"
+                },
+                {
+                  "name": "New York Jets",
+                  "price": -110,
+                  "point": 8.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695616P850_1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/buffalo-bills-%40-new-york-jets-36275763",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -110,
+                  "point": -8.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280913&selectionId=50203"
+                },
+                {
+                  "name": "New York Jets",
+                  "price": -110,
+                  "point": 8.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280913&selectionId=50202"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/buffalo-bills-@-new-york-jets-6%3A44019",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Buffalo Bills",
+                  "price": -105,
+                  "point": -8.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44019-4466906-7296325&type=Single"
+                },
+                {
+                  "name": "New York Jets",
+                  "price": -112,
+                  "point": 8.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44019-4466906-7296326&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e5aa20e1364dd639f042af1c2281bbe2",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "New Orleans Saints",
+      "away_team": "Carolina Panthers",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118165",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Carolina Panthers",
+                  "price": -110,
+                  "point": -1.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695598N150_3"
+                },
+                {
+                  "name": "New Orleans Saints",
+                  "price": -110,
+                  "point": 1.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695598P150_1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/carolina-panthers-%40-new-orleans-saints-36275767",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Carolina Panthers",
+                  "price": -105,
+                  "point": -1.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280903&selectionId=50198"
+                },
+                {
+                  "name": "New Orleans Saints",
+                  "price": -115,
+                  "point": 1.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280903&selectionId=50196"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/carolina-panthers-@-new-orleans-saints-6%3A44045",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Carolina Panthers",
+                  "price": -110,
+                  "point": -1.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44045-4466910-7296333&type=Single"
+                },
+                {
+                  "name": "New Orleans Saints",
+                  "price": -110,
+                  "point": 1.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44045-4466910-7296334&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "be0e03cc42fbc9b6962467b22c7bf9dd",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "Cleveland Browns",
+      "away_team": "Houston Texans",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118093",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Cleveland Browns",
+                  "price": -110,
+                  "point": 4.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695526P450_1"
+                },
+                {
+                  "name": "Houston Texans",
+                  "price": -110,
+                  "point": -4.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695526N450_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/houston-texans-%40-cleveland-browns-36275760",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Cleveland Browns",
+                  "price": -110,
+                  "point": 4.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280871&selectionId=50209"
+                },
+                {
+                  "name": "Houston Texans",
+                  "price": -110,
+                  "point": -4.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280871&selectionId=179823"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/houston-texans-@-cleveland-browns-6%3A44042",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Cleveland Browns",
+                  "price": -110,
+                  "point": 4.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44042-4467481-7297582&type=Single"
+                },
+                {
+                  "name": "Houston Texans",
+                  "price": -108,
+                  "point": -4.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44042-4467481-7297581&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5d8d85473b87f772a979ecf294acab94",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "Green Bay Packers",
+      "away_team": "Minnesota Vikings",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118179",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Green Bay Packers",
+                  "price": -110,
+                  "point": -3.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695612N300_1"
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": -110,
+                  "point": 3.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695612P300_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/minnesota-vikings-%40-green-bay-packers-36275758",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Green Bay Packers",
+                  "price": -120,
+                  "point": -3.0,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280881&selectionId=50192"
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": 100,
+                  "point": 3.0,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280881&selectionId=50191"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/minnesota-vikings-@-green-bay-packers-6%3A44043",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Green Bay Packers",
+                  "price": -112,
+                  "point": -3.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44043-4466872-7296263&type=Single"
+                },
+                {
+                  "name": "Minnesota Vikings",
+                  "price": -105,
+                  "point": 3.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44043-4466872-7296262&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b5700b4d938fd94429f60d4622cc9c0a",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "Indianapolis Colts",
+      "away_team": "Miami Dolphins",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118270",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Indianapolis Colts",
+                  "price": -110,
+                  "point": -2.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695713N250_1"
+                },
+                {
+                  "name": "Miami Dolphins",
+                  "price": -110,
+                  "point": 2.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695713P250_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/miami-dolphins-%40-indianapolis-colts-36275761",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Indianapolis Colts",
+                  "price": -110,
+                  "point": -2.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280891&selectionId=50200"
+                },
+                {
+                  "name": "Miami Dolphins",
+                  "price": -110,
+                  "point": 2.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280891&selectionId=50201"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/miami-dolphins-@-indianapolis-colts-6%3A44027",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Indianapolis Colts",
+                  "price": -112,
+                  "point": -2.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44027-4466881-7296279&type=Single"
+                },
+                {
+                  "name": "Miami Dolphins",
+                  "price": -108,
+                  "point": 2.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44027-4466881-7296278&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "28800df7e768ecec14f116454d560f9b",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T18:00:00Z",
+      "home_team": "Tennessee Titans",
+      "away_team": "Jacksonville Jaguars",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118232",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Jacksonville Jaguars",
+                  "price": -110,
+                  "point": -10.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695675N1000_3"
+                },
+                {
+                  "name": "Tennessee Titans",
+                  "price": -110,
+                  "point": 10.0,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695675P1000_1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/jacksonville-jaguars-%40-tennessee-titans-36275762",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Jacksonville Jaguars",
+                  "price": -120,
+                  "point": -9.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280923&selectionId=50207"
+                },
+                {
+                  "name": "Tennessee Titans",
+                  "price": 100,
+                  "point": 9.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280923&selectionId=50206"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/jacksonville-jaguars-@-tennessee-titans-6%3A44030",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Jacksonville Jaguars",
+                  "price": -108,
+                  "point": -10.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44030-4466876-7296268&type=Single"
+                },
+                {
+                  "name": "Tennessee Titans",
+                  "price": -110,
+                  "point": 10.0,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44030-4466876-7296269&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6c932a965110f3f89ec4a5f1a6ac256e",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T21:05:00Z",
+      "home_team": "Arizona Cardinals",
+      "away_team": "Los Angeles Rams",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118111",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Arizona Cardinals",
+                  "price": -110,
+                  "point": 8.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695544P850_1"
+                },
+                {
+                  "name": "Los Angeles Rams",
+                  "price": -110,
+                  "point": -8.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695544N850_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/los-angeles-rams-%40-arizona-cardinals-36275766",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Arizona Cardinals",
+                  "price": -120,
+                  "point": 7.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280934&selectionId=50188"
+                },
+                {
+                  "name": "Los Angeles Rams",
+                  "price": 100,
+                  "point": -7.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280934&selectionId=10782388"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/los-angeles-rams-@-arizona-cardinals-6%3A44022",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Arizona Cardinals",
+                  "price": -105,
+                  "point": 7.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44022-4467841-7298283&type=Single"
+                },
+                {
+                  "name": "Los Angeles Rams",
+                  "price": -112,
+                  "point": -7.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44022-4467841-7298282&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6079a5cbabf99b265a17edfc92a1da60",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T21:05:00Z",
+      "home_team": "Las Vegas Raiders",
+      "away_team": "Seattle Seahawks",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118249",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Las Vegas Raiders",
+                  "price": -120,
+                  "point": 3.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695692P350_1"
+                },
+                {
+                  "name": "Seattle Seahawks",
+                  "price": 100,
+                  "point": -3.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695692N350_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/seattle-seahawks-%40-las-vegas-raiders-36275769",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Las Vegas Raiders",
+                  "price": -110,
+                  "point": 3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280976&selectionId=27443341"
+                },
+                {
+                  "name": "Seattle Seahawks",
+                  "price": -110,
+                  "point": -3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280976&selectionId=50213"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/seattle-seahawks-@-las-vegas-raiders-6%3A44025",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Las Vegas Raiders",
+                  "price": -108,
+                  "point": 3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44025-4467340-7297271&type=Single"
+                },
+                {
+                  "name": "Seattle Seahawks",
+                  "price": -110,
+                  "point": -3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44025-4467340-7297270&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7627192fd89b05120ab6c712aa23fd81",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-15T21:25:00Z",
+      "home_team": "Dallas Cowboys",
+      "away_team": "San Francisco 49ers",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118134",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Dallas Cowboys",
+                  "price": -110,
+                  "point": 4.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695567P450_1"
+                },
+                {
+                  "name": "San Francisco 49ers",
+                  "price": -110,
+                  "point": -4.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695567N450_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/san-francisco-49ers-%40-dallas-cowboys-36275764",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Dallas Cowboys",
+                  "price": -120,
+                  "point": 4.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280945&selectionId=50189"
+                },
+                {
+                  "name": "San Francisco 49ers",
+                  "price": 100,
+                  "point": -4.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280945&selectionId=43010249"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/san-francisco-49ers-@-dallas-cowboys-6%3A44033",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Dallas Cowboys",
+                  "price": -112,
+                  "point": 4.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44033-4466864-7296247&type=Single"
+                },
+                {
+                  "name": "San Francisco 49ers",
+                  "price": -105,
+                  "point": -4.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44033-4466864-7296246&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "48e497c230e6c9afcb3b600091d28e17",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-16T01:20:00Z",
+      "home_team": "Cincinnati Bengals",
+      "away_team": "Pittsburgh Steelers",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118114",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Cincinnati Bengals",
+                  "price": -118,
+                  "point": -3.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695547N350_1"
+                },
+                {
+                  "name": "Pittsburgh Steelers",
+                  "price": -102,
+                  "point": 3.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695547P350_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/pittsburgh-steelers-%40-cincinnati-bengals-36275765",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Cincinnati Bengals",
+                  "price": -115,
+                  "point": -3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280955&selectionId=50210"
+                },
+                {
+                  "name": "Pittsburgh Steelers",
+                  "price": -105,
+                  "point": 3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280955&selectionId=50208"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/pittsburgh-steelers-@-cincinnati-bengals-6%3A44036",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Cincinnati Bengals",
+                  "price": -110,
+                  "point": -3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44036-4467490-7297602&type=Single"
+                },
+                {
+                  "name": "Pittsburgh Steelers",
+                  "price": -108,
+                  "point": 3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44036-4467490-7297601&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "35e3bdff558b5d1506251e814986f164",
+      "sport_key": "americanfootball_nfl",
+      "sport_title": "NFL",
+      "commence_time": "2026-11-17T01:15:00Z",
+      "home_team": "Baltimore Ravens",
+      "away_team": "Los Angeles Chargers",
+      "bookmakers": [
+        {
+          "key": "draftkings",
+          "title": "DraftKings",
+          "last_update": "2026-11-09T00:50:26Z",
+          "link": "https://sportsbook.draftkings.com/event/34118177",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:26Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Baltimore Ravens",
+                  "price": 100,
+                  "point": -3.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695610N350_1"
+                },
+                {
+                  "name": "Los Angeles Chargers",
+                  "price": -120,
+                  "point": 3.5,
+                  "link": "https://sportsbook.draftkings.com/?outcomes=0HC84695610P350_3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "fanduel",
+          "title": "FanDuel",
+          "last_update": "2026-11-09T00:50:44Z",
+          "link": "https://sportsbook.fanduel.com/football/nfl/los-angeles-chargers-%40-baltimore-ravens-36275768",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:44Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Baltimore Ravens",
+                  "price": -105,
+                  "point": -3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280965&selectionId=50205"
+                },
+                {
+                  "name": "Los Angeles Chargers",
+                  "price": -115,
+                  "point": 3.5,
+                  "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.622280965&selectionId=12481798"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "betmgm",
+          "title": "BetMGM",
+          "last_update": "2026-11-09T00:50:09Z",
+          "link": "https://sports.{state}.betmgm.com/en/sports/events/los-angeles-chargers-@-baltimore-ravens-6%3A44048",
+          "markets": [
+            {
+              "key": "spreads",
+              "last_update": "2026-11-09T00:50:09Z",
+              "link": null,
+              "outcomes": [
+                {
+                  "name": "Baltimore Ravens",
+                  "price": -105,
+                  "point": -3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44048-4467624-7297870&type=Single"
+                },
+                {
+                  "name": "Los Angeles Chargers",
+                  "price": -112,
+                  "point": 3.5,
+                  "link": "https://sports.{state}.betmgm.com/en/sports?options=6:44048-4467624-7297869&type=Single"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "credits_remaining": "17935"
+}

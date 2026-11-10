@@ -1,0 +1,52 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-11-08T23:26:23.571420+00:00",
+  "status": "failed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_09_ARI_SEA",
+      "kickoff": "2026-11-08T21:25:00+00:00",
+      "target_at": "2026-11-08T19:25:00+00:00",
+      "minutes_to_start": -121.4,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_09_GB_NE",
+      "kickoff": "2026-11-08T21:25:00+00:00",
+      "target_at": "2026-11-08T19:25:00+00:00",
+      "minutes_to_start": -121.4,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_09_TB_CHI",
+      "kickoff": "2026-11-09T01:20:00+00:00",
+      "target_at": "2026-11-08T23:20:00+00:00",
+      "minutes_to_start": 113.6,
+      "action": "review_required",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_09_BUF_MIN",
+      "kickoff": "2026-11-10T01:15:00+00:00",
+      "target_at": "2026-11-09T23:15:00+00:00",
+      "minutes_to_start": 1548.6,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_e0cdd485b3e14eda9b84471953129100",
+      "game_ids": [
+        "2026_09_TB_CHI"
+      ],
+      "status": "review_required",
+      "returncode": 1
+    }
+  ],
+  "pipeline_invoked": true
+}

@@ -1,0 +1,186 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "nfl-sharp-gap-cash-v10",
+  "registered_at": "2026-10-28T20:18:40.091240+00:00",
+  "config": {
+    "change_reason": "v10 safety repair: require fresh strategy-matched readiness and persist the loss stop; v9 pricing and limits retained",
+    "pinned_scope": "pricing, selection, staking and grading modules only",
+    "predecessor_experiment_id": "nfl-sharp-gap-cash-v9",
+    "predecessor_sha256": "3dfb4ebd8e87171728958f95f0857bc2ad2a0935475e249b386530eaa76784d2",
+    "scanner": {
+      "bet_books": [
+        "fanduel",
+        "espnbet",
+        "draftkings"
+      ],
+      "cash_enabled": true,
+      "contract": "nfl-sharp-quotes-v2",
+      "daily_cap_rule": "cumulative_window_allocation",
+      "devig_method": "power",
+      "gates": {
+        "close_coverage_min_decisions": 10,
+        "kill_max_mean_close_ev": 0.0,
+        "kill_min_decisions": 50,
+        "max_player_share": 0.2,
+        "max_team_share": 0.35,
+        "min_close_coverage": 0.9,
+        "scale_min_decisions": 150,
+        "scale_min_mean_close_ev": 0.015,
+        "scale_min_weeks": 3
+      },
+      "inactives_source": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+      "ladder_markets": {
+        "player_reception_yds_alternate": "receiving_yards",
+        "player_receptions_alternate": "receptions",
+        "player_rush_yds_alternate": "rushing_yards"
+      },
+      "ladder_model_rows": 3204,
+      "ladder_scan": false,
+      "line_model": {
+        "anytime_td": {
+          "max_gap": 0.0,
+          "sigma": 1.0
+        },
+        "pass_attempts": {
+          "max_gap": 0.0,
+          "sigma": 6.0
+        },
+        "pass_completions": {
+          "max_gap": 0.0,
+          "sigma": 5.0
+        },
+        "passing_tds": {
+          "max_gap": 0.0,
+          "sigma": 0.95
+        },
+        "passing_yards": {
+          "max_gap": 6.0,
+          "sigma": 55.0
+        },
+        "receiving_yards": {
+          "max_gap": 3.0,
+          "sigma": 26.0
+        },
+        "receptions": {
+          "max_gap": 0.0,
+          "sigma": 1.9
+        },
+        "rush_attempts": {
+          "max_gap": 0.0,
+          "sigma": 4.0
+        },
+        "rushing_yards": {
+          "max_gap": 3.0,
+          "sigma": 26.0
+        },
+        "spread": {
+          "max_gap": 0.0,
+          "sigma": 13.5
+        },
+        "total": {
+          "max_gap": 1.0,
+          "sigma": 10.5
+        }
+      },
+      "log_min_ev": 0.01,
+      "loss_pause": -30.0,
+      "markets": [
+        "player_reception_yds",
+        "player_rush_yds",
+        "player_receptions",
+        "alternate_totals"
+      ],
+      "max_bets_per_day": 10,
+      "max_bets_per_game": 2,
+      "max_source_age_seconds": 300,
+      "max_source_skew_seconds": 120,
+      "max_stake_per_week": 40.0,
+      "min_ev": 0.03,
+      "poll_horizon_minutes": 60,
+      "readiness_max_age_hours": 24,
+      "reference_books": [
+        "pinnacle"
+      ],
+      "selection": "best_ev_first_eligible_per_player_game_stat_across_books",
+      "shadow_filter": {
+        "max_side_probability_gap": 0.15,
+        "min_decisions_to_judge": 60,
+        "over_max_limited_usage_risk": 0.4,
+        "over_risky_injury": [
+          "questionable"
+        ],
+        "unavailable_injury": [
+          "out",
+          "doubtful",
+          "ir",
+          "inactive"
+        ]
+      },
+      "stake": 1.0,
+      "stake_window_minutes": [
+        15,
+        45
+      ],
+      "staked_stats": [
+        "receiving_yards",
+        "receptions",
+        "rushing_yards",
+        "total"
+      ],
+      "window_merge_minutes": 45
+    }
+  },
+  "files": {
+    "alt_line_model": {
+      "path": "src/nfl_pipeline/modeling/models/player_props/alt_line_model.json",
+      "sha256": "34ae04f9b11a6a29914574570c6f87395cc837599c88565335f72d6e12693f43"
+    },
+    "nfl_pipeline.context_contract": {
+      "path": "src/nfl_pipeline/context_contract.py",
+      "sha256": "f79a5b28062cf643f62a50a187347f45214208a141332b7cace63ff3b96e6ea0"
+    },
+    "nfl_pipeline.markets": {
+      "path": "src/nfl_pipeline/markets.py",
+      "sha256": "091b44fa26d3eaba07791fcbe06509723b4c3d443486772d2472f409d8850661"
+    },
+    "nfl_pipeline.modeling.sharp_alert_report": {
+      "path": "src/nfl_pipeline/modeling/sharp_alert_report.py",
+      "sha256": "d62a3be1422419052db7662cb77e367086196cc07d34c6190b16cd4269dea8bb"
+    },
+    "nfl_pipeline.sharp_inactives": {
+      "path": "src/nfl_pipeline/sharp_inactives.py",
+      "sha256": "f29156ec5393fe94c7f00cdb6c3bc2259334535d102327410c41a9d301a02fde"
+    },
+    "nfl_pipeline.sharp_math": {
+      "path": "src/nfl_pipeline/sharp_math.py",
+      "sha256": "443c6fca945206736c017a416ad6d8391e3d35ff9ef830890cdd2e72aee5826d"
+    },
+    "nfl_pipeline.sharp_risk": {
+      "path": "src/nfl_pipeline/sharp_risk.py",
+      "sha256": "a61a0dc4cea02d128b1b44bdf086cf65ed5f4671b9a6f83d5c46f90eede35dc0"
+    },
+    "nfl_pipeline.sharp_strategy": {
+      "path": "src/nfl_pipeline/sharp_strategy.py",
+      "sha256": "a6cc911f9cea070a8aa270dbe0c65f11b62ca77e64f30f58126636ceb32743f1"
+    },
+    "nfl_pipeline.sharp_watch": {
+      "path": "src/nfl_pipeline/sharp_watch.py",
+      "sha256": "c5ea6e128ce479a2df41f2a6364ff9e13cf17dd965afc9372fa3e4c0522e8f36"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd"
+}

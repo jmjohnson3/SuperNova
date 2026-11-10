@@ -1,7 +1,7 @@
 {
   "contract": "nfl-independent-probability-replay-v1",
   "artifact_sha256": "766abeada2c010094c71e89f85e2978974df7b5d3d4c40aa5f5695d90354460c",
-  "built_at": "2026-10-13T16:27:41.719633+00:00",
+  "built_at": "2026-10-30T16:02:15.151905+00:00",
   "rows": {
     "6904": {
       "identity": [
@@ -30499,6 +30499,533 @@
         "independent_same_side_probability": 0.6533336761428948,
         "independent_probability_source": "verified_pinned_challenger_replay",
         "source_scoring_version": "58fb8dac7a026bf4aa9978e87680b773fcf85f1fe82f681afaaf3047891a4eb6"
+      }
+    },
+    "10196": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        19.5,
+        22.546496958078457,
+        0.9842284991600394,
+        52.22193068800159
+      ],
+      "probability": {
+        "independent_over_probability": 0.42384553896877675,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5761544610312233,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "10219": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        7.5,
+        14.835318095552662,
+        -3.9322509575716236,
+        41.65119621121279
+      ],
+      "probability": {
+        "independent_over_probability": 0.5639684139985341,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.43603158600146585,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "10255": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        29.5,
+        31.648313731541123,
+        8.32538614424865,
+        62.75793888363711
+      ],
+      "probability": {
+        "independent_over_probability": 0.4175452918794771,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5824547081205229,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "10259": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        19.5,
+        22.493519909938573,
+        -0.7104039223325351,
+        54.54279966370369
+      ],
+      "probability": {
+        "independent_over_probability": 0.41344393065245777,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5865560693475422,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "10304": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        54.5,
+        56.29317448540792,
+        21.25161936095447,
+        95.7892343168571
+      ],
+      "probability": {
+        "independent_over_probability": 0.45107411588713564,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5489258841128644,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11001": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        19.5,
+        22.546496958078457,
+        0.9842284991600394,
+        52.22193068800159
+      ],
+      "probability": {
+        "independent_over_probability": 0.42384553896877675,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5761544610312233,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11025": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        6.5,
+        14.835318095552662,
+        -3.9322509575716236,
+        41.65119621121279
+      ],
+      "probability": {
+        "independent_over_probability": 0.5941760880918141,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.4058239119081859,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11058": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        29.5,
+        31.648313731541123,
+        8.32538614424865,
+        62.75793888363711
+      ],
+      "probability": {
+        "independent_over_probability": 0.4175452918794771,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5824547081205229,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11061": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        19.5,
+        22.493519909938573,
+        -0.7104039223325351,
+        54.54279966370369
+      ],
+      "probability": {
+        "independent_over_probability": 0.41344393065245777,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5865560693475422,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11106": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        55.5,
+        56.29317448540792,
+        21.25161936095447,
+        95.7892343168571
+      ],
+      "probability": {
+        "independent_over_probability": 0.42771824317789586,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5722817568221041,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11129": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        5.5,
+        16.386812231576144,
+        -4.661833084936525,
+        44.18831543187058
+      ],
+      "probability": {
+        "independent_over_probability": 0.6686132565172906,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.33138674348270936,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11576": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        3.5,
+        15.145452167920062,
+        -2.994740260168138,
+        40.97432378264248
+      ],
+      "probability": {
+        "independent_over_probability": 0.7494298982562203,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.2505701017437797,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11846": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        19.5,
+        22.546496958078457,
+        0.9842284991600394,
+        52.22193068800159
+      ],
+      "probability": {
+        "independent_over_probability": 0.42384553896877675,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.42384553896877675,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11869": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        7.5,
+        14.835318095552662,
+        -3.9322509575716236,
+        41.65119621121279
+      ],
+      "probability": {
+        "independent_over_probability": 0.5639684139985341,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.43603158600146585,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11899": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        29.5,
+        31.648313731541123,
+        8.32538614424865,
+        62.75793888363711
+      ],
+      "probability": {
+        "independent_over_probability": 0.4175452918794771,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.5824547081205229,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11902": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        19.5,
+        22.493519909938573,
+        -0.7104039223325351,
+        54.54279966370369
+      ],
+      "probability": {
+        "independent_over_probability": 0.41344393065245777,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.41344393065245777,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11909": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        16.5,
+        14.74033896997604,
+        -3.2267174152700413,
+        39.571207094852454
+      ],
+      "probability": {
+        "independent_over_probability": 0.3425284671831118,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.3425284671831118,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11946": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        55.5,
+        56.29317448540792,
+        21.25161936095447,
+        95.7892343168571
+      ],
+      "probability": {
+        "independent_over_probability": 0.42771824317789586,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.42771824317789586,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "11967": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        5.5,
+        16.386812231576144,
+        -4.661833084936525,
+        44.18831543187058
+      ],
+      "probability": {
+        "independent_over_probability": 0.6686132565172906,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.6686132565172906,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "13776": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        29.5,
+        31.648313731541123,
+        8.32538614424865,
+        62.75793888363711
+      ],
+      "probability": {
+        "independent_over_probability": 0.4175452918794771,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.4175452918794771,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "13905": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        29.5,
+        31.648313731541123,
+        8.32538614424865,
+        62.75793888363711
+      ],
+      "probability": {
+        "independent_over_probability": 0.4175452918794771,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.4175452918794771,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "13906": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        19.5,
+        22.493519909938573,
+        -0.7104039223325351,
+        54.54279966370369
+      ],
+      "probability": {
+        "independent_over_probability": 0.41344393065245777,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.41344393065245777,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "13918": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        57.5,
+        56.29317448540792,
+        21.25161936095447,
+        95.7892343168571
+      ],
+      "probability": {
+        "independent_over_probability": 0.39788266626742463,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.39788266626742463,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "13922": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        5.5,
+        16.386812231576144,
+        -4.661833084936525,
+        44.18831543187058
+      ],
+      "probability": {
+        "independent_over_probability": 0.6686132565172906,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.33138674348270936,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "14147": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        29.5,
+        31.648313731541123,
+        8.32538614424865,
+        62.75793888363711
+      ],
+      "probability": {
+        "independent_over_probability": 0.4175452918794771,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.4175452918794771,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "14148": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        19.5,
+        22.493519909938573,
+        -0.7104039223325351,
+        54.54279966370369
+      ],
+      "probability": {
+        "independent_over_probability": 0.41344393065245777,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.41344393065245777,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "14160": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "over",
+        57.5,
+        56.29317448540792,
+        21.25161936095447,
+        95.7892343168571
+      ],
+      "probability": {
+        "independent_over_probability": 0.39788266626742463,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.39788266626742463,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "14164": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        5.5,
+        16.386812231576144,
+        -4.661833084936525,
+        44.18831543187058
+      ],
+      "probability": {
+        "independent_over_probability": 0.6686132565172906,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.33138674348270936,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "16c0aaac19b3c025f9df74bc889a732bf364ca15357a4adac8494c3e863b13d4"
+      }
+    },
+    "14802": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        22.5,
+        31.096002366438128,
+        4.351072323819121,
+        65.6923257150884
+      ],
+      "probability": {
+        "independent_over_probability": 0.5717411143338995,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.4282588856661005,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "6a639c59d1f6814d6d512b98d6ca79db735128851eff58c3903595257b15ca77"
+      }
+    },
+    "14859": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        20.5,
+        31.096002366438128,
+        4.351072323819121,
+        65.6923257150884
+      ],
+      "probability": {
+        "independent_over_probability": 0.6241927720762864,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.37580722792371357,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "893b9e1c71ee6d5664bbe01be2e9db25b7906b99dbf1cdacf084ac55b9e3cfe7"
+      }
+    },
+    "14918": {
+      "identity": [
+        "nfl-20260918T143342Z",
+        "under",
+        16.5,
+        31.096002366438128,
+        4.351072323819121,
+        65.6923257150884
+      ],
+      "probability": {
+        "independent_over_probability": 0.6819894474079216,
+        "independent_push_probability": 0.0,
+        "independent_same_side_probability": 0.31801055259207844,
+        "independent_probability_source": "verified_pinned_challenger_replay",
+        "source_scoring_version": "893b9e1c71ee6d5664bbe01be2e9db25b7906b99dbf1cdacf084ac55b9e3cfe7"
       }
     }
   }

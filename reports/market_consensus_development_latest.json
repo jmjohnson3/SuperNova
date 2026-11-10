@@ -1,0 +1,772 @@
+{
+  "artifact": {
+    "protocol": {
+      "sports": [
+        "nba",
+        "nfl",
+        "ncaaf"
+      ],
+      "book": "fanduel",
+      "fit_before": "2026-10-28",
+      "calibrate_before": "2026-11-01",
+      "historical_evaluation_before": "2026-11-04",
+      "prospective": "after immutable registration only",
+      "primary": "blend_production vs consensus alone",
+      "secondary": "blend_rotation vs consensus alone",
+      "diagnostics": [
+        "production",
+        "rotation_mean",
+        "rotation_mixture"
+      ],
+      "fitting": "separate sport and market; earlier data only; never refit registered weights",
+      "unit": "one paired primary line per event/player/market; correlations clustered by event and date",
+      "missing_references": "save observation; decision can qualify at a later observation",
+      "missing_model": "save first eligible consensus decision with unavailable model; never backfill",
+      "forecast_age_seconds": 1800,
+      "capture_delay_seconds": 300,
+      "execution": "manual, public feed, and actual wagers remain separate",
+      "review": {
+        "min_days": 21,
+        "min_games": 20,
+        "min_checked_closes": 50,
+        "exact_close_coverage": 0.9,
+        "manual_check_coverage": 0.9,
+        "availability": 0.8,
+        "positive_game_and_day_95_bounds": true
+      },
+      "betting_authorized": false,
+      "automatic_promotion": false
+    },
+    "game_error": {
+      "nba": {},
+      "nfl": {},
+      "ncaaf": {}
+    },
+    "game_error_coverage": {
+      "nba": {
+        "margin": {
+          "games": 0,
+          "minimum": 100,
+          "fit_before": "2026-10-01"
+        },
+        "total": {
+          "games": 0,
+          "minimum": 100,
+          "fit_before": "2026-10-01"
+        }
+      },
+      "nfl": {
+        "margin": {
+          "games": 46,
+          "minimum": 100,
+          "fit_before": "2026-10-01"
+        },
+        "total": {
+          "games": 46,
+          "minimum": 100,
+          "fit_before": "2026-10-01"
+        }
+      },
+      "ncaaf": {
+        "margin": {
+          "games": 0,
+          "minimum": 100,
+          "fit_before": "2026-10-01"
+        },
+        "total": {
+          "games": 0,
+          "minimum": 100,
+          "fit_before": "2026-10-01"
+        }
+      }
+    },
+    "weights": {
+      "nba:assists:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 119,
+        "games": 16,
+        "days": 2,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nba:assists:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nba:points:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 179,
+        "games": 16,
+        "days": 2,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nba:points:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nba:rebounds:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 167,
+        "games": 16,
+        "days": 2,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nba:rebounds:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nba:spread:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nba:spread:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nba:threes:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 137,
+        "games": 16,
+        "days": 2,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nba:threes:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nba:total:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nba:total:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nfl:receiving_yards:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 73,
+        "games": 14,
+        "days": 5,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nfl:receiving_yards:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nfl:receptions:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 146,
+        "games": 14,
+        "days": 5,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nfl:receptions:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nfl:rushing_yards:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 29,
+        "games": 12,
+        "days": 5,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nfl:rushing_yards:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nfl:spread:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nfl:spread:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "nfl:total:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "nfl:total:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "ncaaf:spread:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "ncaaf:spread:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      },
+      "ncaaf:total:production": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0,
+          "status": "identity_no_supported_model_adjustment"
+        }
+      },
+      "ncaaf:total:rotation_mixture": {
+        "weight": 0.0,
+        "status": "no_prior_prospective_rotation_forecasts",
+        "rows": 0,
+        "games": 0,
+        "days": 0,
+        "calibration": {
+          "slope": 1.0,
+          "intercept": 0.0
+        }
+      }
+    },
+    "historical_status": "development only: prior timestamped offers, no presumed execution",
+    "betting_authorized": false,
+    "built_at": "2026-11-04T23:20:05.756174+00:00",
+    "development_records": 3695,
+    "source_counts": {
+      "nba:observed_pairs": 8845,
+      "nba:missing_consensus": 1180,
+      "nfl:observed_pairs": 2662,
+      "nfl:missing_consensus": 954,
+      "ncaaf:observed_pairs": 326,
+      "ncaaf:missing_consensus": 99
+    },
+    "source_records_sha256": "73e333b61fe7dd499d97e6ff4c16cf4c09dd7b400fa7bb1ace3865273bf40cbc"
+  },
+  "groups": {
+    "nba:assists": {
+      "rows": 538,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 119,
+        "games": 16,
+        "days": 2
+      },
+      "calibration_rows": 242,
+      "evaluation_rows": 30,
+      "consensus_brier": 0.2534571478418129,
+      "blend_brier": 0.2534571478418129,
+      "paired_gain": {
+        "game": {
+          "clusters": 4,
+          "observations": 30,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 30,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "nba:points": {
+      "rows": 874,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 179,
+        "games": 16,
+        "days": 2
+      },
+      "calibration_rows": 388,
+      "evaluation_rows": 47,
+      "consensus_brier": 0.2510337421691107,
+      "blend_brier": 0.2510337421691107,
+      "paired_gain": {
+        "game": {
+          "clusters": 4,
+          "observations": 47,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 47,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "nba:rebounds": {
+      "rows": 768,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 167,
+        "games": 16,
+        "days": 2
+      },
+      "calibration_rows": 345,
+      "evaluation_rows": 40,
+      "consensus_brier": 0.2309270892115868,
+      "blend_brier": 0.2309270892115868,
+      "paired_gain": {
+        "game": {
+          "clusters": 4,
+          "observations": 40,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 40,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "nba:spread": {
+      "rows": 60,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0
+      },
+      "calibration_rows": 27,
+      "evaluation_rows": 3,
+      "consensus_brier": 0.24702617749069425,
+      "blend_brier": 0.24702617749069425,
+      "paired_gain": {
+        "game": {
+          "clusters": 3,
+          "observations": 3,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 3,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "nba:threes": {
+      "rows": 628,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 137,
+        "games": 16,
+        "days": 2
+      },
+      "calibration_rows": 277,
+      "evaluation_rows": 31,
+      "consensus_brier": 0.26146889861510986,
+      "blend_brier": 0.26146889861510986,
+      "paired_gain": {
+        "game": {
+          "clusters": 4,
+          "observations": 31,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 31,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "nba:total": {
+      "rows": 64,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0
+      },
+      "calibration_rows": 27,
+      "evaluation_rows": 3,
+      "consensus_brier": 0.24925879523210828,
+      "blend_brier": 0.24925879523210828,
+      "paired_gain": {
+        "game": {
+          "clusters": 3,
+          "observations": 3,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 3,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "nfl:receiving_yards": {
+      "rows": 169,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 73,
+        "games": 14,
+        "days": 5
+      },
+      "calibration_rows": 8,
+      "evaluation_rows": 63,
+      "consensus_brier": 0.24971117522528233,
+      "blend_brier": 0.24971117522528233,
+      "paired_gain": {
+        "game": {
+          "clusters": 12,
+          "observations": 63,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 2,
+          "observations": 63,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        }
+      }
+    },
+    "nfl:receptions": {
+      "rows": 320,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 146,
+        "games": 14,
+        "days": 5
+      },
+      "calibration_rows": 15,
+      "evaluation_rows": 122,
+      "consensus_brier": 0.2393520992534342,
+      "blend_brier": 0.2393520992534342,
+      "paired_gain": {
+        "game": {
+          "clusters": 12,
+          "observations": 122,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 2,
+          "observations": 122,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        }
+      }
+    },
+    "nfl:rushing_yards": {
+      "rows": 93,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 29,
+        "games": 12,
+        "days": 5
+      },
+      "calibration_rows": 4,
+      "evaluation_rows": 30,
+      "consensus_brier": 0.25170917833887085,
+      "blend_brier": 0.25170917833887085,
+      "paired_gain": {
+        "game": {
+          "clusters": 11,
+          "observations": 30,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 2,
+          "observations": 30,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        }
+      }
+    },
+    "nfl:spread": {
+      "rows": 0,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0
+      },
+      "calibration_rows": 0,
+      "evaluation_rows": 0
+    },
+    "nfl:total": {
+      "rows": 27,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0
+      },
+      "calibration_rows": 1,
+      "evaluation_rows": 12,
+      "consensus_brier": 0.2505582455812853,
+      "blend_brier": 0.2505582455812853,
+      "paired_gain": {
+        "game": {
+          "clusters": 12,
+          "observations": 12,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        },
+        "day": {
+          "clusters": 2,
+          "observations": 12,
+          "mean": 0.0,
+          "lower_95": 0.0,
+          "upper_95": 0.0
+        }
+      }
+    },
+    "ncaaf:spread": {
+      "rows": 73,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0
+      },
+      "calibration_rows": 35,
+      "evaluation_rows": 1,
+      "consensus_brier": 0.24670382396983867,
+      "blend_brier": 0.24670382396983867,
+      "paired_gain": {
+        "game": {
+          "clusters": 1,
+          "observations": 1,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 1,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    },
+    "ncaaf:total": {
+      "rows": 81,
+      "fit": {
+        "weight": 0.0,
+        "status": "insufficient_earlier_evidence",
+        "rows": 0,
+        "games": 0,
+        "days": 0
+      },
+      "calibration_rows": 41,
+      "evaluation_rows": 1,
+      "consensus_brier": 0.2576947139638469,
+      "blend_brier": 0.2576947139638469,
+      "paired_gain": {
+        "game": {
+          "clusters": 1,
+          "observations": 1,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "day": {
+          "clusters": 1,
+          "observations": 1,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        }
+      }
+    }
+  }
+}

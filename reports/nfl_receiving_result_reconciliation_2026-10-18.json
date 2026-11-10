@@ -1,10 +1,9 @@
 {
-  "built_at": "2026-10-21T17:13:36.443105+00:00",
+  "built_at": "2026-10-29T21:12:05.726127+00:00",
   "counts": {
-    "void_nonparticipant": 13,
-    "zero_offensive_snaps_requires_book_settlement_review": 4
+    "void_nonparticipant": 13
   },
-  "unresolved_final_rows": 4,
+  "unresolved_final_rows": 0,
   "rows": [
     {
       "forecast_id": 19090,
@@ -14,20 +13,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
-      "action": "refresh_official_results_and_participation_then_regrade",
-      "actual": null,
-      "inferred_zero": false
-    },
-    {
-      "forecast_id": 19138,
-      "game_id": "2026_06_DAL_GB",
-      "player_id": "00-0037801",
-      "player": "K.Turpin",
-      "team": "DAL",
-      "state": "zero_offensive_snaps_requires_book_settlement_review",
-      "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -40,7 +26,7 @@
       "team": "NYG",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -53,7 +39,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -66,20 +52,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
-      "action": "refresh_official_results_and_participation_then_regrade",
-      "actual": null,
-      "inferred_zero": false
-    },
-    {
-      "forecast_id": 19842,
-      "game_id": "2026_06_DAL_GB",
-      "player_id": "00-0037801",
-      "player": "K.Turpin",
-      "team": "DAL",
-      "state": "zero_offensive_snaps_requires_book_settlement_review",
-      "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -92,7 +65,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -105,20 +78,7 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
-      "action": "refresh_official_results_and_participation_then_regrade",
-      "actual": null,
-      "inferred_zero": false
-    },
-    {
-      "forecast_id": 20712,
-      "game_id": "2026_06_DAL_GB",
-      "player_id": "00-0037801",
-      "player": "K.Turpin",
-      "team": "DAL",
-      "state": "zero_offensive_snaps_requires_book_settlement_review",
-      "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -131,7 +91,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -144,7 +104,7 @@
       "team": "CLE",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -157,7 +117,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -170,7 +130,7 @@
       "team": "CLE",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -183,7 +143,7 @@
       "team": "IND",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -196,7 +156,7 @@
       "team": "CLE",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
@@ -209,26 +169,13 @@
       "team": "BUF",
       "state": "void_nonparticipant",
       "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
-      "action": "refresh_official_results_and_participation_then_regrade",
-      "actual": null,
-      "inferred_zero": false
-    },
-    {
-      "forecast_id": 22887,
-      "game_id": "2026_06_DAL_GB",
-      "player_id": "00-0037801",
-      "player": "K.Turpin",
-      "team": "DAL",
-      "state": "zero_offensive_snaps_requires_book_settlement_review",
-      "snap_source_status": "game_published",
-      "snap_source_observed_at": "2026-10-21T13:32:11.533476+00:00",
+      "snap_source_observed_at": "2026-10-29T13:32:12.430522+00:00",
       "action": "refresh_official_results_and_participation_then_regrade",
       "actual": null,
       "inferred_zero": false
     }
   ],
-  "unique_unresolved_player_games": 1,
+  "unique_unresolved_player_games": 0,
   "limitations": [
     "Absent source rows do not prove nonparticipation.",
     "Explicit zero offensive snaps require book-rule settlement review, never an automatic winning under.",

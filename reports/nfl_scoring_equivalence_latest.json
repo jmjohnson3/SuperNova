@@ -1,10 +1,10 @@
 {
   "contract": "nfl-scoring-equivalence-v1",
-  "built_at": "2026-10-27T20:16:06.660855+00:00",
-  "input_rows": 6946,
-  "versioned_rows": 4280,
-  "missing_scoring_version_rows": 2666,
-  "dependency_sha256": "d0f6a11de15c60c193ff7dbfb7958fe46efd6d130b30332b99ced0d2686cf427",
+  "built_at": "2026-11-10T02:23:13.100504+00:00",
+  "input_rows": 8780,
+  "versioned_rows": 5384,
+  "missing_scoring_version_rows": 3396,
+  "dependency_sha256": "93b89e196d9a0be5050fa9c24c03eb9c73da63f5c510963ac37c88e37c7a5f23",
   "sources": {
     "0d2afea95579aa80dc6e9c48b3ce34ce5f9c7a15b4301327745e94ffffdec407": {
       "scoring": "c421c8bc8c8001bbb688601999f4af68888f72d8ef6fd4239b67a6328819b692",
@@ -1748,10 +1748,10 @@
       ],
       "scoring_program": "4e4102c4d9095d753cc931351a759d2843a9b1021b92bebccc523d906913fc8e",
       "input_program": "f04e089a2a2f7afe94f18307dcf5c2f474cd498ff01787c153b4562a6f88664a",
-      "rows": 29,
-      "replayed_rows": 29,
+      "rows": 1133,
+      "replayed_rows": 1133,
       "probe_count": 2,
-      "replay_output_sha256": "184676873da6bf5d87e2e241c308732fbdb6264a163f7de079dc798afd607a35",
+      "replay_output_sha256": "f7886fc09deaeb9924a16bd445c1d4e94516cbb2b33333898f13823514e5558d",
       "failures": {},
       "compatibility_verified": true,
       "pooled": false,
@@ -1764,6 +1764,10 @@
         [
           2026,
           8
+        ],
+        [
+          2026,
+          9
         ]
       ]
     },

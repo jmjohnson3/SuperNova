@@ -39,6 +39,10 @@ echo ======================================== >> %LOGFILE% 2>&1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\run_with_nfl_mutex.ps1 -LockName SuperNovaBets_NFL_Close -WaitSeconds 30 -CommandText ".venv\Scripts\python.exe -m nfl_pipeline.run_close_and_grade %RUN_DATE_ARG%" >> %LOGFILE% 2>&1
 set EXITCODE=%ERRORLEVEL%
 
+:: Retain all four checkpoint statuses, including earlier kickoff waves, between captures.
+.venv\Scripts\python.exe -B -m nfl_slate_readiness %RUN_DATE_ARG% >> %LOGFILE% 2>&1
+if errorlevel 1 set EXITCODE=1
+
 echo Exit code: %EXITCODE% >> %LOGFILE% 2>&1
 echo Finished at %TIME% >> %LOGFILE% 2>&1
 exit /b %EXITCODE%

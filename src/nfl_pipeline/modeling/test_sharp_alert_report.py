@@ -12,6 +12,13 @@ IDS = count(1)
 EXPERIMENT = {'sha256': 'frozen-test'}
 
 
+def test_empty_report_is_bound_to_its_registration():
+    summary = r.summarize(pd.DataFrame(), experiment=EXPERIMENT)
+    assert summary['experiment_id'] == r.EXPERIMENT_NAME
+    assert summary['experiment_sha256'] == EXPERIMENT['sha256']
+    assert summary['readiness']['gates']['loss_pause']['lowest_cumulative_profit'] == 0
+
+
 def quote(over, under, observed):
     return dict(over=over, under=under, market_updated_at=observed.isoformat(),
                 book_updated_at=observed.isoformat())

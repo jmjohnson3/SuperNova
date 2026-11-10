@@ -1,0 +1,53 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "nba-count-probability-v1",
+  "registered_at": "2026-10-29T17:01:12.656386+00:00",
+  "config": {
+    "automatic_betting_authorization": false,
+    "book": "fanduel",
+    "capture": "within 300 seconds of original observation, after registration and before either tip time",
+    "distribution": "negative binomial: variance=max(mu,a*mu+b*mu^2); Poisson at variance=mu",
+    "markets": [
+      "points",
+      "rebounds",
+      "assists"
+    ],
+    "opportunity": "first parent model-comparison offer, valid prior forecast and participation",
+    "parent_experiment": "fanduel-model-assisted-paper-v1",
+    "parent_sha256": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+    "probability_review": "positive paired Brier gain lower bounds against both frozen model and market",
+    "selection": "same offered side and price as parent; count probability EV > 0",
+    "sends_alerts": false,
+    "sport": "nba",
+    "uncertainty": "paired Brier and opportunity improvement, game and day clusters; all parent NBA gates retained"
+  },
+  "files": {
+    "count_distribution_research": {
+      "path": "src/nba_props/count_distribution_research.py",
+      "sha256": "33ca87d8b873fb944e4d070cb6a43062e59e6676af1cf38e08f3c1057c663bee"
+    },
+    "count_distribution_trial": {
+      "path": "src/nba_props/count_distribution_trial.py",
+      "sha256": "aeb9f7f68aabc1efb82fb8400b3a18bbe5796e1e30eebb35e62b6334bca7087c"
+    },
+    "parent_registration": {
+      "path": "src/model_research_experiments/fanduel-model-assisted-paper-v1/registration.json",
+      "sha256": "dedee506b5b705766ce453947cd0f3da12353a8b9f9550d4db3f3823fc5256a1"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "601b41ecd544e3f1f2c0f9a261ccca924a19d5b34d6fdb62b702fe4f8c5f1094"
+}

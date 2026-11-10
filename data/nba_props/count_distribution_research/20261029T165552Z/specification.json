@@ -1,0 +1,21 @@
+{
+  "name": "nba-integer-count-distribution-v1",
+  "change": "negative binomial at variance=max(mu,a*mu+b*mu^2); Poisson at variance=mu",
+  "forecasts": "existing saved monthly walk-forward means and dispersion; no refit or tuning",
+  "quotes": "last actual pregame database observation within 30 hours; inferred snapshots excluded",
+  "book": "draftkings",
+  "markets": [
+    "pts",
+    "reb",
+    "ast"
+  ],
+  "lines": "nonnegative half-integers only",
+  "evaluation_start": "2025-10-01",
+  "evaluation_end_exclusive": "2026-07-01",
+  "selection": "best side by own executable-price EV, minimum 3%; one per player-game-stat",
+  "primary": "paired Brier improvement over frozen raw model, game/day clustered 95% intervals",
+  "review": "positive Brier gain lower bounds for game and day; not betting approval",
+  "caveat": "historical development analysis, not independent prospective or FanDuel execution evidence",
+  "source_sha256": "33ca87d8b873fb944e4d070cb6a43062e59e6676af1cf38e08f3c1057c663bee",
+  "predictions_sha256": "c48c89b97429492394ed706f59fa78a8e75a8cd6420006e08d321fa7ec752468"
+}

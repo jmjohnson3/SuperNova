@@ -310,7 +310,21 @@ def _upsert_schedules(conn, rows: list[tuple]) -> int:
 def _upsert_players(conn, rows: list[tuple]) -> int:
     if not rows:
         return 0
-    sql = """
+    # A later stat refresh must not erase independently verified participation.
+    # Retain only this local proof, and only while all receiving stats agree.
+    # A correction invalidates it so the repair/participation check must run again.
+    result_payload = """(
+        (COALESCE(EXCLUDED.raw_json, '{}'::jsonb) - 'receiving_result_repair') ||
+        CASE WHEN g.raw_json #> '{receiving_result_repair,verified_game_participation}' = 'true'::jsonb
+          AND (g.receiving_yards, g.targets, g.receptions) IS NOT DISTINCT FROM
+              (EXCLUDED.receiving_yards, EXCLUDED.targets, EXCLUDED.receptions)
+          AND g.raw_json #> '{receiving_result_repair,receiving_yards}' = to_jsonb(g.receiving_yards)
+          AND g.raw_json #> '{receiving_result_repair,targets}' = to_jsonb(g.targets)
+          AND g.raw_json #> '{receiving_result_repair,receptions}' = to_jsonb(g.receptions)
+        THEN jsonb_build_object('receiving_result_repair', g.raw_json->'receiving_result_repair')
+        ELSE '{}'::jsonb END
+    )"""
+    sql = f"""
         INSERT INTO raw.nfl_player_gamelogs AS g (
             season, week, game_id, game_date_et, player_id, player_name,
             team_abbr, opponent_abbr, position, is_home,
@@ -347,7 +361,7 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             receiving_yards_after_catch = EXCLUDED.receiving_yards_after_catch,
             -- Keep the "+pbp_usage" provenance suffix added by import_usage_context.
             source = CASE WHEN g.source LIKE EXCLUDED.source || '%%' THEN g.source ELSE EXCLUDED.source END,
-            raw_json = EXCLUDED.raw_json,
+            raw_json = {result_payload},
             updated_at_utc = NOW()
         WHERE (
             g.game_date_et, g.player_name, g.opponent_abbr, g.position, g.is_home,
@@ -368,7 +382,7 @@ def _upsert_players(conn, rows: list[tuple]) -> int:
             EXCLUDED.target_share, EXCLUDED.air_yards_share, EXCLUDED.wopr, EXCLUDED.receiving_air_yards,
             EXCLUDED.receiving_yards_after_catch,
             CASE WHEN g.source LIKE EXCLUDED.source || '%%' THEN g.source ELSE EXCLUDED.source END,
-            EXCLUDED.raw_json
+            {result_payload}
         )
     """
     with conn.cursor() as cur:

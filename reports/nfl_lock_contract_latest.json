@@ -1,9 +1,11 @@
 {
   "contract": "nfl-fanduel-lock-contract-v1",
-  "generated_at_utc": "2026-10-27T13:37:35.947900+00:00",
-  "date": "2026-10-29",
-  "required": false,
-  "game_scope": null,
+  "generated_at_utc": "2026-11-09T23:22:00.426699+00:00",
+  "date": "2026-11-09",
+  "required": true,
+  "game_scope": [
+    "2026_09_BUF_MIN"
+  ],
   "status": "passed",
   "summary": {
     "games": 1,
@@ -13,23 +15,23 @@
   },
   "games": [
     {
-      "game_id": "2026_08_CAR_GB",
-      "home_team_abbr": "GB",
-      "away_team_abbr": "CAR",
-      "start_ts_utc": "2026-10-29 17:15:00-07:00",
+      "game_id": "2026_09_BUF_MIN",
+      "home_team_abbr": "MIN",
+      "away_team_abbr": "BUF",
+      "start_ts_utc": "2026-11-09 17:15:00-08:00",
       "status": "passed",
       "verification": {
-        "game_id": "2026_08_CAR_GB",
-        "current_fanduel_locks": 23,
-        "receiving_locks": 9,
-        "receiving_same_line_triplets": 9,
-        "explicit_injury_context_locks": 23,
-        "known_player_injury_context_locks": 0,
+        "game_id": "2026_09_BUF_MIN",
+        "current_fanduel_locks": 30,
+        "receiving_locks": 11,
+        "receiving_same_line_triplets": 11,
+        "explicit_injury_context_locks": 30,
+        "known_player_injury_context_locks": 10,
         "immutable_lock_violations": 0,
         "all_locks_missing_links": 0,
         "actionable_missing_links": 0,
         "lock_verification_passed": true,
-        "injury_context_note": "explicit_unknown_not_assumed_healthy"
+        "injury_context_note": "known_player_status"
       }
     }
   ]

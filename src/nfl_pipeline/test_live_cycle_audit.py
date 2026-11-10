@@ -101,3 +101,26 @@ def test_manual_recovery_uses_the_same_manifest_validation_as_scheduler():
 def test_bad_manifest_id_fails_closed_without_crashing():
     g,r,p,c=inputs();p['forecast_manifest'][0]['forecast_id']='bad'
     assert not audit.publication_matches(p,{1:r},audit.safe_time(g['start_ts_utc']))
+
+
+def test_projection_delivery_is_separate_from_priced_offer_verification():
+    g,r,p,c=inputs()
+    r['stat']='receiving_yards';r['player_id']='player'
+    r['forecast_payload']['projection']=41.25
+    p['forecast_manifest']=[dict(kind='projection',forecast_id=1,stat=r['stat'],player_id=r['player_id'],
+                               value=41.25,model_version=r['forecast_payload']['model_version'])]
+    start=audit.safe_time(g['start_ts_utc'])
+    assert audit.projection_publication_matches(p,{1:r},start)
+    assert not audit.publication_matches(p,{1:r},start)
+    doc=audit.build(DAY,[g],[r],c,[dict(publications=[p])],datetime(2026,9,23,tzinfo=timezone.utc))
+    assert doc['games'][0]['discord_projection_manifest_verified']
+    assert not doc['games'][0]['discord_exact_prop_manifest_verified']
+    assert 'game_aware_discord_manifest_missing_or_invalid' not in doc['games'][0]['blockers']
+    assert 'valid_exact_close_coverage_below_90_percent' in doc['games'][0]['blockers']
+    p['forecast_manifest'][0]['value']=42.25
+    assert not audit.projection_publication_matches(p,{1:r},start)
+
+
+def test_missing_historical_projection_manifest_remains_unverified():
+    g,r,p,c=inputs();p['forecast_manifest']=[]
+    assert not audit.projection_publication_matches(p,{1:r},audit.safe_time(g['start_ts_utc']))

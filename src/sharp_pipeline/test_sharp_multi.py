@@ -95,6 +95,8 @@ def test_plan_polls_lines_once_per_sport_then_props_spaced():
 
 def test_close_grades_against_pinnacles_last_quote_at_the_same_line():
     close_event = event([bookmaker("pinnacle", lines(home_spread=-115, away_spread=-105), at=START - timedelta(minutes=5))])
+    for m in close_event["bookmakers"][0]["markets"]:
+        m["last_update"] = (START - timedelta(minutes=5)).isoformat()
     closes = {("nba", "e1", "lines"): (START - timedelta(minutes=5), close_event)}
     row = dict(sport="nba", event_id="e1", market="spread", side="home", line=-6.5, price=105, player_norm="")
     fair = scan.sharp_math.no_vig_over(-115, -105)
@@ -102,7 +104,9 @@ def test_close_grades_against_pinnacles_last_quote_at_the_same_line():
     assert report.close_ev(dict(row, side="away", line=6.5, price=-110), closes) == pytest.approx(
         scan.sharp_math.ev(1 - fair, -110))
     moved = scan.shifted_probability("spread", -6.5, fair, -7.5, 12.5)
-    assert report.close_ev(dict(row, line=-7.5), closes) == pytest.approx(scan.sharp_math.ev(moved, 105))
+    assert report.close_ev(dict(row, line=-7.5), closes) is None
+    estimate = report.close_evidence(dict(row, line=-7.5), closes)
+    assert estimate["method"] == "shifted" and estimate["ev"] == pytest.approx(scan.sharp_math.ev(moved, 105))
     assert report.close_ev(dict(row, line=-9.5), closes) is None  # moved 3 points: unknown, not zero
 
 
@@ -167,6 +171,10 @@ def test_props_are_graded_only_against_a_props_snapshot():
         dict(name="Over", description="Lauri Markkanen", price=-120, point=22.5),
         dict(name="Under", description="Lauri Markkanen", price=100, point=22.5)])], at=START - timedelta(minutes=12))])
     lines_close = event([bookmaker("pinnacle", lines(), at=START - timedelta(minutes=4))])
+    for snapshot in (props_close, lines_close):
+        for b in snapshot["bookmakers"]:
+            for m in b["markets"]:
+                m["last_update"] = b["last_update"]
     assert report.payload_kind(props_close) == "props" and report.payload_kind(lines_close) == "lines"
     closes = {("nba", "e1", "props"): (START - timedelta(minutes=12), props_close),
               ("nba", "e1", "lines"): (START - timedelta(minutes=4), lines_close)}

@@ -1,0 +1,279 @@
+{
+  "status": "component_prospective_only",
+  "rows": [
+    {
+      "forecast_id": 30080,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0032464",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 16.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 20.70227291549613,
+      "distribution_mean": 20.70227291549613,
+      "projection_median": 13.510366398365488,
+      "p10": -10.507657486532446,
+      "p90": 63.00321475716983,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30081,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0033576",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 5.174393665355375,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 5.523398318774536,
+      "distribution_mean": 5.523398318774536,
+      "projection_median": 3.0518035361751448,
+      "p10": -7.495050308693836,
+      "p90": 22.17715890873197,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30082,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0033908",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 29.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 31.709035499790957,
+      "distribution_mean": 31.709035499790957,
+      "projection_median": 27.3093878987929,
+      "p10": 1.2895220361012045,
+      "p90": 67.86181407333257,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30083,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0036275",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 17.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 18.18683971282762,
+      "distribution_mean": 18.18683971282762,
+      "projection_median": 15.885651634270843,
+      "p10": -2.2349984517558674,
+      "p90": 45.82790868373465,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30084,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0038543",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 99.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 98.05807022085084,
+      "distribution_mean": 98.05807022085084,
+      "projection_median": 91.31384376532803,
+      "p10": 42.66341347535793,
+      "p90": 161.5002527202466,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30085,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0038797",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 10.85185122817811,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 10.200599307218503,
+      "distribution_mean": 10.200599307218503,
+      "projection_median": 7.522060691064075,
+      "p10": -5.010019968895488,
+      "p90": 30.514545644017147,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30086,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0039021",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 5.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 6.9238974832297,
+      "distribution_mean": 6.9238974832297,
+      "projection_median": 2.0136663956685847,
+      "p10": -10.603035478047302,
+      "p90": 32.25564487971886,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30088,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0039793",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 29.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 29.783266427435663,
+      "distribution_mean": 29.783266427435663,
+      "projection_median": 26.173789727142513,
+      "p10": 1.533212323938633,
+      "p90": 63.843131313941164,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30089,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0039919",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 38.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 40.93985005755989,
+      "distribution_mean": 40.93985005755989,
+      "projection_median": 34.402979216600954,
+      "p10": -2.4430279056491386,
+      "p90": 90.05433276106447,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30090,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0040126",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 42.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 45.45304782824921,
+      "distribution_mean": 45.45304782824921,
+      "projection_median": 36.024843823146696,
+      "p10": 0.16500225463658325,
+      "p90": 99.2910447504099,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30091,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0040648",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 23.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 22.814278702577802,
+      "distribution_mean": 22.814278702577802,
+      "projection_median": 18.8073053020129,
+      "p10": -2.441886779834846,
+      "p90": 56.28819653808759,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    },
+    {
+      "forecast_id": 30092,
+      "game_id": "2026_08_CHI_SEA",
+      "player_id": "00-0040735",
+      "stat": "receiving_yards",
+      "production_release": "nfl-20260918T143342Z",
+      "production_projection": 51.5,
+      "challenger_run": "components-20261027T093255774561Z-team_receiving_yards",
+      "component": "team_receiving_yards",
+      "source_context_cutoff": "2026-11-02T14:35:20.696360+00:00",
+      "projection_mean": 52.6896614253633,
+      "distribution_mean": 52.6896614253633,
+      "projection_median": 46.06910030703589,
+      "p10": 3.01194313628627,
+      "p90": 109.089904037553,
+      "enabled_outputs": [
+        "expected_mean",
+        "median"
+      ],
+      "point_forecast_preserved": false,
+      "betting_eligible": false
+    }
+  ],
+  "scored_at": "2026-11-02T14:39:37.950564+00:00",
+  "training_end": "2026-10-26",
+  "source_manifest": {
+    "run_id": "components-20261027T093255774561Z",
+    "production_release": "nfl-20260918T143342Z",
+    "sha256": "eb467834d696bd1f0536933c55b25109ac40e8ed39e11013b03aa77119bc37e4"
+  },
+  "exclusions": {
+    "unknown_pregame_roster_member": 5
+  }
+}

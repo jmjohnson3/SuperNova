@@ -1,7 +1,92 @@
 {
-  "parlays": [],
+  "parlays": [
+    {
+      "parlay_id": 1,
+      "et_day": "2026-10-25",
+      "book": "draftkings",
+      "ev_when_seen": 0.12849837884376014,
+      "price": 248,
+      "posted": false,
+      "legs": [
+        {
+          "alert_id": 5324,
+          "bet_price": -102.0,
+          "ev_at_sharp_close": 0.06279661564462324,
+          "result": "loss"
+        },
+        {
+          "alert_id": 5025,
+          "bet_price": -132.0,
+          "ev_at_sharp_close": 0.04743557562697942,
+          "result": "win"
+        }
+      ],
+      "decimal_price": 3.4806892453951277,
+      "ev_at_sharp_close": 0.11321098488213166,
+      "result": "loss",
+      "units": -1.0
+    },
+    {
+      "parlay_id": 2,
+      "et_day": "2026-11-01",
+      "book": "espnbet",
+      "ev_when_seen": 0.1003427671911048,
+      "price": 702,
+      "posted": false,
+      "legs": [
+        {
+          "alert_id": 12589,
+          "bet_price": 320.0,
+          "ev_at_sharp_close": null,
+          "result": "loss"
+        },
+        {
+          "alert_id": 12580,
+          "bet_price": -110.0,
+          "ev_at_sharp_close": 0.01312600368118444,
+          "result": "win"
+        }
+      ],
+      "decimal_price": 8.01818181818182,
+      "ev_at_sharp_close": null,
+      "result": "loss",
+      "units": -1.0
+    },
+    {
+      "parlay_id": 3,
+      "et_day": "2026-11-08",
+      "book": "espnbet",
+      "ev_when_seen": 0.17360480386115285,
+      "price": 383,
+      "posted": false,
+      "legs": [
+        {
+          "alert_id": 13112,
+          "bet_price": 130.0,
+          "ev_at_sharp_close": -0.1399679192696251,
+          "result": "win"
+        },
+        {
+          "alert_id": 13167,
+          "bet_price": 110.0,
+          "ev_at_sharp_close": 0.2702475958029391,
+          "result": "loss"
+        }
+      ],
+      "decimal_price": 4.83,
+      "ev_at_sharp_close": 0.09245368286115796,
+      "result": "loss",
+      "units": -1.0
+    }
+  ],
   "summary": {
-    "parlays": 0
+    "parlays": 3,
+    "with_close": 2,
+    "mean_ev_when_seen": 0.13414864996533926,
+    "mean_ev_at_close": 0.10283233387164481,
+    "settled": 3,
+    "wins": 0,
+    "units": -3.0
   },
-  "built_at": "2026-10-23T05:17:15.660689+00:00"
+  "built_at": "2026-11-10T02:08:18.908875+00:00"
 }

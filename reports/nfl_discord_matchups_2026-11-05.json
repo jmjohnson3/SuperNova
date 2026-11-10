@@ -1,0 +1,35 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-11-05",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_09_JAX_BAL",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "JAX @ BAL | NFL 2026-11-05",
+            "description": "Kickoff: <t:1793927700:f> (<t:1793927700:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- JAX QB1 T.Lawrence: Pass Yds 265.7 | Pass TD 2.60 | Rush Yds 9.9 | FanDuel line available\n- JAX RB1 B.Tuten: Rush Yds 63.6 | Rec Yds 25.0 | Rush TD 0.41 | Projection only - no current line\n- JAX WR1 P.Washington: Rec Yds 49.7 | Rec 4.4 | Rec TD 0.45 | FanDuel line available\n- JAX WR2 J.Meyers: Rec Yds 43.7 | Rec 3.7 | Rec TD 0.28 | FanDuel line available\n- JAX TE1 B.Strange: Rec Yds 50.8 | Rec 4.4 | Rec TD 0.21 | FanDuel line available\n- BAL QB1 J.Fagnano: Pass Yds 126.7 | Pass TD 0.00 | FanDuel line available\n- BAL RB1 D.Henry: Rush Yds 70.4 | Rec Yds 7.6 | Rec 1.5 | Rush TD 0.49 | FanDuel line available\n- BAL WR1 Z.Flowers: Rec Yds 67.4 | Rec 6.2 | Rec TD 0.45 | FanDuel line available\n- BAL WR2 R.Bateman: Rec Yds 29.9 | Rec 2.1 | Rec TD 0.14 | FanDuel line available\n- BAL TE1 M.Andrews: Rec Yds 18.9 | Rec 3.4 | Rec TD 0.20 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [],
+  "notice": null
+}

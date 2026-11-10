@@ -1,0 +1,259 @@
+{
+  "started_at": "2026-10-29T21:12:01.188115+00:00",
+  "built_at": "2026-10-29T21:12:41.771681+00:00",
+  "scope": "registered legacy receiving locks, all dates; result integrity only",
+  "production_release": "nfl-20260918T143342Z",
+  "registration_at": "2026-09-22T16:31:06.874590+00:00",
+  "status": "clear",
+  "unresolved_final_rows": 0,
+  "grading_mismatches": 0,
+  "days": [
+    {
+      "day": "2026-09-24",
+      "loaded_forecast_rows": 37,
+      "eligible_forecast_rows": 36,
+      "exclusions": {
+        "stale_original_quote": 1
+      },
+      "states": {
+        "settled_verified_participation": 36
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-09-27",
+      "loaded_forecast_rows": 529,
+      "eligible_forecast_rows": 529,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 524,
+        "void_nonparticipant": 5
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-09-28",
+      "loaded_forecast_rows": 21,
+      "eligible_forecast_rows": 21,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 21
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-01",
+      "loaded_forecast_rows": 45,
+      "eligible_forecast_rows": 45,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 45
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-04",
+      "loaded_forecast_rows": 904,
+      "eligible_forecast_rows": 904,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 896,
+        "void_nonparticipant": 8
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-05",
+      "loaded_forecast_rows": 21,
+      "eligible_forecast_rows": 21,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 20,
+        "void_nonparticipant": 1
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-08",
+      "loaded_forecast_rows": 36,
+      "eligible_forecast_rows": 36,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 36
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-11",
+      "loaded_forecast_rows": 597,
+      "eligible_forecast_rows": 597,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 595,
+        "void_nonparticipant": 2
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-12",
+      "loaded_forecast_rows": 47,
+      "eligible_forecast_rows": 47,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 47
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-15",
+      "loaded_forecast_rows": 85,
+      "eligible_forecast_rows": 85,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 85
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-18",
+      "loaded_forecast_rows": 694,
+      "eligible_forecast_rows": 694,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 681,
+        "void_nonparticipant": 13
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-19",
+      "loaded_forecast_rows": 9,
+      "eligible_forecast_rows": 9,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 9
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-22",
+      "loaded_forecast_rows": 54,
+      "eligible_forecast_rows": 54,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 54
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-25",
+      "loaded_forecast_rows": 593,
+      "eligible_forecast_rows": 589,
+      "exclusions": {
+        "missing_or_invalid_paired_price": 4
+      },
+      "states": {
+        "settled_verified_participation": 582,
+        "void_nonparticipant": 7
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-26",
+      "loaded_forecast_rows": 20,
+      "eligible_forecast_rows": 20,
+      "exclusions": {},
+      "states": {
+        "settled_verified_participation": 20
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    },
+    {
+      "day": "2026-10-29",
+      "loaded_forecast_rows": 33,
+      "eligible_forecast_rows": 33,
+      "exclusions": {},
+      "states": {
+        "pending_game": 33
+      },
+      "unresolved_final_rows": 0,
+      "unique_unresolved_player_games": 0,
+      "unresolved": [],
+      "grading_mismatches": []
+    }
+  ],
+  "historical_missing_captures": {
+    "status": "verified_exclusion",
+    "forecast_ids": [
+      22882,
+      22883,
+      22885,
+      22886,
+      22887,
+      22888,
+      22890,
+      22892,
+      22893,
+      22894,
+      22895,
+      22896,
+      22897
+    ],
+    "count": 13,
+    "original_capture_files_examined": 12,
+    "unexpected_valid_capture_ids": [],
+    "rejected_capture_reasons": {
+      "quote_expired_before_challenger_capture": 13
+    },
+    "missing_original_lock_ids": [],
+    "result_repair_does_not_create_forecast_captures": true
+  },
+  "betting_authorized": false,
+  "forecasts_changed": false,
+  "note": "Forecast revisions are not independent decisions. A clear result audit does not establish an edge, replace exact closes/live price checks, or admit missing original captures."
+}

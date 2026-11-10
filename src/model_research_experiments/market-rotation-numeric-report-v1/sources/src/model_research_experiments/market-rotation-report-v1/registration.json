@@ -1,0 +1,38 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "market-rotation-report-v1",
+  "registered_at": "2026-11-05T01:08:37.870512+00:00",
+  "config": {
+    "betting_authorized": false,
+    "decision_mutations": false,
+    "parent_experiment": "market-rotation-paper-v1",
+    "parent_sha256": "91b29ca447abd7f2680aba9e544bd5326d223a8705f011d58c7071653ed4bce9",
+    "repair": "parse saved offer timestamps before official-result SQL interval arithmetic",
+    "rescoring": false
+  },
+  "files": {
+    "parent_registration": {
+      "path": "src/model_research_experiments/market-rotation-paper-v1/registration.json",
+      "sha256": "f6ccdfdbc427f269d75d9d5a57fdc36a433118f7082b839f47f7b00b4dd4dcd7"
+    },
+    "reader": {
+      "path": "src/edge_research_report.py",
+      "sha256": "e6c21a97fed73f120c1ae7fe68cb4c3ffd58904f48edb107d878acc3cff1220e"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "ccccc785c862ba500f92cd824cb14733b05d25b74d7173f531382e3c797917df"
+}

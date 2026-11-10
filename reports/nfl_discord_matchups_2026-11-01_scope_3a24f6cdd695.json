@@ -1,0 +1,38 @@
+{
+  "contract": "nfl-matchup-cards-v1",
+  "link_contract": "fanduel-betslip-links-v1",
+  "date": "2026-11-01",
+  "games": 1,
+  "cards": [
+    {
+      "game_id": "2026_08_PHI_WAS",
+      "page": 1,
+      "forecast_manifest": [],
+      "cash_ledger_ids": [],
+      "payload": {
+        "embeds": [
+          {
+            "title": "PHI @ WAS | NFL 2026-11-01",
+            "description": "Kickoff: <t:1793582400:f> (<t:1793582400:R>)\nModel forecasts at FanDuel only (research). Bets to place come from the SHARP EDGE alerts in this channel.\n\n**BETS**\n- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts **SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.\n\n**STARTING SKILL PLAYER PROJECTIONS**\n- Forecasts only, not bets.\n- PHI QB1 T.McKee: Pass Yds 173.7 | Pass TD 0.60 | FanDuel line available\n- PHI RB1 S.Barkley: Rush Yds 46.1 | Rec 1.2 | Rush TD 0.25 | FanDuel line available\n- PHI TE1 D.Goedert: Rec Yds 42.1 | Rec 4.9 | Rec TD 0.33 | FanDuel line available\n- WAS QB1 J.Daniels: Pass Yds 190.8 | Pass TD 1.00 | Rush Yds 32.2 | FanDuel line available\n- WAS RB1 R.White: Rush Yds 29.7 | Rec Yds 14.9 | Rec 2.4 | Rush TD 0.23 | FanDuel line available\n- WAS WR1 S.Diggs: Rec Yds 39.0 | Rec 4.5 | Rec TD 0.37 | FanDuel line available\n- WAS WR2 T.Burks: Rec Yds 25.3 | Rec 1.8 | Rec TD 0.23 | FanDuel line available\n- WAS TE1 C.Okonkwo: Rec Yds 27.4 | Rec 3.8 | Rec TD 0.16 | FanDuel line available",
+            "footer": {
+              "text": "Release: nfl-20260918T143342Z | Only labeled bankroll/micro rows are betting instructions."
+            },
+            "color": 2325079
+          }
+        ],
+        "allowed_mentions": {
+          "parse": []
+        }
+      }
+    }
+  ],
+  "cash_readiness": {
+    "status": "operational_issue",
+    "reason": "cash_readiness_missing"
+  },
+  "quote_exclusions": [],
+  "notice": null,
+  "scope_game_ids": [
+    "2026_08_PHI_WAS"
+  ]
+}

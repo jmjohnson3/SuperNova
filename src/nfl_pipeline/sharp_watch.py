@@ -107,6 +107,7 @@ MAX_SOURCE_AGE_SECONDS = 300
 MAX_SOURCE_SKEW_SECONDS = 120
 EXPERIMENT_NAME = strategy.EXPERIMENT_NAME
 READINESS_REPORT = ROOT / "reports" / "nfl_sharp_alerts_latest.json"
+RISK_STATE = ROOT / "reports" / "nfl_sharp_risk_state.json"
 
 
 def _int_env(name: str, default: int) -> int:
@@ -133,6 +134,7 @@ def experiment_config():
                 stake=strategy.STAKE, max_bets_per_day=strategy.MAX_BETS_PER_DAY,
                 max_stake_per_week=strategy.MAX_STAKE_PER_WEEK, max_bets_per_game=strategy.MAX_BETS_PER_GAME,
                 loss_pause=strategy.LOSS_PAUSE, gates=strategy.GATES, shadow_filter=strategy.SHADOW_FILTER,
+                readiness_max_age_hours=strategy.READINESS_MAX_AGE_HOURS,
                 ladder_markets=LADDER_MARKETS, ladder_model_rows=(LADDER_MODEL or {}).get("model_rows"),
                 ladder_scan=bool(strategy.LADDER_SCAN), window_merge_minutes=strategy.WINDOW_MERGE_MINUTES,
                 daily_cap_rule="cumulative_window_allocation", inactives_source=sharp_inactives.URL,
@@ -426,25 +428,20 @@ def alert_tier(ev: float, minutes_to_kickoff: float, stat: str | None = None) ->
 ALERT_REPORT = READINESS_REPORT
 
 
-def _report_summary() -> dict:
+def realized_profit() -> float | None:
+    """Last validated confirmed-wager profit; unknown is never silently reported as zero."""
+    return readiness().get("realized_profit")
+
+
+def readiness(now: datetime | None = None) -> dict:
+    from nfl_pipeline import experiment_registry, sharp_risk
     try:
-        return json.loads(ALERT_REPORT.read_text(encoding="utf-8")).get("summary") or {}
-    except (FileNotFoundError, ValueError, TypeError, AttributeError):
-        return {}
-
-
-def realized_profit() -> float:
-    """Settled profit on bets actually placed, as the alert report graded them (0.0 if unknown)."""
-    try:
-        return float(((_report_summary().get("placed") or {}).get("realized_profit")) or 0.0)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def readiness() -> dict:
-    """The gate verdict the alert report last computed. Missing means no evidence yet, not a pause."""
-    value = _report_summary().get("readiness")
-    return value if isinstance(value, dict) else {}
+        experiment = experiment_registry.load_experiment(EXPERIMENT_NAME)
+    except (OSError, ValueError):
+        experiment = None
+    return sharp_risk.evaluate(now=now or datetime.now(timezone.utc), report_path=ALERT_REPORT,
+                               state_path=RISK_STATE, experiment=experiment, loss_limit=strategy.LOSS_PAUSE,
+                               max_age_hours=strategy.READINESS_MAX_AGE_HOURS)
 
 
 def risk_budget(cur, now: datetime) -> dict[str, Any]:
@@ -466,9 +463,9 @@ def risk_budget(cur, now: datetime) -> dict[str, Any]:
     cur.execute("SELECT start_ts_utc FROM raw.nfl_games WHERE game_date_et = %s AND start_ts_utc IS NOT NULL",
                 (et_now.date(),))
     kickoffs = [r[0] for r in cur.fetchall()]
-    profit = realized_profit()
-    gate = readiness()
-    loss_paused = profit <= strategy.LOSS_PAUSE
+    gate = readiness(now)
+    profit = gate.get("realized_profit")
+    loss_paused = gate.get("loss_paused", False)
     readiness_paused = gate.get("status") == "paused"
     return dict(today=int(today), week=float(week), staked=0.0, staked_count=0, kickoffs=kickoffs,
                 staked_keys=keys, per_game=per_game, realized_profit=profit,
@@ -755,6 +752,7 @@ def _refuse(result: dict, now: datetime, post) -> dict:
 # the cash ledger), so an unrelated edit to a model trial stopped the scanner. Transport (Discord,
 # raw payload storage, prop parsing) and link display are deliberately left out.
 PINNED_MODULES = ("nfl_pipeline.sharp_watch", "nfl_pipeline.sharp_strategy", "nfl_pipeline.sharp_math",
+                  "nfl_pipeline.sharp_risk",
                   "nfl_pipeline.markets", "nfl_pipeline.context_contract",
                   "nfl_pipeline.modeling.sharp_alert_report", "nfl_pipeline.sharp_inactives")
 
@@ -784,11 +782,7 @@ def register(now: datetime | None = None) -> dict:
     config = dict(scanner=normalized_config(), predecessor_experiment_id=strategy.PREDECESSOR,
                   predecessor_sha256=(predecessor or {}).get("sha256"),
                   pinned_scope="pricing, selection, staking and grading modules only",
-                  change_reason=("Cash strategy: FanDuel, ESPN Bet and DraftKings at +3% or better against "
-                                 "Pinnacle no-vig, staked 15-45 minutes before kickoff, judged by EV at the "
-                                 "sharp close; pin only the modules that price, select, stake and grade. v8: the daily cap is "
-                                 "shared across kickoff windows, ladders are not scanned, and the shadow filter reads "
-                                 "game-day statuses"))
+                  change_reason="v10 safety repair: require fresh strategy-matched readiness and persist the loss stop; v9 pricing and limits retained")
     return registry.register_experiment(EXPERIMENT_NAME, config, pinned_files(), now=now)
 
 
@@ -861,8 +855,7 @@ def run(*, now: datetime | None = None, session=requests, post=_post) -> dict[st
             budget = risk_budget(cur, now)
         result["risk"] = {k: v for k, v in budget.items() if k not in ("staked", "staked_keys", "per_game")}
         if budget["paused"]:
-            why = (["loss pause: realized ${:+.2f}".format(budget["realized_profit"])] if budget["loss_paused"] else []) \
-                + budget["readiness_reasons"]
+            why = budget["readiness_reasons"]
             warn_once(state, now, "staking_paused",
                       "**NFL sharp strategy: staking is paused**\n" + "; ".join(why or ["readiness pause"])
                       + "\nGaps are still scanned and graded at stake 0. See reports/nfl_sharp_alerts_latest.md.", post)

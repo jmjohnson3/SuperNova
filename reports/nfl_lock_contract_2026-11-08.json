@@ -1,0 +1,38 @@
+{
+  "contract": "nfl-fanduel-lock-contract-v1",
+  "generated_at_utc": "2026-11-09T00:53:40.119191+00:00",
+  "date": "2026-11-08",
+  "required": true,
+  "game_scope": [
+    "2026_09_TB_CHI"
+  ],
+  "status": "passed",
+  "summary": {
+    "games": 1,
+    "passed": 1,
+    "waiting": 0,
+    "failed": 0
+  },
+  "games": [
+    {
+      "game_id": "2026_09_TB_CHI",
+      "home_team_abbr": "CHI",
+      "away_team_abbr": "TB",
+      "start_ts_utc": "2026-11-08 17:20:00-08:00",
+      "status": "passed",
+      "verification": {
+        "game_id": "2026_09_TB_CHI",
+        "current_fanduel_locks": 38,
+        "receiving_locks": 14,
+        "receiving_same_line_triplets": 14,
+        "explicit_injury_context_locks": 38,
+        "known_player_injury_context_locks": 15,
+        "immutable_lock_violations": 0,
+        "all_locks_missing_links": 0,
+        "actionable_missing_links": 0,
+        "lock_verification_passed": true,
+        "injury_context_note": "known_player_status"
+      }
+    }
+  ]
+}

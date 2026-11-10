@@ -1,160 +1,219 @@
 {
-  "built_at": "2026-10-28T02:15:23.367017+00:00",
+  "built_at": "2026-11-05T00:55:36.464301+00:00",
   "summary": {
     "nba": {
       "overall": {
-        "decisions": 86,
-        "days": 5,
-        "ev_when_seen": 0.04511904987145531,
-        "graded": 83,
-        "close_coverage": 0.9651162790697675,
-        "ev_at_close": 0.02612196549433877,
-        "still_positive": 0.8554216867469879
+        "decisions": 200,
+        "days": 11,
+        "ev_when_seen": 0.04708480440110217,
+        "graded": 195,
+        "close_coverage": 0.975,
+        "ev_at_close": 0.03058107215300628,
+        "still_positive": 0.882051282051282,
+        "estimated_closes": 0,
+        "estimated_close_ev": null
       },
       "status": "research",
       "by_market": {
         "assists": {
-          "decisions": 20,
-          "days": 5,
-          "ev_when_seen": 0.04221838772685908,
-          "graded": 20,
+          "decisions": 38,
+          "days": 11,
+          "ev_when_seen": 0.04680922130460473,
+          "graded": 38,
           "close_coverage": 1.0,
-          "ev_at_close": 0.027977662002758114,
-          "still_positive": 0.9
+          "ev_at_close": 0.03134690978163431,
+          "still_positive": 0.9210526315789473,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         },
         "points": {
-          "decisions": 30,
-          "days": 5,
-          "ev_when_seen": 0.04903650408886698,
-          "graded": 28,
-          "close_coverage": 0.9333333333333333,
-          "ev_at_close": 0.022787850405140843,
-          "still_positive": 0.8571428571428571
+          "decisions": 71,
+          "days": 11,
+          "ev_when_seen": 0.048145290420377386,
+          "graded": 69,
+          "close_coverage": 0.971830985915493,
+          "ev_at_close": 0.024102144937000004,
+          "still_positive": 0.8405797101449275,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         },
         "rebounds": {
-          "decisions": 21,
-          "days": 5,
-          "ev_when_seen": 0.04577011455614027,
-          "graded": 21,
+          "decisions": 53,
+          "days": 11,
+          "ev_when_seen": 0.04584512497022414,
+          "graded": 53,
           "close_coverage": 1.0,
-          "ev_at_close": 0.03172916150097611,
-          "still_positive": 0.8571428571428571
+          "ev_at_close": 0.0347521427863819,
+          "still_positive": 0.9056603773584906,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         },
         "threes": {
-          "decisions": 15,
-          "days": 5,
-          "ev_when_seen": 0.04024020040420128,
-          "graded": 14,
-          "close_coverage": 0.9333333333333333,
-          "ev_at_close": 0.021728406650750955,
-          "still_positive": 0.7857142857142857
+          "decisions": 38,
+          "days": 11,
+          "ev_when_seen": 0.047107979667810045,
+          "graded": 35,
+          "close_coverage": 0.9210526315789473,
+          "ev_at_close": 0.036206140851510825,
+          "still_positive": 0.8857142857142857,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         }
       },
       "by_book": {
         "draftkings": {
-          "decisions": 53,
-          "days": 5,
-          "ev_when_seen": 0.046371700855658754,
-          "graded": 50,
-          "close_coverage": 0.9433962264150944,
-          "ev_at_close": 0.031041116966850035,
-          "still_positive": 0.88
+          "decisions": 115,
+          "days": 11,
+          "ev_when_seen": 0.04695505978284539,
+          "graded": 111,
+          "close_coverage": 0.9652173913043478,
+          "ev_at_close": 0.03785185900255845,
+          "still_positive": 0.9279279279279279,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         },
         "espnbet": {
-          "decisions": 6,
-          "days": 3,
-          "ev_when_seen": 0.03554048857987476,
-          "graded": 6,
+          "decisions": 13,
+          "days": 6,
+          "ev_when_seen": 0.03941109168526714,
+          "graded": 13,
           "close_coverage": 1.0,
-          "ev_at_close": -0.021583815288972612,
-          "still_positive": 0.6666666666666666
+          "ev_at_close": -0.00029336599883585004,
+          "still_positive": 0.7692307692307693,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         },
         "fanduel": {
-          "decisions": 27,
-          "days": 5,
-          "ev_when_seen": 0.0447887115598516,
-          "graded": 27,
-          "close_coverage": 1.0,
-          "ev_at_close": 0.02761371034894264,
-          "still_positive": 0.8518518518518519
+          "decisions": 72,
+          "days": 11,
+          "ev_when_seen": 0.04867756685117699,
+          "graded": 71,
+          "close_coverage": 0.9861111111111112,
+          "ev_at_close": 0.024867133500522578,
+          "still_positive": 0.8309859154929577,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
         }
       },
       "logged": {
-        "decisions": 242,
-        "days": 5,
-        "ev_when_seen": 0.018671130051544364,
-        "graded": 238,
-        "close_coverage": 0.9834710743801653,
-        "ev_at_close": 0.008662107524669024,
-        "still_positive": 0.8445378151260504
+        "decisions": 537,
+        "days": 11,
+        "ev_when_seen": 0.01862417455961254,
+        "graded": 526,
+        "close_coverage": 0.9795158286778398,
+        "ev_at_close": 0.009126923888993997,
+        "still_positive": 0.8460076045627376,
+        "estimated_closes": 4,
+        "estimated_close_ev": 0.01196278971504812
       },
       "record": {
-        "settled": 55,
-        "wins": 27,
-        "losses": 28,
+        "settled": 186,
+        "wins": 92,
+        "losses": 94,
         "pushes": 0,
         "voids": 0,
-        "pending": 31,
-        "roi": -0.054346189136565796,
-        "units": -2.989040402511119
+        "pending": 14,
+        "roi": -0.048852576851799646,
+        "units": -9.086579294434735
       },
       "shadow": {
         "agrees": {
-          "decisions": 28,
-          "ev_at_close": 0.020159966551359033,
-          "settled": 18,
-          "wins": 7,
-          "losses": 11,
+          "decisions": 66,
+          "ev_at_close": 0.022089616227409053,
+          "settled": 63,
+          "wins": 30,
+          "losses": 33,
           "pushes": 0,
           "voids": 0,
-          "pending": 10,
-          "roi": -0.23747635532457492,
-          "units": -4.2745743958423486
+          "pending": 3,
+          "roi": -0.07670551602334237,
+          "units": -4.832447509470569
         },
         "disagrees": {
-          "decisions": 33,
-          "ev_at_close": 0.02493665174206863,
-          "settled": 21,
-          "wins": 13,
-          "losses": 8,
+          "decisions": 107,
+          "ev_at_close": 0.034674737554580365,
+          "settled": 96,
+          "wins": 48,
+          "losses": 48,
           "pushes": 0,
           "voids": 0,
-          "pending": 12,
-          "roi": 0.18802929829133488,
-          "units": 3.9486152641180325
+          "pending": 11,
+          "roi": -0.036623828690840535,
+          "units": -3.5158875543206913
         },
         "no projection": {
-          "decisions": 25,
-          "ev_at_close": 0.03548793477744545,
-          "settled": 16,
-          "wins": 7,
-          "losses": 9,
+          "decisions": 27,
+          "ev_at_close": 0.036022789816512024,
+          "settled": 27,
+          "wins": 14,
+          "losses": 13,
           "pushes": 0,
           "voids": 0,
-          "pending": 9,
-          "roi": -0.16644257942417515,
-          "units": -2.6630812707868023
+          "pending": 0,
+          "roi": -0.027342378912721295,
+          "units": -0.738244230643475
         }
       }
     },
     "ncaaf": {
       "overall": {
-        "decisions": 0
+        "decisions": 1,
+        "days": 1,
+        "ev_when_seen": 0.042845083527426775,
+        "graded": 1,
+        "close_coverage": 1.0,
+        "ev_at_close": 0.042845083527426775,
+        "still_positive": 1.0,
+        "estimated_closes": 0,
+        "estimated_close_ev": null
       },
       "status": "research",
-      "by_market": {},
-      "by_book": {},
+      "by_market": {
+        "h2h": {
+          "decisions": 1,
+          "days": 1,
+          "ev_when_seen": 0.042845083527426775,
+          "graded": 1,
+          "close_coverage": 1.0,
+          "ev_at_close": 0.042845083527426775,
+          "still_positive": 1.0,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
+        }
+      },
+      "by_book": {
+        "fanduel": {
+          "decisions": 1,
+          "days": 1,
+          "ev_when_seen": 0.042845083527426775,
+          "graded": 1,
+          "close_coverage": 1.0,
+          "ev_at_close": 0.042845083527426775,
+          "still_positive": 1.0,
+          "estimated_closes": 0,
+          "estimated_close_ev": null
+        }
+      },
       "logged": {
-        "decisions": 4,
-        "days": 1,
-        "ev_when_seen": 0.014716113555181959,
-        "graded": 3,
-        "close_coverage": 0.75,
-        "ev_at_close": 0.003608938416862717,
-        "still_positive": 0.6666666666666666
+        "decisions": 13,
+        "days": 2,
+        "ev_when_seen": 0.015109778198585543,
+        "graded": 9,
+        "close_coverage": 0.6923076923076923,
+        "ev_at_close": -0.005657851832473156,
+        "still_positive": 0.6666666666666666,
+        "estimated_closes": 3,
+        "estimated_close_ev": 0.01514632782035332
       },
       "record": {
-        "settled": 0
+        "settled": 1,
+        "wins": 0,
+        "losses": 1,
+        "pushes": 0,
+        "voids": 0,
+        "pending": 0,
+        "roi": -1.0,
+        "units": -1.0
       },
       "shadow": {}
     }

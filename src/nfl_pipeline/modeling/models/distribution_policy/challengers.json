@@ -2169,7 +2169,723 @@
         "automatic_cash_approval": false
       },
       "policy_id": "e2aa7456cce72053f2165c0e988177b432b93889e002b3429cc3cc3e04d87345"
+    },
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|passing_yards|raw_distribution": {
+      "a": 1.0,
+      "b": 1.0,
+      "model_weight": 0.5,
+      "calibration_enabled": false,
+      "inner_raw": {
+        "rows": 40,
+        "brier": 0.2487599854932561,
+        "log_loss": 0.6878024246046353,
+        "calibration_error": 0.21692263321075778,
+        "probability_bias": 0.014889321508400914,
+        "player_games": 23,
+        "weeks": 1,
+        "distribution": {
+          "rows": 23,
+          "mae": 63.99394332684402,
+          "rmse": 77.41053143963816,
+          "bias": -17.897469175859193,
+          "interval_rows": 23,
+          "coverage_80": 0.8695652173913043,
+          "interval_width": 213.7826086956522,
+          "expected_interval_coverage": 0.8009950248756195
+        },
+        "median": {
+          "rows": 23,
+          "mae": 63.95652173913044,
+          "rmse": 77.20357054144469,
+          "bias": -17.08695652173913
+        }
+      },
+      "inner_calibrated": {
+        "rows": 40,
+        "brier": 0.2514387859530755,
+        "log_loss": 0.6968520549146365,
+        "calibration_error": 0.22209238270852502,
+        "probability_bias": -0.012321059827359856,
+        "player_games": 23,
+        "weeks": 1,
+        "distribution": {
+          "rows": 23,
+          "mae": 64.2552717746323,
+          "rmse": 79.0152826605145,
+          "bias": -23.900560426550655,
+          "interval_rows": 23,
+          "coverage_80": 0.7391304347826086,
+          "interval_width": 190.8695652173913,
+          "expected_interval_coverage": 0.8039208102110748
+        },
+        "median": {
+          "rows": 23,
+          "mae": 64.26086956521739,
+          "rmse": 78.41029213721549,
+          "bias": -21.217391304347824
+        }
+      },
+      "blend_comparisons": {
+        "0.0": {
+          "rows": 40,
+          "brier": 0.24999999999999992,
+          "log_loss": 0.6931471805599451,
+          "calibration_error": 0.09420289855073129,
+          "probability_bias": 0.06521739130434635,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 54.44789799970924,
+            "rmse": 65.49416453765402,
+            "bias": -2.313929107077204,
+            "interval_rows": 23,
+            "coverage_80": 0.9565217391304348,
+            "interval_width": 216.69565217391303,
+            "expected_interval_coverage": 0.8065464796214177
+          },
+          "median": {
+            "rows": 23,
+            "mae": 54.04347826086956,
+            "rmse": 64.9524909988564,
+            "bias": -3.260869565217391
+          }
+        },
+        "0.1": {
+          "rows": 40,
+          "brier": 0.24713231108140885,
+          "log_loss": 0.6873974010513599,
+          "calibration_error": 0.06018458432475183,
+          "probability_bias": 0.060184584324751815,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 53.50133273261283,
+            "rmse": 65.23835567651334,
+            "bias": -3.872283113955386,
+            "interval_rows": 23,
+            "coverage_80": 0.9565217391304348,
+            "interval_width": 220.2608695652174,
+            "expected_interval_coverage": 0.8067046254808672
+          },
+          "median": {
+            "rows": 23,
+            "mae": 53.73913043478261,
+            "rmse": 64.83557799474794,
+            "bias": -3.391304347826087
+          }
+        },
+        "0.2": {
+          "rows": 40,
+          "brier": 0.24487433048902152,
+          "log_loss": 0.6827911301419781,
+          "calibration_error": 0.06833225178455295,
+          "probability_bias": 0.05515177734515728,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 53.09270909958243,
+            "rmse": 65.32897150445027,
+            "bias": -5.4306371208335795,
+            "interval_rows": 23,
+            "coverage_80": 0.9565217391304348,
+            "interval_width": 223.7826086956522,
+            "expected_interval_coverage": 0.8081100278931214
+          },
+          "median": {
+            "rows": 23,
+            "mae": 53.130434782608695,
+            "rmse": 64.88585294995727,
+            "bias": -4.521739130434782
+          }
+        },
+        "0.30000000000000004": {
+          "rows": 40,
+          "brier": 0.24322605822283788,
+          "log_loss": 0.6792793261950798,
+          "calibration_error": 0.1105451005840323,
+          "probability_bias": 0.050118970365562725,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 53.42469663276518,
+            "rmse": 65.76458004007432,
+            "bias": -6.988991127711785,
+            "interval_rows": 23,
+            "coverage_80": 0.9130434782608695,
+            "interval_width": 225.2173913043478,
+            "expected_interval_coverage": 0.8077238723967115
+          },
+          "median": {
+            "rows": 23,
+            "mae": 53.30434782608695,
+            "rmse": 65.1293028287308,
+            "bias": -5.478260869565218
+          }
+        },
+        "0.4": {
+          "rows": 40,
+          "brier": 0.2421874942828579,
+          "log_loss": 0.6768398321361155,
+          "calibration_error": 0.09542144350709875,
+          "probability_bias": 0.04508616338596818,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 54.92315550198203,
+            "rmse": 66.53840591289708,
+            "bias": -8.547345134589987,
+            "interval_rows": 23,
+            "coverage_80": 0.9130434782608695,
+            "interval_width": 225.69565217391303,
+            "expected_interval_coverage": 0.8072878522155633
+          },
+          "median": {
+            "rows": 23,
+            "mae": 54.43478260869565,
+            "rmse": 66.1717133839975,
+            "bias": -7.043478260869565
+          }
+        },
+        "0.5": {
+          "rows": 40,
+          "brier": 0.2417586386690817,
+          "log_loss": 0.6754773993814911,
+          "calibration_error": 0.1556168433196321,
+          "probability_bias": 0.04005335640637362,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 56.42161437119888,
+            "rmse": 67.63884193697895,
+            "bias": -10.1056991414682,
+            "interval_rows": 23,
+            "coverage_80": 0.9130434782608695,
+            "interval_width": 224.8695652173913,
+            "expected_interval_coverage": 0.8064754586742882
+          },
+          "median": {
+            "rows": 23,
+            "mae": 56.47826086956522,
+            "rmse": 67.59952405286529,
+            "bias": -8.91304347826087
+          }
+        },
+        "0.6000000000000001": {
+          "rows": 40,
+          "brier": 0.24193949138150916,
+          "log_loss": 0.6752269486169343,
+          "calibration_error": 0.16402768764871078,
+          "probability_bias": 0.03502054942677909,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 57.92007324041574,
+            "rmse": 69.0502745779178,
+            "bias": -11.664053148346397,
+            "interval_rows": 23,
+            "coverage_80": 0.8695652173913043,
+            "interval_width": 224.69565217391303,
+            "expected_interval_coverage": 0.8054436090550918
+          },
+          "median": {
+            "rows": 23,
+            "mae": 58.26086956521739,
+            "rmse": 69.28454247584347,
+            "bias": -10.956521739130435
+          }
+        },
+        "0.7000000000000001": {
+          "rows": 40,
+          "brier": 0.2427300524201403,
+          "log_loss": 0.6761612885179723,
+          "calibration_error": 0.20209459946643485,
+          "probability_bias": 0.029987742447184534,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 59.434394859907336,
+            "rmse": 70.7540946063202,
+            "bias": -13.222407155224593,
+            "interval_rows": 23,
+            "coverage_80": 0.8695652173913043,
+            "interval_width": 222.43478260869566,
+            "expected_interval_coverage": 0.8057100616526334
+          },
+          "median": {
+            "rows": 23,
+            "mae": 60.17391304347826,
+            "rmse": 71.40454254213925,
+            "bias": -12.956521739130435
+          }
+        },
+        "0.8": {
+          "rows": 40,
+          "brier": 0.2441303217849752,
+          "log_loss": 0.6784062278921456,
+          "calibration_error": 0.24197851323094607,
+          "probability_bias": 0.024954935467590016,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 60.95424434888622,
+            "rmse": 72.72975588710871,
+            "bias": -14.780761162102793,
+            "interval_rows": 23,
+            "coverage_80": 0.8695652173913043,
+            "interval_width": 221.17391304347825,
+            "expected_interval_coverage": 0.8054929061725136
+          },
+          "median": {
+            "rows": 23,
+            "mae": 61.82608695652174,
+            "rmse": 73.4213569213612,
+            "bias": -13.91304347826087
+          }
+        },
+        "0.9": {
+          "rows": 40,
+          "brier": 0.24614029947601382,
+          "log_loss": 0.6821698233244559,
+          "calibration_error": 0.1982478909798828,
+          "probability_bias": 0.019922128487995436,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 62.474093837865105,
+            "rmse": 74.95576617446311,
+            "bias": -16.339115168980992,
+            "interval_rows": 23,
+            "coverage_80": 0.8695652173913043,
+            "interval_width": 217.7391304347826,
+            "expected_interval_coverage": 0.8047415230882325
+          },
+          "median": {
+            "rows": 23,
+            "mae": 62.56521739130435,
+            "rmse": 74.83982896827064,
+            "bias": -15.26086956521739
+          }
+        },
+        "1.0": {
+          "rows": 40,
+          "brier": 0.2487599854932561,
+          "log_loss": 0.6878024246046353,
+          "calibration_error": 0.21692263321075778,
+          "probability_bias": 0.014889321508400914,
+          "player_games": 23,
+          "weeks": 1,
+          "distribution": {
+            "rows": 23,
+            "mae": 63.99394332684402,
+            "rmse": 77.41053143963816,
+            "bias": -17.897469175859193,
+            "interval_rows": 23,
+            "coverage_80": 0.8695652173913043,
+            "interval_width": 213.7826086956522,
+            "expected_interval_coverage": 0.8009950248756195
+          },
+          "median": {
+            "rows": 23,
+            "mae": 63.95652173913044,
+            "rmse": 77.20357054144469,
+            "bias": -17.08695652173913
+          }
+        }
+      },
+      "blend_regularization": 0.0,
+      "calibration_player_games": 30,
+      "tuning_player_games": 23,
+      "ranking_support": 0.18699186991869918,
+      "training_periods": [
+        [
+          2026,
+          7
+        ],
+        [
+          2026,
+          8
+        ]
+      ],
+      "tuning_period": [
+        2026,
+        9
+      ],
+      "fit_scope": "current_time_development",
+      "contract": "nfl-distribution-policy-v1",
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|passing_yards|raw_distribution",
+      "created_at": "2026-11-09T02:38:39.276908+00:00",
+      "training_scoring_version": "2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb",
+      "source": "raw_distribution",
+      "policy_id": "1614f49f6c06ede16cda13f85ff0def9b64a19a0e3c50b359c883e258d98c610"
+    },
+    "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|rushing_yards|raw_distribution": {
+      "a": 1.0,
+      "b": 1.0,
+      "model_weight": 0.5,
+      "calibration_enabled": false,
+      "inner_raw": {
+        "rows": 88,
+        "brier": 0.25017015030381035,
+        "log_loss": 0.7108053616434761,
+        "calibration_error": 0.0950097994874114,
+        "probability_bias": -0.052721242273481066,
+        "player_games": 55,
+        "weeks": 1,
+        "distribution": {
+          "rows": 55,
+          "mae": 17.65165083672547,
+          "rmse": 23.155004790694296,
+          "bias": -0.7756671189505626,
+          "interval_rows": 55,
+          "coverage_80": 0.8363636363636363,
+          "interval_width": 58.18181818181818,
+          "expected_interval_coverage": 0.8024423337856166
+        },
+        "median": {
+          "rows": 55,
+          "mae": 17.854545454545455,
+          "rmse": 23.556508461762554,
+          "bias": -4.254545454545455
+        }
+      },
+      "inner_calibrated": {
+        "rows": 88,
+        "brier": 0.26588354637352607,
+        "log_loss": 0.756626808478708,
+        "calibration_error": 0.17113792095742136,
+        "probability_bias": -0.12617736546076674,
+        "player_games": 55,
+        "weeks": 1,
+        "distribution": {
+          "rows": 55,
+          "mae": 18.14251943558703,
+          "rmse": 23.912099623817262,
+          "bias": -6.0195801361318395,
+          "interval_rows": 55,
+          "coverage_80": 0.7090909090909091,
+          "interval_width": 45.50909090909091,
+          "expected_interval_coverage": 0.8082816943930383
+        },
+        "median": {
+          "rows": 55,
+          "mae": 18.2,
+          "rmse": 24.038983490836863,
+          "bias": -6.345454545454546
+        }
+      },
+      "blend_comparisons": {
+        "0.0": {
+          "rows": 88,
+          "brier": 0.2500000000000002,
+          "log_loss": 0.6931471805599457,
+          "calibration_error": 0.015151515151520838,
+          "probability_bias": 0.009090909090912288,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 19.263661109004186,
+            "rmse": 24.182455588268667,
+            "bias": 3.5223053983022976,
+            "interval_rows": 55,
+            "coverage_80": 0.7818181818181819,
+            "interval_width": 64.32727272727273,
+            "expected_interval_coverage": 0.8097928213361564
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.854545454545455,
+            "rmse": 22.9005756180137,
+            "bias": -1.6727272727272726
+          }
+        },
+        "0.1": {
+          "rows": 88,
+          "brier": 0.24677782090602338,
+          "log_loss": 0.6866982819461497,
+          "calibration_error": 0.06894467058646378,
+          "probability_bias": 0.0029096939544729626,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 18.7025792266075,
+            "rmse": 23.677347573324678,
+            "bias": 3.092508146577012,
+            "interval_rows": 55,
+            "coverage_80": 0.8545454545454545,
+            "interval_width": 64.78181818181818,
+            "expected_interval_coverage": 0.8098747472343123
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.69090909090909,
+            "rmse": 22.67116711115284,
+            "bias": -1.7636363636363637
+          }
+        },
+        "0.2": {
+          "rows": 88,
+          "brier": 0.24427546272857042,
+          "log_loss": 0.6816719168219741,
+          "calibration_error": 0.053040856324440354,
+          "probability_bias": -0.0032715211819663555,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 18.360023240037872,
+            "rmse": 23.253680997721094,
+            "bias": 2.6627108948517275,
+            "interval_rows": 55,
+            "coverage_80": 0.8727272727272727,
+            "interval_width": 64.83636363636364,
+            "expected_interval_coverage": 0.8102283533679505
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.69090909090909,
+            "rmse": 22.56908585573719,
+            "bias": -2.1636363636363636
+          }
+        },
+        "0.30000000000000004": {
+          "rows": 88,
+          "brier": 0.2424929254676415,
+          "log_loss": 0.6780795164250474,
+          "calibration_error": 0.045169606512890925,
+          "probability_bias": -0.00945273631840571,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 18.138544101068078,
+            "rmse": 22.91597333271795,
+            "bias": 2.2329136431264396,
+            "interval_rows": 55,
+            "coverage_80": 0.8545454545454545,
+            "interval_width": 64.81818181818181,
+            "expected_interval_coverage": 0.8085677538718461
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.654545454545456,
+            "rmse": 22.48191192128382,
+            "bias": -2.5272727272727273
+          }
+        },
+        "0.4": {
+          "rows": 88,
+          "brier": 0.24143020912323657,
+          "log_loss": 0.6759671834414819,
+          "calibration_error": 0.06898537614955709,
+          "probability_bias": -0.01563395145484504,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.978841251196563,
+            "rmse": 22.668066737907285,
+            "bias": 1.803116391401155,
+            "interval_rows": 55,
+            "coverage_80": 0.8545454545454545,
+            "interval_width": 64.9090909090909,
+            "expected_interval_coverage": 0.8093776524003873
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.618181818181817,
+            "rmse": 22.520697550960055,
+            "bias": -2.890909090909091
+          }
+        },
+        "0.5": {
+          "rows": 88,
+          "brier": 0.24108731369535558,
+          "log_loss": 0.6754246236126087,
+          "calibration_error": 0.05828433589627669,
+          "probability_bias": -0.021815166591284383,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.85620096376463,
+            "rmse": 22.5129280079005,
+            "bias": 1.3733191396758677,
+            "interval_rows": 55,
+            "coverage_80": 0.8545454545454545,
+            "interval_width": 64.58181818181818,
+            "expected_interval_coverage": 0.8087658591440092
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.563636363636363,
+            "rmse": 22.656325626833024,
+            "bias": -3.2
+          }
+        },
+        "0.6000000000000001": {
+          "rows": 88,
+          "brier": 0.24146423918399856,
+          "log_loss": 0.6766038370204861,
+          "calibration_error": 0.06024423337856312,
+          "probability_bias": -0.027996381727723726,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.750560047357244,
+            "rmse": 22.45248020486638,
+            "bias": 0.9435218879505819,
+            "interval_rows": 55,
+            "coverage_80": 0.8727272727272727,
+            "interval_width": 63.4,
+            "expected_interval_coverage": 0.8072665303038827
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.672727272727272,
+            "rmse": 22.834583022647507,
+            "bias": -3.4545454545454546
+          }
+        },
+        "0.7000000000000001": {
+          "rows": 88,
+          "brier": 0.24256098558916558,
+          "log_loss": 0.6797597206237951,
+          "calibration_error": 0.10165234433891226,
+          "probability_bias": -0.03417759686416304,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.644919130949862,
+            "rmse": 22.48748694757233,
+            "bias": 0.513724636225295,
+            "interval_rows": 55,
+            "coverage_80": 0.8545454545454545,
+            "interval_width": 62.8,
+            "expected_interval_coverage": 0.8081172685283939
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.727272727272727,
+            "rmse": 23.076552444576134,
+            "bias": -3.727272727272727
+          }
+        },
+        "0.8": {
+          "rows": 88,
+          "brier": 0.24437755291085653,
+          "log_loss": 0.6853526998844979,
+          "calibration_error": 0.08546660636212863,
+          "probability_bias": -0.04035881200060237,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.539278214542488,
+            "rmse": 22.617505014719658,
+            "bias": 0.08392738450001076,
+            "interval_rows": 55,
+            "coverage_80": 0.8545454545454545,
+            "interval_width": 61.85454545454545,
+            "expected_interval_coverage": 0.8087564613395405
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.836363636363636,
+            "rmse": 23.290653607285165,
+            "bias": -4.0181818181818185
+          }
+        },
+        "0.9": {
+          "rows": 88,
+          "brier": 0.24691394114907145,
+          "log_loss": 0.6943977140063985,
+          "calibration_error": 0.09831298055178637,
+          "probability_bias": -0.04654002713704174,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.540314009524863,
+            "rmse": 22.840911955760774,
+            "bias": -0.3458698672252803,
+            "interval_rows": 55,
+            "coverage_80": 0.8363636363636363,
+            "interval_width": 60.41818181818182,
+            "expected_interval_coverage": 0.8074324701472194
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.87272727272727,
+            "rmse": 23.426092678503135,
+            "bias": -4.127272727272727
+          }
+        },
+        "1.0": {
+          "rows": 88,
+          "brier": 0.25017015030381035,
+          "log_loss": 0.7108053616434761,
+          "calibration_error": 0.0950097994874114,
+          "probability_bias": -0.052721242273481066,
+          "player_games": 55,
+          "weeks": 1,
+          "distribution": {
+            "rows": 55,
+            "mae": 17.65165083672547,
+            "rmse": 23.155004790694296,
+            "bias": -0.7756671189505626,
+            "interval_rows": 55,
+            "coverage_80": 0.8363636363636363,
+            "interval_width": 58.18181818181818,
+            "expected_interval_coverage": 0.8024423337856166
+          },
+          "median": {
+            "rows": 55,
+            "mae": 17.854545454545455,
+            "rmse": 23.556508461762554,
+            "bias": -4.254545454545455
+          }
+        }
+      },
+      "blend_regularization": 0.0,
+      "calibration_player_games": 71,
+      "tuning_player_games": 55,
+      "ranking_support": 0.3548387096774194,
+      "training_periods": [
+        [
+          2026,
+          7
+        ],
+        [
+          2026,
+          8
+        ]
+      ],
+      "tuning_period": [
+        2026,
+        9
+      ],
+      "fit_scope": "current_time_development",
+      "contract": "nfl-distribution-policy-v1",
+      "key": "nfl-distribution-policy-v1|nfl-20260918T143342Z|fanduel|rushing_yards|raw_distribution",
+      "created_at": "2026-11-09T02:41:40.781357+00:00",
+      "training_scoring_version": "2c46f8e1c0a840378865a096ef836b08c432b14655d62b671841d62eebb16feb",
+      "source": "raw_distribution",
+      "policy_id": "f2df335cc7b74416dbe3b119adff9da17b91a91c4c729fdda0d39cd1b4e7a9f7"
     }
   },
-  "sha256": "03f44b48904de6d2621127bfd05df3f0f41771d3976f503e71d0c950858ac696"
+  "sha256": "1bbc77eac626e09d029a4044f5a5175bae5a187d1bcce7dc4ec34854801bd58e"
 }

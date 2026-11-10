@@ -1,0 +1,9 @@
+{
+  "contract": "nfl-targets-model-pointer-v1",
+  "run_id": "volume-20261022T151821Z",
+  "sha256": "4d25aa4e4df31000a7c51191b5898fd6cb2884ecb7af9afe6a93dd0db531c57c",
+  "features": 191,
+  "evidence": "reports/nfl_volume_model_latest.md (volume-20261022T151821Z)",
+  "used_by": "receptions projection targets",
+  "installed_at": "2026-10-22T15:28:00.611472+00:00"
+}

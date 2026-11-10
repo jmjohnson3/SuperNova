@@ -113,8 +113,9 @@ def starting_skill_players(rows):
     return selected
 
 
-SHARP_POINTER = ('- No model bets: the model forecasts are research. Bets come from the sharp-gap scanner, which posts '
-                 '**SHARP EDGE** alerts in this channel 15-45 minutes before kickoff with the book, price and link.')
+SHARP_POINTER = ('- See **NFL PAPER DECISIONS** for props, spreads and totals, scan times and any missing-data status. '
+                 'Qualifying **PAPER PRICE CHECK** alerts show the exact FanDuel side, line, price and the model selection or veto '
+                 '15-45 minutes before kickoff. No wager is requested. The separate **SHARP EDGE** cash path remains subject to its authorization checks.')
 
 
 def starter_projection_line(player):
@@ -229,8 +230,8 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
     for gid, game in sorted(upcoming.items(), key=lambda item: (utc(item[1]['start_ts_utc']), item[0])):
         title = f"{game['away_team_abbr']} @ {game['home_team_abbr']} | NFL {day}"
         kickoff = int(utc(game['start_ts_utc']).timestamp())
-        intro = (f'Kickoff: <t:{kickoff}:f> (<t:{kickoff}:R>)\nModel forecasts at FanDuel only (research). '
-                 'Bets to place come from the SHARP EDGE alerts in this channel.')
+        intro = (f'Kickoff: <t:{kickoff}:f> (<t:{kickoff}:R>)\nPlayer and game forecasts support FanDuel paper comparisons. '
+                 'See NFL PAPER DECISIONS in this channel for current picks and scan status.')
         sections = []
         cash = by_game[gid].get('$1 CASH TRIAL ELIGIBLE', [])
         bankroll_games = [r for r in games_by_id[gid] if r.get('tier') == 'bankroll' and r.get('ledger_locked')]
@@ -283,6 +284,15 @@ def build_bundle(day, schedule, game_rows, prop_rows, releases, *, now=None, pap
         # Matchup-level manifest is repeated across pages. Historical locked rows
         # without a current forecast ID are not advertised as refreshed decisions.
         manifest=[]
+        # Forecast-only starter cards need their own audit trail. These entries
+        # describe displayed numbers, never executable prices or betting selections.
+        for player in starters:
+            for stat, row in player['stat_rows'].items():
+                value = independent_projection(row)
+                if row.get('forecast_id') is not None and value is not None:
+                    manifest.append(dict(kind='projection', forecast_id=row['forecast_id'],
+                        player_id=row.get('player_id'), stat=stat, value=value,
+                        model_version=row.get('model_version')))
         displayed=[('game',r) for r in bankroll_games]
         displayed += [('prop',r) for rows in by_game[gid].values() for r in rows]
         for kind,r in displayed:

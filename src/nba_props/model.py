@@ -50,6 +50,8 @@ def match_name(name: str) -> str:
 # --- features --------------------------------------------------------------------------------------
 def load_games(conn) -> pd.DataFrame:
     df = pd.read_sql("SELECT * FROM nbaprops.player_games ORDER BY game_date, game_id, player_id", conn)
+    from nba_props.ingest import conflicted_games
+    df = df[~df.game_id.isin(conflicted_games(conn))].copy()
     num = ["minutes", "pts", "reb", "ast", "fg3m", "fga", "fta", "tov", "oreb", "stl", "blk", "plus_minus"]
     df[num] = df[num].astype(float)
     df["game_date"] = pd.to_datetime(df.game_date)

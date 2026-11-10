@@ -12,8 +12,8 @@ Every run (the Sharp-Multi-Watch task, every 10 minutes):
 Pricing is exact-line only: a book's price is valued at Pinnacle's no-vig probability for the same
 market, player and line (power de-vig, as for NFL). Quotes must be fresh (source update within five
 minutes) and the two books' quotes within two minutes of each other. A gap of +3% or better seen
-15-45 minutes before the start is a research decision; +1% to +3% is logged. Nothing is staked or
-pinged: a nightly digest reports what the scanner would have bet and how it held at the close.
+15-45 minutes before the start is a research decision; +1% to +3% is logged. Frozen NBA prop
+selections send PAPER PRICE CHECK requests. Nothing is staked; a digest reports the research results.
 
 Credits: a daily allowance per run keeps the monthly plan solvent and holds back a reserve for NFL
 Sundays before the plan resets (NFL_ODDS_API_RESET_DAY). Lines are polled before props.
@@ -100,19 +100,32 @@ CREATE TABLE IF NOT EXISTS bets.sharp_multi_decisions (
   home_team TEXT, away_team TEXT, market TEXT NOT NULL, player TEXT, player_norm TEXT NOT NULL DEFAULT '',
   side TEXT NOT NULL, line NUMERIC NOT NULL, book TEXT NOT NULL, price INTEGER NOT NULL, link TEXT,
   sharp_price_over INTEGER, sharp_price_under INTEGER, fair_probability NUMERIC NOT NULL, ev NUMERIC NOT NULL,
-  minutes_to_start NUMERIC NOT NULL, tier TEXT NOT NULL, research_only BOOLEAN NOT NULL DEFAULT TRUE,
-  UNIQUE (sport, event_id, market, player_norm, side, line, book, price));
+  minutes_to_start NUMERIC NOT NULL, tier TEXT NOT NULL, research_only BOOLEAN NOT NULL DEFAULT TRUE);
 ALTER TABLE bets.sharp_multi_decisions ADD COLUMN IF NOT EXISTS method TEXT NOT NULL DEFAULT 'exact';
+ALTER TABLE bets.sharp_multi_decisions ADD COLUMN IF NOT EXISTS observation_id TEXT;
+ALTER TABLE bets.sharp_multi_decisions ADD COLUMN IF NOT EXISTS experiment_id TEXT;
+ALTER TABLE bets.sharp_multi_decisions ADD COLUMN IF NOT EXISTS experiment_sha256 TEXT;
+-- Preserve legacy rows; the old offer-wide uniqueness discarded later qualifying observations.
+DO $$ DECLARE c record; BEGIN
+  FOR c IN SELECT conname FROM pg_constraint
+    WHERE conrelid='bets.sharp_multi_decisions'::regclass AND contype='u'
+      AND pg_get_constraintdef(oid)='UNIQUE (sport, event_id, market, player_norm, side, line, book, price)'
+  LOOP EXECUTE format('ALTER TABLE bets.sharp_multi_decisions DROP CONSTRAINT %I', c.conname); END LOOP;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS sharp_multi_decision_observation
+  ON bets.sharp_multi_decisions (observation_id, market, player_norm, side, line, book, price);
 """
 
 
 # --- pricing ---------------------------------------------------------------------------------------
 def _fresh(timestamps: list[str | None], observed: datetime) -> datetime | None:
-    stamps = [safe_time(t) for t in timestamps if t]
-    if not stamps or any(t is None or t > observed for t in stamps):
+    # Input order is book, market. The market update is authoritative when supplied;
+    # a fresh unrelated market at this book cannot refresh this quote.
+    source = timestamps[-1] if timestamps[-1] is not None else timestamps[0]
+    stamp = safe_time(source)
+    if stamp is None or stamp > observed:
         return None
-    newest = max(stamps)
-    return newest if (observed - newest).total_seconds() <= MAX_SOURCE_AGE else None
+    return stamp if (observed - stamp).total_seconds() <= MAX_SOURCE_AGE else None
 
 
 def pairs(book: dict, observed: datetime) -> dict[tuple, dict]:
@@ -322,30 +335,45 @@ def plan(events: dict[str, list[dict]], state: dict, now: datetime) -> list[tupl
     return [item for _, item in sorted(due, key=lambda d: (order[d[1][0]], d[0]))]
 
 
-def store(conn, sport: str, event: dict, observed: datetime) -> list[dict]:
+def store(conn, sport: str, event: dict, observed: datetime, experiment: dict | None = None) -> list[dict]:
     """Persist the event's quotes and every gap; returns decisions and logged gaps."""
     kickoff = safe_time(event["commence_time"])
     minutes = (kickoff - observed).total_seconds() / 60
     gaps = find_gaps(event, observed, sport=sport)
+    enrolled = (sport == 'nba' and experiment is not None
+                and observed >= safe_time(experiment['registered_at']))
     with conn.cursor() as cur:
         body = dict(sport=sport, event_id=event["id"], observed_at_utc=observed.isoformat(), event=event)
+        observation_id = _digest(body)
         cur.execute("""INSERT INTO bets.sharp_multi_quotes (observation_id, sport, event_id, observed_at_utc, commence_time_utc, payload)
                        VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
-                    (_digest(body), sport, event["id"], observed, kickoff, psycopg2.extras.Json(event)))
+                    (observation_id, sport, event["id"], observed, kickoff, psycopg2.extras.Json(event)))
         for gap in gaps:
             cur.execute("""INSERT INTO bets.sharp_multi_decisions (decided_at, sport, event_id, commence_time_utc,
                                home_team, away_team, market, player, player_norm, side, line, book, price, link,
-                               sharp_price_over, sharp_price_under, fair_probability, ev, minutes_to_start, tier, method)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
+                                sharp_price_over, sharp_price_under, fair_probability, ev, minutes_to_start, tier, method, observation_id,
+                                experiment_id, experiment_sha256)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
                         (observed, sport, event["id"], kickoff, event.get("home_team"), event.get("away_team"),
                          gap["market"], gap["player"], gap["player_norm"], gap["side"], gap["line"], gap["book"],
                          gap["price"], gap["link"], gap["sharp_price_over"], gap["sharp_price_under"],
-                         gap["fair_probability"], gap["ev"], minutes, tier(gap["ev"], minutes), gap["method"]))
+                          gap["fair_probability"], gap["ev"], minutes, tier(gap["ev"], minutes), gap["method"], observation_id,
+                          experiment['experiment_id'] if enrolled else None, experiment['sha256'] if enrolled else None))
+    if enrolled:
+        from sharp_pipeline import paper_alerts
+        paper_alerts.enqueue(conn, observation_id, experiment)
     return gaps
 
 
 def run(*, now: datetime | None = None, session=requests, dry_run: bool = False) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
+    from sharp_pipeline import nba_experiment, paper_alerts
+    try:
+        experiment = nba_experiment.active()
+        experiment_status = 'frozen'
+    except (OSError, ValueError):
+        experiment = None
+        experiment_status = 'unregistered_or_drifted'
     key = OddsCrawlerConfig().oddsapi_key
     if not key:
         return dict(status="skipped", reason="ODDS_API_KEY is not set")
@@ -361,13 +389,15 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
     spent = state.get("spent", {}).get(today, 0)
     allowance = daily_allowance(remaining or 0, spent, now.astimezone(_ET).date(),
                                 int(os.getenv("NFL_ODDS_API_RESET_DAY") or 1))
-    result = dict(status="ok", credits_remaining=remaining, allowance=round(allowance, 1), spent_today=spent,
+    result = dict(status="ok", nba_experiment=experiment_status, paper_alert_deliveries=[],
+                  credits_remaining=remaining, allowance=round(allowance, 1), spent_today=spent,
                   due=[(d[0], d[1], d[2]["id"] if d[0] != "lines" else None) for d in due], polled=[], skipped=[])
     if dry_run or not due:
         return dict(result, status="dry_run" if dry_run else "nothing_due")
     with psycopg2.connect(PG_DSN) as conn:
         with conn.cursor() as cur:
             cur.execute(SCHEMA_SQL)
+            cur.execute(paper_alerts.SCHEMA_SQL)
         conn.commit()
         for item in due:
             cost = item[-1]
@@ -404,8 +434,11 @@ def run(*, now: datetime | None = None, session=requests, dry_run: bool = False)
                 minutes = (safe_time(event.get("commence_time")) - observed).total_seconds() / 60
                 if item[0] == "lines" and not 0 < minutes <= LINES_HORIZON:
                     continue  # the bulk call returns every game; keep only those near their start
-                gaps += len(store(conn, sport, event, observed))
+                gaps += len(store(conn, sport, event, observed, experiment=experiment))
             conn.commit()
+            if sport == 'nba' and experiment:
+                result['paper_alert_deliveries'].append(paper_alerts.dispatch(conn, experiment,
+                    now=None if session is requests else observed))
             if item[0] == "props":
                 state.setdefault("props_last_poll", {})[item[2]["id"]] = now.isoformat()
             elif item[0] == "props_morning":

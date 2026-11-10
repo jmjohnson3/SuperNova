@@ -1,0 +1,45 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "nfl-spread-quotes-v1",
+  "registered_at": "2026-11-05T21:59:29.270386+00:00",
+  "config": {
+    "books": [
+      "fanduel",
+      "pinnacle",
+      "draftkings",
+      "betmgm"
+    ],
+    "credit_floor": 1000,
+    "historical_backfill": false,
+    "horizon_minutes": 60,
+    "kickoff_match": "exact native/provider time and both teams",
+    "markets": [
+      "spreads"
+    ],
+    "max_daily_calls": 48,
+    "parser_parent": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd",
+    "poll_seconds": 300,
+    "role": "paper quotes only; no cash decision observations or stakes"
+  },
+  "files": {
+    "nfl_spread_collection": {
+      "path": "src/nfl_spread_collection.py",
+      "sha256": "9db9375237a3ea44c052e524662880477474ccc6ac4838f9358d01f71e21084d"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "35362fa35c4cc50220a6eec40a83098d7ed5f168a67c00ed62b5fc2003fba3d8"
+}

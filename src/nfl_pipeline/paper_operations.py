@@ -150,7 +150,7 @@ def load_database(day, component_id, capture_ids):
 def report(day):
     from nfl_pipeline import experiment_registry
     from nfl_pipeline.modeling import receiving_paper_trial as trial
-    from nfl_pipeline.paper_collection import guard_freezes
+    from nfl_pipeline.paper_collection import guard_freezes, related_freeze_statuses
     now = datetime.now(timezone.utc)
     try:
         freezes = dict(status='verified',**guard_freezes())
@@ -172,6 +172,7 @@ def report(day):
     legacy = read_json(ROOT/'reports'/f'nfl_receiving_trial_checkpoint_{LEGACY_DAY}.json')
     doc = build(day,games,quotes,forecasts,documents,closes,receipt,legacy,freezes,now,
                 registration_sha=(manifest or {}).get('sha256'),next_game=next_game)
+    doc['related_strategies'] = related_freeze_statuses()
     for suffix in (str(day),'latest'):
         atomic_json(ROOT/'reports'/f'nfl_paper_operations_{suffix}.json',doc)
         text = [f'# NFL paper operations: {day}','',f"Status: {doc['status']}",
@@ -180,6 +181,9 @@ def report(day):
             text += ['',game['game_id'],*['- '+name+': '+stage['status'] for name,stage in game['stages'].items()]]
         text += ['',f"Historical missing current captures excluded: {doc['legacy_missing']['previously_current_missing_count']}",
                  'Cash authorization: none.']
+        text += ['', 'Other strategies (separate from receiving paper collection):']
+        text += ['- '+name+': '+state['status'] + ('; '+state['reason'] if state.get('reason') else '')
+                 for name,state in doc['related_strategies'].items()]
         (ROOT/'reports'/f'nfl_paper_operations_{suffix}.md').write_text('\n'.join(text)+'\n',encoding='utf-8')
     return doc
 

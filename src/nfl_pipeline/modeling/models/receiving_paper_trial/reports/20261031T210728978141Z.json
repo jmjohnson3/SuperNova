@@ -1,0 +1,166 @@
+{
+  "contract": "nfl-receiving-independent-paper-v2",
+  "registration_sha256": "d7264621bc65f45f66bd12be9f678e2a8d627c0bf1afb487212f41b8fa288e23",
+  "status": "paper_evidence_collection",
+  "all_offers": {
+    "rows": 87,
+    "accounting": {
+      "loss": 5,
+      "win": 4,
+      "pending_game": 78
+    },
+    "settled_binary": 9,
+    "hypothetical_profit_units": -1.4757025306629405,
+    "hypothetical_roi": -0.16396694785143784,
+    "weeks": 1,
+    "player_games": 9,
+    "distribution": {
+      "rows": 9,
+      "mae": 13.748869717047787,
+      "rmse": 19.161735978515217,
+      "bias": -2.760897361694462,
+      "interval_rows": 9,
+      "coverage_80": 1.0,
+      "interval_width": 67.66666666666667
+    },
+    "challenger": {
+      "rows": 9,
+      "brier": 0.24360146708927402,
+      "log_loss": 0.6798982925892822,
+      "calibration_error": 0.2840236171894422,
+      "probability_bias": 0.11204674212580724
+    },
+    "production": {
+      "rows": 9,
+      "brier": 0.25,
+      "log_loss": 0.6931471805599453,
+      "calibration_error": 0.05555555555555555,
+      "probability_bias": 0.05555555555555555
+    },
+    "market": {
+      "rows": 9,
+      "brier": 0.25,
+      "log_loss": 0.6931471805599453,
+      "calibration_error": 0.05555555555555555,
+      "probability_bias": 0.05555555555555555
+    },
+    "brier_gain_vs_production": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    },
+    "brier_gain_vs_market": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    }
+  },
+  "frozen_selected": {
+    "rows": 5,
+    "accounting": {
+      "loss": 2,
+      "pending_game": 3
+    },
+    "settled_binary": 2,
+    "hypothetical_profit_units": -2.0,
+    "hypothetical_roi": -1.0,
+    "weeks": 1,
+    "player_games": 2,
+    "distribution": {
+      "rows": 2,
+      "mae": 34.41897466387373,
+      "rmse": 36.37830363041369,
+      "bias": -34.41897466387373,
+      "interval_rows": 2,
+      "coverage_80": 1.0,
+      "interval_width": 74.0
+    },
+    "challenger": {
+      "rows": 2,
+      "brier": 0.325413967370933,
+      "log_loss": 0.8453909160257035,
+      "calibration_error": 0.5699617197690537,
+      "probability_bias": 0.5699617197690537
+    },
+    "production": {
+      "rows": 2,
+      "brier": 0.25,
+      "log_loss": 0.6931471805599453,
+      "calibration_error": 0.5,
+      "probability_bias": 0.5
+    },
+    "market": {
+      "rows": 2,
+      "brier": 0.25,
+      "log_loss": 0.6931471805599453,
+      "calibration_error": 0.5,
+      "probability_bias": 0.5
+    },
+    "brier_gain_vs_production": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    },
+    "brier_gain_vs_market": {
+      "clusters": 1,
+      "lower_95": null,
+      "upper_95": null
+    }
+  },
+  "selected_decision_ids": [
+    "02eba9aa72bc411fa0cc4329cbbf0cc0adb102e6552ec4feaa78933238713c3d",
+    "72e1cd46dc1150414a243e800df1e51cbc811ae13319c04389e61421b0a67998",
+    "fbe0b22ccebbac4be05cca2e6297ee116dc6bfc06c0c5c24548de7984e5c32df",
+    "3d9efd7efd685bff419b116676c5be72966593e13c48f339ce3d28e1e193ae28",
+    "3badd046a6228b837a4349343bb33028ad6e21dbf42cd2ac51db07576635ddf0"
+  ],
+  "blockers": [
+    "paper_only_no_automatic_cash_authorization",
+    "independent_exact_close_coverage_below_floor",
+    "positive_selected_closing_fair_conditional_ev_unconfirmed",
+    "all_offer_player_game_sample_below_floor",
+    "selected_player_game_sample_below_floor",
+    "all_offers_independent_weeks_below_floor",
+    "all_offers_brier_gain_vs_production_unconfirmed",
+    "all_offers_brier_gain_vs_market_unconfirmed",
+    "frozen_selected_independent_weeks_below_floor",
+    "frozen_selected_brier_gain_vs_production_unconfirmed",
+    "frozen_selected_brier_gain_vs_market_unconfirmed"
+  ],
+  "exact_closes": {
+    "matured": 2,
+    "valid": 0,
+    "coverage": 0.0,
+    "unknown_reasons": {
+      "missing_exact_pregame_close": 2
+    },
+    "average_probability_delta": null,
+    "average_closing_fair_conditional_ev": null,
+    "observations": [
+      {
+        "decision_id": "02eba9aa72bc411fa0cc4329cbbf0cc0adb102e6552ec4feaa78933238713c3d",
+        "valid": false,
+        "reason": "missing_exact_pregame_close"
+      },
+      {
+        "decision_id": "72e1cd46dc1150414a243e800df1e51cbc811ae13319c04389e61421b0a67998",
+        "valid": false,
+        "reason": "missing_exact_pregame_close"
+      }
+    ]
+  },
+  "valid_exact_close_coverage": 0.0,
+  "research_only": true,
+  "production_changed": false,
+  "betting_approved": false,
+  "limitations": [
+    "Prospective captures only; neither reviewed history nor later forecasts replace decisions.",
+    "One player-game per cohort; NFL weeks are the uncertainty clusters.",
+    "Probabilities are conditional on no push. Actual pushes return zero profit and are excluded from binary scores.",
+    "Closing fair EV is conditional on no push; a closing push probability is not fabricated.",
+    "Paper returns use captured prices, not confirmed fills. Source production W/L is never used for an independent side.",
+    "An empty selection or unconfirmed interval never counts as an improvement."
+  ],
+  "built_at": "2026-10-31T21:07:28.978141+00:00",
+  "dependency_drift": null
+}

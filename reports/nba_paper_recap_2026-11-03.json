@@ -1,0 +1,23 @@
+{
+  "day": "2026-11-03",
+  "built_at": "2026-11-04T21:33:12.813581+00:00",
+  "summary": {
+    "by_book": {},
+    "alerts": 0,
+    "unique_picks": 0,
+    "repeated_alerts": 0,
+    "games": 0,
+    "unique_record": {
+      "win": 0,
+      "loss": 0,
+      "push": 0,
+      "pending": 0
+    }
+  },
+  "alerts": [],
+  "official_results": {
+    "path": null,
+    "retrieved_at": null
+  },
+  "betting_authorized": false
+}

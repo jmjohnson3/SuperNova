@@ -1,0 +1,131 @@
+{
+  "contract": "nfl-game-aware-pregame-v1",
+  "built_at": "2026-11-01T16:11:45.993222+00:00",
+  "status": "completed",
+  "target_minutes": 120,
+  "min_remaining_minutes": 20,
+  "observations": [
+    {
+      "game_id": "2026_08_ARI_DAL",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_ATL_TB",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_BAL_BUF",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_CLE_PIT",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_IND_JAX",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_LV_NYJ",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_MIN_DET",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_TEN_CIN",
+      "kickoff": "2026-11-01T18:00:00+00:00",
+      "target_at": "2026-11-01T16:00:00+00:00",
+      "minutes_to_start": 108.2,
+      "action": "already_completed",
+      "attempts": 1
+    },
+    {
+      "game_id": "2026_08_LAC_LA",
+      "kickoff": "2026-11-01T21:05:00+00:00",
+      "target_at": "2026-11-01T19:05:00+00:00",
+      "minutes_to_start": 293.2,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_08_KC_DEN",
+      "kickoff": "2026-11-01T21:25:00+00:00",
+      "target_at": "2026-11-01T19:25:00+00:00",
+      "minutes_to_start": 313.2,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_08_NE_MIA",
+      "kickoff": "2026-11-01T21:25:00+00:00",
+      "target_at": "2026-11-01T19:25:00+00:00",
+      "minutes_to_start": 313.2,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_08_PHI_WAS",
+      "kickoff": "2026-11-02T01:20:00+00:00",
+      "target_at": "2026-11-01T23:20:00+00:00",
+      "minutes_to_start": 548.2,
+      "action": "waiting_for_window",
+      "attempts": 0
+    },
+    {
+      "game_id": "2026_08_CHI_SEA",
+      "kickoff": "2026-11-03T01:15:00+00:00",
+      "target_at": "2026-11-02T23:15:00+00:00",
+      "minutes_to_start": 1983.2,
+      "action": "waiting_for_window",
+      "attempts": 0
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "pregame_11587155bdff49c1a203a7e91e62f916",
+      "game_ids": [
+        "2026_08_ARI_DAL",
+        "2026_08_ATL_TB",
+        "2026_08_BAL_BUF",
+        "2026_08_CLE_PIT",
+        "2026_08_IND_JAX",
+        "2026_08_LV_NYJ",
+        "2026_08_MIN_DET",
+        "2026_08_TEN_CIN"
+      ],
+      "status": "completed",
+      "returncode": 0
+    }
+  ],
+  "pipeline_invoked": true
+}

@@ -1,15 +1,17 @@
 {
-  "built_at": "2026-11-10T02:23:03.133116+00:00",
+  "built_at": "2026-11-10T02:36:36.285887+00:00",
   "source": "odds_api_requote",
   "book": "draftkings",
-  "attempts": 0,
-  "answered": 0,
-  "outcomes": {},
-  "held_same_or_better": 0,
-  "held_share": null,
-  "median_seconds_after_alert": null,
-  "mean_ev_at_alert": null,
-  "mean_ev_obtainable": null,
-  "credits": 0,
+  "attempts": 3,
+  "answered": 3,
+  "outcomes": {
+    "available/same_or_better_price": 3
+  },
+  "held_same_or_better": 3,
+  "held_share": 1.0,
+  "median_seconds_after_alert": 60.677488,
+  "mean_ev_at_alert": 0.0398188369684615,
+  "mean_ev_obtainable": 0.0398188369684615,
+  "credits": 2,
   "note": "Provider re-quote of DraftKings about a minute after the alert. Not the logged-in screen: limits, bet acceptance and profit remain unverified. Nothing is staked."
 }

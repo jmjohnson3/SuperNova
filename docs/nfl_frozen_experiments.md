@@ -3,6 +3,19 @@
 These changes repair evidence collection. Profitability still has to be demonstrated
 on later offers, and paper results do not authorize cash betting.
 
+## Paper collection isolation: October 28, 2026
+
+The receiving-only paper runner checks its own frozen experiment, candidate artifact
+and production release before each step and at completion. The separate sharp and
+legacy cash registrations are reported as diagnostics; they do not gate a runner
+that neither selects sharp bets nor reserves or publishes cash wagers.
+
+The operational audit found the legacy cash dependency freeze drifted while receiving
+v7 still verified. Paper collection now continues under v7; the old cash registration
+stays blocked and unchanged. No cohort is reset or pooled, and no source checks used
+by cash authorization are bypassed. The operations report exposes that blocked cash
+status separately. Historical missing captures remain excluded.
+
 ## Registered October 22, 2026: `nfl-sharp-gap-cash-v7`
 
 Two changes requested after the lever analysis (`reports/nfl_sharp_levers_2026.md`). That analysis
@@ -270,6 +283,47 @@ Read-only checks and derived reports:
 
 These commands do not fetch sportsbook quotes, send Discord messages or place bets.
 The reports may write derived local files and preserve newly verified close evidence.
+
+Audit result completeness across every registered receiving date:
+
+```powershell
+.\.venv\Scripts\python.exe -B -m nfl_pipeline.modeling.receiving_result_audit
+```
+
+This separate audit checks unresolved results and saved grades against verified
+outcomes, and checks the original October 18 capture files for the 13 excluded
+forecast IDs. A clear single-date report does not clear older dates. The audit
+never fills a forecast capture or changes a result. It saves timestamped evidence
+under `data/nfl_result_audit/` and `reports/nfl_receiving_results_audit_latest.md`.
+
+The stats importer preserves existing verified receiving participation only when
+the new receiving yards, targets and receptions still agree with that proof.
+Changed or incomplete receiving statistics invalidate it and require verification
+again. Result repairs and refreshes do not change frozen forecasts or selections.
+
+## Diagnosing receiving-paper exact closes
+
+```powershell
+.\.venv\Scripts\python.exe -B -m nfl_pipeline.receiving_close_audit --date 2026-10-29
+```
+
+This separate diagnostic uses the frozen experiment's exact-close validator,
+then explains failures from stored quote rows and original SportsGameOdds raw
+responses. It distinguishes a missing locked line, missing selected-side price,
+missing opposing price, and missing collection window. Future selections remain
+pending. It makes no API calls or evidence repairs.
+
+The October 29 audit found three snapshots in the final 20 minutes. Hubbard's
+13.5 receiving-yard line was marked unavailable on both sides; Watson's 69.5
+under was marked unavailable while its over remained present. The active paired
+lines were 16.5 and 70.5 respectively. The parser correctly excluded inactive
+quotes. Neither close qualifies under the unchanged frozen rules, and another
+line or a modeled conversion must not replace it. Provider availability flags
+are not evidence of a human's live sportsbook check.
+
+Reports: `reports/nfl_receiving_close_audit_YYYY-MM-DD.md` and `.json`. The JSON
+retains raw response IDs, hashes, source update times and availability flags so
+these causes are reviewable without exposing provider credentials.
 
 ## Actual wagers and costs
 

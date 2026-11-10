@@ -443,13 +443,14 @@ def readiness(primary: pd.DataFrame, stats: dict, placed: pd.DataFrame) -> dict:
 def summarize(df: pd.DataFrame, experiment=None) -> dict:
     """Primary evidence is the registered strategy's decisions inside the stake window. Earlier,
     later and logged gaps are graded beside them as context."""
-    if df.empty:
-        empty = dict(alerts=0, weeks=0)
-        return dict(alerts=0, verdict="no graded decisions yet", logged=empty, early=empty, late=empty,
-                    placed=empty, readiness=readiness(df, empty, df))
     if experiment is None:
         from nfl_pipeline.experiment_registry import load_experiment
         experiment = load_experiment(EXPERIMENT_NAME)
+    if df.empty:
+        empty = dict(alerts=0, weeks=0)
+        return dict(alerts=0, verdict="no graded decisions yet", logged=empty, early=empty, late=empty,
+                    placed=empty, readiness=readiness(df, empty, df), experiment_id=EXPERIMENT_NAME,
+                    experiment_sha256=(experiment or {}).get('sha256'))
     tier = _tier(df)
     books = df["book"].fillna("fanduel") if "book" in df else pd.Series("fanduel", index=df.index)
     ladder = df.get('ladder', pd.Series(False, index=df.index)).fillna(False).astype(bool)

@@ -18,62 +18,65 @@
     "deployment_approved": false,
     "betting_approved": false
   },
-  "player_games": 78,
+  "player_games": 233,
   "exclusions": {
-    "earlier_capture_of_same_player_game": 521
+    "earlier_capture_of_same_player_game": 1352
   },
   "deployment_approved": false,
   "betting_approved": false,
-  "captured_player_games": 109,
-  "pending_or_did_not_play": 31,
+  "captured_player_games": 310,
+  "pending_or_did_not_play": 77,
   "weeks": [
-    "2026-7"
+    "2026-7",
+    "2026-8",
+    "2026-9"
   ],
   "carries": {
-    "model_mae": 3.429011434870347,
-    "average_mae": 3.8089743589743583,
-    "player_games": 78
+    "model_mae": 3.4631954018826536,
+    "average_mae": 3.7468640801616777,
+    "player_games": 233
   },
   "reference": {
-    "mae": 23.295762719434897,
-    "bias": -6.847105555648457,
-    "above_share": 0.47435897435897434
+    "mae": 23.244284457787607,
+    "bias": -2.135386853294947,
+    "above_share": 0.4592274678111588
   },
   "candidate": {
-    "mae": 23.092383657986858,
-    "bias": -7.455348478861889,
-    "above_share": 0.5
+    "mae": 22.58598796669784,
+    "bias": -3.320463225982143,
+    "above_share": 0.48068669527896996
   },
   "clustered_mae_gain": {
-    "weeks": 1,
-    "mean": 0.20337906144804035,
-    "lower_95": null
+    "weeks": 3,
+    "mean": 0.6689785941661853,
+    "lower_95": -0.6133449127475089,
+    "upper_95": 1.9513021010798797
   },
   "by_position": {
     "QB": {
-      "player_games": 19,
+      "player_games": 57,
       "reference": {
-        "mae": 10.317417291972415,
-        "bias": -3.2002778611751066,
+        "mae": 12.02594535946701,
+        "bias": -1.661342222896601,
         "above_share": 0.42105263157894735
       },
       "candidate": {
-        "mae": 10.186386634250503,
-        "bias": -3.6789533330129274,
-        "above_share": 0.5263157894736842
+        "mae": 12.25698781021934,
+        "bias": -1.4642463433891377,
+        "above_share": 0.47368421052631576
       }
     },
     "RB": {
-      "player_games": 59,
+      "player_games": 176,
       "reference": {
-        "mae": 27.475229890990608,
-        "bias": -8.021507694546655,
-        "above_share": 0.4915254237288136
+        "mae": 26.877496552130072,
+        "bias": -2.2889126710944105,
+        "above_share": 0.4715909090909091
       },
       "candidate": {
-        "mae": 27.248552191054493,
-        "bias": -8.67147572922003,
-        "above_share": 0.4915254237288136
+        "mae": 25.93117551737553,
+        "bias": -3.9216243754582867,
+        "above_share": 0.48295454545454547
       }
     }
   }

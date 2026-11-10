@@ -1,17 +1,17 @@
 {
   "contract": "nfl-game-aware-pregame-v1",
-  "built_at": "2026-10-28T02:15:07.267318+00:00",
-  "status": "idle",
+  "built_at": "2026-11-10T02:41:37.884647+00:00",
+  "status": "failed",
   "target_minutes": 120,
   "min_remaining_minutes": 20,
   "observations": [
     {
-      "game_id": "2026_08_CAR_GB",
-      "kickoff": "2026-10-30T00:15:00+00:00",
-      "target_at": "2026-10-29T22:15:00+00:00",
-      "minutes_to_start": 2759.9,
-      "action": "waiting_for_window",
-      "attempts": 0
+      "game_id": "2026_09_BUF_MIN",
+      "kickoff": "2026-11-10T01:15:00+00:00",
+      "target_at": "2026-11-09T23:15:00+00:00",
+      "minutes_to_start": -86.6,
+      "action": "review_required",
+      "attempts": 1
     }
   ],
   "runs": [],

@@ -13,10 +13,10 @@ Model forecasts at FanDuel only (research). Bets to place come from the SHARP ED
 **STARTING SKILL PLAYER PROJECTIONS**
 - Forecasts only, not bets.
 - CAR QB1 B.Young: Pass Yds 264.7 | Pass TD 1.80 | FanDuel line available
-- CAR RB1 C.Hubbard: Rush Yds 70.7 | Rec Yds 14.5 | Rec 2.4 | Rush TD 0.56 | FanDuel line available
+- CAR RB1 C.Hubbard: Rush Yds 70.7 | Rec Yds 14.5 | Rec 2.3 | Rush TD 0.56 | FanDuel line available
 - CAR WR1 T.McMillan: Rec Yds 75.7 | Rec 6.0 | Rec TD 0.40 | FanDuel line available
-- CAR WR2 J.Coker: Rec Yds 58.5 | Rec 4.8 | Rec TD 0.31 | FanDuel line available
-- CAR TE1 T.Tremble: Rec Yds 19.6 | Rec 2.8 | Rec TD 0.23 | Projection only - no current line
+- CAR WR2 J.Coker: Rec Yds 58.5 | Rec 4.8 | Rec TD 0.30 | FanDuel line available
+- CAR TE1 T.Tremble: Rec Yds 19.6 | Rec 2.8 | Rec TD 0.23 | FanDuel line available
 - GB QB1 J.Love: Pass Yds 275.8 | Pass TD 1.80 | FanDuel line available
 - GB RB1 J.Jacobs: Rush Yds 46.4 | Rec Yds 16.0 | Rec 2.2 | Rush TD 0.34 | FanDuel line available
 - GB WR1 C.Watson: Rec Yds 71.3 | Rec 4.5 | Rec TD 0.45 | FanDuel line available

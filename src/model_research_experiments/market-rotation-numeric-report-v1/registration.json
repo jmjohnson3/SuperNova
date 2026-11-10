@@ -1,0 +1,42 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "market-rotation-numeric-report-v1",
+  "registered_at": "2026-11-06T16:07:29.201288+00:00",
+  "config": {
+    "betting_authorized": false,
+    "decision_mutations": false,
+    "parent_reader": "market-rotation-report-v1",
+    "parent_sha256": "ccccc785c862ba500f92cd824cb14733b05d25b74d7173f531382e3c797917df",
+    "repair": "connection-local NUMERIC-to-float decoding for report arithmetic",
+    "rescoring": false
+  },
+  "files": {
+    "adapter": {
+      "path": "src/edge_research_numeric_report.py",
+      "sha256": "c4bd3542263f724953376daafea674b6068bf0e8c4d7e6595f092743c2c87b80"
+    },
+    "parent": {
+      "path": "src/model_research_experiments/market-rotation-report-v1/registration.json",
+      "sha256": "29eadc5c8d405c727db3ee7f7c0cb74b91101c973e4792f9b9fedc7e832c552a"
+    },
+    "reader": {
+      "path": "src/edge_research_report.py",
+      "sha256": "e6c21a97fed73f120c1ae7fe68cb4c3ffd58904f48edb107d878acc3cff1220e"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "f22675a2b024f632ed8a7d76de0aded74e2122194ed0a7a71eaa658fb4369b73"
+}

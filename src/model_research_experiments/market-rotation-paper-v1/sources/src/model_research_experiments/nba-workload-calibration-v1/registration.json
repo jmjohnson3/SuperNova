@@ -1,0 +1,129 @@
+{
+  "contract": "nfl-frozen-paper-experiment-v1",
+  "experiment_id": "nba-workload-calibration-v1",
+  "registered_at": "2026-11-04T17:02:00.492695+00:00",
+  "config": {
+    "automatic_betting_authorization": false,
+    "calibration": "stat distribution calibration on fixed integer thresholds; no sportsbook fitting",
+    "calibration_end": "2025-07-01",
+    "calibration_max_threshold": {
+      "ast": 20,
+      "fg3m": 12,
+      "pts": 60,
+      "reb": 25
+    },
+    "dispersion_end": "2025-02-01",
+    "evaluation_end": "2026-07-01",
+    "evaluation_start": "2025-10-01",
+    "feature_columns": [
+      "home",
+      "rest_days",
+      "b2b",
+      "team_changed",
+      "games_before",
+      "prior_starter",
+      "min3",
+      "min10",
+      "min_sd",
+      "pts_rate",
+      "reb_rate",
+      "ast_rate",
+      "fg3a_rate",
+      "fga_rate",
+      "fta_rate",
+      "fg3_pct",
+      "team_pace",
+      "opponent_pace",
+      "team_eff",
+      "opponent_def_eff",
+      "team_margin_sd"
+    ],
+    "first_oof": "2024-10-01",
+    "fit_parameters": {
+      "learning_rate": 0.04,
+      "min_child_samples": 80,
+      "n_estimators": 150,
+      "n_jobs": 2,
+      "num_leaves": 15,
+      "random_state": 630,
+      "reg_lambda": 5.0,
+      "verbosity": -1
+    },
+    "fit_policy": "pinned artifact; no automatic refit",
+    "historical_status": "reconstructed development evidence; outcome revisions and historical retrieval times are not proven",
+    "max_forecast_age_seconds": 1800,
+    "min_calibration_rows": 200,
+    "minimum_player_games": 5,
+    "name": "nba-workload-calibration-v1",
+    "parent_experiment": "fanduel-model-assisted-paper-v1",
+    "parent_sha256": "6dc7f9edb1b6496a4620c71995a2e88fca8b7b12847560cc618d223579a66f94",
+    "parents": {
+      "nba": {
+        "experiment_id": "nba-prop-price-check-v1",
+        "sha256": "cf9ee8966e7efbf392836268932c36abcf722931ef6ea0d641ba50630ce9fe2f"
+      },
+      "nfl": {
+        "experiment_id": "nfl-sharp-gap-cash-v10",
+        "sha256": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd"
+      },
+      "receiving": {
+        "experiment_id": "fanduel-receiving-oe-paper-v7",
+        "sha256": "d7264621bc65f45f66bd12be9f678e2a8d627c0bf1afb487212f41b8fa288e23"
+      }
+    },
+    "prospective_status": "untouched period starts after registration; exact artifacts and rules pinned",
+    "result_lag_days": 2,
+    "review": "Existing NBA manual execution gates plus positive paired probability gains by game and date; human review only",
+    "selection": "same FanDuel offered side; calibrated probability EV>=3%, verified active context, no uncertain availability",
+    "shooting_prior_attempts": 100
+  },
+  "files": {
+    "artifact": {
+      "path": "src/nba_props/models/research_v1.joblib",
+      "sha256": "e168adc5698fc05ca2a75f4af29366073f8b8183f381dd9432ab4e3d438f6d11"
+    },
+    "manifest": {
+      "path": "reports/nba_research_training_manifest.json",
+      "sha256": "853ba9f6a290ac883b6a4d6d46f9b55c995f6ae7ad3adae267d208aeff36f0f4"
+    },
+    "parent_registration": {
+      "path": "src/model_research_experiments/fanduel-model-assisted-paper-v1/registration.json",
+      "sha256": "dedee506b5b705766ce453947cd0f3da12353a8b9f9550d4db3f3823fc5256a1"
+    },
+    "parent_report": {
+      "path": "src/model_research_report.py",
+      "sha256": "4fafab4991afb1522e20aa652d708c5f54b5105c4c9c0cb9ef6580b1aec0db11"
+    },
+    "research_data": {
+      "path": "src/nba_props/research_data.py",
+      "sha256": "70578544e9f9e1d9245cae208cacb9f45b0e2c29b00460eee050980bcabff710"
+    },
+    "research_evaluation": {
+      "path": "src/nba_props/research_evaluation.py",
+      "sha256": "37f5878b37b18d27de45be5d7cd977961be294ea1f51eae231c7fda38861c853"
+    },
+    "research_models": {
+      "path": "src/nba_props/research_models.py",
+      "sha256": "e0903cecf6193076749f54d25edc7c71bc34676252e021ca6404b1b0093bd0bb"
+    },
+    "research_trial": {
+      "path": "src/nba_props/research_trial.py",
+      "sha256": "44be5e4528b6da00b1950c422e6e43172b5d74c0c7f6466c81c6871be500a32a"
+    }
+  },
+  "runtime_versions": {
+    "python": "3.12.2",
+    "python_implementation": "CPython",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0"
+  },
+  "research_only": true,
+  "betting_approved": false,
+  "automatic_rollover": false,
+  "sha256": "a1dfe7f3da748e7963ed018a6c3ca4debf9927d5dd96dae08a755028bebbc8f2"
+}

@@ -1,8 +1,8 @@
 """Results and the model shadow filter for the multi-sport research decisions.
 
 Results (secondary to EV at the close, which stays the primary test): NBA player stats and team scores
-from nbaprops.player_games (stats.nba.com), NCAAF scores from ncaaf.games (CFBD). A prop whose player
-has no game log that day did not play and is void, as books void it. First-half markets are not graded
+from nbaprops.player_games (stats.nba.com), NCAAF scores from ncaaf.games (CFBD). Missing player results
+remain pending: absence from this feed does not verify nonparticipation. First-half markets are not graded
 (no half scores). ROI is at the decision's own price, $1 flat.
 
 Shadow filter (NBA props only): the model's probability for the decision's side, from the latest
@@ -11,6 +11,8 @@ Pinnacle's no-vig probability. It is recorded beside each decision and never cha
 """
 from __future__ import annotations
 
+import re
+import unicodedata
 import numpy as np
 import pandas as pd
 
@@ -31,7 +33,7 @@ def grade(row: dict, actual: float | None, home_pts: float | None, away_pts: flo
     if market in UNGRADED_MARKETS:
         return None
     if market in MARKET_STAT:
-        if actual is None:
+        if actual is None or not np.isfinite(float(actual)):
             return None
         value = float(actual) - line
         signed = value if side == "over" else -value
@@ -65,12 +67,14 @@ def _table_exists(cur, name: str) -> bool:
 def nba_actuals(conn, days: list) -> tuple[dict, dict, set]:
     """{(day, name_key): stats}, {(day, team full name): points}, days with any game logs."""
     from nba_api.stats.static import teams
+    from nba_props.ingest import conflicted_games
+    excluded = conflicted_games(conn)
     full = {t["abbreviation"]: t["full_name"] for t in teams.get_teams()}
     with conn.cursor() as cur:
         if not days or not _table_exists(cur, "nbaprops.player_games"):
             return {}, {}, set()
         cur.execute("""SELECT game_date, player_name, team, pts, reb, ast, fg3m FROM nbaprops.player_games
-                       WHERE game_date = ANY(%s)""", (list(days),))
+                       WHERE game_date = ANY(%s) AND NOT (game_id = ANY(%s))""", (list(days), excluded))
         rows = cur.fetchall()
     players, scores, seen = {}, {}, set()
     for day, name, team, pts, reb, ast, fg3m in rows:
@@ -92,9 +96,20 @@ def ncaaf_scores(conn, days: list) -> list[tuple]:
 
 
 def match_school(odds_name: str, schools: list[str]) -> str | None:
-    """'Miami (OH) RedHawks' -> 'Miami (OH)': the longest CFBD school name the Odds API name starts with."""
-    hits = [s for s in schools if odds_name == s or odds_name.startswith(s + " ")]
-    return max(hits, key=len) if hits else None
+    """Match verified aliases and normalized school prefixes; ambiguous matches stay pending."""
+    def key(name):
+        plain = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+        return " ".join(re.sub(r"[^a-z0-9()]", " ", plain.replace("'", "")).split())
+    name = key(odds_name)
+    for alias, school in {"umass": "massachusetts"}.items():
+        if name == alias or name.startswith(alias + " "):
+            name = school + name[len(alias):]
+    hits = {s for s in schools if name == key(s) or name.startswith(key(s) + " ")}
+    if not hits:
+        return None
+    longest = max(len(key(s)) for s in hits)
+    best = [s for s in hits if len(key(s)) == longest]
+    return best[0] if len(best) == 1 else None
 
 
 def latest_projections(conn, days: list) -> pd.DataFrame:
@@ -127,8 +142,6 @@ def attach(conn, df: pd.DataFrame) -> pd.DataFrame:
                     actual = stats[MARKET_STAT[r["market"]]]
             home_pts, away_pts = nba_scores.get((r["day"], r["home_team"])), nba_scores.get((r["day"], r["away_team"]))
             result = grade(r, actual, home_pts, away_pts)
-            if result is None and r["market"] in MARKET_STAT and r["day"] in nba_days and home_pts is not None:
-                result = "void"  # the game was played and logged, the player was not in it
         else:
             games = cf_by_day.get(r["day"], [])
             schools = [g[0] for g in games] + [g[1] for g in games]

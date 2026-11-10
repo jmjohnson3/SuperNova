@@ -64,7 +64,7 @@ def confirm(conn, alert_ids: list[int], stake: float | None, placed: bool = True
     return rows
 
 
-def confirm_late(conn, alert_ids: list[int], price: int | None = None) -> dict:
+def confirm_late(conn, alert_ids: list[int], price: int | None = None, stake: float | None = None) -> dict:
     """Record bets placed before kickoff but confirmed after it. All-or-nothing per game: every staked
     alert of each named game must be listed, or nothing is written."""
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -80,10 +80,11 @@ def confirm_late(conn, alert_ids: list[int], price: int | None = None) -> dict:
             return dict(confirmed=[], refused="a late confirmation must list every staked alert of its games",
                         missing_from_request=missing, not_staked_or_unknown=unknown)
         cur.execute("""UPDATE bets.nfl_sharp_alerts
-            SET placed_at = now(), confirmed_late = TRUE, taken_price = COALESCE(%(price)s, taken_price, fd_price)
+            SET placed_at = now(), confirmed_late = TRUE, stake = COALESCE(%(stake)s, stake),
+                taken_price = COALESCE(%(price)s, taken_price, fd_price)
             WHERE alert_id = ANY(%(ids)s) AND placed_at IS NULL
             RETURNING alert_id, book, player_name, side, fd_line, fd_price, taken_price, stake, placed_at""",
-                    {"ids": alert_ids, "price": price})
+                    {"ids": alert_ids, "price": price, "stake": stake})
         rows = [dict(r) for r in cur.fetchall()]
     conn.commit()
     return dict(confirmed=rows)
@@ -115,7 +116,7 @@ def main() -> None:
     args = ap.parse_args()
     with psycopg2.connect(PG_DSN) as conn:
         if args.confirm and args.late:
-            print(json.dumps(confirm_late(conn, args.confirm, args.price), indent=2, default=str))
+            print(json.dumps(confirm_late(conn, args.confirm, args.price, stake=args.stake), indent=2, default=str))
         elif args.confirm:
             rows = confirm(conn, args.confirm, args.stake, placed=True, price=args.price)
             missed = sorted(set(args.confirm) - {r["alert_id"] for r in rows})

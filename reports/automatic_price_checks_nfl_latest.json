@@ -1,0 +1,186 @@
+{
+  "built_at": "2026-11-10 02:43:39.284690+00:00",
+  "observer_id": "fanduel-automatic-paper-v2",
+  "sha256": "5c077fc714752dd63643f43c3684c3d85e3483d2172e6d4d481b2a3cba0eaeb8",
+  "registered_at": "2026-11-06T16:03:30.919085+00:00",
+  "sport": "nfl",
+  "state": "co",
+  "attempts": 1,
+  "statuses": {
+    "not_listed": 1
+  },
+  "reasons": {
+    "main_offer_absent_from_complete_tab": 1
+  },
+  "timely_available": 0,
+  "checks": [
+    {
+      "alert_key": "M92",
+      "sport": "nfl",
+      "attempted_at": "2026-11-08 12:20:43.869833-08:00",
+      "alert": {
+        "ev": 0.037629155637547484,
+        "book": "fanduel",
+        "line": 15.5,
+        "link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.623426149&selectionId=89154773",
+        "side": "over",
+        "stat": "receiving_yards",
+        "tier": "alert",
+        "price": -113,
+        "sport": "nfl",
+        "market": "receiving_yards",
+        "method": "exact",
+        "player": "Oronde Gadsden II",
+        "game_id": "2026_09_HOU_LAC",
+        "sent_at": "2026-11-08 12:20:38.150982-08:00",
+        "event_id": "39aeac43cea7b12558b91cdab1255a10",
+        "line_gap": 0.0,
+        "alert_key": "M92",
+        "away_team": "HOU",
+        "home_team": "LAC",
+        "decided_at": "2026-11-08T20:20:12.588176+00:00",
+        "native_tip": "2026-11-08 13:05:00-08:00",
+        "sharp_book": "pinnacle",
+        "sharp_line": 15.5,
+        "player_norm": "oronde gadsden ii",
+        "model_agrees": null,
+        "model_filter": "no_forecast",
+        "minimum_price": -119,
+        "observation_id": "afb375bc4f0e5680d5c54f61e404cfac95010b2c1105a45f67cf9614905ae69e",
+        "game_day_status": {
+          "espn_status": null,
+          "teammates_out": [],
+          "adjusted_projection": null
+        },
+        "parent_check_id": null,
+        "fair_probability": 0.5504793173100604,
+        "model_projection": null,
+        "quote_provenance": {
+          "contract": "nfl-sharp-quotes-v2",
+          "devig_method": "power",
+          "execution_quote": {
+            "over": -113,
+            "under": -113,
+            "ladder": false,
+            "player": "Oronde Gadsden II",
+            "over_link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.623426149&selectionId=89154773",
+            "market_key": "player_reception_yds",
+            "under_link": "https://sportsbook.fanduel.com/addToBetslip?marketId=42.623426149&selectionId=89154782",
+            "book_updated_at": null,
+            "market_updated_at": "2026-11-08T20:19:43Z"
+          },
+          "observed_at_utc": "2026-11-08T20:20:12.588176+00:00",
+          "reference_quote": {
+            "over": -134,
+            "under": 111,
+            "ladder": false,
+            "player": "Oronde Gadsden II",
+            "over_link": null,
+            "market_key": "player_reception_yds",
+            "under_link": null,
+            "book_updated_at": null,
+            "market_updated_at": "2026-11-08T20:19:46Z"
+          },
+          "reference_method": "exact"
+        },
+        "commence_time_utc": "2026-11-08T13:05:00-08:00",
+        "experiment_sha256": "cf616524e341ad1f0429449473d0d6c34a05b2c651aedc000e2ee500d247acdd",
+        "execution_updated_at": "2026-11-08T20:19:43+00:00",
+        "model_filter_reasons": [],
+        "reference_updated_at": "2026-11-08T20:19:46+00:00"
+      },
+      "recorded_at": "2026-11-08 12:20:44.869899-08:00",
+      "payload": {
+        "line": null,
+        "price": null,
+        "state": "co",
+        "reason": "main_offer_absent_from_complete_tab",
+        "source": "automated_fanduel_public_feed",
+        "status": "not_listed",
+        "timely": true,
+        "event_id": "36244874",
+        "receipts": [
+          {
+            "path": "content-managed-page",
+            "state": "co",
+            "parameters": {
+              "page": "CUSTOM",
+              "customPageId": "nfl"
+            },
+            "body_sha256": "6c609969b7ed107528d1848a5f4a656e2be8dbde55f1a3ccdc89f8acbd43f261",
+            "http_status": 200,
+            "received_at": "2026-11-08 20:20:44.729302+00:00",
+            "server_date": "2026-11-08 20:20:44+00:00",
+            "requested_at": "2026-11-08 20:20:43.869833+00:00",
+            "snapshot_file": "data\\automatic_price_checks\\20261108T202044729302Z_319224d1b2824918a2c67e37d13786bc.json",
+            "cache_age_seconds": null
+          },
+          {
+            "path": "event-page",
+            "state": "co",
+            "parameters": {
+              "tab": "receiving-props",
+              "eventId": "36244874"
+            },
+            "body_sha256": "5c6539eaffcb30ba5d29b37bf608481884194db54a6121f741c36c6a451b744f",
+            "http_status": 200,
+            "received_at": "2026-11-08 20:20:44.823046+00:00",
+            "server_date": "2026-11-08 20:20:42+00:00",
+            "requested_at": "2026-11-08 20:20:44.807430+00:00",
+            "snapshot_file": "data\\automatic_price_checks\\20261108T202044823046Z_757bb60172c549f9b510c8738121d800.json",
+            "cache_age_seconds": "2"
+          }
+        ],
+        "observed_at": "2026-11-08 20:20:44.823046+00:00",
+        "attempted_at": "2026-11-08 20:20:43.869833+00:00",
+        "manual_check": false,
+        "wager_placed": false,
+        "account_availability_verified": false
+      }
+    }
+  ],
+  "manual_checks_added": 0,
+  "betting_authorized": false,
+  "paired_comparison": {
+    "groups": {
+      "props": {
+        "paired_offers": 1,
+        "model_selected": 0,
+        "price_only_public_quotes_with_exact_closes": 0,
+        "model_selected_public_quotes_with_exact_closes": 0,
+        "price_only_by_game": {
+          "clusters": 0,
+          "observations": 0,
+          "mean": null,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "model_selected_by_game": {
+          "clusters": 0,
+          "observations": 0,
+          "mean": null,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "model_incremental_by_game": {
+          "clusters": 1,
+          "observations": 1,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "model_incremental_by_day": {
+          "clusters": 1,
+          "observations": 1,
+          "mean": 0.0,
+          "lower_95": null,
+          "upper_95": null
+        },
+        "betting_authorized": false
+      }
+    },
+    "unpaired_attempts": 0,
+    "note": "Independent public-feed diagnostic. Same original offers, including model vetoes. Reference probabilities are estimates; these EVs are not realized profit or account execution evidence."
+  },
+  "note": "Public main-market observations only. Account availability, bet acceptance and profitability remain unverified."
+}
