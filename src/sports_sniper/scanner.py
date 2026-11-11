@@ -125,6 +125,8 @@ def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports
             newest[event_id] = (snap.sport, snap.observed_at)
         dropped.update({k: v for k, v in counts.items() if k != "kept"})
     found = detect(quotes, settings)
+    if source != "sample" and settings.model_view:
+        attach_model_view(found, settings)
     db.init_db(engine)
     with Session(engine) as session, session.begin():
         scan = db.Scan(started_at=now, source=source, sports=",".join(sports), events=len(newest),
@@ -148,6 +150,33 @@ def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports
                             credits_used=meta.get("credits_used"), credits_remaining=meta.get("credits_remaining"),
                             note=meta.get("note"))
     return result
+
+
+def attach_model_view(found: list, settings: Settings, adapters=None) -> int:
+    """Give each flagged over/under the prediction model's calibrated chance of its side, when a calibration has
+    been fitted (`cli backtest` or the daily evaluation) and the model has a forecast made before the price. It
+    is recorded beside the bet and never changes what is flagged. Any failure leaves the bets without a view."""
+    try:
+        import pandas as pd
+        from sports_sniper import calibration
+        from sports_sniper.providers import models
+        fits = calibration.load(calibration.default_path(settings.database_url))
+        priced = [o for o in found if o.status == "priced" and o.line is not None and o.side in ("over", "under") and o.sport in fits]
+        if not priced:
+            return 0
+        frame = pd.DataFrame([dict(sport=o.sport, commence_time=pd.Timestamp(o.commence_time), player=o.player, market=o.market,
+                                   line=o.line, observed_at=pd.Timestamp(o.observed_at)) for o in priced])
+        values, versions = models.over_probabilities(settings.results_dsn, frame, adapters or models.ADAPTERS)
+        done = 0
+        for o, over, version in zip(priced, values, versions):
+            chance = calibration.side_probability(fits[o.sport], over, o.side)
+            if chance is not None:
+                o.model_probability, o.model_version = chance, f"{version}+{fits[o.sport]['version']}"
+                done += 1
+        return done
+    except Exception as error:
+        log.warning("model view unavailable (%s)", type(error).__name__)
+        return 0
 
 
 def new_saved_snapshots(settings: Settings, engine: Engine, sports: list[str], now: datetime, lookback_hours: float,

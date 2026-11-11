@@ -11,23 +11,46 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy.engine import Engine
 
-from sports_sniper import backtest, bankroll, model_compare
+from sports_sniper import backtest, bankroll, breakout, calibration, model_compare
 from sports_sniper.config import Settings
 from sports_sniper.markets import market_label
+from sports_sniper.providers import models
 
 GRID = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08]
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / "reports" / "sniper_backtest_latest.md"
 
 
-def build(engine: Engine, settings: Settings, *, progress=None, load_results=None, nba=None) -> dict:
+def save_calibration(report: dict, settings: Settings) -> Path | None:
+    """Keep the latest calibration fit where the scanner reads it. Nothing is written without a fit."""
+    path = calibration.default_path(settings.database_url)
+    if path is not None and report.get("calibration"):
+        calibration.save(report["calibration"], path)
+        return path
+    return None
+
+
+def with_models(found: pd.DataFrame, offers: pd.DataFrame, settings: Settings, adapters=None):
+    """(flagged prices with the model's view, lines with every probability source, the calibration fits by day)."""
+    offers, fits = model_compare.attach_models(offers, settings, adapters)
+    values, versions = models.over_probabilities(settings.results_dsn, found, adapters or models.ADAPTERS) if len(found) else ([], [])
+    return calibration.annotate(found, fits, values, versions), offers, fits
+
+
+def build(engine: Engine, settings: Settings, *, progress=None, load_results=None, adapters=None, history=None) -> dict:
     found, offers = backtest.candidates(engine, settings, cache=backtest.default_cache(settings), progress=progress,
                                         load_results=load_results)
+    found, offers, _ = with_models(found, offers, settings, adapters)
+    latest = calibration.fit_latest(offers)
+    if history is None:
+        try:
+            history = breakout.load_history(settings.results_dsn)
+        except Exception:                    # the statistics database is optional
+            history = {}
     books = tuple(settings.bet_books)
     rules = backtest.presets(settings)
     main = rules[1]
     bets = backtest.run(found, main, books)
-    offers = model_compare.attach_models(offers, settings, nba=nba)
     forward = {objective: backtest.walk_forward(found, main, GRID, default_books=books, objective=objective)
                for objective in ("roi", "closing_value")}
     return dict(
@@ -41,8 +64,10 @@ def build(engine: Engine, settings: Settings, *, progress=None, load_results=Non
         walk_forward={k: dict(folds=v["folds"], metrics=backtest.metrics(v["bets"])) for k, v in forward.items()},
         bankroll={"Flat $1": bankroll.simulate(bets, bankroll.Rules()),
                   "Quarter Kelly": bankroll.simulate(bets, bankroll.Rules(staking="kelly"))},
-        scores=model_compare.scores(offers), scores_by_market=model_compare.scores(offers, "market"),
-        picks=model_compare.picks_table(offers),
+        scores=model_compare.scores(offers, "sport"), scores_by_market=model_compare.scores(offers, "market"),
+        scores_calibrated=model_compare.scores(offers, "sport", tuple(model_compare.SOURCES)),
+        picks=model_compare.picks_table(offers), calibration=latest,
+        breakout=breakout.validate(offers, history),
         model_lines=int(offers.model_probability.notna().sum()) if len(offers) else 0)
 
 
@@ -109,15 +134,37 @@ def markdown(r: dict) -> str:
         lines += [f"{r['model_lines']} two-sided lines had a model forecast made before the price was seen. Lower is better.", "",
                   "| Lines | Settled | Bet book's own price | Market consensus | Prediction model |", "|---|---|---|---|---|"]
         for s in pd.concat([r["scores"], r["scores_by_market"]]).itertuples():
-            name = "All" if s.group == "All" else market_label(s.group)
+            name = s.group.upper() if s.group in ("nba", "nfl", "mlb") else market_label(s.group)
             lines.append(f"| {name} (Brier) | {s.lines} | {s.book_brier:.4f} | {s.consensus_brier:.4f} | {s.model_brier:.4f} |")
+        if not r["scores_calibrated"].empty:
+            lines += ["", "With the model calibrated on earlier days only (the lines after the first fit):", "",
+                      "| Lines | Settled | Bet book | Market consensus | Model | Model, calibrated | Market moved by the model |", "|---|---|---|---|---|---|---|"]
+            for s in r["scores_calibrated"].itertuples():
+                lines.append(f"| {s.group.upper()} (Brier) | {s.lines} | {s.book_brier:.4f} | {s.consensus_brier:.4f} | {s.model_brier:.4f} | "
+                             f"{s.calibrated_brier:.4f} | {s.blend_brier:.4f} |")
+        for sport, c in r["calibration"].items():
+            lines += ["", f"{sport.upper()} calibration on {c['lines']} settled lines: the model's log-odds are multiplied by "
+                      f"{c['b']:.2f} (1 would mean its confidence is right, 0 that it says nothing); set against the market, its "
+                      f"disagreement gets a weight of {c['blend_c']:.2f} (0 means the market already knows it)."]
         lines += ["", "Betting the side each source says is underpriced, at the bet book's price, on those same lines:", "",
                   "| Source | Edge needed | Settled | W-L | ROI | Its own estimate |", "|---|---|---|---|---|---|"]
         for p in r["picks"].itertuples():
             se = "" if pd.isna(p.roi_se) else f" ± {p.roi_se:.1%}"
             lines.append(f"| {model_compare.SOURCES[p.source]} | {p.threshold:.0%}+ | {p.bets} | {p.won}-{p.lost} | "
                          f"{pct(p.roi)}{se} | {pct(p.estimated_ev)} |")
-        lines += ["", "NFL forecasts are not compared: the stored NFL probabilities are already blended toward FanDuel's price."]
+        lines += ["", "The NFL model is compared on receptions and passing touchdowns only: its yardage projections are "
+                  "anchored to the line, so they carry no chance of their own."]
+    lines += ["", "## Breakout signals", ""]
+    if r["breakout"].empty:
+        lines += ["No settled lines to test the signals on."]
+    else:
+        lines += ["Lines on players whose recent opportunity was above their season baseline (games before that day only), "
+                  "against every other line. Over ROI is betting every over at the bet book's price.", "",
+                  "| Sport | Lines | Count | Players | Over won | Market's chance of the over | Over ROI |", "|---|---|---|---|---|---|---|"]
+        for b in r["breakout"].itertuples():
+            se = "" if b.over_roi_se is None or pd.isna(b.over_roi_se) else f" ± {b.over_roi_se:.1%}"
+            lines.append(f"| {b.sport.upper()} | {'Breakout signal' if b.breakout else 'No signal'} | {b.lines} | {b.players} | "
+                         f"{pct(b.over_rate, False)} | {pct(b.market_over, False)} | {pct(b.over_roi)}{se} |")
     return "\n".join(lines) + "\n"
 
 

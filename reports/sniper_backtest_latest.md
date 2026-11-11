@@ -1,6 +1,6 @@
 # Sports Betting Sniper: backtest
 
-Built 2026-11-11 18:52 UTC. Research on paper only: simulated $1 bets at prices that were stored, graded from final statistics. A past result is not a forecast.
+Built 2026-11-11 19:08 UTC. Research on paper only: simulated $1 bets at prices that were stored, graded from final statistics. A past result is not a forecast.
 
 Stored snapshots Oct 22 to Nov 11, 2026, 177 games, 8302 flagged prices.
 
@@ -15,6 +15,8 @@ Stored snapshots Oct 22 to Nov 11, 2026, 177 games, 8302 flagged prices.
 | v2, overs only | 36 | 18-18-0 | +4.0% | -32% to +40% | +5.5% | +2.1% (26) | 5.3 | 3 |
 | v2, entered one look later | 45 | 21-24-0 | -8.7% | -37% to +19% | +5.8% | +3.3% (36) | 6.2 | 4 |
 | v2, any edge (0%+) | 205 | 105-100-0 | -0.9% | -15% to +13% | +4.5% | +2.5% (151) | 10.8 | 5 |
+| v2, model agrees | 39 | 22-17-0 | +21.6% | -7% to +51% | +6.5% | +3.9% (28) | 3.0 | 3 |
+| v2, model disagrees | 44 | 21-23-0 | -10.5% | -38% to +17% | +5.4% | +4.1% (33) | 8.6 | 3 |
 
 ROI is profit over stakes; the interval treats whole games as the draws. Closing value is the edge of the price taken against the fair price at the last look before the game. "One look later" enters at the same book's price about ten minutes on and drops the bet when the line is gone or no longer clears the bar.
 
@@ -86,25 +88,55 @@ Hypothetical $100. Limits: $5 a bet, $20 a day, $3 a game, $2 a player. Quarter 
 
 ## Model against market (NBA)
 
-4064 two-sided lines had a model forecast made before the price was seen. Lower is better.
+4502 two-sided lines had a model forecast made before the price was seen. Lower is better.
 
 | Lines | Settled | Bet book's own price | Market consensus | Prediction model |
 |---|---|---|---|---|
-| All (Brier) | 3709 | 0.2468 | 0.2465 | 0.2645 |
+| NBA (Brier) | 3709 | 0.2468 | 0.2465 | 0.2645 |
+| NFL (Brier) | 437 | 0.2432 | 0.2435 | 0.2417 |
 | Assists (Brier) | 625 | 0.2444 | 0.2444 | 0.2662 |
 | Points (Brier) | 1257 | 0.2486 | 0.2480 | 0.2578 |
 | Rebounds (Brier) | 1008 | 0.2439 | 0.2437 | 0.2474 |
+| Receptions (Brier) | 437 | 0.2432 | 0.2435 | 0.2417 |
 | Three-pointers (Brier) | 819 | 0.2495 | 0.2492 | 0.2944 |
+
+With the model calibrated on earlier days only (the lines after the first fit):
+
+| Lines | Settled | Bet book | Market consensus | Model | Model, calibrated | Market moved by the model |
+|---|---|---|---|---|---|---|
+| NBA (Brier) | 3493 | 0.2466 | 0.2463 | 0.2647 | 0.2488 | 0.2465 |
+| NFL (Brier) | 281 | 0.2464 | 0.2461 | 0.2449 | 0.2504 | 0.2459 |
+
+NBA calibration on 3709 settled lines: the model's log-odds are multiplied by 0.19 (1 would mean its confidence is right, 0 that it says nothing); set against the market, its disagreement gets a weight of 0.09 (0 means the market already knows it).
+
+NFL calibration on 437 settled lines: the model's log-odds are multiplied by 1.59 (1 would mean its confidence is right, 0 that it says nothing); set against the market, its disagreement gets a weight of 0.56 (0 means the market already knows it).
 
 Betting the side each source says is underpriced, at the bet book's price, on those same lines:
 
 | Source | Edge needed | Settled | W-L | ROI | Its own estimate |
 |---|---|---|---|---|---|
-| Market consensus (other books) | 2%+ | 44 | 25-19 | +14.9% ± 18.1% | +4.3% |
+| Market consensus (other books) | 2%+ | 45 | 25-20 | +13.5% ± 17.4% | +4.3% |
 | Market consensus (other books) | 4%+ | 12 | 6-6 | +1.8% ± 34.7% | +8.0% |
 | Market consensus (other books) | 6%+ | 6 | 2-4 | -34.0% ± 41.4% | +11.4% |
-| Prediction model | 2%+ | 2687 | 1317-1370 | -5.5% ± 1.7% | +21.5% |
-| Prediction model | 4%+ | 2462 | 1199-1263 | -5.8% ± 1.8% | +23.2% |
-| Prediction model | 6%+ | 2247 | 1083-1164 | -6.5% ± 2.0% | +24.9% |
+| Prediction model | 2%+ | 2680 | 1310-1370 | -5.2% ± 1.7% | +21.0% |
+| Prediction model | 4%+ | 2452 | 1192-1260 | -5.3% ± 1.8% | +22.6% |
+| Prediction model | 6%+ | 2222 | 1067-1155 | -6.1% ± 2.0% | +24.5% |
+| Model, calibrated on earlier days | 2%+ | 1797 | 823-974 | -3.7% ± 2.4% | +10.7% |
+| Model, calibrated on earlier days | 4%+ | 1436 | 653-783 | -3.2% ± 2.7% | +12.7% |
+| Model, calibrated on earlier days | 6%+ | 1137 | 513-624 | -2.6% ± 2.8% | +14.7% |
+| Market moved by the model | 2%+ | 577 | 290-287 | -2.3% ± 4.4% | +5.6% |
+| Market moved by the model | 4%+ | 351 | 178-173 | +0.2% ± 5.3% | +7.4% |
+| Market moved by the model | 6%+ | 206 | 106-100 | +5.1% ± 8.2% | +9.2% |
 
-NFL forecasts are not compared: the stored NFL probabilities are already blended toward FanDuel's price.
+The NFL model is compared on receptions and passing touchdowns only: its yardage projections are anchored to the line, so they carry no chance of their own.
+
+## Breakout signals
+
+Lines on players whose recent opportunity was above their season baseline (games before that day only), against every other line. Over ROI is betting every over at the bet book's price.
+
+| Sport | Lines | Count | Players | Over won | Market's chance of the over | Over ROI |
+|---|---|---|---|---|---|---|
+| NBA | No signal | 3808 | 252 | 46.6% | 48.6% | -9.9% ± 1.8% |
+| NBA | Breakout signal | 272 | 67 | 46.0% | 49.2% | -12.8% ± 6.8% |
+| NFL | No signal | 875 | 251 | 46.4% | 49.6% | -11.7% ± 4.2% |
+| NFL | Breakout signal | 215 | 91 | 45.1% | 49.5% | -14.6% ± 7.5% |

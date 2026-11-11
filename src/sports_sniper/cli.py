@@ -198,12 +198,18 @@ def backtest_command(min_ev: float = typer.Option(None, help="Also test a custom
                    f"closing value {_pct(m['closing_value'])}")
     for name, b in report["bankroll"].items():
         typer.echo(f"Paper bankroll, {name}: ${b['start']:.0f} -> ${b['final']:.2f}, largest fall ${b['max_drawdown']:.2f}")
-    if not report["scores"].empty:
-        s = report["scores"].iloc[0]
-        typer.echo(f"Model against market on {int(s.lines)} NBA lines (Brier, lower is better): book {s.book_brier:.4f}, "
+    for s in report["scores"].itertuples():
+        typer.echo(f"Model against market on {int(s.lines)} {s.group.upper()} lines (Brier, lower is better): book {s.book_brier:.4f}, "
                    f"consensus {s.consensus_brier:.4f}, model {s.model_brier:.4f}")
+    for b in report["breakout"].itertuples():
+        if b.breakout:
+            typer.echo(f"Breakout signals, {b.sport.upper()}: over won {b.over_rate:.1%} on {b.lines} lines, "
+                       f"betting every over {_pct(b.over_roi)}")
     if write:
         typer.echo(f"Report: {research.write(report)}")
+        saved = research.save_calibration(report, settings)
+        if saved:
+            typer.echo(f"Model calibration: {saved} ({', '.join(report['calibration'])})")
 
 
 @app.command("bankroll")

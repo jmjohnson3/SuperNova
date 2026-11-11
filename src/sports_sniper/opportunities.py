@@ -54,6 +54,8 @@ class Opportunity:
     premium_vs_median: float | None  # this price against the middle price at the other books to bet at
     minutes_to_start: float
     explanation: str
+    model_probability: float | None = None   # the prediction model's calibrated chance of this side, when it has one
+    model_version: str | None = None
 
     def record(self) -> dict:
         out = asdict(self)

@@ -11,7 +11,7 @@ import streamlit as st
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from sports_sniper import backtest, bankroll, db, model_compare, performance
+from sports_sniper import backtest, bankroll, breakout, db, model_compare, performance, research
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.movement import moves
@@ -161,6 +161,21 @@ def filtered(data: pd.DataFrame) -> pd.DataFrame:
     return data if show_expired else data[data.available]
 
 
+def money(value) -> str:
+    return "-" if pd.isna(value) else f"{'+' if value >= 0 else '-'}${abs(value):,.2f}"
+
+
+def plus_minus(value, error) -> str:
+    return "-" if value is None else pct(value, True) + ("" if error is None else f" ± {error:.1%}")
+
+
+def model_view(probability, break_even) -> str:
+    """What the prediction model says about a bet's side, when it has a calibrated forecast for it."""
+    if pd.isna(probability):
+        return "-"
+    return f"{'Agrees' if probability > break_even else 'Disagrees'} ({probability:.0%})"
+
+
 def table(data: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({
         "Player / market": [label(o) for o in data.itertuples()],
@@ -175,6 +190,7 @@ def table(data: pd.DataFrame) -> pd.DataFrame:
         "Conservative EV": data.conservative_ev.map(lambda v: pct(v, True)).to_list(),
         "Evidence": data.evidence.str.capitalize().to_list(),
         "Estimate from": ["Market consensus" if s == "market_consensus" else "-" for s in data.source],
+        "Model view": [model_view(p, b) for p, b in zip(data.model_probability, data.break_even)],
         "Price seen": [("" if o.available else "EXPIRED · ") + ago(o.observed_at, now) for o in data.itertuples()],
     })
 
@@ -207,8 +223,9 @@ c2.metric("Available now", int((priced.available & (priced.conservative_ev > min
 c3.metric("Flagged in the last 36 h", len(priced))
 c4.metric("Last scan", f"#{scan.id} · {scan.source}")
 
-board_tab, longshot_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
-    ["Opportunity Board", "Longshot Hunter", "Line Movement", "Performance", "Paper Bets", "Backtest", "Model Comparison"])
+board_tab, longshot_tab, radar_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
+    ["Opportunity Board", "Longshot Hunter", "Breakout Radar", "Line Movement", "Performance", "Paper Bets", "Backtest",
+     "Model Comparison"])
 
 with board_tab:
     st.subheader("Today's opportunities")
@@ -220,8 +237,9 @@ with board_tab:
     else:
         st.dataframe(table(board), hide_index=True, width="stretch", column_config=LINK_COLUMN)
         st.caption("Ranked by conservative EV: the estimated chance lowered by its uncertainty before the EV is worked out. "
-                   "Every estimate on this page comes from other sportsbooks' prices for the identical bet, with their "
-                   "margin removed; no prediction model is involved yet.")
+                   "Every estimate comes from other sportsbooks' prices for the identical bet, with their margin removed. "
+                   "**Model view** is a second opinion only: the prediction model's calibrated chance of the same side, "
+                   "\"Agrees\" when it is above the price's break-even. It does not change what is flagged or how it is ranked.")
         details(board, "board")
 
 with longshot_tab:
@@ -252,6 +270,63 @@ with longshot_tab:
             "Price seen": [("" if o.available else "EXPIRED · ") + ago(o.observed_at, now) for o in outliers.itertuples()],
         }), hide_index=True, width="stretch", column_config=LINK_COLUMN)
 
+with radar_tab:
+    st.subheader("Breakout Radar")
+    st.caption("Players whose recent opportunity (minutes and shot attempts; targets, carries and snap share) is clearly "
+               "above their own average earlier this season, with every recent game above it. Built from game logs only: "
+               "injuries, lineups and news are not read here. A signal is information about the player, not an edge.")
+    if st.button("Load the radar", key="radar_load") or st.session_state.get("radar_on"):
+        st.session_state["radar_on"] = True
+        logs = game_logs()
+        latest_prices = db.load_prices(engine(), since=now - timedelta(hours=3))
+        if not latest_prices.empty:
+            latest_prices = latest_prices[latest_prices.commence_time > now]
+            newest = latest_prices.groupby("event_id").observed_at.transform("max")
+            latest_prices = latest_prices[(latest_prices.observed_at == newest) & latest_prices.book.isin(settings.bet_books)]
+        flagged = breakout.radar(logs, latest_prices, now.astimezone(breakout.results.EASTERN).date())
+        if not logs:
+            st.info("The game-log database could not be read, so there is nothing to show.")
+        elif flagged.empty:
+            st.info("No player clears the bar right now.")
+        else:
+            only_playing = st.checkbox("Only players with a stored line for a game still to start", value=bool(flagged.playing.any()),
+                                       key="radar_playing")
+            shown = flagged[flagged.playing] if only_playing else flagged
+            number = lambda row, v: f"{v:.0%}" if row.metric == "snap_share" else f"{v:.1f}"      # noqa: E731
+            st.dataframe(pd.DataFrame({
+                "Player": shown.player.to_list(), "Sport": shown.sport.str.upper().to_list(), "Team": shown.team.to_list(),
+                "Signal": shown.label.str.capitalize().to_list(),
+                "Earlier average": [number(r, r.baseline) for r in shown.itertuples()],
+                "Recent average": [number(r, r.recent) for r in shown.itertuples()],
+                "Change": shown.share.map(lambda v: pct(v, True)).to_list(),
+                "Last game": shown.last_game.map(str).to_list(),
+                "Lines seen now": ["; ".join(f"{market_label(p['market'])} over {p['line']:g} {american(p['price'])} at {book_label(p['book'])}"
+                                             for p in props) or "-" for props in shown.props],
+            }).head(60), hide_index=True, width="stretch")
+            if len(shown):
+                pick = st.selectbox("Explain", shown.index, key="radar_pick",
+                                    format_func=lambda i: f"{shown.loc[i].player} ({shown.loc[i].label})")
+                st.write(shown.loc[pick].explanation)
+                for prop in shown.loc[pick].props:
+                    link = bet_link(prop["link"], scan.source)
+                    if link:
+                        st.link_button(f"{market_label(prop['market'])} over {prop['line']:g} {american(prop['price'])} at "
+                                       f"{book_label(prop['book'])}", link)
+        st.markdown("#### Has the signal paid?")
+        if st.button("Load the evidence", key="radar_evidence") or st.session_state.get("radar_evidence_on"):
+            st.session_state["radar_evidence_on"] = True
+            checked = breakout.validate(replay()[1], logs)
+            if checked.empty:
+                st.write("No settled lines to test it on yet.")
+            else:
+                st.dataframe(pd.DataFrame([{
+                    "Sport": b.sport.upper(), "Lines": "Breakout signal" if b.breakout else "No signal", "Count": b.lines,
+                    "Players": b.players, "Over won": pct(b.over_rate), "Market's chance of the over": pct(b.market_over),
+                    "Betting every over": plus_minus(b.over_roi, None if pd.isna(b.over_roi_se) else b.over_roi_se)}
+                    for b in checked.itertuples()]), hide_index=True, width="stretch")
+                st.caption("Every stored two-sided line, split by whether the player had a signal from games before that day. "
+                           "If flagged players do not go over more often than the price implies, the books already know.")
+
 with moves_tab:
     st.subheader("Line movement")
     history = db.load_prices(engine(), since=now - timedelta(hours=36))
@@ -281,14 +356,6 @@ STRATEGY_LABEL = {db.STRATEGY_AUTO: "Automatic v2: edge of 4% or more, at your b
                   db.STRATEGY_AUTO_V1: "Automatic v1 (to Nov 10): any positive conservative edge, every book",
                   db.STRATEGY_MANUAL: "Saved by hand"}
 STATUS_LABEL = {"open": "Open", "won": "Won", "lost": "Lost", "push": "Push", "void": "Void"}
-
-
-def money(value) -> str:
-    return "-" if pd.isna(value) else f"{'+' if value >= 0 else '-'}${abs(value):,.2f}"
-
-
-def plus_minus(value, error) -> str:
-    return "-" if value is None else pct(value, True) + ("" if error is None else f" ± {error:.1%}")
 
 
 def results_table(rows: list[tuple[str, dict]]) -> pd.DataFrame:
@@ -336,9 +403,11 @@ with perf_tab:
         rows = [("All", total), ("Forward (entered when seen)", performance.summarize(view[~view.replayed])),
                 ("Replayed from saved snapshots", performance.summarize(view[view.replayed]))]
         st.dataframe(results_table([r for r in rows if r[1]["bets"]]), hide_index=True, width="stretch")
+        view = view.assign(model=["No model forecast" if pd.isna(p) else "Model agrees" if p > 1 / d else "Model disagrees"
+                                  for p, d in zip(view.model_probability, view.decimal)])
         for title, column, name in (("By sport", "sport", str.upper), ("By market", "market", market_label),
                                     ("By sportsbook", "book", book_label), ("By side", "side", str.capitalize),
-                                    ("By evidence", "evidence", str.capitalize)):
+                                    ("By evidence", "evidence", str.capitalize), ("By model view", "model", str)):
             st.markdown(f"#### {title}")
             st.dataframe(results_table([(name(key), performance.summarize(group)) for key, group in view.groupby(column)]),
                          hide_index=True, width="stretch")
@@ -391,7 +460,16 @@ with paper_tab:
 def replay():
     """Every flagged price in every stored snapshot, graded, and one row per two-sided line with the model's chance."""
     found, offers = backtest.candidates(engine(), settings, cache=backtest.default_cache(settings))
-    return found, model_compare.attach_models(offers, settings)
+    found, offers, _ = research.with_models(found, offers, settings)
+    return found, offers
+
+
+@st.cache_data(ttl=1800, show_spinner="Reading this season's game logs...")
+def game_logs():
+    try:
+        return breakout.load_history(settings.results_dsn)
+    except Exception:
+        return {}
 
 
 def backtest_table(rows) -> pd.DataFrame:
@@ -497,18 +575,29 @@ with model_tab:
     if st.button("Load the comparison", key="mc_load") or st.session_state.get("mc_on"):
         st.session_state["mc_on"] = True
         _, offers = replay()
-        table_all = model_compare.scores(offers)
+        table_all = model_compare.scores(offers, "sport")
         if table_all.empty:
             st.info("No settled lines with a model forecast made before the price was seen yet.")
         else:
             both = pd.concat([table_all, model_compare.scores(offers, "market")])
             st.dataframe(pd.DataFrame([{
-                "Lines": "All" if s.group == "All" else market_label(s.group), "Settled": s.lines, "Over won": pct(s.over_rate),
-                "Bet book's own price": f"{s.book_brier:.4f}", "Market consensus": f"{s.consensus_brier:.4f}",
-                "Prediction model": f"{s.model_brier:.4f}",
-                "Closest": min(model_compare.SOURCES, key=lambda k: getattr(s, f"{k}_brier")).capitalize()} for s in both.itertuples()]),
+                "Lines": s.group.upper() if s.group in ("nba", "nfl", "mlb") else market_label(s.group), "Settled": s.lines,
+                "Over won": pct(s.over_rate), "Bet book's own price": f"{s.book_brier:.4f}",
+                "Market consensus": f"{s.consensus_brier:.4f}", "Prediction model": f"{s.model_brier:.4f}",
+                "Closest": min(model_compare.BASE, key=lambda k: getattr(s, f"{k}_brier")).capitalize()} for s in both.itertuples()]),
                 hide_index=True, width="stretch")
-            st.caption("Brier score: the average squared miss of the probability, lower is better. A coin flip scores 0.2500.")
+            st.caption("Brier score: the average squared miss of the probability, lower is better. A coin flip scores 0.2500. "
+                       "NFL covers receptions and passing touchdowns only; the yardage projections are anchored to the line.")
+            fitted = model_compare.scores(offers, "sport", tuple(model_compare.SOURCES))
+            if not fitted.empty:
+                st.markdown("#### After calibration")
+                st.dataframe(pd.DataFrame([{
+                    "Lines": s.group.upper(), "Settled": s.lines, "Market consensus": f"{s.consensus_brier:.4f}",
+                    "Prediction model": f"{s.model_brier:.4f}", "Model, calibrated": f"{s.calibrated_brier:.4f}",
+                    "Market moved by the model": f"{s.blend_brier:.4f}"} for s in fitted.itertuples()]), hide_index=True, width="stretch")
+                st.caption("The calibration and the model's weight against the market are fitted on earlier days only, then "
+                           "scored on later ones. If moving the market's chance by the model does not beat the market alone, "
+                           "the model is not adding information.")
             st.markdown("#### If you bet each source's picks")
             st.dataframe(pd.DataFrame([{
                 "Source": model_compare.SOURCES[p.source], "Edge needed": f"{p.threshold:.0%}+", "Settled": p.bets,
@@ -521,4 +610,4 @@ with model_tab:
             st.dataframe(pd.DataFrame([{"Model's chance of the over": f"{b['low']:.0%} to {b['high']:.0%}", "Lines": b["n"],
                                         "Average estimate": pct(b["predicted"]), "Over actually won": pct(b["observed"]),
                                         "95% interval": f"{b['interval'][0]:.0%} to {b['interval'][1]:.0%}"}
-                                       for b in model_compare.calibration(offers, "model", 10)]), hide_index=True, width="stretch")
+                                       for b in model_compare.calibration_table(offers, "model", 10)]), hide_index=True, width="stretch")

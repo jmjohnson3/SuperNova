@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     link_state: str = "co"                   # two-letter state for sportsbook links that need one (BetMGM)
 
     # --- paper trading ---
+    model_view: bool = True             # add the prediction model's calibrated chance to flagged bets (display and records only)
     auto_paper: bool = True                  # enter every flagged bet that clears the bar as a paper bet
     auto_paper_evidence: list[str] = ["strong", "moderate"]
     replay_after_minutes: float = 60.0       # a bet entered this long after its price was seen is a replay

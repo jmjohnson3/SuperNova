@@ -114,6 +114,8 @@ class OpportunityRow(Base):
     premium_vs_median: Mapped[float | None] = mapped_column(Float, nullable=True)
     minutes_to_start: Mapped[float] = mapped_column(Float)
     explanation: Mapped[str] = mapped_column(Text)
+    model_probability: Mapped[float | None] = mapped_column(Float, nullable=True)     # calibrated model chance of this side
+    model_version: Mapped[str | None] = mapped_column(String(60), nullable=True)
 
 
 class PaperBet(Base):
@@ -159,6 +161,7 @@ class PaperBet(Base):
     settle_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     link: Mapped[str | None] = mapped_column(Text, nullable=True)
     replayed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())   # entered long after the price was seen
+    model_probability: Mapped[float | None] = mapped_column(Float, nullable=True)     # calibrated model chance when entered
 
 
 def make_engine(url: str) -> Engine:
@@ -251,7 +254,8 @@ def place_paper_bet(session: Session, opportunity: OpportunityRow, *, stake: flo
         raise ValueError("a paper stake must be positive")
     created = now or datetime.now(timezone.utc)
     replayed = created - as_utc(opportunity.observed_at) > timedelta(minutes=replay_after_minutes)
-    bet = PaperBet(created_at=created, strategy=strategy, model_version=model_version, replayed=replayed,
+    bet = PaperBet(created_at=created, strategy=strategy, model_version=model_version or opportunity.model_version,
+                   model_probability=opportunity.model_probability, replayed=replayed,
                    entry_no=1 if existing is None else existing.entry_no + 1, opportunity_id=opportunity.id,
                    data_source=opportunity.data_source, sport=opportunity.sport, event_id=opportunity.event_id,
                    event_name=opportunity.event_name, commence_time=opportunity.commence_time, book=opportunity.book,

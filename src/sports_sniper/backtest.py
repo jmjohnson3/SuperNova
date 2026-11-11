@@ -56,6 +56,7 @@ class Strategy:
     min_price: int | None = None
     max_price: int | None = None
     entry_delay: int = 0            # 0: the price that was flagged; 1: the same book's price one look later
+    model: str = ""                 # "agrees" | "disagrees": the calibrated model's view of the bet's side
     stake: float = 1.0
 
 
@@ -71,6 +72,8 @@ def presets(settings: Settings) -> list[Strategy]:
         replace(v2, name="v2, overs only", sides=("over",)),
         replace(v2, name="v2, entered one look later", entry_delay=1),
         replace(v2, name="v2, any edge (0%+)", min_ev=0.0),
+        replace(v2, name="v2, model agrees", model="agrees"),
+        replace(v2, name="v2, model disagrees", model="disagrees"),
     ]
 
 
@@ -271,6 +274,9 @@ def run(found: pd.DataFrame, strategy: Strategy, default_books: tuple[str, ...] 
     for column, wanted in (("book", books), ("sport", strategy.sports), ("market", strategy.markets), ("side", strategy.sides)):
         if wanted:
             keep &= data[column].isin(wanted)
+    if strategy.model:
+        view = data.model_agrees if "model_agrees" in data else pd.Series([None] * len(data), index=data.index)
+        keep &= view.map(lambda v: v is not None and not pd.isna(v) and bool(v) == (strategy.model == "agrees")).astype(bool)
     if strategy.max_ev is not None:
         keep &= data.ev <= strategy.max_ev
     if strategy.max_minutes is not None:

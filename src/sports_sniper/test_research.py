@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from typer.testing import CliRunner
 
-from sports_sniper import backtest, bankroll, cli, db, model_compare, research
+from sports_sniper import backtest, bankroll, breakout, cli, db, model_compare, research
 from sports_sniper.backtest import Strategy
 from sports_sniper.config import Settings
 from sports_sniper.providers import models
@@ -192,10 +192,10 @@ def test_sources_are_scored_on_the_same_settled_lines():
     assert model_compare.scores(offers.iloc[0:0].assign(model_probability=[])).empty
     picks = model_compare.picks(offers, "model", 0.04)
     assert list(picks.side) == ["over", "under", "under"] and list(picks.status) == ["won", "won", "push"]
-    table = model_compare.picks_table(offers, thresholds=(0.04,)).set_index("source")
+    table = model_compare.picks_table(offers, thresholds=(0.04,), sources=("consensus", "model")).set_index("source")
     assert table.loc["model", "bets"] == 3 and table.loc["model", "roi"] == pytest.approx((1.0 + 0.8) / 3)
     assert table.loc["consensus", "won"] == 2                       # 0.6 over at 2.0, 0.6 under at 1.8; the 0.5s have no edge
-    assert [b["n"] for b in model_compare.calibration(offers, "model", 2)] == [1, 1]
+    assert [b["n"] for b in model_compare.calibration_table(offers, "model", 2)] == [1, 1]
 
 
 class Cursor:
@@ -244,26 +244,31 @@ def test_the_nba_model_uses_only_forecasts_made_before_the_price_was_seen():
     offers.loc[2, ["sport", "market"]] = ["nfl", "player_rush_yds"]
     got = models.nba_over_probabilities("dsn", offers, connect=lambda dsn: Connection(rows))
     assert 0.75 < got[0] < 0.95 and got[1] is None and got[2] is None       # mean 26 against a line of 20.5
-    attached = model_compare.attach_models(offers, Settings(_env_file=None), nba=lambda dsn, o: got)
+    attached, fits = model_compare.attach_models(offers, Settings(_env_file=None), adapters=((models.NBA_MODEL, lambda dsn, o: got),))
     assert attached.model_version.iloc[0] == models.NBA_MODEL and attached.model_version.iloc[1:].isna().all()
+    assert fits == {} and attached.calibrated_probability.isna().all()        # three lines are far too few to calibrate on
     assert models.nba_over_probabilities(None, offers.iloc[0:0]) == []
 
 
 # --- report, command line and dashboard ---------------------------------------------------------------
 def test_report_covers_rules_walk_forward_bankroll_and_models(settings, engine):  # noqa: F811
     scan(settings, engine)
-    report = research.build(engine, settings, load_results=fake_results, nba=lambda dsn, offers: [0.7] * len(offers))
+    report = research.build(engine, settings, load_results=fake_results, history={},
+                            adapters=(("test-model", lambda dsn, offers: [0.7] * len(offers)),))
     text = research.markdown(report)
-    for heading in ("## Rules compared", "## By minimum estimated edge", "## Walk-forward", "## Paper bankroll", "## Model against market"):
+    for heading in ("## Rules compared", "## By minimum estimated edge", "## Walk-forward", "## Paper bankroll", "## Model against market",
+                    "## Breakout signals"):
         assert heading in text
-    assert "Automatic v2 (4%+, bet books)" in text and "not a forecast" in text and len(report["strategies"]) == 7
+    assert "Automatic v2 (4%+, bet books)" in text and "not a forecast" in text and len(report["strategies"]) == 9
+    assert research.save_calibration(report, settings) is None           # nothing fitted on a handful of lines: nothing saved
     empty = db.make_engine("sqlite:///:memory:")
     db.init_db(empty)
-    assert "No stored real prices yet" in research.markdown(research.build(empty, settings, load_results=fake_results))
+    assert "No stored real prices yet" in research.markdown(research.build(empty, settings, load_results=fake_results, history={}, adapters=()))
 
 
 def test_backtest_and_bankroll_commands(env, tmp_path, monkeypatch):  # noqa: F811
-    monkeypatch.setattr(models, "nba_over_probabilities", lambda dsn, offers, connect=None: [None] * len(offers))
+    monkeypatch.setattr(models, "ADAPTERS", ())
+    monkeypatch.setattr(breakout, "load_history", lambda dsn, connect=None: {})
     seeded().dispose()
     out = CliRunner().invoke(cli.app, ["backtest", "--no-write", "--min-ev", "0.01", "--side", "over"])
     assert out.exit_code == 0, out.output
@@ -277,6 +282,8 @@ def test_backtest_and_bankroll_commands(env, tmp_path, monkeypatch):  # noqa: F8
 def test_dashboard_backtest_and_model_tabs(env, monkeypatch):  # noqa: F811
     import streamlit as st
     from streamlit.testing.v1 import AppTest
+    monkeypatch.setattr(models, "ADAPTERS", ())
+    monkeypatch.setattr(breakout, "load_history", lambda dsn, connect=None: {})
     seeded().dispose()
     st.cache_resource.clear()
     st.cache_data.clear()
