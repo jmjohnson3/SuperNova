@@ -134,6 +134,12 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
 - **Model view.** Each flagged over/under gets the calibrated model's chance of its own side: "Agrees" when it beats
   the price's break-even. It is recorded with the opportunity and the paper bet, shown on the board and in Performance
   ("By model view"), and available as a backtest rule. It never changes what is flagged or how it is ranked.
+- **Predictions** (`predictions.py`, `predictions_view.py`). The forecasts the other pipelines already store, beside the
+  latest stored line: NCAAF spreads and totals (`ncaaf.projections`), NBA spreads and totals (`nbaprops.game_projections`,
+  lines from the saved snapshots) and player props (`nbaprops.projections`, lines from the Sniper's own stored prices), NFL
+  spreads, totals and player props (`bets.nfl_*_predictions`). Read-only and information only: a "lean" is where the model
+  sits against the line, it flags nothing and enters no paper bet. NBA lines exist only from about 40 minutes before
+  tip-off; NFL game forecasts are the market line and NFL player projections are anchored to FanDuel's line.
 - **Breakout Radar** (`breakout.py`). Players whose minutes or shot attempts (NBA), or targets, carries or snap share
   (NFL), over their last few games are above their own earlier average this season by an absolute amount and a share,
   with every recent game above it. The explanation is built from those numbers only; injuries and lineups are not read.
@@ -211,7 +217,7 @@ write-ahead mode so the dashboard can read while a pass writes; it grows by roug
 - Model adapters, walk-forward calibration, the model view on flagged bets, the Breakout Radar and its validation.
 - The longshot ladder model and its walk-forward score, Discord alerts (tested with a stand-in for Discord; **no real
   alert has been sent**), the Parlay Lab, and the daily automatic evaluation.
-- Streamlit dashboard: Opportunity Board, Longshot Hunter, Breakout Radar, Parlay Lab, Line Movement, Performance, Paper
+- Streamlit dashboard: Opportunity Board, Predictions, Longshot Hunter, Breakout Radar, Parlay Lab, Line Movement, Performance, Paper
   Bets, Backtest, Model Comparison, with filters.
 - NFL and NBA. MLB markets are listed and the code paths are shared, but MLB has not been run.
 

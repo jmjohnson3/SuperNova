@@ -358,6 +358,10 @@ python -m pytest src/sports_sniper -q
   Measured 2026-11-11: the live model's stated spread is about right out of sample, and no variant beats consensus.
   Performance shows forward bets by default and separates "Demonstrated" (prices confirmed with Got it / Gone, an
   append-only log) from research on paper.
+- Predictions tab (2026-11-11, `predictions.py` / `predictions_view.py`): the stored forecasts for NCAAF, NBA and NFL games
+  (spread, total) and NBA/NFL player props beside the latest stored line, read-only. Home-spread convention as above
+  (`margin + spread > 0` = home covers). It shows leans only; it must not flag or paper-bet from them. New sports are added
+  as one loader each in `predictions.py`.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from sports_sniper import backtest, bankroll, breakout, db, ladder, model_compare, parlay, performance, research
-from sports_sniper import odds_math
+from sports_sniper import odds_math, predictions_view
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.movement import moves
@@ -319,8 +319,8 @@ if games_ahead:
                                         "In": "now" if g["prices_from"] <= now else f"{(g['prices_from'] - now).total_seconds() / 60:.0f} min"}
                                        for g in soon]), hide_index=True, width="stretch")
 
-board_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
-    ["Opportunity Board", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance", "Paper Bets",
+board_tab, predictions_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
+    ["Opportunity Board", "Predictions", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance", "Paper Bets",
      "Backtest", "Model Comparison"])
 
 
@@ -377,6 +377,9 @@ with board_tab:
                    "**Model view** is a second opinion only: the prediction model's calibrated chance of the same side, "
                    "\"Agrees\" when it is above the price's break-even. It does not change what is flagged or how it is ranked.")
         details(board, "board")
+
+with predictions_tab:
+    predictions_view.render(settings, engine(), now)
 
 with longshot_tab:
     st.subheader("Longshot Hunter")

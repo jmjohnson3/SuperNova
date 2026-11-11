@@ -226,7 +226,7 @@ def test_dashboard_starts_empty_then_shows_a_labelled_sample_scan(env):
     app.button[[b.label for b in app.button].index("Scan sample data")].click().run()
     assert not app.exception and app.title[0].value.endswith("Sports Betting Sniper")
     assert "Hypothetical sample data" in app.warning[0].value
-    assert [t.label for t in app.tabs] == ["Opportunity Board", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement",
+    assert [t.label for t in app.tabs] == ["Opportunity Board", "Predictions", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement",
                                             "Performance", "Paper Bets", "Backtest", "Model Comparison"]
     metrics = {m.label: m.value for m in app.metric}
     assert metrics["Available now"] == "6" and metrics["Last scan"].endswith("sample")
