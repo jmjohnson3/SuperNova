@@ -5,13 +5,14 @@ reports/sniper_backtest_latest.md. Every number is history on paper, with its un
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 from sqlalchemy.engine import Engine
 
-from sports_sniper import backtest, bankroll, breakout, calibration, model_compare
+from sports_sniper import backtest, bankroll, breakout, calibration, ladder, model_compare, parlay
 from sports_sniper.config import Settings
 from sports_sniper.markets import market_label
 from sports_sniper.providers import models
@@ -37,7 +38,56 @@ def with_models(found: pd.DataFrame, offers: pd.DataFrame, settings: Settings, a
     return calibration.annotate(found, fits, values, versions), offers, fits
 
 
-def build(engine: Engine, settings: Settings, *, progress=None, load_results=None, adapters=None, history=None) -> dict:
+def ladder_check(engine: Engine, offers: pd.DataFrame, settings: Settings, load_results=None, extra=None) -> dict:
+    """The longshot ladder model scored walk-forward on every stored alternate line."""
+    if extra is None:
+        try:
+            extra = ladder.nfl_line_history(settings.results_dsn)
+        except Exception:                    # the line history is optional
+            extra = None
+    ratios = ladder.combined_library(offers, extra)
+    return ladder.summary(ladder.evaluate(backtest.load_prices(engine), ratios, settings, load_results), settings.min_ev,
+                          settings.longshot_min_american)
+
+
+def due(settings: Settings, now: datetime | None = None) -> bool:
+    """Whether the scheduled pass should refresh the evaluation: no report yet, or the last one is old enough."""
+    marker = calibration.default_path(settings.database_url)
+    if marker is None:
+        return False
+    marker = marker.with_name("evaluation.json")
+    if not marker.exists():
+        return True
+    age = (now or datetime.now(timezone.utc)).timestamp() - marker.stat().st_mtime
+    return age >= settings.evaluate_every_hours * 3600
+
+
+def evaluate(engine: Engine, settings: Settings, *, progress=None, write_report: bool = True, **sources) -> dict:
+    """The automatic evaluation: rebuild the report, refit the model calibration on every settled line, and
+    re-measure the parlay links. Returns a short summary and leaves a marker so `due` knows when it last ran."""
+    report = build(engine, settings, progress=progress, **sources)
+    summary = dict(at=report["built_at"].isoformat(), flagged=len(report["found"]), games=report["games"],
+                   calibration={k: dict(b=v["b"], blend_c=v["blend_c"], lines=v["lines"]) for k, v in report["calibration"].items()})
+    if not report["found"].empty and write_report:
+        summary["report"] = str(write(report))
+    saved = save_calibration(report, settings)
+    summary["calibration_saved"] = saved is not None
+    links = parlay.default_path(settings.database_url)
+    if links is not None:
+        try:
+            table = parlay.build(settings.results_dsn)
+            if table:
+                parlay.save(table, links)
+            summary["parlay_links"] = {sport: len(found) for sport, found in table.items()}
+        except Exception as error:           # the game-log database is optional
+            summary["parlay_links"] = f"unavailable ({type(error).__name__})"
+        marker = links.with_name("evaluation.json")
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+    return summary
+
+
+def build(engine: Engine, settings: Settings, *, progress=None, load_results=None, adapters=None, history=None, line_history=None) -> dict:
     found, offers = backtest.candidates(engine, settings, cache=backtest.default_cache(settings), progress=progress,
                                         load_results=load_results)
     found, offers, _ = with_models(found, offers, settings, adapters)
@@ -68,6 +118,7 @@ def build(engine: Engine, settings: Settings, *, progress=None, load_results=Non
         scores_calibrated=model_compare.scores(offers, "sport", tuple(model_compare.SOURCES)),
         picks=model_compare.picks_table(offers), calibration=latest,
         breakout=breakout.validate(offers, history),
+        ladder=ladder_check(engine, offers, settings, load_results, line_history) if len(offers) else ladder.summary(pd.DataFrame()),
         model_lines=int(offers.model_probability.notna().sum()) if len(offers) else 0)
 
 
@@ -165,6 +216,21 @@ def markdown(r: dict) -> str:
             se = "" if b.over_roi_se is None or pd.isna(b.over_roi_se) else f" ± {b.over_roi_se:.1%}"
             lines.append(f"| {b.sport.upper()} | {'Breakout signal' if b.breakout else 'No signal'} | {b.lines} | {b.players} | "
                          f"{pct(b.over_rate, False)} | {pct(b.market_over, False)} | {pct(b.over_roi)}{se} |")
+    lines += ["", "## Longshot ladder model", ""]
+    check = r["ladder"]
+    if not check["lines"]:
+        lines += ["No stored alternate lines could be priced and settled."]
+    else:
+        lines += [f"One-sided alternate lines priced from the sharp main line and the spread of past results, each using only "
+                  f"results known before its game: {check['lines']} settled alternates from {check['games']} games. The NFL scanner "
+                  "stopped collecting alternates on Oct 26, so this is a small set of games.", "",
+                  "| Model's chance | Lines | Model said | Actually won | Book's break-even |", "|---|---|---|---|---|"]
+        lines += [f"| {b['low']:.0%} to {b['high']:.0%} | {b['n']} | {b['predicted']:.1%} | {b['observed']:.1%} | {b['break_even']:.1%} |"
+                  for b in check["calibration"]]
+        lines += ["", "| Bets (one per player, market and line, at the best price) | Settled | W-L | ROI | The model's own estimate |", "|---|---|---|---|---|"]
+        for name, m in check["groups"]:
+            se = "" if m["roi_se"] is None else f" ± {m['roi_se']:.1%}"
+            lines.append(f"| {name} | {m['won'] + m['lost'] + m['push']} | {m['won']}-{m['lost']} | {pct(m['roi'])}{se} | {pct(m['estimated_ev'])} |")
     return "\n".join(lines) + "\n"
 
 

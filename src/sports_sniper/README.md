@@ -4,8 +4,9 @@ Finds sportsbook prices on player props that look too generous against what othe
 identical bet, ranks them, and tracks them as paper bets. **Research and paper trading only.** It never places
 a wager, and an estimated edge is an estimate, not a profit.
 
-Phase 1 (scanner, ranking, storage, dashboard) and Phase 3 (backtest, walk-forward, paper bankroll, model against
-market) are built. No prediction model feeds the board: the one model compared so far is worse than the market.
+All four phases are built to the extent the data allows (what is missing is listed at the end). The board still
+ranks on market consensus alone: every model added so far has been tested against results and none has earned a
+say in what is flagged.
 
 ## Run it
 
@@ -14,6 +15,7 @@ python -m sports_sniper.cli scan          # real saved snapshots if there are an
 python -m sports_sniper.cli settle        # grade finished paper bets, add closing line value
 python -m sports_sniper.cli dashboard     # opens http://localhost:8517
 python -m sports_sniper.cli backtest      # replay stored snapshots; writes reports/sniper_backtest_latest.md
+python -m sports_sniper.cli evaluate      # the daily evaluation by hand: report, model calibration, parlay links
 ```
 
 Other commands: `scan --source sample | saved | live`, `scan --sport nba`, `scan --lookback-hours 456` (replay
@@ -105,6 +107,42 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
 - The slow part is kept per game in `data/sniper/backtest_cache.pkl` and redone only for games with new prices.
 - Historical odds before the first stored snapshot (2026-10-22) are not used; none were bought.
 
+## Predictive intelligence (Phase 2)
+
+- **Model adapters** (`providers/models.py`). NBA: `nbaprops.projections` turned into a chance at the line. NFL: the
+  production model's own chance before it is blended toward FanDuel, for receptions and passing touchdowns only (its
+  yardage projections are anchored to the line, so they say nothing). Only a forecast made before the price was seen
+  is used. MLB has no adapter: that pipeline has had no data since its statistics feed lapsed.
+- **Calibration** (`calibration.py`). A two-number logistic fit of the model's log-odds, and a second fit of how much
+  weight the model's disagreement deserves against the market. Both are fitted on earlier days only and saved to
+  `data/sniper/model_calibration.json` by the daily evaluation.
+- **Model view.** Each flagged over/under gets the calibrated model's chance of its own side: "Agrees" when it beats
+  the price's break-even. It is recorded with the opportunity and the paper bet, shown on the board and in Performance
+  ("By model view"), and available as a backtest rule. It never changes what is flagged or how it is ranked.
+- **Breakout Radar** (`breakout.py`). Players whose minutes or shot attempts (NBA), or targets, carries or snap share
+  (NFL), over their last few games are above their own earlier average this season by an absolute amount and a share,
+  with every recent game above it. The explanation is built from those numbers only; injuries and lineups are not read.
+  `validate` checks the signal against settled lines.
+- **What the evidence says so far** (`reports/sniper_backtest_latest.md`): the NBA model is close to noise once
+  calibrated and adds nothing to the market; the NFL receptions model is slightly better than the market on a few
+  hundred lines, too few to act on; flagged breakout players did not go over more often than the price implied.
+
+## Advanced features (Phase 4)
+
+- **Longshot ladder model** (`ladder.py`). A chance for one-sided alternate lines from the sharp book's main line for
+  the same player and the spread of past results around their lines, each priced only from results known before its
+  game. Always labelled speculative and never paper-traded: on the alternates stored so far its "underpriced"
+  longshots lost. Shown under Longshot Hunter when alternates are in the latest prices.
+- **Alerts** (`alerts.py`). With `SNIPER_ALERT_WEBHOOK_URL` set, the scheduled pass posts each new automatic paper bet
+  to that Discord channel once, while its price is fresh and its game has not started. Off by default. The address
+  is never logged.
+- **Parlay Lab** (`parlay.py`). Links between statistics measured from several seasons of game logs (same player,
+  teammates, opponents) and a Gaussian-copula simulation of the chance that every leg wins, against the independent
+  product. The book's same-game parlay price is typed in; it is not in the odds feed.
+- **Automatic evaluation.** Once a day (`SNIPER_EVALUATE_EVERY_HOURS`) the scheduled pass rebuilds the backtest report,
+  refits the model calibration on every settled line and re-measures the parlay links (`cli evaluate`, about 90
+  seconds). The underlying NBA and NFL models are retrained by their own pipelines, not here.
+
 ## Scheduled runs
 
 `scripts/sharp_multi_watch.bat` (task `\SuperNovaBets\Sharp-Multi-Watch`, every 10 minutes) runs
@@ -131,19 +169,26 @@ write-ahead mode so the dashboard can read while a pass writes; it grows by roug
   separate entry is asked for.
 - Settlement of NBA and NFL over/under props, closing line value, and the performance summary.
 - Backtest over stored snapshots with delayed entry and walk-forward, the paper-bankroll simulator, and the
-  model-against-market comparison for NBA.
-- Streamlit dashboard: Opportunity Board, Longshot Hunter, Line Movement, Performance, Paper Bets, Backtest, Model
-  Comparison, with filters.
+  model-against-market comparison for NBA and NFL.
+- Model adapters, walk-forward calibration, the model view on flagged bets, the Breakout Radar and its validation.
+- The longshot ladder model and its walk-forward score, Discord alerts (tested with a stand-in for Discord; **no real
+  alert has been sent**), the Parlay Lab, and the daily automatic evaluation.
+- Streamlit dashboard: Opportunity Board, Longshot Hunter, Breakout Radar, Parlay Lab, Line Movement, Performance, Paper
+  Bets, Backtest, Model Comparison, with filters.
 - NFL and NBA. MLB markets are listed and the code paths are shared, but MLB has not been run.
 
 ## What is not built yet
 
 - **Settling touchdown markets and MLB.** The results source has no reliable touchdown total, and MLB has no
   results adapter, so those bets stay open.
-- **Model-derived EV on the board.** Every board estimate is market consensus. The NBA model is compared with the
-  market (and loses), so it is not used for ranking; new models, calibration and the Breakout Radar are Phase 2.
-- **An NFL model comparison**, and backtests on seasons before the stored snapshots (would need bought history).
-- Alerts, live in-game scanning, Parlay Lab (Phase 4).
+- **Model-derived EV on the board.** Every board estimate is market consensus. The models are compared with the
+  market and shown as a second opinion; none has beaten it, so none ranks or flags a bet.
+- **Live in-game scanning.** The scheduled scanners stop at the start of a game, in-play prices would cost Odds API
+  credits on every poll, and there is no live statistics feed to settle or model from.
+- **Injuries and lineups in the Breakout Radar**, anytime-touchdown and two-touchdown models, and an MLB adapter.
+- **Alternate lines going forward.** The NFL scanner stopped collecting them on Oct 26, so the ladder model has one
+  weekend of evidence and nothing new to price unless a live scan asks for alternate markets.
+- Backtests on seasons before the stored snapshots (would need bought history).
 - **Alembic migrations.** Tables are created directly and new columns are appended on start; there is no
   migration history yet.
 - Whether a flagged price is still there when you open the sportsbook is not measured by this application.
@@ -178,7 +223,12 @@ performance.py     record, ROI, closing value and calibration with their uncerta
 backtest.py        replay of stored snapshots, rules, delayed entry, walk-forward
 bankroll.py        paper-bankroll simulator (flat or fractional Kelly, exposure limits)
 model_compare.py   probability sources scored against results
-research.py        the Phase 3 report (reports/sniper_backtest_latest.md)
+research.py        the report (reports/sniper_backtest_latest.md) and the daily evaluation
+calibration.py     walk-forward calibration of model probabilities
+breakout.py        breakout signals from game logs, and their validation
+ladder.py          longshot ladder model for one-sided alternate lines
+parlay.py          links between statistics and the joint chance of a parlay
+alerts.py          Discord alerts for new paper bets (off by default)
 cli.py             Typer commands
 dashboard/app.py   Streamlit dashboard
 fixtures/          sample_odds.json

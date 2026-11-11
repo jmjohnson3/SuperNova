@@ -401,20 +401,20 @@ def test_settle_command_reports_the_record(env):
 
 def test_watch_command_logs_one_line_per_step(env, monkeypatch):
     engine = db.make_engine(get_settings().database_url)
-    out = CliRunner().invoke(cli.app, ["watch"])
+    out = CliRunner().invoke(cli.app, ["watch", "--no-evaluate"])
     lines = out.output.strip().splitlines()
-    assert out.exit_code == 0 and len(lines) == 3 and lines[0].endswith("pass started") and lines[1].endswith("0 new snapshots")
-    assert lines[2].endswith("settled nothing; closing values added 0; done")
+    assert out.exit_code == 0 and len(lines) == 4 and lines[0].endswith("pass started") and lines[1].endswith("0 new snapshots")
+    assert lines[2].endswith("settled nothing; closing values added 0") and lines[3].endswith("done")
     stamp = datetime.now(timezone.utc) - timedelta(hours=1)
     monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: sample.load(stamp)[2:])      # games start after the look, whatever the clock says
-    out = CliRunner().invoke(cli.app, ["watch"])
+    out = CliRunner().invoke(cli.app, ["watch", "--no-evaluate"])
     assert out.exit_code == 0, out.output
     assert "2 games, 57 prices, 11 flagged, 5 new paper bets" in out.output and "sample" not in out.output.lower()
 
     def broken(dsn, sports, since):
         raise ConnectionError("postgresql://user:secret@host/db is down")
     monkeypatch.setattr(saved_quotes, "load", broken)
-    out = CliRunner().invoke(cli.app, ["watch"])
+    out = CliRunner().invoke(cli.app, ["watch", "--no-evaluate"])
     assert out.exit_code == 1 and "failed (ConnectionError)" in out.output and "secret" not in out.output
     engine.dispose()
 

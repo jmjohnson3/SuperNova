@@ -140,7 +140,8 @@ def settle(refresh: bool = typer.Option(True, help="Read the latest saved snapsh
 
 
 @app.command()
-def watch(lookback_hours: float = typer.Option(3.0, help="How far back to look for saved snapshots not stored yet.")) -> None:
+def watch(lookback_hours: float = typer.Option(3.0, help="How far back to look for saved snapshots not stored yet."),
+          evaluate: bool = typer.Option(True, help="Also run the daily evaluation when it is due.")) -> None:
     """One scheduled pass: store new saved snapshots, enter the bets they flag, settle finished ones. No credits."""
     settings = get_settings()
     engine = db.make_engine(settings.database_url)
@@ -161,7 +162,34 @@ def watch(lookback_hours: float = typer.Option(3.0, help="How far back to look f
         raise typer.Exit(1)
     graded = {k: counts[k] for k in ("won", "lost", "push", "void") if counts.get(k)}
     say(f"settled {graded or 'nothing'}; closing values added {counts.get('closing_values', 0)}"
-        + ("; results database unavailable" if counts.get("results_unavailable") else "") + "; done")
+        + ("; results database unavailable" if counts.get("results_unavailable") else ""))
+    from sports_sniper import alerts, research
+    sent = alerts.send(engine, settings)
+    if sent["status"] not in ("off", "nothing new"):
+        say(f"alerts: {sent['status']}, {sent['sent']} bets")
+    if evaluate and research.due(settings):          # once a day: the report, the model calibration and the parlay links
+        try:
+            done = research.evaluate(engine, settings)
+            say(f"daily evaluation: {done['flagged']} flagged prices replayed, calibration {'saved' if done['calibration_saved'] else 'not fitted'}")
+        except Exception as error:
+            say(f"daily evaluation failed ({type(error).__name__})")
+    say("done")
+
+
+@app.command("evaluate")
+def evaluate_command() -> None:
+    """Refresh the backtest report, refit the model calibration and re-measure the parlay links (what the scheduled pass does daily)."""
+    from sports_sniper import research
+    settings = get_settings()
+    engine = db.make_engine(settings.database_url)
+    db.init_db(engine)
+    done = research.evaluate(engine, settings, progress=lambda message: typer.echo(f"  {message}"))
+    typer.echo(f"Replayed {done['flagged']} flagged prices from {done['games']} games.")
+    for sport, c in done["calibration"].items():
+        typer.echo(f"  {sport.upper()} model calibration on {c['lines']} lines: confidence multiplier {c['b']:.2f}, weight against the market {c['blend_c']:.2f}")
+    typer.echo(f"Parlay links: {done.get('parlay_links', 'not stored (no SQLite database)')}")
+    if "report" in done:
+        typer.echo(f"Report: {done['report']}")
 
 
 @app.command("backtest")
@@ -205,6 +233,8 @@ def backtest_command(min_ev: float = typer.Option(None, help="Also test a custom
         if b.breakout:
             typer.echo(f"Breakout signals, {b.sport.upper()}: over won {b.over_rate:.1%} on {b.lines} lines, "
                        f"betting every over {_pct(b.over_roi)}")
+    for name, m in report["ladder"]["groups"][2:3]:
+        typer.echo(f"Longshot ladder model, {name.lower()}: {m['won']}-{m['lost']}, ROI {_pct(m['roi'])}")
     if write:
         typer.echo(f"Report: {research.write(report)}")
         saved = research.save_calibration(report, settings)

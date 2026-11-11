@@ -1,6 +1,6 @@
 # Sports Betting Sniper: backtest
 
-Built 2026-11-11 19:08 UTC. Research on paper only: simulated $1 bets at prices that were stored, graded from final statistics. A past result is not a forecast.
+Built 2026-11-11 19:25 UTC. Research on paper only: simulated $1 bets at prices that were stored, graded from final statistics. A past result is not a forecast.
 
 Stored snapshots Oct 22 to Nov 11, 2026, 177 games, 8302 flagged prices.
 
@@ -140,3 +140,25 @@ Lines on players whose recent opportunity was above their season baseline (games
 | NBA | Breakout signal | 272 | 67 | 46.0% | 49.2% | -12.8% ± 6.8% |
 | NFL | No signal | 875 | 251 | 46.4% | 49.6% | -11.7% ± 4.2% |
 | NFL | Breakout signal | 215 | 91 | 45.1% | 49.5% | -14.6% ± 7.5% |
+
+## Longshot ladder model
+
+One-sided alternate lines priced from the sharp main line and the spread of past results, each using only results known before its game: 9096 settled alternates from 12 games. The NFL scanner stopped collecting alternates on Oct 26, so this is a small set of games.
+
+| Model's chance | Lines | Model said | Actually won | Book's break-even |
+|---|---|---|---|---|
+| 0% to 5% | 698 | 2.5% | 8.5% | 7.7% |
+| 5% to 10% | 743 | 7.5% | 8.6% | 9.0% |
+| 10% to 20% | 1639 | 14.5% | 12.8% | 13.1% |
+| 20% to 35% | 1643 | 26.4% | 22.9% | 23.6% |
+| 35% to 50% | 1526 | 43.6% | 35.5% | 43.7% |
+| 50% to 75% | 1850 | 61.6% | 57.6% | 68.0% |
+| 75% to 100% | 997 | 79.5% | 81.2% | 89.1% |
+
+| Bets (one per player, market and line, at the best price) | Settled | W-L | ROI | The model's own estimate |
+|---|---|---|---|---|
+| Every alternate, blind | 4265 | 1423-2842 | -13.4% ± 7.2% | +20.4% |
+| Every longshot (+200 or longer), blind | 2303 | 265-2038 | -16.1% ± 12.3% | +44.0% |
+| Longshots the model has at 4%+ | 1353 | 126-1227 | -29.4% ± 20.7% | +102.3% |
+| Longshots the model has positive after its haircut | 1202 | 112-1090 | -26.6% ± 22.3% | +113.5% |
+| Any alternate the model has at 4%+ | 1528 | 200-1328 | -27.7% ± 18.8% | +92.0% |

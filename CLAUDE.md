@@ -341,9 +341,14 @@ python -m pytest src/sports_sniper -q
   credits) and falls back to hypothetical sample data. `live` spends Odds API credits from the shared plan and is
   always explicit; it stops at `SNIPER_MAX_CREDITS_PER_SCAN` and `SNIPER_CREDIT_FLOOR` (2,000).
 - Phase 3 (2026-11-11): `python -m sports_sniper.cli backtest` replays the stored snapshots (rules, delayed entry,
-  walk-forward, paper bankroll, NBA model against market) and writes `reports/sniper_backtest_latest.md`; also the
+  walk-forward, paper bankroll, models against market) and writes `reports/sniper_backtest_latest.md`; also the
   Backtest and Model Comparison tabs. On 19 days the 4% rule is break-even with a wide interval, under half of flagged
   edges are still there one look later, and the NBA projection model is worse than the books' own prices.
+- Phases 2 and 4 (2026-11-11): model adapters with walk-forward calibration (the "model view" is recorded beside each
+  flagged bet and never changes what is flagged), Breakout Radar, longshot ladder model for alternates (speculative;
+  its picks lost), Parlay Lab, Discord alerts for new paper bets (`SNIPER_ALERT_WEBHOOK_URL`, off when unset), and a
+  daily evaluation inside `watch` (`cli evaluate`, about 90 s: report, calibration, parlay links). Nothing here has
+  shown an edge beyond the price gap; do not let a model rank or flag bets without out-of-sample evidence.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

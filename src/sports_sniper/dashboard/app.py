@@ -11,7 +11,8 @@ import streamlit as st
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from sports_sniper import backtest, bankroll, breakout, db, model_compare, performance, research
+from sports_sniper import backtest, bankroll, breakout, db, ladder, model_compare, parlay, performance, research
+from sports_sniper import odds_math
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.movement import moves
@@ -223,9 +224,49 @@ c2.metric("Available now", int((priced.available & (priced.conservative_ev > min
 c3.metric("Flagged in the last 36 h", len(priced))
 c4.metric("Last scan", f"#{scan.id} · {scan.source}")
 
-board_tab, longshot_tab, radar_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
-    ["Opportunity Board", "Longshot Hunter", "Breakout Radar", "Line Movement", "Performance", "Paper Bets", "Backtest",
-     "Model Comparison"])
+board_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
+    ["Opportunity Board", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance", "Paper Bets",
+     "Backtest", "Model Comparison"])
+
+
+@st.cache_data(ttl=600, show_spinner="Replaying the stored snapshots (a couple of minutes the first time)...")
+def replay():
+    """Every flagged price in every stored snapshot, graded, and one row per two-sided line with the model's chance."""
+    found, offers = backtest.candidates(engine(), settings, cache=backtest.default_cache(settings))
+    found, offers, _ = research.with_models(found, offers, settings)
+    return found, offers
+
+
+@st.cache_data(ttl=1800, show_spinner="Reading past lines and results...")
+def ladder_ratios():
+    try:
+        extra = ladder.nfl_line_history(settings.results_dsn)
+    except Exception:
+        extra = None
+    return ladder.combined_library(replay()[1], extra)
+
+
+@st.cache_data(ttl=1800, show_spinner="Scoring the ladder model on stored alternates...")
+def ladder_evidence():
+    return research.ladder_check(engine(), replay()[1], settings)
+
+
+@st.cache_data(ttl=1800, show_spinner="Reading this season's game logs...")
+def game_logs():
+    try:
+        return breakout.load_history(settings.results_dsn)
+    except Exception:
+        return {}
+
+
+def latest_look(hours: float, upcoming_only: bool = True) -> pd.DataFrame:
+    """The newest stored snapshot of each game seen in the last `hours`."""
+    recent = db.load_prices(engine(), since=now - timedelta(hours=hours))
+    if recent.empty:
+        return recent
+    if upcoming_only:
+        recent = recent[recent.commence_time > now]
+    return recent[recent.observed_at == recent.groupby("event_id").observed_at.transform("max")]
 
 with board_tab:
     st.subheader("Today's opportunities")
@@ -269,6 +310,39 @@ with longshot_tab:
             "Books quoting": outliers.books_quoting.to_list(), "Status": "Insufficient data",
             "Price seen": [("" if o.available else "EXPIRED · ") + ago(o.observed_at, now) for o in outliers.itertuples()],
         }), hide_index=True, width="stretch", column_config=LINK_COLUMN)
+
+    st.markdown("#### Model-priced longshots (speculative)")
+    st.caption("One-sided alternate lines given a chance by the ladder model: the sharp book's main line for the same player, "
+               "plus how far players have finished from their lines in the past. On the alternates stored so far the model's "
+               "\"underpriced\" longshots lost money (see the evidence below), so these are for study, never entered as paper bets.")
+    if st.button("Price longshots with the ladder model", key="ladder_load") or st.session_state.get("ladder_on"):
+        st.session_state["ladder_on"] = True
+        ratios = ladder_ratios()
+        modelled = ladder.current(latest_look(3, not show_expired), ratios, settings, int(floor))
+        if modelled.empty:
+            st.info("No alternate lines in the latest stored prices. The scheduled NFL scanner no longer collects them; a live "
+                    "scan with alternate markets configured would.")
+        else:
+            st.dataframe(pd.DataFrame({
+                "Player / market": [f"{m.player} — Over {m.line:g} {market_label(m.market)}" for m in modelled.itertuples()],
+                "Game": modelled.event_name.to_list(), "Book": modelled.book.map(book_label).to_list(),
+                "Bet": [bet_link(m.link, scan.source) for m in modelled.itertuples()],
+                "Odds": modelled.price.map(american).to_list(),
+                "Main line": [f"{m.anchor_line:g} ({m.anchor_probability:.0%} over)" for m in modelled.itertuples()],
+                "Model's chance": [f"{m.probability:.1%} ± {m.standard_error:.1%}" for m in modelled.itertuples()],
+                "Break-even": (1 / modelled.decimal).map(pct).to_list(),
+                "Model EV": modelled.ev.map(lambda v: pct(v, True)).to_list(),
+                "Conservative EV": modelled.conservative_ev.map(lambda v: pct(v, True)).to_list(),
+                "Estimate from": "Ladder model", "Evidence": "Speculative",
+            }).head(100), hide_index=True, width="stretch", column_config=LINK_COLUMN)
+        check = ladder_evidence()
+        if check["lines"]:
+            st.markdown("**Has the ladder model paid?**")
+            st.dataframe(pd.DataFrame([{"Bets": name, "Settled": m["won"] + m["lost"] + m["push"], "Record (W-L)": f"{m['won']}-{m['lost']}",
+                                        "ROI": plus_minus(m["roi"], m["roi_se"]), "The model's own estimate": pct(m["estimated_ev"], True)}
+                                       for name, m in check["groups"]]), hide_index=True, width="stretch")
+            st.caption(f"{check['lines']} settled alternates from {check['games']} games, each priced only from results known before "
+                       "its game. A model whose picks lose is describing the ladder, not beating it.")
 
 with radar_tab:
     st.subheader("Breakout Radar")
@@ -326,6 +400,62 @@ with radar_tab:
                     for b in checked.itertuples()]), hide_index=True, width="stretch")
                 st.caption("Every stored two-sided line, split by whether the player had a signal from games before that day. "
                            "If flagged players do not go over more often than the price implies, the books already know.")
+
+with parlay_tab:
+    st.subheader("Parlay Lab")
+    st.caption("The chance that several bets in one game all win, allowing for how they move together. Multiplying the legs "
+               "assumes they are independent; in one game they are not. Each leg's own chance is the market consensus (other "
+               "books, margin removed). A book's same-game parlay price is not in the odds feed, so type it in to compare. "
+               "Research only.")
+    links = parlay.load(parlay.default_path(settings.database_url))
+    if not links:
+        st.info("The links between statistics have not been measured yet. Run `python -m sports_sniper.cli evaluate` once "
+                "(the scheduled pass also does it daily).")
+    elif st.button("Load the legs", key="parlay_load") or st.session_state.get("parlay_on"):
+        st.session_state["parlay_on"] = True
+        look = latest_look(36 if show_expired else 3, not show_expired)
+        if look.empty:
+            st.info("No stored prices for games still to start. Tick **Include prices no longer available** to study recent games.")
+        else:
+            games = look.drop_duplicates("event_id").sort_values("commence_time")
+            game = st.selectbox("Game", games.event_id, key="parlay_game",
+                                format_func=lambda e: f"{games.set_index('event_id').loc[e].event_name} "
+                                                      f"({local(games.set_index('event_id').loc[e].commence_time)})")
+            rows = look[look.event_id == game]
+            two_sided = pd.DataFrame(backtest._offers([backtest._quote(r) for r in rows.itertuples(index=False)], settings))
+            if two_sided.empty:
+                st.info("No two-sided line in this game has a sharp reference right now.")
+            else:
+                team_of = parlay.teams_from(game_logs())
+                options = {}
+                for o in two_sided.itertuples():
+                    for side, chance in (("over", o.consensus_probability), ("under", 1 - o.consensus_probability)):
+                        options[f"{o.player} — {side.capitalize()} {o.line:g} {market_label(o.market)} ({chance:.0%})"] = dict(
+                            probability=chance, event_id=o.event_id, player_key=o.player_key, market=o.market, side=side,
+                            team=team_of.get((o.sport, o.player_key)))
+                picked = st.multiselect("Legs (2 to 4)", sorted(options), max_selections=4, key="parlay_legs")
+                offered = st.number_input("The book's price for this parlay (American; 0 if you have none)", value=0, step=10, key="parlay_price")
+                if len(picked) >= 2:
+                    try:
+                        out = parlay.evaluate([options[name] for name in picked], links, rows.sport.iloc[0], int(offered) or None)
+                    except ValueError as problem:
+                        st.warning(str(problem).capitalize() + ".")
+                    else:
+                        p1, p2, p3, p4 = st.columns(4)
+                        p1.metric("If the legs were independent", pct(out["independent"]),
+                                  f"fair {american(odds_math.decimal_to_american(out['independent_decimal']))}", delta_color="off")
+                        p2.metric("Allowing for the links", pct(out["joint"]),
+                                  f"fair {american(odds_math.decimal_to_american(out['fair_decimal']))}", delta_color="off")
+                        p3.metric("EV at the book's price", "-" if out["ev"] is None else pct(out["ev"], True))
+                        p4.metric("EV if you assumed independence", "-" if out["ev"] is None else pct(out["ev_if_independent"], True))
+                        st.dataframe(pd.DataFrame([{"Leg": picked[n["a"]], "With": picked[n["b"]],
+                                                    "Link": f"{n['correlation']:+.2f}", "Why": n["why"]} for n in out["links"]]),
+                                     hide_index=True, width="stretch")
+                        st.caption("A positive link makes both legs more likely to win together than multiplying suggests; a "
+                                   "negative one less. The links are averages over many players and games, so a particular pair "
+                                   "can differ. Books price same-game parlays knowing this.")
+                else:
+                    st.write("Pick at least two legs.")
 
 with moves_tab:
     st.subheader("Line movement")
@@ -456,22 +586,6 @@ with paper_tab:
 
 
 # --- Phase 3: backtest, bankroll and model against market ------------------------------------------------------------
-@st.cache_data(ttl=600, show_spinner="Replaying the stored snapshots (a couple of minutes the first time)...")
-def replay():
-    """Every flagged price in every stored snapshot, graded, and one row per two-sided line with the model's chance."""
-    found, offers = backtest.candidates(engine(), settings, cache=backtest.default_cache(settings))
-    found, offers, _ = research.with_models(found, offers, settings)
-    return found, offers
-
-
-@st.cache_data(ttl=1800, show_spinner="Reading this season's game logs...")
-def game_logs():
-    try:
-        return breakout.load_history(settings.results_dsn)
-    except Exception:
-        return {}
-
-
 def backtest_table(rows) -> pd.DataFrame:
     return pd.DataFrame([{
         "Rule": name, "Settled": m["won"] + m["lost"] + m["push"], "Record (W-L-P)": f"{m['won']}-{m['lost']}-{m['push']}",

@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     link_state: str = "co"                   # two-letter state for sportsbook links that need one (BetMGM)
 
     # --- paper trading ---
+    alert_webhook_url: str | None = None     # Discord webhook for new paper bets; alerts are off without it. A secret.
+    alert_min_ev: float = 0.04
+    alert_max_per_pass: int = 5
+    alert_max_age_minutes: float = 12.0      # a bet is only alerted while its price is this fresh
+    evaluate_every_hours: float = 20.0       # the scheduled pass refreshes the backtest report and calibration this often
     model_view: bool = True             # add the prediction model's calibrated chance to flagged bets (display and records only)
     auto_paper: bool = True                  # enter every flagged bet that clears the bar as a paper bet
     auto_paper_evidence: list[str] = ["strong", "moderate"]

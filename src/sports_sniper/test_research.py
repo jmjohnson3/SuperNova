@@ -7,13 +7,14 @@ import pandas as pd
 import pytest
 from typer.testing import CliRunner
 
-from sports_sniper import backtest, bankroll, breakout, cli, db, model_compare, research
+from sports_sniper import backtest, bankroll, breakout, cli, db, ladder, model_compare, research
 from sports_sniper.backtest import Strategy
 from sports_sniper.config import Settings
 from sports_sniper.providers import models
 from sports_sniper.test_settlement import NBA, NOW, engine, env, fake_results, real_snapshots, scan, seeded, settings  # noqa: F401
 
 START = datetime(2026, 11, 1, 23, 0, tzinfo=timezone.utc)
+NO_LINES = pd.DataFrame(columns=["day", "market", "ratio"])
 
 
 def flagged(n: int, *, day: int = 0, ev: float = 0.05, status: str = "won", price: int = -110, book: str = "fanduel",
@@ -253,7 +254,7 @@ def test_the_nba_model_uses_only_forecasts_made_before_the_price_was_seen():
 # --- report, command line and dashboard ---------------------------------------------------------------
 def test_report_covers_rules_walk_forward_bankroll_and_models(settings, engine):  # noqa: F811
     scan(settings, engine)
-    report = research.build(engine, settings, load_results=fake_results, history={},
+    report = research.build(engine, settings, load_results=fake_results, history={}, line_history=NO_LINES,
                             adapters=(("test-model", lambda dsn, offers: [0.7] * len(offers)),))
     text = research.markdown(report)
     for heading in ("## Rules compared", "## By minimum estimated edge", "## Walk-forward", "## Paper bankroll", "## Model against market",
@@ -263,12 +264,13 @@ def test_report_covers_rules_walk_forward_bankroll_and_models(settings, engine):
     assert research.save_calibration(report, settings) is None           # nothing fitted on a handful of lines: nothing saved
     empty = db.make_engine("sqlite:///:memory:")
     db.init_db(empty)
-    assert "No stored real prices yet" in research.markdown(research.build(empty, settings, load_results=fake_results, history={}, adapters=()))
+    assert "No stored real prices yet" in research.markdown(research.build(empty, settings, load_results=fake_results, history={}, adapters=(), line_history=NO_LINES))
 
 
 def test_backtest_and_bankroll_commands(env, tmp_path, monkeypatch):  # noqa: F811
     monkeypatch.setattr(models, "ADAPTERS", ())
     monkeypatch.setattr(breakout, "load_history", lambda dsn, connect=None: {})
+    monkeypatch.setattr(ladder, "nfl_line_history", lambda dsn, connect=None: NO_LINES)
     seeded().dispose()
     out = CliRunner().invoke(cli.app, ["backtest", "--no-write", "--min-ev", "0.01", "--side", "over"])
     assert out.exit_code == 0, out.output
@@ -284,6 +286,7 @@ def test_dashboard_backtest_and_model_tabs(env, monkeypatch):  # noqa: F811
     from streamlit.testing.v1 import AppTest
     monkeypatch.setattr(models, "ADAPTERS", ())
     monkeypatch.setattr(breakout, "load_history", lambda dsn, connect=None: {})
+    monkeypatch.setattr(ladder, "nfl_line_history", lambda dsn, connect=None: NO_LINES)
     seeded().dispose()
     st.cache_resource.clear()
     st.cache_data.clear()

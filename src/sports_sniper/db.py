@@ -162,6 +162,7 @@ class PaperBet(Base):
     link: Mapped[str | None] = mapped_column(Text, nullable=True)
     replayed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())   # entered long after the price was seen
     model_probability: Mapped[float | None] = mapped_column(Float, nullable=True)     # calibrated model chance when entered
+    alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 def make_engine(url: str) -> Engine:
