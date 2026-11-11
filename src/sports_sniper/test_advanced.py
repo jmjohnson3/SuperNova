@@ -125,6 +125,23 @@ def test_alerts_are_off_without_an_address_and_sent_once_for_fresh_bets(settings
         assert all(b.alerted_at is None or db.as_utc(b.alerted_at) == now for b in session.scalars(select(db.PaperBet)))
 
 
+def test_each_sport_can_have_its_own_channel(settings, engine):  # noqa: F811
+    now = NOW + timedelta(minutes=26)
+    scan(settings, engine, now=now)
+    with Session(engine) as session:
+        sports = {b.sport for b in alerts.pending(session, alert_settings(settings, alert_max_per_pass=50), now)}
+    posted = []
+    only_nba = settings.model_copy(update=dict(alert_webhook_url_nba="https://discord.test/nba-token", alert_max_age_minutes=30.0, alert_max_per_pass=50))
+    out = alerts.send(engine, only_nba, now=now, post=lambda url, text: posted.append(url))
+    assert posted == ["https://discord.test/nba-token"] and out["status"] == "sent"
+    with Session(engine) as session:
+        assert {b.sport for b in session.scalars(select(db.PaperBet)) if b.alerted_at is not None} == {"nba"}     # no channel for the rest: not sent
+    both = only_nba.model_copy(update=dict(alert_webhook_url="https://discord.test/general-token"))
+    more = alerts.send(engine, both, now=now, post=lambda url, text: posted.append(url))
+    assert (more["sent"] > 0 and posted[1:] == ["https://discord.test/general-token"]) if sports - {"nba"} else more["status"] == "nothing new"
+    assert alerts.address(both, "nba").endswith("nba-token") and alerts.address(both, "nfl").endswith("general-token")
+
+
 def test_a_failed_alert_is_retried_and_never_shows_the_address(settings, engine):  # noqa: F811
     now = NOW + timedelta(minutes=26)
     scan(settings, engine, now=now)

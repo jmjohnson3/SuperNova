@@ -1,6 +1,6 @@
 """Alerts: tell a Discord channel when the scheduled pass enters a new paper bet whose price is still live.
 
-Off unless SNIPER_ALERT_WEBHOOK_URL is set. A bet is alerted once, only when it was entered from a price seen in
+Off unless SNIPER_ALERT_WEBHOOK_URL (or a per-sport SNIPER_ALERT_WEBHOOK_URL_NBA / _NFL / _MLB) is set. A bet is alerted once, only when it was entered from a price seen in
 the last few minutes for a game that has not started (never a replayed one), and at most a few per pass. The
 message is information for research: it says the bet is on paper and that the price may already be gone. The
 webhook address is a secret: it is never logged or put in an error.
@@ -47,25 +47,39 @@ def pending(session: Session, settings: Settings, now: datetime) -> list:
             and (b.ev or 0) >= settings.alert_min_ev][:settings.alert_max_per_pass]
 
 
+def address(settings: Settings, sport: str) -> str | None:
+    """Where a sport's alerts go: its own channel when one is set, otherwise the general one."""
+    return getattr(settings, f"alert_webhook_url_{sport}", None) or settings.alert_webhook_url
+
+
 def send(engine: Engine, settings: Settings, *, now: datetime | None = None, post=None) -> dict:
-    """Post one message for the new paper bets. Returns counts; never raises for a delivery problem."""
-    url = settings.alert_webhook_url
-    if not url:
+    """Post one message per channel for the new paper bets. Returns counts; never raises for a delivery problem.
+    A bet whose message did not go out stays unalerted and is tried again on the next pass while it is fresh."""
+    if not any(address(settings, sport) for sport in ("nba", "nfl", "mlb")):
         return dict(status="off", sent=0)
     now = now or datetime.now(timezone.utc)
     db.init_db(engine)
     with Session(engine) as session, session.begin():
-        bets = pending(session, settings, now)
-        if not bets:
+        by_channel: dict[str, list] = {}
+        for bet in pending(session, settings, now):
+            url = address(settings, bet.sport)
+            if url:
+                by_channel.setdefault(url, []).append(bet)
+        if not by_channel:
             return dict(status="nothing new", sent=0)
-        try:
-            if post is None:
-                response = httpx.post(url, json={"content": message(bets, now, settings.link_state)}, timeout=10)
-                response.raise_for_status()
-            else:
-                post(url, message(bets, now, settings.link_state))
-        except Exception as error:               # the address must not appear in a log line or an error
-            return dict(status=f"failed ({type(error).__name__})", sent=0)
-        for bet in bets:
-            bet.alerted_at = now
-        return dict(status="sent", sent=len(bets))
+        sent, problems = 0, []
+        for url, bets in by_channel.items():
+            try:
+                if post is None:
+                    response = httpx.post(url, json={"content": message(bets, now, settings.link_state)}, timeout=10)
+                    response.raise_for_status()
+                else:
+                    post(url, message(bets, now, settings.link_state))
+            except Exception as error:           # the address must not appear in a log line or an error
+                problems.append(type(error).__name__)
+                continue
+            for bet in bets:
+                bet.alerted_at = now
+            sent += len(bets)
+        status = "sent" if not problems else f"failed ({', '.join(sorted(set(problems)))})"
+        return dict(status=status, sent=sent)

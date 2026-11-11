@@ -59,6 +59,9 @@ class Settings(BaseSettings):
 
     # --- paper trading ---
     alert_webhook_url: str | None = None     # Discord webhook for new paper bets; alerts are off without it. A secret.
+    alert_webhook_url_nba: str | None = None  # a channel of its own for one sport; falls back to the address above
+    alert_webhook_url_nfl: str | None = None
+    alert_webhook_url_mlb: str | None = None
     alert_min_ev: float = 0.04
     alert_max_per_pass: int = 5
     alert_max_age_minutes: float = 12.0      # a bet is only alerted while its price is this fresh

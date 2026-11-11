@@ -27,6 +27,9 @@ start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.draftkings_che
 :: Discord replies to the alerts (y / n / m / b) become price checks; every-alert paper ledger; one summary a day.
 start "" /b cmd /c ".venv\Scripts\python.exe -B -m sharp_pipeline.discord_replies >> %SIDELOG%_replies.log 2>&1"
 :: Sports Betting Sniper: store the snapshots just saved, enter flagged bets as paper bets, settle finished ones (no credits).
+:: Sniper alerts: each new paper bet is posted once to its sport's own Discord channel while the price is fresh.
+if defined NBA_DISCORD_WEBHOOK_URL set "SNIPER_ALERT_WEBHOOK_URL_NBA=%NBA_DISCORD_WEBHOOK_URL%"
+for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v NFL_DISCORD_WEBHOOK_URL 2^>nul ^| findstr NFL_DISCORD_WEBHOOK_URL') do set "SNIPER_ALERT_WEBHOOK_URL_NFL=%%B"
 start "" /b cmd /c ".venv\Scripts\python.exe -B -m sports_sniper.cli watch >> %SIDELOG%_sniper.log 2>&1"
 :: The task runs at normal priority so the scan above is not starved on a busy PC (scripts\tasks\Sharp-Multi-Watch.xml).
 :: The report steps below are not time-critical: run them below normal so they do not slow the next scan.

@@ -346,7 +346,8 @@ python -m pytest src/sports_sniper -q
   edges are still there one look later, and the NBA projection model is worse than the books' own prices.
 - Phases 2 and 4 (2026-11-11): model adapters with walk-forward calibration (the "model view" is recorded beside each
   flagged bet and never changes what is flagged), Breakout Radar, longshot ladder model for alternates (speculative;
-  its picks lost), Parlay Lab, Discord alerts for new paper bets (`SNIPER_ALERT_WEBHOOK_URL`, off when unset), and a
+  its picks lost), Parlay Lab, Discord alerts for new paper bets (on since 2026-11-11: the watch .bat passes the saved NBA and NFL channel
+  addresses as `SNIPER_ALERT_WEBHOOK_URL_NBA` / `_NFL`; off when unset), and a
   daily evaluation inside `watch` (`cli evaluate`, about 90 s: report, calibration, parlay links). Nothing here has
   shown an edge beyond the price gap; do not let a model rank or flag bets without out-of-sample evidence.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.

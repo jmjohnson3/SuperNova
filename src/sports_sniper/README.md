@@ -133,9 +133,10 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
   the same player and the spread of past results around their lines, each priced only from results known before its
   game. Always labelled speculative and never paper-traded: on the alternates stored so far its "underpriced"
   longshots lost. Shown under Longshot Hunter when alternates are in the latest prices.
-- **Alerts** (`alerts.py`). With `SNIPER_ALERT_WEBHOOK_URL` set, the scheduled pass posts each new automatic paper bet
-  to that Discord channel once, while its price is fresh and its game has not started. Off by default. The address
-  is never logged.
+- **Alerts** (`alerts.py`). With `SNIPER_ALERT_WEBHOOK_URL` set (or one per sport: `_NBA`, `_NFL`, `_MLB`), the scheduled
+  pass posts each new automatic paper bet to that Discord channel once, while its price is fresh and its game has not
+  started. The address is never logged. On this PC `scripts/sharp_multi_watch.bat` turns them on (since 2026-11-11)
+  by passing the saved NBA and NFL channel addresses to the scheduled pass.
 - **Parlay Lab** (`parlay.py`). Links between statistics measured from several seasons of game logs (same player,
   teammates, opponents) and a Gaussian-copula simulation of the chance that every leg wins, against the independent
   product. The book's same-game parlay price is typed in; it is not in the odds feed.
