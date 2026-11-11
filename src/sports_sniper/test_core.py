@@ -214,7 +214,7 @@ def test_one_sided_longshots_get_no_probability_only_a_price_comparison():
     td = find(found, "Sample Player E", "yes", "draftkings")
     assert td.status == "insufficient_data" and td.evidence == "insufficient"
     assert td.probability is None and td.ev is None and td.conservative_ev is None and td.fair_price is None
-    assert td.premium_vs_median == pytest.approx(3.4 / 2.75 - 1) and td.books_quoting == 4 and td.is_best_price
+    assert td.premium_vs_median == pytest.approx(3.4 / 2.75 - 1) and td.books_quoting == 3 and td.is_best_price          # BetMGM is a reference, not a book to bet at
     assert "insufficient data" in td.explanation and "No book prices the other side" in td.explanation
     assert find(found, "Sample Player E", "yes", "fanduel") is None                # not the best price: not flagged
     alt = [o for o in found if o.market == "player_points_alternate"]
@@ -284,3 +284,11 @@ def test_settings_read_the_environment_and_keep_the_key_secret(monkeypatch):
     assert settings.markets_for("nba") == ["player_points"] and settings.credit_floor == 5000
     assert settings.markets_for("nfl") == ["player_anytime_td", "player_pass_tds", "player_rush_yds", "player_reception_yds"]
     assert settings.markets_for("cricket") == []
+
+
+def test_only_the_configured_books_are_flagged_and_the_rest_stay_references():
+    found = detect(quotes(), SETTINGS)
+    assert {o.book for o in found} <= {"fanduel", "draftkings", "espnbet"}
+    assert "betmgm" in find(found, "Sample Player A", "over", "draftkings").reference_books
+    everywhere = detect(quotes(), Settings(_env_file=None, bet_books=[]))
+    assert "betmgm" in {o.book for o in everywhere} and SETTINGS.min_ev == 0.04

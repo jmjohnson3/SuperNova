@@ -72,8 +72,9 @@ def scan(source: str = typer.Option("auto", help=" | ".join(SOURCES)),
     dropped = {k: v for k, v in result.dropped.items() if v and k != "not_player_market"}
     if dropped:
         typer.echo("Left out: " + ", ".join(f"{v} {k.replace('_', ' ')}" for k, v in sorted(dropped.items())))
-    shown = [o for o in result.current if o.status == "priced" and o.conservative_ev > settings.min_conservative_ev]
-    typer.echo(f"\n{len(shown)} with a positive conservative EV" + (":" if shown else ". Nothing clears the bar."))
+    shown = [o for o in result.current if o.status == "priced" and o.conservative_ev > settings.min_conservative_ev
+             and o.ev >= settings.min_ev]
+    typer.echo(f"\n{len(shown)} with an estimated edge of {settings.min_ev:.0%} or more" + (":" if shown else ". Nothing clears the bar."))
     for o in shown[:limit]:
         typer.echo("  " + _row(o))
 
@@ -92,7 +93,7 @@ def top(limit: int = typer.Option(15), all_evidence: bool = typer.Option(False, 
     frame = db.load_opportunities(engine)
     frame = frame[(frame.data_source == latest.source) & ~frame.superseded & (frame.status == "priced")].sort_values("conservative_ev", ascending=False)
     if not all_evidence:
-        frame = frame[frame.conservative_ev > settings.min_conservative_ev]
+        frame = frame[(frame.conservative_ev > settings.min_conservative_ev) & (frame.ev >= settings.min_ev)]
     typer.echo(f"Scan {latest.id} ({latest.source}), {len(frame)} shown:")
     for o in frame.head(limit).itertuples():
         typer.echo(f"  [{o.id}] " + _row(o))

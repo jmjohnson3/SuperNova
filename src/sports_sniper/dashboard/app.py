@@ -123,6 +123,8 @@ kind, text = SOURCE_NOTE[scan.source]
 getattr(st, kind)(text)
 frame = db.load_opportunities(engine(), since=now - timedelta(hours=36))
 frame = frame[frame.data_source == scan.source] if not frame.empty else frame
+if settings.bet_books and not frame.empty:          # rows stored before the bet-book setting existed
+    frame = frame[frame.book.isin(settings.bet_books)]
 if not frame.empty:
     age = (now - frame.observed_at).dt.total_seconds() / 60
     frame["available"] = ~frame.superseded & (frame.commence_time > now) & (age <= settings.max_snapshot_age_minutes)
@@ -135,6 +137,8 @@ with st.sidebar:
     markets = st.multiselect("Market", sorted(frame.market.unique()), format_func=market_label)
     books = st.multiselect("Sportsbook", sorted(frame.book.unique()), format_func=book_label)
     min_odds = st.number_input("Minimum odds (American)", value=-10000, step=50)
+    min_ev = st.slider("Minimum estimated EV", 0.0, 0.15, float(settings.min_ev), 0.005, format="%.3f",
+                       help="Flagged bets with an estimated edge under 4% have lost on paper so far; lower this to see them.")
     min_edge = st.slider("Minimum conservative EV", 0.0, 0.15, float(settings.min_conservative_ev), 0.005, format="%.3f")
     tiers = st.multiselect("Evidence", ["strong", "moderate", "speculative"], default=["strong", "moderate"],
                            help="Strong: holds after the uncertainty haircut, with a sharp book and a second reference. "
@@ -199,7 +203,7 @@ unpriced = frame[frame.status != "priced"].sort_values("premium_vs_median", asce
 last_seen = frame.observed_at.max() if not frame.empty else None
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Last prices seen", "-" if last_seen is None else ago(last_seen, now))
-c2.metric("Available now", int((priced.available & (priced.conservative_ev > min_edge)).sum()))
+c2.metric("Available now", int((priced.available & (priced.conservative_ev > min_edge) & (priced.ev >= min_ev)).sum()))
 c3.metric("Flagged in the last 36 h", len(priced))
 c4.metric("Last scan", f"#{scan.id} · {scan.source}")
 
@@ -209,7 +213,7 @@ board_tab, longshot_tab, moves_tab, perf_tab, paper_tab = st.tabs(
 with board_tab:
     st.subheader("Today's opportunities")
     board = filtered(priced)
-    board = board[(board.conservative_ev > min_edge) & board.evidence.isin(tiers)]
+    board = board[(board.conservative_ev > min_edge) & (board.ev >= min_ev) & board.evidence.isin(tiers)]
     if board.empty:
         st.info("No opportunities clear the bar right now. That is a normal result: most prices are fair or worse."
                 + ("" if show_expired or priced.empty else " Tick **Include prices no longer available** to review earlier ones."))
@@ -224,7 +228,7 @@ with longshot_tab:
     st.subheader("Longshot Hunter")
     floor = st.number_input("Minimum payout odds (American)", value=int(settings.longshot_min_american), step=50)
     longs = filtered(priced)
-    longs = longs[(longs.price >= floor) & longs.evidence.isin(tiers) & (longs.conservative_ev > min_edge)]
+    longs = longs[(longs.price >= floor) & longs.evidence.isin(tiers) & (longs.conservative_ev > min_edge) & (longs.ev >= min_ev)]
     if longs.empty:
         st.info("No longshot has a supportable positive edge right now.")
     else:
@@ -273,7 +277,9 @@ with moves_tab:
         st.caption("First seen is the first price this app stored, not the book's opening price. A negative break-even "
                    "change means the payout got longer.")
 
-STRATEGY_LABEL = {db.STRATEGY_AUTO: "Automatic: every flagged bet that clears the bar", db.STRATEGY_MANUAL: "Saved by hand"}
+STRATEGY_LABEL = {db.STRATEGY_AUTO: "Automatic v2: edge of 4% or more, at your bet books",
+                  db.STRATEGY_AUTO_V1: "Automatic v1 (to Nov 10): any positive conservative edge, every book",
+                  db.STRATEGY_MANUAL: "Saved by hand"}
 STATUS_LABEL = {"open": "Open", "won": "Won", "lost": "Lost", "push": "Push", "void": "Void"}
 
 
@@ -372,7 +378,7 @@ with paper_tab:
             "Note": shown.settle_note.fillna("").to_list(),
             "Data": ["Hypothetical sample" if d == "sample" else "Replayed" if r else "Real prices"
                      for d, r in zip(shown.data_source, shown.replayed)],
-            "Strategy": shown.strategy.map(lambda n: "Automatic" if n == db.STRATEGY_AUTO else "By hand").to_list(),
+            "Strategy": shown.strategy.map(lambda n: "By hand" if n == db.STRATEGY_MANUAL else "Automatic").to_list(),
         }), hide_index=True, width="stretch", column_config=LINK_COLUMN)
         if len(all_bets) > len(shown):
             st.caption(f"Showing the newest {len(shown)} of {len(all_bets)}.")

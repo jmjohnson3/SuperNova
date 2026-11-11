@@ -139,7 +139,7 @@ def run_scan(settings: Settings, engine: Engine, source: str = "auto", *, sports
                       ["event_id", "book", "market", "player_key", "line_key", "side", "observed_at"])
         paper = 0
         if settings.auto_paper:
-            paper = db.auto_paper_bets(session, scan.id, min_conservative_ev=settings.min_conservative_ev,
+            paper = db.auto_paper_bets(session, scan.id, min_conservative_ev=settings.min_conservative_ev, min_ev=settings.min_ev,
                                        evidence=settings.auto_paper_evidence, stake=settings.paper_stake, now=now,
                                        replay_after_minutes=settings.replay_after_minutes)
         result = ScanResult(scan_id=scan.id, source=source, sports=sports, events=scan.events, quotes=len(quotes),

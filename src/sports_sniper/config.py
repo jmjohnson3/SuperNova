@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     sports: list[str] = ["nfl", "nba"]
     bookmakers: list[str] = ["draftkings", "fanduel", "betmgm", "espnbet", "fanatics", "pinnacle"]  # 10 or fewer cost one region
     sharp_books: list[str] = ["pinnacle"]    # used as references, never evaluated as places to bet
+    bet_books: list[str] = ["fanduel", "draftkings", "espnbet"]   # books to flag bets at; the rest are references only. Empty = every book
     markets: dict[str, list[str]] = {}       # per sport; empty uses markets.DEFAULT_MARKETS
     lookahead_hours: float = 24.0            # live scans: games starting within this many hours
     saved_lookback_hours: float = 36.0       # saved snapshots: how far back to read
@@ -49,6 +50,7 @@ class Settings(BaseSettings):
 
     # --- what to show ---
     min_conservative_ev: float = 0.0
+    min_ev: float = 0.04                     # smallest estimated edge shown and paper-traded (smaller ones have not held up)
     longshot_min_american: int = 200
     max_snapshot_age_minutes: float = 20.0   # older prices are shown as history, not as available
     line_move_threshold: float = 0.02        # change in break-even probability worth flagging

@@ -83,16 +83,18 @@ def detect(quotes: list[Quote], settings: Settings) -> list[Opportunity]:
     for q in quotes:
         by_selection[q.selection + (q.observed_at,)][q.book][q.side] = q
     sharp = tuple(settings.sharp_books)
+    bettable = set(settings.bet_books)       # other books still serve as references, never as places to bet
     found: list[Opportunity] = []
     for books in by_selection.values():
         for book, sides in books.items():
-            if book in sharp:
+            if book in sharp or (bettable and book not in bettable):
                 continue
             for side, q in sides.items():
                 minutes = (q.commence_time - q.observed_at).total_seconds() / 60
                 if minutes <= 0:
                     continue            # the game had started: not a pre-game price
-                rivals = [b[side].decimal for name, b in books.items() if name not in sharp and name != book and side in b]
+                rivals = [b[side].decimal for name, b in books.items()
+                          if name not in sharp and name != book and side in b and (not bettable or name in bettable)]
                 is_best = all(q.decimal >= r - 1e-9 for r in rivals)
                 premium = q.decimal / statistics.median(rivals) - 1 if rivals else None
                 longshot = q.price >= settings.longshot_min_american

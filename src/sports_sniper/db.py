@@ -11,7 +11,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.schema import CreateColumn
 
-STRATEGY_AUTO = "auto-consensus-v1"     # every flagged bet that clears the bar, entered automatically
+STRATEGY_AUTO = "auto-consensus-v2"     # v2 (2026-11-11): estimated edge of 4% or more, at the configured bet books only
+STRATEGY_AUTO_V1 = "auto-consensus-v1"     # every flagged bet that clears the bar, entered automatically
 STRATEGY_MANUAL = "manual"              # bets saved by hand from the dashboard or the command line
 STRATEGY = STRATEGY_MANUAL
 
@@ -264,13 +265,13 @@ def place_paper_bet(session: Session, opportunity: OpportunityRow, *, stake: flo
     return bet, True
 
 
-def auto_paper_bets(session: Session, scan_id: int, *, min_conservative_ev: float, evidence: list[str], stake: float,
+def auto_paper_bets(session: Session, scan_id: int, *, min_conservative_ev: float, min_ev: float, evidence: list[str], stake: float,
                     now: datetime, replay_after_minutes: float = 60) -> int:
     """Enter every bet this scan flagged that clears the bar, at the best-priced book, the first time it is
     seen. Returns how many were new. Hypothetical sample data is never paper-traded automatically."""
     rows = session.scalars(select(OpportunityRow).where(
         OpportunityRow.scan_id == scan_id, OpportunityRow.status == "priced", OpportunityRow.data_source != "sample",
-        OpportunityRow.conservative_ev > min_conservative_ev, OpportunityRow.evidence.in_(evidence),
+        OpportunityRow.conservative_ev > min_conservative_ev, OpportunityRow.ev >= min_ev, OpportunityRow.evidence.in_(evidence),
         OpportunityRow.is_best_price).order_by(OpportunityRow.observed_at, OpportunityRow.conservative_ev.desc())).all()
     made = 0
     for row in rows:

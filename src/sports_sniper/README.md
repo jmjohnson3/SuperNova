@@ -58,8 +58,11 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
 
 ## Paper trading and settlement
 
-- **Automatic entries.** Every flagged bet on real prices with a positive conservative EV and strong or moderate
-  evidence is entered as a paper bet (strategy `auto-consensus-v1`) at the best-priced book, the first time it
+- **The bar (since 2026-11-11).** A bet is shown and paper-traded only with an estimated edge of 4% or more
+  (`SNIPER_MIN_EV`) at a book in `SNIPER_BET_BOOKS` (FanDuel, DraftKings, theScore Bet). Other books are references
+  only. On the first 372 settled paper bets, those under 4% lost and had the smallest closing value.
+- **Automatic entries.** Every flagged bet on real prices that clears the bar, with a positive conservative EV and
+  strong or moderate evidence, is entered as a paper bet (strategy `auto-consensus-v2`; `v1` is the earlier rule) at the best-priced book, the first time it
   qualifies, one per game, player, market, line and side. Bets saved by hand are strategy `manual`. Sample data is
   never entered automatically and never settled.
 - **Replays.** A bet entered more than an hour after its price was seen (a scan of older saved snapshots) is marked

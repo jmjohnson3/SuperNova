@@ -38,19 +38,19 @@ def count(engine, model) -> int:
 def test_a_sample_scan_is_stored_and_a_repeat_adds_nothing(settings, engine):
     first = scanner.run_scan(settings, engine, "sample", now=NOW)
     assert (first.source, first.events, first.quotes, first.new_quotes) == ("sample", 2, 114, 114)
-    assert first.note == "hypothetical sample data" and len(first.opportunities) == count(engine, db.OpportunityRow) == 22
-    assert len(first.current) == 12 and {o.observed_at for o in first.current} == {NOW}
+    assert first.note == "hypothetical sample data" and len(first.opportunities) == count(engine, db.OpportunityRow) == 20
+    assert len(first.current) == 11 and {o.observed_at for o in first.current} == {NOW}
     again = scanner.run_scan(settings, engine, "sample", now=NOW)
-    assert again.new_quotes == 0 and count(engine, db.PriceRow) == 114 and count(engine, db.OpportunityRow) == 22
+    assert again.new_quotes == 0 and count(engine, db.PriceRow) == 114 and count(engine, db.OpportunityRow) == 20
     assert count(engine, db.Scan) == 2
     frame = db.load_opportunities(engine)
-    assert len(frame) == 12 and set(frame.data_source) == {"sample"} and frame.observed_at.max() == NOW
+    assert len(frame) == 11 and set(frame.data_source) == {"sample"} and frame.observed_at.max() == NOW
     assert not frame.superseded.any()                    # each bet's newest look is the current one
     everything = db.load_opportunities(engine, latest_only=False)
-    assert len(everything) == 22 and everything.superseded.sum() == 10 and (everything[everything.superseded].observed_at < NOW).all()
+    assert len(everything) == 20 and everything.superseded.sum() == 9 and (everything[everything.superseded].observed_at < NOW).all()
     later = scanner.run_scan(settings, engine, "sample", now=NOW + timedelta(minutes=5), snapshots=[])
     assert later.current == [] and not db.load_opportunities(engine).superseded.any()      # an empty scan changes nothing
-    assert len(db.load_opportunities(engine, latest_only=False)) == 22
+    assert len(db.load_opportunities(engine, latest_only=False)) == 20
     assert str(frame.observed_at.dt.tz) == "UTC" and frame[frame.status == "insufficient_data"].probability.isna().all()
 
 
@@ -201,7 +201,7 @@ def test_command_line_scans_ranks_and_saves_a_paper_bet(env):
     runner = CliRunner()
     assert "No scans yet" in runner.invoke(cli.app, ["top"]).output
     out = runner.invoke(cli.app, ["scan", "--source", "sample"])
-    assert out.exit_code == 0 and "HYPOTHETICAL SAMPLE DATA" in out.output and "6 with a positive conservative EV" in out.output
+    assert out.exit_code == 0 and "HYPOTHETICAL SAMPLE DATA" in out.output and "6 with an estimated edge of 4% or more" in out.output
     assert "Sample Player H Over 4.5 (Three-pointers) at DraftKings +340" in out.output
     top = runner.invoke(cli.app, ["top"])
     first_id = int(top.output.split("[")[1].split("]")[0])

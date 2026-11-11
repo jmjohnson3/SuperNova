@@ -409,7 +409,7 @@ def test_watch_command_logs_one_line_per_step(env, monkeypatch):
     monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: sample.load(stamp)[2:])      # games start after the look, whatever the clock says
     out = CliRunner().invoke(cli.app, ["watch"])
     assert out.exit_code == 0, out.output
-    assert "2 games, 57 prices, 12 flagged, 5 new paper bets" in out.output and "sample" not in out.output.lower()
+    assert "2 games, 57 prices, 11 flagged, 5 new paper bets" in out.output and "sample" not in out.output.lower()
 
     def broken(dsn, sports, since):
         raise ConnectionError("postgresql://user:secret@host/db is down")
@@ -444,3 +444,9 @@ def test_dashboard_shows_settled_performance(env):
     assert set(paper["Status"]) == {"Won", "Lost", "Void", "Open"} and "did not play" in set(paper["Note"])
     assert "Not enough settled bets" in " ".join(m.value for m in app.markdown)
     engine.dispose()
+
+
+def test_automatic_bets_need_the_minimum_estimated_edge(settings, engine):
+    strict = Settings(_env_file=None, database_url=settings.database_url, min_ev=0.05)
+    assert scan(strict, engine).paper_bets == 3                      # the two bets at about 4% are left out
+    assert all(b.ev >= 0.05 and b.strategy == "auto-consensus-v2" for b in bets(engine).values())
