@@ -340,6 +340,10 @@ python -m pytest src/sports_sniper -q
 - `auto` reads the snapshots the scheduled scanners already saved (`providers/saved_quotes.py`, read-only, no
   credits) and falls back to hypothetical sample data. `live` spends Odds API credits from the shared plan and is
   always explicit; it stops at `SNIPER_MAX_CREDITS_PER_SCAN` and `SNIPER_CREDIT_FLOOR` (2,000).
+- Phase 3 (2026-11-11): `python -m sports_sniper.cli backtest` replays the stored snapshots (rules, delayed entry,
+  walk-forward, paper bankroll, NBA model against market) and writes `reports/sniper_backtest_latest.md`; also the
+  Backtest and Model Comparison tabs. On 19 days the 4% rule is break-even with a wide interval, under half of flagged
+  edges are still there one look later, and the NBA projection model is worse than the books' own prices.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

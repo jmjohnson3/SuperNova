@@ -4,7 +4,8 @@ Finds sportsbook prices on player props that look too generous against what othe
 identical bet, ranks them, and tracks them as paper bets. **Research and paper trading only.** It never places
 a wager, and an estimated edge is an estimate, not a profit.
 
-This is Phase 1: the working scanner, ranking, storage and dashboard. No prediction model is involved yet.
+Phase 1 (scanner, ranking, storage, dashboard) and Phase 3 (backtest, walk-forward, paper bankroll, model against
+market) are built. No prediction model feeds the board: the one model compared so far is worse than the market.
 
 ## Run it
 
@@ -12,10 +13,11 @@ This is Phase 1: the working scanner, ranking, storage and dashboard. No predict
 python -m sports_sniper.cli scan          # real saved snapshots if there are any, else sample data
 python -m sports_sniper.cli settle        # grade finished paper bets, add closing line value
 python -m sports_sniper.cli dashboard     # opens http://localhost:8517
+python -m sports_sniper.cli backtest      # replay stored snapshots; writes reports/sniper_backtest_latest.md
 ```
 
 Other commands: `scan --source sample | saved | live`, `scan --sport nba`, `scan --lookback-hours 456` (replay
-older saved snapshots), `top`, `paper-bet <id>`, `quota`,
+older saved snapshots), `top`, `paper-bet <id>`, `bankroll --staking flat | kelly`, `quota`,
 `init-db`. Tests: `python -m pytest src/sports_sniper -q`. After `pip install -e .` the same commands are
 available as `sniper scan`, `sniper dashboard` and so on. Settings are in `.env.example`.
 
@@ -80,6 +82,29 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
   line value, calibration and Brier score against the prices' own break-even, by sport, market, book, side and
   evidence, with forward and replayed bets separated.
 
+## Validation and research (Phase 3)
+
+- **Backtest** (`backtest.py`, the Backtest tab, `cli backtest`). Replays every stored snapshot in time order. A rule
+  (minimum edge, books, sides, sports, evidence, odds range, minutes before the start) sees only what was in a snapshot at
+  that moment, enters once per bet at the price that was stored, and is graded from the same final statistics that
+  settle paper bets. It reports record, ROI with a 95% interval (whole games as the draws), estimated against realized
+  edge, closing line value, largest fall, longest losing run, and results by period and market. Replaying the first
+  automatic rule reproduces the paper ledger's record exactly, which is the check that the engine and the live path agree.
+- **Entered one look later.** The same book's price at the next snapshot (about ten minutes on); no bet when the line
+  is gone or no longer clears the bar. A closing price is never used as an entry price.
+- **Walk-forward.** The minimum edge is chosen on earlier days only (by results or by closing value) and applied to
+  the next three game days, so a threshold is never judged on the bets that chose it.
+- **Paper bankroll** (`bankroll.py`). Flat or fractional Kelly on the probability lowered by its uncertainty, with
+  limits per bet, per day, per sport, per game and per player, an optional stop after a fall, and the largest fall
+  tracked. Stakes for a day come from the bankroll at the start of that day. A loss never raises the next stake.
+- **Model against market** (`model_compare.py`, `providers/models.py`, the Model Comparison tab). Every two-sided line
+  once, at the first look where a bet book and Pinnacle both priced it: Brier score and log loss of the bet book's own
+  no-vig price, the other books' consensus and the NBA projection model (a forecast made before the price was seen),
+  then what betting each source's picks at the bet book's price would have returned. NFL forecasts are not compared:
+  the stored probabilities are already blended toward FanDuel's price.
+- The slow part is kept per game in `data/sniper/backtest_cache.pkl` and redone only for games with new prices.
+- Historical odds before the first stored snapshot (2026-10-22) are not used; none were bought.
+
 ## Scheduled runs
 
 `scripts/sharp_multi_watch.bat` (task `\SuperNovaBets\Sharp-Multi-Watch`, every 10 minutes) runs
@@ -105,16 +130,20 @@ write-ahead mode so the dashboard can read while a pass writes; it grows by roug
 - Paper bets at the observed price: automatic for flagged bets, or saved by hand; never duplicated unless a
   separate entry is asked for.
 - Settlement of NBA and NFL over/under props, closing line value, and the performance summary.
-- Streamlit dashboard: Opportunity Board, Longshot Hunter, Line Movement, Performance, Paper Bets, with filters.
+- Backtest over stored snapshots with delayed entry and walk-forward, the paper-bankroll simulator, and the
+  model-against-market comparison for NBA.
+- Streamlit dashboard: Opportunity Board, Longshot Hunter, Line Movement, Performance, Paper Bets, Backtest, Model
+  Comparison, with filters.
 - NFL and NBA. MLB markets are listed and the code paths are shared, but MLB has not been run.
 
 ## What is not built yet
 
 - **Settling touchdown markets and MLB.** The results source has no reliable touchdown total, and MLB has no
   results adapter, so those bets stay open.
-- **Model-derived EV.** Every estimate is market consensus. Model adapters, calibration and model-versus-market
-  comparison are Phase 2. So is the Breakout Radar, which needs usage and injury data sources.
-- **Backtesting and the bankroll simulator** (Phase 3), alerts, live in-game scanning, Parlay Lab (Phase 4).
+- **Model-derived EV on the board.** Every board estimate is market consensus. The NBA model is compared with the
+  market (and loses), so it is not used for ranking; new models, calibration and the Breakout Radar are Phase 2.
+- **An NFL model comparison**, and backtests on seasons before the stored snapshots (would need bought history).
+- Alerts, live in-game scanning, Parlay Lab (Phase 4).
 - **Alembic migrations.** Tables are created directly and new columns are appended on start; there is no
   migration history yet.
 - Whether a flagged price is still there when you open the sportsbook is not measured by this application.
@@ -141,11 +170,15 @@ normalize.py       Odds API event -> clean quotes
 consensus.py       fair probability from the other books
 opportunities.py   detection, evidence labels, ranking
 movement.py        line movement from stored prices
-providers/         odds_api.py (live), saved_quotes.py and results.py (existing Postgres), sample.py (hypothetical)
+providers/         odds_api.py (live), saved_quotes.py, results.py and models.py (existing Postgres), sample.py (hypothetical)
 db.py              SQLAlchemy models and queries
 scanner.py         one scan, end to end
 settlement.py      grading rules, closing line value, settling paper bets
 performance.py     record, ROI, closing value and calibration with their uncertainty
+backtest.py        replay of stored snapshots, rules, delayed entry, walk-forward
+bankroll.py        paper-bankroll simulator (flat or fractional Kelly, exposure limits)
+model_compare.py   probability sources scored against results
+research.py        the Phase 3 report (reports/sniper_backtest_latest.md)
 cli.py             Typer commands
 dashboard/app.py   Streamlit dashboard
 fixtures/          sample_odds.json

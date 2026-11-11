@@ -11,7 +11,7 @@ import streamlit as st
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from sports_sniper import db, performance
+from sports_sniper import backtest, bankroll, db, model_compare, performance
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.movement import moves
@@ -207,8 +207,8 @@ c2.metric("Available now", int((priced.available & (priced.conservative_ev > min
 c3.metric("Flagged in the last 36 h", len(priced))
 c4.metric("Last scan", f"#{scan.id} · {scan.source}")
 
-board_tab, longshot_tab, moves_tab, perf_tab, paper_tab = st.tabs(
-    ["Opportunity Board", "Longshot Hunter", "Line Movement", "Performance", "Paper Bets"])
+board_tab, longshot_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
+    ["Opportunity Board", "Longshot Hunter", "Line Movement", "Performance", "Paper Bets", "Backtest", "Model Comparison"])
 
 with board_tab:
     st.subheader("Today's opportunities")
@@ -384,3 +384,141 @@ with paper_tab:
             st.caption(f"Showing the newest {len(shown)} of {len(all_bets)}.")
         st.caption("Bets on hypothetical sample data are never settled. A bet stays open until its game is final and complete "
                    "in the results source; the Note column says why.")
+
+
+# --- Phase 3: backtest, bankroll and model against market ------------------------------------------------------------
+@st.cache_data(ttl=600, show_spinner="Replaying the stored snapshots (a couple of minutes the first time)...")
+def replay():
+    """Every flagged price in every stored snapshot, graded, and one row per two-sided line with the model's chance."""
+    found, offers = backtest.candidates(engine(), settings, cache=backtest.default_cache(settings))
+    return found, model_compare.attach_models(offers, settings)
+
+
+def backtest_table(rows) -> pd.DataFrame:
+    return pd.DataFrame([{
+        "Rule": name, "Settled": m["won"] + m["lost"] + m["push"], "Record (W-L-P)": f"{m['won']}-{m['lost']}-{m['push']}",
+        "ROI": plus_minus(m["roi"], m["roi_se"]),
+        "95% interval": "-" if m["roi_interval"] is None else f"{m['roi_interval'][0]:+.0%} to {m['roi_interval'][1]:+.0%}",
+        "Est. EV": "-" if m["estimated_ev"] is None else pct(m["estimated_ev"], True),
+        "Closing line value": plus_minus(m["closing_value"], m["closing_se"]), "With a close": m["closing_count"],
+        "Largest fall (units)": round(m["max_drawdown"], 1), "Longest losing run": m["longest_losing_streak"],
+    } for name, m in rows])
+
+
+with backtest_tab:
+    st.subheader("Backtest")
+    st.caption("Replays every stored snapshot in time order. A rule sees only what was in a snapshot at that moment, enters "
+               "once per bet at the price that was stored, and is graded from final statistics. History on paper, not a forecast.")
+    if st.button("Load the backtest", key="bt_load") or st.session_state.get("bt_on"):
+        st.session_state["bt_on"] = True
+        found, offers = replay()
+        if found.empty:
+            st.info("No stored real prices to replay yet. Use **Scan saved prices** first.")
+        else:
+            defaults = tuple(settings.bet_books)
+            st.caption(f"Snapshots {local(found.observed_at.min())} to {local(found.observed_at.max())}: "
+                       f"{found.event_id.nunique()} games, {len(found)} flagged prices.")
+            st.markdown("#### Your rule")
+            b1, b2, b3, b4 = st.columns(4)
+            bt_edge = b1.slider("Minimum estimated edge", 0.0, 0.10, float(settings.min_ev), 0.005, format="%.3f", key="bt_edge")
+            bt_books = b2.multiselect("Books", sorted(found.book.unique()), default=[b for b in defaults if b in set(found.book)],
+                                      format_func=book_label, key="bt_books")
+            bt_sides = b3.multiselect("Side", ["over", "under"], format_func=str.capitalize, key="bt_sides")
+            bt_sports = b4.multiselect("Sport", sorted(found.sport.unique()), format_func=str.upper, key="bt_sports")
+            bt_delay = st.checkbox("Enter one look later (about ten minutes), and skip the bet if the line is gone", key="bt_delay",
+                                   help="A check on whether the price was really there to bet.")
+            rule = backtest.Strategy("Your rule", min_ev=bt_edge, books=tuple(bt_books) or backtest.ANY_BOOK, sides=tuple(bt_sides),
+                                     sports=tuple(bt_sports), entry_delay=int(bt_delay))
+            mine = backtest.run(found, rule, defaults)
+            m = backtest.metrics(mine)
+            k1, k2, k3, k4 = st.columns(4)
+            k1.metric("Settled bets", m["won"] + m["lost"] + m["push"], help=f"{m['open']} open, {m['void']} void, over {m['days']} game days")
+            k2.metric("Record (W-L-P)", f"{m['won']}-{m['lost']}-{m['push']}")
+            k3.metric("Simulated ROI", plus_minus(m["roi"], m["roi_se"]),
+                      None if m["roi_interval"] is None else f"95%: {m['roi_interval'][0]:+.0%} to {m['roi_interval'][1]:+.0%}", delta_color="off")
+            k4.metric("Closing line value", plus_minus(m["closing_value"], m["closing_se"]),
+                      f"largest fall {m['max_drawdown']:.1f} units", delta_color="off")
+            st.markdown("#### Rules compared")
+            st.dataframe(backtest_table([(s.name, r) for s, r in backtest.compare(found, backtest.presets(settings), defaults)]
+                                        + [("Your rule", m)]), hide_index=True, width="stretch")
+            st.caption("ROI is profit over $1 stakes; ± is one standard error and the interval is 95%, with whole games as the "
+                       "draws. With around a hundred bets the interval is wide: none of these rules is shown to win or lose yet.")
+            st.markdown("#### Walk-forward")
+            objective = st.radio("Choose the minimum edge on earlier days by", ["roi", "closing_value"], horizontal=True,
+                                 format_func={"roi": "Results (ROI)", "closing_value": "Closing line value"}.get, key="bt_objective")
+            forward = backtest.walk_forward(found, backtest.replace(rule, name="walk-forward"),
+                                            [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08], default_books=defaults, objective=objective)
+            if not forward["folds"]:
+                st.write("Not enough days stored yet (seven are needed before the first test window).")
+            else:
+                st.dataframe(pd.DataFrame([{
+                    "Later days": f"{f['test_from']:%b %d} to {f['test_to']:%b %d}", "Edge chosen from earlier days": f"{f['chosen']:.1%}",
+                    "Settled": f["test_won"] + f["test_lost"] + f["test_push"], "Record (W-L-P)": f"{f['test_won']}-{f['test_lost']}-{f['test_push']}",
+                    "ROI": pct(f["test_roi"], True), "Closing line value": pct(f["test_closing_value"], True)} for f in forward["folds"]]),
+                    hide_index=True, width="stretch")
+                w = backtest.metrics(forward["bets"])
+                st.write(f"All later days together: **{w['won']}-{w['lost']}-{w['push']}**, ROI **{plus_minus(w['roi'], w['roi_se'])}**, "
+                         f"closing line value {plus_minus(w['closing_value'], w['closing_se'])}. The minimum edge was never "
+                         "chosen on the days it is judged on.")
+            st.markdown("#### By period and market")
+            st.dataframe(backtest_table(backtest.by_period(mine) + [(market_label(k), backtest.metrics(g)) for k, g in mine.groupby("market")]),
+                         hide_index=True, width="stretch")
+            st.markdown("#### Paper bankroll")
+            st.caption("Hypothetical money run through your rule's settled bets, a game day at a time. Nothing here places a bet.")
+            s1, s2, s3, s4 = st.columns(4)
+            staking = s1.selectbox("Staking", ["flat", "kelly"], format_func={"flat": "Flat stake", "kelly": "Fractional Kelly"}.get, key="br_staking")
+            start_money = s2.number_input("Starting bankroll", min_value=1.0, value=100.0, key="br_start")
+            flat = s3.number_input("Flat stake", min_value=0.1, value=1.0, key="br_flat")
+            share = s4.slider("Share of Kelly", 0.05, 1.0, 0.25, 0.05, key="br_kelly")
+            l1, l2, l3, l4 = st.columns(4)
+            cap = l1.number_input("Most on one bet", min_value=0.1, value=5.0, key="br_cap")
+            daily = l2.number_input("Most in one day", min_value=0.1, value=20.0, key="br_daily")
+            per_game = l3.number_input("Most on one game", min_value=0.1, value=3.0, key="br_game")
+            stop = l4.slider("Stop after a fall of", 0.0, 0.9, 0.0, 0.05, key="br_stop", help="0 means never stop.")
+            sim = bankroll.simulate(mine, bankroll.Rules(start=start_money, staking=staking, flat_stake=flat, kelly_fraction=share,
+                                                         max_stake=cap, max_daily=daily, max_per_game=per_game,
+                                                         stop_drawdown=stop or None))
+            r1, r2, r3, r4 = st.columns(4)
+            r1.metric("Ending bankroll", f"${sim['final']:,.2f}", money(sim["profit"]), delta_color="off")
+            r2.metric("Bets placed", sim["placed"], f"${sim['staked']:,.2f} staked", delta_color="off")
+            r3.metric("Largest fall", f"${sim['max_drawdown']:,.2f}", f"{sim['max_drawdown_pct']:.0%} from the high", delta_color="off")
+            r4.metric("Lowest point", f"${sim['lowest']:,.2f}")
+            if len(sim["curve"]):
+                st.line_chart(sim["curve"].set_index("day").bankroll)
+            if sim["skipped"]:
+                st.caption("Left out: " + ", ".join(f"{n} {why}" for why, n in sim["skipped"].items())
+                           + (f". Stopped after {sim['stopped']}." if sim["stopped"] else "."))
+
+with model_tab:
+    st.subheader("Model comparison")
+    st.caption("Which probability source was closest to what happened? Each two-sided line is scored once, at the first look "
+               "where a bet book and a sharp book both priced it. The model's chance comes from a forecast made before the "
+               "price was seen (NBA projections; NFL forecasts are not a separate source, they are blended toward FanDuel).")
+    if st.button("Load the comparison", key="mc_load") or st.session_state.get("mc_on"):
+        st.session_state["mc_on"] = True
+        _, offers = replay()
+        table_all = model_compare.scores(offers)
+        if table_all.empty:
+            st.info("No settled lines with a model forecast made before the price was seen yet.")
+        else:
+            both = pd.concat([table_all, model_compare.scores(offers, "market")])
+            st.dataframe(pd.DataFrame([{
+                "Lines": "All" if s.group == "All" else market_label(s.group), "Settled": s.lines, "Over won": pct(s.over_rate),
+                "Bet book's own price": f"{s.book_brier:.4f}", "Market consensus": f"{s.consensus_brier:.4f}",
+                "Prediction model": f"{s.model_brier:.4f}",
+                "Closest": min(model_compare.SOURCES, key=lambda k: getattr(s, f"{k}_brier")).capitalize()} for s in both.itertuples()]),
+                hide_index=True, width="stretch")
+            st.caption("Brier score: the average squared miss of the probability, lower is better. A coin flip scores 0.2500.")
+            st.markdown("#### If you bet each source's picks")
+            st.dataframe(pd.DataFrame([{
+                "Source": model_compare.SOURCES[p.source], "Edge needed": f"{p.threshold:.0%}+", "Settled": p.bets,
+                "Record (W-L)": f"{p.won}-{p.lost}", "ROI": plus_minus(None if pd.isna(p.roi) else p.roi, None if pd.isna(p.roi_se) else p.roi_se),
+                "Its own estimate": pct(p.estimated_ev, True)} for p in model_compare.picks_table(offers).itertuples()]),
+                hide_index=True, width="stretch")
+            st.caption("Each source bets the side it prices above break-even by at least the edge shown, at the bet book's price, on "
+                       "the same lines. A model that loses here is not adding information to the market's own prices.")
+            st.markdown("#### Model calibration")
+            st.dataframe(pd.DataFrame([{"Model's chance of the over": f"{b['low']:.0%} to {b['high']:.0%}", "Lines": b["n"],
+                                        "Average estimate": pct(b["predicted"]), "Over actually won": pct(b["observed"]),
+                                        "95% interval": f"{b['interval'][0]:.0%} to {b['interval'][1]:.0%}"}
+                                       for b in model_compare.calibration(offers, "model", 10)]), hide_index=True, width="stretch")
