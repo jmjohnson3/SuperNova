@@ -19,13 +19,18 @@ import math
 
 import pandas as pd
 
-from sports_sniper import calibration, odds_math, performance
+from sports_sniper import calibration, nba_candidate, odds_math, performance
 from sports_sniper.config import Settings
 from sports_sniper.providers import models
 
 SOURCES = {"book": "Bet book's own price (no-vig)", "consensus": "Market consensus (other books)", "model": "Prediction model",
            "calibrated": "Model, calibrated on earlier days", "blend": "Market moved by the model"}
 BASE = ("book", "consensus", "model")
+# the NBA candidate (uncertainty measured on later games) and calibration by statistic
+CANDIDATE_SOURCES = {"consensus": "Market consensus", "model": "Live model", "calibrated": "Live model, calibrated by sport",
+                     "stat_calibrated": "Live model, calibrated by statistic", "candidate": "Candidate (uncertainty from later games)",
+                     "candidate_calibrated": "Candidate, calibrated by statistic", "candidate_blend": "Market moved by the candidate"}
+CANDIDATE = nba_candidate.over_probabilities        # replaced in tests; None switches the candidate off
 
 
 def attach_models(offers: pd.DataFrame, settings: Settings, adapters=None) -> tuple[pd.DataFrame, dict]:
@@ -35,7 +40,20 @@ def attach_models(offers: pd.DataFrame, settings: Settings, adapters=None) -> tu
     values, versions = models.over_probabilities(settings.results_dsn, offers, adapters or models.ADAPTERS) if len(offers) else ([], [])
     offers["model_probability"] = pd.Series(values, index=offers.index, dtype=float)
     offers["model_version"] = pd.Series(versions, index=offers.index, dtype=object)
-    return calibration.walk_forward(offers)
+    offers, fits = calibration.walk_forward(offers)
+    params: dict = {}
+    candidate = [None] * len(offers)
+    if CANDIDATE is not None and len(offers):
+        try:
+            candidate, params = CANDIDATE(settings.results_dsn, offers)
+        except Exception:                    # the projections database is optional
+            candidate, params = [None] * len(offers), {}
+    offers["candidate_probability"] = pd.Series(candidate, index=offers.index, dtype=float)
+    offers["stat_calibrated_probability"], _, _ = calibration.calibrate(offers, "model", by_market=True)
+    offers["candidate_calibrated_probability"], offers["candidate_blend_probability"], stat_fits = calibration.calibrate(
+        offers, "candidate", by_market=True)
+    offers.attrs["candidate_params"], offers.attrs["candidate_fits"] = params, stat_fits
+    return offers, fits
 
 
 def log_loss(probabilities, outcomes) -> float:

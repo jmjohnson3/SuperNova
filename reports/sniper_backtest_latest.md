@@ -1,6 +1,6 @@
 # Sports Betting Sniper: backtest
 
-Built 2026-11-11 19:25 UTC. Research on paper only: simulated $1 bets at prices that were stored, graded from final statistics. A past result is not a forecast.
+Built 2026-11-11 21:33 UTC. Research on paper only: simulated $1 bets at prices that were stored, graded from final statistics. A past result is not a forecast.
 
 Stored snapshots Oct 22 to Nov 11, 2026, 177 games, 8302 flagged prices.
 
@@ -96,7 +96,7 @@ Hypothetical $100. Limits: $5 a bet, $20 a day, $3 a game, $2 a player. Quarter 
 | NFL (Brier) | 437 | 0.2432 | 0.2435 | 0.2417 |
 | Assists (Brier) | 625 | 0.2444 | 0.2444 | 0.2662 |
 | Points (Brier) | 1257 | 0.2486 | 0.2480 | 0.2578 |
-| Rebounds (Brier) | 1008 | 0.2439 | 0.2437 | 0.2474 |
+| Rebounds (Brier) | 1008 | 0.2440 | 0.2438 | 0.2474 |
 | Receptions (Brier) | 437 | 0.2432 | 0.2435 | 0.2417 |
 | Three-pointers (Brier) | 819 | 0.2495 | 0.2492 | 0.2944 |
 
@@ -104,7 +104,7 @@ With the model calibrated on earlier days only (the lines after the first fit):
 
 | Lines | Settled | Bet book | Market consensus | Model | Model, calibrated | Market moved by the model |
 |---|---|---|---|---|---|---|
-| NBA (Brier) | 3493 | 0.2466 | 0.2463 | 0.2647 | 0.2488 | 0.2465 |
+| NBA (Brier) | 3493 | 0.2466 | 0.2464 | 0.2647 | 0.2488 | 0.2465 |
 | NFL (Brier) | 281 | 0.2464 | 0.2461 | 0.2449 | 0.2504 | 0.2459 |
 
 NBA calibration on 3709 settled lines: the model's log-odds are multiplied by 0.19 (1 would mean its confidence is right, 0 that it says nothing); set against the market, its disagreement gets a weight of 0.09 (0 means the market already knows it).
@@ -121,14 +121,69 @@ Betting the side each source says is underpriced, at the bet book's price, on th
 | Prediction model | 2%+ | 2680 | 1310-1370 | -5.2% ± 1.7% | +21.0% |
 | Prediction model | 4%+ | 2452 | 1192-1260 | -5.3% ± 1.8% | +22.6% |
 | Prediction model | 6%+ | 2222 | 1067-1155 | -6.1% ± 2.0% | +24.5% |
-| Model, calibrated on earlier days | 2%+ | 1797 | 823-974 | -3.7% ± 2.4% | +10.7% |
-| Model, calibrated on earlier days | 4%+ | 1436 | 653-783 | -3.2% ± 2.7% | +12.7% |
-| Model, calibrated on earlier days | 6%+ | 1137 | 513-624 | -2.6% ± 2.8% | +14.7% |
-| Market moved by the model | 2%+ | 577 | 290-287 | -2.3% ± 4.4% | +5.6% |
-| Market moved by the model | 4%+ | 351 | 178-173 | +0.2% ± 5.3% | +7.4% |
-| Market moved by the model | 6%+ | 206 | 106-100 | +5.1% ± 8.2% | +9.2% |
+| Model, calibrated on earlier days | 2%+ | 1794 | 821-973 | -3.8% ± 2.4% | +10.7% |
+| Model, calibrated on earlier days | 4%+ | 1434 | 653-781 | -3.1% ± 2.7% | +12.7% |
+| Model, calibrated on earlier days | 6%+ | 1137 | 514-623 | -2.4% ± 2.9% | +14.7% |
+| Market moved by the model | 2%+ | 572 | 284-288 | -3.3% ± 4.5% | +5.7% |
+| Market moved by the model | 4%+ | 346 | 175-171 | -0.1% ± 5.3% | +7.5% |
+| Market moved by the model | 6%+ | 205 | 104-101 | +3.7% ± 8.1% | +9.2% |
 
 The NFL model is compared on receptions and passing touchdowns only: its yardage projections are anchored to the line, so they carry no chance of their own.
+
+## NBA candidate: uncertainty measured on later games, calibration by statistic
+
+The candidate keeps the live model's projected means. For each game it takes its scale and spread from projections and results of earlier days only, is then calibrated by statistic on earlier days only, and is scored on the days after that. Brier score, lower is better, on the same lines for every column.
+
+| Lines | Settled | Market consensus | Live model | Live model, calibrated by sport | Live model, calibrated by statistic | Candidate (uncertainty from later games) | Candidate, calibrated by statistic | Market moved by the candidate |
+|---|---|---|---|---|---|---|---|---|
+| All NBA | 3493 | 0.2464 | 0.2647 | 0.2488 | 0.2488 | 0.2633 | 0.2491 | 0.2466 |
+| Assists | 590 | 0.2437 | 0.2666 | 0.2487 | 0.2487 | 0.2553 | 0.2481 | 0.2438 |
+| Points | 1175 | 0.2475 | 0.2554 | 0.2481 | 0.2483 | 0.2509 | 0.2476 | 0.2469 |
+| Rebounds | 953 | 0.2440 | 0.2488 | 0.2482 | 0.2479 | 0.2642 | 0.2501 | 0.2446 |
+| Three-pointers | 775 | 0.2495 | 0.2968 | 0.2509 | 0.2508 | 0.2872 | 0.2507 | 0.2506 |
+
+Calibration by statistic, fitted on every settled line so far. Confidence multiplies the candidate's log-odds (1 = take it at its word, 0 = it says nothing). The weight against the market is never negative and may stay at zero.
+
+| Statistic | Lines of its own | Share of its own fit | Confidence | Weight against the market |
+|---|---|---|---|---|
+| Assists | 625 | 51% | 0.21 | 0.05 |
+| Points | 1257 | 68% | 0.28 | 0.20 |
+| Rebounds | 1008 | 63% | 0.19 | 0.03 |
+| Three-pointers | 819 | 58% | 0.16 | 0.04 |
+
+The live model against results on 16 days (the last projection before each game, players who played):
+
+| Statistic | Player-games | Results / projections | Error spread / stated spread | Average miss |
+|---|---|---|---|---|
+| ast | 2800 | 0.967 | 1.01 | 1.31 |
+| fg3m | 2800 | 0.975 | 0.97 | 0.89 |
+| pts | 2800 | 0.946 | 0.89 | 4.43 |
+| reb | 2800 | 0.977 | 1.01 | 1.83 |
+
+A spread ratio near 1 means the stated uncertainty matched what happened on games the model had not seen.
+
+How much of the miss is playing time (the projection rescaled to the minutes actually played; usual minutes are the average of the previous five games, a stand-in because the live model stores no minutes forecast):
+
+| Statistic | Player-games | Average miss | Miss if minutes were known | Share owed to minutes | Average minutes surprise |
+|---|---|---|---|---|---|
+| ast | 2230 | 1.35 | 1.32 | 2% | 4.8 |
+| fg3m | 2230 | 0.92 | 0.88 | 4% | 4.8 |
+| pts | 2230 | 4.58 | 4.18 | 9% | 4.8 |
+| reb | 2230 | 1.85 | 1.81 | 2% | 4.8 |
+
+Betting each source's picks at the bet book's price on those lines:
+
+| Source | Edge needed | Settled | W-L | ROI |
+|---|---|---|---|---|
+| Market consensus | 2%+ | 42 | 23-19 | +10.0% ± 18.4% |
+| Market consensus | 4%+ | 12 | 6-6 | +1.8% ± 34.7% |
+| Market consensus | 6%+ | 6 | 2-4 | -34.0% ± 41.4% |
+| Candidate, calibrated by statistic | 2%+ | 1622 | 722-900 | -5.8% ± 2.5% |
+| Candidate, calibrated by statistic | 4%+ | 1277 | 555-722 | -6.4% ± 3.0% |
+| Candidate, calibrated by statistic | 6%+ | 1001 | 433-568 | -5.4% ± 3.4% |
+| Market moved by the candidate | 2%+ | 551 | 279-272 | -1.4% ± 4.4% |
+| Market moved by the candidate | 4%+ | 293 | 143-150 | -3.5% ± 5.7% |
+| Market moved by the candidate | 6%+ | 160 | 78-82 | -3.0% ± 8.1% |
 
 ## Breakout signals
 
@@ -136,7 +191,7 @@ Lines on players whose recent opportunity was above their season baseline (games
 
 | Sport | Lines | Count | Players | Over won | Market's chance of the over | Over ROI |
 |---|---|---|---|---|---|---|
-| NBA | No signal | 3808 | 252 | 46.6% | 48.6% | -9.9% ± 1.8% |
+| NBA | No signal | 3808 | 252 | 46.7% | 48.6% | -9.9% ± 1.8% |
 | NBA | Breakout signal | 272 | 67 | 46.0% | 49.2% | -12.8% ± 6.8% |
 | NFL | No signal | 875 | 251 | 46.4% | 49.6% | -11.7% ± 4.2% |
 | NFL | Breakout signal | 215 | 91 | 45.1% | 49.5% | -14.6% ± 7.5% |

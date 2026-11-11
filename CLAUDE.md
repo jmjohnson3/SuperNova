@@ -353,6 +353,11 @@ python -m pytest src/sports_sniper -q
 - The dashboard is the alert (2026-11-11, the user's choice over Discord): it refreshes itself every minute, a "Bet now"
   panel lists flagged prices seen in the last 10 minutes with a countdown, and Got it / Gone answers
   (`sniper_price_checks`) measure whether flagged prices can really be bet.
+- `sports_sniper.nba_candidate` is the NBA probability challenger (live projections, scale and spread from earlier days'
+  results) with calibration by statistic; `nba_props/live.py` and `model.py` are pinned, so candidates live outside them.
+  Measured 2026-11-11: the live model's stated spread is about right out of sample, and no variant beats consensus.
+  Performance shows forward bets by default and separates "Demonstrated" (prices confirmed with Got it / Gone, an
+  append-only log) from research on paper.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

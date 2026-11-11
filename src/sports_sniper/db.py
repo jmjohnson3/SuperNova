@@ -167,10 +167,12 @@ class PaperBet(Base):
 
 class PriceCheck(Base):
     """What was found when a flagged price was opened at the sportsbook: still there (got) or not (gone).
-    One per bet and book; a later answer replaces the earlier one. It records availability, never a wager."""
-    __tablename__ = "sniper_price_checks"
-    __table_args__ = (UniqueConstraint("event_id", "book", "market", "player_key", "line_key", "side", name="sniper_price_check_identity"),)
+    Every answer is kept. The first answer for a bet at a book is the measurement (was the price there when it
+    was first opened?); later answers are corrections, numbered in order. It records availability, never a wager."""
+    __tablename__ = "sniper_price_check_log"
+    __table_args__ = (Index("sniper_price_check_bet", "event_id", "book", "market", "player_key", "line_key", "side"),)
     id: Mapped[int] = mapped_column(primary_key=True)
+    sequence: Mapped[int] = mapped_column(Integer, default=1)          # 1 = the first answer for this bet at this book
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     opportunity_id: Mapped[int | None] = mapped_column(ForeignKey("sniper_opportunities.id"), nullable=True)
     data_source: Mapped[str] = mapped_column(String(20))
@@ -198,18 +200,20 @@ CHECK_OUTCOMES = ("got", "gone")
 
 def record_check(session: Session, opportunity: OpportunityRow, outcome: str, *, price_seen: int | None = None,
                  now: datetime | None = None) -> PriceCheck:
-    """Save what was found when a flagged price was opened. A second answer for the same bet and book replaces the first."""
+    """Save what was found when a flagged price was opened. Nothing is overwritten: a later answer for the same
+    bet and book is added after the earlier ones."""
     if outcome not in CHECK_OUTCOMES:
         raise ValueError("outcome must be got or gone")
+    if price_seen is not None and abs(int(price_seen)) < 100:
+        raise ValueError("the price seen must be American odds, such as -115 or +140")
     now = now or datetime.now(timezone.utc)
-    same = select(PriceCheck).where(PriceCheck.event_id == opportunity.event_id, PriceCheck.book == opportunity.book,
-                                    PriceCheck.market == opportunity.market, PriceCheck.player_key == opportunity.player_key,
-                                    PriceCheck.line_key == opportunity.line_key, PriceCheck.side == opportunity.side)
-    check = session.scalars(same).first()
-    if check is None:
-        check = PriceCheck(event_id=opportunity.event_id, book=opportunity.book, market=opportunity.market,
-                           player_key=opportunity.player_key, line_key=opportunity.line_key, side=opportunity.side)
-        session.add(check)
+    earlier = session.scalar(select(func.count()).select_from(PriceCheck).where(
+        PriceCheck.event_id == opportunity.event_id, PriceCheck.book == opportunity.book, PriceCheck.market == opportunity.market,
+        PriceCheck.player_key == opportunity.player_key, PriceCheck.line_key == opportunity.line_key,
+        PriceCheck.side == opportunity.side)) or 0
+    check = PriceCheck(event_id=opportunity.event_id, book=opportunity.book, market=opportunity.market, sequence=earlier + 1,
+                       player_key=opportunity.player_key, line_key=opportunity.line_key, side=opportunity.side)
+    session.add(check)
     check.checked_at, check.opportunity_id, check.data_source = now, opportunity.id, opportunity.data_source
     check.sport, check.event_name, check.commence_time = opportunity.sport, opportunity.event_name, opportunity.commence_time
     check.player, check.line, check.flagged_price = opportunity.player, opportunity.line, opportunity.price
@@ -221,9 +225,13 @@ def record_check(session: Session, opportunity: OpportunityRow, outcome: str, *,
 
 
 def load_checks(engine: Engine) -> pd.DataFrame:
+    """Every answer, oldest first, with `first` marking each bet's first answer and `latest` its most recent."""
     with engine.connect() as conn:
-        frame = pd.read_sql(select(PriceCheck).order_by(PriceCheck.checked_at.desc()), conn)
-    return utc(frame, ["checked_at", "commence_time", "price_observed_at"])
+        frame = pd.read_sql(select(PriceCheck).order_by(PriceCheck.id), conn)
+    frame = utc(frame, ["checked_at", "commence_time", "price_observed_at"])
+    frame["first"] = frame.sequence == 1
+    frame["latest"] = ~frame.duplicated(BET, keep="last") if len(frame) else pd.Series(dtype=bool)
+    return frame
 
 
 def make_engine(url: str) -> Engine:
@@ -250,6 +258,9 @@ def init_db(engine: Engine) -> None:
         existing = inspect(conn)
         if existing.has_table("sniper_quotes"):
             conn.execute(text("DROP TABLE sniper_quotes"))
+        if existing.has_table("sniper_price_checks"):          # the first version kept one answer per bet; it was never used
+            if not conn.execute(text("SELECT COUNT(*) FROM sniper_price_checks")).scalar():
+                conn.execute(text("DROP TABLE sniper_price_checks"))
         for table in Base.metadata.sorted_tables:
             have = {c["name"] for c in existing.get_columns(table.name)}
             for column in table.columns:

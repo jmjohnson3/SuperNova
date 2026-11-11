@@ -19,6 +19,7 @@ from sports_sniper.movement import moves
 from sports_sniper.providers import schedule
 from sports_sniper.opportunities import EVIDENCE_ORDER, describe
 from sports_sniper.scanner import run_scan
+from sports_sniper.settlement import profit as settle_profit
 from sports_sniper.settlement import settle
 
 st.set_page_config(page_title="Sports Betting Sniper", page_icon="🎯", layout="wide")
@@ -261,14 +262,18 @@ def check_key(row) -> tuple:
 
 
 def save_check(opportunity_id: int, outcome: str, price_seen: int | None = None) -> None:
-    with Session(engine()) as session, session.begin():
-        db.record_check(session, session.get(db.OpportunityRow, opportunity_id), outcome, price_seen=price_seen)
+    try:
+        with Session(engine()) as session, session.begin():
+            db.record_check(session, session.get(db.OpportunityRow, opportunity_id), outcome, price_seen=price_seen)
+    except ValueError as problem:
+        st.warning(str(problem).capitalize() + ".")
+        return
     st.rerun()
 
 
 CHECK_LABEL = {"got": "✔ Got it", "gone": "✖ Gone"}
 all_checks = db.load_checks(engine())
-checked = {check_key(c): c.outcome for c in all_checks.itertuples()}
+checked = {check_key(c): c.outcome for c in all_checks[all_checks.latest].itertuples()} if not all_checks.empty else {}
 fresh_age = (now - priced.observed_at).dt.total_seconds() / 60 if not priced.empty else pd.Series(dtype=float)
 bet_now = priced[priced.available & (fresh_age <= settings.fresh_minutes) & (priced.conservative_ev > min_edge) & (priced.ev >= min_ev)
                  & priced.evidence.isin(tiers) & priced.is_best_price] if not priced.empty else priced
@@ -297,7 +302,7 @@ else:
         answer = checked.get(check_key(o))
         if answer:
             yes.markdown(CHECK_LABEL[answer])
-            if no.button("Change", key=f"now_change_{o.id}"):
+            if no.button("Change", key=f"now_change_{o.id}", help="Adds a correction. Your first answer is kept as the measurement."):
                 save_check(int(o.id), "gone" if answer == "got" else "got")
         else:
             if yes.button("Got it", key=f"now_got_{o.id}", help="The price was still there when you opened the book."):
@@ -590,22 +595,64 @@ def results_table(rows: list[tuple[str, dict]]) -> pd.DataFrame:
 
 all_bets = db.load_paper_bets(engine())
 
+HYPOTHESIS_BETS = 100        # settled forward bets needed in each group before the model-agrees split means anything
+
 with perf_tab:
     st.subheader("Performance")
-    st.caption("Simulated results of paper bets at prices that were actually observed. No real money is involved, and a "
-               "past paper result does not promise a future one.")
     real = all_bets[all_bets.data_source != "sample"] if not all_bets.empty else all_bets
     if real.empty:
         st.info("No paper bets on real prices yet. Scan saved prices: every flagged bet that clears the bar is entered "
                 "automatically, then **Settle paper bets** grades it once its game is final.")
     else:
         names = sorted(real.strategy.unique())
-        chosen = st.selectbox("Strategy", names, format_func=lambda n: STRATEGY_LABEL.get(n, n))
-        with_replays = st.checkbox("Include replayed bets", value=True,
+        chosen = st.selectbox("Strategy", names, index=names.index(db.STRATEGY_AUTO) if db.STRATEGY_AUTO in names else 0,
+                              format_func=lambda n: STRATEGY_LABEL.get(n, n),
+                              help="Each rule keeps its own record. A change of rule starts a new one rather than rewriting the old.")
+        with_replays = st.checkbox("Include replayed bets", value=False,
                                    help="A replayed bet was entered long after its price was seen, from saved snapshots. Its "
-                                        "price was real, but the rule was applied after the fact; forward bets are the clean test.")
-        view = real[real.strategy == chosen]
-        view = view if with_replays else view[~view.replayed]
+                                        "price was real, but the rule was applied after the fact. Forward bets, entered when "
+                                        "the price was seen, are the clean test and the default here.")
+        everything = real[real.strategy == chosen]
+        view = everything if with_replays else everything[~everything.replayed]
+        real_checks = all_checks[all_checks.data_source != "sample"] if not all_checks.empty else all_checks
+
+        st.markdown("### Demonstrated: prices confirmed at the sportsbook")
+        if real_checks.empty:
+            st.info("**Nothing is demonstrated yet: 0 flagged prices have been checked at a sportsbook.** Everything below is "
+                    "research on paper, which assumes every flagged price could be bet. Use **Got it** / **Gone** in the Bet "
+                    "now panel after opening a bet to start measuring it.")
+        else:
+            a = performance.availability(real_checks)
+            a1, a2, a3, a4 = st.columns(4)
+            a1.metric("Prices checked", a["checks"], f"{a['corrected']} corrected later" if a["corrected"] else None, delta_color="off")
+            a2.metric("Still there", f"{a['got_rate']:.0%}", f"95%: {a['interval'][0]:.0%} to {a['interval'][1]:.0%}", delta_color="off")
+            a3.metric("Got it at a different price", a["changed"], f"{a['worse']} worse", delta_color="off")
+            a4.metric("Typical time to check", f"{a['median_seconds'] / 60:.1f} min", "after the price was stored", delta_color="off")
+            firsts = real_checks[real_checks["first"]]
+            st.dataframe(pd.DataFrame([{"Book": book_label(k), "Checked": len(g), "Still there": pct((g.outcome == "got").mean()),
+                                        "Gone": int((g.outcome == "gone").sum())} for k, g in firsts.groupby("book")]),
+                         hide_index=True, width="stretch")
+            confirmed = performance.checked_returns(everything, real_checks, settle_profit)
+            proven = performance.summarize(confirmed) if len(confirmed) else None
+            if proven is None or not proven["bets"]:
+                st.write("None of the confirmed prices belongs to a paper bet of this strategy yet.")
+            else:
+                d1, d2, d3 = st.columns(3)
+                d1.metric("Confirmed bets", proven["bets"], f"{proven['open']} open", delta_color="off")
+                d2.metric("Confirmed record (W-L-P)", f"{proven['won']}-{proven['lost']}-{proven['push']}")
+                d3.metric("Return at checked prices", plus_minus(proven["roi"], proven["roi_se"]),
+                          money(proven["profit"]) if proven["staked"] else None, delta_color="off")
+                st.dataframe(results_table([("All confirmed", proven)]
+                                           + [(f"Sport: {k.upper()}", performance.summarize(g)) for k, g in confirmed.groupby("sport")]
+                                           + [(f"Market: {market_label(k)}", performance.summarize(g)) for k, g in confirmed.groupby("market")]
+                                           + [(f"Book: {book_label(k)}", performance.summarize(g)) for k, g in confirmed.groupby("book")]),
+                             hide_index=True, width="stretch")
+            st.caption("Only each bet's first answer counts toward \"still there\"; later corrections are kept beside it. Return at "
+                       "checked prices re-grades the confirmed bets at the price you actually saw. ± is one standard error.")
+
+        st.markdown("### Research: paper bets, assuming every flagged price could be bet")
+        st.caption(("Forward bets only. " if not with_replays else "Forward and replayed bets together. ")
+                   + "Simulated results at prices that were observed; no real money, and no check that the price could be bet.")
         total = performance.summarize(view)
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Paper bets", total["bets"], help=f"{total['open']} open, {total['void']} void")
@@ -620,41 +667,34 @@ with perf_tab:
                    "the draws. Closing line value is the edge of the price taken against the fair price at the last look before "
                    "the game (other books, margin removed). It settles down far faster than results do: a few hundred bets "
                    "can still swing 10% either way on luck alone.")
-        rows = [("All", total), ("Forward (entered when seen)", performance.summarize(view[~view.replayed])),
-                ("Replayed from saved snapshots", performance.summarize(view[view.replayed]))]
+        rows = [("All", performance.summarize(everything)), ("Forward (entered when seen)", performance.summarize(everything[~everything.replayed])),
+                ("Replayed from saved snapshots", performance.summarize(everything[everything.replayed]))]
         st.dataframe(results_table([r for r in rows if r[1]["bets"]]), hide_index=True, width="stretch")
+        first_answer = {check_key(c): c.outcome for c in real_checks[real_checks["first"]].itertuples()} if not real_checks.empty else {}
         view = view.assign(model=["No model forecast" if pd.isna(p) else "Model agrees" if p > 1 / d else "Model disagrees"
                                   for p, d in zip(view.model_probability, view.decimal)],
-                           check=[{"got": "Price was there (Got it)", "gone": "Price was gone"}.get(checked.get(check_key(b)), "Not checked")
+                           check=[{"got": "Price was there (Got it)", "gone": "Price was gone"}.get(first_answer.get(check_key(b)), "Not checked")
                                   for b in view.itertuples()])
         for title, column, name in (("By sport", "sport", str.upper), ("By market", "market", market_label),
                                     ("By sportsbook", "book", book_label), ("By side", "side", str.capitalize),
-                                    ("By evidence", "evidence", str.capitalize), ("By model view", "model", str),
+                                    ("By evidence", "evidence", str.capitalize),
                                     ("By whether the price was there", "check", str)):
             st.markdown(f"#### {title}")
             st.dataframe(results_table([(name(key), performance.summarize(group)) for key, group in view.groupby(column)]),
                          hide_index=True, width="stretch")
-        st.markdown("#### Was the price really there?")
-        real_checks = all_checks[all_checks.data_source != "sample"] if not all_checks.empty else all_checks
-        if real_checks.empty:
-            st.write("No answers yet. Use **Got it** or **Gone** on a bet in the Bet now panel after opening it at the book.")
-        else:
-            a = performance.availability(real_checks)
-            a1, a2, a3, a4 = st.columns(4)
-            a1.metric("Prices checked", a["checks"])
-            a2.metric("Still there", f"{a['got_rate']:.0%}", f"95%: {a['interval'][0]:.0%} to {a['interval'][1]:.0%}", delta_color="off")
-            a3.metric("Got it at a different price", a["changed"], f"{a['worse']} worse", delta_color="off")
-            a4.metric("Typical time to check", f"{a['median_seconds'] / 60:.1f} min", "after the price was stored", delta_color="off")
-            st.dataframe(pd.DataFrame([{"Book": book_label(k), "Checked": len(g), "Still there": pct((g.outcome == "got").mean()),
-                                        "Gone": int((g.outcome == "gone").sum())} for k, g in real_checks.groupby("book")]),
-                         hide_index=True, width="stretch")
-            st.caption("The paper record assumes every flagged price could be bet. This is the share that really could, by your own "
-                       "answers; the table above (\"By whether the price was there\") shows how each group went on to do.")
-        st.markdown("#### Calibration")
-        bands = performance.calibration(view)
+
+        st.markdown("### Probability accuracy")
+        parts = [(f"{title}: {name(row[column])}", row) for title, column, name in (("Sport", "sport", str.upper), ("Market", "market", market_label),
+                                                                                  ("Book", "book", book_label))
+                 for row in performance.accuracy(view, column).to_dict("records")]
         if total["won"] + total["lost"] < 30:
             st.write("Not enough settled bets to judge calibration yet (30 needed).")
         else:
+            st.dataframe(pd.DataFrame([{"Group": name, "Decided bets": r["bets"], "Average estimate": pct(r["estimate"]),
+                                        "Actually won": pct(r["won"]), "95% interval": f"{r['interval'][0]:.0%} to {r['interval'][1]:.0%}",
+                                        "Brier, our estimate": f"{r['brier']:.4f}", "Brier, the price's break-even": f"{r['break_even_brier']:.4f}"}
+                                       for name, r in parts]), hide_index=True, width="stretch")
+            bands = performance.calibration(view)
             st.dataframe(pd.DataFrame([{"Estimated chance": f"{b['low']:.0%} to {b['high']:.0%}", "Bets": b["n"],
                                         "Average estimate": pct(b["predicted"]), "Actually won": pct(b["observed"]),
                                         "95% interval": f"{b['interval'][0]:.0%} to {b['interval'][1]:.0%}"} for b in bands]),
@@ -662,6 +702,23 @@ with perf_tab:
             st.caption(f"Brier score {total['brier']:.4f} for these estimates against {total['break_even_brier']:.4f} for the "
                        "prices' own break-even chance (lower is better). An estimate that cannot beat the price it was "
                        "compared with is not adding information.")
+
+        st.markdown("### Hypothesis under test: bets the model agrees with do better")
+        forward = everything[~everything.replayed]
+        forward = forward.assign(model=["none" if pd.isna(p) else "agrees" if p > 1 / d else "disagrees"
+                                        for p, d in zip(forward.model_probability, forward.decimal)])
+        tested = []
+        for name, group in [("All markets", forward)] + [(market_label(k), g) for k, g in forward.groupby("market")]:
+            yes, no = performance.summarize(group[group.model == "agrees"]), performance.summarize(group[group.model == "disagrees"])
+            tested.append({"Market": name, "Agrees: settled": yes["won"] + yes["lost"] + yes["push"], "Agrees: record": f"{yes['won']}-{yes['lost']}-{yes['push']}",
+                           "Agrees: ROI": plus_minus(yes["roi"], yes["roi_se"]), "Disagrees: settled": no["won"] + no["lost"] + no["push"],
+                           "Disagrees: record": f"{no['won']}-{no['lost']}-{no['push']}", "Disagrees: ROI": plus_minus(no["roi"], no["roi_se"])})
+        st.dataframe(pd.DataFrame(tested), hide_index=True, width="stretch")
+        enough = tested[0]["Agrees: settled"] >= HYPOTHESIS_BETS and tested[0]["Disagrees: settled"] >= HYPOTHESIS_BETS
+        st.caption("Stated on 2026-11-11 after a replay in which agreed bets went 22-17 and the rest 21-23, a gap well inside "
+                   "chance. Only forward bets entered since the model's view was recorded count here, so it cannot be fitted to "
+                   f"the bets that suggested it. It needs {HYPOTHESIS_BETS} settled bets in each group before it says anything"
+                   + ("." if enough else "; it does not have them yet.") + " The model's view does not affect what is flagged.")
 
 with paper_tab:
     st.subheader("Paper bets")
@@ -821,6 +878,31 @@ with model_tab:
                 st.caption("The calibration and the model's weight against the market are fitted on earlier days only, then "
                            "scored on later ones. If moving the market's chance by the model does not beat the market alone, "
                            "the model is not adding information.")
+            checked_candidate = research.candidate_check(offers, settings)
+            if not checked_candidate["scores"].empty:
+                st.markdown("#### NBA candidate and calibration by statistic")
+                st.dataframe(pd.DataFrame([dict({"Lines": "All NBA" if c.group == "All" else market_label(c.group), "Settled": c.lines},
+                                                **{label_: f"{getattr(c, key + '_brier'):.4f}" for key, label_ in model_compare.CANDIDATE_SOURCES.items()})
+                                           for c in checked_candidate["scores"].itertuples()]), hide_index=True, width="stretch")
+                st.caption("The candidate keeps the live model's projections but takes its scale and spread from earlier days' "
+                           "results, then is calibrated by statistic on earlier days and scored on later ones. Lower is better; "
+                           "the market consensus column is the one to beat.")
+                if not checked_candidate["weights"].empty:
+                    st.dataframe(pd.DataFrame([{"Statistic": market_label(w.market), "Lines of its own": w.own_lines,
+                                                "Share of its own fit": f"{w.own_weight:.0%}", "Confidence": f"{w.confidence:.2f}",
+                                                "Weight against the market": f"{w.weight_against_market:.2f}"}
+                                               for w in checked_candidate["weights"].itertuples()]), hide_index=True, width="stretch")
+                    st.caption("Confidence multiplies the candidate's log-odds (1 = take it at its word, 0 = it says nothing). The "
+                               "weight against the market is never negative and may stay at zero. A statistic with few lines leans "
+                               "on the fit for the whole sport.")
+                found_out = checked_candidate["diagnostics"]
+                if found_out:
+                    st.dataframe(pd.DataFrame([{"Statistic": w.stat, "Player-games": w.player_games, "Average miss": f"{w.mae:.2f}",
+                                                "Miss if minutes were known": f"{w.mae_minutes_known:.2f}",
+                                                "Share owed to minutes": f"{w.minutes_share:.0%}"} for w in found_out["workload"].itertuples()]),
+                                 hide_index=True, width="stretch")
+                    st.caption("How much of the live model's miss is playing time: its projection rescaled to the minutes actually "
+                               "played. Usual minutes are the average of the previous five games, a stand-in.")
             st.markdown("#### If you bet each source's picks")
             st.dataframe(pd.DataFrame([{
                 "Source": model_compare.SOURCES[p.source], "Edge needed": f"{p.threshold:.0%}+", "Settled": p.bets,

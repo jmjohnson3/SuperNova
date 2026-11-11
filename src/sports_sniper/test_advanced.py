@@ -291,7 +291,7 @@ def test_dashboard_parlay_lab_and_ladder_section(env, offline):  # noqa: F811
 
 
 # --- bet now and price checks ---------------------------------------------------------------------------
-def test_a_price_check_is_kept_once_per_bet_and_the_latest_answer_wins(settings, engine):  # noqa: F811
+def test_every_price_check_is_kept_and_the_first_answer_is_the_measurement(settings, engine):  # noqa: F811
     from sports_sniper import performance
     now = NOW + timedelta(minutes=26)
     scan(settings, engine, now=now)
@@ -313,7 +313,35 @@ def test_a_price_check_is_kept_once_per_bet_and_the_latest_answer_wins(settings,
     with Session(engine) as session, session.begin():
         db.record_check(session, session.get(db.OpportunityRow, first_id), "gone", now=now + timedelta(minutes=5))
     again = db.load_checks(engine)
-    assert len(again) == 2 and set(again.outcome) == {"gone"} and performance.availability(again.iloc[0:0])["got_rate"] is None
+    assert len(again) == 3 and again.sequence.tolist() == [1, 1, 2] and again["first"].tolist() == [True, True, False]
+    assert again.latest.tolist() == [False, True, True] and again.outcome.tolist() == ["got", "gone", "gone"]     # nothing overwritten
+    later = performance.availability(again)
+    assert (later["checks"], later["got"], later["corrected"]) == (2, 1, 1)             # the first answer still counts; the change is noted
+    assert performance.availability(again.iloc[0:0])["got_rate"] is None
+
+
+def test_confirmed_bets_are_regraded_at_the_price_that_was_seen(settings, engine):  # noqa: F811
+    from sports_sniper import performance, settlement
+    now = NOW + timedelta(minutes=26)
+    scan(settings, engine, now=now)
+    settlement.settle(engine, settings, now=now + timedelta(hours=4), load_results=fake_results)
+    bets = db.load_paper_bets(engine)
+    won = bets[bets.status == "won"].iloc[0]
+    lost = bets[bets.status == "lost"].iloc[0]
+    with Session(engine) as session, session.begin():
+        worse = -200 if won.price > -200 else int(won.price) - 50
+        with pytest.raises(ValueError):
+            db.record_check(session, session.get(db.OpportunityRow, int(won.opportunity_id)), "got", price_seen=85)     # not American odds
+        for bet, outcome, seen in ((won, "got", worse), (lost, "gone", None)):
+            db.record_check(session, session.get(db.OpportunityRow, int(bet.opportunity_id)), outcome, price_seen=seen, now=now)
+    confirmed = performance.checked_returns(bets, db.load_checks(engine), settlement.profit)
+    assert len(confirmed) == 1 and confirmed.iloc[0].checked_price == worse                     # the bet that was gone is not counted
+    assert 0 < confirmed.iloc[0].profit < won.profit and confirmed.iloc[0].ev < won.ev            # a worse price: less won, less edge
+    assert performance.checked_returns(bets, db.load_checks(engine).iloc[0:0], settlement.profit).empty
+    table = performance.accuracy(bets, "sport")
+    row = table.set_index("sport").loc["nba"]
+    assert row.bets == 2 and row.won == 0.5 and row.interval[0] < 0.5 < row.interval[1] and row.brier > 0
+    assert performance.accuracy(bets.iloc[0:0], "sport").empty
 
 
 def test_the_schedule_says_when_prices_will_appear():
@@ -376,11 +404,14 @@ def test_dashboard_bet_now_panel_records_whether_the_price_was_there(env, offlin
     assert not app.exception and db.load_checks(engine).outcome.tolist() == ["got"]
     assert any(m.value == "✔ Got it" for m in app.markdown) and len([b for b in app.button if b.label == "Got it" and b.key.startswith("now_got_")]) == count - 1
     next(b for b in app.button if b.label == "Change").click().run()
-    assert not app.exception and db.load_checks(engine).outcome.tolist() == ["gone"]
+    assert not app.exception and db.load_checks(engine).outcome.tolist() == ["got", "gone"]        # the first answer is kept
+    assert any(m.value == "✖ Gone" for m in app.markdown)
     with Session(engine) as session, session.begin():           # ten minutes later the same prices are no longer fresh
         for row in session.scalars(select(db.OpportunityRow)):
             row.observed_at = db.as_utc(row.observed_at) - timedelta(minutes=15)
     app = AppTest.from_file(page, default_timeout=120).run()
     assert not app.exception and any(h.value == "Bet now" for h in app.subheader)
-    assert any("Was the price really there?" in m.value for m in app.markdown)
+    assert any("Demonstrated: prices confirmed" in m.value for m in app.markdown)
+    assert {m.label: m.value for m in app.metric}["Prices checked"] == "1" and not any("Nothing is demonstrated" in i.value for i in app.info)
+    assert any("Hypothesis under test" in m.value for m in app.markdown)
     engine.dispose()

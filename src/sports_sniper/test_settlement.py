@@ -430,7 +430,9 @@ def test_dashboard_shows_settled_performance(env):
     app = AppTest.from_file(str(cli.Path(cli.__file__).resolve().parent / "dashboard" / "app.py"), default_timeout=90).run()
     assert not app.exception
     app.button[[b.label for b in app.button].index("Settle paper bets")].click().run()
-    assert not app.exception
+    assert not app.exception and {m.label: m.value for m in app.metric}["Paper bets"] == "0"      # forward bets only by default
+    assert any("Nothing is demonstrated yet" in i.value for i in app.info)
+    app.checkbox[[c.label for c in app.checkbox].index("Include replayed bets")].check().run()
     metrics = {m.label: m.value for m in app.metric}
     assert metrics["Paper bets"] == "5" and metrics["Record (W-L-P)"] == "1-1-0" and metrics["Simulated profit"] == "+$0.05"
     tables = [d.value for d in app.dataframe]

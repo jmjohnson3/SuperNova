@@ -226,3 +226,99 @@ def test_history_comes_from_whichever_tables_exist():
     history = breakout.load_history("dsn", connect=lambda dsn: OneTable(rows))
     assert set(history) == {"nba"} and history["nba"].player_key.tolist() == ["sample player"] and history["nba"].minutes.iloc[0] == 31.5
     assert breakout.load_history(None, connect=lambda dsn: OneTable(rows)) == {} or True
+
+
+# --- calibration by statistic, and the NBA candidate ----------------------------------------------------
+def test_a_statistic_gets_its_own_calibration_only_with_enough_lines_and_the_weight_is_never_negative():
+    points = lines(3000, 10, signal=1.0, seed=1)
+    threes = lines(3000, 10, signal=0.0, seed=2).assign(market="player_threes")
+    thin = lines(60, 10, signal=0.0, seed=3).assign(market="player_assists")
+    offers = pd.concat([points, threes, thin], ignore_index=True)
+    by_sport, _, sport_fits = calibration.calibrate(offers, "model")
+    by_stat, blend, stat_fits = calibration.calibrate(offers, "model", by_market=True)
+    day = sorted(calibration.days_of(offers).unique())[-1]
+    good, noise, small = (stat_fits[("nba", day, m)] for m in ("player_points", "player_threes", "player_assists"))
+    assert good["b"] > noise["b"] and good["own_weight"] > 0.7 and noise["blend_c"] < good["blend_c"]
+    assert small["own_weight"] == 0.0 and small["b"] == sport_fits[("nba", day)]["b"]          # too few lines: its sport's fit
+    later = calibration.days_of(offers) > sorted(calibration.days_of(offers).unique())[2]
+    def brier(p, rows):
+        y = (offers.status[rows] == "won").to_numpy(dtype=float)
+        return float(((p[rows.to_numpy()] - y) ** 2).mean())
+    noisy = later & (offers.market == "player_threes")
+    assert brier(by_stat, noisy) < brier(by_sport, noisy)                                      # the useless statistic is no longer trusted
+    against = lines(3000, 10, signal=1.0, seed=4)
+    against["model_probability"] = 1 - against.model_probability                               # a source that points the wrong way
+    fit = calibration.fit(against)
+    assert fit["blend_c"] == 0.0 and fit["b"] < 0                                              # no say against the market, never a bet against it
+    table = calibration.latest_by_market(offers, "model").set_index("market")
+    assert table.loc["player_assists", "own_lines"] == 0 and table.loc["player_points", "own_lines"] == 3000
+    assert calibration.latest_by_market(offers.iloc[0:0], "model").empty and np.isnan(calibration.calibrate(offers.iloc[0:0], "model")[0]).all()
+
+
+def candidate_data(days: int = 12, players: int = 60, seed: int = 5):
+    """Stored projections that run 10% high with a stated spread half of the real one, and what then happened."""
+    from sports_sniper import nba_candidate
+    rng = np.random.default_rng(seed)
+    projections, results = [], []
+    for d in range(days):
+        day = date(2026, 11, 1) + timedelta(days=d)
+        tip = pd.Timestamp(datetime(2026, 11, 1, 23, tzinfo=timezone.utc) + timedelta(days=d))
+        for p in range(players):
+            truth = rng.uniform(4, 30)
+            actual = rng.negative_binomial(truth / 1.0, 0.5)                    # mean `truth`, variance 2 * truth
+            row = dict(day=day, name_key=f"player {p}", minutes=30.0, pts=float(actual), reb=1.0, ast=1.0, fg3m=1.0)
+            results.append(row)
+            for hours, bump in ((5, 0.0), (1, 0.0)):
+                projections.append(dict(day=day, name_key=f"player {p}", stat="pts", run_at=tip - timedelta(hours=hours), tip=tip,
+                                        mu=truth * 1.10 + bump, a=1.0, b=0.0))
+            projections.append(dict(day=day, name_key=f"player {p}", stat="pts", run_at=tip + timedelta(minutes=5), tip=tip, mu=99.0, a=1.0, b=0.0))
+    return pd.DataFrame(projections), pd.DataFrame(results), nba_candidate
+
+
+def test_the_candidate_measures_scale_and_spread_on_earlier_games_only():
+    projections, results, nba_candidate = candidate_data()
+    history = nba_candidate.pairs(projections, results)
+    assert len(history) == 12 * 60 and history.mu.max() < 40                    # the forecast made after the tip is never paired
+    fitted = nba_candidate.fit(history)
+    assert fitted.scale == pytest.approx(1 / 1.10, abs=0.03) and 1.6 < fitted.a + fitted.b * 15 < 2.6 and fitted.fitted
+    assert nba_candidate.fit(history.iloc[:100]) is None
+    days = sorted(history.day.unique())
+    params = nba_candidate.params_by_day(history, days)
+    assert not params[(days[0], "pts")].fitted and params[(days[0], "pts")].scale == 1.0 and params[(days[0], "pts")].a == 1.0   # nothing earlier: the live numbers
+    assert params[(days[-1], "pts")].fitted and params[(days[-1], "pts")].pairs == 11 * 60       # every earlier day, never its own
+    check = nba_candidate.spread_check(history).set_index("stat").loc["pts"]
+    assert check.spread_ratio > 1.5 and check.result_over_projection == pytest.approx(1 / 1.10, abs=0.03)   # surer than it had reason to be
+
+
+def test_the_candidate_prices_offers_from_the_last_forecast_before_the_price():
+    pytest.importorskip("nba_props.model")
+    projections, results, nba_candidate = candidate_data()
+    tip = pd.Timestamp(datetime(2026, 11, 12, 23, tzinfo=timezone.utc))
+    offers = pd.DataFrame([dict(sport="nba", market="player_points", player="Player 3", line=15.5, commence_time=tip,
+                                observed_at=tip - timedelta(minutes=30)),
+                           dict(sport="nba", market="player_points", player="Nobody Known", line=15.5, commence_time=tip,
+                                observed_at=tip - timedelta(minutes=30)),
+                           dict(sport="nfl", market="player_receptions", player="Player 3", line=4.5, commence_time=tip,
+                                observed_at=tip - timedelta(minutes=30))])
+    values, params = nba_candidate.over_probabilities(None, offers, data=(projections, results))
+    assert 0 < values[0] < 1 and values[1] is None and values[2] is None and params[(tip.tz_convert("America/New_York").date(), "pts")].fitted
+    live = float(__import__("nba_props.model", fromlist=["p_over"]).p_over(
+        np.array([projections[(projections.name_key == "player 3") & (projections.day == date(2026, 11, 12)) & (projections.run_at < tip)].mu.iloc[-1]]),
+        np.array([15.5]), 1.0, 0.0)[0])
+    assert abs(values[0] - 0.5) < abs(live - 0.5) or values[0] < live          # scaled down and less sure than the live model
+    assert nba_candidate.over_probabilities(None, offers.iloc[0:0], data=(projections, results)) == ([], {})
+
+
+def test_the_workload_split_shows_how_much_error_is_playing_time():
+    from sports_sniper import nba_candidate
+    rows, results = [], []
+    for d in range(12):
+        day = date(2026, 11, 1) + timedelta(days=d)
+        minutes = 36.0 if d == 11 else 30.0                                    # one night with a bigger role
+        results.append(dict(day=day, name_key="starter", minutes=minutes, pts=minutes * 0.5, reb=5.0, ast=5.0, fg3m=2.0))
+        rows.append(dict(day=day, name_key="starter", stat="pts", mu=15.0, a=1.0, b=0.0, actual=minutes * 0.5, minutes=minutes))
+        rows.append(dict(day=day, name_key="starter", stat="reb", mu=4.0, a=1.0, b=0.0, actual=5.0, minutes=minutes))
+    split = nba_candidate.workload_split(pd.DataFrame(rows), pd.DataFrame(results)).set_index("stat")
+    assert split.loc["pts", "minutes_share"] == pytest.approx(1.0) and split.loc["pts", "mae_minutes_known"] == pytest.approx(0.0)   # all of it was minutes
+    assert split.loc["reb", "minutes_share"] < 0.2 and split.loc["pts", "minutes_mae"] > 0      # a rate error stays when minutes are known
+    assert nba_candidate.workload_split(pd.DataFrame(rows).iloc[0:0], pd.DataFrame(results)).empty

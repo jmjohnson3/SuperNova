@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy.engine import Engine
 
-from sports_sniper import backtest, bankroll, breakout, calibration, ladder, model_compare, parlay
+from sports_sniper import backtest, bankroll, breakout, calibration, ladder, model_compare, nba_candidate, parlay
 from sports_sniper.config import Settings
 from sports_sniper.markets import market_label
 from sports_sniper.providers import models
@@ -36,6 +36,22 @@ def with_models(found: pd.DataFrame, offers: pd.DataFrame, settings: Settings, a
     offers, fits = model_compare.attach_models(offers, settings, adapters)
     values, versions = models.over_probabilities(settings.results_dsn, found, adapters or models.ADAPTERS) if len(found) else ([], [])
     return calibration.annotate(found, fits, values, versions), offers, fits
+
+
+def candidate_check(offers: pd.DataFrame, settings: Settings) -> dict:
+    """The NBA candidate and calibration by statistic, scored on the same later lines as the live model."""
+    nba = offers[offers.sport == "nba"] if len(offers) else offers
+    sources = tuple(model_compare.CANDIDATE_SOURCES)
+    if nba.empty or "candidate_probability" not in nba or nba.candidate_probability.notna().sum() == 0:
+        return dict(scores=pd.DataFrame(), weights=pd.DataFrame(), diagnostics={}, picks=pd.DataFrame())
+    days = sorted({t.astimezone(nba_candidate.EASTERN).date() for t in nba.commence_time})
+    try:
+        diagnostics = nba_candidate.diagnostics(settings.results_dsn, days)
+    except Exception:                        # the projections database is optional
+        diagnostics = {}
+    return dict(scores=pd.concat([model_compare.scores(nba, None, sources), model_compare.scores(nba, "market", sources)], ignore_index=True),
+                weights=calibration.latest_by_market(nba, "candidate"), diagnostics=diagnostics,
+                picks=model_compare.picks_table(nba, sources=("consensus", "candidate_calibrated", "candidate_blend")))
 
 
 def ladder_check(engine: Engine, offers: pd.DataFrame, settings: Settings, load_results=None, extra=None) -> dict:
@@ -116,7 +132,7 @@ def build(engine: Engine, settings: Settings, *, progress=None, load_results=Non
                   "Quarter Kelly": bankroll.simulate(bets, bankroll.Rules(staking="kelly"))},
         scores=model_compare.scores(offers, "sport"), scores_by_market=model_compare.scores(offers, "market"),
         scores_calibrated=model_compare.scores(offers, "sport", tuple(model_compare.SOURCES)),
-        picks=model_compare.picks_table(offers), calibration=latest,
+        picks=model_compare.picks_table(offers), calibration=latest, candidate=candidate_check(offers, settings),
         breakout=breakout.validate(offers, history),
         ladder=ladder_check(engine, offers, settings, load_results, line_history) if len(offers) else ladder.summary(pd.DataFrame()),
         model_lines=int(offers.model_probability.notna().sum()) if len(offers) else 0)
@@ -205,6 +221,7 @@ def markdown(r: dict) -> str:
                          f"{pct(p.roi)}{se} | {pct(p.estimated_ev)} |")
         lines += ["", "The NFL model is compared on receptions and passing touchdowns only: its yardage projections are "
                   "anchored to the line, so they carry no chance of their own."]
+    lines += candidate_markdown(r["candidate"])
     lines += ["", "## Breakout signals", ""]
     if r["breakout"].empty:
         lines += ["No settled lines to test the signals on."]
@@ -232,6 +249,44 @@ def markdown(r: dict) -> str:
             se = "" if m["roi_se"] is None else f" ± {m['roi_se']:.1%}"
             lines.append(f"| {name} | {m['won'] + m['lost'] + m['push']} | {m['won']}-{m['lost']} | {pct(m['roi'])}{se} | {pct(m['estimated_ev'])} |")
     return "\n".join(lines) + "\n"
+
+
+def candidate_markdown(c: dict) -> list[str]:
+    lines = ["", "## NBA candidate: uncertainty measured on later games, calibration by statistic", ""]
+    if c["scores"].empty:
+        return lines + ["No later NBA lines with a candidate forecast yet."]
+    lines += ["The candidate keeps the live model's projected means. For each game it takes its scale and spread from "
+              "projections and results of earlier days only, is then calibrated by statistic on earlier days only, and is "
+              "scored on the days after that. Brier score, lower is better, on the same lines for every column.", "",
+              "| Lines | Settled | " + " | ".join(model_compare.CANDIDATE_SOURCES.values()) + " |", "|---|---|" + "---|" * len(model_compare.CANDIDATE_SOURCES)]
+    for s in c["scores"].itertuples():
+        name = "All NBA" if s.group == "All" else market_label(s.group)
+        lines.append(f"| {name} | {s.lines} | " + " | ".join(f"{getattr(s, k + '_brier'):.4f}" for k in model_compare.CANDIDATE_SOURCES) + " |")
+    if not c["weights"].empty:
+        lines += ["", "Calibration by statistic, fitted on every settled line so far. Confidence multiplies the candidate's log-odds "
+                  "(1 = take it at its word, 0 = it says nothing). The weight against the market is never negative and may stay at zero.", "",
+                  "| Statistic | Lines of its own | Share of its own fit | Confidence | Weight against the market |", "|---|---|---|---|---|"]
+        lines += [f"| {market_label(w.market)} | {w.own_lines} | {w.own_weight:.0%} | {w.confidence:.2f} | {w.weight_against_market:.2f} |"
+                  for w in c["weights"].itertuples()]
+    d = c["diagnostics"]
+    if d:
+        lines += ["", f"The live model against results on {d['days']} days (the last projection before each game, players who played):", "",
+                  "| Statistic | Player-games | Results / projections | Error spread / stated spread | Average miss |", "|---|---|---|---|---|"]
+        lines += [f"| {s.stat} | {s.player_games} | {s.result_over_projection:.3f} | {s.spread_ratio:.2f} | {s.mae:.2f} |" for s in d["spread"].itertuples()]
+        lines += ["", "A spread ratio near 1 means the stated uncertainty matched what happened on games the model had not seen.", "",
+                  "How much of the miss is playing time (the projection rescaled to the minutes actually played; usual minutes are "
+                  "the average of the previous five games, a stand-in because the live model stores no minutes forecast):", "",
+                  "| Statistic | Player-games | Average miss | Miss if minutes were known | Share owed to minutes | Average minutes surprise |", "|---|---|---|---|---|---|"]
+        lines += [f"| {w.stat} | {w.player_games} | {w.mae:.2f} | {w.mae_minutes_known:.2f} | {w.minutes_share:.0%} | {w.minutes_mae:.1f} |"
+                  for w in d["workload"].itertuples()]
+    if not c["picks"].empty:
+        lines += ["", "Betting each source's picks at the bet book's price on those lines:", "",
+                  "| Source | Edge needed | Settled | W-L | ROI |", "|---|---|---|---|---|"]
+        labels = dict(model_compare.CANDIDATE_SOURCES)
+        for p in c["picks"].itertuples():
+            se = "" if pd.isna(p.roi_se) else f" ± {p.roi_se:.1%}"
+            lines.append(f"| {labels[p.source]} | {p.threshold:.0%}+ | {p.bets} | {p.won}-{p.lost} | {pct(p.roi)}{se} |")
+    return lines
 
 
 def write(r: dict, path: Path = REPORT) -> Path:

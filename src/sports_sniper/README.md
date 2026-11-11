@@ -69,8 +69,8 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
   lists the games still to start and when their prices should first appear (about 40 minutes before an NBA game, an
   hour before an NFL game), read from the existing pipelines' schedules.
 - **Got it / Gone.** After opening a bet at the book, say whether the price was still there (in the Bet now panel, or
-  under any board with the price you actually saw). One answer per bet and book is kept in `sniper_price_checks`;
-  a later answer replaces it. It records availability only, never a wager.
+  under any board with the price you actually saw). Every answer is kept in `sniper_price_check_log`: the first is the
+  measurement, a later one is a correction beside it. It records availability only, never a wager.
 - **Performance** then shows the share of flagged prices that were really there, by book, how long after the price was
   stored you checked, and the paper record split by "price was there", "gone" and "not checked". Until now nothing
   measured this; the backtest only shows that under half of flagged prices survive to the next look ten minutes later.
@@ -141,6 +141,29 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
 - **What the evidence says so far** (`reports/sniper_backtest_latest.md`): the NBA model is close to noise once
   calibrated and adds nothing to the market; the NFL receptions model is slightly better than the market on a few
   hundred lines, too few to act on; flagged breakout players did not go over more often than the price implied.
+
+### NBA candidate, calibration by statistic, and what is demonstrated (2026-11-11)
+
+- **Candidate** (`nba_candidate.py`). The live NBA model sets each statistic's spread from the games it trained on.
+  The candidate keeps the live projections and takes its scale (results over projections) and spread from earlier
+  days' forecasts and results only, falling back to the live numbers while it has under 400 earlier player-games.
+  It changes no pinned file. Its diagnostics also report whether the live model's stated spread matched later
+  results, and how much of each miss would remain if the minutes played had been known.
+- **Calibration by statistic** (`calibration.calibrate(..., by_market=True)`). Each statistic is calibrated on its own
+  earlier lines once it has 300, pulled toward the fit for its sport in proportion to how few it has, and uses the
+  sport's fit outright below that. A source's weight against the market is never negative and may stay at zero.
+- **Three chronological steps.** Scale and spread from days before the game; calibration from candidate chances of
+  earlier days (themselves out of sample); scores on the days after. `reports/sniper_backtest_latest.md` has the
+  table by statistic. So far: the live model's stated spread was about right on unseen games (0.9 to 1.0 of the error
+  it claimed), the candidate's raw scores are better for assists, points and threes and worse for rebounds, and after
+  calibration neither version beats the market consensus. The miss is in the projected means, not the spread, and
+  only 2 to 9% of it is playing time by this measure.
+- **"Model agrees" is a stated hypothesis**, counted on forward bets only, by market, in the Performance tab, and not
+  read until it has 100 settled bets in each group.
+- **Demonstrated against research.** Performance opens on forward bets and on a Demonstrated section: the share of
+  flagged prices that were really there (first answers only) and the return at the prices actually seen, by sport,
+  market and book. Everything else is labelled research on paper. Price checks are an append-only log
+  (`sniper_price_check_log`): the first answer is the measurement and later corrections are kept beside it.
 
 ## Advanced features (Phase 4)
 
@@ -239,7 +262,8 @@ backtest.py        replay of stored snapshots, rules, delayed entry, walk-forwar
 bankroll.py        paper-bankroll simulator (flat or fractional Kelly, exposure limits)
 model_compare.py   probability sources scored against results
 research.py        the report (reports/sniper_backtest_latest.md) and the daily evaluation
-calibration.py     walk-forward calibration of model probabilities
+calibration.py     walk-forward calibration of model probabilities, by sport or by statistic
+nba_candidate.py   NBA candidate: scale and spread measured on later games; workload split
 breakout.py        breakout signals from game logs, and their validation
 ladder.py          longshot ladder model for one-sided alternate lines
 parlay.py          links between statistics and the joint chance of a parlay

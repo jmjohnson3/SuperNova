@@ -54,16 +54,85 @@ def fit_logistic(features: np.ndarray, outcome: np.ndarray, offset: np.ndarray |
     return beta
 
 
-def fit(lines: pd.DataFrame) -> dict | None:
-    """Both fits on settled lines that have a model chance; None with fewer than MIN_LINES."""
-    use = lines[lines.status.isin(["won", "lost"]) & lines.model_probability.notna() & lines.consensus_probability.notna()]
-    if len(use) < MIN_LINES:
+def fit(lines: pd.DataFrame, source: str = "model", min_lines: int = MIN_LINES) -> dict | None:
+    """Both fits on settled lines that have the source's chance; None with fewer than `min_lines`.
+
+    The weight the source gets against the market is never negative: a source the results argue against is
+    given no say (weight 0, the market's own chance with its intercept) rather than being bet against.
+    """
+    column = f"{source}_probability"
+    use = lines[lines.status.isin(["won", "lost"]) & lines[column].notna() & lines.consensus_probability.notna()]
+    if len(use) < min_lines:
         return None
     y = (use.status == "won").to_numpy(dtype=float)
-    model, market = logit(use.model_probability), logit(use.consensus_probability)
+    model, market = logit(use[column]), logit(use.consensus_probability)
     a, b = fit_logistic(model[:, None], y)
     a2, c = fit_logistic((model - market)[:, None], y, offset=market)
+    if c < 0:
+        a2, c = fit_logistic(np.empty((len(y), 0)), y, offset=market)[0], 0.0
     return dict(a=float(a), b=float(b), blend_a=float(a2), blend_c=float(c), lines=int(len(use)), version=VERSION)
+
+
+MIN_MARKET_LINES = 300      # settled lines of one statistic needed before it gets a fit of its own
+SHRINK_LINES = 600          # a statistic's own fit counts n / (n + this) against its sport's fit
+
+
+def mix(sport_fit: dict, market_fit: dict | None) -> dict:
+    """A statistic's coefficients: its sport's fit when it has too few lines of its own, otherwise its own fit
+    pulled toward the sport's in proportion to how few lines it has."""
+    if market_fit is None:
+        return dict(sport_fit, own_weight=0.0, own_lines=0)
+    w = market_fit["lines"] / (market_fit["lines"] + SHRINK_LINES)
+    out = {k: w * market_fit[k] + (1 - w) * sport_fit[k] for k in ("a", "b", "blend_a", "blend_c")}
+    return dict(out, lines=sport_fit["lines"], version=VERSION, own_weight=float(w), own_lines=market_fit["lines"])
+
+
+def calibrate(offers: pd.DataFrame, source: str, *, by_market: bool = False) -> tuple[np.ndarray, np.ndarray, dict]:
+    """(calibrated chance, blended chance, fits) for `source`, every row from fits on earlier days only.
+
+    With `by_market`, each statistic is calibrated on its own earlier lines, falling back to (and shrunk toward)
+    its sport's fit while it has few. Fits are keyed (sport, day), or (sport, day, market) when by statistic.
+    """
+    calibrated, blend = np.full(len(offers), np.nan), np.full(len(offers), np.nan)
+    fits: dict[tuple, dict] = {}
+    column = f"{source}_probability"
+    if offers.empty or column not in offers:
+        return calibrated, blend, fits
+    day = days_of(offers).to_numpy()
+    sport_of, market_of = offers.sport.to_numpy(), offers.market.to_numpy()
+    for sport in sorted(set(sport_of)):
+        mine = sport_of == sport
+        for today in sorted(set(day[mine])):
+            earlier = offers[mine & (day < today)]
+            sport_fit = fit(earlier, source)
+            if sport_fit is None:
+                continue
+            rows = mine & (day == today)
+            groups = [(None, rows)] if not by_market else [(m, rows & (market_of == m)) for m in sorted(set(market_of[rows]))]
+            for market, where in groups:
+                coefficients = sport_fit if market is None else mix(sport_fit, fit(earlier[earlier.market == market], source, MIN_MARKET_LINES))
+                fits[(sport, today) if market is None else (sport, today, market)] = coefficients
+                c, b = apply(coefficients, offers.loc[where, column], offers.loc[where, "consensus_probability"])
+                calibrated[where], blend[where] = c, b
+    return calibrated, blend, fits
+
+
+def latest_by_market(offers: pd.DataFrame, source: str) -> pd.DataFrame:
+    """The by-statistic fit on everything settled so far: one row per sport and market."""
+    rows = []
+    column = f"{source}_probability"
+    if offers.empty or column not in offers:
+        return pd.DataFrame(rows)
+    for sport in sorted(offers.sport.unique()):
+        mine = offers[offers.sport == sport]
+        sport_fit = fit(mine, source)
+        if sport_fit is None:
+            continue
+        for market in sorted(mine.market.unique()):
+            c = mix(sport_fit, fit(mine[mine.market == market], source, MIN_MARKET_LINES))
+            rows.append(dict(sport=sport, market=market, own_lines=c["own_lines"], own_weight=c["own_weight"], confidence=c["b"],
+                             weight_against_market=c["blend_c"]))
+    return pd.DataFrame(rows)
 
 
 def apply(coefficients: dict | None, model_probability, consensus_probability=None):
@@ -88,23 +157,7 @@ def walk_forward(offers: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """Add calibrated_probability and blend_probability (the over), each from a fit on earlier days only.
     Returns the offers and the fit used for each (sport, day)."""
     offers = offers.copy()
-    offers["calibrated_probability"] = np.nan
-    offers["blend_probability"] = np.nan
-    fits: dict[tuple, dict] = {}
-    if offers.empty or "model_probability" not in offers:
-        return offers, fits
-    day = days_of(offers)
-    for sport in sorted(offers.sport.unique()):
-        mine = offers.sport == sport
-        for today in sorted(day[mine].unique()):
-            coefficients = fit(offers[mine & (day < today)])
-            if coefficients is None:
-                continue
-            fits[(sport, today)] = coefficients
-            rows = mine & (day == today)
-            calibrated, blend = apply(coefficients, offers.loc[rows, "model_probability"], offers.loc[rows, "consensus_probability"])
-            offers.loc[rows, "calibrated_probability"] = calibrated
-            offers.loc[rows, "blend_probability"] = blend
+    offers["calibrated_probability"], offers["blend_probability"], fits = calibrate(offers, "model")
     return offers, fits
 
 
