@@ -33,6 +33,8 @@
     <RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable>
     <WakeToRun>true</WakeToRun>
     <Enabled>true</Enabled>
+    <!-- Normal priority. The scheduler's default (7) also means low disk and memory priority, which starved the scan on a busy PC. -->
+    <Priority>4</Priority>
   </Settings>
   <Actions Context="Author">
     <Exec>
