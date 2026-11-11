@@ -16,6 +16,7 @@ from sports_sniper import odds_math
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.movement import moves
+from sports_sniper.providers import schedule
 from sports_sniper.opportunities import EVIDENCE_ORDER, describe
 from sports_sniper.scanner import run_scan
 from sports_sniper.settlement import settle
@@ -95,7 +96,23 @@ with Session(engine()) as session:
     scan = db.latest_scan(session)
 
 # --- sidebar ---------------------------------------------------------------------------------------
+st.session_state["page_runs"] = st.session_state.get("page_runs", 0) + 1
 with st.sidebar:
+    auto_refresh = st.toggle("Refresh every minute", value=True, key="auto_refresh",
+                             help="Reloads the page each minute so new prices show up without touching it. The scheduled "
+                                  "scanners store them; this only re-reads what is stored and uses no API credits.")
+
+
+    @st.fragment(run_every=60 if auto_refresh else None)
+    def heartbeat() -> None:
+        """Runs with the page, then alone once a minute; a run of its own asks for the whole page again."""
+        if st.session_state.get("heartbeat_run") == st.session_state["page_runs"]:
+            st.rerun()
+        st.session_state["heartbeat_run"] = st.session_state["page_runs"]
+        st.caption(f"Page read {datetime.now().astimezone():%I:%M:%S %p}".replace(" 0", " "))
+
+
+    heartbeat()
     st.header("Scan")
     if st.button("Scan saved prices (free)", width="stretch", help="Real snapshots the scheduled jobs already saved. "
                                                                    "Falls back to sample data when there are none."):
@@ -207,6 +224,12 @@ def details(data: pd.DataFrame, key: str) -> None:
     link = bet_link(row.link, row.data_source)
     if link:
         st.link_button(f"Open at {book_label(row.book)}", link)
+    g1, g2, g3 = st.columns([1, 1, 2])
+    seen_price = g3.number_input("Price you saw, if it had changed (American; 0 = unchanged)", value=0, step=5, key=f"{key}_seen")
+    if g1.button("Got it", key=f"{key}_got", help="The price was still there when you opened the book."):
+        save_check(int(row.id), "got", int(seen_price) or None)
+    if g2.button("Gone", key=f"{key}_gone", help="The price had moved or the line was no longer offered."):
+        save_check(int(row.id), "gone")
     stake = st.number_input("Hypothetical stake", min_value=0.01, value=float(settings.paper_stake), key=f"{key}_stake")
     if st.button("Save as paper bet", key=f"{key}_save"):
         with Session(engine()) as session, session.begin():
@@ -223,6 +246,73 @@ c1.metric("Last prices seen", "-" if last_seen is None else ago(last_seen, now))
 c2.metric("Available now", int((priced.available & (priced.conservative_ev > min_edge) & (priced.ev >= min_ev)).sum()))
 c3.metric("Flagged in the last 36 h", len(priced))
 c4.metric("Last scan", f"#{scan.id} · {scan.source}")
+
+# --- bet now: prices seen in the last few minutes, and whether they were really there -----------------------------
+@st.cache_data(ttl=600, show_spinner=False)
+def next_games() -> list[dict]:
+    try:
+        return schedule.upcoming(settings.results_dsn, datetime.now(timezone.utc))
+    except Exception:
+        return []
+
+
+def check_key(row) -> tuple:
+    return (row.event_id, row.book, row.market, row.player_key, row.line_key, row.side)
+
+
+def save_check(opportunity_id: int, outcome: str, price_seen: int | None = None) -> None:
+    with Session(engine()) as session, session.begin():
+        db.record_check(session, session.get(db.OpportunityRow, opportunity_id), outcome, price_seen=price_seen)
+    st.rerun()
+
+
+CHECK_LABEL = {"got": "✔ Got it", "gone": "✖ Gone"}
+all_checks = db.load_checks(engine())
+checked = {check_key(c): c.outcome for c in all_checks.itertuples()}
+fresh_age = (now - priced.observed_at).dt.total_seconds() / 60 if not priced.empty else pd.Series(dtype=float)
+bet_now = priced[priced.available & (fresh_age <= settings.fresh_minutes) & (priced.conservative_ev > min_edge) & (priced.ev >= min_ev)
+                 & priced.evidence.isin(tiers) & priced.is_best_price] if not priced.empty else priced
+for column, wanted in (("sport", sports), ("market", markets), ("book", books)):
+    if wanted and not bet_now.empty:
+        bet_now = bet_now[bet_now[column].isin(wanted)]
+bet_now = bet_now.sort_values("commence_time") if not bet_now.empty else bet_now
+
+st.subheader(f"Bet now ({len(bet_now)})" if len(bet_now) else "Bet now")
+if bet_now.empty:
+    st.caption(f"No flagged price has been seen in the last {settings.fresh_minutes:.0f} minutes. Prices are stored in the last "
+               "40 minutes before an NBA game and the last hour before an NFL game, every ten minutes.")
+else:
+    st.caption(f"Flagged prices seen in the last {settings.fresh_minutes:.0f} minutes, soonest game first. Open the book, then say "
+               "whether the price was still there: that is the only way to learn if these bets can really be placed. "
+               "Nothing here places a bet.")
+    for o in bet_now.head(12).itertuples():
+        starts = (o.commence_time - now).total_seconds() / 60
+        left, when, go, yes, no = st.columns([5, 2.2, 1.6, 1.2, 1.2], vertical_alignment="center")
+        left.markdown(f"**{label(o)}** · {book_label(o.book)} **{american(o.price)}** (fair {american(o.fair_price)}, "
+                      f"edge {pct(o.ev, True)}) · model: {model_view(o.model_probability, o.break_even).lower()}")
+        when.markdown(f"Starts in **{starts:.0f} min** · seen {ago(o.observed_at, now)}")
+        link = bet_link(o.link, o.data_source)
+        if link:
+            go.link_button(f"Open {book_label(o.book)}", link)
+        answer = checked.get(check_key(o))
+        if answer:
+            yes.markdown(CHECK_LABEL[answer])
+            if no.button("Change", key=f"now_change_{o.id}"):
+                save_check(int(o.id), "gone" if answer == "got" else "got")
+        else:
+            if yes.button("Got it", key=f"now_got_{o.id}", help="The price was still there when you opened the book."):
+                save_check(int(o.id), "got")
+            if no.button("Gone", key=f"now_gone_{o.id}", help="The price had moved or the line was no longer offered."):
+                save_check(int(o.id), "gone")
+games_ahead = next_games()
+if games_ahead:
+    soon = [g for g in games_ahead if g["start"] > now][:8]
+    if soon:
+        with st.expander("When to look", expanded=bet_now.empty):
+            st.dataframe(pd.DataFrame([{"Game": f"{g['sport'].upper()} · {g['name']}", "Starts": local(g["start"]),
+                                        "Prices from about": local(g["prices_from"]),
+                                        "In": "now" if g["prices_from"] <= now else f"{(g['prices_from'] - now).total_seconds() / 60:.0f} min"}
+                                       for g in soon]), hide_index=True, width="stretch")
 
 board_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
     ["Opportunity Board", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance", "Paper Bets",
@@ -534,13 +624,32 @@ with perf_tab:
                 ("Replayed from saved snapshots", performance.summarize(view[view.replayed]))]
         st.dataframe(results_table([r for r in rows if r[1]["bets"]]), hide_index=True, width="stretch")
         view = view.assign(model=["No model forecast" if pd.isna(p) else "Model agrees" if p > 1 / d else "Model disagrees"
-                                  for p, d in zip(view.model_probability, view.decimal)])
+                                  for p, d in zip(view.model_probability, view.decimal)],
+                           check=[{"got": "Price was there (Got it)", "gone": "Price was gone"}.get(checked.get(check_key(b)), "Not checked")
+                                  for b in view.itertuples()])
         for title, column, name in (("By sport", "sport", str.upper), ("By market", "market", market_label),
                                     ("By sportsbook", "book", book_label), ("By side", "side", str.capitalize),
-                                    ("By evidence", "evidence", str.capitalize), ("By model view", "model", str)):
+                                    ("By evidence", "evidence", str.capitalize), ("By model view", "model", str),
+                                    ("By whether the price was there", "check", str)):
             st.markdown(f"#### {title}")
             st.dataframe(results_table([(name(key), performance.summarize(group)) for key, group in view.groupby(column)]),
                          hide_index=True, width="stretch")
+        st.markdown("#### Was the price really there?")
+        real_checks = all_checks[all_checks.data_source != "sample"] if not all_checks.empty else all_checks
+        if real_checks.empty:
+            st.write("No answers yet. Use **Got it** or **Gone** on a bet in the Bet now panel after opening it at the book.")
+        else:
+            a = performance.availability(real_checks)
+            a1, a2, a3, a4 = st.columns(4)
+            a1.metric("Prices checked", a["checks"])
+            a2.metric("Still there", f"{a['got_rate']:.0%}", f"95%: {a['interval'][0]:.0%} to {a['interval'][1]:.0%}", delta_color="off")
+            a3.metric("Got it at a different price", a["changed"], f"{a['worse']} worse", delta_color="off")
+            a4.metric("Typical time to check", f"{a['median_seconds'] / 60:.1f} min", "after the price was stored", delta_color="off")
+            st.dataframe(pd.DataFrame([{"Book": book_label(k), "Checked": len(g), "Still there": pct((g.outcome == "got").mean()),
+                                        "Gone": int((g.outcome == "gone").sum())} for k, g in real_checks.groupby("book")]),
+                         hide_index=True, width="stretch")
+            st.caption("The paper record assumes every flagged price could be bet. This is the share that really could, by your own "
+                       "answers; the table above (\"By whether the price was there\") shows how each group went on to do.")
         st.markdown("#### Calibration")
         bands = performance.calibration(view)
         if total["won"] + total["lost"] < 30:

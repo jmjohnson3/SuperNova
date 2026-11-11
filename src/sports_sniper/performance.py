@@ -49,6 +49,17 @@ def summarize(bets: pd.DataFrame) -> dict:
     return out
 
 
+def availability(checks: pd.DataFrame) -> dict:
+    """How often a flagged price was still there when it was opened, from the Got it / Gone answers."""
+    n = int(len(checks))
+    got = int((checks.outcome == "got").sum()) if n else 0
+    changed = checks[(checks.outcome == "got") & checks.price_seen.notna() & (checks.price_seen != checks.flagged_price)] if n else checks
+    return dict(checks=n, got=got, gone=n - got, got_rate=got / n if n else None,
+                interval=odds_math.wilson_interval(got, n) if n else None,
+                changed=int(len(changed)), worse=int((changed.price_seen < changed.flagged_price).sum()) if n else 0,
+                median_seconds=float(checks.seconds_after.median()) if n else None)
+
+
 def breakdown(bets: pd.DataFrame, column: str) -> pd.DataFrame:
     rows = [dict({column: key}, **summarize(group)) for key, group in bets.groupby(column, sort=True)]
     return pd.DataFrame(rows)

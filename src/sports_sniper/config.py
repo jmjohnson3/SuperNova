@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     link_state: str = "co"                   # two-letter state for sportsbook links that need one (BetMGM)
 
     # --- paper trading ---
+    fresh_minutes: float = 10.0              # the dashboard's "Bet now" panel shows prices seen this recently
     alert_webhook_url: str | None = None     # Discord webhook for new paper bets; alerts are off without it. A secret.
     alert_webhook_url_nba: str | None = None  # a channel of its own for one sport; falls back to the address above
     alert_webhook_url_nfl: str | None = None

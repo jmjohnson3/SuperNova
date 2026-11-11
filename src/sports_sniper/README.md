@@ -60,6 +60,21 @@ Every flagged row carries a sentence built from the numbers that produced it. Pr
 at scan time are dropped; in the dashboard a price is "available" only when it comes from the newest look at a
 game that has not started, seen in the last 20 minutes. Everything else is shown as expired history.
 
+## Bet now, and whether the price was there
+
+- **The page refreshes itself every minute** (a switch in the sidebar). It only re-reads what the scheduled scanners
+  have stored, so it uses no API credits.
+- **Bet now** sits above the tabs: flagged prices seen in the last 10 minutes (`SNIPER_FRESH_MINUTES`) that clear the
+  bar, soonest game first, each with a countdown to the start, the bet link and the model's view. **When to look**
+  lists the games still to start and when their prices should first appear (about 40 minutes before an NBA game, an
+  hour before an NFL game), read from the existing pipelines' schedules.
+- **Got it / Gone.** After opening a bet at the book, say whether the price was still there (in the Bet now panel, or
+  under any board with the price you actually saw). One answer per bet and book is kept in `sniper_price_checks`;
+  a later answer replaces it. It records availability only, never a wager.
+- **Performance** then shows the share of flagged prices that were really there, by book, how long after the price was
+  stored you checked, and the paper record split by "price was there", "gone" and "not checked". Until now nothing
+  measured this; the backtest only shows that under half of flagged prices survive to the next look ten minutes later.
+
 ## Paper trading and settlement
 
 - **The bar (since 2026-11-11).** A bet is shown and paper-traded only with an estimated edge of 4% or more
@@ -191,7 +206,7 @@ write-ahead mode so the dashboard can read while a pass writes; it grows by roug
 - Backtests on seasons before the stored snapshots (would need bought history).
 - **Alembic migrations.** Tables are created directly and new columns are appended on start; there is no
   migration history yet.
-- Whether a flagged price is still there when you open the sportsbook is not measured by this application.
+- Whether a flagged price is still there is only known for the bets you answer Got it or Gone on.
 
 ## What already exists in this repository, and what was reused
 
@@ -215,7 +230,7 @@ normalize.py       Odds API event -> clean quotes
 consensus.py       fair probability from the other books
 opportunities.py   detection, evidence labels, ranking
 movement.py        line movement from stored prices
-providers/         odds_api.py (live), saved_quotes.py, results.py and models.py (existing Postgres), sample.py (hypothetical)
+providers/         odds_api.py (live), saved_quotes.py, results.py, models.py and schedule.py (existing Postgres), sample.py (hypothetical)
 db.py              SQLAlchemy models and queries
 scanner.py         one scan, end to end
 settlement.py      grading rules, closing line value, settling paper bets

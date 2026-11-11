@@ -350,6 +350,9 @@ python -m pytest src/sports_sniper -q
   do not switch them on or add Discord output to it), and a
   daily evaluation inside `watch` (`cli evaluate`, about 90 s: report, calibration, parlay links). Nothing here has
   shown an edge beyond the price gap; do not let a model rank or flag bets without out-of-sample evidence.
+- The dashboard is the alert (2026-11-11, the user's choice over Discord): it refreshes itself every minute, a "Bet now"
+  panel lists flagged prices seen in the last 10 minutes with a countdown, and Got it / Gone answers
+  (`sniper_price_checks`) measure whether flagged prices can really be bet.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

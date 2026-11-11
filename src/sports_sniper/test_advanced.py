@@ -13,10 +13,11 @@ from typer.testing import CliRunner
 
 from sports_sniper import alerts, breakout, cli, db, ladder, parlay, research
 from sports_sniper.config import Settings, get_settings
-from sports_sniper.providers import models
+from sports_sniper.providers import models, schedule
 from sports_sniper.test_research import Connection
 from sports_sniper.test_settlement import NOW, engine, env, fake_results, scan, seeded, settings  # noqa: F401
 
+REAL_UPCOMING = schedule.upcoming            # the function itself; tests replace the module's name with an empty schedule
 START = pd.Timestamp(datetime(2026, 11, 8, 18, 0, tzinfo=timezone.utc))
 SEEN = START - timedelta(minutes=30)
 NO_LINES = pd.DataFrame(columns=["day", "market", "ratio"])
@@ -287,3 +288,99 @@ def test_dashboard_parlay_lab_and_ladder_section(env, offline):  # noqa: F811
         app.button[[b.label for b in app.button].index(label)].click().run()
         assert not app.exception, label
     assert any(s.label == "Game" for s in app.selectbox) and any(m.label == "Legs (2 to 4)" for m in app.multiselect)
+
+
+# --- bet now and price checks ---------------------------------------------------------------------------
+def test_a_price_check_is_kept_once_per_bet_and_the_latest_answer_wins(settings, engine):  # noqa: F811
+    from sports_sniper import performance
+    now = NOW + timedelta(minutes=26)
+    scan(settings, engine, now=now)
+    with Session(engine) as session, session.begin():
+        rows = session.scalars(select(db.OpportunityRow).where(db.OpportunityRow.status == "priced")).all()
+        first = rows[0]
+        second = next(r for r in rows if r.player_key != first.player_key)
+        first_id = first.id
+        check = db.record_check(session, first, "got", price_seen=first.price - 10, now=now + timedelta(minutes=2))
+        assert check.outcome == "got" and check.price_seen == first.price - 10 and check.flagged_price == first.price
+        db.record_check(session, second, "gone", price_seen=-105, now=now + timedelta(minutes=3))
+        with pytest.raises(ValueError):
+            db.record_check(session, first, "maybe")
+    checks = db.load_checks(engine)
+    assert len(checks) == 2 and checks.set_index("outcome").loc["gone", "price_seen"] != -105        # no price for a bet that was gone
+    summary = performance.availability(checks)
+    assert (summary["checks"], summary["got"], summary["gone"], summary["changed"], summary["worse"]) == (2, 1, 1, 1, 1)
+    assert summary["got_rate"] == 0.5 and summary["median_seconds"] > 0 and summary["interval"][0] < 0.5 < summary["interval"][1]
+    with Session(engine) as session, session.begin():
+        db.record_check(session, session.get(db.OpportunityRow, first_id), "gone", now=now + timedelta(minutes=5))
+    again = db.load_checks(engine)
+    assert len(again) == 2 and set(again.outcome) == {"gone"} and performance.availability(again.iloc[0:0])["got_rate"] is None
+
+
+def test_the_schedule_says_when_prices_will_appear():
+    from sports_sniper.providers import schedule as real
+
+    class Games(Connection):
+        def cursor(self):
+            outer = self
+
+            class C:
+                def __enter__(s):
+                    return s
+
+                def __exit__(s, *exc):
+                    return False
+
+                def execute(s, sql, params=None):
+                    s.answer = [("t",)] if "to_regclass" in sql else outer.rows["nba" if "game_projections" in sql else "nfl"]
+
+                def fetchone(s):
+                    return s.answer[0]
+
+                def fetchall(s):
+                    return s.answer
+            return C()
+    tip = datetime(2026, 11, 12, 0, 0, tzinfo=timezone.utc)
+    rows = {"nba": [("DEN", "MEM", tip)], "nfl": [("WAS", "NYG", tip - timedelta(hours=1)), ("AAA", "BBB", None)]}
+    games = REAL_UPCOMING("dsn", tip - timedelta(hours=5), connect=lambda dsn: Games(rows))
+    assert [g["name"] for g in games] == ["WAS @ NYG", "DEN @ MEM"]
+    assert games[1]["prices_from"] == tip - timedelta(minutes=40) and games[0]["prices_from"] == tip - timedelta(hours=2)
+
+
+def test_dashboard_bet_now_panel_records_whether_the_price_was_there(env, offline, monkeypatch):  # noqa: F811
+    import streamlit as st
+    from streamlit.testing.v1 import AppTest
+    from sports_sniper import scanner
+    from sports_sniper.providers import sample
+    from sports_sniper.providers import schedule as real
+    config = get_settings()
+    engine = db.make_engine(config.database_url)             # noqa: F811
+    stamp = datetime.now(timezone.utc) - timedelta(minutes=2)
+    scanner.run_scan(config, engine, "saved", snapshots=sample.load(stamp)[2:])        # looked at two minutes ago; games still to start
+    tip = datetime.now(timezone.utc) + timedelta(hours=3)
+    monkeypatch.setattr(real, "upcoming", lambda dsn, now, hours=18.0, connect=None: [
+        dict(sport="nba", name="AAA @ BBB", start=tip, prices_from=tip - timedelta(minutes=40))])
+    st.cache_resource.clear()
+    st.cache_data.clear()
+    page = str(cli.Path(cli.__file__).resolve().parent / "dashboard" / "app.py")
+    app = AppTest.from_file(page, default_timeout=120).run()
+    assert not app.exception
+    heading = next(h.value for h in app.subheader if h.value.startswith("Bet now"))
+    count = int(heading.split("(")[1].rstrip(")"))
+    assert count >= 1 and any(t.label == "Refresh every minute" and t.value for t in app.toggle)
+    assert any("Starts in" in m.value and "seen" in m.value for m in app.markdown)
+    assert any("Prices from about" in d.value for d in app.dataframe)                  # the When to look table
+    got = [b for b in app.button if b.label == "Got it" and b.key.startswith("now_got_")]
+    gone = [b for b in app.button if b.label == "Gone" and b.key.startswith("now_gone_")]
+    assert len(got) == count == len(gone)
+    got[0].click().run()
+    assert not app.exception and db.load_checks(engine).outcome.tolist() == ["got"]
+    assert any(m.value == "✔ Got it" for m in app.markdown) and len([b for b in app.button if b.label == "Got it" and b.key.startswith("now_got_")]) == count - 1
+    next(b for b in app.button if b.label == "Change").click().run()
+    assert not app.exception and db.load_checks(engine).outcome.tolist() == ["gone"]
+    with Session(engine) as session, session.begin():           # ten minutes later the same prices are no longer fresh
+        for row in session.scalars(select(db.OpportunityRow)):
+            row.observed_at = db.as_utc(row.observed_at) - timedelta(minutes=15)
+    app = AppTest.from_file(page, default_timeout=120).run()
+    assert not app.exception and any(h.value == "Bet now" for h in app.subheader)
+    assert any("Was the price really there?" in m.value for m in app.markdown)
+    engine.dispose()

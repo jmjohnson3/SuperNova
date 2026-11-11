@@ -165,6 +165,67 @@ class PaperBet(Base):
     alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class PriceCheck(Base):
+    """What was found when a flagged price was opened at the sportsbook: still there (got) or not (gone).
+    One per bet and book; a later answer replaces the earlier one. It records availability, never a wager."""
+    __tablename__ = "sniper_price_checks"
+    __table_args__ = (UniqueConstraint("event_id", "book", "market", "player_key", "line_key", "side", name="sniper_price_check_identity"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    opportunity_id: Mapped[int | None] = mapped_column(ForeignKey("sniper_opportunities.id"), nullable=True)
+    data_source: Mapped[str] = mapped_column(String(20))
+    sport: Mapped[str] = mapped_column(String(10))
+    event_id: Mapped[str] = mapped_column(String(64))
+    event_name: Mapped[str] = mapped_column(String(160))
+    commence_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    book: Mapped[str] = mapped_column(String(40))
+    market: Mapped[str] = mapped_column(String(60))
+    player: Mapped[str] = mapped_column(String(120))
+    player_key: Mapped[str] = mapped_column(String(120))
+    line: Mapped[float | None] = mapped_column(Float, nullable=True)
+    line_key: Mapped[str] = mapped_column(String(20))
+    side: Mapped[str] = mapped_column(String(8))
+    flagged_price: Mapped[int] = mapped_column(Integer)
+    price_observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ev: Mapped[float | None] = mapped_column(Float, nullable=True)
+    outcome: Mapped[str] = mapped_column(String(10))                    # got | gone
+    price_seen: Mapped[int | None] = mapped_column(Integer, nullable=True)   # the price that was there, when it had changed
+    seconds_after: Mapped[float] = mapped_column(Float)                 # from when the price was stored to when it was checked
+
+
+CHECK_OUTCOMES = ("got", "gone")
+
+
+def record_check(session: Session, opportunity: OpportunityRow, outcome: str, *, price_seen: int | None = None,
+                 now: datetime | None = None) -> PriceCheck:
+    """Save what was found when a flagged price was opened. A second answer for the same bet and book replaces the first."""
+    if outcome not in CHECK_OUTCOMES:
+        raise ValueError("outcome must be got or gone")
+    now = now or datetime.now(timezone.utc)
+    same = select(PriceCheck).where(PriceCheck.event_id == opportunity.event_id, PriceCheck.book == opportunity.book,
+                                    PriceCheck.market == opportunity.market, PriceCheck.player_key == opportunity.player_key,
+                                    PriceCheck.line_key == opportunity.line_key, PriceCheck.side == opportunity.side)
+    check = session.scalars(same).first()
+    if check is None:
+        check = PriceCheck(event_id=opportunity.event_id, book=opportunity.book, market=opportunity.market,
+                           player_key=opportunity.player_key, line_key=opportunity.line_key, side=opportunity.side)
+        session.add(check)
+    check.checked_at, check.opportunity_id, check.data_source = now, opportunity.id, opportunity.data_source
+    check.sport, check.event_name, check.commence_time = opportunity.sport, opportunity.event_name, opportunity.commence_time
+    check.player, check.line, check.flagged_price = opportunity.player, opportunity.line, opportunity.price
+    check.price_observed_at, check.ev, check.outcome = opportunity.observed_at, opportunity.ev, outcome
+    check.price_seen = price_seen if outcome == "got" else None
+    check.seconds_after = (now - as_utc(opportunity.observed_at)).total_seconds()
+    session.flush()
+    return check
+
+
+def load_checks(engine: Engine) -> pd.DataFrame:
+    with engine.connect() as conn:
+        frame = pd.read_sql(select(PriceCheck).order_by(PriceCheck.checked_at.desc()), conn)
+    return utc(frame, ["checked_at", "commence_time", "price_observed_at"])
+
+
 def make_engine(url: str) -> Engine:
     """An engine for the Sniper's database. A SQLite file is opened in write-ahead mode with a long wait for
     locks, so the dashboard can keep reading while a scheduled scan writes."""
