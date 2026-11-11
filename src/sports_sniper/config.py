@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     max_snapshot_age_minutes: float = 20.0   # older prices are shown as history, not as available
     line_move_threshold: float = 0.02        # change in break-even probability worth flagging
     paper_stake: float = 1.0
+    link_state: str = "co"                   # two-letter state for sportsbook links that need one (BetMGM)
 
     # --- paper trading ---
     auto_paper: bool = True                  # enter every flagged bet that clears the bar as a paper bet

@@ -406,7 +406,7 @@ def test_watch_command_logs_one_line_per_step(env, monkeypatch):
     assert out.exit_code == 0 and len(lines) == 3 and lines[0].endswith("pass started") and lines[1].endswith("0 new snapshots")
     assert lines[2].endswith("settled nothing; closing values added 0; done")
     stamp = datetime.now(timezone.utc) - timedelta(hours=1)
-    monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: [restamp(s, stamp) for s in sample.load(NOW)[2:]])
+    monkeypatch.setattr(saved_quotes, "load", lambda dsn, sports, since: sample.load(stamp)[2:])      # games start after the look, whatever the clock says
     out = CliRunner().invoke(cli.app, ["watch"])
     assert out.exit_code == 0, out.output
     assert "2 games, 57 prices, 12 flagged, 5 new paper bets" in out.output and "sample" not in out.output.lower()
@@ -436,6 +436,10 @@ def test_dashboard_shows_settled_performance(env):
     tables = [d.value for d in app.dataframe]
     summary = next(t for t in tables if "Group" in t and "All" in set(t["Group"]))
     assert summary.set_index("Group").loc["All", "Void"] == 1
+    app.checkbox[[c.label for c in app.checkbox].index("Include prices no longer available")].check().run()
+    board = app.dataframe[0].value
+    assert not app.exception and "Bet" in board and board["Bet"].isna().all()      # the sample fixture carries no links
+    tables = [d.value for d in app.dataframe]
     paper = next(t for t in tables if "Note" in t)
     assert set(paper["Status"]) == {"Won", "Lost", "Void", "Open"} and "did not play" in set(paper["Note"])
     assert "Not enough settled bets" in " ".join(m.value for m in app.markdown)

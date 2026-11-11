@@ -54,6 +54,17 @@ def local(when) -> str:
     return pd.Timestamp(when).to_pydatetime().astimezone().strftime("%a %b %d, %I:%M %p").replace(" 0", " ")
 
 
+def bet_link(link, source: str) -> str | None:
+    """The sportsbook's own link for a bet, or None. Sample data has no real links."""
+    if source == "sample" or pd.isna(link) or not link:
+        return None
+    return str(link).replace("{state}", settings.link_state.lower())
+
+
+LINK_COLUMN = {"Bet": st.column_config.LinkColumn("Bet", display_text="Open", help="Opens this bet at the sportsbook. "
+                                                  "The price there may have changed since it was seen.")}
+
+
 def label(o) -> str:
     return f"{o.player} — {describe(o.side, None if pd.isna(o.line) else o.line)} {market_label(o.market)}"
 
@@ -151,6 +162,7 @@ def table(data: pd.DataFrame) -> pd.DataFrame:
         "Player / market": [label(o) for o in data.itertuples()],
         "Game": [f"{o.event_name} ({local(o.commence_time)})" for o in data.itertuples()],
         "Book": data.book.map(book_label).to_list(),
+        "Bet": [bet_link(o.link, o.data_source) for o in data.itertuples()],
         "Odds": data.price.map(american).to_list(),
         "Fair odds": data.fair_price.map(american).to_list(),
         "Est. chance": data.probability.map(pct).to_list(),
@@ -171,8 +183,9 @@ def details(data: pd.DataFrame, key: str) -> None:
     st.write(row.explanation)
     if not row.available:
         st.caption(f"This price was seen {ago(row.observed_at, now)} and may be gone.")
-    if pd.notna(row.link) and row.link and scan.source != "sample":
-        st.caption(f"[Open at {book_label(row.book)}]({row.link})")
+    link = bet_link(row.link, row.data_source)
+    if link:
+        st.link_button(f"Open at {book_label(row.book)}", link)
     stake = st.number_input("Hypothetical stake", min_value=0.01, value=float(settings.paper_stake), key=f"{key}_stake")
     if st.button("Save as paper bet", key=f"{key}_save"):
         with Session(engine()) as session, session.begin():
@@ -201,7 +214,7 @@ with board_tab:
         st.info("No opportunities clear the bar right now. That is a normal result: most prices are fair or worse."
                 + ("" if show_expired or priced.empty else " Tick **Include prices no longer available** to review earlier ones."))
     else:
-        st.dataframe(table(board), hide_index=True, width="stretch")
+        st.dataframe(table(board), hide_index=True, width="stretch", column_config=LINK_COLUMN)
         st.caption("Ranked by conservative EV: the estimated chance lowered by its uncertainty before the EV is worked out. "
                    "Every estimate on this page comes from other sportsbooks' prices for the identical bet, with their "
                    "margin removed; no prediction model is involved yet.")
@@ -215,7 +228,7 @@ with longshot_tab:
     if longs.empty:
         st.info("No longshot has a supportable positive edge right now.")
     else:
-        st.dataframe(table(longs), hide_index=True, width="stretch")
+        st.dataframe(table(longs), hide_index=True, width="stretch", column_config=LINK_COLUMN)
         details(longs, "longshot")
     outliers = filtered(unpriced)
     outliers = outliers[outliers.price >= floor]
