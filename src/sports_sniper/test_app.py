@@ -73,11 +73,14 @@ def test_paper_bets_use_the_observed_price_and_are_not_duplicated(settings, engi
         assert bet.strategy == db.STRATEGY and bet.data_source == "sample" and bet.profit is None
         same, created = db.place_paper_bet(session, row, stake=5.0)
         assert not created and same.id == bet.id and same.stake == 2.0
+        row.link = "https://book.example/bet"
         extra, created = db.place_paper_bet(session, row, stake=1.0, allow_duplicate=True)
+        assert extra.link == "https://book.example/bet" and bet.link is None
         assert created and extra.entry_no == 2
         with pytest.raises(ValueError):
             db.place_paper_bet(session, row, stake=0, allow_duplicate=True)
-    assert len(db.load_paper_bets(engine)) == 2
+    saved = db.load_paper_bets(engine)
+    assert len(saved) == 2 and set(saved.link) == {"https://book.example/bet"}     # the older bet takes its opportunity's link
 
 
 # --- live source -----------------------------------------------------------------------------------

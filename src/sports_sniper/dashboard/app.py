@@ -241,11 +241,12 @@ with longshot_tab:
         st.dataframe(pd.DataFrame({
             "Player / market": [label(o) for o in outliers.itertuples()],
             "Game": outliers.event_name.to_list(), "Book": outliers.book.map(book_label).to_list(),
+            "Bet": [bet_link(o.link, o.data_source) for o in outliers.itertuples()],
             "Odds": outliers.price.map(american).to_list(), "Break-even": outliers.break_even.map(pct).to_list(),
             "Above the middle price": outliers.premium_vs_median.map(lambda v: pct(v, True)).to_list(),
             "Books quoting": outliers.books_quoting.to_list(), "Status": "Insufficient data",
             "Price seen": [("" if o.available else "EXPIRED · ") + ago(o.observed_at, now) for o in outliers.itertuples()],
-        }), hide_index=True, width="stretch")
+        }), hide_index=True, width="stretch", column_config=LINK_COLUMN)
 
 with moves_tab:
     st.subheader("Line movement")
@@ -262,12 +263,13 @@ with moves_tab:
         st.dataframe(pd.DataFrame({
             "Player / market": [label(m) for m in changed.itertuples()],
             "Game": changed.event_name.to_list(), "Book": changed.book.map(book_label).to_list(),
+            "Bet": [bet_link(m.link, scan.source) for m in changed.itertuples()],
             "First seen": changed.first_price.map(american).to_list(), "Latest": changed.last_price.map(american).to_list(),
             "Break-even change": changed.break_even_change.map(lambda v: pct(v, True)).to_list(),
             "Best latest price": [f"{american(m.best_now)} at {book_label(m.best_book)}" for m in changed.itertuples()],
             "Latest seen": [("" if now - m.last_seen <= timedelta(minutes=settings.max_snapshot_age_minutes) else "STALE · ")
                             + ago(m.last_seen, now) for m in changed.itertuples()],
-        }), hide_index=True, width="stretch")
+        }), hide_index=True, width="stretch", column_config=LINK_COLUMN)
         st.caption("First seen is the first price this app stored, not the book's opening price. A negative break-even "
                    "change means the payout got longer.")
 
@@ -357,7 +359,9 @@ with paper_tab:
         st.dataframe(pd.DataFrame({
             "Entered": shown.created_at.map(local).to_list(),
             "Bet": [label(b) for b in shown.itertuples()], "Game": shown.event_name.to_list(),
-            "Book": shown.book.map(book_label).to_list(), "Odds": shown.price.map(american).to_list(),
+            "Book": shown.book.map(book_label).to_list(),
+            "Bet": [bet_link(link, source) for link, source in zip(shown.link, shown.data_source)],
+            "Odds": shown.price.map(american).to_list(),
             "Est. chance": shown.probability.map(pct).to_list(),
             "Conservative EV": shown.conservative_ev.map(lambda v: pct(v, True)).to_list(),
             "Stake": shown.stake.to_list(), "Status": shown.status.map(STATUS_LABEL).to_list(),
@@ -369,7 +373,7 @@ with paper_tab:
             "Data": ["Hypothetical sample" if d == "sample" else "Replayed" if r else "Real prices"
                      for d, r in zip(shown.data_source, shown.replayed)],
             "Strategy": shown.strategy.map(lambda n: "Automatic" if n == db.STRATEGY_AUTO else "By hand").to_list(),
-        }), hide_index=True, width="stretch")
+        }), hide_index=True, width="stretch", column_config=LINK_COLUMN)
         if len(all_bets) > len(shown):
             st.caption(f"Showing the newest {len(shown)} of {len(all_bets)}.")
         st.caption("Bets on hypothetical sample data are never settled. A bet stays open until its game is final and complete "

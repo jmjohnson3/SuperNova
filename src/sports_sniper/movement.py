@@ -6,7 +6,7 @@ import pandas as pd
 from sports_sniper import odds_math
 
 COLUMNS = ["sport", "event_name", "commence_time", "book", "market", "player", "side", "line", "first_price", "last_price",
-           "first_seen", "last_seen", "observations", "break_even_change", "best_now", "best_book"]
+           "first_seen", "last_seen", "observations", "break_even_change", "best_now", "best_book", "link"]
 
 
 def moves(quotes: pd.DataFrame, threshold: float = 0.0) -> pd.DataFrame:
@@ -18,13 +18,15 @@ def moves(quotes: pd.DataFrame, threshold: float = 0.0) -> pd.DataFrame:
     """
     if quotes.empty:
         return pd.DataFrame(columns=COLUMNS)
+    if "link" not in quotes:
+        quotes = quotes.assign(link=None)
     key = ["sport", "event_id", "book", "market", "player_key", "line_key", "side"]
     ordered = quotes.sort_values("observed_at")
     grouped = ordered.groupby(key, sort=False)
     out = grouped.agg(event_name=("event_name", "last"), commence_time=("commence_time", "last"), player=("player", "last"),
                       line=("line", "last"), first_price=("price", "first"), last_price=("price", "last"),
                       first_seen=("observed_at", "first"), last_seen=("observed_at", "last"),
-                      observations=("price", "size")).reset_index()
+                      observations=("price", "size"), link=("link", "last")).reset_index()
     out["break_even_change"] = [odds_math.implied_probability(b) - odds_math.implied_probability(a)
                                 for a, b in zip(out.first_price, out.last_price)]
     bet = ["sport", "event_id", "market", "player_key", "line_key", "side"]

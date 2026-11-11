@@ -70,6 +70,7 @@ class PriceRow(Base):
     price: Mapped[int] = mapped_column(Integer)
     last_update: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    link: Mapped[str | None] = mapped_column(Text, nullable=True)      # the sportsbook's own link for this bet, when it sends one
 
 
 class OpportunityRow(Base):
@@ -155,6 +156,7 @@ class PaperBet(Base):
     closing_probability: Mapped[float | None] = mapped_column(Float, nullable=True)
     closing_observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     settle_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    link: Mapped[str | None] = mapped_column(Text, nullable=True)
     replayed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())   # entered long after the price was seen
 
 
@@ -226,7 +228,7 @@ def touch_events(session: Session, latest: dict[str, tuple[str, datetime]]) -> N
 def quote_rows(quotes, scan_id: int) -> list[dict]:
     return [dict(scan_id=scan_id, sport=q.sport, event_id=q.event_id, event_name=q.event_name, commence_time=q.commence_time,
                  book=q.book, market=q.market, player=q.player, player_key=q.player_key, line=q.line, line_key=line_key(q.line),
-                 side=q.side, price=q.price, last_update=q.last_update, observed_at=q.observed_at) for q in quotes]
+                 side=q.side, price=q.price, last_update=q.last_update, observed_at=q.observed_at, link=q.link) for q in quotes]
 
 
 def opportunity_rows(found, scan_id: int, data_source: str) -> list[dict]:
@@ -256,7 +258,7 @@ def place_paper_bet(session: Session, opportunity: OpportunityRow, *, stake: flo
                    line=opportunity.line, line_key=opportunity.line_key, side=opportunity.side, price=opportunity.price,
                    decimal=opportunity.decimal, price_observed_at=opportunity.observed_at, probability=opportunity.probability,
                    standard_error=opportunity.standard_error, ev=opportunity.ev, conservative_ev=opportunity.conservative_ev,
-                   evidence=opportunity.evidence, stake=float(stake))
+                   evidence=opportunity.evidence, stake=float(stake), link=opportunity.link)
     session.add(bet)
     session.flush()
     return bet, True
@@ -322,6 +324,9 @@ def load_prices(engine: Engine, since: datetime | None = None) -> pd.DataFrame:
 def load_paper_bets(engine: Engine) -> pd.DataFrame:
     with engine.connect() as conn:
         frame = pd.read_sql(select(PaperBet).order_by(PaperBet.created_at.desc()), conn)
+        links = pd.read_sql(select(OpportunityRow.id, OpportunityRow.link).where(OpportunityRow.link.is_not(None)), conn)
+    # bets entered before links were kept on the bet itself take the link of the opportunity they came from
+    frame["link"] = frame.link.where(frame.link.notna(), frame.opportunity_id.map(links.set_index("id").link))
     return utc(frame, ["created_at", "commence_time", "price_observed_at", "settled_at", "closing_observed_at"])
 
 

@@ -269,6 +269,9 @@ def test_line_movement_compares_first_and_latest_stored_price():
     g = changed[changed.player == "Sample Player G"].iloc[0]
     assert (g.first_price, g.last_price, g.best_now, g.best_book) == (150, 165, 165, "fanduel")
     assert len(moves(frame, threshold=0.03)) == 1 and moves(frame.iloc[:0]).empty
+    assert "link" in changed and changed.link.isna().all()               # the sample fixture carries no links
+    linked = frame.assign(link=[f"https://book.example/{i}" for i in range(len(frame))])
+    assert moves(linked).link.str.startswith("https://book.example/").all()
 
 
 # --- settings --------------------------------------------------------------------------------------
