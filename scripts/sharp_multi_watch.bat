@@ -55,7 +55,12 @@ if errorlevel 1 set EXITCODE=1
 if errorlevel 1 set EXITCODE=1
 %LOW% .venv\Scripts\python.exe -B -m paper_collection_review --refresh >> %LOGFILE% 2>&1
 if errorlevel 1 set EXITCODE=1
+:: UTC database session for this step only. In the PC's own zone the projection timestamps come back with mixed
+:: daylight-saving offsets, pandas re-parses all of them for every graded bet and the step took 19 minutes, so it
+:: was cut off every run and the digest never posted. Same output in UTC, about 90 seconds.
+set PGTZ=UTC
 %LOW% .venv\Scripts\python.exe -m sharp_pipeline.report --digest >> %LOGFILE% 2>&1
+set PGTZ=
 if errorlevel 1 set EXITCODE=1
 
 echo Exit code: %EXITCODE% >> %LOGFILE% 2>&1
