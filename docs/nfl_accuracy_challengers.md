@@ -126,3 +126,21 @@ predictions. Older forecasts without full replay arguments cannot establish exac
 reproducibility. True routes/first reads still require a real data source. The
 already-examined 2026 results are not an untouched final test. Final adoption needs
 new prospective outcomes under these versioned contracts.
+
+## Spreads and totals against the closing line (2026-11-12; `python -m nfl_pipeline.modeling.game_line_test`)
+The game feature table has every game since 1999 with the closing spread and total. Two models per market,
+refitted before each season from 2010 on earlier seasons only: direct (team features, never the line) and
+residual (what the result did beyond the line, from the features plus the line). 4,499 games, picks priced at
+-110, break-even 52.4% (`reports/nfl_game_line_test_latest.md`).
+
+| Market | Closing line miss | Direct model | Residual model | Weight beside the line (direct / residual) |
+|---|---:|---:|---:|---:|
+| Home margin | 10.037 | 10.534 | 10.190 | +0.05 (0.05) / +0.09 (0.09) |
+| Total points | 10.475 | 10.853 | 10.607 | +0.04 (0.05) / +0.14 (0.08) |
+
+- Neither model is as accurate as the close and neither earns weight beside it.
+- No pick rule reaches break-even. Spread: direct model 6+ points from the line 52.0% on 633 picks (-0.7%),
+  residual 50.0% to 50.3%. Total: best is the residual model 1.5+ points away, 51.7% on 2,316 (-1.3%); the direct
+  model is under 50.5%. No rule is above break-even in more than 11 of 17 seasons.
+- Verdict: no edge against the NFL close from lagged team scoring, pace, efficiency, rest and injury scores. The
+  game models stay context. The close is the last price; this says nothing about earlier prices.

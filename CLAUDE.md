@@ -286,6 +286,9 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
 - `modeling/efficiency_model` (2026-11-12, research, not scheduled): per-opportunity rates judged with the volume known.
   A model beats a shrunk last-10 rate by 1% to 2%; opponent splits by position and weather add almost nothing; no
   variant beats production or the line on live 2026 forecasts. Not adopted.
+- `modeling/game_line_test` (2026-11-12, research, not scheduled): spreads and totals against the closing line, 2010 to 2026
+  (4,499 games, refit each season on earlier ones). Direct and residual models are both less accurate than the close,
+  earn no weight beside it, and no disagreement rule reaches the 52.4% break-even. Game models stay context.
 
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`
