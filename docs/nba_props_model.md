@@ -100,6 +100,46 @@ testing is new information about minutes (who takes the minutes when a player si
 returns from injury and minutes limits; the timing of injury reports), measured in this same harness. The test
 also flatters every version a little: it uses the final lineup file, which can be later than the line snapshot.
 
+## Challenger: new minutes information (2026-11-12; `nba_props.minutes_info`, same harness)
+Three groups of inputs from data already held (box scores and the pre-game lineup files), all known before the game:
+- **absence**: which rotation teammates are newly out or back against the player's recent games, weighted by how
+  alike they are, and how his minutes and per-minute numbers moved in earlier games this season with and without them;
+- **returning**: his own lay-off (days off, team games missed, games since he came back, his level before);
+- **role**: his minutes in earlier starts and earlier bench games, and whether tonight's lineup is a change.
+
+The minutes forecast alone (average miss in minutes, 86,198 test player-games):
+
+| Player-games | Last-3 average | Current inputs | + absence | + returning | + role | + all three |
+|---|---:|---:|---:|---:|---:|---:|
+| All | 5.01 | 4.54 | 4.49 | 4.53 | 4.52 | 4.46 |
+| 30+ rotation minutes back | 5.28 | 4.69 | 4.54 | 4.66 | 4.64 | 4.51 |
+| First 5 games back from a lay-off | 5.41 | 4.72 | 4.63 | 4.63 | 4.68 | 4.54 |
+| Role changed tonight | 7.45 | 5.12 | 5.07 | 5.11 | 5.03 | 4.96 |
+
+All three: -0.077 minutes (-0.087 to -0.067), about 1.7%. Absence carries most of it; the groups add up.
+
+Given to the statistic models and a minutes model (`minutes_info` variant), on the same DraftKings lines:
+
+| Version | Points miss | Rebounds miss | Assists miss | Points log loss |
+|---|---:|---:|---:|---:|
+| DraftKings line | 5.069 | 2.060 | 1.777 | 0.6917 |
+| Current model (v2) | 5.142 | 2.060 | 1.777 | 0.7070 |
+| + minutes information and model | 5.118 | 2.054 | 1.774 | 0.7052 |
+
+- **The first input that measurably helps**: points -0.023 (-0.032 to -0.015), rebounds -0.006 (-0.010 to -0.002),
+  assists -0.002 (-0.006 to +0.001). It closes a third of the points gap to the line; rebounds and assists are now
+  a hair better than the line on average miss.
+- **It is not an edge**: the probabilities are still worse than DraftKings' no-vig price on all three (assists
+  log loss got worse, +0.0019), and picks at a 4% disagreement lose 2.2% (points), 3.6% (rebounds), 5.4% (assists).
+- The model's weight beside the line rose (points 0.27 to 0.32, rebounds 0.37 to 0.43): it carries a little
+  more information the line does not, but the line still deserves most of the weight.
+
+Verdict: a real but small gain in accuracy, kept as a challenger. The live model (pinned) is unchanged; adopting
+these inputs means a new live model version, and that is not worth doing for betting on this evidence. The gap
+that remains is information the box score and lineup file do not hold: in-game substitution patterns (rotation
+stints from stats.nba.com, reachable at about 2 seconds a game), minutes limits announced by teams, and news
+between the lineup file and tip.
+
 ## Spreads and totals (`python -m nba_props.games`; reports/nba_games_model_latest.md)
 Decayed ridge team ratings (margin and total fitted separately) plus each side's missing rotation, rest
 and back-to-backs; walk-forward monthly, 2023-24 to 2025-26, against DraftKings' pre-game line.

@@ -1,9 +1,11 @@
 """The NBA prop challenger's inputs and scoring (no database, no real model fits)."""
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from nba_props import challenger
+from nba_props import challenger, minutes_info
 
 
 class Mean:
@@ -115,3 +117,69 @@ def test_minutes_accuracy_and_the_report():
     text = challenger.markdown(report)
     assert "| Points | 10 | 4.900 | 5.000 | 5.000 |" in text and "-0.020 (-0.030 to -0.010)" in text
     assert "Minutes model with the game line" in text and "90% of the scored lines (60% of all test" in text and "+ game line" not in text
+
+
+def informed() -> pd.DataFrame:
+    f = frame()
+    f.loc[f.minutes > 0, "games_before"] = 5
+    f = f.assign(**{c: 0.0 for c in minutes_info.FEATURES})
+    f["absent_new_min"] = np.where(f.out_count >= 2, 40.0, 0.0)
+    f["games_since_return"] = 10.0
+    return f
+
+
+def test_the_minutes_forecast_is_scored_by_input_set_and_situation(monkeypatch):
+    f = informed()
+    played = f.minutes > 0
+    good = pd.Series(np.where(played, f.minutes + 1.0, np.nan), index=f.index)
+    poor = pd.Series(np.where(played, f.minutes + 3.0, np.nan), index=f.index)
+    out = challenger.minutes_table(f, {"Current inputs": poor, "+ all three": good}, "2024-03-01")
+    table = out["table"]
+    assert table["All"]["Current inputs"] == pytest.approx(3.0) and table["All"]["+ all three"] == pytest.approx(1.0)
+    assert table["All"]["Last-3 average"] == 0 and table["Starters"]["rows"] < table["All"]["rows"]
+    assert "30+ rotation minutes newly out" in table and "30+ rotation minutes back" not in table        # no such player-games: no row
+    assert (out["first"], out["last"]) == ("Current inputs", "+ all three")
+    assert out["change"] == pytest.approx(-2.0) and out["change_low"] == pytest.approx(-2.0) and out["change_high"] == pytest.approx(-2.0)
+    late = challenger.minutes_table(f, {"a": poor.where(f.game_date >= "2024-04-01"), "b": good}, "2024-03-01")
+    assert late["table"]["All"]["rows"] < table["All"]["rows"]                                            # only what every forecast covers
+    asked = []
+
+    def forecast(frame, cols, start, fitter=None):
+        asked.append((cols, start))
+        return poor
+    monkeypatch.setattr(challenger, "minutes_walk_forward", forecast)
+    info = challenger.minutes_information(f, ["x"], "2024-03-01", full=good, log=lambda text: None)
+    assert [cols for cols, _ in asked] == [["x"], ["x"] + minutes_info.GROUPS["absence"], ["x"] + minutes_info.GROUPS["returning"],
+                                           ["x"] + minutes_info.GROUPS["role"]] and {start for _, start in asked} == {"2024-03-01"}
+    assert list(info["table"]["All"]) == ["rows", "Last-3 average", *challenger.INPUT_SETS] and info["change"] == pytest.approx(-2.0)
+
+
+def test_a_run_keeps_the_variants_it_does_not_refit(tmp_path, monkeypatch):
+    monkeypatch.setattr(challenger, "REPORT", tmp_path / "report")
+    assert challenger.earlier_report("2024-03-01", ["baseline"]) == {}                                    # nothing stored yet
+    stored = dict(built_at="earlier", test_from="2024-03-01", lines_with_game_line=0.9,
+                  variants=dict(baseline=dict(a=1), both=dict(a=2), retired=dict(a=3)))
+    (tmp_path / "report.json").write_text(json.dumps(stored), encoding="utf-8")
+    kept = challenger.earlier_report("2024-03-01", ["baseline", "minutes_info"])
+    assert kept == dict(variants=dict(both=dict(kept_from="earlier", a=2)), lines_with_game_line=0.9)
+    assert challenger.earlier_report("2023-11-01", ["baseline"]) == {}                                    # another test period: start again
+
+
+def test_the_report_shows_the_minutes_information_and_what_was_kept():
+    score = dict(rows=10, model_mae=5.0, line_mae=4.9, blend_model_weight=0.2, blend_model_se=0.05, logloss_model=0.70,
+                 logloss_market=0.69, picks_4pct=dict(picks=4, hit_rate=0.5, roi=-0.04))
+    entry = dict(all_games_mae={s: 1.0 for s in challenger.LINE_STATS}, training_fit_spread={s: score for s in challenger.LINE_STATS},
+                 honest_spread={s: score for s in challenger.LINE_STATS})
+    change = dict(rows=10, mae=-0.02, mae_low=-0.03, mae_high=-0.01, ll=-0.001, ll_low=-0.002, ll_high=0.0)
+    against = {s: change for s in challenger.LINE_STATS}
+    info = dict(table={"All": {"rows": 50, "Last-3 average": 5.0, "Current inputs": 4.5, "+ all three": 4.25}}, first="Current inputs",
+                last="+ all three", change=-0.25, change_low=-0.3, change_high=-0.2)
+    report = dict(built_at="now", test_from="2024-03-01", game_line_coverage=0.6, lines_with_game_line=0.9, minutes_information=info,
+                  variants=dict(baseline=entry, known_minutes=dict(entry, against_baseline=against, kept_from="earlier"),
+                                minutes_info=dict(entry, against_baseline=against)))
+    text = challenger.markdown(report)
+    assert "| Statistic | Lines | DraftKings line | Current model | + minutes information and model | If minutes were known |" in text
+    assert "| All | 50 | 5.00 | 4.50 | 4.25 |" in text and "+ all three against current inputs: -0.250 minutes (-0.300 to -0.200)." in text
+    assert "Kept from an earlier run (their changes are against that run's current model): If minutes were known (earlier)." in text
+    alone = challenger.markdown(dict(built_at="now", test_from="2024-03-01", variants={}, minutes_information=info))
+    assert alone.startswith("# NBA prop challenger: minutes information") and "| All | 50 | 5.00 | 4.50 | 4.25 |" in alone

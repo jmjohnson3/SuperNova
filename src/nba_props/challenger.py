@@ -1,4 +1,5 @@
-"""NBA prop challenger: does the market's game line, or a model of minutes, make the projections better?
+"""NBA prop challenger: do the market's game line, a model of minutes, or new information about tonight's
+minutes make the projections better?
 
 Research only. It reads the pinned model's features and test (nba_props.model) and changes nothing in them;
 nothing here feeds a live forecast, a flag or a paper bet.
@@ -12,22 +13,31 @@ Variants, all walk-forward (monthly refits on earlier games only) and scored on 
     both            game_line + minutes_model (the minutes model also sees the spread)
     known_minutes   both, but with the minutes actually played: not attainable, it shows how much of the
                     remaining error is minutes
+    minutes_info    + nba_props.minutes_info (who is newly out or back and how the player's minutes moved without
+                    them, his own lay-off, tonight's role against his earlier starts and bench games), given to
+                    the statistic models and to a minutes model
+    minutes_info_direct   the same inputs without the minutes model (optional)
+
+A run keeps the variants it does not refit from the stored report, when the test period is the same. With the
+minutes information it also scores the minutes forecast alone, one group of inputs at a time.
 
 Probabilities use the pinned count distribution. Its spread is fitted two ways: on the training fit (as the
 pinned model does) and on earlier out-of-sample forecasts only ("honest spread").
 
-    python -m nba_props.challenger [--test-from 2023-11-01] [--variants baseline,both] [--threes]      (about 40 minutes)
+    python -m nba_props.challenger [--test-from 2023-11-01] [--variants baseline,minutes_info] [--threes]   (about 40 minutes)
+    python -m nba_props.challenger --minutes-only        the minutes forecast alone (about 12 minutes)
 """
 from __future__ import annotations
 
 import argparse
+import json
 from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
 import psycopg2
 
-from nba_props import model
+from nba_props import minutes_info, model
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.forecast_store import clean
 from nfl_pipeline.integrity import atomic_json
@@ -47,11 +57,17 @@ VARIANTS = {
     "game_line": dict(line=True, minutes=None),
     "minutes_model": dict(line=False, minutes="model"),
     "both": dict(line=True, minutes="model"),
+    "minutes_info_direct": dict(line=False, minutes=None, info=True),
+    "minutes_info": dict(line=False, minutes="model", info=True),
     "known_minutes": dict(line=True, minutes="actual"),
 }
-DEFAULT_VARIANTS = "baseline,game_line,both,known_minutes"      # minutes_model alone is optional: about 15 minutes more
+DEFAULT_VARIANTS = "baseline,minutes_info"         # the others are kept from the stored report
 LABEL = {"baseline": "Current model", "game_line": "+ game line", "minutes_model": "+ minutes model",
-         "both": "+ both", "known_minutes": "If minutes were known"}
+         "both": "+ both", "known_minutes": "If minutes were known", "minutes_info_direct": "+ minutes information",
+         "minutes_info": "+ minutes information and model"}
+INPUT_SETS = {"Current inputs": [], "+ absence": minutes_info.GROUPS["absence"], "+ returning": minutes_info.GROUPS["returning"],
+              "+ role": minutes_info.GROUPS["role"], "+ all three": minutes_info.FEATURES}
+DISRUPTED = 30.0                                   # rotation minutes newly out (or back) that count as a changed line-up
 
 
 # --- inputs --------------------------------------------------------------------------------------------------
@@ -185,17 +201,75 @@ def minutes_accuracy(f: pd.DataFrame, test_from: str) -> dict:
                                      model=float((short.pred_min - short.minutes).abs().mean())) if len(short) else None)
 
 
+def situations(f: pd.DataFrame) -> dict[str, pd.Series]:
+    """The player-games where minutes are hardest to call, by what was known before the game."""
+    out = {"All": pd.Series(True, index=f.index), "Starters": f.starter.eq(1.0), "Team missing 2+ rotation players": f.out_count >= 2,
+           f"{DISRUPTED:.0f}+ rotation minutes newly out": f.absent_new_min >= DISRUPTED,
+           f"{DISRUPTED:.0f}+ rotation minutes back": f.absent_back_min >= DISRUPTED,
+           "First 5 games back from a lay-off": f.games_since_return < 5,
+           "Role changed tonight": f.starter_flip.fillna(0.0) != 0}
+    return out
+
+
+def minutes_table(f: pd.DataFrame, forecasts: dict[str, pd.Series], test_from: str, draws: int = 2000, seed: int = 7) -> dict:
+    """Average miss in minutes on the test period for each forecast, by situation, on the player-games every
+    forecast covers; and the change from the first forecast to the last with a 95% interval over game days."""
+    names = list(forecasts)
+    keep = eligible(f) & (f.game_date >= pd.Timestamp(test_from))
+    for series in forecasts.values():
+        keep &= series.notna()
+    rows = f[keep]
+    miss = {"Last-3 average": (rows.min_ewm3 - rows.minutes).abs()} | {n: (forecasts[n][keep] - rows.minutes).abs() for n in names}
+    table = {}
+    for label, mask in situations(rows).items():
+        if mask.any():
+            table[label] = dict(rows=int(mask.sum())) | {n: float(v[mask].mean()) for n, v in miss.items()}
+    diff = miss[names[-1]] - miss[names[0]]
+    days = pd.DataFrame(dict(day=rows.game_date, d=diff)).groupby("day").d.agg(["size", "sum"])
+    pick = np.random.default_rng(seed).integers(0, len(days), size=(draws, len(days)))
+    sims = days["sum"].to_numpy()[pick].sum(axis=1) / days["size"].to_numpy()[pick].sum(axis=1)
+    low, high = (float(v) for v in np.percentile(sims, [2.5, 97.5]))
+    return dict(table=table, first=names[0], last=names[-1], change=float(diff.mean()), change_low=low, change_high=high)
+
+
+def minutes_information(f: pd.DataFrame, base_cols: list[str], test_from: str, full: pd.Series | None = None, fitter=None, log=print) -> dict:
+    """The minutes forecast alone with each group of new inputs. `full` is an existing forecast with all of them."""
+    forecasts = {}
+    for name, extra in INPUT_SETS.items():
+        log(f"  minutes forecast: {name.lower()}")
+        forecasts[name] = full if full is not None and name == "+ all three" else minutes_walk_forward(f, base_cols + extra, start=test_from, fitter=fitter)
+    return minutes_table(f, forecasts, test_from)
+
+
 def summary(ev: dict) -> dict:
     return {s: {k: ev[s][k] for k in ("rows", "model_mae", "line_mae", "blend_model_weight", "blend_model_se", "logloss_model",
                                       "logloss_market")} | dict(picks_4pct=ev[s]["picks"][2]) for s in LINE_STATS if s in ev}
 
 
 # --- report --------------------------------------------------------------------------------------------------
+def information_lines(report: dict) -> list[str]:
+    info = report.get("minutes_information")
+    if not info:
+        return []
+    sets = [n for n in next(iter(info["table"].values())) if n != "rows"]
+    L = ["", "## New minutes information: the minutes forecast alone (average miss in minutes)", "",
+         "Absence = which rotation teammates are newly out or back and how the player's minutes moved without them; returning = his "
+         "own lay-off; role = tonight's lineup against his earlier starts and bench games.", "",
+         "| Player-games | Rows | " + " | ".join(sets) + " |", "|---|---:|" + "---:|" * len(sets)]
+    for label, row in info["table"].items():
+        L.append(f"| {label} | {row['rows']} | " + " | ".join(f"{row[n]:.2f}" for n in sets) + " |")
+    return L + ["", f"{info['last']} against {info['first'].lower()}: {info['change']:+.3f} minutes "
+                    f"({info['change_low']:+.3f} to {info['change_high']:+.3f})."]
+
+
 def markdown(report: dict) -> str:
     stat_name = {"pts": "Points", "reb": "Rebounds", "ast": "Assists", "fg3m": "Three-pointers"}
     pct = lambda v: "-" if v is None else f"{v:+.1%}"
     names = [n for n in VARIANTS if n in report["variants"]]
-    L = ["# NBA prop challenger: game line and minutes model", "",
+    if not names:
+        return "\n".join(["# NBA prop challenger: minutes information", "", f"Built {report['built_at']}. Walk-forward from "
+                          f"{report['test_from']}. Research only."] + information_lines(report) + [""])
+    L = ["# NBA prop challenger: game line, minutes model and minutes information", "",
          f"Built {report['built_at']}. Walk-forward from {report['test_from']}, monthly refits on earlier games only, scored on "
          f"DraftKings lines taken before tip. Research only; nothing here feeds a live forecast.", "",
          "## Average miss on lines (lower is better)", "",
@@ -241,12 +315,29 @@ def markdown(report: dict) -> str:
             for key, label in (("starters", "Starters"), ("two_or_more_out", "Team missing 2+ rotation players")):
                 if m.get(key):
                     L.append(f"| {label} | {m[key]['rows']} | {m[key]['last_3_average']:.2f} | - | {m[key]['model']:.2f} |")
+    L += information_lines(report)
+    kept = {n: v["kept_from"] for n, v in report["variants"].items() if v.get("kept_from")}
+    if kept:
+        L += ["", "Kept from an earlier run (their changes are against that run's current model): "
+                  + ", ".join(f"{LABEL[n]} ({built})" for n, built in kept.items()) + "."]
     L += ["", f"Game lines: {report['lines_with_game_line']:.0%} of the scored lines ({report['game_line_coverage']:.0%} of all test "
               "player-games) have a DraftKings spread and total taken before tip; the rest are left empty. \"If minutes were known\" uses the minutes actually played and cannot be had before a game.", ""]
     return "\n".join(L)
 
 
-def run(test_from: str, names: list[str], stats=LINE_STATS, log=print) -> dict:
+def earlier_report(test_from: str, names: list[str]) -> dict:
+    """What the stored report holds that this run does not refit, when the test period is the same."""
+    try:
+        stored = json.loads(REPORT.with_suffix(".json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if stored.get("test_from") != test_from:
+        return {}
+    kept = {n: {"kept_from": stored.get("built_at"), **v} for n, v in stored.get("variants", {}).items() if n not in names and n in VARIANTS}
+    return dict(variants=kept) | {k: stored[k] for k in ("lines_with_game_line", "minutes_information") if k in stored}
+
+
+def run(test_from: str, names: list[str], stats=LINE_STATS, minutes_only: bool = False, log=print) -> dict:
     from nba_props import games
     with psycopg2.connect(PG_DSN) as conn:
         frame, lines, lineups = model.load_games(conn), model.load_lines(conn), model.final_lineups(conn)
@@ -254,19 +345,33 @@ def run(test_from: str, names: list[str], stats=LINE_STATS, log=print) -> dict:
     base = model.features(frame, lineups)
     base_cols = model.feature_columns(base)
     lined = add_game_line(base, game_lines)
-    minutes: dict[bool, pd.Series] = {}
+    minutes: dict[tuple, pd.Series] = {}
     report = dict(built_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), test_from=test_from, variants={},
                   game_line_coverage=float(lined[eligible(lined) & (lined.game_date >= pd.Timestamp(test_from))].mkt_total.notna().mean()))
+    report |= earlier_report(test_from, names)
+    informed = None
+    if minutes_only or any(VARIANTS[n].get("info") for n in names):
+        log("  minutes information")
+        informed = minutes_info.add(base, frame, lineups)
+        full = None
+        if "minutes_info" in names:
+            log("  minutes model (with the minutes information)")
+            full = minutes[(False, True)] = minutes_walk_forward(informed, base_cols + minutes_info.FEATURES)
+        report["minutes_information"] = minutes_information(informed, base_cols, test_from, full=full, log=log)
+        atomic_json(REPORT.with_suffix(".json"), clean(report))
     scored: dict[str, pd.DataFrame] = {}
     for name in names:
         spec = VARIANTS[name]
         f, cols = (lined, base_cols + LINE_FEATURES) if spec["line"] else (base, list(base_cols))
+        if spec.get("info"):
+            f, cols = informed, base_cols + minutes_info.FEATURES
         entry: dict = {}
         if spec["minutes"] == "model":
-            if spec["line"] not in minutes:
+            key = (spec["line"], bool(spec.get("info")))
+            if key not in minutes:
                 log(f"  minutes model ({'with' if spec['line'] else 'without'} the game line)")
-                minutes[spec["line"]] = minutes_walk_forward(f, cols)
-            f, cols = add_minutes(f, minutes[spec["line"]]), cols + MINUTES_FEATURES
+                minutes[key] = minutes_walk_forward(f, cols)
+            f, cols = add_minutes(f, minutes[key]), cols + MINUTES_FEATURES
             entry["minutes"] = minutes_accuracy(f, test_from)
         elif spec["minutes"] == "actual":
             f, cols = add_minutes(f, f.minutes.where(eligible(f))), cols + MINUTES_FEATURES
@@ -277,7 +382,7 @@ def run(test_from: str, names: list[str], stats=LINE_STATS, log=print) -> dict:
         rows_honest = model.market_rows(honest(preds), lines)
         entry["training_fit_spread"], entry["honest_spread"] = summary(model.evaluate(rows)), summary(model.evaluate(rows_honest))
         scored[name] = rows_honest
-        if "lines_with_game_line" not in report:
+        if name == names[0]:
             keyed = preds.assign(name_key=preds.player_name.map(model.match_name)).merge(
                 lined[["game_id", "player_id", "mkt_total"]], on=["game_id", "player_id"], how="left")
             on_lines = rows[["game_date", "name_key"]].drop_duplicates().merge(keyed[["game_date", "name_key", "mkt_total"]], on=["game_date", "name_key"])
@@ -294,9 +399,11 @@ def main() -> None:
     ap.add_argument("--test-from", default="2023-11-01")
     ap.add_argument("--variants", default=DEFAULT_VARIANTS)
     ap.add_argument("--threes", action="store_true", help="also fit three-pointers (no DraftKings line history; a third more time)")
+    ap.add_argument("--minutes-only", action="store_true", help="score the minutes forecast with the new inputs; refit no statistic model")
     args = ap.parse_args()
-    names = [n for n in args.variants.split(",") if n in VARIANTS]
-    report = run(args.test_from, names, stats=STATS if args.threes else LINE_STATS, log=lambda text: print(text, flush=True))
+    names = [] if args.minutes_only else [n for n in args.variants.split(",") if n in VARIANTS]
+    report = run(args.test_from, names, stats=STATS if args.threes else LINE_STATS, minutes_only=args.minutes_only,
+                 log=lambda text: print(text, flush=True))
     text = markdown(report)
     REPORT.with_suffix(".md").write_bytes(text.encode())
     print(text)

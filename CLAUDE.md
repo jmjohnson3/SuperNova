@@ -390,6 +390,10 @@ filter snapshot < commence before using it as evidence.
   DraftKings' spread and total add nothing; a separate minutes model forecasts minutes 10% better but moves the
   projections 0.1%; with the minutes actually played the model would beat the line by 0.67 points
   (`reports/nba_props_challenger_latest.md`). New inputs are judged there; the lever is information about minutes.
+  `nba_props.minutes_info` (2026-11-12; `--variants baseline,minutes_info`, `--minutes-only`): who is newly out or back,
+  the player's own lay-off and tonight's role cut the minutes miss 4.54 to 4.46 and the points miss 5.142 to 5.118
+  (line 5.069). Real but small; picks still lose 2% to 5%, so the pinned live model is unchanged. A run keeps the
+  variants it does not refit from the stored report.
 
 ## NCAAF game models (`src/ncaaf_pipeline/`, research)
 CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings

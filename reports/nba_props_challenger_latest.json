@@ -1,127 +1,9 @@
 {
-  "built_at": "2026-11-12 04:41 UTC",
+  "built_at": "2026-11-12 06:57 UTC",
   "test_from": "2023-11-01",
   "variants": {
-    "baseline": {
-      "all_games_mae": {
-        "pts": 4.443755321206014,
-        "reb": 1.8409383315688719,
-        "ast": 1.3068519063686617
-      },
-      "training_fit_spread": {
-        "pts": {
-          "rows": 22148,
-          "model_mae": 5.141569715514707,
-          "line_mae": 5.068990428029619,
-          "blend_model_weight": 0.26592008412745466,
-          "blend_model_se": 0.030098958124560135,
-          "logloss_model": 0.7074363111974992,
-          "logloss_market": 0.6916654538313712,
-          "picks_4pct": {
-            "edge": 0.04,
-            "picks": 15514,
-            "overs": 8012,
-            "unders": 7502,
-            "hit_rate": 0.515792187701431,
-            "market_expected": 0.4990253931387918,
-            "roi": -0.029563845924530433
-          }
-        },
-        "reb": {
-          "rows": 21067,
-          "model_mae": 2.0600573996374822,
-          "line_mae": 2.0595006408126455,
-          "blend_model_weight": 0.3737332593032548,
-          "blend_model_se": 0.030116302620531957,
-          "logloss_model": 0.7036734952761553,
-          "logloss_market": 0.6885370772972655,
-          "picks_4pct": {
-            "edge": 0.04,
-            "picks": 13965,
-            "overs": 8437,
-            "unders": 5528,
-            "hit_rate": 0.505907626208378,
-            "market_expected": 0.4944123625405485,
-            "roi": -0.04089043286286876
-          }
-        },
-        "ast": {
-          "rows": 14794,
-          "model_mae": 1.7765833979011294,
-          "line_mae": 1.7768014059753954,
-          "blend_model_weight": 0.3917670263429866,
-          "blend_model_se": 0.03289310497128699,
-          "logloss_model": 0.7250985827759844,
-          "logloss_market": 0.6855584553523573,
-          "picks_4pct": {
-            "edge": 0.04,
-            "picks": 11770,
-            "overs": 9959,
-            "unders": 1811,
-            "hit_rate": 0.4988105352591334,
-            "market_expected": 0.4927753743914526,
-            "roi": -0.05160207069151569
-          }
-        }
-      },
-      "honest_spread": {
-        "pts": {
-          "rows": 22148,
-          "model_mae": 5.141569715514707,
-          "line_mae": 5.068990428029619,
-          "blend_model_weight": 0.26592008412745466,
-          "blend_model_se": 0.030098958124560135,
-          "logloss_model": 0.7069877925622542,
-          "logloss_market": 0.6916654538313712,
-          "picks_4pct": {
-            "edge": 0.04,
-            "picks": 15541,
-            "overs": 7838,
-            "unders": 7703,
-            "hit_rate": 0.5180490315938485,
-            "market_expected": 0.499047064192279,
-            "roi": -0.02520424620568492
-          }
-        },
-        "reb": {
-          "rows": 21067,
-          "model_mae": 2.0600573996374822,
-          "line_mae": 2.0595006408126455,
-          "blend_model_weight": 0.3737332593032548,
-          "blend_model_se": 0.030116302620531957,
-          "logloss_model": 0.7054478475306066,
-          "logloss_market": 0.6885370772972655,
-          "picks_4pct": {
-            "edge": 0.04,
-            "picks": 14364,
-            "overs": 9722,
-            "unders": 4642,
-            "hit_rate": 0.5054302422723476,
-            "market_expected": 0.4946144072461639,
-            "roi": -0.04235843946728949
-          }
-        },
-        "ast": {
-          "rows": 14794,
-          "model_mae": 1.7765833979011294,
-          "line_mae": 1.7768014059753954,
-          "blend_model_weight": 0.3917670263429866,
-          "blend_model_se": 0.03289310497128699,
-          "logloss_model": 0.7225211631328962,
-          "logloss_market": 0.6855584553523573,
-          "picks_4pct": {
-            "edge": 0.04,
-            "picks": 11638,
-            "overs": 9702,
-            "unders": 1936,
-            "hit_rate": 0.5012029558343358,
-            "market_expected": 0.4926000096827857,
-            "roi": -0.04687064903714785
-          }
-        }
-      }
-    },
     "game_line": {
+      "kept_from": "2026-11-12 04:41 UTC",
       "all_games_mae": {
         "pts": 4.44314008901489,
         "reb": 1.841043965227889,
@@ -270,6 +152,7 @@
       }
     },
     "both": {
+      "kept_from": "2026-11-12 04:41 UTC",
       "minutes": {
         "rows": 86198,
         "last_3_average": 5.006398714857143,
@@ -434,6 +317,7 @@
       }
     },
     "known_minutes": {
+      "kept_from": "2026-11-12 04:41 UTC",
       "all_games_mae": {
         "pts": 3.617398491431299,
         "reb": 1.5756663764617345,
@@ -580,8 +464,363 @@
           "ll_high": -0.03736897411045632
         }
       }
+    },
+    "baseline": {
+      "all_games_mae": {
+        "pts": 4.443755321206014,
+        "reb": 1.8409383315688719,
+        "ast": 1.3068519063686617
+      },
+      "training_fit_spread": {
+        "pts": {
+          "rows": 22148,
+          "model_mae": 5.141569715514707,
+          "line_mae": 5.068990428029619,
+          "blend_model_weight": 0.26592008412745466,
+          "blend_model_se": 0.030098958124560135,
+          "logloss_model": 0.7074363111974992,
+          "logloss_market": 0.6916654538313712,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 15514,
+            "overs": 8012,
+            "unders": 7502,
+            "hit_rate": 0.515792187701431,
+            "market_expected": 0.4990253931387918,
+            "roi": -0.029563845924530433
+          }
+        },
+        "reb": {
+          "rows": 21067,
+          "model_mae": 2.0600573996374822,
+          "line_mae": 2.0595006408126455,
+          "blend_model_weight": 0.3737332593032548,
+          "blend_model_se": 0.030116302620531957,
+          "logloss_model": 0.7036734952761553,
+          "logloss_market": 0.6885370772972655,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 13965,
+            "overs": 8437,
+            "unders": 5528,
+            "hit_rate": 0.505907626208378,
+            "market_expected": 0.4944123625405485,
+            "roi": -0.04089043286286876
+          }
+        },
+        "ast": {
+          "rows": 14794,
+          "model_mae": 1.7765833979011294,
+          "line_mae": 1.7768014059753954,
+          "blend_model_weight": 0.3917670263429866,
+          "blend_model_se": 0.03289310497128699,
+          "logloss_model": 0.7250985827759844,
+          "logloss_market": 0.6855584553523573,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 11770,
+            "overs": 9959,
+            "unders": 1811,
+            "hit_rate": 0.4988105352591334,
+            "market_expected": 0.4927753743914526,
+            "roi": -0.05160207069151569
+          }
+        }
+      },
+      "honest_spread": {
+        "pts": {
+          "rows": 22148,
+          "model_mae": 5.141569715514707,
+          "line_mae": 5.068990428029619,
+          "blend_model_weight": 0.26592008412745466,
+          "blend_model_se": 0.030098958124560135,
+          "logloss_model": 0.7069877925622542,
+          "logloss_market": 0.6916654538313712,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 15541,
+            "overs": 7838,
+            "unders": 7703,
+            "hit_rate": 0.5180490315938485,
+            "market_expected": 0.499047064192279,
+            "roi": -0.02520424620568492
+          }
+        },
+        "reb": {
+          "rows": 21067,
+          "model_mae": 2.0600573996374822,
+          "line_mae": 2.0595006408126455,
+          "blend_model_weight": 0.3737332593032548,
+          "blend_model_se": 0.030116302620531957,
+          "logloss_model": 0.7054478475306066,
+          "logloss_market": 0.6885370772972655,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 14364,
+            "overs": 9722,
+            "unders": 4642,
+            "hit_rate": 0.5054302422723476,
+            "market_expected": 0.4946144072461639,
+            "roi": -0.04235843946728949
+          }
+        },
+        "ast": {
+          "rows": 14794,
+          "model_mae": 1.7765833979011294,
+          "line_mae": 1.7768014059753954,
+          "blend_model_weight": 0.3917670263429866,
+          "blend_model_se": 0.03289310497128699,
+          "logloss_model": 0.7225211631328962,
+          "logloss_market": 0.6855584553523573,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 11638,
+            "overs": 9702,
+            "unders": 1936,
+            "hit_rate": 0.5012029558343358,
+            "market_expected": 0.4926000096827857,
+            "roi": -0.04687064903714785
+          }
+        }
+      }
+    },
+    "minutes_info": {
+      "minutes": {
+        "rows": 86198,
+        "last_3_average": 5.006398714857143,
+        "last_10_average": 5.309397586203174,
+        "model": 4.462641814393779,
+        "starters": {
+          "rows": 40394,
+          "last_3_average": 4.790347457223166,
+          "model": 4.26893788278554
+        },
+        "two_or_more_out": {
+          "rows": 28397,
+          "last_3_average": 5.496495882734287,
+          "model": 4.741468159315405
+        }
+      },
+      "all_games_mae": {
+        "pts": 4.40830131280583,
+        "reb": 1.8272654182141261,
+        "ast": 1.3005206550839952
+      },
+      "training_fit_spread": {
+        "pts": {
+          "rows": 22148,
+          "model_mae": 5.118081403219023,
+          "line_mae": 5.068990428029619,
+          "blend_model_weight": 0.3247806062454217,
+          "blend_model_se": 0.031504561379399894,
+          "logloss_model": 0.7052280473263836,
+          "logloss_market": 0.6916654538313712,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 15393,
+            "overs": 8059,
+            "unders": 7334,
+            "hit_rate": 0.517378028974209,
+            "market_expected": 0.499044401384996,
+            "roi": -0.02649866874455275
+          }
+        },
+        "reb": {
+          "rows": 21067,
+          "model_mae": 2.053954222724457,
+          "line_mae": 2.0595006408126455,
+          "blend_model_weight": 0.42892687040610766,
+          "blend_model_se": 0.03068579823443285,
+          "logloss_model": 0.7047232902016493,
+          "logloss_market": 0.6885370772972655,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 14405,
+            "overs": 9962,
+            "unders": 4443,
+            "hit_rate": 0.5078097882679625,
+            "market_expected": 0.495549563105664,
+            "roi": -0.039477975639149586
+          }
+        },
+        "ast": {
+          "rows": 14794,
+          "model_mae": 1.7742524623074425,
+          "line_mae": 1.7768014059753954,
+          "blend_model_weight": 0.40655739159717946,
+          "blend_model_se": 0.03366737706357249,
+          "logloss_model": 0.7257575708228247,
+          "logloss_market": 0.6855584553523573,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 11840,
+            "overs": 10129,
+            "unders": 1711,
+            "hit_rate": 0.4975506756756757,
+            "market_expected": 0.49346984592793713,
+            "roi": -0.05565623143890856
+          }
+        }
+      },
+      "honest_spread": {
+        "pts": {
+          "rows": 22148,
+          "model_mae": 5.118081403219023,
+          "line_mae": 5.068990428029619,
+          "blend_model_weight": 0.3247806062454217,
+          "blend_model_se": 0.031504561379399894,
+          "logloss_model": 0.7051543431058344,
+          "logloss_market": 0.6916654538313712,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 15439,
+            "overs": 8107,
+            "unders": 7332,
+            "hit_rate": 0.519528466869616,
+            "market_expected": 0.49898027924749755,
+            "roi": -0.022373534139193654
+          }
+        },
+        "reb": {
+          "rows": 21067,
+          "model_mae": 2.053954222724457,
+          "line_mae": 2.0595006408126455,
+          "blend_model_weight": 0.42892687040610766,
+          "blend_model_se": 0.03068579823443285,
+          "logloss_model": 0.7037292152825684,
+          "logloss_market": 0.6885370772972655,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 14286,
+            "overs": 9492,
+            "unders": 4794,
+            "hit_rate": 0.50944981100378,
+            "market_expected": 0.49553995831226394,
+            "roi": -0.03621343106746809
+          }
+        },
+        "ast": {
+          "rows": 14794,
+          "model_mae": 1.7742524623074425,
+          "line_mae": 1.7768014059753954,
+          "blend_model_weight": 0.40655739159717946,
+          "blend_model_se": 0.03366737706357249,
+          "logloss_model": 0.7244551679217788,
+          "logloss_market": 0.6855584553523573,
+          "picks_4pct": {
+            "edge": 0.04,
+            "picks": 11798,
+            "overs": 10061,
+            "unders": 1737,
+            "hit_rate": 0.4980505170367859,
+            "market_expected": 0.4931582217028654,
+            "roi": -0.05399100153300488
+          }
+        }
+      },
+      "against_baseline": {
+        "ast": {
+          "rows": 14794,
+          "mae": -0.002330935593687131,
+          "mae_low": -0.00555045466152541,
+          "mae_high": 0.0009979580720467474,
+          "ll": 0.0019340047888826211,
+          "ll_low": 0.0005042844381946844,
+          "ll_high": 0.0034016933463965593
+        },
+        "pts": {
+          "rows": 22148,
+          "mae": -0.023488312295683697,
+          "mae_low": -0.031651219481656466,
+          "mae_high": -0.01546339472728784,
+          "ll": -0.0018334494564199418,
+          "ll_low": -0.003484591590697766,
+          "ll_high": -0.000163396496953033
+        },
+        "reb": {
+          "rows": 21067,
+          "mae": -0.006103176913025463,
+          "mae_low": -0.009531760133466953,
+          "mae_high": -0.0024807326342895326,
+          "ll": -0.0017186322480383053,
+          "ll_low": -0.0031476211898881297,
+          "ll_high": -0.00026950681071824257
+        }
+      }
     }
   },
   "game_line_coverage": 0.8146360704424697,
-  "lines_with_game_line": 0.9984951757103656
+  "lines_with_game_line": 0.9984951757103656,
+  "minutes_information": {
+    "table": {
+      "All": {
+        "rows": 86198,
+        "Last-3 average": 5.006398714857143,
+        "Current inputs": 4.539575088510922,
+        "+ absence": 4.489125303395731,
+        "+ returning": 4.530017910913461,
+        "+ role": 4.515758825654347,
+        "+ all three": 4.462641814393779
+      },
+      "Starters": {
+        "rows": 40394,
+        "Last-3 average": 4.790347457223166,
+        "Current inputs": 4.302199869395452,
+        "+ absence": 4.290903260891342,
+        "+ returning": 4.29682812025866,
+        "+ role": 4.285335352210997,
+        "+ all three": 4.26893788278554
+      },
+      "Team missing 2+ rotation players": {
+        "rows": 28397,
+        "Last-3 average": 5.496495882734287,
+        "Current inputs": 4.830596148050744,
+        "+ absence": 4.772822027975029,
+        "+ returning": 4.819151259135629,
+        "+ role": 4.801438645190641,
+        "+ all three": 4.741468159315405
+      },
+      "30+ rotation minutes newly out": {
+        "rows": 26649,
+        "Last-3 average": 5.637479194990604,
+        "Current inputs": 4.891639675338966,
+        "+ absence": 4.842378453612007,
+        "+ returning": 4.878485718664994,
+        "+ role": 4.860958232732903,
+        "+ all three": 4.811287277592284
+      },
+      "30+ rotation minutes back": {
+        "rows": 17734,
+        "Last-3 average": 5.279517615381356,
+        "Current inputs": 4.685321118381934,
+        "+ absence": 4.53917109906115,
+        "+ returning": 4.664702419174867,
+        "+ role": 4.64011473715631,
+        "+ all three": 4.510029228514365
+      },
+      "First 5 games back from a lay-off": {
+        "rows": 12501,
+        "Last-3 average": 5.406105905893591,
+        "Current inputs": 4.722938386104031,
+        "+ absence": 4.633014878474845,
+        "+ returning": 4.633242922278233,
+        "+ role": 4.67704118360554,
+        "+ all three": 4.538902801528702
+      },
+      "Role changed tonight": {
+        "rows": 6872,
+        "Last-3 average": 7.449108233821438,
+        "Current inputs": 5.12085501479166,
+        "+ absence": 5.067056011693643,
+        "+ returning": 5.11102210274363,
+        "+ role": 5.030949065660822,
+        "+ all three": 4.957729978643347
+      }
+    },
+    "first": "Current inputs",
+    "last": "+ all three",
+    "change": -0.07693327411714357,
+    "change_low": -0.08691403501489207,
+    "change_high": -0.06650395859877872
+  }
 }
