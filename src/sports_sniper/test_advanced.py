@@ -287,7 +287,21 @@ def test_dashboard_parlay_lab_and_ladder_section(env, offline):  # noqa: F811
     for label in ("Load the legs", "Price longshots with the ladder model", "Load the radar"):
         app.button[[b.label for b in app.button].index(label)].click().run()
         assert not app.exception, label
-    assert any(s.label == "Game" for s in app.selectbox) and any(m.label == "Legs (2 to 4)" for m in app.multiselect)
+    assert any(s.label == "Sportsbook" for s in app.selectbox) and any(m.label == "Games" for m in app.multiselect)
+    legs = next(m for m in app.multiselect if m.label == "Legs (2 to 12)")
+    assert len(legs.options) >= 4
+    one_player = [o for o in legs.options if o.split(" — ")[0] == legs.options[0].split(" — ")[0] and " Over " in o]
+    other = next(o for o in legs.options if o.split(" — ")[0] != legs.options[0].split(" — ")[0])
+    legs.set_value([one_player[0], other]).run()
+    assert not app.exception
+    shown = next(d.value for d in app.dataframe if "Last 5" in d.value.columns)
+    assert len(shown) == 2 and list(shown.columns) == ["Leg", "Game", "Price", "Market chance", "Projection", "Model chance", "Last 5", "Last 10", "Bet"]
+    metrics = {m.label: m.value for m in app.metric}
+    assert metrics["Legs multiplied"].startswith(("+", "-")) and metrics["EV at that price"] == "-"       # one game: the book reprices it
+    assert any("Some legs share a game" in w.value for w in app.warning)
+    next(n for n in app.number_input if "price for this parlay" in n.label).set_value(250).run()
+    metrics = {m.label: m.value for m in app.metric}
+    assert not app.exception and metrics["Price used"] == "+250" and metrics["EV at that price"] != "-" and "Allowing for the links" in metrics
 
 
 # --- bet now and price checks ---------------------------------------------------------------------------

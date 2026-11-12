@@ -5,7 +5,7 @@ import streamlit as st
 
 import pandas as pd
 
-from sports_sniper import model_compare, nba_candidate, predictions
+from sports_sniper import model_compare, nba_candidate, parlay_legs, predictions
 from sports_sniper.providers import schedule
 
 
@@ -18,4 +18,5 @@ def no_real_schedule(monkeypatch):
     monkeypatch.setattr(predictions, "games", lambda dsn, now, connect=None, names=None: empty_games)          # no stored forecasts either
     monkeypatch.setattr(predictions, "props", lambda dsn, now, prices=None, connect=None: pd.DataFrame(columns=predictions.PROP_COLUMNS + ["gap"]))
     monkeypatch.setattr(predictions, "ncaaf_record", lambda dsn, connect=None: None)
+    monkeypatch.setattr(parlay_legs, "load_recent", lambda dsn, today, connect=None: {})                 # nor recent game logs
     st.cache_data.clear()

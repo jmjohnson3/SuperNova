@@ -362,6 +362,9 @@ python -m pytest src/sports_sniper -q
   (spread, total) and NBA/NFL player props beside the latest stored line, read-only. Home-spread convention as above
   (`margin + spread > 0` = home covers). It shows leans only; it must not flag or paper-bet from them. New sports are added
   as one loader each in `predictions.py`.
+- Parlay Lab (2026-11-11, `parlay_view.py` / `parlay_legs.py`): up to 12 legs at one chosen book across games, per-leg
+  projection, model chance and last-5/10 hit counts, and one betslip link for the parlay. The link only opens the slip.
+  Hit counts and projections are context; they do not change any estimate.
 - Task `\SuperNovaBets\Sniper-Dashboard` (`scripts/sniper_dashboard.vbs` -> `sniper_dashboard.bat`, at logon and every 5
   minutes) keeps the dashboard up on port 8517, bound to 127.0.0.1 with no console window. The dashboard has no login:
   remote access is through a private network only (the user's choice is Tailscale, `tailscale serve --bg 8517`); never

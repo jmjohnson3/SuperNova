@@ -182,7 +182,12 @@ game that has not started, seen in the last 20 minutes. Everything else is shown
   started. The address is never logged. They are off on this PC: everything is read in the dashboard.
 - **Parlay Lab** (`parlay.py`). Links between statistics measured from several seasons of game logs (same player,
   teammates, opponents) and a Gaussian-copula simulation of the chance that every leg wins, against the independent
-  product. The book's same-game parlay price is typed in; it is not in the odds feed.
+  product. Legs come from one chosen sportsbook (`parlay_legs.py`, `parlay_view.py`): up to 12, from one game or several,
+  each with that book's price, the stored projection and model chance at the leg's line, and how many of the player's
+  last 5 and 10 games that side of the line would have won. One button opens the whole parlay in the book's betslip
+  (FanDuel and theScore Bet use their indexed link formats; DraftKings' combined link is built from its single-bet
+  links and is unconfirmed). The book's same-game parlay price is typed in; it is not in the odds feed, so no EV is
+  shown for legs that share a game until it is.
 - **Automatic evaluation.** Once a day (`SNIPER_EVALUATE_EVERY_HOURS`) the scheduled pass rebuilds the backtest report,
   refits the model calibration on every settled line and re-measures the parlay links (`cli evaluate`, about 90
   seconds). The underlying NBA and NFL models are retrained by their own pipelines, not here.

@@ -188,7 +188,7 @@ def evaluate(legs: list[dict], table: dict, sport: str, price: int | None = None
     n = len(legs)
     matrix, notes = np.eye(n), []
     for i, j in combinations(range(n), 2):
-        r, why = link(table, sport, legs[i], legs[j])
+        r, why = link(table, legs[i].get("sport", sport), legs[i], legs[j])
         matrix[i, j] = matrix[j, i] = r
         notes.append(dict(a=i, b=j, correlation=r, why=why))
     chances = [float(leg["probability"]) for leg in legs]

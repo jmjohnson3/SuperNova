@@ -22,7 +22,9 @@ STARTED_HOURS = 4            # keep a game on the page this long after it starts
 LINE_HOURS = 36              # ignore stored lines older than this
 GAME_COLUMNS = ["sport", "start", "away", "home", "pred_margin", "pred_total", "spread", "total", "book", "made_at", "note", "model"]
 PROP_COLUMNS = ["sport", "start", "game", "player", "team", "stat", "projection", "raw", "low", "high", "line", "book",
-                "over_price", "under_price", "model_over", "market_over", "made_at", "model"]
+                "over_price", "under_price", "model_over", "market_over", "made_at", "model", "market", "player_key", "disp_a", "disp_b"]
+NFL_MARKET = {"receiving_yards": "player_reception_yds", "receptions": "player_receptions", "rushing_yards": "player_rush_yds",
+              "passing_yards": "player_pass_yds", "passing_tds": "player_pass_tds"}
 NBA_STAT_LABEL = {"pts": "Points", "reb": "Rebounds", "ast": "Assists", "fg3m": "Threes"}
 NBA_MARKET = {stat: market for market, stat in NBA_STAT.items()}
 
@@ -223,7 +225,7 @@ def nba_props(dsn, now: datetime, prices: pd.DataFrame | None = None, connect=No
                         high=mu + 1.2816 * spread, line=line.get("line"), book=line.get("book"), over_price=line.get("over_price"),
                         under_price=line.get("under_price"), model_over=chance,
                         market_over=no_vig_over(line.get("over_price"), line.get("under_price")), made_at=_utc(r.run_at_utc),
-                        model=r.model_version))
+                        model=r.model_version, market=NBA_MARKET.get(r.stat), player_key=player_key(r.player_name), disp_a=a, disp_b=b))
     return pd.DataFrame(out, columns=PROP_COLUMNS)
 
 
@@ -246,7 +248,8 @@ def nfl_props(dsn, now: datetime, connect=None) -> pd.DataFrame:
                         raw=_number(r.raw), low=_number(r.projection_p10), high=_number(r.projection_p90), line=_number(r.line),
                         book=r.book, over_price=_number(r.price) if over else None, under_price=None if over else _number(r.price),
                         model_over=_number(r.raw_over_probability),
-                        market_over=market if market is None or over else 1 - market, made_at=_utc(r.updated_at_utc), model=r.model_version))
+                        market_over=market if market is None or over else 1 - market, made_at=_utc(r.updated_at_utc), model=r.model_version,
+                        market=NFL_MARKET.get(r.stat), player_key=player_key(r.player), disp_a=None, disp_b=None))
     return pd.DataFrame(out, columns=PROP_COLUMNS)
 
 
