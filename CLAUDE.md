@@ -328,6 +328,11 @@ Pinnacle's last quote before the start.
   `nba-prop-price-check-v1`, whose alerts it reads). One Discord summary a day; research only.
 - `sharp_pipeline.outcomes` adds results (NBA from `nbaprops.player_games`, NCAAF from `ncaaf.games`) and the
   NBA prop shadow filter (latest `nbaprops.projections` before the decision) to the report and digest.
+- `sharp_pipeline.gap_validity` (2026-11-12, not scheduled, no credits; `reports/price_gap_validity_latest.md`): checks the
+  scanners' assumption that Pinnacle is right, on every stored two-sided prop price against results (NBA 12,889 and NFL
+  2,823 settled, three weeks). Weight on Pinnacle where it differs from the book: +0.55 (-0.12 to +1.22) overall, +1.29
+  (0.00 to 2.52) on gaps of 3%+; those 260 gaps returned +7.8% (-7.3% to +21.2%) against +4.8% claimed. Leaning the right
+  way but not shown: it needs roughly 1,500 such bets. Rerun it as data accumulates before any stake review.
 
 ## Sports Betting Sniper (`src/sports_sniper/`, research and paper trading)
 
