@@ -394,6 +394,11 @@ filter snapshot < commence before using it as evidence.
   the player's own lay-off and tonight's role cut the minutes miss 4.54 to 4.46 and the points miss 5.142 to 5.118
   (line 5.069). Real but small; picks still lose 2% to 5%, so the pinned live model is unchanged. A run keeps the
   variants it does not refit from the stored report.
+  `nba_props.stints` (2026-11-12, not scheduled) stores stats.nba.com rotation stints for every game since 2021-22
+  (`nbaprops.rotation_stints`, `rotation_games`; a rerun fetches only new games); `nba_props.stint_info` (`stint_info`
+  variant, now in the default run, about an hour) cuts the minutes miss 4.46 to 4.42 but the points miss only 5.118
+  to 5.114, which cannot be told from zero. Not adopted. History is close to used up for minutes; what is left is
+  same-day news and the game itself.
 
 ## NCAAF game models (`src/ncaaf_pipeline/`, research)
 CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings

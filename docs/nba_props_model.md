@@ -140,6 +140,58 @@ that remains is information the box score and lineup file do not hold: in-game s
 stints from stats.nba.com, reachable at about 2 seconds a game), minutes limits announced by teams, and news
 between the lineup file and tip.
 
+## Challenger: rotation stints (2026-11-12; `nba_props.stints`, `nba_props.stint_info`, same harness)
+`python -m nba_props.stints` downloads stats.nba.com's rotation stints (who was on the floor, from when to when,
+with the stint's plus-minus), one request per game, into `nbaprops.rotation_stints` and `nbaprops.rotation_games`.
+All 6,742 finished games from 2021-22 to 2026-11-11 are stored; a rerun fetches only games not stored yet. It is
+not scheduled. 22 games whose stints do not add up to the box-score minutes are left out automatically.
+
+Two groups of inputs, from earlier games only:
+- **stint patterns**: the player's minutes with garbage time taken out (the fourth quarter of a game 15+ points
+  apart), his share of time in the fourth quarter and in close finishes, when he usually first comes on, how his
+  minutes are cut up, and whether his last game ended early for him. The score during a game is rebuilt from each
+  stint's plus-minus, so garbage time and close finishes are approximate;
+- **substitutes**: the newly-out and returning teammates weighted by how much the player's floor time went with
+  each one's bench time in earlier shared games.
+
+The minutes forecast alone, on top of the minutes information above (average miss in minutes, 86,419 test
+player-games, all with stint inputs):
+
+| Player-games | Minutes information | + stint patterns | + substitutes | + both |
+|---|---:|---:|---:|---:|
+| All | 4.46 | 4.42 | 4.46 | 4.42 |
+| 30+ rotation minutes newly out | 4.81 | 4.77 | 4.81 | 4.77 |
+| First 5 games back from a lay-off | 4.54 | 4.49 | 4.55 | 4.48 |
+| Role changed tonight | 4.96 | 4.96 | 4.95 | 4.93 |
+
+Both: -0.045 minutes (-0.052 to -0.038), about 1%. The stint patterns carry all of it. The substitute weights add
+nothing beyond the absence inputs: with/without minutes from box scores already say who fills whose minutes.
+
+On the same DraftKings lines (`stint_info` variant: minutes information, stints and a minutes model):
+
+| Version | Points miss | Rebounds miss | Assists miss | Points log loss |
+|---|---:|---:|---:|---:|
+| DraftKings line | 5.069 | 2.060 | 1.777 | 0.6917 |
+| Current model (v2) | 5.142 | 2.060 | 1.777 | 0.7070 |
+| + minutes information and model | 5.118 | 2.054 | 1.774 | 0.7052 |
+| + minutes information, stints and model | 5.114 | 2.052 | 1.775 | 0.7047 |
+
+- **The stints' own step on the lines is too small to tell from zero**: points -0.004 (-0.011 to +0.002), rebounds
+  -0.002 (-0.004 to +0.000), assists +0.001 (-0.002 to +0.003), and assists log loss a little worse (+0.0010,
+  +0.0003 to +0.0018).
+- Against the current model the full set is points -0.028 (-0.038 to -0.018), rebounds -0.008 (-0.012 to -0.005),
+  assists -0.002 (-0.005 to +0.002). The model's weight beside the line rose again (points 0.32 to 0.35, rebounds
+  0.43 to 0.45).
+- **Still not an edge**: the probabilities are worse than DraftKings' no-vig price on all three, and picks at a
+  4% disagreement lose 1.6% (points), 3.2% (rebounds), 5.9% (assists).
+
+Verdict: stints improve the minutes forecast a little and the projections by an amount that cannot be told from
+zero. Not adopted; the pinned live model is unchanged and the download does not need to be kept current. Taken
+together, everything tried from history (minutes model, absences, lay-offs, roles, stints) moved the minutes miss
+from 4.54 to 4.42 and the points miss from 5.142 to 5.114, against 4.397 with the minutes actually played. History
+is close to used up. What is left is what happens on the day: team-announced minutes limits, news between the
+lineup file and tip, and the game itself (fouls, blowouts, injuries).
+
 ## Spreads and totals (`python -m nba_props.games`; reports/nba_games_model_latest.md)
 Decayed ridge team ratings (margin and total fitted separately) plus each side's missing rotation, rest
 and back-to-backs; walk-forward monthly, 2023-24 to 2025-26, against DraftKings' pre-game line.
