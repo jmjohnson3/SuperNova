@@ -191,3 +191,27 @@ and without the inputs (`reports/nfl_volume_absence_latest.md`).
   refit, but better volume alone has not improved a yardage projection here, and the projection is still behind
   the line. The historical injury report is the final one of the week; live would read it from the observation
   log, which has not been checked for parity.
+
+## Challenger: efficiency (2026-11-12; `python -m nfl_pipeline.modeling.efficiency_model`)
+The other half of the projection miss: yards per target, catches per target and yards per carry. Each estimate
+is a per-opportunity rate scored as rate x the targets or carries the player actually had, so only efficiency
+is judged. Baseline = the player's last-10 rate shrunk toward his position's; model = LightGBM on the
+parity-safe features plus that baseline, weighted by opportunities; then the opponent's allowed rates by
+position and the weather on top. Same walk-forward as the volume model, 2023 to 2026
+(`reports/nfl_efficiency_model_latest.md`).
+
+| Stat, volume known | Player-games | Baseline | Model | + opponent | + opponent and weather | Best, weekly difference (95%) |
+|---|---:|---:|---:|---:|---:|---:|
+| Receiving yards | 15,501 | 13.852 | 13.767 | 13.747 | 13.746 | -0.123 (-0.233 to -0.013) |
+| Receptions | 15,501 | 0.733 | 0.729 | 0.728 | 0.727 | -0.005 (-0.010 to +0.000) |
+| Rushing yards | 6,768 | 11.969 | 11.750 | 11.730 | 11.753 | -0.351 (-0.614 to -0.088) |
+
+- Efficiency is close to unforecastable. The best model beats a shrunk last-10 rate by 0.8% on receiving yards,
+  0.8% on receptions and 2% on rushing yards. The opponent's allowed rates by position and the weather add
+  almost nothing beyond the model, and not in every season.
+- On the live 2026 forecasts nothing beats the production number, and the line beats all of them: receiving
+  yards with a line 21.27 line, 22.26 production, 22.43 to 22.53 for the rates; rushing 18.89, 20.54, 21.17 to
+  21.59; receptions 1.58, 1.60, 1.60 to 1.61.
+- Verdict: not adopted, and no reason to bring the opponent splits or a weather forecast into the live
+  snapshot for this. With volume (docs above) and efficiency both tested, the yardage projections are near what
+  box-score history can give; the line's lead (about 1 yard receiving, 1.7 rushing) is not in these inputs.

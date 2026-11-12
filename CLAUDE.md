@@ -283,6 +283,9 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
 - `modeling/volume_absence` (2026-11-12, research, not scheduled): teammates listed Out or Doubtful, volume returning and
   the player's own volume without them improve the volume forecast (targets 0.7%, carries 1.4%; 10% when a back is
   newly out) but not the yardage projections, which stay worse than production after the rescale. Not adopted.
+- `modeling/efficiency_model` (2026-11-12, research, not scheduled): per-opportunity rates judged with the volume known.
+  A model beats a shrunk last-10 rate by 1% to 2%; opponent splits by position and weather add almost nothing; no
+  variant beats production or the line on live 2026 forecasts. Not adopted.
 
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`
