@@ -386,6 +386,10 @@ filter snapshot < commence before using it as evidence.
   adds the projection. Month by month over two seasons (44,699 DraftKings offers) it only breaks even, and its 269
   picks on saved live quotes sat 4.5% below Pinnacle's close (`reports/nba_selector_backtest_latest.md`,
   `reports/nba_selector_latest.md`). Blind unders lose 3.9%, blind overs 8.5%. Do not schedule it or post its picks.
+- `nba_props.challenger` (2026-11-11, not scheduled, about 40 minutes): the pinned walk-forward test with extra inputs.
+  DraftKings' spread and total add nothing; a separate minutes model forecasts minutes 10% better but moves the
+  projections 0.1%; with the minutes actually played the model would beat the line by 0.67 points
+  (`reports/nba_props_challenger_latest.md`). New inputs are judged there; the lever is information about minutes.
 
 ## NCAAF game models (`src/ncaaf_pipeline/`, research)
 CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings

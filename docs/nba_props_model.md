@@ -69,6 +69,37 @@ Availability is real information the line does not fully hold (the anchored blen
 own log loss; v1 did not), but the gain is small and the picks still do not clear the vig against the
 pre-game line. Next: the morning snapshot (from Nov 3) tests whether it predicts where morning lines go.
 
+## Challenger: game line and minutes model (2026-11-11; `python -m nba_props.challenger`)
+`nba_props.challenger` reruns the walk-forward test with extra inputs and scores every version on the same
+22,148 / 21,067 / 14,794 DraftKings points / rebounds / assists lines (reports/nba_props_challenger_latest.md).
+It imports the pinned model and changes nothing in it.
+
+| Version | Points miss | Rebounds miss | Assists miss | Points log loss |
+|---|---:|---:|---:|---:|
+| DraftKings line | 5.069 | 2.060 | 1.777 | 0.6917 |
+| Current model (v2) | 5.142 | 2.060 | 1.777 | 0.7070 |
+| + DraftKings spread and total | 5.141 | 2.060 | 1.777 | 0.7068 |
+| + game line and a minutes model | 5.135 | 2.058 | 1.776 | 0.7063 |
+| If the minutes played were known | 4.397 | 1.863 | 1.665 | 0.6130 |
+
+- **The game line adds nothing** (points -0.001, interval -0.003 to +0.001). The model's pace and opponent rates,
+  and the prop line it is judged against, already carry it.
+- **The minutes model forecasts minutes about 10% better** than the player's last-3 average (4.53 against 5.01
+  minutes; 4.82 against 5.50 when the team is missing two or more rotation players), but the projections move by
+  0.1%: points -0.007 (-0.011 to -0.002), rebounds -0.002, assists 0. It is built from the same inputs the stat
+  model already had (recent minutes, starter, who is out), so it tells that model little it could not work out.
+- **Fitting the spread on out-of-sample forecasts** instead of the training fit does not change the log loss. The
+  overconfidence is not the count distribution; it is the model disagreeing with a line that knows more.
+- **Minutes are the whole gap.** With the minutes actually played, the same model beats the line by 0.67 points
+  and its picks hit 67%. That is not attainable (it includes foul trouble, blowouts and injuries during the game),
+  but it says where accuracy is: knowing tonight's minutes better, not more box-score features. As a rough guide
+  from these numbers, matching the line on points needs a minutes miss near 4.1 instead of 4.5.
+
+Verdict: neither input is adopted; picks still lose 2.4% to 4.9% at DraftKings' prices. The next thing worth
+testing is new information about minutes (who takes the minutes when a player sits, from rotation stints;
+returns from injury and minutes limits; the timing of injury reports), measured in this same harness. The test
+also flatters every version a little: it uses the final lineup file, which can be later than the line snapshot.
+
 ## Spreads and totals (`python -m nba_props.games`; reports/nba_games_model_latest.md)
 Decayed ridge team ratings (margin and total fitted separately) plus each side's missing rotation, rest
 and back-to-backs; walk-forward monthly, 2023-24 to 2025-26, against DraftKings' pre-game line.
