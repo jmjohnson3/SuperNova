@@ -74,8 +74,9 @@ def candidates(df: pd.DataFrame, lineups: pd.DataFrame) -> pd.DataFrame:
     return grid[["game_id", "team", "player_id", "out", "pm"] + [f"prof_{s}" for s in PROFILE]].reset_index(drop=True)
 
 
-def absence_features(df: pd.DataFrame, grid: pd.DataFrame) -> pd.DataFrame:
-    """Per player-game he played: what tonight's outs change against his recent games, from earlier games only."""
+def absence_pairs(df: pd.DataFrame, grid: pd.DataFrame) -> pd.DataFrame:
+    """One row per player-game he played and rotation teammate (`mate`): what that teammate's status tonight
+    changes against the player's recent games (`change`: +1 newly out, -1 back), from earlier games only."""
     d = _sorted(df)
     p = d[d.minutes > 0]
     g = p.groupby("player_id")
@@ -98,7 +99,8 @@ def absence_features(df: pd.DataFrame, grid: pd.DataFrame) -> pd.DataFrame:
     newly, back = change.clip(lower=0), (-change).clip(lower=0)
     distance = sum(((pairs[f"own_{s}"] - pairs[f"prof_{s}"]) / scale) ** 2 for s, (_, scale) in PROFILE.items())
     alike = np.exp(-0.5 * distance.fillna(distance.median() if distance.notna().any() else 0.0))
-    out = pairs[["game_id", "player_id"]].copy()
+    out = pairs[["game_id", "player_id", "mate", "game_date", "pm"]].copy()
+    out["change"], out["newly"], out["back"] = change, newly, back
     with np.errstate(divide="ignore", invalid="ignore"):
         out["wo_min_adj"] = ((min_out / n_out - min_in / n_in) * weight).fillna(0.0) * change
         for s in STATS:
@@ -108,7 +110,12 @@ def absence_features(df: pd.DataFrame, grid: pd.DataFrame) -> pd.DataFrame:
     out["wo_support"] = change.abs() * np.minimum(n_out, n_in)
     out["absent_new_min"], out["absent_back_min"] = pairs.pm * newly, pairs.pm * back
     out["absent_new_sim"], out["absent_back_sim"] = pairs.pm * newly * alike, pairs.pm * back * alike
-    return out.groupby(["game_id", "player_id"], as_index=False).sum()
+    return out
+
+
+def absence_features(df: pd.DataFrame, grid: pd.DataFrame) -> pd.DataFrame:
+    """Per player-game he played: the absence inputs, summed over his rotation teammates."""
+    return absence_pairs(df, grid).groupby(["game_id", "player_id"], as_index=False)[GROUPS["absence"]].sum()
 
 
 # --- the player's own lay-off ----------------------------------------------------------------------------------

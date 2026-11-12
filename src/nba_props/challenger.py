@@ -17,6 +17,9 @@ Variants, all walk-forward (monthly refits on earlier games only) and scored on 
                     them, his own lay-off, tonight's role against his earlier starts and bench games), given to
                     the statistic models and to a minutes model
     minutes_info_direct   the same inputs without the minutes model (optional)
+    stint_info      minutes_info + nba_props.stint_info, from stored rotation stints (nba_props.stints): minutes
+                    with garbage time taken out, when the player comes on, and whose bench time his floor time
+                    goes with (his substitutes) for the teammates newly out or back
 
 A run keeps the variants it does not refit from the stored report, when the test period is the same. With the
 minutes information it also scores the minutes forecast alone, one group of inputs at a time.
@@ -24,8 +27,9 @@ minutes information it also scores the minutes forecast alone, one group of inpu
 Probabilities use the pinned count distribution. Its spread is fitted two ways: on the training fit (as the
 pinned model does) and on earlier out-of-sample forecasts only ("honest spread").
 
-    python -m nba_props.challenger [--test-from 2023-11-01] [--variants baseline,minutes_info] [--threes]   (about 40 minutes)
-    python -m nba_props.challenger --minutes-only        the minutes forecast alone (about 12 minutes)
+    python -m nba_props.challenger [--test-from 2023-11-01] [--variants baseline,minutes_info,stint_info] [--threes]
+                                                         (about an hour)
+    python -m nba_props.challenger --minutes-only        the minutes forecast alone (about 20 minutes)
 """
 from __future__ import annotations
 
@@ -37,7 +41,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 
-from nba_props import minutes_info, model
+from nba_props import minutes_info, model, stint_info
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.forecast_store import clean
 from nfl_pipeline.integrity import atomic_json
@@ -59,12 +63,22 @@ VARIANTS = {
     "both": dict(line=True, minutes="model"),
     "minutes_info_direct": dict(line=False, minutes=None, info=True),
     "minutes_info": dict(line=False, minutes="model", info=True),
+    "stint_info": dict(line=False, minutes="model", info=True, stints=True),
     "known_minutes": dict(line=True, minutes="actual"),
 }
-DEFAULT_VARIANTS = "baseline,minutes_info"         # the others are kept from the stored report
+DEFAULT_VARIANTS = "baseline,minutes_info,stint_info"      # the others are kept from the stored report
 LABEL = {"baseline": "Current model", "game_line": "+ game line", "minutes_model": "+ minutes model",
          "both": "+ both", "known_minutes": "If minutes were known", "minutes_info_direct": "+ minutes information",
-         "minutes_info": "+ minutes information and model"}
+         "minutes_info": "+ minutes information and model", "stint_info": "+ minutes information, stints and model"}
+STINT_SETS = {"Minutes information": [], "+ stint patterns": stint_info.GROUPS["stints"], "+ substitutes": stint_info.GROUPS["substitutes"],
+              "+ both": stint_info.FEATURES}
+STUDIES = {"minutes_information": ("New minutes information",
+                                   "Absence = which rotation teammates are newly out or back and how the player's minutes moved without "
+                                   "them; returning = his own lay-off; role = tonight's lineup against his earlier starts and bench games."),
+           "stint_information": ("Rotation stints on top of the minutes information",
+                                 "Stint patterns = minutes with garbage time taken out, share of time in the fourth quarter and close "
+                                 "finishes, when he first comes on, whether his last game ended early; substitutes = the newly-out and "
+                                 "returning teammates weighted by how much his floor time went with their bench time.")}
 INPUT_SETS = {"Current inputs": [], "+ absence": minutes_info.GROUPS["absence"], "+ returning": minutes_info.GROUPS["returning"],
               "+ role": minutes_info.GROUPS["role"], "+ all three": minutes_info.FEATURES}
 DISRUPTED = 30.0                                   # rotation minutes newly out (or back) that count as a changed line-up
@@ -232,12 +246,16 @@ def minutes_table(f: pd.DataFrame, forecasts: dict[str, pd.Series], test_from: s
     return dict(table=table, first=names[0], last=names[-1], change=float(diff.mean()), change_low=low, change_high=high)
 
 
-def minutes_information(f: pd.DataFrame, base_cols: list[str], test_from: str, full: pd.Series | None = None, fitter=None, log=print) -> dict:
-    """The minutes forecast alone with each group of new inputs. `full` is an existing forecast with all of them."""
+def minutes_information(f: pd.DataFrame, base_cols: list[str], test_from: str, full: pd.Series | None = None, fitter=None, log=print,
+                        sets: dict | None = None, first: pd.Series | None = None) -> dict:
+    """The minutes forecast alone with each group of new inputs. `first` and `full` are existing forecasts for the
+    first set and the last (all of them)."""
+    sets = sets or INPUT_SETS
+    have = {next(iter(sets)): first, list(sets)[-1]: full}
     forecasts = {}
-    for name, extra in INPUT_SETS.items():
+    for name, extra in sets.items():
         log(f"  minutes forecast: {name.lower()}")
-        forecasts[name] = full if full is not None and name == "+ all three" else minutes_walk_forward(f, base_cols + extra, start=test_from, fitter=fitter)
+        forecasts[name] = have[name] if have.get(name) is not None else minutes_walk_forward(f, base_cols + extra, start=test_from, fitter=fitter)
     return minutes_table(f, forecasts, test_from)
 
 
@@ -248,18 +266,22 @@ def summary(ev: dict) -> dict:
 
 # --- report --------------------------------------------------------------------------------------------------
 def information_lines(report: dict) -> list[str]:
-    info = report.get("minutes_information")
-    if not info:
-        return []
-    sets = [n for n in next(iter(info["table"].values())) if n != "rows"]
-    L = ["", "## New minutes information: the minutes forecast alone (average miss in minutes)", "",
-         "Absence = which rotation teammates are newly out or back and how the player's minutes moved without them; returning = his "
-         "own lay-off; role = tonight's lineup against his earlier starts and bench games.", "",
-         "| Player-games | Rows | " + " | ".join(sets) + " |", "|---|---:|" + "---:|" * len(sets)]
-    for label, row in info["table"].items():
-        L.append(f"| {label} | {row['rows']} | " + " | ".join(f"{row[n]:.2f}" for n in sets) + " |")
-    return L + ["", f"{info['last']} against {info['first'].lower()}: {info['change']:+.3f} minutes "
-                    f"({info['change_low']:+.3f} to {info['change_high']:+.3f})."]
+    L = []
+    for key, (title, blurb) in STUDIES.items():
+        info = report.get(key)
+        if not info or not info["table"]:
+            continue
+        sets = [n for n in next(iter(info["table"].values())) if n != "rows"]
+        L += ["", f"## {title}: the minutes forecast alone (average miss in minutes)", "", blurb, "",
+              "| Player-games | Rows | " + " | ".join(sets) + " |", "|---|---:|" + "---:|" * len(sets)]
+        for label, row in info["table"].items():
+            L.append(f"| {label} | {row['rows']} | " + " | ".join(f"{row[n]:.2f}" for n in sets) + " |")
+        L += ["", f"{info['last']} against {info['first'].lower()}: {info['change']:+.3f} minutes "
+                  f"({info['change_low']:+.3f} to {info['change_high']:+.3f})."]
+        if info.get("coverage") is not None:
+            L += ["", f"Stints: {info['games']} games stored, {info['games_dropped']} left out because their stints do not add up to the box "
+                      f"score; {info['coverage']:.0%} of the test player-games have stint inputs."]
+    return L
 
 
 def markdown(report: dict) -> str:
@@ -293,6 +315,15 @@ def markdown(report: dict) -> str:
             d = report["variants"][n]["against_baseline"].get(s)
             if d:
                 L.append(f"| {LABEL[n]} | {stat_name[s]} | {d['mae']:+.3f} ({d['mae_low']:+.3f} to {d['mae_high']:+.3f}) | "
+                         f"{d['ll']:+.4f} ({d['ll_low']:+.4f} to {d['ll_high']:+.4f}) |")
+    step = report["variants"].get("stint_info", {}).get("against_minutes_info")
+    if step:
+        L += ["", "## What the stints add to the minutes information on the same lines (95% interval; negative is better)", "",
+              "| Statistic | Average miss | Log loss |", "|---|---:|---:|"]
+        for s in LINE_STATS:
+            if s in step:
+                d = step[s]
+                L.append(f"| {stat_name[s]} | {d['mae']:+.3f} ({d['mae_low']:+.3f} to {d['mae_high']:+.3f}) | "
                          f"{d['ll']:+.4f} ({d['ll_low']:+.4f} to {d['ll_high']:+.4f}) |")
     L += ["", "## Picks where the model disagrees with DraftKings by more than 4% (honest spread)", "",
           "| Variant | Statistic | Picks | Hit rate | ROI at DraftKings' price | Model's weight beside the line (se) |", "|---|---|---:|---:|---:|---:|"]
@@ -334,7 +365,7 @@ def earlier_report(test_from: str, names: list[str]) -> dict:
     if stored.get("test_from") != test_from:
         return {}
     kept = {n: {"kept_from": stored.get("built_at"), **v} for n, v in stored.get("variants", {}).items() if n not in names and n in VARIANTS}
-    return dict(variants=kept) | {k: stored[k] for k in ("lines_with_game_line", "minutes_information") if k in stored}
+    return dict(variants=kept) | {k: stored[k] for k in ("lines_with_game_line", *STUDIES) if k in stored}
 
 
 def run(test_from: str, names: list[str], stats=LINE_STATS, minutes_only: bool = False, log=print) -> dict:
@@ -342,6 +373,8 @@ def run(test_from: str, names: list[str], stats=LINE_STATS, minutes_only: bool =
     with psycopg2.connect(PG_DSN) as conn:
         frame, lines, lineups = model.load_games(conn), model.load_lines(conn), model.final_lineups(conn)
         game_lines = games.load_lines(conn)
+        with_stints = minutes_only or any(VARIANTS[n].get("stints") for n in names)
+        stints = stint_info.load(conn) if with_stints and stint_info.stored(conn) else None
     base = model.features(frame, lineups)
     base_cols = model.feature_columns(base)
     lined = add_game_line(base, game_lines)
@@ -349,7 +382,7 @@ def run(test_from: str, names: list[str], stats=LINE_STATS, minutes_only: bool =
     report = dict(built_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), test_from=test_from, variants={},
                   game_line_coverage=float(lined[eligible(lined) & (lined.game_date >= pd.Timestamp(test_from))].mkt_total.notna().mean()))
     report |= earlier_report(test_from, names)
-    informed = None
+    informed = stinted = None
     if minutes_only or any(VARIANTS[n].get("info") for n in names):
         log("  minutes information")
         informed = minutes_info.add(base, frame, lineups)
@@ -357,17 +390,37 @@ def run(test_from: str, names: list[str], stats=LINE_STATS, minutes_only: bool =
         if "minutes_info" in names:
             log("  minutes model (with the minutes information)")
             full = minutes[(False, True)] = minutes_walk_forward(informed, base_cols + minutes_info.FEATURES)
-        report["minutes_information"] = minutes_information(informed, base_cols, test_from, full=full, log=log)
+        report["minutes_information"] = study = minutes_information(informed, base_cols, test_from, full=full, log=log)
         atomic_json(REPORT.with_suffix(".json"), clean(report))
+        if stints is not None and len(stints):
+            log("  rotation stints")
+            stinted = stint_info.add(informed, frame, lineups, stints)
+            info_cols = base_cols + minutes_info.FEATURES
+            full = None
+            if "stint_info" in names:
+                log("  minutes model (with the minutes information and the stints)")
+                full = minutes[(False, True, True)] = minutes_walk_forward(stinted, info_cols + stint_info.FEATURES)
+            test = stinted[eligible(stinted) & (stinted.game_date >= pd.Timestamp(test_from))]
+            games_stored = stints.game_id.nunique()
+            used = stint_info.verified(*stint_info.summaries(stints), frame)[0].game_id.nunique()
+            report["stint_information"] = minutes_information(stinted, info_cols, test_from, full=full, log=log, sets=STINT_SETS,
+                                                              first=minutes.get((False, True))) | dict(
+                games=int(games_stored), games_dropped=int(games_stored - used), coverage=float(test.comp_min_ewm3.notna().mean()))
+            atomic_json(REPORT.with_suffix(".json"), clean(report))
     scored: dict[str, pd.DataFrame] = {}
     for name in names:
         spec = VARIANTS[name]
         f, cols = (lined, base_cols + LINE_FEATURES) if spec["line"] else (base, list(base_cols))
         if spec.get("info"):
             f, cols = informed, base_cols + minutes_info.FEATURES
+        if spec.get("stints"):
+            if stinted is None:
+                log(f"  {name}: no stints stored (python -m nba_props.stints); left out")
+                continue
+            f, cols = stinted, cols + stint_info.FEATURES
         entry: dict = {}
         if spec["minutes"] == "model":
-            key = (spec["line"], bool(spec.get("info")))
+            key = (spec["line"], bool(spec.get("info"))) + ((True,) if spec.get("stints") else ())
             if key not in minutes:
                 log(f"  minutes model ({'with' if spec['line'] else 'without'} the game line)")
                 minutes[key] = minutes_walk_forward(f, cols)
@@ -389,6 +442,8 @@ def run(test_from: str, names: list[str], stats=LINE_STATS, minutes_only: bool =
             report["lines_with_game_line"] = float(on_lines.mkt_total.notna().mean())
         if "baseline" in scored and name != "baseline":
             entry["against_baseline"] = paired(scored["baseline"], rows_honest)
+        if name == "stint_info" and "minutes_info" in scored:
+            entry["against_minutes_info"] = paired(scored["minutes_info"], rows_honest)
         report["variants"][name] = entry
         atomic_json(REPORT.with_suffix(".json"), clean(report))
     return report
