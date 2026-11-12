@@ -280,6 +280,9 @@ reservation (`cash_execution`) → Discord → exact close → settled result �
   features (`modeling/feature_parity`, `docs/nfl_feature_parity.md`). The production yardage models use
   none of them; the opportunity/workload models behind the workload adjustment do. Check parity before
   training on a feature.
+- `modeling/volume_absence` (2026-11-12, research, not scheduled): teammates listed Out or Doubtful, volume returning and
+  the player's own volume without them improve the volume forecast (targets 0.7%, carries 1.4%; 10% when a back is
+  newly out) but not the yardage projections, which stay worse than production after the rescale. Not adopted.
 
 ### Model artifacts (NFL)
 `.joblib`/`.pkl` binaries and bulky run outputs under `src/nfl_pipeline/modeling/models/`

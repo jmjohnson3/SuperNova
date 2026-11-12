@@ -164,3 +164,30 @@ live snapshot and the table. They belong to the serving-parity rebuild of the fe
 - **Feature table and training feature lists: unchanged.** These feed the pinned production model
   and future retrains. Changing them would alter production inputs without a retrain. The right
   change is a new release that trains on model targets (out of fold) and on parity-safe features.
+
+## Challenger: teammates ruled out (2026-11-12; `python -m nfl_pipeline.modeling.volume_absence`)
+The volume model leaves out the table's teammate-injury scores because they do not match live. This adds a small
+set built from sources that are the same before and after a game (earlier box scores and the week's injury
+report): recent targets/carries of teammates listed Out or Doubtful (all, and the newly vacated part), volume
+returning, the player's own volume in earlier games without those teammates, vacated targets at his position,
+quarterback out. Same walk-forward, parameters and parity-safe features as the volume model, 2023 to 2026, with
+and without the inputs (`reports/nfl_volume_absence_latest.md`).
+
+| Volume | Player-games | Volume model MAE | With absence inputs | Weekly difference (95%) |
+|---|---:|---:|---:|---:|
+| Targets, all | 17,900 | 1.656 | 1.644 | -0.010 (-0.014 to -0.005) |
+| Targets, 8+ returning | 190 | 1.922 | 1.847 | -0.086 (-0.132 to -0.040) |
+| Carries, all | 7,588 | 3.072 | 3.029 | -0.051 (-0.065 to -0.037) |
+| Carries, 8+ newly vacated | 399 | 3.598 | 3.235 | -0.443 (-0.640 to -0.247) |
+| Carries, 8+ returning | 130 | 3.377 | 3.129 | -0.327 (-0.629 to -0.025) |
+
+- A real gain in the volume forecast, in every season: small for targets (0.7%), larger for carries (1.4%, and
+  10% when a back with 8+ carries is newly out). Targets move less because a receiver's absence spreads thinly.
+- It does not reach yards. Moving the live 2026 projection to the model's volume is still worse than the
+  production number, with or without the inputs: receiving 20.67 production, 21.27 volume model, 21.09 with
+  absence; rushing 20.52, 21.27, 21.11; receptions 1.54, 1.63, 1.62. The rushing rescale that looked better on
+  weeks 2 to 6 (18.16 against 19.02) is worse on the fuller season.
+- Verdict: kept as a challenger, not adopted. The inputs are worth including the next time the volume model is
+  refit, but better volume alone has not improved a yardage projection here, and the projection is still behind
+  the line. The historical injury report is the final one of the week; live would read it from the observation
+  log, which has not been checked for parity.
