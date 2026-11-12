@@ -13,5 +13,5 @@ netstat -ano | findstr /c:":8517 " | findstr LISTENING >nul && exit /b 0
 set LOGFILE=logs\sniper_dashboard_%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%.log
 echo ======================================== >> %LOGFILE% 2>&1
 echo Dashboard started at %DATE% %TIME% >> %LOGFILE% 2>&1
-.venv\Scripts\python.exe -m streamlit run src\sports_sniper\dashboard\app.py --server.port 8517 --server.address 127.0.0.1 --server.headless true --browser.gatherUsageStats false >> %LOGFILE% 2>&1
+.venv\Scripts\python.exe -m streamlit run src\sports_sniper\dashboard\app.py --server.port 8517 --server.address 127.0.0.1 --server.headless true --browser.gatherUsageStats false --client.toolbarMode minimal >> %LOGFILE% 2>&1
 echo Dashboard stopped at %DATE% %TIME% with code %ERRORLEVEL% >> %LOGFILE% 2>&1

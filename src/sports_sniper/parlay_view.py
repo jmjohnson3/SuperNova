@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
 
-from sports_sniper import breakout, db, odds_math, parlay, parlay_legs, predictions
+from sports_sniper import breakout, db, odds_math, parlay, parlay_legs, phone_view, predictions
 from sports_sniper.markets import book_label, market_label
 
 PRICE_HOURS = 12             # how far back to look for a stored prop line when reading projections
@@ -137,8 +137,8 @@ def render(settings, engine, now: datetime, show_expired: bool, bet_link) -> Non
 
     history = recent_games(settings.results_dsn, now.date())
     props = projections(settings.results_dsn, now.replace(second=0, microsecond=0), engine)
-    st.dataframe(legs_table(legs, history, props, lambda link: bet_link(link, "saved")), hide_index=True, width="stretch",
-                 column_config={"Bet": st.column_config.LinkColumn("Bet", display_text="Open")})
+    phone_view.table(legs_table(legs, history, props, lambda link: bet_link(link, "saved")), sub=["Game"],
+                     column_config={"Bet": st.column_config.LinkColumn("Bet", display_text="Open")})
     st.caption("**Last 5 / Last 10**: how many of the player's most recent games this side of this line would have won. "
                "**Projection** and **Model chance** are the stored model forecast (Predictions tab) at this leg's line; the "
                "models have not beaten the market in testing, and a hot streak is already in the book's price. "

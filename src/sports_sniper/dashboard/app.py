@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from sports_sniper import backtest, bankroll, breakout, db, ladder, model_compare, parlay, performance, research
-from sports_sniper import odds_math, parlay_view, predictions_view
+from sports_sniper import odds_math, parlay_view, phone_view, predictions_view
 from sports_sniper.config import get_settings
 from sports_sniper.markets import book_label, market_label
 from sports_sniper.movement import moves
@@ -23,6 +23,7 @@ from sports_sniper.settlement import profit as settle_profit
 from sports_sniper.settlement import settle
 
 st.set_page_config(page_title="Sports Betting Sniper", page_icon="🎯", layout="wide")
+phone_view.setup()
 settings = get_settings()
 SOURCE_NOTE = {
     "sample": ("warning", "**Hypothetical sample data.** These teams, players and prices are invented so the app works "
@@ -66,6 +67,8 @@ def bet_link(link, source: str) -> str | None:
 
 LINK_COLUMN = {"Bet": st.column_config.LinkColumn("Bet", display_text="Open", help="Opens this bet at the sportsbook. "
                                                   "The price there may have changed since it was seen.")}
+
+PHONE_COLUMNS = ["Book", "Odds", "Fair odds", "Est. EV", "Conservative EV", "Evidence", "Model view", "Price seen"]
 
 
 def label(o) -> str:
@@ -242,7 +245,7 @@ def details(data: pd.DataFrame, key: str) -> None:
 priced = frame[frame.status == "priced"].sort_values(["conservative_ev", "ev"], ascending=False)
 unpriced = frame[frame.status != "priced"].sort_values("premium_vs_median", ascending=False)
 last_seen = frame.observed_at.max() if not frame.empty else None
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3, c4 = st.container(key="summary").columns(4)
 c1.metric("Last prices seen", "-" if last_seen is None else ago(last_seen, now))
 c2.metric("Available now", int((priced.available & (priced.conservative_ev > min_edge) & (priced.ev >= min_ev)).sum()))
 c3.metric("Flagged in the last 36 h", len(priced))
@@ -292,7 +295,7 @@ else:
                "Nothing here places a bet.")
     for o in bet_now.head(12).itertuples():
         starts = (o.commence_time - now).total_seconds() / 60
-        left, when, go, yes, no = st.columns([5, 2.2, 1.6, 1.2, 1.2], vertical_alignment="center")
+        left, when, go, yes, no = st.container(key=f"betnow_{o.id}").columns([5, 2.2, 1.6, 1.2, 1.2], vertical_alignment="center")
         left.markdown(f"**{label(o)}** · {book_label(o.book)} **{american(o.price)}** (fair {american(o.fair_price)}, "
                       f"edge {pct(o.ev, True)}) · model: {model_view(o.model_probability, o.break_even).lower()}")
         when.markdown(f"Starts in **{starts:.0f} min** · seen {ago(o.observed_at, now)}")
@@ -371,7 +374,7 @@ with board_tab:
         st.info("No opportunities clear the bar right now. That is a normal result: most prices are fair or worse."
                 + ("" if show_expired or priced.empty else " Tick **Include prices no longer available** to review earlier ones."))
     else:
-        st.dataframe(table(board), hide_index=True, width="stretch", column_config=LINK_COLUMN)
+        phone_view.table(table(board), sub=["Game"], keep=PHONE_COLUMNS, column_config=LINK_COLUMN)
         st.caption("Ranked by conservative EV: the estimated chance lowered by its uncertainty before the EV is worked out. "
                    "Every estimate comes from other sportsbooks' prices for the identical bet, with their margin removed. "
                    "**Model view** is a second opinion only: the prediction model's calibrated chance of the same side, "
@@ -389,7 +392,7 @@ with longshot_tab:
     if longs.empty:
         st.info("No longshot has a supportable positive edge right now.")
     else:
-        st.dataframe(table(longs), hide_index=True, width="stretch", column_config=LINK_COLUMN)
+        phone_view.table(table(longs), sub=["Game"], keep=PHONE_COLUMNS, column_config=LINK_COLUMN)
         details(longs, "longshot")
     outliers = filtered(unpriced)
     outliers = outliers[outliers.price >= floor]

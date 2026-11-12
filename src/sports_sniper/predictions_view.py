@@ -7,11 +7,13 @@ from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
 
-from sports_sniper import db, predictions
+from sports_sniper import db, phone_view, predictions
 from sports_sniper.markets import book_label
 
 SPORTS = {"nba": "NBA", "nfl": "NFL", "ncaaf": "NCAAF"}
 PRICE_HOURS = 12             # how far back to look for a stored prop line
+GAME_PHONE = ["Model spread", "Line", "Spread lean", "Model total", "Total line", "Total lean", "Missing players"]
+PROP_PHONE = ["Stat", "Projection", "Line", "Gap", "Model: over", "Market: over", "Likely range", "Line from"]
 
 
 def when(stamp) -> str:
@@ -126,7 +128,7 @@ def render(settings, engine, now: datetime) -> None:
     if games.empty:
         st.write("No game forecasts for the chosen sports.")
     else:
-        st.dataframe(games_table(games), hide_index=True, width="stretch")
+        phone_view.table(games_table(games), title="Game", sub=["Sport", "Starts"], keep=GAME_PHONE)
         waiting = int(games.spread.isna().sum())
         st.caption("Model spread and Line both name the favourite. Spread lean is the side the model prefers at that line and by "
                    "how many points; Total lean likewise."
@@ -156,7 +158,7 @@ def render(settings, engine, now: datetime) -> None:
     disagreement = (view.model_over - view.market_over).abs()
     view = view.assign(order=disagreement.fillna(-1)).sort_values(["order", "start", "player"], ascending=[False, True, True])
     st.write(f"{len(view)} projections" + (f", {int(props.line.notna().sum())} of {len(props)} with a line" if not lined else ""))
-    st.dataframe(props_table(view.head(500)), hide_index=True, width="stretch")
+    phone_view.table(props_table(view.head(500)), title="Player", sub=["Team", "Game", "Starts"], keep=PROP_PHONE)
     st.caption("Sorted by how far the model's chance of the over is from the market's (the book's two prices with the margin "
                "removed). Likely range is the model's 10th to 90th percentile. NBA lines come from the stored price snapshots "
                "(FanDuel first, then DraftKings), which start about 40 minutes before tip-off. NFL projections are anchored "

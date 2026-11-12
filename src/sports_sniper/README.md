@@ -224,6 +224,8 @@ write-ahead mode so the dashboard can read while a pass writes; it grows by roug
   alert has been sent**), the Parlay Lab, and the daily automatic evaluation.
 - Streamlit dashboard: Opportunity Board, Predictions, Longshot Hunter, Breakout Radar, Parlay Lab, Line Movement, Performance, Paper
   Bets, Backtest, Model Comparison, with filters.
+- Phone layout (`phone_view.py`): on a narrow screen the header is compact and the tabs wrap; on a phone (or with
+  **Phone layout** in the sidebar) the main tables are shown as cards with an Open button for the sportsbook link.
 - NFL and NBA. MLB markets are listed and the code paths are shared, but MLB has not been run.
 
 ## What is not built yet
