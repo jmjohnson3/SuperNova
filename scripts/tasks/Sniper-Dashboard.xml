@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>SuperNovaBets - keeps the Sports Betting Sniper dashboard running on http://localhost:8517 (this PC only; research and paper trading)</Description>
+    <Author>SuperNovaBets</Author>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+    </LogonTrigger>
+    <!-- Every 5 minutes: does nothing while the dashboard is up, starts it again if it stopped. -->
+    <CalendarTrigger>
+      <StartBoundary>2026-01-01T00:02:00</StartBoundary>
+      <Repetition>
+        <Interval>PT5M</Interval>
+        <Duration>P1D</Duration>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <Enabled>true</Enabled>
+    <Priority>4</Priority>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>wscript.exe</Command>
+      <Arguments>"C:\Users\josh\Git\SuperNovaBets\scripts\sniper_dashboard.vbs"</Arguments>
+      <WorkingDirectory>C:\Users\josh\Git\SuperNovaBets</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

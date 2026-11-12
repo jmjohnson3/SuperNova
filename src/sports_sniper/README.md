@@ -278,3 +278,14 @@ cli.py             Typer commands
 dashboard/app.py   Streamlit dashboard
 fixtures/          sample_odds.json
 ```
+
+## Keeping the dashboard running, and opening it away from home
+
+The scheduled task `\SuperNovaBets\Sniper-Dashboard` (`scripts/tasks/Sniper-Dashboard.xml`) starts the dashboard at logon and
+checks every 5 minutes that it is still up, with no console window. It listens on this PC only
+(`http://localhost:8517`); the log is `logs/sniper_dashboard_YYYYMMDD.log`. To stop it for good, disable the task and end
+its `python.exe`.
+
+The dashboard has no login, so do not forward the port or put it on a public link. From another device use a private
+network: with Tailscale installed on the PC and the phone, `tailscale serve --bg 8517` gives an address only your own
+devices can open.
