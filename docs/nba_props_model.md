@@ -192,6 +192,48 @@ from 4.54 to 4.42 and the points miss from 5.142 to 5.114, against 4.397 with th
 is close to used up. What is left is what happens on the day: team-announced minutes limits, news between the
 lineup file and tip, and the game itself (fouls, blowouts, injuries).
 
+## Do prices lag lineup and injury news? (2026-11-12; `python -m nba_props.news_lag`)
+Stored data only, no credits, not scheduled; report `reports/nba_news_lag_latest.md`. A news move is a live
+projection that changes 3% or more in a news run (`nba_props.live --news` re-projects with the day's saved fits,
+so the change is the news alone). Each is lined up against the prop prices the sharp scanner saved every 10
+minutes in the last 50 minutes before tip (`bets.sharp_multi_quotes`): the last price before the watcher saw the
+news, the first price after, and the last before tip. A price is turned into the projection it implies, so line
+moves and price moves are on one scale. 2026-10-24 to 2026-11-12: 17 days, 127 games; 2,377 news moves have a
+FanDuel or DraftKings price after the news, 1,483 of them within 15 minutes of our seeing it.
+
+Fresh news (first price within 15 minutes), in the direction the model moved:
+
+| Book | Moves | Model's move | Market after our first look | Market in the 10 minutes before it |
+|---|---:|---:|---:|---:|
+| FanDuel | 1,192 | 11.2% | -0.07% (-0.36% to +0.27%) | +3.50% (+1.85% to +5.06%), 251 moves |
+| DraftKings | 1,406 | 11.3% | -0.24% (-0.51% to +0.03%) | +3.93% (+1.41% to +6.67%), 280 moves |
+| Pinnacle | 691 | 10.0% | +0.20% (-0.04% to +0.42%) | +2.18% (+1.05% to +3.80%), 138 moves |
+
+Betting the news side at FanDuel and DraftKings, value at Pinnacle's last no-vig price before tip:
+
+| Bets | Count | Value at Pinnacle's close | Return on results |
+|---|---:|---:|---:|
+| Fresh news, first price after | 2,546 | -5.8% (-6.1% to -5.3%) | -3.9% (-7.7% to +0.6%) |
+| No news: every over / every under | 7,885 each | -6.8% / -5.4% | -9.4% / -3.0% |
+| Fresh news, at the price one look earlier (not available to us) | 573 | -2.6% (-4.1% to -0.9%) | -0.7% (-11.6% to +11.6%) |
+| The same bets at the first price after | 573 | -6.2% (-7.2% to -4.8%) | -4.2% (-15.9% to +9.9%) |
+
+- **No lag we can use.** By the first price after the watcher sees the news, FanDuel and DraftKings have finished
+  moving: nothing is left in the news direction, and the news side is worth the same as a blind bet (the vig).
+  Older news, each kind of news and the larger moves read the same.
+- **The books move with the news or before it.** In the 10 minutes around our seeing it the market moves about 3.7%
+  the model's way, 7 times in 10. Our sources (the NBA lineup file and ESPN's injury list) are official and late;
+  the books have the reporters.
+- **The model moves three times as far as the market** (11% against 3.7%; 23% against 4.6% when a player's own role
+  changes): much of what the lineup file "announces" was expected already. The live model's reaction to a
+  confirmed starter is too large.
+- **Even one look faster would not pay**: at the price about 10 minutes earlier the news side is still -2.6% at
+  Pinnacle's close (-1.5%, -3.6% to +0.6%, for model moves of 10% or more). Speed would recover about half the vig.
+- Limits: 17 days; prices only every 10 minutes and only in the last 50 minutes, so a lag shorter than a few
+  minutes cannot be seen; the implied projection is a normal approximation.
+
+Verdict: not an edge with these sources, and no reason to buy faster prices to chase it. Not scheduled.
+
 ## Spreads and totals (`python -m nba_props.games`; reports/nba_games_model_latest.md)
 Decayed ridge team ratings (margin and total fitted separately) plus each side's missing rotation, rest
 and back-to-backs; walk-forward monthly, 2023-24 to 2025-26, against DraftKings' pre-game line.

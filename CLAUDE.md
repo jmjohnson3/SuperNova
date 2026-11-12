@@ -399,6 +399,11 @@ filter snapshot < commence before using it as evidence.
   variant, now in the default run, about an hour) cuts the minutes miss 4.46 to 4.42 but the points miss only 5.118
   to 5.114, which cannot be told from zero. Not adopted. History is close to used up for minutes; what is left is
   same-day news and the game itself.
+- `nba_props.news_lag` (2026-11-12, not scheduled, stored data only): do prop prices lag lineup and injury news? No. By the
+  first saved price after the news watcher sees a change, FanDuel and DraftKings have finished moving, and the news side
+  is worth the same as a blind bet (-5.8% at Pinnacle's close on 2,546 bets over 17 days); even the price 10 minutes
+  earlier is -2.6%. The official lineup file and ESPN's list are late and the live model over-reacts to a confirmed
+  starter (`reports/nba_news_lag_latest.md`). Do not build alerts on news moves.
 
 ## NCAAF game models (`src/ncaaf_pipeline/`, research)
 CFBD history (`ingest`, key `CFBD_API_KEY`, 1,000 calls/month) feeds opponent-adjusted points ratings
