@@ -1,8 +1,8 @@
 # Price gaps: is Pinnacle right when a book disagrees?
 
-Built 2026-11-12 23:38 UTC. Research only; stored prices, no credits. Player props with Pinnacle at the identical line in the same look; one row per game, player, statistic and book, the first look 15 to 45 minutes before the start.
+Built 2026-11-13 00:13 UTC. Research only; stored prices, no credits. Player props with Pinnacle at the identical line in the same look; one row per game, player, statistic and book, the first look 15 to 45 minutes before the start.
 
-- NBA: 124 games, 13128 prices, 12889 settled, 2026-10-24 to 2026-11-12.
+- NBA: 124 games, 13175 prices, 12889 settled, 2026-10-24 to 2026-11-12.
 - NFL: 41 games, 2895 prices, 2823 settled, 2026-10-22 to 2026-11-10.
 
 ## Whose price is right
@@ -84,5 +84,11 @@ Weight 1 means that where the two differ Pinnacle's price is the right one; 0 me
 | 35 to 25 | 243 | +4.6% | 55.1% | +10.4% (-4.2% to +24.1%) |
 | 25 to 15 | 259 | +4.7% | 52.9% | +7.6% (-6.7% to +22.3%) |
 | 15 to 5 | 233 | +4.8% | 47.2% | -4.1% (-18.0% to +10.6%) |
+
+## Progress, run by run (about 1,500 bets on gaps of 3%+ are needed)
+
+| Run | Bets on 3%+ gaps | Value claimed | Return on results (95%) | Weight on Pinnacle (95%) |
+|---|---:|---:|---:|---:|
+| 2026-11-13 | 260 | +4.8% | +7.8% (-7.3% to +21.2%) | +1.29 (-0.00 to +2.52) |
 
 Value claimed is the bet's expected return if Pinnacle's no-vig price is the true chance. Every price is counted, whether or not a scanner flagged it or the price could really be bet. NCAAF and game lines are not included (too few stored).

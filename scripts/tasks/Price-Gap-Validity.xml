@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>SuperNovaBets - Two-weekly rerun of the price-gap validity test (stored prices, no credits, report only)</Description>
+    <Author>SuperNovaBets</Author>
+  </RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>2026-11-25T04:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByWeek>
+        <WeeksInterval>2</WeeksInterval>
+        <DaysOfWeek>
+          <Wednesday />
+        </DaysOfWeek>
+      </ScheduleByWeek>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <Priority>7</Priority>
+    <Enabled>true</Enabled>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>C:\Users\josh\Git\SuperNovaBets\scripts\price_gap_validity.bat</Command>
+      <WorkingDirectory>C:\Users\josh\Git\SuperNovaBets</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

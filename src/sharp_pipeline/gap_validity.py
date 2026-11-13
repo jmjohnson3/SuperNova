@@ -19,6 +19,7 @@ window), except in the timing table. Intervals resample whole games.
 from __future__ import annotations
 
 import argparse
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -41,6 +42,8 @@ GAPS = (("Under 0% (no side is good value)", -np.inf, 0.0), ("0% to 1.5%", 0.0, 
         ("3% to 5%", 0.03, 0.05), ("5% or more", 0.05, np.inf))
 TIMING = (("45 to 35 minutes", 35.0, 45.0), ("35 to 25", 25.0, 35.0), ("25 to 15", 15.0, 25.0), ("15 to 5", 5.0, 15.0))
 FLAG = 0.03
+NEEDED = 1500                            # bets on 3%+ gaps to tell the claimed value from zero
+HISTORY = ROOT / "reports" / "price_gap_validity_history.json"
 NFL_STATS = ("receptions", "receiving_yards", "rushing_yards")
 KEYS = ["sport", "game", "player", "stat"]
 DRAWS = 1000
@@ -202,9 +205,29 @@ def markdown(report: dict) -> str:
         L += table(f"The better side at the book, by size of the gap: {sport}", "Gap against Pinnacle", rows)
     L += table("Gaps of 3% or more", "Group", report["flagged"])
     L += table("Gaps of 3% or more by minutes before the start (each window's first look)", "Window", report["timing"])
+    if report.get("history"):
+        L += ["", f"## Progress, run by run (about {NEEDED:,} bets on gaps of 3%+ are needed)", "",
+              "| Run | Bets on 3%+ gaps | Value claimed | Return on results (95%) | Weight on Pinnacle (95%) |", "|---|---:|---:|---:|---:|"]
+        span = lambda fmt, v, lo, hi: "-" if v is None else format(v, fmt) if lo is None else f"{format(v, fmt)} ({format(lo, fmt)} to {format(hi, fmt)})"
+        for h in report["history"]:
+            L.append(f"| {h['date']} | {h['bets']} | {pct(h['claimed'])} | {span('+.1%', h['roi'], h['roi_low'], h['roi_high'])} | "
+                     f"{span('+.2f', h['weight'], h['weight_low'], h['weight_high'])} |")
     L += ["", "Value claimed is the bet's expected return if Pinnacle's no-vig price is the true chance. Every price is counted, whether or not a "
               "scanner flagged it or the price could really be bet. NCAAF and game lines are not included (too few stored)."]
     return "\n".join(L) + "\n"
+
+
+def headline(report: dict) -> dict:
+    """One line per run for the progress table: the 3%+ gaps."""
+    r, w = report["flagged"]["All"], report["weight"].get("Gap of 3%+ only") or {}
+    return dict(date=report["built"][:10], bets=r["bets"], claimed=r["claimed"], roi=r["roi"], roi_low=r["low"], roi_high=r["high"],
+                weight=w.get("weight"), weight_low=w.get("low"), weight_high=w.get("high"))
+
+
+def with_history(report: dict, earlier: list[dict]) -> list[dict]:
+    """Earlier runs plus this one; a second run on the same day replaces that day's line."""
+    line = news_lag.clean(headline(report))
+    return [h for h in earlier if h["date"] != line["date"]] + [line]
 
 
 def run(log=print) -> dict:
@@ -212,6 +235,9 @@ def run(log=print) -> dict:
         quotes = pd.concat([nba_quotes(conn), nfl_quotes(conn)], ignore_index=True)
     log(f"  {len(quotes)} stored prices")
     report = summarise(paired(quotes))
+    earlier = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    report["history"] = with_history(report, earlier)
+    atomic_json(HISTORY, report["history"])
     atomic_json(REPORT.with_suffix(".json"), news_lag.clean(report))
     REPORT.write_text(markdown(report), encoding="utf-8")
     log(f"  wrote {REPORT}")

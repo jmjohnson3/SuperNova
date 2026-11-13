@@ -58,3 +58,10 @@ def test_returns_and_the_report():
         {**quote("pinnacle", 40, 10.5, -130, 110), "game": f"g{i}"}, {**quote("fanduel", 40, 10.5, 100, -120, actual=12.0 if i % 2 else 9.0), "game": f"g{i}"})])
     text = gv.markdown(gv.news_lag.clean(gv.summarise(gv.paired(quotes))))
     assert "## Whose price is right" in text and "| All | 12 |" in text and "| 45 to 35 minutes | 12 |" in text
+    report = gv.summarise(gv.paired(quotes))
+    earlier = [dict(date="2026-01-01", bets=3, claimed=0.04, roi=0.1, roi_low=None, roi_high=None, weight=None, weight_low=None, weight_high=None),
+               dict(gv.headline(report), bets=1)]                                           # an earlier run today is replaced
+    report["history"] = gv.with_history(report, earlier)
+    assert [h["bets"] for h in report["history"]] == [3, 12] and report["history"][1]["date"] == report["built"][:10]
+    text = gv.markdown(gv.news_lag.clean(report))
+    assert "## Progress, run by run (about 1,500 bets" in text and "| 2026-01-01 | 3 | +4.0% | +10.0% | - |" in text
