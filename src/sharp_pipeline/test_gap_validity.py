@@ -64,4 +64,42 @@ def test_returns_and_the_report():
     report["history"] = gv.with_history(report, earlier)
     assert [h["bets"] for h in report["history"]] == [3, 12] and report["history"][1]["date"] == report["built"][:10]
     text = gv.markdown(gv.news_lag.clean(report))
-    assert "## Progress, run by run (about 1,500 bets" in text and "| 2026-01-01 | 3 | +4.0% | +10.0% | - |" in text
+    assert "## Progress, run by run (about 1,500 prop bets" in text and "| 2026-01-01 | 3 | +4.0% | +10.0% | - | 0 | - |" in text
+
+
+def market(book, key, outcomes, minutes=40, game="e1"):
+    return dict(sport="nba", game=game, observed_at=TIP - pd.Timedelta(minutes=minutes), commence=TIP, home_team="Home", away_team="Away",
+                book=book, market=key, outcomes=outcomes)
+
+
+def test_game_lines_are_held_from_the_home_side():
+    side = lambda name, price, point=None: dict(name=name, price=price, **({} if point is None else {"point": point}))
+    rows = gv.line_rows([
+        market("pinnacle", "spreads", [side("Away", -105, 3.5), side("Home", -105, -3.5)]),
+        market("fanduel", "spreads", [side("Home", 110, -3.5), side("Away", -130, 3.5)]),
+        market("draftkings", "spreads", [side("Home", -110, -4.0), side("Away", -110, 4.0)]),      # another line: no pair
+        market("pinnacle", "h2h", [side("Home", -160), side("Away", 140)]),
+        market("fanduel", "h2h", [side("Home", -150), side("Away", 130)]),
+        market("pinnacle", "totals", [side("Over", -110, 220.5), side("Under", -110, 220.5)]),
+        market("fanduel", "totals", [side("Over", -120, 220.5), side("Under", 100, 220.5)]),
+        market("fanduel", "totals", [side("Over", -120, 220.5)]),                                   # one side only
+        market("fanduel", "spreads", [side("Home", -110, -3.5), side("Away", -110, 4.5)]),          # the two sides disagree
+        market("fanduel", "team_totals", [side("Over", -110, 110.5), side("Under", -110, 110.5)])])
+    assert len(rows) == 7 and rows[rows.stat == "spread"].line.tolist() == [3.5, 3.5, 4.0] and (rows[rows.stat == "moneyline"].line == 0).all()
+    fd = rows[(rows.book == "fanduel") & (rows.stat == "spread")].iloc[0]
+    assert (fd.over, fd.under) == (110.0, -130.0)                                                   # over is the home price
+    scores = pd.DataFrame(dict(game=["e1"], home_points=[110.0], away_points=[106.0]))
+    p = gv.paired(gv.with_scores(rows, scores)).set_index("stat")
+    assert sorted(p.index) == ["moneyline", "spread", "total"] and (p.kind == "Game lines").all()
+    assert p.loc["spread", "side"] == 1 and p.loc["spread", "profit"] == pytest.approx(1.10)        # home by 4 covers 3.5 at +110
+    assert p.loc["moneyline", "over_hit"] == 1 and p.loc["total", "side"] == -1 and p.loc["total", "profit"] == pytest.approx(1.0)
+    push = gv.paired(gv.with_scores(rows[rows.stat == "spread"].assign(line=4.0), scores))
+    assert (push.profit == 0).all()
+    unsettled = gv.paired(gv.with_scores(rows, scores.assign(game="other")))
+    assert unsettled.profit.isna().all() and len(unsettled) == 3
+    props = gv.paired(pd.DataFrame([quote("pinnacle", 40, 10.5, -130, 110), quote("fanduel", 40, 10.5, 100, -120)]))
+    report = gv.summarise(pd.concat([p.reset_index(), props], ignore_index=True))
+    assert set(report["sample"]) == {"NBA game lines", "NBA player props"} and report["flagged"]["Game lines"]["bets"] >= 1
+    line = gv.headline(report)
+    assert line["line_bets"] == report["flagged"]["Game lines"]["bets"] and line["bets"] == report["flagged"]["Player props"]["bets"]
+    assert line["line_roi"] == report["flagged"]["Game lines"]["roi"]

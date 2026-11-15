@@ -337,6 +337,10 @@ Pinnacle's last quote before the start.
   `switch_to_nfl_tasks.ps1`, with the XML declaration stripped) reruns it and adds a line to the report's progress table
   (`reports/price_gap_validity_history.json`). Report only: no Discord, no stakes. Until it shows otherwise everything
   stays on paper and models stay context (user decision 2026-11-12).
+  Game lines were added on 2026-11-14 (NBA and NCAAF spreads, totals and moneylines, held from the home side): 2,474 settled
+  prices but no help. Spreads and totals never gap 3% at the same line; all 25 gaps were moneyline longshots (+360 to
+  +1300) and all lost, because an even split of the margin overstates a longshot's chance. The progress table follows
+  prop gaps only (291 bets, +7.2%, -6.6% to +20.0%). Do not treat a moneyline longshot gap as value.
 
 ## Sports Betting Sniper (`src/sports_sniper/`, research and paper trading)
 

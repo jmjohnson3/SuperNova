@@ -1,9 +1,10 @@
-"""When a sportsbook and Pinnacle disagree on a player prop, who is right? Research only; stored data, no credits.
+"""When a sportsbook and Pinnacle disagree on a price, who is right? Research only; stored data, no credits.
 
 The price-gap scanners score every decision at Pinnacle's last no-vig price, which assumes Pinnacle is the
-truth. This checks that assumption against results, on every stored two-sided prop price (not only the ones a
-scanner flagged): NBA from bets.sharp_multi_quotes, NFL from bets.nfl_sharp_quote_observations, both with
-Pinnacle at the identical line in the same look.
+truth. This checks that assumption against results, on every stored two-sided price (not only the ones a
+scanner flagged): NBA props and NBA and NCAAF spreads, totals and moneylines from bets.sharp_multi_quotes, NFL
+props from bets.nfl_sharp_quote_observations, all with Pinnacle at the identical line in the same look.
+A game line is held as a prop on the home margin: the spread and moneyline "over" is the home side.
 
     weight    the result regressed on the book's own no-vig price plus w x (Pinnacle's price - the book's), in
               log-odds: w = 1 means Pinnacle is right where they differ, w = 0 means the book is
@@ -31,6 +32,7 @@ from scipy.optimize import minimize_scalar
 from nba_props import news_lag
 from nfl_pipeline.db import PG_DSN
 from nfl_pipeline.integrity import atomic_json
+from sharp_pipeline import outcomes
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / "reports" / "price_gap_validity_latest.md"
@@ -47,6 +49,9 @@ HISTORY = ROOT / "reports" / "price_gap_validity_history.json"
 NFL_STATS = ("receptions", "receiving_yards", "rushing_yards")
 KEYS = ["sport", "game", "player", "stat"]
 DRAWS = 1000
+LINE_MARKETS = {"h2h": "moneyline", "spreads": "spread", "totals": "total"}
+LINE_STATS = tuple(LINE_MARKETS.values())
+EASTERN = "America/New_York"
 
 
 # --- data ----------------------------------------------------------------------------------------------------------
@@ -79,6 +84,87 @@ def nfl_quotes(conn) -> pd.DataFrame:
     return q.assign(sport="nfl", player=q.name)[["sport", "game", "player", "stat", "book", "line", "over", "under", "observed_at", "commence", "actual"]]
 
 
+def line_rows(records: list[dict]) -> pd.DataFrame:
+    """Stored game-line markets as two-sided quotes. Spread and moneyline: over = the home side, the line is the
+    margin the home side must beat (minus its own spread; 0 for the moneyline). Total: the usual over and under."""
+    out = []
+    for r in records:
+        stat = LINE_MARKETS.get(r["market"])
+        sides = {o.get("name"): o for o in r["outcomes"] or [] if o.get("price") is not None}
+        if stat is None or len(sides) != 2:
+            continue
+        if stat == "total":
+            first, second = sides.get("Over"), sides.get("Under")
+        else:
+            first, second = sides.get(r["home_team"]), sides.get(r["away_team"])
+        if first is None or second is None:
+            continue
+        if stat == "moneyline":
+            line = 0.0
+        elif first.get("point") is None or second.get("point") is None:
+            continue
+        elif stat == "total":
+            line = float(first["point"])
+            if line != float(second["point"]):
+                continue
+        else:
+            line = -float(first["point"])
+            if float(second["point"]) != line:
+                continue
+        out.append(dict(sport=r["sport"], game=r["game"], player="-", stat=stat, book=r["book"], line=line, over=float(first["price"]),
+                        under=float(second["price"]), observed_at=r["observed_at"], commence=r["commence"],
+                        home_team=r["home_team"], away_team=r["away_team"]))
+    cols = ["sport", "game", "player", "stat", "book", "line", "over", "under", "observed_at", "commence", "home_team", "away_team"]
+    df = pd.DataFrame(out, columns=cols)
+    for c in ("observed_at", "commence"):
+        df[c] = pd.to_datetime(df[c], utc=True)
+    return df
+
+
+def with_scores(rows: pd.DataFrame, scores: pd.DataFrame) -> pd.DataFrame:
+    """Add the result each line is judged on: home margin for spread and moneyline, total points for the total.
+    scores: one row per game with home_points and away_points; a game without a final score stays unsettled."""
+    q = rows.merge(scores[["game", "home_points", "away_points"]].drop_duplicates("game"), on="game", how="left")
+    q["actual"] = np.where(q.stat == "total", q.home_points + q.away_points, q.home_points - q.away_points)
+    return q[["sport", "game", "player", "stat", "book", "line", "over", "under", "observed_at", "commence", "actual"]]
+
+
+def game_scores(conn, games: pd.DataFrame) -> pd.DataFrame:
+    """Final scores for the stored events (game, sport, commence, home_team, away_team), matched as the scanner report does."""
+    games = games.assign(day=games.commence.dt.tz_convert(EASTERN).dt.date)
+    days = sorted(set(games.day))
+    _, nba, _ = outcomes.nba_actuals(conn, days)
+    college: dict = {}
+    for day, home, away, hp, ap in outcomes.ncaaf_scores(conn, days):
+        college.setdefault(day, []).append((home, away, hp, ap))
+    out = []
+    for g in games.to_dict("records"):
+        home = away = None
+        if g["sport"] == "nba":
+            home, away = nba.get((g["day"], g["home_team"])), nba.get((g["day"], g["away_team"]))
+        else:
+            played = college.get(g["day"], [])
+            schools = [x[0] for x in played] + [x[1] for x in played]
+            h, a = outcomes.match_school(g["home_team"] or "", schools), outcomes.match_school(g["away_team"] or "", schools)
+            hit = next((x for x in played if x[0] == h and x[1] == a), None)
+            if hit:
+                home, away = hit[2], hit[3]
+        out.append(dict(game=g["game"], home_points=None if home is None else float(home), away_points=None if away is None else float(away)))
+    return pd.DataFrame(out, columns=["game", "home_points", "away_points"]).astype({"home_points": float, "away_points": float})
+
+
+def line_quotes(conn) -> pd.DataFrame:
+    with conn.cursor() as cur:
+        cur.execute("""SELECT q.sport, q.event_id, q.observed_at_utc, q.commence_time_utc, q.payload->>'home_team', q.payload->>'away_team',
+                              b->>'key', m->>'key', m->'outcomes'
+                       FROM bets.sharp_multi_quotes q, jsonb_array_elements(q.payload->'bookmakers') b, jsonb_array_elements(b->'markets') m
+                       WHERE m->>'key' = ANY(%s) AND b->>'key' = ANY(%s)""", (list(LINE_MARKETS), [REFERENCE, *BOOKS]))
+        names = ("sport", "game", "observed_at", "commence", "home_team", "away_team", "book", "market", "outcomes")
+        rows = line_rows([dict(zip(names, r)) for r in cur.fetchall()])
+    games = rows.drop_duplicates("game")[["game", "sport", "commence", "home_team", "away_team"]]
+    return with_scores(rows, game_scores(conn, games))
+
+
 # --- one row per player, statistic and book ------------------------------------------------------------------------
 def no_vig(over, under) -> np.ndarray:
     a, b = news_lag.american_probability(over), news_lag.american_probability(under)
@@ -102,6 +188,7 @@ def paired(quotes: pd.DataFrame) -> pd.DataFrame:
     margin = (out.actual - out.line) * out.side
     out["profit"] = np.select([margin > 0, margin < 0, margin == 0], [news_lag.decimal(price) - 1.0, -1.0, 0.0], np.nan)
     out["over_hit"] = np.where(out.actual.isna() | (out.actual == out.line), np.nan, (out.actual > out.line).astype(float))
+    out["kind"] = np.where(out.stat.isin(LINE_STATS), "Game lines", "Player props")
     return out
 
 
@@ -162,17 +249,21 @@ def summarise(rows: pd.DataFrame) -> dict:
     main = first_in(rows, *WINDOW)
     flagged = main[main.ev >= FLAG]
     cut = lambda frame, col: {str(k): g for k, g in frame.groupby(col)}
+    kinds, flagged_kinds = cut(main, "kind"), cut(flagged, "kind")
     return dict(
         built=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-        sample={s: dict(games=int(g.game.nunique()), prices=int(len(g)), settled=int(g.over_hit.notna().sum()),
-                        first=str(g.observed_at.min().date()), last=str(g.observed_at.max().date())) for s, g in main.groupby("sport")},
-        weight={"All": weight(main), **{f"{s.upper()}": weight(g) for s, g in cut(main, "sport").items()},
+        sample={f"{s.upper()} {k.lower()}": dict(games=int(g.game.nunique()), prices=int(len(g)), settled=int(g.profit.notna().sum()),
+                                                 first=str(g.observed_at.min().date()), last=str(g.observed_at.max().date()))
+                for (s, k), g in main.groupby(["sport", "kind"])},
+        weight={"All": weight(main), **{k: weight(g) for k, g in kinds.items()},
+                **{f"{s.upper()}": weight(g) for s, g in cut(main, "sport").items()},
                 **{f"{b}": weight(g) for b, g in cut(main, "book").items()},
                 **{f"{s.upper()} {m}": weight(g) for (s, m), g in main.groupby(["sport", "stat"])},
-                "Gap of 3%+ only": weight(flagged)},
+                "Gap of 3%+ only": weight(flagged), **{f"Gap of 3%+, {k.lower()}": weight(g) for k, g in flagged_kinds.items()}},
         gaps={sport: {label: returns(g[(g.ev >= lo) & (g.ev < hi)]) for label, lo, hi in GAPS}
-              for sport, g in {"All": main, **{s.upper(): g for s, g in cut(main, "sport").items()}}.items()},
-        flagged={"All": returns(flagged), **{b: returns(g) for b, g in cut(flagged, "book").items()},
+              for sport, g in {"All": main, **kinds, **{s.upper(): g for s, g in cut(main, "sport").items()}}.items()},
+        flagged={"All": returns(flagged), **{k: returns(g) for k, g in flagged_kinds.items()},
+                 **{b: returns(g) for b, g in cut(flagged, "book").items()},
                  **{f"{s.upper()} {m}": returns(g) for (s, m), g in flagged.groupby(["sport", "stat"])},
                  "Over side": returns(flagged[flagged.side > 0]), "Under side": returns(flagged[flagged.side < 0])},
         timing={label: returns(first_in(rows, lo, hi).query("ev >= @FLAG")) for label, lo, hi in TIMING})
@@ -182,10 +273,11 @@ def summarise(rows: pd.DataFrame) -> dict:
 def markdown(report: dict) -> str:
     pct = lambda v, d=1: "-" if v is None else f"{v:+.{d}%}"
     L = ["# Price gaps: is Pinnacle right when a book disagrees?", "",
-         f"Built {report['built']}. Research only; stored prices, no credits. Player props with Pinnacle at the identical line in the same look; "
-         "one row per game, player, statistic and book, the first look 15 to 45 minutes before the start.", ""]
+         f"Built {report['built']}. Research only; stored prices, no credits. Player props and game lines (spread, total, moneyline) with "
+         "Pinnacle at the identical line in the same look; one row per game, player or market, and book, the first look 15 to 45 minutes "
+         "before the start.", ""]
     for sport, s in report["sample"].items():
-        L.append(f"- {sport.upper()}: {s['games']} games, {s['prices']} prices, {s['settled']} settled, {s['first']} to {s['last']}.")
+        L.append(f"- {sport}: {s['games']} games, {s['prices']} prices, {s['settled']} settled, {s['first']} to {s['last']}.")
     L += ["", "## Whose price is right", "",
           "Weight 1 means that where the two differ Pinnacle's price is the right one; 0 means the book's own price is. Intervals resample games.", "",
           "| Prices | Settled | Games | Average difference | Weight on Pinnacle (95%) |", "|---|---:|---:|---:|---:|"]
@@ -206,21 +298,27 @@ def markdown(report: dict) -> str:
     L += table("Gaps of 3% or more", "Group", report["flagged"])
     L += table("Gaps of 3% or more by minutes before the start (each window's first look)", "Window", report["timing"])
     if report.get("history"):
-        L += ["", f"## Progress, run by run (about {NEEDED:,} bets on gaps of 3%+ are needed)", "",
-              "| Run | Bets on 3%+ gaps | Value claimed | Return on results (95%) | Weight on Pinnacle (95%) |", "|---|---:|---:|---:|---:|"]
+        L += ["", f"## Progress, run by run (about {NEEDED:,} prop bets on gaps of 3%+ are needed)", "",
+              "| Run | Prop bets on 3%+ gaps | Value claimed | Return on results (95%) | Weight on Pinnacle (95%) | Game-line bets | Their return |",
+              "|---|---:|---:|---:|---:|---:|---:|"]
         span = lambda fmt, v, lo, hi: "-" if v is None else format(v, fmt) if lo is None else f"{format(v, fmt)} ({format(lo, fmt)} to {format(hi, fmt)})"
         for h in report["history"]:
             L.append(f"| {h['date']} | {h['bets']} | {pct(h['claimed'])} | {span('+.1%', h['roi'], h['roi_low'], h['roi_high'])} | "
-                     f"{span('+.2f', h['weight'], h['weight_low'], h['weight_high'])} |")
+                     f"{span('+.2f', h['weight'], h['weight_low'], h['weight_high'])} | {h.get('line_bets', 0)} | {pct(h.get('line_roi'))} |")
     L += ["", "Value claimed is the bet's expected return if Pinnacle's no-vig price is the true chance. Every price is counted, whether or not a "
-              "scanner flagged it or the price could really be bet. NCAAF and game lines are not included (too few stored)."]
+              "scanner flagged it or the price could really be bet. Game lines were added on 2026-11-14 (NBA and NCAAF; the spread and "
+              "moneyline are counted from the home side, so each game's two sides are one row). A college game whose teams cannot be matched "
+              "to a final score stays unsettled. Spreads and totals almost never differ from Pinnacle by 3% at the same line; the game-line gaps "
+              "are moneyline longshots, where sharing the margin evenly between the two sides overstates the longshot's chance."]
     return "\n".join(L) + "\n"
 
 
 def headline(report: dict) -> dict:
-    """One line per run for the progress table: the 3%+ gaps."""
-    r, w = report["flagged"]["All"], report["weight"].get("Gap of 3%+ only") or {}
-    return dict(date=report["built"][:10], bets=r["bets"], claimed=r["claimed"], roi=r["roi"], roi_low=r["low"], roi_high=r["high"],
+    """One line per run for the progress table: the 3%+ gaps on player props (the lead being followed), game lines beside them."""
+    r = report["flagged"].get("Player props") or report["flagged"]["All"]
+    w = report["weight"].get("Gap of 3%+, player props") or report["weight"].get("Gap of 3%+ only") or {}
+    lines = report["flagged"].get("Game lines") or {}
+    return dict(date=report["built"][:10], bets=r["bets"], line_bets=lines.get("bets", 0), line_roi=lines.get("roi"), claimed=r["claimed"], roi=r["roi"], roi_low=r["low"], roi_high=r["high"],
                 weight=w.get("weight"), weight_low=w.get("low"), weight_high=w.get("high"))
 
 
@@ -232,7 +330,7 @@ def with_history(report: dict, earlier: list[dict]) -> list[dict]:
 
 def run(log=print) -> dict:
     with psycopg2.connect(PG_DSN) as conn:
-        quotes = pd.concat([nba_quotes(conn), nfl_quotes(conn)], ignore_index=True)
+        quotes = pd.concat([nba_quotes(conn), nfl_quotes(conn), line_quotes(conn)], ignore_index=True)
     log(f"  {len(quotes)} stored prices")
     report = summarise(paired(quotes))
     earlier = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
