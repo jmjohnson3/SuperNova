@@ -400,6 +400,12 @@ python -m pytest src/sports_sniper -q
   minutes) keeps the dashboard up on port 8517, bound to 127.0.0.1 with no console window. The dashboard has no login:
   remote access is through a private network only (the user's choice is Tailscale, `tailscale serve --bg 8517`); never
   bind it to all interfaces or forward the port.
+- Arbitrage & Middles tab (2026-11-16, `arbs.py` / `arbs_view.py`): an over at one book and an under at another on the same
+  player, from each game's latest stored prices (`sniper_prices`, no credits; props only, Pinnacle never a leg). Same line
+  and a sure return = arbitrage; a higher under line = middle (free if it cannot lose, otherwise capped by the cost slider).
+  Stakes are split so either win pays the same. Books default to FanDuel and DraftKings. Information only: it flags
+  nothing, enters no paper bet, and how often a middle lands is not measured (the "books' own chance" is only the gap
+  between two no-vig prices).
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

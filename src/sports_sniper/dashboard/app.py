@@ -322,9 +322,9 @@ if games_ahead:
                                         "In": "now" if g["prices_from"] <= now else f"{(g['prices_from'] - now).total_seconds() / 60:.0f} min"}
                                        for g in soon]), hide_index=True, width="stretch")
 
-board_tab, predictions_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab = st.tabs(
+board_tab, predictions_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab, arb_tab = st.tabs(
     ["Opportunity Board", "Predictions", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance", "Paper Bets",
-     "Backtest", "Model Comparison"])
+     "Backtest", "Model Comparison", "Arbitrage & Middles"])
 
 
 @st.cache_data(ttl=600, show_spinner="Replaying the stored snapshots (a couple of minutes the first time)...")
@@ -869,3 +869,7 @@ with model_tab:
                                         "Average estimate": pct(b["predicted"]), "Over actually won": pct(b["observed"]),
                                         "95% interval": f"{b['interval'][0]:.0%} to {b['interval'][1]:.0%}"}
                                        for b in model_compare.calibration_table(offers, "model", 10)]), hide_index=True, width="stretch")
+
+with arb_tab:
+    from sports_sniper.arbs_view import render as render_arbs
+    render_arbs(engine(), settings, now)
