@@ -404,8 +404,12 @@ python -m pytest src/sports_sniper -q
   player, from each game's latest stored prices (`sniper_prices`, no credits; props only, Pinnacle never a leg). Same line
   and a sure return = arbitrage; a higher under line = middle (free if it cannot lose, otherwise capped by the cost slider).
   Stakes are split so either win pays the same. Books default to FanDuel and DraftKings. Information only: it flags
-  nothing, enters no paper bet, and how often a middle lands is not measured (the "books' own chance" is only the gap
-  between two no-vig prices).
+  nothing and enters no paper bet (the "books' own chance" is only the gap between two no-vig prices).
+  `sports_sniper.arbs_backtest` (2026-11-16, not scheduled, no credits, about 8 minutes; `reports/sniper_middles_latest.md`) grades
+  every stored look against results, one bet per player, statistic and game at first sighting (217 games, 23 days). Middles lose:
+  at FanDuel and DraftKings with cost up to 5% they landed 1.6% of the time (0.0% to 4.0%) against 4.7% needed and returned -2.9%
+  (-4.5% to -0.6%, 124 bets); any two books -1.7% (295 bets), cost 5% to 10% -3.1% (2,225 bets). Most are one-yard NFL gaps. Only
+  same-line arbitrages paid: 69 at FanDuel and DraftKings averaging +1.4%, if both prices can be bet. Do not flag middles.
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 

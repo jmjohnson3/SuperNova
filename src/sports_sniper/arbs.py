@@ -24,7 +24,7 @@ MAX_QUOTE_AGE = timedelta(minutes=5)          # a book's price last changed this
 EXCLUDED_BOOKS = ("pinnacle",)                    # a reference price, not a book the user can bet at
 ALTERNATE = "_alternate"
 KEY = ["event_id", "stat", "player_key"]
-COLUMNS = ["kind", "sport", "event_id", "event_name", "commence_time", "observed_at", "stat", "player", "over_book", "over_line",
+COLUMNS = ["kind", "sport", "event_id", "event_name", "commence_time", "observed_at", "stat", "player", "player_key", "over_book", "over_line",
            "over_price", "over_link", "under_book", "under_line", "under_price", "under_link", "width", "over_share", "miss_return",
            "hit_return", "break_even", "books_chance"]
 
