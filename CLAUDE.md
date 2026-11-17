@@ -341,6 +341,12 @@ Pinnacle's last quote before the start.
   prices but no help. Spreads and totals never gap 3% at the same line; all 25 gaps were moneyline longshots (+360 to
   +1300) and all lost, because an even split of the margin overstates a longshot's chance. The progress table follows
   prop gaps only (291 bets, +7.2%, -6.6% to +20.0%). Do not treat a moneyline longshot gap as value.
+- `sharp_pipeline.fair_price_model` (2026-11-16, not scheduled, no credits; `reports/fair_price_model_latest.md`): a fair
+  price fitted from all six books' prop prices plus an over/under term per statistic, refit before each game day (5,432
+  props on 15 forecast days). It is no more accurate than the plain average of the books (log loss +0.0004, -0.0010 to
+  +0.0018), no book earns extra weight (Pinnacle included), the per-statistic under lean does not hold out of sample, and
+  its 3%+ bets at FanDuel and DraftKings returned -5.1% (425 bets) against +10.7% (97 bets, -10.9% to +34.1%) for the
+  Pinnacle-gap rule on the same days. Not adopted; do not rank or flag from it.
 
 ## Sports Betting Sniper (`src/sports_sniper/`, research and paper trading)
 
