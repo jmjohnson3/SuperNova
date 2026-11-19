@@ -423,6 +423,11 @@ training cut-off, so it cannot know the results.
   `raw.nfl_context_observations`, from 17 Sep; the model's own `baseline_projection` beside FanDuel prop lines). Weather is the
   kickoff reading. `team_stats` builds third downs, red zone, turnovers, penalties, net punting, possession, EPA from the cached
   nflverse play-by-play (`data/nfl_ai_report/cache/`).
+- Dashboard tab **NFL Report** (`sports_sniper/nfl_report_view.py`, 2026-11-19): pick a slate (the next one by default), each game's
+  packet text and a table of its bets (both sides of FanDuel/DraftKings spread and total, FanDuel props) with links for games not
+  started: FanDuel betslip resolved for `NFL_FANDUEL_STATE` via `sharp_links.book_link`, else the stored provider link, else the
+  book's NFL page. "Rebuild this week" reruns the packets (play-by-play re-downloaded when over 12 hours old). Links are kept in the
+  packet JSON only, never in the text Claude reads. Information only: no picks, flags or paper bets.
 - Calling Claude: the plan is the `claude` command run headless (subscription, no API key); its sign-in had expired on 2026-11-18.
   Picks must be saved before kickoff and graded against results and the closing line; units stay paper until the record earns them.
 

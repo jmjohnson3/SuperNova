@@ -132,7 +132,8 @@ def lines(conn, games: pd.DataFrame, cutoff: datetime) -> pd.DataFrame:
     start, end = games.start_ts_utc.min() - timedelta(hours=12), games.start_ts_utc.max() + timedelta(hours=12)
     return _frame(conn, """
         SELECT fetched_at_utc, commence_time_utc, bookmaker_key AS book, home_team_abbr AS home, away_team_abbr AS away,
-               spread_home_points, spread_home_price, spread_away_price, total_points, total_over_price, total_under_price
+               spread_home_points, spread_home_price, spread_away_price, total_points, total_over_price, total_under_price,
+               spread_home_link, spread_away_link, total_over_link, total_under_link
         FROM odds.nfl_game_lines
         WHERE fetched_at_utc <= %s AND commence_time_utc BETWEEN %s AND %s AND bookmaker_key = ANY(%s)
               AND spread_home_points IS NOT NULL ORDER BY fetched_at_utc""", (cutoff, start, end, list(BOOKS)))
@@ -146,7 +147,9 @@ def _line(row) -> dict:
         return None if v is None or pd.isna(v) else int(v)
     return {"seen": pd.Timestamp(row.fetched_at_utc).tz_convert(EASTERN).strftime("%a %H:%M ET"),
             "home_spread": num(row.spread_home_points), "home_price": price(row.spread_home_price), "away_price": price(row.spread_away_price),
-            "total": num(row.total_points), "over_price": price(row.total_over_price), "under_price": price(row.total_under_price)}
+            "total": num(row.total_points), "over_price": price(row.total_over_price), "under_price": price(row.total_under_price),
+            "links": {k: getattr(row, f"{k}_link", None) for k in ("spread_home", "spread_away", "total_over", "total_under")
+                      if isinstance(getattr(row, f"{k}_link", None), str)}}           # for the dashboard; not in the text
 
 
 def game_lines(all_lines: pd.DataFrame, game) -> dict:
@@ -165,7 +168,7 @@ def props(conn, game_ids: list[str], cutoff: datetime) -> pd.DataFrame:
     p = _frame(conn, """
         SELECT DISTINCT ON (game_id, player_id, stat)
                game_id, player_name, team_abbr AS team, position, stat, line, side, price, baseline_projection,
-               market_no_vig_probability AS book_no_vig, injury_report_status, created_at_utc
+               market_no_vig_probability AS book_no_vig, injury_report_status, created_at_utc, link, offer_player_name
         FROM bets.nfl_player_prop_predictions
         WHERE game_id = ANY(%s) AND book = 'fanduel' AND stat = ANY(%s) AND created_at_utc <= %s AND line IS NOT NULL
         ORDER BY game_id, player_id, stat, created_at_utc DESC""", (game_ids, list(PROP_STATS), cutoff))
@@ -181,7 +184,9 @@ def _prop_rows(p: pd.DataFrame) -> list[dict]:
     keep = p.groupby("stat").head(PROPS_PER_GAME // len(PROP_STATS))
     return [{"player": r.player_name, "team": r.team, "pos": r.position, "stat": r.stat, "line": float(r.line), "side_priced": r.side,
              "price": None if pd.isna(r.price) else int(r.price), "book_no_vig_chance": None if pd.isna(r.book_no_vig) else round(float(r.book_no_vig), 3),
-             "model_projection": None if pd.isna(r.baseline_projection) else round(float(r.baseline_projection), 1)}
+             "model_projection": None if pd.isna(r.baseline_projection) else round(float(r.baseline_projection), 1),
+             "link": r.link if isinstance(getattr(r, "link", None), str) else None,
+             "book_player": getattr(r, "offer_player_name", None)}                       # FanDuel's spelling, for its betslip
             for r in keep.itertuples()]
 
 
@@ -218,9 +223,10 @@ def build_slate(conn, games: pd.DataFrame, slate: date, rows: pd.DataFrame, rank
               "injury_snapshots": not inj.empty, "games": []}
     for g in todays.itertuples():
         surface = None if pd.isna(g.surface) or not g.surface else g.surface
-        game = {"game_id": g.game_id, "matchup": f"{g.away} @ {g.home}",
+        game = {"game_id": g.game_id, "matchup": f"{g.away} @ {g.home}", "away": g.away, "home": g.home,
+                "kickoff_utc": g.start_ts_utc.isoformat(),
                 "kickoff_et": g.start_ts_utc.tz_convert(EASTERN).strftime("%a %d %b %I:%M %p"),
-                "venue": {"roof": g.roof, "surface": surface,
+                "venue": {"roof": None if pd.isna(g.roof) or not g.roof else g.roof, "surface": surface,
                           "weather_at_kickoff": None if g.roof in ("dome", "closed") or pd.isna(g.temp) else
                           {"temp_f": float(g.temp), "wind_mph": None if pd.isna(g.wind) else float(g.wind)}},
                 "lines": game_lines(all_lines, g), "teams": {}}
@@ -266,7 +272,7 @@ def to_text(packet: dict) -> str:
         a, h = g["teams"]["away"], g["teams"]["home"]
         v = g["venue"]
         weather = v["weather_at_kickoff"]
-        out += [f"## {g['matchup']} ({g['kickoff_et']} ET)", f"Venue: {v['roof']}" + (f", {v['surface']}" if v['surface'] else "") +
+        out += [f"## {g['matchup']} ({g['kickoff_et']} ET)", f"Venue: {v['roof'] or 'roof not listed'}" + (f", {v['surface']}" if v['surface'] else "") +
                 (f"; {weather['temp_f']:.0f}F, wind {_fmt(weather['wind_mph'])} mph" if weather else ""), ""]
         if g["lines"]:
             out += ["| Book | Home spread (price) | Total (over/under) | Earliest seen | Latest seen |", "|---|---|---|---|---|"]
@@ -309,8 +315,9 @@ def to_text(packet: dict) -> str:
     return "\n".join(out)
 
 
-def build(season: int, weeks: list[int], out: Path = OUT) -> list[Path]:
-    pbp_rows = team_stats.game_rows(team_stats.load_pbp(season))
+def build(season: int, weeks: list[int], out: Path = OUT, pbp_max_age: timedelta | None = None) -> list[Path]:
+    """Write the packets for the weeks' slates. pbp_max_age re-downloads play-by-play older than that (live runs)."""
+    pbp_rows = team_stats.game_rows(team_stats.load_pbp(season, max_age=pbp_max_age))
     conn = _connect()
     written = []
     try:

@@ -6,8 +6,9 @@ is about.
 """
 from __future__ import annotations
 
-import urllib.request
 import shutil
+import time
+import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -22,10 +23,11 @@ COLUMNS = ["game_id", "season_type", "week", "game_date", "home_team", "away_tea
            "touchback", "fixed_drive", "fixed_drive_result", "drive_inside20", "drive_time_of_possession"]
 
 
-def load_pbp(season: int, refresh: bool = False) -> pd.DataFrame:
-    """The season's play-by-play, downloaded once into the cache (the same file the Tuesday import reads)."""
+def load_pbp(season: int, refresh: bool = False, max_age=None) -> pd.DataFrame:
+    """The season's play-by-play, downloaded into the cache once (or again when older than max_age, a timedelta)."""
     path = CACHE / f"play_by_play_{season}.csv"
-    if refresh or not path.exists():
+    stale = max_age is not None and path.exists() and time.time() - path.stat().st_mtime > max_age.total_seconds()
+    if refresh or stale or not path.exists():
         CACHE.mkdir(parents=True, exist_ok=True)
         part = path.with_suffix(".part")
         with urllib.request.urlopen(PBP_URL.format(season=season), timeout=600) as r, open(part, "wb") as f:

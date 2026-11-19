@@ -322,9 +322,9 @@ if games_ahead:
                                         "In": "now" if g["prices_from"] <= now else f"{(g['prices_from'] - now).total_seconds() / 60:.0f} min"}
                                        for g in soon]), hide_index=True, width="stretch")
 
-board_tab, predictions_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab, arb_tab = st.tabs(
-    ["Opportunity Board", "Predictions", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance", "Paper Bets",
-     "Backtest", "Model Comparison", "Arbitrage & Middles"])
+board_tab, predictions_tab, nfl_report_tab, longshot_tab, radar_tab, parlay_tab, moves_tab, perf_tab, paper_tab, backtest_tab, model_tab, shortlist_tab, profit_tab, arb_tab = st.tabs(
+    ["Opportunity Board", "Predictions", "NFL Report", "Longshot Hunter", "Breakout Radar", "Parlay Lab", "Line Movement", "Performance",
+     "Paper Bets", "Backtest", "Model Comparison", "Frozen Shortlist", "Profit Audit", "Arbitrage & Middles"])
 
 
 @st.cache_data(ttl=600, show_spinner="Replaying the stored snapshots (a couple of minutes the first time)...")
@@ -383,6 +383,10 @@ with board_tab:
 
 with predictions_tab:
     predictions_view.render(settings, engine(), now)
+
+with nfl_report_tab:
+    from sports_sniper.nfl_report_view import render as render_nfl_report
+    render_nfl_report(now)
 
 with longshot_tab:
     st.subheader("Longshot Hunter")
@@ -869,6 +873,15 @@ with model_tab:
                                         "Average estimate": pct(b["predicted"]), "Over actually won": pct(b["observed"]),
                                         "95% interval": f"{b['interval'][0]:.0%} to {b['interval'][1]:.0%}"}
                                        for b in model_compare.calibration_table(offers, "model", 10)]), hide_index=True, width="stretch")
+
+
+with shortlist_tab:
+    from sports_sniper.shortlist_view import render as render_shortlist
+    render_shortlist()
+
+with profit_tab:
+    from sports_sniper.profit_view import render as render_profit
+    render_profit()
 
 with arb_tab:
     from sports_sniper.arbs_view import render as render_arbs
