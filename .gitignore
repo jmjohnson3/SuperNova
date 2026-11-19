@@ -51,3 +51,5 @@ reports/nba_props_model_predictions_v1.csv.gz
 # Sports Betting Sniper: local database and secrets
 data/sniper/
 .env
+
+data/nfl_ai_report/

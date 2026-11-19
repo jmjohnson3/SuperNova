@@ -413,6 +413,19 @@ python -m pytest src/sports_sniper -q
 - Its own tables (`sniper_*`) live in SQLite at `data/sniper/sniper.db` unless `SNIPER_DATABASE_URL` says otherwise.
   It shares no tables, registration or pinned module with the NFL/NBA trials and never places a wager.
 
+## NFL AI report (`src/nfl_ai_report/`, research, started 2026-11-18)
+A weekly NFL matchup report written by Claude from our own data (the user's ChatGPT-style prompt: team statistics, injuries,
+weather, line movement, unit-rated picks), to be tested on 2026 weeks 1-10 before any weekly run. Weeks after the model's
+training cut-off, so it cannot know the results.
+- `packets` (`python -m nfl_ai_report.packets --season 2026 --weeks 1-11`, about 3 minutes, no credits) writes one packet per
+  game day to `data/nfl_ai_report/packets/` (ignored): report time 11:00 AM ET or 90 minutes before the first kickoff, and only
+  what was stored by then (FanDuel/DraftKings spread and total, earliest and latest; injury statuses from
+  `raw.nfl_context_observations`, from 17 Sep; the model's own `baseline_projection` beside FanDuel prop lines). Weather is the
+  kickoff reading. `team_stats` builds third downs, red zone, turnovers, penalties, net punting, possession, EPA from the cached
+  nflverse play-by-play (`data/nfl_ai_report/cache/`).
+- Calling Claude: the plan is the `claude` command run headless (subscription, no API key); its sign-in had expired on 2026-11-18.
+  Picks must be saved before kickoff and graded against results and the closing line; units stay paper until the record earns them.
+
 ## NBA data (`src/nba_props/`)
 MySportsFeeds lapsed (403 for every league/season), so `nba_pipeline` has had no data since April 2026.
 `nba_props` uses free stats.nba.com via `nba_api`: `ingest` (game logs), `model` (walk-forward test against
